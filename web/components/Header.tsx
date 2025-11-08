@@ -3,7 +3,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
-export default function Header({ profile }: { profile: any }) {
+export default function Header({ profile }: { profile: { full_name?: string | null; role?: string } | null }) {
   const router = useRouter();
 
   const handleLogout = async () => {

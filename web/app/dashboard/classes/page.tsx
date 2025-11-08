@@ -45,7 +45,7 @@ export default function ClassesPage() {
         console.error("Error fetching classes:", error);
       } else if (data) {
         // ✅ flatten `teacher` array into single object
-        const flattened = data.map((cls: any) => ({
+        const flattened = data.map((cls) => ({
           ...cls,
           teacher: Array.isArray(cls.teacher)
             ? cls.teacher[0] || null

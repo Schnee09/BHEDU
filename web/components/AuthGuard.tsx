@@ -7,10 +7,9 @@ import { supabase } from "../lib/supabaseClient";
 
 type Props = {
   children: React.ReactNode;
-  fallback?: React.ReactNode;
 };
 
-export default function AuthGuard({ children, fallback = null }: Props) {
+export default function AuthGuard({ children }: Props) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 

@@ -59,10 +59,10 @@ export async function POST(req: Request) {
     }
 
     // Parse JSON after verification
-    let body: any;
+    let body: { email?: unknown; password?: unknown };
     try {
       body = raw ? JSON.parse(raw) : {};
-    } catch (e) {
+    } catch {
       return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { status: 400 });
     }
 
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     const sb = createClient(supabaseUrl, serviceRoleKey);
 
     // Use the server-side admin API to create a user (requires service role key)
-    const { data, error } = await (sb.auth.admin as any).createUser({
+    const { data, error } = await (sb.auth.admin as { createUser: (params: { email: string; password: string; email_confirm: boolean }) => Promise<{ data: unknown; error: Error | null }> }).createUser({
       email,
       password,
       email_confirm: true,
@@ -85,7 +85,8 @@ export async function POST(req: Request) {
     }
 
     return new Response(JSON.stringify({ data }), { status: 200 });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err?.message ?? String(err) }), { status: 500 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 }
