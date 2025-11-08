@@ -17,6 +17,7 @@ export interface Course {
   thumbnail?: string;
   author_id?: string;
   created_at?: string;
+  is_published?: boolean;
 }
 
 export interface Lesson {
@@ -26,6 +27,7 @@ export interface Lesson {
   content?: string;
   video_url?: string;
   order_index?: number;
+  is_published?: boolean;
   created_at?: string;
 }
 

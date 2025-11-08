@@ -1,50 +1,37 @@
 // src/services/lessonService.ts
 import { supabase } from '../config/supabase';
-
-export type Lesson = {
-  id: string;
-  course_id: string;
-  title: string;
-  content?: string;
-  video_url?: string;
-  order_index?: number;
-  is_published?: boolean;
-  created_at?: string;
-  updated_at?: string;
-};
+import type { Lesson } from '../types';
 
 export const lessonService = {
   async createLesson(payload: Omit<Lesson, 'id' | 'created_at' | 'updated_at'>) {
-    const { data, error } = await supabase
-      .from<unknown, Lesson>('lessons')
+    const { data, error } = await (supabase.from('lessons') as any)
       .insert([payload])
       .select()
       .single();
 
     if (error) throw new Error(error.message);
-    return data;
+    return data as Lesson;
   },
 
   async updateLesson(id: string, updates: Partial<Lesson>) {
-    const { data, error } = await supabase
-      .from<unknown, Lesson>('lessons')
+    const { data, error } = await (supabase.from('lessons') as any)
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw new Error(error.message);
-    return data;
+    return data as Lesson;
   },
 
   async deleteLesson(id: string) {
-    const { error } = await supabase.from<unknown, Lesson>('lessons').delete().eq('id', id);
+    const { error } = await supabase.from('lessons').delete().eq('id', id);
     if (error) throw new Error(error.message);
     return true;
   },
 
   async getLessonsByCourse(course_id: string, onlyPublished = false) {
-    let q = supabase.from<unknown, Lesson>('lessons').select('*').eq('course_id', course_id).order('order_index', { ascending: true });
+    let q: any = supabase.from('lessons').select('*').eq('course_id', course_id).order('order_index', { ascending: true });
     if (onlyPublished) q = q.eq('is_published', true);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
@@ -53,7 +40,7 @@ export const lessonService = {
 
   async getLessonById(id: string) {
     const { data, error } = await supabase
-      .from<unknown, Lesson>('lessons')
+      .from('lessons')
       .select('*')
       .eq('id', id)
       .single();
@@ -63,8 +50,7 @@ export const lessonService = {
   },
 
   async setPublish(id: string, is_published: boolean) {
-    const { data, error } = await supabase
-      .from<unknown, Lesson>('lessons')
+    const { data, error } = await (supabase.from('lessons') as any)
       .update({ is_published, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()

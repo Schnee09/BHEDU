@@ -70,8 +70,11 @@ export const lessonController = {
         .maybeSingle();
       if (courseErr) throw courseErr;
 
+      // Normalize to any to avoid strict typing mismatch during migration
+      const _courseData: any = courseData;
+
       // if requester is course author (rare for students), allow
-      if (courseData?.author_id === actor.id) return res.json(lesson);
+      if (_courseData?.author_id === actor.id) return res.json(lesson);
 
       // else check enrollment
       const { data: enrollData, error: enrollErr } = await supabase
@@ -106,9 +109,10 @@ export const lessonController = {
         .eq('id', course_id)
         .maybeSingle();
       if (courseErr) throw courseErr;
+      const _courseData2: any = courseData;
       if (!courseData) return res.status(404).json({ error: 'Course not found' });
 
-      if (courseData.author_id !== actor.id && actor.user_metadata?.role !== 'admin')
+      if (_courseData2.author_id !== actor.id && actor.user_metadata?.role !== 'admin')
         return res.status(403).json({ error: 'Not course author' });
 
       const newLesson = await lessonService.createLesson({
@@ -138,7 +142,8 @@ export const lessonController = {
       if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
 
       const { data: courseData } = await supabase.from('courses').select('*').eq('id', lesson.course_id).maybeSingle();
-      if (courseData?.author_id !== actor.id && actor.user_metadata?.role !== 'admin')
+      const _courseData3: any = courseData;
+      if (_courseData3?.author_id !== actor.id && actor.user_metadata?.role !== 'admin')
         return res.status(403).json({ error: 'Not course author' });
 
       const updated = await lessonService.updateLesson(id, updates);
@@ -159,7 +164,8 @@ export const lessonController = {
       if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
 
       const { data: courseData } = await supabase.from('courses').select('*').eq('id', lesson.course_id).maybeSingle();
-      if (courseData?.author_id !== actor.id && actor.user_metadata?.role !== 'admin')
+      const _courseData4: any = courseData;
+      if (_courseData4?.author_id !== actor.id && actor.user_metadata?.role !== 'admin')
         return res.status(403).json({ error: 'Not course author' });
 
       await lessonService.deleteLesson(id);
@@ -183,7 +189,8 @@ export const lessonController = {
       if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
 
       const { data: courseData } = await supabase.from('courses').select('*').eq('id', lesson.course_id).maybeSingle();
-      if (courseData?.author_id !== actor.id && actor.user_metadata?.role !== 'admin')
+      const _courseData5: any = courseData;
+      if (_courseData5?.author_id !== actor.id && actor.user_metadata?.role !== 'admin')
         return res.status(403).json({ error: 'Not course author' });
 
       const updated = await lessonService.setPublish(id, is_published);
