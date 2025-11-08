@@ -18,10 +18,36 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install & build web (pre-deploy checks)
+      - name: Validate required deployment secrets
+        run: |
+          missing=()
+          [ -z "${{ secrets.VERCEL_TOKEN }}" ] && missing+=(VERCEL_TOKEN)
+          [ -z "${{ secrets.VERCEL_ORG_ID }}" ] && missing+=(VERCEL_ORG_ID)
+          [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ] && missing+=(VERCEL_PROJECT_ID)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Missing required secrets: ${missing[@]}" >&2
+            exit 1
+          fi
+          echo "All required Vercel secrets present."
+
+      - name: Install web dependencies
         working-directory: ./web
         run: |
           npm ci
+
+      - name: Lint web (ESLint, no warnings allowed)
+        working-directory: ./web
+        run: |
+          npm run lint -- --max-warnings=0
+
+      - name: Typecheck web (TS noEmit)
+        working-directory: ./web
+        run: |
+          npx tsc --noEmit
+
+      - name: Build web (Next production build)
+        working-directory: ./web
+        run: |
           npm run build
 
       # Production deploy on push to main
