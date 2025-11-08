@@ -49,10 +49,23 @@ Or use the Vercel web UI to connect the repository and enable automatic deploys 
 - Endpoint (deployed): `POST https://<your-vercel-domain>/api/admin/create-user`
 - Headers:
   - `Content-Type: application/json`
-  - `x-internal-secret: <INTERNAL_API_KEY value>`
+  - `x-internal-signature: <hex-hmac-sha256-of-body>`  # required: HMAC-SHA256(raw-body) using `INTERNAL_API_KEY`
 - Body:
 ```json
 { "email": "user@example.com", "password": "P@ssw0rd!" }
+```
+
+Notes on signing requests
+- Generate the signature by computing the HMAC-SHA256 over the exact request body (no whitespace changes) using the `INTERNAL_API_KEY` as the HMAC key, and send the resulting hex string in the `x-internal-signature` header. The server will validate the signature using a timing-safe comparison.
+
+Example (local test using openssl to compute HMAC):
+```bash
+BODY='{"email":"user@example.com","password":"P@ssw0rd!"}'
+SIGNATURE=$(printf "%s" "$BODY" | openssl dgst -sha256 -hmac "${INTERNAL_API_KEY}" -hex | sed 's/^.* //')
+curl -X POST https://<your-vercel-domain>/api/admin/create-user \
+  -H "Content-Type: application/json" \
+  -H "x-internal-signature: $SIGNATURE" \
+  -d "$BODY"
 ```
 
 ## Local development notes
