@@ -20,5 +20,8 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/lessons', lessonRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 
+// health check for orchestration/monitoring
+app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
