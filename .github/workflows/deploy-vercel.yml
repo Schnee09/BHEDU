@@ -18,6 +18,12 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Install & build web (pre-deploy checks)
+        working-directory: ./web
+        run: |
+          npm ci
+          npm run build
+
       # Production deploy on push to main
       - name: Vercel Deploy (production)
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
