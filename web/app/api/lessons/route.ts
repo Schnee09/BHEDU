@@ -89,14 +89,21 @@ export async function POST(req: Request) {
   if (typeof is_published !== 'undefined' && typeof is_published !== 'boolean') return new Response(JSON.stringify({ error: 'is_published must be boolean' }), { status: 400 });
 
   const sb = createClient(supabaseUrl, serviceRoleKey);
-  const insert = {
+  const insert: {
+    course_id: string;
+    title: string;
+    content: string | null;
+    video_url: string | null;
+    order_index: number;
+    is_published: boolean;
+  } = {
     course_id: course_id as string,
     title: title as string,
     content: (content as string) ?? null,
     video_url: (video_url as string) ?? null,
     order_index: (order_index as number) ?? 0,
     is_published: (is_published as boolean) ?? false
-  } as any;
+  };
 
   const { data, error } = await sb.from('lessons').insert(insert).select().single();
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });

@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     thumbnail: (thumbnail as string) ?? null,
     author_id: (author_id as string) ?? null,
     is_published: (is_published as boolean) ?? false
-  } as any;
+  };
 
   const { data, error } = await sb.from('courses').insert(insert).select().single();
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
