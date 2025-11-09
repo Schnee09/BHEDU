@@ -25,7 +25,6 @@ type SupabaseLike = {
 
 function buildStub(): SupabaseLike {
   // Minimal shape used by our code paths; all methods return empty data.
-  const empty = { data: null, error: null };
   return {
     auth: {
       getSession: async () => ({ data: { session: null }, error: null }),
