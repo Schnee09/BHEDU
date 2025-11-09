@@ -41,14 +41,12 @@ export default function AttendancePage() {
 
       // Teacher: only attendance of own classes
       if (profile.role === "teacher") {
-        const { data: classes } = await supabase
+        const { data: classesRaw } = await supabase
           .from("classes")
           .select("id")
           .eq("teacher_id", profile.id);
-        query = query.in(
-          "class_id",
-          classes?.map((c) => c.id) || []
-        );
+        const classIds = (classesRaw as Array<{ id: string }> | null)?.map((c) => c.id) || [];
+        query = query.in("class_id", classIds);
       }
 
       // Student: only own attendance
@@ -58,13 +56,29 @@ export default function AttendancePage() {
 
       const { data, error } = await query;
       if (error) console.error("❌ Error fetching attendance:", error);
-      setAttendance(
-        data?.map((a) => ({
-          ...a,
-          student_name: (a.profiles && 'full_name' in a.profiles) ? (a.profiles.full_name as string) || "Unknown" : "Unknown",
-          class_name: (a.classes && 'name' in a.classes) ? (a.classes.name as string) || "Unknown" : "Unknown",
-        })) || []
-      );
+      const mapped = Array.isArray(data)
+        ? (data as unknown[]).map((raw) => {
+            const r = raw as {
+              id: unknown;
+              class_id?: unknown;
+              student_id?: unknown;
+              date?: unknown;
+              status?: unknown;
+              profiles?: { full_name?: unknown };
+              classes?: { name?: unknown };
+            };
+            return {
+              id: String(r.id as string | number),
+              class_id: String((r.class_id as string | number | undefined) || ""),
+              student_id: String((r.student_id as string | number | undefined) || ""),
+              date: String((r.date as string | undefined) || new Date().toISOString()),
+              status: String((r.status as string | undefined) || "Unknown"),
+              student_name: (r.profiles?.full_name as string | undefined) || "Unknown",
+              class_name: (r.classes?.name as string | undefined) || "Unknown",
+            };
+          })
+        : [];
+      setAttendance(mapped);
       setLoading(false);
     };
 

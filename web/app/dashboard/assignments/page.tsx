@@ -29,38 +29,45 @@ export default function AssignmentsPage() {
 
       // Teachers: only own classes’ assignments
       if (profile.role === "teacher") {
-        query = query.in(
-          "class_id",
-          (
-            await supabase
-              .from("classes")
-              .select("id")
-              .eq("teacher_id", profile.id)
-          ).data?.map((c) => c.id) || []
-        );
+        const { data: classesData } = await supabase
+          .from("classes")
+          .select("id")
+          .eq("teacher_id", profile.id);
+        const classIds = (classesData as Array<{ id: string }> | null)?.map((c) => c.id) || [];
+        query = query.in("class_id", classIds);
       }
 
       // Students: only enrolled class assignments
       if (profile.role === "student") {
-        query = query.in(
-          "class_id",
-          (
-            await supabase
-              .from("enrollments")
-              .select("class_id")
-              .eq("student_id", profile.id)
-          ).data?.map((e) => e.class_id) || []
-        );
+        const { data: enrollmentsData } = await supabase
+          .from("enrollments")
+          .select("class_id")
+          .eq("student_id", profile.id);
+        const enrolledIds = (enrollmentsData as Array<{ class_id: string }> | null)?.map((e) => e.class_id) || [];
+        query = query.in("class_id", enrolledIds);
       }
 
       const { data, error } = await query;
       if (error) console.error("❌ Error fetching assignments:", error);
-      setAssignments(
-        data?.map((a) => ({
-          ...a,
-          class_name: (a as { classes?: { name?: string } }).classes?.name || "Unknown",
-        })) || []
-      );
+      const mapped: Assignment[] = Array.isArray(data)
+        ? (data as unknown[]).map((raw) => {
+            const r = raw as {
+              id: unknown;
+              title?: unknown;
+              due_date?: unknown;
+              class_id?: unknown;
+              classes?: { name?: unknown };
+            };
+            return {
+              id: String(r.id as string | number),
+              title: String((r.title as string | undefined) || "Untitled"),
+              due_date: (r.due_date as string | null | undefined) ?? null,
+              class_id: String((r.class_id as string | number | undefined) || ""),
+              class_name: (r.classes?.name as string | undefined) || "Unknown",
+            };
+          })
+        : [];
+      setAssignments(mapped);
       setLoading(false);
     };
 
