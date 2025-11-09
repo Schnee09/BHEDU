@@ -3,8 +3,14 @@ name: Deploy web to Vercel
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/deploy-vercel.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/deploy-vercel.yml'
 
 jobs:
   vercel-deploy:
