@@ -33,7 +33,7 @@ export async function GET(req: Request) {
   }
 
   const sb = createClient(supabaseUrl, serviceRoleKey);
-  const { data, error } = await sb.from('users').select('id, email, role, created_at').order('created_at', { ascending: false });
+  const { data, error } = await sb.from('profiles').select('id, full_name, role, created_at').order('created_at', { ascending: false });
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
   return new Response(JSON.stringify({ data }), { status: 200 });
 }
@@ -60,14 +60,17 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: 'Invalid signature format' }), { status: 400 });
   }
 
-  let body: { email?: unknown; role?: unknown } = {};
+  let body: { full_name?: unknown; role?: unknown } = {};
   try { body = raw ? JSON.parse(raw) : {}; } catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 }); }
-  const { email, role } = body;
-  if (!email || typeof email !== 'string') return new Response(JSON.stringify({ error: 'email required' }), { status: 400 });
+  const { full_name, role } = body;
+  if (!full_name || typeof full_name !== 'string') return new Response(JSON.stringify({ error: 'full_name required' }), { status: 400 });
   if (role && typeof role !== 'string') return new Response(JSON.stringify({ error: 'role must be string' }), { status: 400 });
 
   const sb = createClient(supabaseUrl, serviceRoleKey);
-  const { data, error } = await sb.from('users').insert({ email, role: role || 'student' }).select().single();
+  // Note: profiles.id must be explicitly provided (usually matches auth.users.id)
+  // For now, generate a random UUID - in production, this should match an auth user
+  const profileId = crypto.randomUUID();
+  const { data, error } = await sb.from('profiles').insert({ id: profileId, full_name, role: role || 'student' }).select().single();
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
   return new Response(JSON.stringify({ data }), { status: 201 });
 }
