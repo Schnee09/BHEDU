@@ -1,15 +1,15 @@
 // src/config/database.ts
-import { User, Course, Lesson, Enrollment } from '../types';
+import { Profile, Course, Lesson, Enrollment } from '../types';
 
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
 export interface Database {
   public: {
     Tables: {
-      users: {
-        Row: User;
-        Insert: Omit<User, 'id' | 'created_at'>;
-        Update: Partial<User>;
+      profiles: {
+        Row: Profile;
+        Insert: Profile; // id has no default; require explicit id on insert
+        Update: Partial<Profile>;
       };
       courses: {
         Row: Course;

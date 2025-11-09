@@ -1,12 +1,12 @@
 // src/types.ts
 export type Role = 'student' | 'teacher' | 'admin';
 
-export interface User {
+export interface Profile {
   id: string;
-  email: string;
-  password?: string;
-  full_name?: string;
-  role?: Role;
+  full_name: string;
+  role: Role;
+  avatar_url?: string;
+  metadata?: Record<string, any>;
   created_at?: string;
 }
 
