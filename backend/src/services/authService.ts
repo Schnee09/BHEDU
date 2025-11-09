@@ -13,7 +13,21 @@ export const authService = {
     });
 
     if (error) throw new Error(error.message);
-    return data.user;
+
+    // Ensure a row exists in profiles (profiles.full_name and role are NOT NULL)
+    const user = data.user;
+    if (user?.id) {
+      const fallbackName = full_name || (email?.split('@')[0] ?? 'User');
+      const fallbackRole = (role as any) || 'student';
+      const { error: profileErr } = await (supabase as any)
+        .from('profiles')
+        .upsert({ id: user.id, full_name: fallbackName, role: fallbackRole })
+        .select()
+        .single();
+      if (profileErr) throw new Error(`profile upsert failed: ${profileErr.message}`);
+    }
+
+    return user;
   },
 
   // Sign in (server-side proxy). Typically frontend calls Supabase client directly.
