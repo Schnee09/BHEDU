@@ -28,28 +28,38 @@ export default function StudentsPage() {
 
       // Teachers only see students in their classes
       if (profile.role === "teacher") {
-        query = query.in(
-          "id",
-          (
-            await supabase
-              .from("enrollments")
-              .select("student_id")
-              .in(
-                "class_id",
-                (
-                  await supabase
-                    .from("classes")
-                    .select("id")
-                    .eq("teacher_id", profile.id)
-                ).data?.map((c) => c.id) || []
-              )
-          ).data?.map((e) => e.student_id) || []
-        );
+        const { data: teacherClasses } = await supabase
+          .from("classes")
+          .select("id")
+          .eq("teacher_id", profile.id);
+        const classIds = (teacherClasses as Array<{ id: string }> | null)?.map((c) => c.id) || [];
+        const { data: enrollments } = await supabase
+          .from("enrollments")
+          .select("student_id")
+          .in("class_id", classIds);
+        const studentIds = (enrollments as Array<{ student_id: string }> | null)?.map((e) => e.student_id) || [];
+        query = query.in("id", studentIds);
       }
 
       const { data, error } = await query;
       if (error) console.error("❌ Error fetching students:", error);
-      setStudents(data || []);
+      const mapped: Student[] = Array.isArray(data)
+        ? (data as unknown[]).map((raw) => {
+            const r = raw as {
+              id: unknown;
+              full_name?: unknown;
+              role?: unknown;
+              created_at?: unknown;
+            };
+            return {
+              id: String(r.id as string | number),
+              full_name: String((r.full_name as string | undefined) || "Unknown"),
+              role: String((r.role as string | undefined) || "student"),
+              created_at: String((r.created_at as string | undefined) || new Date().toISOString()),
+            };
+          })
+        : [];
+      setStudents(mapped);
       setLoading(false);
     };
 

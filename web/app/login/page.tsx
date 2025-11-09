@@ -26,14 +26,15 @@ export default function LoginPage() {
 
     if (error) setError(error.message);
     else {
-      const userRole =
-        data.user?.user_metadata?.role ||
-        (await supabase
+      let userRole = data.user?.user_metadata?.role as string | undefined;
+      if (!userRole) {
+        const { data: profileRow } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", data.user?.id)
-          .single()
-          .then((res) => res.data?.role));
+          .single();
+  userRole = (profileRow as { role?: unknown } | null)?.role as string | undefined;
+      }
 
       if (userRole === "admin") router.replace("/dashboard");
       else if (userRole === "teacher") router.replace("/dashboard/classes");

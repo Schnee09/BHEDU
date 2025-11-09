@@ -30,14 +30,15 @@ export default function DashboardPage() {
 
           const classesCount = classesRes.count || 0;
 
+          const { data: teacherClasses } = await supabase
+            .from("classes")
+            .select("id")
+            .eq("teacher_id", profile.id);
+          const teacherClassIds = (teacherClasses as Array<{ id: string }> | null)?.map((c) => c.id) || [];
           const assignmentsRes = await supabase
             .from("assignments")
             .select("id", { count: "exact", head: true })
-            .in(
-              "class_id",
-              (await supabase.from("classes").select("id").eq("teacher_id", profile.id)).data?.map((c) => c.id) ??
-              []
-            );
+            .in("class_id", teacherClassIds);
 
           const assignmentsCount = assignmentsRes.count || 0;
 
@@ -51,15 +52,15 @@ export default function DashboardPage() {
 
           const classesCount = enrollRes.count || 0;
 
+          const { data: enrollments } = await supabase
+            .from("enrollments")
+            .select("class_id")
+            .eq("student_id", profile.id);
+          const enrolledIds = (enrollments as Array<{ class_id: string }> | null)?.map((e) => e.class_id) || [];
           const assignmentsRes = await supabase
             .from("assignments")
             .select("id", { count: "exact", head: true })
-            .in(
-              "class_id",
-              (await supabase.from("enrollments").select("class_id").eq("student_id", profile.id)).data?.map(
-                (e) => e.class_id
-              ) ?? []
-            );
+            .in("class_id", enrolledIds);
 
           const assignmentsCount = assignmentsRes.count || 0;
 

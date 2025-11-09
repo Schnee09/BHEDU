@@ -43,14 +43,26 @@ export default function ClassesPage() {
 
       if (error) {
         console.error("Error fetching classes:", error);
-      } else if (data) {
-        // ✅ flatten `teacher` array into single object
-        const flattened = data.map((cls) => ({
-          ...cls,
-          teacher: Array.isArray(cls.teacher)
-            ? cls.teacher[0] || null
-            : cls.teacher || null,
-        }));
+      } else if (Array.isArray(data)) {
+        const flattened: ClassData[] = (data as unknown[]).map((raw) => {
+          const r = raw as {
+            id: unknown;
+            name?: unknown;
+            created_at?: unknown;
+            teacher_id?: unknown;
+            teacher?: { full_name?: unknown } | Array<{ full_name?: unknown }>;
+          };
+          const teacherObj = Array.isArray(r.teacher)
+            ? (r.teacher[0] as { full_name?: unknown }) || null
+            : (r.teacher as { full_name?: unknown } | undefined) || null;
+          return {
+            id: String(r.id as string | number),
+            name: String((r.name as string | undefined) || "Untitled"),
+            created_at: String((r.created_at as string | undefined) || new Date().toISOString()),
+            teacher_id: String((r.teacher_id as string | number | undefined) || ""),
+            teacher: teacherObj ? { full_name: String(teacherObj.full_name || "Unknown") } : null,
+          };
+        });
         setClasses(flattened);
       }
 
