@@ -11,6 +11,13 @@ on:
     # Run for all PR changes to main so preview deploy always runs
   workflow_dispatch:
 
+# Needed for posting preview URLs as PR comments
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  deployments: write
+
 jobs:
   vercel-deploy:
     runs-on: ubuntu-latest
