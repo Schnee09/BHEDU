@@ -1,0 +1,1 @@
+chore update web lockfile and next config

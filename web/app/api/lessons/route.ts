@@ -23,8 +23,8 @@ export async function GET(req: Request) {
   const sig = req.headers.get('x-internal-signature');
   if (!sig) return new Response(JSON.stringify({ error: 'Missing signature' }), { status: 401 });
 
-  // Use the query string as part of signed payload for GET for minimal replay protection
-  const expected = computeHmac(internalKey, `course_id=${course_id}`);
+  // Empty payload for GET (like other routes for consistency)
+  const expected = computeHmac(internalKey, '');
   try {
     const providedBuf = Buffer.from(sig, 'hex');
     const expectedBuf = Buffer.from(expected, 'hex');
