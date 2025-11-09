@@ -8,9 +8,7 @@ on:
       - '.github/workflows/deploy-vercel.yml'
   pull_request:
     branches: [ main ]
-    paths:
-      - 'web/**'
-      - '.github/workflows/deploy-vercel.yml'
+    # Run for all PR changes to main so preview deploy always runs
   workflow_dispatch:
 
 jobs:
