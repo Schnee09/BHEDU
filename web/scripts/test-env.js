@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 const key = process.env.INTERNAL_API_KEY;
 console.log('Key from env:', JSON.stringify(key));
