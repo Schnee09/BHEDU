@@ -61,11 +61,11 @@ export default function ScoresPage() {
       const { data, error } = await query;
       if (error) console.error("❌ Error fetching scores:", error);
       setScores(
-        data?.map((s: any) => ({
+        data?.map((s) => ({
           ...s,
-          student_name: s.profiles?.full_name || "Unknown",
-          class_name: s.classes?.name || "Unknown",
-          assignment_title: s.assignments?.title || "N/A",
+          student_name: (s.profiles && 'full_name' in s.profiles) ? (s.profiles.full_name as string) || "Unknown" : "Unknown",
+          class_name: (s.classes && 'name' in s.classes) ? (s.classes.name as string) || "Unknown" : "Unknown",
+          assignment_title: (s.assignments && 'title' in s.assignments) ? (s.assignments.title as string) || "N/A" : "N/A",
         })) || []
       );
       setLoading(false);

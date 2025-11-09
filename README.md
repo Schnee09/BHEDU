@@ -1,47 +1,58 @@
-# BH-EDU: Early-Stage Education Platform
+# BH-EDU — Local dev notes
 
-A full-stack app for [e.g., backend/blockchain courses] with user auth, progress tracking, and real-time updates via Supabase.
+This repository contains two apps:
 
-## 🚀 Quick Start
-1. Clone: `git clone https://github.com/Schnee09/BHEDU.git && cd BHEDU`
-2. Install: `npm install`
-3. Setup Env: Copy `.env.example` to `.env` and add Supabase URL/Keys (from supabase.com dashboard)
-4. Seed Data: `npm run seed` (adds test users/courses)
-5. Dev Mode: `npm run dev` (runs backend on :8080 + web on :3000)
-6. Open: http://localhost:3000
+- `backend` — Node + TypeScript server using Supabase (server-side).
+- `web` — Next.js frontend.
 
-## 📁 Structure
-- `backend/`: Node.js/TS APIs (auth, courses endpoints)
-- `web/`: Frontend (React/Vanilla JS dashboard, login)
-- `supabase/`: DB migrations, edge functions, RLS policies
-- `scripts/`: Utils (e.g., seed.ts for initial data)
-- `docs/`: API docs, course outlines
-- `.vscode/`: Workspace settings
+Environment
+-----------
 
-## 🛠 Tech Stack
-| Category | Tools |
-|----------|-------|
-| Backend | Node.js, TypeScript, Express/Fastify |
-| DB/Auth | Supabase (Postgres, Realtime, Storage) |
-| Frontend | [Vite/React – update as needed] |
-| Dev | npm, tsx, concurrently |
+- The frontend should only use public keys:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-## 🤖 AI Collaboration
-- **Prompts for GPT/Copilot**: "Generate a Supabase auth middleware for backend/routes.ts" or "Add error handling to scripts/seed.ts for duplicate users."
-- **For Grok**: Share a file URL (e.g., "Analyze https://github.com/Schnee09/BHEDU/blob/main/scripts/seed.ts").
-- **Automation Idea**: New PR → Auto-review with GitHub Copilot.
+- The Supabase service role key is a server-only secret. Do NOT store it in client env files.
+  - Put the service role key in the backend environment as `SUPABASE_SERVICE_ROLE_KEY`.
+  - Use `backend/.env.example` as a template. Do not commit real secrets.
 
-## 📋 Todos (See Issues)
-- Implement user signup/login
-- Build course enrollment UI
-- Add tests for backend
+CI / GitHub Actions
+-------------------
 
-## 🤝 Contributing
-1. Fork & branch: `git checkout -b feature/auth`
-2. Commit: `git commit -m "feat: add login route"`
-3. PR to `main`
+The repository includes a GitHub Actions workflow at `.github/workflows/ci.yml` that builds the backend and the web app on push and pull requests to `main`.
 
-License: MIT. Questions? Open an issue!
+If you need the CI to perform operations that require the service role key, add it to GitHub Actions secrets:
 
----
-Built with ❤️ by Schnee09 | [Supabase Starter](https://supabase.com/docs/guides/getting-started)
+1. Go to the repository Settings → Secrets and add `SUPABASE_SERVICE_ROLE_KEY`.
+2. Reference it in workflows as `secrets.SUPABASE_SERVICE_ROLE_KEY` (do not echo or print the secret).
+
+Local development
+-----------------
+
+Backend:
+
+```cmd
+cd /d e:\TTGDBH\BH-EDU\backend
+pnpm install
+pnpm run typecheck
+pnpm run build
+pnpm run dev
+```
+
+Web:
+
+```cmd
+cd /d e:\TTGDBH\BH-EDU\web
+npm ci
+npm run build
+npm run dev
+```
+
+Security checklist
+------------------
+
+- If the service role key was ever pushed to a remote, rotate it immediately in Supabase.
+- Keep `backend/.env` out of version control; prefer platform secrets or GitHub Actions secrets.
+
+If you want, I can also add an example GitHub Actions step showing how to inject the secret into the backend job (without printing it). Say the word and I'll add it.
+# BHEDU

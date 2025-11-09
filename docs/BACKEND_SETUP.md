@@ -82,6 +82,92 @@ supabase functions deploy sync_attendance
 
 ---
 
+## 6.1. Deploying the Web + Backend on Vercel (recommended flow)
+
+There are two pragmatic ways to host the project when using Vercel for the `web` app:
+
+Option A — Web on Vercel, backend (Supabase + Node) elsewhere (fastest)
+- Deploy the `web` (Next.js) app to Vercel.
+- Keep Supabase for DB/Auth/Edge Functions.
+- Keep the existing `backend/` Node/Express app deployed to a managed host (Render, Railway, Cloud Run, etc.) if you use privileged keys or heavier server logic.
+- In Vercel set the public env vars for the client only (anon key + url) and set `BACKEND_URL` pointing to your API host.
+
+Option B — Migrate privileged endpoints into Vercel Serverless (single-host)
+- Port only the privileged or small server endpoints (those that require `SUPABASE_SERVICE_ROLE_KEY` or perform integrations) into Next API routes or Vercel Serverless Functions inside the `web` project.
+- Store `SUPABASE_SERVICE_ROLE_KEY` and other secrets as Vercel Environment Variables (Project → Settings → Environment Variables) so they are available to serverless functions but not to the browser.
+- This reduces infra maintenance and keeps frontend + serverless together on Vercel.
+
+Notes on choosing:
+- If you need long-running processes or heavy background jobs, keep the Node backend on a host that supports persistent processes (Cloud Run / Render / Railway).
+- If server endpoints are small and latency-sensitive, Vercel serverless + Supabase Edge Functions is a very convenient hybrid.
+
+### Vercel environment variables (example)
+Set these in the Vercel dashboard or via the CLI (production/staging/dev as appropriate):
+
+```
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key   # client-safe
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key   # server-only (do NOT expose to client)
+BACKEND_URL=https://api.myapp.example    # if you keep external backend
+OPENAI_API_KEY=...
+```
+
+Add via CLI:
+```bash
+vercel env add SUPABASE_SERVICE_ROLE_KEY production
+vercel env add SUPABASE_URL production
+vercel env add SUPABASE_ANON_KEY production
+```
+
+### Example: Next API route that uses the Service Role key (server-side only)
+Place this in `web/src/pages/api/adminCreateUser.ts` (or in the App Router `app/api/...` route):
+
+```ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { createClient } from '@supabase/supabase-js';
+
+const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const { email, password } = req.body;
+  const { data, error } = await sb.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+  if (error) return res.status(400).json({ error: error.message });
+  return res.status(200).json(data);
+}
+```
+
+This API runs server-side on Vercel and may safely use the service role key (keep that env var secret in Vercel).
+
+### Optional `vercel.json` (rewrites / redirects)
+If you need to add rewrites or custom routing, create `vercel.json` in the `web` project root. Example:
+
+```json
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" }
+  ]
+}
+```
+
+### Deploying from CLI (quick)
+From the `web` folder:
+
+```bash
+npm i -g vercel   # or use npx vercel
+vercel login
+vercel --prod
+```
+
+If you keep an external `backend` service, set `BACKEND_URL` in Vercel and update the client to call `${process.env.NEXT_PUBLIC_BACKEND_URL}`.
+
+---
+
 ## 7. Testing Checklist
 - [ ] Auth + RLS verified for all roles  
 - [ ] CRUD API tested via Supabase SDK  

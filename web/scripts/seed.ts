@@ -49,7 +49,7 @@ async function safeDeleteUser(email: string) {
     if (error) {
       throw new Error(`Failed to list users for deletion check: ${error.message}`);
     }
-    const existing = data.users.find((u: any) => u.email === email);
+    const existing = data.users.find((u) => u.email === email);
     if (existing) {
       const { error: delError } = await supabase.auth.admin.deleteUser(existing.id);
       if (delError) {
@@ -70,7 +70,7 @@ async function getOrCreateUser(u: { email: string; password: string; role: strin
     if (listError) {
       throw new Error(`Failed to list users for ${u.email}: ${listError.message}`);
     }
-    const existingUser = userList.users.find((user: any) => user.email === u.email);
+    const existingUser = userList.users.find((user) => user.email === u.email);
     if (existingUser) {
       console.log(`✅ User already exists: ${u.email}`);
       return existingUser.id;

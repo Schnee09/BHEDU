@@ -11,6 +11,16 @@ export const courseController = {
     }
   },
 
+  // Public listing (no auth) - temporary for smoke tests only
+  async listPublic(req: Request, res: Response) {
+    try {
+      const data = await courseService.getAll();
+      res.json(data);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+
   async get(req: Request, res: Response) {
     try {
       const id = req.params.id;

@@ -59,10 +59,10 @@ export default function AttendancePage() {
       const { data, error } = await query;
       if (error) console.error("❌ Error fetching attendance:", error);
       setAttendance(
-        data?.map((a: any) => ({
+        data?.map((a) => ({
           ...a,
-          student_name: a.profiles?.full_name || "Unknown",
-          class_name: a.classes?.name || "Unknown",
+          student_name: (a.profiles && 'full_name' in a.profiles) ? (a.profiles.full_name as string) || "Unknown" : "Unknown",
+          class_name: (a.classes && 'name' in a.classes) ? (a.classes.name as string) || "Unknown" : "Unknown",
         })) || []
       );
       setLoading(false);

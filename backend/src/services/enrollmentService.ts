@@ -1,20 +1,10 @@
 // src/services/enrollmentService.ts
 import { supabase } from '../config/supabase';
-
-export type Enrollment = {
-  id: string;
-  user_id: string;
-  course_id: string;
-  progress?: number;
-  status?: string;
-  enrolled_at?: string;
-  updated_at?: string;
-};
-
+import type { Enrollment } from '../types';
+import type { Database } from '../config/database';
 export const enrollmentService = {
   async enroll(user_id: string, course_id: string) {
-    const { data, error } = await supabase
-      .from<unknown, Enrollment>('enrollments')
+    const { data, error } = await (supabase.from('enrollments') as any)
       .upsert([{ user_id, course_id }], { onConflict: 'user_id,course_id' })
       .select()
       .single();
@@ -24,8 +14,7 @@ export const enrollmentService = {
   },
 
   async unenroll(user_id: string, course_id: string) {
-    const { error } = await supabase
-      .from<unknown, Enrollment>('enrollments')
+    const { error } = await supabase.from('enrollments')
       .delete()
       .match({ user_id, course_id });
 
@@ -81,8 +70,7 @@ export const enrollmentService = {
   },
 
   async updateProgress(user_id: string, course_id: string, progress: number) {
-    const { data, error } = await supabase
-      .from<unknown, Enrollment>('enrollments')
+    const { data, error } = await (supabase.from('enrollments') as any)
       .update({ progress, updated_at: new Date().toISOString() })
       .match({ user_id, course_id })
       .select()
@@ -93,8 +81,7 @@ export const enrollmentService = {
   },
 
   async getEnrollmentById(id: string) {
-    const { data, error } = await supabase
-      .from<unknown, Enrollment>('enrollments')
+    const { data, error } = await supabase.from('enrollments')
       .select('*')
       .eq('id', id)
       .single();
@@ -104,8 +91,7 @@ export const enrollmentService = {
   },
 
   async getEnrollment(user_id: string, course_id: string) {
-    const { data, error } = await supabase
-      .from<unknown, Enrollment>('enrollments')
+    const { data, error } = await supabase.from('enrollments')
       .select('*')
       .match({ user_id, course_id })
       .maybeSingle();

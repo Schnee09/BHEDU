@@ -58,7 +58,7 @@ export default function AssignmentsPage() {
       setAssignments(
         data?.map((a) => ({
           ...a,
-          class_name: (a as any).classes?.name || "Unknown",
+          class_name: (a as { classes?: { name?: string } }).classes?.name || "Unknown",
         })) || []
       );
       setLoading(false);

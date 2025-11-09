@@ -1,1 +1,10 @@
 node_modules
+
+# local environment files
+backend/.env
+web/.env.local
+
+# build artifacts
+backend/dist/
+web/.next/
+.next/
