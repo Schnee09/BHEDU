@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import process from 'node:process';
 
 function parseArgs(argv) {
-  const out = { method: 'GET', url: '', body: '', noSign: false, headerOnly: false, bypassToken: '' };
+  const out = { method: 'GET', url: '', body: '', noSign: false, headerOnly: false, bypassToken: '', signPayload: '' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--method' || a === '-X') out.method = argv[++i]?.toUpperCase() || 'GET';
@@ -12,15 +12,16 @@ function parseArgs(argv) {
     else if (a === '--no-sign') out.noSign = true;
     else if (a === '--header-only') out.headerOnly = true;
     else if (a === '--bypass-token') out.bypassToken = argv[++i] || '';
+    else if (a === '--sign-payload') out.signPayload = argv[++i] || '';
     else if (a === '--help' || a === '-h') {
-      console.log(`Usage: node scripts/hmac-request.mjs --url <URL> [--method GET|POST] [--body '{"k":"v"}'] [--no-sign] [--bypass-token <token>]\nReads INTERNAL_API_KEY from env to compute x-internal-signature over raw body.`);
+      console.log(`Usage: node scripts/hmac-request.mjs --url <URL> [--method GET|POST] [--body '{"k":"v"}'] [--sign-payload '<string>'] [--no-sign] [--bypass-token <token>]\nReads INTERNAL_API_KEY from env to compute x-internal-signature over raw body (or --sign-payload).\nNote: For GET/HEAD requests you can pass --sign-payload to compute signature without sending a body.`);
       process.exit(0);
     }
   }
   return out;
 }
 
-const { method, url, body, noSign, headerOnly, bypassToken } = parseArgs(process.argv);
+const { method, url, body, noSign, headerOnly, bypassToken, signPayload } = parseArgs(process.argv);
 if (!url) {
   console.error('Missing --url');
   process.exit(2);
@@ -28,6 +29,7 @@ if (!url) {
 
 const key = process.env.INTERNAL_API_KEY?.trim();
 const raw = body || (method === 'GET' || method === 'HEAD' ? '' : '');
+const toSign = signPayload || raw;
 
 const headers = { 'Content-Type': 'application/json' };
 if (!noSign) {
@@ -35,7 +37,7 @@ if (!noSign) {
     console.error('INTERNAL_API_KEY is not set in env. Use --no-sign to send without signature.');
     process.exit(3);
   }
-  const hmac = crypto.createHmac('sha256', key).update(raw).digest('hex');
+  const hmac = crypto.createHmac('sha256', key).update(toSign).digest('hex');
   headers['x-internal-signature'] = hmac;
 }
 
@@ -45,7 +47,8 @@ if (headerOnly) {
 }
 
 const init = { method, headers };
-if (raw) init.body = raw;
+// Only attach body when explicitly provided and method allows/needs it
+if (raw && !(method === 'GET' || method === 'HEAD')) init.body = raw;
 
 try {
   // Optional: set Vercel protection bypass cookie
