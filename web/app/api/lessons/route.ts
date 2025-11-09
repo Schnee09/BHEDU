@@ -23,12 +23,16 @@ export async function GET(req: Request) {
   const sig = req.headers.get('x-internal-signature');
   if (!sig) return new Response(JSON.stringify({ error: 'Missing signature' }), { status: 401 });
 
-  // Empty payload for GET (like other routes for consistency)
-  const expected = computeHmac(internalKey, '');
+  // Accept both legacy (query-string) and new (empty) signatures
+  const expectedEmpty = computeHmac(internalKey, '');
+  const expectedQuery = computeHmac(internalKey, `course_id=${course_id}`);
   try {
     const providedBuf = Buffer.from(sig, 'hex');
-    const expectedBuf = Buffer.from(expected, 'hex');
-    if (providedBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(providedBuf, expectedBuf)) {
+    const emptyBuf = Buffer.from(expectedEmpty, 'hex');
+    const queryBuf = Buffer.from(expectedQuery, 'hex');
+    const matchesEmpty = providedBuf.length === emptyBuf.length && crypto.timingSafeEqual(providedBuf, emptyBuf);
+    const matchesQuery = providedBuf.length === queryBuf.length && crypto.timingSafeEqual(providedBuf, queryBuf);
+    if (!matchesEmpty && !matchesQuery) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
   } catch {
