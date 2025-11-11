@@ -1,8 +1,12 @@
-import { createCourse, createLesson, getCoursesAndLessons } from './actions'
+import { createCourse, createLesson, getCoursesAndLessons, editCourse, deleteCourse, editLesson, deleteLesson } from './actions'
+import { requireAdmin } from '@/lib/adminAuth'
+import { SubmitButton } from '@/components/SubmitButton'
+import ConfirmSubmitButton from '@/components/ConfirmSubmitButton'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminCoursesPage() {
+  await requireAdmin()
   const { courses, lessonsByCourse } = await getCoursesAndLessons()
 
   return (
@@ -14,7 +18,7 @@ export default async function AdminCoursesPage() {
         <form action={createCourse} className="flex flex-col gap-2">
           <input name="title" placeholder="Course title" className="border rounded px-3 py-2" />
           <input name="description" placeholder="Description (optional)" className="border rounded px-3 py-2" />
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded w-max">Create Course</button>
+          <SubmitButton label="Create Course" pendingLabel="Creating..." variant="primary" />
         </form>
       </section>
 
@@ -29,7 +33,7 @@ export default async function AdminCoursesPage() {
           </select>
           <input name="lesson_title" placeholder="Lesson title" className="border rounded px-3 py-2" />
           <input name="content" placeholder="Content (optional)" className="border rounded px-3 py-2 md:col-span-2" />
-          <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded w-max">Create Lesson</button>
+          <SubmitButton label="Create Lesson" pendingLabel="Creating..." variant="success" />
         </form>
       </section>
 
@@ -38,14 +42,51 @@ export default async function AdminCoursesPage() {
         {courses.length === 0 && <p className="text-sm text-gray-500">No courses yet.</p>}
         <ul className="space-y-3">
           {courses.map(c => (
-            <li key={c.id} className="border rounded p-3">
+            <li key={c.id} className="border rounded p-3 space-y-2">
               <div className="font-medium">{c.title}</div>
               <div className="text-sm text-gray-500">{c.description || '—'}</div>
+              <details className="border rounded p-2 bg-gray-50">
+                <summary className="cursor-pointer text-sm font-semibold">Edit Course</summary>
+                <form action={editCourse} className="mt-2 flex flex-col gap-2">
+                  <input type="hidden" name="course_id" value={c.id} />
+                  <input name="title" defaultValue={c.title} className="border rounded px-2 py-1" />
+                  <input name="description" defaultValue={c.description || ''} className="border rounded px-2 py-1" />
+                  <label className="inline-flex items-center gap-2 text-xs">
+                    <input type="checkbox" name="is_published" defaultChecked={true} /> Published
+                  </label>
+                  <div className="flex gap-2">
+                    <SubmitButton label="Save" pendingLabel="Saving..." variant="warning" />
+                    <ConfirmSubmitButton label="Delete" />
+                    <input type="hidden" name="course_id" value={c.id} />
+                    <button hidden formAction={deleteCourse} />
+                  </div>
+                </form>
+              </details>
               <div className="mt-2">
                 <strong className="text-sm">Lessons:</strong>
                 <ul className="list-disc pl-5 text-sm">
                   {(lessonsByCourse[c.id] || []).map((l: any) => (
-                    <li key={l.id}>{l.order_index ?? 0}. {l.title}</li>
+                    <li key={l.id} className="space-y-1">
+                      <div>{l.order_index ?? 0}. {l.title}</div>
+                      <details className="border rounded p-2 bg-gray-50">
+                        <summary className="cursor-pointer text-xs font-semibold">Edit Lesson</summary>
+                        <form action={editLesson} className="mt-2 flex flex-col gap-2">
+                          <input type="hidden" name="lesson_id" value={l.id} />
+                          <input name="lesson_title" defaultValue={l.title} className="border rounded px-2 py-1" />
+                          <input name="content" defaultValue={l.content || ''} className="border rounded px-2 py-1" />
+                          <input name="order_index" defaultValue={l.order_index ?? 0} type="number" className="border rounded px-2 py-1" />
+                          <label className="inline-flex items-center gap-2 text-xs">
+                            <input type="checkbox" name="is_published" defaultChecked={l.is_published} /> Published
+                          </label>
+                          <div className="flex gap-2">
+                            <SubmitButton label="Save" pendingLabel="Saving..." variant="warning" />
+                            <ConfirmSubmitButton label="Delete" />
+                            <input type="hidden" name="lesson_id" value={l.id} />
+                            <button hidden formAction={deleteLesson} />
+                          </div>
+                        </form>
+                      </details>
+                    </li>
                   ))}
                   {(!lessonsByCourse[c.id] || lessonsByCourse[c.id].length === 0) && (
                     <li className="text-gray-400">No lessons yet.</li>
