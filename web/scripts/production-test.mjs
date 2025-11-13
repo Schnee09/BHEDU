@@ -6,7 +6,6 @@
  */
 
 import crypto from 'crypto'
-import { readFileSync } from 'fs'
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000'
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY

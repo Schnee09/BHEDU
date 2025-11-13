@@ -65,29 +65,37 @@ export default async function AdminCoursesPage() {
               <div className="mt-2">
                 <strong className="text-sm">Lessons:</strong>
                 <ul className="list-disc pl-5 text-sm">
-                  {(lessonsByCourse[c.id] || []).map((l: any) => (
-                    <li key={l.id} className="space-y-1">
-                      <div>{l.order_index ?? 0}. {l.title}</div>
+                  {(lessonsByCourse[c.id] || []).map((l) => {
+                    const lessonId = String(l.id || '');
+                    const lessonTitle = String(l.title || '');
+                    const lessonContent = String(l.content || '');
+                    const lessonOrder = Number(l.order_index ?? 0);
+                    const lessonPublished = Boolean(l.is_published);
+                    
+                    return (
+                    <li key={lessonId} className="space-y-1">
+                      <div>{lessonOrder}. {lessonTitle}</div>
                       <details className="border rounded p-2 bg-gray-50">
                         <summary className="cursor-pointer text-xs font-semibold">Edit Lesson</summary>
                         <form action={editLesson} className="mt-2 flex flex-col gap-2">
-                          <input type="hidden" name="lesson_id" value={l.id} />
-                          <input name="lesson_title" defaultValue={l.title} className="border rounded px-2 py-1" />
-                          <input name="content" defaultValue={l.content || ''} className="border rounded px-2 py-1" />
-                          <input name="order_index" defaultValue={l.order_index ?? 0} type="number" className="border rounded px-2 py-1" />
+                          <input type="hidden" name="lesson_id" value={lessonId} />
+                          <input name="lesson_title" defaultValue={lessonTitle} className="border rounded px-2 py-1" />
+                          <input name="content" defaultValue={lessonContent} className="border rounded px-2 py-1" />
+                          <input name="order_index" defaultValue={lessonOrder} type="number" className="border rounded px-2 py-1" />
                           <label className="inline-flex items-center gap-2 text-xs">
-                            <input type="checkbox" name="is_published" defaultChecked={l.is_published} /> Published
+                            <input type="checkbox" name="is_published" defaultChecked={lessonPublished} /> Published
                           </label>
                           <div className="flex gap-2">
                             <SubmitButton label="Save" pendingLabel="Saving..." variant="warning" />
                             <ConfirmSubmitButton label="Delete" />
-                            <input type="hidden" name="lesson_id" value={l.id} />
+                            <input type="hidden" name="lesson_id" value={lessonId} />
                             <button hidden formAction={deleteLesson} />
                           </div>
                         </form>
                       </details>
                     </li>
-                  ))}
+                    );
+                  })}
                   {(!lessonsByCourse[c.id] || lessonsByCourse[c.id].length === 0) && (
                     <li className="text-gray-400">No lessons yet.</li>
                   )}

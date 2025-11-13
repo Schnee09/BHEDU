@@ -15,7 +15,7 @@ export default function NavBar() {
       if (user && !cancelled) {
         setEmail(user.email ?? null);
         const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-        if (!cancelled && data && (data as any).role) setRole((data as any).role as string);
+        if (!cancelled && data && (data as Record<string, unknown>).role) setRole((data as Record<string, unknown>).role as string);
       }
     })();
     return () => { cancelled = true; };

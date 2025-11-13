@@ -34,7 +34,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   let body: { title?: unknown; content?: unknown; video_url?: unknown; order_index?: unknown; is_published?: unknown } = {}
   try { body = raw ? JSON.parse(raw) : {} } catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 }) }
 
-  const updates: Record<string, any> = {}
+  const updates: Record<string, unknown> = {}
   if (typeof body.title !== 'undefined') {
     if (typeof body.title !== 'string') return new Response(JSON.stringify({ error: 'title must be string' }), { status: 400 })
     updates.title = body.title

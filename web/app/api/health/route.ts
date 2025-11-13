@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 // Simple health check for uptime monitoring
-export async function GET(req: NextRequest) {
+export async function GET() {
   const start = Date.now()
   
   try {

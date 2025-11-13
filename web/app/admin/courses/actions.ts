@@ -15,7 +15,7 @@ function sign(payload: string) {
   return crypto.createHmac('sha256', INTERNAL_API_KEY).update(payload).digest('hex')
 }
 
-async function internalFetch(path: string, method: 'GET'|'POST'|'PUT'|'DELETE', body?: any, signPayloadOverride?: string) {
+async function internalFetch(path: string, method: 'GET'|'POST'|'PUT'|'DELETE', body?: Record<string, unknown>, signPayloadOverride?: string) {
   if (!BASE_URL) throw new Error('BASE_URL not resolved (set VERCEL_URL or NEXT_PUBLIC_BASE_URL)')
   const url = `${BASE_URL}${path}`
   const raw = body ? JSON.stringify(body) : ''
@@ -112,7 +112,7 @@ export async function getCoursesAndLessons() {
     // Fetch courses first (empty GET payload signature)
     const coursesResp = await internalFetch('/api/courses','GET')
     const courses = (coursesResp.data||[]) as Array<{id:string,title:string,description:string}>
-    const lessonsByCourse: Record<string, any[]> = {}
+    const lessonsByCourse: Record<string, Array<Record<string, unknown>>> = {}
     for (const c of courses) {
       try {
         // Attempt modern empty signature first
@@ -137,7 +137,7 @@ export async function editCourse(formData: FormData) {
     const id = String(formData.get('course_id')||'').trim()
     if (!id) throw new ValidationError('course_id required')
     
-    const payload: any = {}
+    const payload: Record<string, unknown> = {}
     const titleRaw = formData.get('title')
     const descriptionRaw = formData.get('description')
     const is_published_raw = formData.get('is_published')
@@ -199,7 +199,7 @@ export async function editLesson(formData: FormData) {
     const id = String(formData.get('lesson_id')||'').trim()
     if (!id) throw new ValidationError('lesson_id required')
     
-    const payload: any = {}
+    const payload: Record<string, unknown> = {}
     const titleRaw = formData.get('lesson_title')
     const contentRaw = formData.get('content')
     const order_index_raw = formData.get('order_index')
