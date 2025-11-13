@@ -15,7 +15,7 @@
   "type": "commonjs",
   "devDependencies": {
     "@types/node": "^24.9.1",
-    "supabase": "^2.51.0",
+    "supabase": "^2.58.5",
     "typescript": "^5.9.3"
   },
   "dependencies": {

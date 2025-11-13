@@ -85,17 +85,20 @@ $$;
 ------------------------------------------------------------
 
 -- Teachers manage their own classes (direct check, no RLS recursion)
+drop policy if exists "Teachers manage own classes" on classes;
 create policy "Teachers manage own classes"
   on classes for all
   using (auth.uid() = teacher_id)
   with check (auth.uid() = teacher_id);
 
 -- Students view enrolled classes (direct check, no RLS on enrollments)
+drop policy if exists "Students view enrolled classes" on classes;
 create policy "Students view enrolled classes"
   on classes for select
   using (is_student_in_class(id, auth.uid()));
 
 -- Service role bypass
+drop policy if exists "Service role full access classes" on classes;
 create policy "Service role full access classes"
   on classes for all
   using (auth.role() = 'service_role');
@@ -105,17 +108,20 @@ create policy "Service role full access classes"
 ------------------------------------------------------------
 
 -- Students view their own enrollments (direct column check)
+drop policy if exists "Students view own enrollments" on enrollments;
 create policy "Students view own enrollments"
   on enrollments for select
   using (student_id = auth.uid());
 
 -- Teachers view/manage enrollments (uses security definer function)
+drop policy if exists "Teachers manage enrollments" on enrollments;
 create policy "Teachers manage enrollments"
   on enrollments for all
   using (is_teacher_of_class(class_id, auth.uid()))
   with check (is_teacher_of_class(class_id, auth.uid()));
 
 -- Service role bypass
+drop policy if exists "Service role full access enrollments" on enrollments;
 create policy "Service role full access enrollments"
   on enrollments for all
   using (auth.role() = 'service_role');
@@ -125,17 +131,20 @@ create policy "Service role full access enrollments"
 ------------------------------------------------------------
 
 -- Teachers manage assignments (uses security definer function)
+drop policy if exists "Teachers manage own assignments" on assignments;
 create policy "Teachers manage own assignments"
   on assignments for all
   using (is_teacher_of_class(class_id, auth.uid()))
   with check (is_teacher_of_class(class_id, auth.uid()));
 
 -- Students view assignments (uses security definer function)
+drop policy if exists "Students view class assignments" on assignments;
 create policy "Students view class assignments"
   on assignments for select
   using (is_student_in_class(class_id, auth.uid()));
 
 -- Service role bypass
+drop policy if exists "Service role full access assignments" on assignments;
 create policy "Service role full access assignments"
   on assignments for all
   using (auth.role() = 'service_role');
@@ -145,22 +154,26 @@ create policy "Service role full access assignments"
 ------------------------------------------------------------
 
 -- Students submit their own work (direct check)
+drop policy if exists "Students submit own" on submissions;
 create policy "Students submit own"
   on submissions for insert
   with check (student_id = auth.uid());
 
 -- Students view their own submissions (direct check)
+drop policy if exists "Students view own submissions" on submissions;
 create policy "Students view own submissions"
   on submissions for select
   using (student_id = auth.uid());
 
 -- Teachers view/grade submissions (uses security definer functions)
+drop policy if exists "Teachers manage submissions" on submissions;
 create policy "Teachers manage submissions"
   on submissions for all
   using (is_teacher_of_class(get_class_from_assignment(assignment_id), auth.uid()))
   with check (is_teacher_of_class(get_class_from_assignment(assignment_id), auth.uid()));
 
 -- Service role bypass
+drop policy if exists "Service role full access submissions" on submissions;
 create policy "Service role full access submissions"
   on submissions for all
   using (auth.role() = 'service_role');
@@ -170,17 +183,20 @@ create policy "Service role full access submissions"
 ------------------------------------------------------------
 
 -- Students view their own scores (direct check)
+drop policy if exists "Students view own scores" on scores;
 create policy "Students view own scores"
   on scores for select
   using (student_id = auth.uid());
 
 -- Teachers manage scores (uses security definer function)
+drop policy if exists "Teachers manage class scores" on scores;
 create policy "Teachers manage class scores"
   on scores for all
   using (is_teacher_of_class(class_id, auth.uid()))
   with check (is_teacher_of_class(class_id, auth.uid()));
 
 -- Service role bypass
+drop policy if exists "Service role full access scores" on scores;
 create policy "Service role full access scores"
   on scores for all
   using (auth.role() = 'service_role');
@@ -190,17 +206,20 @@ create policy "Service role full access scores"
 ------------------------------------------------------------
 
 -- Students view their own attendance (direct check)
+drop policy if exists "Students view own attendance" on attendance;
 create policy "Students view own attendance"
   on attendance for select
   using (student_id = auth.uid());
 
 -- Teachers manage attendance (uses security definer function)
+drop policy if exists "Teachers manage attendance" on attendance;
 create policy "Teachers manage attendance"
   on attendance for all
   using (is_teacher_of_class(class_id, auth.uid()))
   with check (is_teacher_of_class(class_id, auth.uid()));
 
 -- Service role bypass
+drop policy if exists "Service role full access attendance" on attendance;
 create policy "Service role full access attendance"
   on attendance for all
   using (auth.role() = 'service_role');
