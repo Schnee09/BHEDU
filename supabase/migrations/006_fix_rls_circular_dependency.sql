@@ -34,12 +34,14 @@ drop policy if exists "Admins manage all attendance" on attendance;
 ------------------------------------------------------------
 
 -- Teachers manage their own classes (direct check, no recursion)
+drop policy if exists "Teachers manage own classes" on classes;
 create policy "Teachers manage own classes"
   on classes for all
   using (auth.uid() = teacher_id)
   with check (auth.uid() = teacher_id);
 
 -- Students view enrolled classes (uses security definer function below)
+drop policy if exists "Students view enrolled classes" on classes;
 create policy "Students view enrolled classes"
   on classes for select
   using (
@@ -50,6 +52,7 @@ create policy "Students view enrolled classes"
   );
 
 -- Service role bypass
+drop policy if exists "Service role full access classes" on classes;
 create policy "Service role full access classes"
   on classes for all
   using (auth.role() = 'service_role');
@@ -59,11 +62,13 @@ create policy "Service role full access classes"
 ------------------------------------------------------------
 
 -- Students view their own enrollments (direct check)
+drop policy if exists "Students view own enrollments" on enrollments;
 create policy "Students view own enrollments"
   on enrollments for select
   using (student_id = auth.uid());
 
 -- Teachers view enrollments for their classes (direct check)
+drop policy if exists "Teachers view enrollments for own classes" on enrollments;
 create policy "Teachers view enrollments for own classes"
   on enrollments for select
   using (
@@ -74,6 +79,7 @@ create policy "Teachers view enrollments for own classes"
   );
 
 -- Teachers can create enrollments for their classes
+drop policy if exists "Teachers manage enrollments for own classes" on enrollments;
 create policy "Teachers manage enrollments for own classes"
   on enrollments for insert
   with check (
@@ -84,6 +90,7 @@ create policy "Teachers manage enrollments for own classes"
   );
 
 -- Service role bypass
+drop policy if exists "Service role full access enrollments" on enrollments;
 create policy "Service role full access enrollments"
   on enrollments for all
   using (auth.role() = 'service_role');
@@ -93,6 +100,7 @@ create policy "Service role full access enrollments"
 ------------------------------------------------------------
 
 -- Teachers manage assignments for their classes (direct check)
+drop policy if exists "Teachers manage own assignments" on assignments;
 create policy "Teachers manage own assignments"
   on assignments for all
   using (
@@ -109,6 +117,7 @@ create policy "Teachers manage own assignments"
   );
 
 -- Students view assignments for enrolled classes
+drop policy if exists "Students view class assignments" on assignments;
 create policy "Students view class assignments"
   on assignments for select
   using (
@@ -119,6 +128,7 @@ create policy "Students view class assignments"
   );
 
 -- Service role bypass
+drop policy if exists "Service role full access assignments" on assignments;
 create policy "Service role full access assignments"
   on assignments for all
   using (auth.role() = 'service_role');
@@ -128,16 +138,19 @@ create policy "Service role full access assignments"
 ------------------------------------------------------------
 
 -- Students submit their own work
+drop policy if exists "Students submit own" on submissions;
 create policy "Students submit own"
   on submissions for insert
   with check (student_id = auth.uid());
 
 -- Students view their own submissions
+drop policy if exists "Students view own submissions" on submissions;
 create policy "Students view own submissions"
   on submissions for select
   using (student_id = auth.uid());
 
 -- Teachers view submissions for their classes' assignments
+drop policy if exists "Teachers view submissions for own classes" on submissions;
 create policy "Teachers view submissions for own classes"
   on submissions for select
   using (
@@ -151,6 +164,7 @@ create policy "Teachers view submissions for own classes"
   );
 
 -- Teachers can grade submissions (update)
+drop policy if exists "Teachers grade submissions for own classes" on submissions;
 create policy "Teachers grade submissions for own classes"
   on submissions for update
   using (
@@ -164,6 +178,7 @@ create policy "Teachers grade submissions for own classes"
   );
 
 -- Service role bypass
+drop policy if exists "Service role full access submissions" on submissions;
 create policy "Service role full access submissions"
   on submissions for all
   using (auth.role() = 'service_role');
@@ -173,11 +188,13 @@ create policy "Service role full access submissions"
 ------------------------------------------------------------
 
 -- Students view their own scores
+drop policy if exists "Students view own scores" on scores;
 create policy "Students view own scores"
   on scores for select
   using (student_id = auth.uid());
 
 -- Teachers manage scores for their classes (direct check)
+drop policy if exists "Teachers manage class scores" on scores;
 create policy "Teachers manage class scores"
   on scores for all
   using (
@@ -194,6 +211,7 @@ create policy "Teachers manage class scores"
   );
 
 -- Service role bypass
+drop policy if exists "Service role full access scores" on scores;
 create policy "Service role full access scores"
   on scores for all
   using (auth.role() = 'service_role');
@@ -203,11 +221,13 @@ create policy "Service role full access scores"
 ------------------------------------------------------------
 
 -- Students view their own attendance
+drop policy if exists "Students view own attendance" on attendance;
 create policy "Students view own attendance"
   on attendance for select
   using (student_id = auth.uid());
 
 -- Teachers manage attendance for their classes (direct check)
+drop policy if exists "Teachers manage attendance" on attendance;
 create policy "Teachers manage attendance"
   on attendance for all
   using (
@@ -224,6 +244,7 @@ create policy "Teachers manage attendance"
   );
 
 -- Service role bypass
+drop policy if exists "Service role full access attendance" on attendance;
 create policy "Service role full access attendance"
   on attendance for all
   using (auth.role() = 'service_role');

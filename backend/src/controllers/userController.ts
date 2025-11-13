@@ -31,6 +31,19 @@ export const userController = {
     }
   },
 
+  async create(req: Request, res: Response) {
+    try {
+      const profile = req.body;
+      if (!profile.full_name || !profile.role) {
+        return res.status(400).json({ error: 'full_name and role required' });
+      }
+      const data = await userService.create(profile);
+      res.status(201).json(data);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  },
+
   async update(req: Request, res: Response) {
     try {
       const id = req.params.id;

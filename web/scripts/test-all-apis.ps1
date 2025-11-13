@@ -7,7 +7,7 @@ $env:INTERNAL_API_KEY = "23685fb84b01f55cf50d871a6d71e5bc3d12e01a48b95e54986ab27
 # Get preview URL from user input or use default
 $baseUrl = Read-Host "Enter preview URL (or press Enter to use last known)"
 if ([string]::IsNullOrWhiteSpace($baseUrl)) {
-    $baseUrl = "https://bhedu-2hffss3ha-schnees-projects-fc5cc4c6.vercel.app"
+    $baseUrl = "https://bhedu-ftc8txlzy-schnees-projects-fc5cc4c6.vercel.app"
 }
 
 Write-Host "`n🚀 Testing API at: $baseUrl`n" -ForegroundColor Green

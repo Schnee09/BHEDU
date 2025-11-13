@@ -198,7 +198,26 @@ export const lessonController = {
     } catch (err: any) {
       return res.status(400).json({ error: err.message });
     }
+  },
+
+  // For internal HMAC routes: list lessons by query param course_id
+  async listByCourseInternal(req: Request, res: Response) {
+    try {
+      const course_id = req.query.course_id as string;
+      if (!course_id) return res.status(400).json({ error: 'course_id query param required' });
+      
+      // Internal route: return all lessons (published or not) for admin use
+      const lessons = await lessonService.getLessonsByCourse(course_id, false);
+      return res.json({ data: lessons });
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
   }
 };
+
+
+
+
+
 
 

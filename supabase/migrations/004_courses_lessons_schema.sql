@@ -44,11 +44,13 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists update_courses_updated_at on courses;
 create trigger update_courses_updated_at
   before update on courses
   for each row
   execute function update_updated_at_column();
 
+drop trigger if exists update_lessons_updated_at on lessons;
 create trigger update_lessons_updated_at
   before update on lessons
   for each row

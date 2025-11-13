@@ -1,17 +1,21 @@
-"use client";
-
 import "./globals.css";
 import { ReactNode } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { SessionContextProvider } from "@supabase/auth-helpers-react";
+import NavBar from "@/components/NavBar";
+import ClientProviders from "@/components/ClientProviders";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <SessionContextProvider supabaseClient={supabase}>
-          {children}
-        </SessionContextProvider>
+        <ErrorBoundary>
+          <ClientProviders>
+            <NavBar />
+            <div className="max-w-5xl mx-auto px-4 py-6">
+              {children}
+            </div>
+          </ClientProviders>
+        </ErrorBoundary>
       </body>
     </html>
   );
