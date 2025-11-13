@@ -106,7 +106,11 @@ async function runTests() {
     null,
     ''
   )
-  health.success ? results.passed++ : results.failed++
+  if (health.success) {
+    results.passed++
+  } else {
+    results.failed++
+  }
   
   // Test 2: List Courses
   const courses = await testEndpoint(
@@ -116,7 +120,11 @@ async function runTests() {
     null,
     ''
   )
-  courses.success ? results.passed++ : results.failed++
+  if (courses.success) {
+    results.passed++
+  } else {
+    results.failed++
+  }
   
   // Test 3: Create Course (with validation)
   const newCourse = await testEndpoint(
@@ -129,7 +137,11 @@ async function runTests() {
       is_published: true
     }
   )
-  newCourse.success ? results.passed++ : results.failed++
+  if (newCourse.success) {
+    results.passed++
+  } else {
+    results.failed++
+  }
   
   let courseId = null
   if (newCourse.success && newCourse.data?.data?.id) {
@@ -146,7 +158,11 @@ async function runTests() {
       null,
       `course_id=${courseId}`
     )
-    lessons.success ? results.passed++ : results.failed++
+    if (lessons.success) {
+      results.passed++
+    } else {
+      results.failed++
+    }
     
     // Test 5: Create Lesson
     const newLesson = await testEndpoint(
@@ -161,7 +177,11 @@ async function runTests() {
         is_published: true
       }
     )
-    newLesson.success ? results.passed++ : results.failed++
+    if (newLesson.success) {
+      results.passed++
+    } else {
+      results.failed++
+    }
   } else {
     console.log('\n⚠️  Skipping lesson tests (no course created)')
     results.warnings += 2
