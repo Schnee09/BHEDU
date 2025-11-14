@@ -38,6 +38,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: '📱'
     },
     {
+      title: 'Attendance Reports',
+      href: '/admin/attendance/reports',
+      icon: '📊'
+    },
+    {
       title: 'Students',
       href: '/admin/students',
       icon: '👥'
