@@ -19,28 +19,28 @@ export default function DashboardLayout({
 
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-amber-50/30">
         {/* Unified Sidebar with role-based navigation */}
         <Sidebar />
 
         {/* Main Content Area */}
         <div className="flex-1 ml-64">
           {/* Header */}
-          <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+          <header className="bg-gradient-to-r from-amber-600 to-yellow-600 shadow-lg border-b-4 border-amber-700 sticky top-0 z-10">
             <div className="px-6 py-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
+                  <h1 className="text-2xl font-bold text-white">
                     Welcome back, {profile.full_name}
                   </h1>
-                  <p className="text-sm text-gray-600 mt-1 capitalize">
-                    {profile.role} Portal
+                  <p className="text-sm text-amber-100 mt-1 capitalize">
+                    {profile.role} Portal • Bethel Heights Educational Development
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{profile.full_name}</p>
-                    <p className="text-xs text-gray-500 capitalize">{profile.role}</p>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/30">
+                    <p className="text-sm font-medium text-white">{profile.full_name}</p>
+                    <p className="text-xs text-amber-100 capitalize">{profile.role}</p>
                   </div>
                 </div>
               </div>

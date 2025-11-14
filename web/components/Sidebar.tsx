@@ -131,19 +131,24 @@ export default function Sidebar() {
   const navSections = getNavSections();
 
   return (
-    <aside className="w-64 bg-white shadow-lg border-r border-gray-200 fixed h-full overflow-y-auto">
+    <aside className="w-64 bg-gradient-to-b from-amber-50 to-white shadow-xl border-r border-amber-200 fixed h-full overflow-y-auto">
       <div className="p-4">
-        {/* Header */}
-        <div className="mb-6 pb-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">BH-EDU</h2>
-          <p className="text-xs text-gray-500 mt-1 capitalize">{role} Portal</p>
+        {/* Header with Brand Colors */}
+        <div className="mb-6 pb-4 border-b-2 border-amber-300">
+          <div className="bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-3 rounded-lg shadow-md">
+            <h2 className="text-xl font-bold tracking-wide">BH-EDU</h2>
+            <p className="text-xs mt-1 opacity-90">Bethel Heights</p>
+          </div>
+          <div className="mt-3 px-2">
+            <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider">{role} Portal</p>
+          </div>
         </div>
 
         {/* Navigation Sections */}
         <nav className="space-y-6">
           {navSections.map((section) => (
             <div key={section.title}>
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">
+              <h3 className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-3 px-3">
                 {section.title}
               </h3>
               <ul className="space-y-1">
@@ -153,10 +158,10 @@ export default function Sidebar() {
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                        className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                           isActive
-                            ? "bg-blue-50 text-blue-700 font-medium"
-                            : "text-gray-700 hover:bg-gray-100"
+                            ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-semibold shadow-md transform scale-105"
+                            : "text-amber-900 hover:bg-amber-100 hover:text-amber-800"
                         }`}
                       >
                         <span className="text-lg">{link.icon}</span>
