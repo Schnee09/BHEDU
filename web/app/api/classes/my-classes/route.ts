@@ -5,12 +5,12 @@
  * Get classes for the current teacher or all classes for admins
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // Teacher or admin authentication
     const authResult = await teacherAuth()
