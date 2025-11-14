@@ -3,6 +3,7 @@
  * GET/POST/PUT /api/grades
  * 
  * Manage student grades for assignments
+ * Updated: 2025-11-14
  */
 
 import { NextResponse } from 'next/server'
