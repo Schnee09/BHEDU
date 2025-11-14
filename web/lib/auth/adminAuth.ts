@@ -3,7 +3,6 @@
  * Verifies that the current user is an admin
  */
 
-import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 export interface AuthResult {
@@ -17,7 +16,7 @@ export interface AuthResult {
 /**
  * Check if the current user is authenticated and has admin role
  */
-export async function adminAuth(_req: NextRequest): Promise<AuthResult> {
+export async function adminAuth(): Promise<AuthResult> {
   try {
     const supabase = await createClient()
 
@@ -73,7 +72,7 @@ export async function adminAuth(_req: NextRequest): Promise<AuthResult> {
 /**
  * Check if the current user is authenticated and has teacher or admin role
  */
-export async function teacherAuth(_req: NextRequest): Promise<AuthResult> {
+export async function teacherAuth(): Promise<AuthResult> {
   try {
     const supabase = await createClient()
 

@@ -46,6 +46,7 @@ export default function QRGenerationPage() {
     if (selectedClass) {
       loadStudents()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClass])
 
   const loadClasses = async () => {
@@ -141,7 +142,7 @@ export default function QRGenerationPage() {
       } else {
         alert(data.error || 'Failed to generate QR codes')
       }
-    } catch (error) {
+    } catch {
       alert('Failed to generate QR codes')
     } finally {
       setGenerating(false)
