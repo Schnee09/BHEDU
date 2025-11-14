@@ -33,6 +33,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: '✅'
     },
     {
+      title: 'Generate QR Codes',
+      href: '/admin/attendance/qr',
+      icon: '📱'
+    },
+    {
       title: 'Students',
       href: '/admin/students',
       icon: '👥'
