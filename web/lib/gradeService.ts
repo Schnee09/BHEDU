@@ -26,6 +26,7 @@ export interface Assignment {
   published: boolean
   created_at: string
   updated_at: string
+  category?: AssignmentCategory // Populated when joining with categories
 }
 
 export interface Grade {

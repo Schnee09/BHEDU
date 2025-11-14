@@ -158,8 +158,8 @@ export async function POST(request: Request) {
 
     // Check teacher access
     if (authResult.userRole !== 'admin') {
-      const hasAccess = assignments.every((a: { classes: { teacher_id: string } }) => 
-        a.classes.teacher_id === authResult.userId
+      const hasAccess = (assignments as Array<{ classes: Array<{ teacher_id: string }> }>).every((a) => 
+        a.classes.length > 0 && a.classes[0].teacher_id === authResult.userId
       )
       if (!hasAccess) {
         return NextResponse.json(
@@ -172,7 +172,7 @@ export async function POST(request: Request) {
     // Validate points don't exceed total_points
     for (const grade of gradesData) {
       if (grade.points_earned !== null && grade.points_earned !== undefined) {
-        const assignment = assignments.find((a: { id: string; total_points: number }) => a.id === grade.assignment_id)
+        const assignment = (assignments as Array<{ id: string; total_points: number }>).find((a) => a.id === grade.assignment_id)
         if (assignment && grade.points_earned > assignment.total_points) {
           return NextResponse.json(
             { error: `Points cannot exceed ${assignment.total_points} for assignment ${grade.assignment_id}` },

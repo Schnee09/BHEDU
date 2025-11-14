@@ -43,6 +43,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: '📊'
     },
     {
+      title: 'Assignments',
+      href: '/admin/grades/assignments',
+      icon: '📝'
+    },
+    {
       title: 'Students',
       href: '/admin/students',
       icon: '👥'
