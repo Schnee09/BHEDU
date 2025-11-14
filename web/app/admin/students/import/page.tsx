@@ -11,9 +11,7 @@ import {
   parseCSV, 
   validateImportData, 
   generateCSVTemplate,
-  type StudentImportRow,
-  type ImportPreview,
-  type ValidationError 
+  type ImportPreview
 } from '@/lib/importService'
 
 export default function BulkImportPage() {

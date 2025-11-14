@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { classId: string } }
+  { params }: { params: Promise<{ classId: string }> }
 ) {
   try {
     // Teacher or admin authentication
@@ -25,7 +25,7 @@ export async function GET(
     }
 
     const supabase = await createClient()
-    const { classId } = params
+    const { classId } = await params
     const searchParams = req.nextUrl.searchParams
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
 

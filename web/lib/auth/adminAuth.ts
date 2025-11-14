@@ -17,7 +17,7 @@ export interface AuthResult {
 /**
  * Check if the current user is authenticated and has admin role
  */
-export async function adminAuth(req: NextRequest): Promise<AuthResult> {
+export async function adminAuth(_req: NextRequest): Promise<AuthResult> {
   try {
     const supabase = await createClient()
 
@@ -73,7 +73,7 @@ export async function adminAuth(req: NextRequest): Promise<AuthResult> {
 /**
  * Check if the current user is authenticated and has teacher or admin role
  */
-export async function teacherAuth(req: NextRequest): Promise<AuthResult> {
+export async function teacherAuth(_req: NextRequest): Promise<AuthResult> {
   try {
     const supabase = await createClient()
 

@@ -145,7 +145,7 @@ export function generateDateRange(startDate: string, endDate: string): string[] 
   const start = new Date(startDate)
   const end = new Date(endDate)
   
-  let current = new Date(start)
+  const current = new Date(start)
   while (current <= end) {
     dates.push(current.toISOString().split('T')[0])
     current.setDate(current.getDate() + 1)

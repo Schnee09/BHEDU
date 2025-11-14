@@ -49,6 +49,7 @@ export default function AttendanceMarkingPage() {
     if (selectedClass && date) {
       loadAttendance()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClass, date])
 
   const loadClasses = async () => {
