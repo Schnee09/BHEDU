@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { exportAttendanceToCSV, formatAttendanceStatus } from '@/lib/attendanceService'
 
 interface AttendanceRecord {
   id: string
@@ -141,7 +140,34 @@ export default function AttendanceReportsPage() {
 
     setExporting(true)
     try {
-      exportAttendanceToCSV(records)
+      // Create CSV content
+      const headers = ['Date', 'Student Name', 'Student ID', 'Class', 'Status', 'Check In', 'Check Out', 'Notes']
+      const rows = records.map(record => [
+        new Date(record.date).toLocaleDateString(),
+        `${record.student?.first_name || ''} ${record.student?.last_name || ''}`.trim(),
+        record.student?.student_id || '',
+        record.class?.title || '',
+        record.status,
+        record.check_in_time ? new Date(record.check_in_time).toLocaleTimeString() : '',
+        record.check_out_time ? new Date(record.check_out_time).toLocaleTimeString() : '',
+        record.notes || ''
+      ])
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n')
+
+      // Download
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `attendance-report-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Export failed:', error)
       alert('Failed to export data')
@@ -535,7 +561,7 @@ export default function AttendanceReportsPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>
-                              {formatAttendanceStatus(record.status)}
+                              {record.status.replace('_', ' ').toUpperCase()}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

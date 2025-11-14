@@ -74,7 +74,7 @@ export async function GET(request: Request) {
     }
 
     // If not admin, filter by teacher's classes
-    if (authResult.role !== 'admin') {
+    if (authResult.userRole !== 'admin') {
       const { data: teacherClasses } = await supabase
         .from('classes')
         .select('id')
