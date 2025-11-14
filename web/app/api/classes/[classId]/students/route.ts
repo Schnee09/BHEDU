@@ -16,7 +16,7 @@ export async function GET(
 ) {
   try {
     // Teacher or admin authentication
-    const authResult = await teacherAuth(req)
+    const authResult = await teacherAuth()
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },

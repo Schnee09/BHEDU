@@ -14,7 +14,7 @@ import type { StudentImportRow } from '@/lib/importService'
 export async function POST(req: NextRequest) {
   try {
     // Admin authentication
-    const authResult = await adminAuth(req)
+    const authResult = await adminAuth()
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
