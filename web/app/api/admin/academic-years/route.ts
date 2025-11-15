@@ -10,9 +10,9 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -51,7 +51,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },

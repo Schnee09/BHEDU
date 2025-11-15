@@ -6,14 +6,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   try {
     // Teacher or admin authentication
-    const authResult = await teacherAuth()
+    const authResult = await teacherAuth(req)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+  const supabase = createServiceClient()
     const body = await req.json()
     const { studentIds, classId, validDate, expiryHours } = body as {
       studentIds: string[]

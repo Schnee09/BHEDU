@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -16,7 +16,7 @@ export async function GET(
 ) {
   try {
     // Teacher or admin authentication
-    const authResult = await teacherAuth()
+    const authResult = await teacherAuth(req)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -24,7 +24,7 @@ export async function GET(
       )
     }
 
-    const supabase = await createClient()
+  const supabase = createServiceClient()
     const { classId } = await params
     const searchParams = req.nextUrl.searchParams
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0]

@@ -18,7 +18,7 @@ function validateTable(table: string) {
 }
 
 export async function GET(request: Request, ctx: Params) {
-  const authResult = await adminAuth()
+  const authResult = await adminAuth(request)
   if (!authResult.authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -76,7 +76,7 @@ export async function GET(request: Request, ctx: Params) {
 }
 
 export async function POST(request: Request, ctx: Params) {
-  const authResult = await adminAuth()
+  const authResult = await adminAuth(request)
   if (!authResult.authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -97,7 +97,7 @@ export async function POST(request: Request, ctx: Params) {
 }
 
 export async function PUT(request: Request, ctx: Params) {
-  const authResult = await adminAuth()
+  const authResult = await adminAuth(request)
   if (!authResult.authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -123,7 +123,7 @@ export async function PUT(request: Request, ctx: Params) {
 }
 
 export async function DELETE(request: Request, ctx: Params) {
-  const authResult = await adminAuth()
+  const authResult = await adminAuth(request)
   if (!authResult.authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

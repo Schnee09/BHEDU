@@ -10,7 +10,7 @@ import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(request: Request) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -69,7 +69,7 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },

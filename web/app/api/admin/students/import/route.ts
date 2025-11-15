@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 import type { StudentImportRow } from '@/lib/importService'
@@ -14,7 +14,7 @@ import type { StudentImportRow } from '@/lib/importService'
 export async function POST(req: NextRequest) {
   try {
     // Admin authentication
-    const authResult = await adminAuth()
+  const authResult = await adminAuth(req)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+  const supabase = createServiceClient()
     const body = await req.json()
     const { students } = body as { students: StudentImportRow[] }
 

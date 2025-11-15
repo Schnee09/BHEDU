@@ -13,7 +13,7 @@ import { sendEmail, generateWelcomeEmail } from '@/lib/email/emailService'
 
 export async function GET(request: Request) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },

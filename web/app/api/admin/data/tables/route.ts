@@ -54,8 +54,8 @@ const ALLOWED_TABLES = [
   'payment_allocations'
 ]
 
-export async function GET() {
-  const authResult = await adminAuth()
+export async function GET(request: Request) {
+  const authResult = await adminAuth(request)
   if (!authResult.authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

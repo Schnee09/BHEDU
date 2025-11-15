@@ -23,7 +23,7 @@ interface UserImportRow {
 
 export async function POST(request: Request) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },

@@ -22,7 +22,7 @@ export async function adminAuth(request?: NextRequest | Request): Promise<AuthRe
   try {
     // Use request-based client if request is provided (API routes)
     // Otherwise use cookies-based client (server components)
-    let supabase = request \
+    let supabase = request 
       ? createClientFromRequest(request)
       : await createClient()
 
@@ -96,22 +96,32 @@ export async function adminAuth(request?: NextRequest | Request): Promise<AuthRe
 /**
  * Check if the current user is authenticated and has teacher or admin role
  */
-export async function teacherAuth(): Promise<AuthResult> {
+export async function teacherAuth(request?: NextRequest | Request): Promise<AuthResult> {
   try {
-    const supabase = await createClient()
+    const supabase = request ? createClientFromRequest(request) : await createClient()
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    let { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return {
-        authorized: false,
-        reason: 'Not authenticated'
+      // Fallback to Authorization header (Bearer token)
+      const token = request ? request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') : undefined
+      if (token) {
+        const tokenClient = createClientFromToken(token)
+        const result = await tokenClient.auth.getUser()
+        user = result.data.user
+        authError = result.error
+      }
+      if (authError || !user) {
+        return {
+          authorized: false,
+          reason: 'Not authenticated'
+        }
       }
     }
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, email, role')
+      .select('id, role')
       .eq('id', user.id)
       .single()
 
@@ -126,7 +136,7 @@ export async function teacherAuth(): Promise<AuthResult> {
       return {
         authorized: false,
         userId: user.id,
-        userEmail: profile.email,
+        userEmail: user.email,
         userRole: profile.role,
         reason: 'Insufficient permissions (teacher or admin required)'
       }
@@ -135,7 +145,7 @@ export async function teacherAuth(): Promise<AuthResult> {
     return {
       authorized: true,
       userId: user.id,
-      userEmail: profile.email,
+      userEmail: user.email,
       userRole: profile.role
     }
 
