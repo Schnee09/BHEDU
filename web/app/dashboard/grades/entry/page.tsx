@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { apiFetch } from '@/lib/api/client'
 import { Assignment, Grade, validateGradePoints } from '@/lib/gradeService'
 
 interface Student {
@@ -586,7 +587,7 @@ export default function GradeEntryPage() {
       {hasChanges && (
         <div className="fixed bottom-6 right-6 bg-yellow-50 border border-yellow-300 rounded-lg shadow-lg p-4 max-w-sm">
           <div className="flex items-start gap-3">
-            <div className="text-yellow-600 text-xl">‚ö†ÅEÅE/div>
+              <div className="text-yellow-600 text-xl">‚ö†Ô∏è</div>
             <div>
               <h4 className="font-semibold text-yellow-900 mb-1">
                 Unsaved Changes

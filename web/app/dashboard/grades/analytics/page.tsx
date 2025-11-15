@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { apiFetch } from '@/lib/api/client'
 import { percentageToLetterGrade, getLetterGradeColor } from '@/lib/gradeService'
 
 interface Class {
@@ -354,7 +355,7 @@ export default function GradeAnalyticsPage() {
                 {strugglingStudents.length > 0 && (
                   <div className="bg-white rounded-lg shadow-sm border border-red-200 p-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <span className="text-2xl">‚ö†ÅEÅE/span>
+                        <span className="text-2xl">‚ö†Ô∏è</span>
                       <h2 className="text-lg font-semibold text-red-900">
                         Students Needing Support
                       </h2>

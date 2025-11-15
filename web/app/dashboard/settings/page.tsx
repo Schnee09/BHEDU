@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { apiFetch } from '@/lib/api/client'
 
 interface Setting {
   id: string
@@ -199,7 +200,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'general', label: 'School Info', icon: '🏫' },
     { id: 'academic', label: 'Academic', icon: '📚' },
-    { id: 'attendance', label: 'Attendance', icon: '✁E },
+      { id: 'attendance', label: 'Attendance', icon: '📋' },
     { id: 'grading', label: 'Grading', icon: '📊' },
     { id: 'financial', label: 'Financial', icon: '💰' },
     { id: 'years', label: 'Academic Years', icon: '📅' },

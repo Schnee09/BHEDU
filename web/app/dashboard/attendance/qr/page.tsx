@@ -6,6 +6,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { apiFetch } from '@/lib/api/client'
 import { QRCodeSVG } from 'qrcode.react'
 
 interface Class {
@@ -214,7 +215,7 @@ export default function QRGenerationPage() {
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">â„¹EEHow it works:</h3>
+              <h3 className="font-semibold text-blue-900 mb-2">â„¹ï¿½Eï¿½EHow it works:</h3>
               <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
                 <li>Select students from your class</li>
                 <li>Generate unique QR codes for each student</li>
@@ -307,7 +308,7 @@ export default function QRGenerationPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-lg mb-1">
-                  âœEGenerated {generatedQRs.length} QR Codes
+                    âœ… Generated {generatedQRs.length} QR Codes
                 </h2>
                 <p className="text-sm text-gray-600">
                   Valid for {date} â€¢ Expires in {expiryHours} hours
@@ -318,7 +319,7 @@ export default function QRGenerationPage() {
                   onClick={printQRCodes}
                   className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition"
                 >
-                  ğŸ–¨EEPrint
+                  ğŸ–¨ï¿½Eï¿½EPrint
                 </button>
                 <button
                   onClick={() => setGeneratedQRs([])}

@@ -7,6 +7,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { apiFetch } from '@/lib/api/client'
 import { 
   parseCSV, 
   validateImportData, 
@@ -223,7 +224,7 @@ export default function BulkImportPage() {
           {/* Preview and Validation Results */}
           {preview && (
             <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
-              <h2 className="font-semibold mb-4">✁EStep 3: Review and Import</h2>
+                <h2 className="font-semibold mb-4">📋 Step 3: Review and Import</h2>
 
               {/* Summary */}
               <div className="grid grid-cols-3 gap-4 mb-6">
@@ -260,7 +261,7 @@ export default function BulkImportPage() {
               {/* Warnings */}
               {preview.warnings.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="font-semibold text-yellow-600 mb-2">⚠�E�EWarnings (optional fixes):</h3>
+                  <h3 className="font-semibold text-yellow-600 mb-2">⚠�E�EWarnings (optional fixes):</h3>
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-h-64 overflow-y-auto">
                     {preview.warnings.map((warning, idx) => (
                       <div key={idx} className="text-sm mb-2">
@@ -277,7 +278,7 @@ export default function BulkImportPage() {
               {preview.valid.length > 0 && (
                 <div className="mb-6">
                   <h3 className="font-semibold text-green-600 mb-2">
-                    ✁EValid Students (first 10):
+                      ✅ Valid Students (first 10):
                   </h3>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 text-sm">
