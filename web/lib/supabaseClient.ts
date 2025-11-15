@@ -1,10 +1,10 @@
 // web/lib/supabaseClient.ts
 // Use @supabase/ssr for proper cookie-based auth in Next.js
 import { createBrowserClient } from '@supabase/ssr'
-import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Singleton browser client for consistent cookie-based auth
-let _client: SupabaseClient | undefined
+// Using ReturnType to get exact type from createBrowserClient
+let _client: ReturnType<typeof createBrowserClient> | undefined
 
 type SupabaseLike = {
   auth: {
@@ -45,21 +45,21 @@ function buildStub(): SupabaseLike {
   };
 }
 
-function ensureClient(): SupabaseClient {
+function ensureClient(): ReturnType<typeof createBrowserClient> {
   if (_client) return _client
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !anon) {
     // During build / SSR without envs return stub (client components will hydrate with real values in Vercel)
-    _client = buildStub() as unknown as SupabaseClient
-    return _client as SupabaseClient
+    _client = buildStub() as unknown as ReturnType<typeof createBrowserClient>
+    return _client as ReturnType<typeof createBrowserClient>
   }
   _client = createBrowserClient(url, anon)
   return _client
 }
 
 // ✅ single reusable client reference
-export const supabase: SupabaseClient = ensureClient()
+export const supabase: ReturnType<typeof createBrowserClient> = ensureClient()
 
 // ✅ factory for places expecting createClient()
 export function createClient() {
