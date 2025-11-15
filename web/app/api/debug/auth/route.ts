@@ -7,6 +7,10 @@ import { createClientFromRequest } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
+    // Check what cookies are being sent
+    const cookieHeader = request.headers.get('cookie')
+    const hasSbCookies = cookieHeader?.includes('sb-') || false
+    
     const supabase = createClientFromRequest(request)
 
     // Get current user
@@ -16,7 +20,12 @@ export async function GET(request: Request) {
       return NextResponse.json({
         authenticated: false,
         error: 'Not authenticated',
-        authError: authError?.message
+        authError: authError?.message || 'Auth session missing!',
+        debug: {
+          hasCookieHeader: !!cookieHeader,
+          hasSupabaseCookies: hasSbCookies,
+          cookieHeaderLength: cookieHeader?.length || 0
+        }
       })
     }
 
@@ -36,7 +45,11 @@ export async function GET(request: Request) {
       },
       profile: profile,
       profileError: profileError?.message,
-      isAdmin: profile?.role === 'admin'
+      isAdmin: profile?.role === 'admin',
+      debug: {
+        hasCookieHeader: !!cookieHeader,
+        hasSupabaseCookies: hasSbCookies
+      }
     })
 
   } catch (error) {
