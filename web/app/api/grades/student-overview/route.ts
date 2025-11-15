@@ -84,7 +84,7 @@ export async function GET(request: Request) {
         // Get student info
         const { data: student } = await supabase
           .from('profiles')
-          .select('id, email, first_name, last_name, student_id, grade_level')
+          .select('id, email, full_name, student_id, grade_level')
           .eq('id', sid)
           .single()
 

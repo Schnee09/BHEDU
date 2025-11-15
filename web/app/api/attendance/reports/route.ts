@@ -39,8 +39,7 @@ export async function GET(request: Request) {
         student:profiles!attendance_student_id_fkey(
           id,
           email,
-          first_name,
-          last_name,
+          full_name,
           student_id,
           grade_level
         ),
@@ -163,7 +162,7 @@ export async function GET(request: Request) {
       const studentKey = record.student_id
       if (!byStudent[studentKey]) {
         byStudent[studentKey] = {
-          name: `${record.student?.first_name || ''} ${record.student?.last_name || ''}`.trim() || 'Unknown',
+          name: record.student?.full_name || 'Unknown',
           studentId: record.student?.student_id || '',
           count: 0,
           present: 0,

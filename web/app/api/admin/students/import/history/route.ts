@@ -33,8 +33,7 @@ export async function GET(req: NextRequest) {
         *,
         importer:profiles!import_logs_imported_by_fkey(
           id,
-          first_name,
-          last_name,
+          full_name,
           email
         )
       `, { count: 'exact' })

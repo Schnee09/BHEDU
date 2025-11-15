@@ -28,16 +28,14 @@ export async function GET(request: Request) {
         student:profiles!payments_student_id_fkey(
           id,
           student_id,
-          first_name,
-          last_name,
+          full_name,
           email,
           grade_level
         ),
         payment_method:payment_methods(id, name, type),
         received_by_user:profiles!payments_received_by_fkey(
           id,
-          first_name,
-          last_name
+          full_name
         ),
         allocations:payment_allocations(
           *,
@@ -172,16 +170,14 @@ export async function POST(request: Request) {
         student:profiles!payments_student_id_fkey(
           id,
           student_id,
-          first_name,
-          last_name,
+          full_name,
           email,
           grade_level
         ),
         payment_method:payment_methods(id, name, type),
         received_by_user:profiles!payments_received_by_fkey(
           id,
-          first_name,
-          last_name
+          full_name
         ),
         allocations:payment_allocations(
           *,

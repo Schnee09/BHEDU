@@ -141,8 +141,7 @@ export async function POST(req: NextRequest) {
             password: tempPassword,
             email_confirm: true, // Auto-confirm email
             user_metadata: {
-              first_name: student.firstName,
-              last_name: student.lastName
+              full_name: `${student.firstName} ${student.lastName}`.trim()
             }
           })
 
@@ -174,8 +173,7 @@ export async function POST(req: NextRequest) {
             .insert({
               id: authData.user.id,
               email: student.email.toLowerCase(),
-              first_name: student.firstName,
-              last_name: student.lastName,
+              full_name: `${student.firstName} ${student.lastName}`.trim(),
               role: 'student',
               phone: student.phone || null,
               address: student.address || null,

@@ -28,8 +28,7 @@ export async function GET(request: Request) {
         student:profiles!student_accounts_student_id_fkey(
           id,
           student_id,
-          first_name,
-          last_name,
+          full_name,
           email,
           grade_level
         ),
@@ -115,8 +114,7 @@ export async function POST(request: Request) {
         student:profiles!student_accounts_student_id_fkey(
           id,
           student_id,
-          first_name,
-          last_name,
+          full_name,
           email,
           grade_level
         ),
