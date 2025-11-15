@@ -3,7 +3,7 @@
  * Verifies that the current user is an admin
  */
 
-import { createClient, createClientFromRequest } from '@/lib/supabase/server'
+import { createClient, createClientFromRequest, createClientFromToken } from '@/lib/supabase/server'
 import type { NextRequest } from 'next/server'
 
 export interface AuthResult {
@@ -22,17 +22,28 @@ export async function adminAuth(request?: NextRequest | Request): Promise<AuthRe
   try {
     // Use request-based client if request is provided (API routes)
     // Otherwise use cookies-based client (server components)
-    const supabase = request 
+    let supabase = request \
       ? createClientFromRequest(request)
       : await createClient()
 
     // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    let { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return {
-        authorized: false,
-        reason: authError?.message || 'Not authenticated'
+      // Fallback: try Authorization header (Bearer token)
+      const token = request ? request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') : undefined
+      if (token) {
+        const tokenClient = createClientFromToken(token)
+        const result = await tokenClient.auth.getUser()
+        user = result.data.user
+        authError = result.error
+      }
+
+      if (authError || !user) {
+        return {
+          authorized: false,
+          reason: authError?.message || 'Not authenticated'
+        }
       }
     }
 

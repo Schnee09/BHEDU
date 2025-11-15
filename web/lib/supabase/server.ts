@@ -80,4 +80,28 @@ export function createServiceClient() {
   })
 }
 
+/**
+ * Create a Supabase client that authenticates using a Bearer token.
+ * Useful when API requests send Authorization headers instead of cookies.
+ */
+export function createClientFromToken(accessToken: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+  const client = createSupabaseClient(url, anon, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+    auth: {
+      autoRefreshToken: true,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  })
+
+  return client
+}
+
 
