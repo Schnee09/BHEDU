@@ -38,8 +38,7 @@ export async function GET(request: Request) {
       .select(`
         id,
         email,
-        first_name,
-        last_name,
+        full_name,
         role,
         is_active,
         last_login_at,
@@ -62,7 +61,7 @@ export async function GET(request: Request) {
     }
 
     if (search) {
-      query = query.or(`email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%,student_id.ilike.%${search}%`)
+      query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%,student_id.ilike.%${search}%`)
     }
 
     // Apply pagination
@@ -118,8 +117,7 @@ export async function POST(request: Request) {
     const {
       email,
       password,
-      first_name,
-      last_name,
+      full_name,
       role,
       phone,
       department,
@@ -130,9 +128,9 @@ export async function POST(request: Request) {
     } = body
 
     // Validation
-    if (!email || !password || !first_name || !last_name || !role) {
+    if (!email || !password || !full_name || !role) {
       return NextResponse.json(
-        { error: 'Missing required fields: email, password, first_name, last_name, role' },
+        { error: 'Missing required fields: email, password, full_name, role' },
         { status: 400 }
       )
     }
@@ -153,8 +151,7 @@ export async function POST(request: Request) {
       password,
       email_confirm: true,
       user_metadata: {
-        first_name,
-        last_name,
+        full_name,
         role
       }
     })
@@ -171,8 +168,7 @@ export async function POST(request: Request) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .update({
-        first_name,
-        last_name,
+        full_name,
         role,
         phone,
         department,
@@ -209,7 +205,7 @@ export async function POST(request: Request) {
    // Send welcome email
    const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`
    const emailContent = generateWelcomeEmail({
-     firstName: first_name,
+     firstName: full_name,
      email,
      password,
      role,

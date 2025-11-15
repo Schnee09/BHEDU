@@ -63,14 +63,14 @@ export async function POST(
      // Send email notification to user
      const { data: userProfile } = await supabase
        .from('profiles')
-       .select('first_name, email')
+       .select('full_name, email')
        .eq('id', id)
        .single()
 
      if (userProfile?.email) {
        const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`
        const emailContent = generatePasswordResetEmail({
-         firstName: userProfile.first_name || 'User',
+         firstName: userProfile.full_name || 'User',
          newPassword: new_password,
          loginUrl
        })

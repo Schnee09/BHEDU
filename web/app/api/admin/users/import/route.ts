@@ -10,8 +10,7 @@ import { adminAuth } from '@/lib/auth/adminAuth'
 interface UserImportRow {
   email: string
   password?: string
-  first_name: string
-  last_name: string
+  full_name: string
   role: 'admin' | 'teacher' | 'student'
   phone?: string
   department?: string // for teachers
@@ -56,12 +55,12 @@ export async function POST(request: Request) {
 
       try {
         // Validate required fields
-        if (!user.email || !user.first_name || !user.last_name || !user.role) {
+        if (!user.email || !user.full_name || !user.role) {
           results.failed++
           results.errors.push({
             row: rowNumber,
             email: user.email || 'N/A',
-            error: 'Missing required fields (email, first_name, last_name, role)'
+            error: 'Missing required fields (email, full_name, role)'
           })
           continue
         }
@@ -86,8 +85,7 @@ export async function POST(request: Request) {
           password: password,
           email_confirm: true,
           user_metadata: {
-            first_name: user.first_name,
-            last_name: user.last_name,
+            full_name: user.full_name,
             role: user.role
           }
         })
@@ -104,8 +102,7 @@ export async function POST(request: Request) {
 
         // Update profile with additional fields
         const profileData: Record<string, string | boolean> = {
-          first_name: user.first_name,
-          last_name: user.last_name,
+          full_name: user.full_name,
           role: user.role,
           is_active: user.is_active !== undefined ? user.is_active : true
         }

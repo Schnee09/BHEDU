@@ -31,8 +31,7 @@ export async function GET(
       .select(`
         id,
         email,
-        first_name,
-        last_name,
+        full_name,
         role,
         is_active,
         last_login_at,
@@ -96,8 +95,7 @@ export async function PUT(
     const body = await request.json()
     const {
       email,
-      first_name,
-      last_name,
+      full_name,
       role,
       phone,
       department,
@@ -127,8 +125,7 @@ export async function PUT(
     const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
       .update({
-        first_name,
-        last_name,
+        full_name,
         role,
         phone,
         department,
