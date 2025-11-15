@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { apiFetch } from '@/lib/api/client'
 
 interface DashboardData {
   total_outstanding: number
@@ -31,7 +32,7 @@ export default function FinanceDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/admin/finance/reports?type=dashboard')
+      const response = await apiFetch('/api/admin/finance/reports?type=dashboard')
       const result = await response.json()
 
       if (!response.ok) {
