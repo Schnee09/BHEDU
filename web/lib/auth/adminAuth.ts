@@ -26,7 +26,7 @@ export async function adminAuth(): Promise<AuthResult> {
     if (authError || !user) {
       return {
         authorized: false,
-        reason: 'Not authenticated'
+        reason: authError?.message || 'Not authenticated'
       }
     }
 
@@ -37,7 +37,14 @@ export async function adminAuth(): Promise<AuthResult> {
       .eq('id', user.id)
       .single()
 
-    if (profileError || !profile) {
+    if (profileError) {
+      return {
+        authorized: false,
+        reason: `Profile query error: ${profileError.message}`
+      }
+    }
+
+    if (!profile) {
       return {
         authorized: false,
         reason: 'Profile not found'

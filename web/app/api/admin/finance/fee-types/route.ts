@@ -11,7 +11,10 @@ export async function GET(request: Request) {
   try {
     const authResult = await adminAuth()
     if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ 
+        error: 'Unauthorized', 
+        reason: authResult.reason 
+      }, { status: 401 })
     }
 
     const supabase = createServiceClient()
