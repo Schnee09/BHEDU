@@ -22,7 +22,7 @@ export async function adminAuth(request?: NextRequest | Request): Promise<AuthRe
   try {
     // Use request-based client if request is provided (API routes)
     // Otherwise use cookies-based client (server components)
-    let supabase = request 
+    const supabase = request 
       ? createClientFromRequest(request)
       : await createClient()
 
