@@ -60,7 +60,7 @@ export default function GradeEntryPage() {
 
   const loadClasses = async () => {
     try {
-      const response = await fetch('/api/classes/my-classes')
+      const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
         setClasses(data)
@@ -73,7 +73,7 @@ export default function GradeEntryPage() {
   const loadAssignments = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/grades/assignments?classId=${selectedClass}&published=true`)
+      const response = await apiFetch(`/api/grades/assignments?classId=${selectedClass}&published=true`)
       if (response.ok) {
         const data = await response.json()
         setAssignments(data)
@@ -88,7 +88,7 @@ export default function GradeEntryPage() {
   const loadGrades = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/grades?assignmentId=${selectedAssignment}`)
+      const response = await apiFetch(`/api/grades?assignmentId=${selectedAssignment}`)
       if (response.ok) {
         const data = await response.json()
         setGrades(data)
@@ -167,7 +167,7 @@ export default function GradeEntryPage() {
       }
 
       // Save grades
-      const response = await fetch('/api/grades', {
+      const response = await apiFetch('/api/grades', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -310,13 +310,13 @@ export default function GradeEntryPage() {
                 onClick={() => handleQuickAction('all-present')}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
               >
-                ✓ All Full Credit
+                ✁EAll Full Credit
               </button>
               <button
                 onClick={() => handleQuickAction('all-missing')}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
               >
-                ✗ All Missing
+                ✁EAll Missing
               </button>
               <button
                 onClick={() => handleQuickAction('clear-all')}
@@ -586,7 +586,7 @@ export default function GradeEntryPage() {
       {hasChanges && (
         <div className="fixed bottom-6 right-6 bg-yellow-50 border border-yellow-300 rounded-lg shadow-lg p-4 max-w-sm">
           <div className="flex items-start gap-3">
-            <div className="text-yellow-600 text-xl">⚠️</div>
+            <div className="text-yellow-600 text-xl">⚠�E�E/div>
             <div>
               <h4 className="font-semibold text-yellow-900 mb-1">
                 Unsaved Changes

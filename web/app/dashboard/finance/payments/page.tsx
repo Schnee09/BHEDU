@@ -66,7 +66,7 @@ export default function PaymentsPage() {
   const fetchPayments = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/admin/finance/payments')
+      const response = await apiFetch('/api/admin/finance/payments')
       const result = await response.json()
 
       if (!response.ok) throw new Error(result.error || 'Failed to fetch payments')
@@ -80,7 +80,7 @@ export default function PaymentsPage() {
 
   const fetchPaymentMethods = async () => {
     try {
-      const response = await fetch('/api/admin/finance/payment-methods')
+      const response = await apiFetch('/api/admin/finance/payment-methods')
       const result = await response.json()
       if (response.ok) {
         setPaymentMethods(result.data?.filter((m: PaymentMethod) => m.is_active) || [])
@@ -124,7 +124,7 @@ export default function PaymentsPage() {
     }
 
     try {
-      const response = await fetch('/api/admin/finance/payments', {
+      const response = await apiFetch('/api/admin/finance/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { apiFetch } from '@/lib/api/client'
 
 interface OutstandingBalance {
   student_id: string
@@ -87,7 +88,7 @@ export default function FinancialReportsPage() {
           break
       }
 
-      const response = await fetch(url + params.toString())
+      const response = await apiFetch(url + params.toString())
       const result = await response.json()
 
       if (!response.ok) throw new Error(result.error || 'Failed to fetch report data')

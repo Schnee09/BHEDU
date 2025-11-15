@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
+import { apiFetch } from '@/lib/api/client'
 
 interface User {
   id: string
@@ -71,7 +72,7 @@ export default function UserManagementPage() {
         limit: '20'
       })
 
-      const response = await fetch(`/api/admin/users?${params}`)
+      const response = await apiFetch(`/api/admin/users?${params}`)
       const data = await response.json()
 
       if (data.success) {
@@ -93,7 +94,7 @@ export default function UserManagementPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/admin/users', {
+      const response = await apiFetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -123,7 +124,7 @@ export default function UserManagementPage() {
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+      const response = await apiFetch(`/api/admin/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -158,7 +159,7 @@ export default function UserManagementPage() {
     if (!confirm('Are you sure you want to reset this user\'s password?')) return
 
     try {
-      const response = await fetch(`/api/admin/users/${userId}/reset-password`, {
+      const response = await apiFetch(`/api/admin/users/${userId}/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ new_password: newPassword })
@@ -181,7 +182,7 @@ export default function UserManagementPage() {
     if (!confirm(`Are you sure you want to ${user.is_active ? 'deactivate' : 'activate'} this user?`)) return
 
     try {
-      const response = await fetch(`/api/admin/users/${user.id}`, {
+      const response = await apiFetch(`/api/admin/users/${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...user, is_active: !user.is_active })

@@ -75,7 +75,7 @@ export default function InvoicesPage() {
       const params = new URLSearchParams()
       if (filterStatus !== 'all') params.set('status', filterStatus)
 
-      const response = await fetch(`/api/admin/finance/invoices?${params}`)
+      const response = await apiFetch(`/api/admin/finance/invoices?${params}`)
       const result = await response.json()
 
       if (!response.ok) throw new Error(result.error || 'Failed to fetch invoices')
@@ -89,7 +89,7 @@ export default function InvoicesPage() {
 
   const fetchFeeTypes = async () => {
     try {
-      const response = await fetch('/api/admin/finance/fee-types')
+      const response = await apiFetch('/api/admin/finance/fee-types')
       const result = await response.json()
       if (response.ok) {
         setFeeTypes(result.data || [])
@@ -161,7 +161,7 @@ export default function InvoicesPage() {
     }
 
     try {
-      const response = await fetch('/api/admin/finance/invoices', {
+      const response = await apiFetch('/api/admin/finance/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

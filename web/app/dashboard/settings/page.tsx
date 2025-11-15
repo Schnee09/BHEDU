@@ -47,7 +47,7 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('/api/admin/settings')
+      const response = await apiFetch('/api/admin/settings')
       const data = await response.json()
       if (data.success) {
         setSettings(data.data)
@@ -67,7 +67,7 @@ export default function SettingsPage() {
 
   const fetchAcademicYears = async () => {
     try {
-      const response = await fetch('/api/admin/academic-years')
+      const response = await apiFetch('/api/admin/academic-years')
       const data = await response.json()
       if (data.success) {
         setAcademicYears(data.data)
@@ -79,7 +79,7 @@ export default function SettingsPage() {
 
   const fetchGradingScales = async () => {
     try {
-      const response = await fetch('/api/admin/grading-scales')
+      const response = await apiFetch('/api/admin/grading-scales')
       const data = await response.json()
       if (data.success) {
         setGradingScales(data.data)
@@ -99,7 +99,7 @@ export default function SettingsPage() {
           setting_value: settingsForm[s.setting_key] || s.setting_value
         }))
 
-      const response = await fetch('/api/admin/settings', {
+      const response = await apiFetch('/api/admin/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ settings: categorySettings })
@@ -199,7 +199,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'general', label: 'School Info', icon: '🏫' },
     { id: 'academic', label: 'Academic', icon: '📚' },
-    { id: 'attendance', label: 'Attendance', icon: '✅' },
+    { id: 'attendance', label: 'Attendance', icon: '✁E },
     { id: 'grading', label: 'Grading', icon: '📊' },
     { id: 'financial', label: 'Financial', icon: '💰' },
     { id: 'years', label: 'Academic Years', icon: '📅' },

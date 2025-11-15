@@ -19,7 +19,7 @@ export default function AdminDataViewerPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/admin/data/tables')
+        const res = await apiFetch('/api/admin/data/tables')
         const json = await res.json()
         if (json.success) {
           setTables(json.data)
@@ -44,7 +44,7 @@ export default function AdminDataViewerPage() {
       setError(null)
       try {
         const params = new URLSearchParams({ page: String(pagination.page), limit: String(pagination.limit) })
-        const res = await fetch(`/api/admin/data/${table}?` + params.toString())
+        const res = await apiFetch(`/api/admin/data/${table}?` + params.toString())
         const json = await res.json()
         if (json.success) {
           setRows(json.data)
@@ -92,7 +92,7 @@ export default function AdminDataViewerPage() {
     const id = editing.id
     try {
       setLoading(true)
-      const res = await fetch(`/api/admin/data/${table}`, {
+      const res = await apiFetch(`/api/admin/data/${table}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editing)
@@ -117,7 +117,7 @@ export default function AdminDataViewerPage() {
     if (!confirm('Delete this record?')) return
     try {
       setLoading(true)
-      const res = await fetch(`/api/admin/data/${table}?id=${id}`, { method: 'DELETE' })
+      const res = await apiFetch(`/api/admin/data/${table}?id=${id}`, { method: 'DELETE' })
       const json = await res.json()
       if (!json.success) {
         alert(json.error || 'Failed to delete')

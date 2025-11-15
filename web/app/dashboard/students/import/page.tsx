@@ -100,7 +100,7 @@ export default function BulkImportPage() {
     setImporting(true)
 
     try {
-      const response = await fetch('/api/admin/students/import', {
+      const response = await apiFetch('/api/admin/students/import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -223,7 +223,7 @@ export default function BulkImportPage() {
           {/* Preview and Validation Results */}
           {preview && (
             <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
-              <h2 className="font-semibold mb-4">✅ Step 3: Review and Import</h2>
+              <h2 className="font-semibold mb-4">✁EStep 3: Review and Import</h2>
 
               {/* Summary */}
               <div className="grid grid-cols-3 gap-4 mb-6">
@@ -244,7 +244,7 @@ export default function BulkImportPage() {
               {/* Errors */}
               {preview.errors.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="font-semibold text-red-600 mb-2">❌ Errors (must fix):</h3>
+                  <h3 className="font-semibold text-red-600 mb-2">❁EErrors (must fix):</h3>
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-h-64 overflow-y-auto">
                     {preview.errors.map((error, idx) => (
                       <div key={idx} className="text-sm mb-2">
@@ -260,7 +260,7 @@ export default function BulkImportPage() {
               {/* Warnings */}
               {preview.warnings.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="font-semibold text-yellow-600 mb-2">⚠️ Warnings (optional fixes):</h3>
+                  <h3 className="font-semibold text-yellow-600 mb-2">⚠�E�EWarnings (optional fixes):</h3>
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-h-64 overflow-y-auto">
                     {preview.warnings.map((warning, idx) => (
                       <div key={idx} className="text-sm mb-2">
@@ -277,7 +277,7 @@ export default function BulkImportPage() {
               {preview.valid.length > 0 && (
                 <div className="mb-6">
                   <h3 className="font-semibold text-green-600 mb-2">
-                    ✅ Valid Students (first 10):
+                    ✁EValid Students (first 10):
                   </h3>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 text-sm">

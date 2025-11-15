@@ -60,7 +60,7 @@ export default function GradeAnalyticsPage() {
 
   const loadClasses = async () => {
     try {
-      const response = await fetch('/api/classes/my-classes')
+      const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
         setClasses(data)
@@ -73,7 +73,7 @@ export default function GradeAnalyticsPage() {
   const loadGrades = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/grades/student-overview?classId=${selectedClass}`)
+      const response = await apiFetch(`/api/grades/student-overview?classId=${selectedClass}`)
       if (response.ok) {
         const data = await response.json()
         setGrades(data)
@@ -354,7 +354,7 @@ export default function GradeAnalyticsPage() {
                 {strugglingStudents.length > 0 && (
                   <div className="bg-white rounded-lg shadow-sm border border-red-200 p-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <span className="text-2xl">‚ö†Ô∏è</span>
+                      <span className="text-2xl">‚ö†ÅEÅE/span>
                       <h2 className="text-lg font-semibold text-red-900">
                         Students Needing Support
                       </h2>

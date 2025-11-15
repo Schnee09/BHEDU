@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { apiFetch } from '@/lib/api/client'
 
 interface StudentAccount {
   id: string
@@ -46,7 +47,7 @@ export default function StudentAccountsPage() {
       if (filterStatus !== 'all') params.set('status', filterStatus)
       if (filterYear !== 'all') params.set('academic_year_id', filterYear)
 
-      const response = await fetch(`/api/admin/finance/student-accounts?${params}`)
+      const response = await apiFetch(`/api/admin/finance/student-accounts?${params}`)
       const result = await response.json()
 
       if (!response.ok) throw new Error(result.error || 'Failed to fetch accounts')

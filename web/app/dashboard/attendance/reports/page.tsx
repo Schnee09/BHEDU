@@ -72,7 +72,7 @@ export default function AttendanceReportsPage() {
 
   const loadClasses = async () => {
     try {
-      const response = await fetch('/api/classes/my-classes')
+      const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
         setClasses(data.classes || [])
@@ -116,7 +116,7 @@ export default function AttendanceReportsPage() {
       if (end) params.append('endDate', end)
       if (statusFilter) params.append('status', statusFilter)
 
-      const response = await fetch(`/api/attendance/reports?${params}`)
+      const response = await apiFetch(`/api/attendance/reports?${params}`)
       if (response.ok) {
         const result = await response.json()
         setRecords(result.data || [])
@@ -370,7 +370,7 @@ export default function AttendanceReportsPage() {
                           {analytics.totalPresent}
                         </p>
                       </div>
-                      <div className="text-4xl">✅</div>
+                      <div className="text-4xl">✁E/div>
                     </div>
                   </div>
 
@@ -382,7 +382,7 @@ export default function AttendanceReportsPage() {
                           {analytics.totalAbsent}
                         </p>
                       </div>
-                      <div className="text-4xl">❌</div>
+                      <div className="text-4xl">❁E/div>
                     </div>
                   </div>
                 </div>
@@ -489,7 +489,7 @@ export default function AttendanceReportsPage() {
 
                     {/* Bottom Performers */}
                     <div className="bg-white rounded-lg shadow p-6">
-                      <h2 className="text-lg font-semibold text-gray-900 mb-4">⚠️ Needs Attention</h2>
+                      <h2 className="text-lg font-semibold text-gray-900 mb-4">⚠�E�ENeeds Attention</h2>
                       <div className="space-y-3">
                         {bottomPerformers.map((student) => (
                           <div key={student.studentId} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">

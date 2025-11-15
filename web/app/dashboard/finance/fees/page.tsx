@@ -68,7 +68,7 @@ export default function FeeManagementPage() {
       if (filterCategory !== 'all') params.set('category', filterCategory)
       if (filterYear !== 'all') params.set('academic_year_id', filterYear)
 
-      const response = await fetch(`/api/admin/finance/fee-types?${params}`)
+      const response = await apiFetch(`/api/admin/finance/fee-types?${params}`)
       const result = await response.json()
 
       if (!response.ok) throw new Error(result.error || 'Failed to fetch fee types')
@@ -82,7 +82,7 @@ export default function FeeManagementPage() {
 
   const fetchAcademicYears = async () => {
     try {
-      const response = await fetch('/api/admin/academic-years')
+      const response = await apiFetch('/api/admin/academic-years')
       const result = await response.json()
       if (response.ok) {
         setAcademicYears(result.data || [])
@@ -106,7 +106,7 @@ export default function FeeManagementPage() {
         ? `/api/admin/finance/fee-types/${editingFee.id}`
         : '/api/admin/finance/fee-types'
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: editingFee ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -147,7 +147,7 @@ export default function FeeManagementPage() {
     if (!confirm('Are you sure you want to delete this fee type?')) return
 
     try {
-      const response = await fetch(`/api/admin/finance/fee-types/${id}`, {
+      const response = await apiFetch(`/api/admin/finance/fee-types/${id}`, {
         method: 'DELETE'
       })
 

@@ -51,7 +51,7 @@ export default function QRGenerationPage() {
 
   const loadClasses = async () => {
     try {
-      const response = await fetch('/api/classes/my-classes')
+      const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
         setClasses(data.classes || [])
@@ -67,7 +67,7 @@ export default function QRGenerationPage() {
   const loadStudents = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/classes/${selectedClass}/students`)
+      const response = await apiFetch(`/api/classes/${selectedClass}/students`)
       if (response.ok) {
         const data = await response.json()
         setStudents(data.students || [])
@@ -105,7 +105,7 @@ export default function QRGenerationPage() {
 
     setGenerating(true)
     try {
-      const response = await fetch('/api/attendance/qr/generate', {
+      const response = await apiFetch('/api/attendance/qr/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -214,7 +214,7 @@ export default function QRGenerationPage() {
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">ℹ️ How it works:</h3>
+              <h3 className="font-semibold text-blue-900 mb-2">ℹ�E�EHow it works:</h3>
               <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
                 <li>Select students from your class</li>
                 <li>Generate unique QR codes for each student</li>
@@ -307,7 +307,7 @@ export default function QRGenerationPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-lg mb-1">
-                  ✅ Generated {generatedQRs.length} QR Codes
+                  ✁EGenerated {generatedQRs.length} QR Codes
                 </h2>
                 <p className="text-sm text-gray-600">
                   Valid for {date} • Expires in {expiryHours} hours
@@ -318,7 +318,7 @@ export default function QRGenerationPage() {
                   onClick={printQRCodes}
                   className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition"
                 >
-                  🖨️ Print
+                  🖨�E�EPrint
                 </button>
                 <button
                   onClick={() => setGeneratedQRs([])}

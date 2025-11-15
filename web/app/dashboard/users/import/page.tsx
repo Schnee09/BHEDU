@@ -71,7 +71,7 @@ export default function BulkUserImportPage() {
         const text = e.target?.result as string
         const users = parseCSV(text)
 
-        const response = await fetch('/api/admin/users/import', {
+        const response = await apiFetch('/api/admin/users/import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ users })

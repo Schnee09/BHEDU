@@ -54,7 +54,7 @@ export default function AttendanceMarkingPage() {
 
   const loadClasses = async () => {
     try {
-      const response = await fetch('/api/classes/my-classes')
+      const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
         setClasses(data.classes || [])
@@ -70,7 +70,7 @@ export default function AttendanceMarkingPage() {
   const loadAttendance = async () => {
     setLoading(true)
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/attendance/class/${selectedClass}?date=${date}`
       )
       
@@ -128,7 +128,7 @@ export default function AttendanceMarkingPage() {
         notes: student.notes || undefined
       }))
 
-      const response = await fetch('/api/attendance/bulk', {
+      const response = await apiFetch('/api/attendance/bulk', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -263,13 +263,13 @@ export default function AttendanceMarkingPage() {
               onClick={() => markAll('present')}
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm transition"
             >
-              ✓ All Present
+              ✁EAll Present
             </button>
             <button
               onClick={() => markAll('absent')}
               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm transition"
             >
-              ✗ All Absent
+              ✁EAll Absent
             </button>
             <button
               onClick={exportCSV}
@@ -334,8 +334,8 @@ export default function AttendanceMarkingPage() {
                           className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} ${statusInfo.bgColor} border-0`}
                         >
                           <option value="unmarked">Unmarked</option>
-                          <option value="present">✓ Present</option>
-                          <option value="absent">✗ Absent</option>
+                          <option value="present">✁EPresent</option>
+                          <option value="absent">✁EAbsent</option>
                           <option value="late">⏰ Late</option>
                           <option value="excused">📝 Excused</option>
                           <option value="half_day">🕐 Half Day</option>

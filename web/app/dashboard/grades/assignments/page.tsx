@@ -50,7 +50,7 @@ export default function AssignmentManagementPage() {
 
   const loadClasses = async () => {
     try {
-      const response = await fetch('/api/classes/my-classes')
+      const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
         setClasses(data.classes || [])
@@ -69,7 +69,7 @@ export default function AssignmentManagementPage() {
     if (!selectedClass) return
 
     try {
-      const response = await fetch(`/api/grades/categories?classId=${selectedClass}`)
+      const response = await apiFetch(`/api/grades/categories?classId=${selectedClass}`)
       if (response.ok) {
         const data = await response.json()
         setCategories(data.categories || [])
@@ -83,7 +83,7 @@ export default function AssignmentManagementPage() {
     if (!selectedClass) return
 
     try {
-      const response = await fetch(`/api/grades/assignments?classId=${selectedClass}`)
+      const response = await apiFetch(`/api/grades/assignments?classId=${selectedClass}`)
       if (response.ok) {
         const data = await response.json()
         setAssignments(data.assignments || [])
@@ -102,7 +102,7 @@ export default function AssignmentManagementPage() {
     }
 
     try {
-      const response = await fetch('/api/grades/categories', {
+      const response = await apiFetch('/api/grades/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -135,7 +135,7 @@ export default function AssignmentManagementPage() {
     }
 
     try {
-      const response = await fetch('/api/grades/assignments', {
+      const response = await apiFetch('/api/grades/assignments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -258,7 +258,7 @@ export default function AssignmentManagementPage() {
                       onClick={() => setShowAssignmentForm(true)}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     >
-                      ➕ Create Assignment
+                      ➁ECreate Assignment
                     </button>
                   </div>
 
@@ -345,7 +345,7 @@ export default function AssignmentManagementPage() {
                       onClick={() => setShowCategoryForm(true)}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     >
-                      ➕ Create Category
+                      ➁ECreate Category
                     </button>
                   </div>
 

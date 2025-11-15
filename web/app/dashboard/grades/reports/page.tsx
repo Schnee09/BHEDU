@@ -61,7 +61,7 @@ export default function ReportCardsPage() {
 
   const loadClasses = async () => {
     try {
-      const response = await fetch('/api/classes/my-classes')
+      const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
         setClasses(data)
@@ -73,7 +73,7 @@ export default function ReportCardsPage() {
 
   const loadStudents = async () => {
     try {
-      const response = await fetch(`/api/classes/${selectedClass}/students`)
+      const response = await apiFetch(`/api/classes/${selectedClass}/students`)
       if (response.ok) {
         const data = await response.json()
         setStudents(data)
@@ -86,7 +86,7 @@ export default function ReportCardsPage() {
   const loadGrades = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/grades/student-overview?classId=${selectedClass}`)
+      const response = await apiFetch(`/api/grades/student-overview?classId=${selectedClass}`)
       if (response.ok) {
         const data = await response.json()
         setGrades(data)
