@@ -39,7 +39,19 @@ const ALLOWED_TABLES = [
   'import_errors',
 
   // Student support
-  'guardians'
+  'guardians',
+
+  // Financial
+  'fee_types',
+  'payment_schedules',
+  'payment_schedule_installments',
+  'fee_assignments',
+  'student_accounts',
+  'invoices',
+  'invoice_items',
+  'payment_methods',
+  'payments',
+  'payment_allocations'
 ]
 
 export async function GET() {

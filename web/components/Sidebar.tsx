@@ -64,8 +64,20 @@ export default function Sidebar() {
             { href: "/dashboard/users", label: "User Management", icon: "👤" },
             { href: "/dashboard/users/import", label: "Import Users", icon: "📥" },
             { href: "/dashboard/students/import", label: "Import Students", icon: "📥" },
+            { href: "/dashboard/admin/data", label: "Data Viewer", icon: "🔍" },
             { href: "/dashboard/reports", label: "Reports", icon: "📑" },
             { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
+          ]
+        },
+        {
+          title: "Financial",
+          links: [
+            { href: "/dashboard/finance", label: "Dashboard", icon: "💰" },
+            { href: "/dashboard/finance/fees", label: "Fee Management", icon: "💵" },
+            { href: "/dashboard/finance/accounts", label: "Student Accounts", icon: "👥" },
+            { href: "/dashboard/finance/invoices", label: "Invoices", icon: "📄" },
+            { href: "/dashboard/finance/payments", label: "Payments", icon: "💳" },
+            { href: "/dashboard/finance/reports", label: "Financial Reports", icon: "📊" },
           ]
         }
       ];
