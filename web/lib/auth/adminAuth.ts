@@ -3,7 +3,8 @@
  * Verifies that the current user is an admin
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createClientFromRequest } from '@/lib/supabase/server'
+import type { NextRequest } from 'next/server'
 
 export interface AuthResult {
   authorized: boolean
@@ -15,10 +16,15 @@ export interface AuthResult {
 
 /**
  * Check if the current user is authenticated and has admin role
+ * @param request - Optional NextRequest for API routes
  */
-export async function adminAuth(): Promise<AuthResult> {
+export async function adminAuth(request?: NextRequest | Request): Promise<AuthResult> {
   try {
-    const supabase = await createClient()
+    // Use request-based client if request is provided (API routes)
+    // Otherwise use cookies-based client (server components)
+    const supabase = request 
+      ? createClientFromRequest(request)
+      : await createClient()
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()

@@ -2,6 +2,7 @@
 import { cookies } from 'next/headers'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import type { NextRequest } from 'next/server'
 
 /**
  * Cookie-aware Supabase server client for SSR/server actions.
@@ -22,6 +23,38 @@ export async function createClient() {
       },
       remove(name: string, options: CookieOptions) {
         cookieStore.set({ name, value: '', ...options })
+      },
+    },
+  })
+}
+
+/**
+ * Create Supabase client from Next.js Request (for API routes)
+ */
+export function createClientFromRequest(request: NextRequest | Request) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+  // Get cookies from request
+  const cookieStore = 'cookies' in request ? request.cookies : undefined
+  
+  return createServerClient(url, anon, {
+    cookies: {
+      get(name: string) {
+        if (cookieStore && 'get' in cookieStore) {
+          return cookieStore.get(name)?.value
+        }
+        // Fallback for standard Request
+        const cookies = request.headers.get('cookie')
+        if (!cookies) return undefined
+        const match = cookies.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`))
+        return match ? decodeURIComponent(match[2]) : undefined
+      },
+      set() {
+        // No-op for request-based client (response handling done elsewhere)
+      },
+      remove() {
+        // No-op for request-based client
       },
     },
   })

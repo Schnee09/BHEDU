@@ -11,9 +11,9 @@ type Params = { params: Promise<{ id: string }> }
 
 export async function GET(request: Request, ctx: Params) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
     const { id } = await ctx.params
@@ -38,9 +38,9 @@ export async function GET(request: Request, ctx: Params) {
 
 export async function PUT(request: Request, ctx: Params) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
     const { id } = await ctx.params
@@ -80,9 +80,9 @@ export async function PUT(request: Request, ctx: Params) {
 
 export async function DELETE(request: Request, ctx: Params) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
     const { id } = await ctx.params

@@ -7,11 +7,11 @@ import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { createServiceClient } from '@/lib/supabase/server'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
     const supabase = createServiceClient()
@@ -35,9 +35,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const authResult = await adminAuth()
+    const authResult = await adminAuth(request)
     if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
     const body = await request.json()
