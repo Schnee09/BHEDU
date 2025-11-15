@@ -3,16 +3,17 @@
 import { useEffect, useMemo, useState } from 'react'
 
 type Pagination = { page: number; limit: number; total: number; pages: number }
+type RowData = Record<string, unknown> & { id?: string | number }
 
 export default function AdminDataViewerPage() {
   const [tables, setTables] = useState<string[]>([])
   const [table, setTable] = useState<string>('')
-  const [rows, setRows] = useState<Record<string, unknown>[]>([])
+  const [rows, setRows] = useState<RowData[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 25, total: 0, pages: 1 })
   const [q, setQ] = useState('')
-  const [editing, setEditing] = useState<Record<string, unknown> | null>(null)
+  const [editing, setEditing] = useState<RowData | null>(null)
 
   // Fetch allowed tables
   useEffect(() => {
@@ -184,8 +185,8 @@ export default function AdminDataViewerPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filtered.map((row) => (
-                  <tr key={row.id ?? JSON.stringify(row)} className="hover:bg-amber-50">
+                {filtered.map((row, index) => (
+                  <tr key={row.id ? String(row.id) : `row-${index}`} className="hover:bg-amber-50">
                     {columns.map((c) => (
                       <td key={c} className="px-3 py-2 align-top">
                         {editing && editing.id === row.id ? (
@@ -208,8 +209,8 @@ export default function AdminDataViewerPage() {
                       ) : (
                         <>
                           <button onClick={() => startEdit(row)} className="mr-2 px-3 py-1 rounded bg-amber-100 text-amber-900 border border-amber-300">Edit</button>
-                          {'id' in row && (
-                            <button onClick={() => deleteRow(row.id)} className="px-3 py-1 rounded bg-red-100 text-red-700 border border-red-300">Delete</button>
+                          {row.id && (
+                            <button onClick={() => deleteRow(String(row.id))} className="px-3 py-1 rounded bg-red-100 text-red-700 border border-red-300">Delete</button>
                           )}
                         </>
                       )}
