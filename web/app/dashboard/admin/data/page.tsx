@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from 'react'
+import { apiFetch } from '@/lib/api/client'
 
 type Pagination = { page: number; limit: number; total: number; pages: number }
 type RowData = Record<string, unknown> & { id?: string | number }

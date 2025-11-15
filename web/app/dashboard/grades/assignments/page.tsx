@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { AssignmentCategory, Assignment } from '@/lib/gradeService'
+import { apiFetch } from '@/lib/api/client'
 
 interface ClassOption {
   id: string

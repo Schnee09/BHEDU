@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { apiFetch } from '@/lib/api/client'
 
 interface Payment {
   id: string

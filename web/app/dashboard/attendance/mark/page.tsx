@@ -13,6 +13,7 @@ import {
   exportAttendanceToCSV,
   type StudentAttendanceRecord 
 } from '@/lib/attendanceService'
+import { apiFetch } from '@/lib/api/client'
 
 interface Class {
   id: string

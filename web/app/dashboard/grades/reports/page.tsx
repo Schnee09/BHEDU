@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getLetterGradeColor } from '@/lib/gradeService'
+import { apiFetch } from '@/lib/api/client'
 
 interface Class {
   id: string
