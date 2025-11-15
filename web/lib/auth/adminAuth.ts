@@ -33,7 +33,7 @@ export async function adminAuth(): Promise<AuthResult> {
     // Get user profile to check role
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, email, role')
+      .select('id, full_name, role')
       .eq('id', user.id)
       .single()
 
@@ -48,7 +48,7 @@ export async function adminAuth(): Promise<AuthResult> {
       return {
         authorized: false,
         userId: user.id,
-        userEmail: profile.email,
+        userEmail: user.email,
         userRole: profile.role,
         reason: 'Insufficient permissions (admin required)'
       }
@@ -57,7 +57,7 @@ export async function adminAuth(): Promise<AuthResult> {
     return {
       authorized: true,
       userId: user.id,
-      userEmail: profile.email,
+      userEmail: user.email,
       userRole: profile.role
     }
 
