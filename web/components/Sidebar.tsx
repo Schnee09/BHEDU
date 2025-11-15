@@ -61,8 +61,9 @@ export default function Sidebar() {
         {
           title: "Administration",
           links: [
+            { href: "/dashboard/users", label: "User Management", icon: "👤" },
             { href: "/dashboard/students/import", label: "Import Students", icon: "📥" },
-            { href: "/dashboard/reports", label: "Reports", icon: "�" },
+            { href: "/dashboard/reports", label: "Reports", icon: "📑" },
             { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
           ]
         }
