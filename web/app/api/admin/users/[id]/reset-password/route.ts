@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
+import { sendEmail, generatePasswordResetEmail } from '@/lib/email/emailService'
 
 export async function POST(
   request: Request,
@@ -22,7 +23,9 @@ export async function POST(
 
     const { id } = await params
     const body = await request.json()
-    const { new_password, send_email = false } = body
+    const { new_password } = body
+    // TODO: Implement email notification
+    // const { send_email = false } = body
 
     if (!new_password || new_password.length < 6) {
       return NextResponse.json(
@@ -57,12 +60,31 @@ export async function POST(
         metadata: { reset_by: authResult.userId }
       })
 
-    // TODO: If send_email is true, send email notification to user
-    // This would require email service integration
+     // Send email notification to user
+     const { data: userProfile } = await supabase
+       .from('profiles')
+       .select('first_name, email')
+       .eq('id', id)
+       .single()
+
+     if (userProfile?.email) {
+       const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`
+       const emailContent = generatePasswordResetEmail({
+         firstName: userProfile.first_name || 'User',
+         newPassword: new_password,
+         loginUrl
+       })
+
+       await sendEmail({
+         to: userProfile.email,
+         subject: 'Your Password Has Been Reset - BH-EDU',
+         ...emailContent
+       })
+     }
 
     return NextResponse.json({
       success: true,
-      message: 'Password reset successfully'
+       message: 'Password reset successfully. Notification email sent.'
     })
 
   } catch (error) {

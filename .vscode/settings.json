@@ -21,5 +21,12 @@
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
-  "typescript.tsdk": "node_modules\\typescript\\lib"
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+  "files.exclude": {
+    "**/*.rpyc": true,
+    "**/*.rpa": true,
+    "**/*.rpymc": true,
+    "**/cache/": true
+  },
+  "idf.pythonInstallPath": "C:\\Users\\Admin\\.espressif\\tools\\idf-python\\3.8.7\\python.exe"
 }

@@ -18,14 +18,14 @@ interface AcademicYear {
   start_date: string
   end_date: string
   is_current: boolean
-  terms: any[]
+ terms: Array<{ name: string; start_date: string; end_date: string }>
 }
 
 interface GradingScale {
   id: string
   name: string
   description: string
-  scale: any[]
+ scale: Array<{ letter: string; min: number; max: number; gpa: number; description: string }>
   is_default: boolean
 }
 
@@ -285,7 +285,7 @@ export default function SettingsPage() {
                         </p>
                         {year.terms && year.terms.length > 0 && (
                           <div className="mt-2 flex gap-2 flex-wrap">
-                            {year.terms.map((term: any, idx: number) => (
+                             {year.terms.map((term, idx: number) => (
                               <span key={idx} className="text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded">
                                 {term.name}
                               </span>
@@ -351,7 +351,7 @@ export default function SettingsPage() {
 
                     {/* Scale Preview */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-3">
-                      {scale.scale.map((grade: any, idx: number) => (
+                       {scale.scale.map((grade, idx: number) => (
                         <div key={idx} className="text-center p-2 bg-gradient-to-br from-amber-50 to-yellow-50 rounded border border-amber-200">
                           <div className="font-bold text-amber-900">{grade.letter}</div>
                           <div className="text-xs text-gray-600">{grade.min}-{grade.max}%</div>

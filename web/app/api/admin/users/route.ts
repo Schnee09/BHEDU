@@ -7,9 +7,9 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { createServiceClient } from '@/lib/supabase/server'
+import { sendEmail, generateWelcomeEmail } from '@/lib/email/emailService'
 
 export async function GET(request: Request) {
   try {
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const supabase = await createClient()
+  const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     
     // Get query parameters
@@ -206,10 +206,26 @@ export async function POST(request: Request) {
         metadata: { created_by: authResult.userId, role }
       })
 
+   // Send welcome email
+   const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`
+   const emailContent = generateWelcomeEmail({
+     firstName: first_name,
+     email,
+     password,
+     role,
+     loginUrl
+   })
+
+   await sendEmail({
+     to: email,
+     subject: 'Welcome to BH-EDU - Your Account Details',
+     ...emailContent
+   })
+
     return NextResponse.json({
       success: true,
       data: profile,
-      message: 'User created successfully'
+     message: 'User created successfully. Welcome email sent.'
     })
 
   } catch (error) {

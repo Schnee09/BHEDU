@@ -2,7 +2,8 @@ name: Deploy web to Vercel
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - '**'  # trigger on all branches; steps are conditioned to choose prod (main) vs preview (others)
     paths:
       - 'web/**'
       - '.github/workflows/deploy-vercel.yml'
@@ -10,6 +11,15 @@ on:
     branches: [ main ]
     # Run for all PR changes to main so preview deploy always runs
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment to deploy'
+        required: false
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
 
 # Needed for posting preview URLs as PR comments
 permissions:
@@ -80,7 +90,7 @@ jobs:
 
       # Production deploy on push to main
       - name: Vercel Deploy (production)
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')
+        if: (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -91,7 +101,7 @@ jobs:
 
       # Preview deploy on pull requests
       - name: Vercel Deploy (preview)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/main')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == '' || github.event.inputs.environment == 'preview'))
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}

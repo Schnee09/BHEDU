@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 
 interface User {
   id: string
@@ -30,7 +29,6 @@ interface UserStats {
 }
 
 export default function UserManagementPage() {
-  const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -59,9 +57,10 @@ export default function UserManagementPage() {
 
   useEffect(() => {
     fetchUsers()
-  }, [roleFilter, activeFilter, searchQuery, page])
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [roleFilter, activeFilter, searchQuery, page])
 
-  const fetchUsers = async () => {
+   const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
@@ -87,7 +86,7 @@ export default function UserManagementPage() {
     } finally {
       setLoading(false)
     }
-  }
+   }, [roleFilter, activeFilter, searchQuery, page])
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -313,6 +312,12 @@ export default function UserManagementPage() {
           >
             + Create User
           </button>
+          <a
+            href="/dashboard/users/import"
+            className="px-6 py-2 bg-amber-100 text-amber-800 rounded-lg border border-amber-300 hover:bg-amber-200 transition font-semibold"
+          >
+            Bulk Import
+          </a>
         </div>
       </div>
 
@@ -478,7 +483,7 @@ export default function UserManagementPage() {
                   <select
                     required
                     value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value as any})}
+                     onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'teacher' | 'student'})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
                   >
                     <option value="student">Student</option>
@@ -628,7 +633,7 @@ export default function UserManagementPage() {
                   <select
                     required
                     value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value as any})}
+                     onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'teacher' | 'student'})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
                   >
                     <option value="student">Student</option>

@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(request: Request) {
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const supabase = await createClient()
+  const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
 
@@ -43,13 +43,14 @@ export async function GET(request: Request) {
     }
 
     // Group by category
-    const grouped = settings?.reduce((acc, setting) => {
+     type SettingGroup = Record<string, typeof settings>
+     const grouped = settings?.reduce((acc: SettingGroup, setting) => {
       if (!acc[setting.category]) {
         acc[setting.category] = []
       }
       acc[setting.category].push(setting)
       return acc
-    }, {} as Record<string, any[]>)
+     }, {} as SettingGroup)
 
     return NextResponse.json({
       success: true,
@@ -86,7 +87,7 @@ export async function PUT(request: Request) {
       )
     }
 
-    const supabase = await createClient()
+  const supabase = createServiceClient()
     const results = []
 
     // Update each setting
