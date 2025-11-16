@@ -1,11 +1,11 @@
-/**
+﻿/**
  * Payment Methods API
  * Manages available payment methods
  */
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
 
     const { data, error } = await supabase
       .from('payment_methods')
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
 
     const { data, error } = await supabase
       .from('payment_methods')

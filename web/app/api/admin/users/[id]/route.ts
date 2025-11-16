@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(
@@ -23,7 +23,7 @@ export async function GET(
     }
 
     const { id } = await params
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
 
     // Get user details
     const { data: user, error } = await supabase

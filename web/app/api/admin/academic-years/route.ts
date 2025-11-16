@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Academic Years API
  * GET /api/admin/academic-years - Get all academic years
  * POST /api/admin/academic-years - Create academic year
@@ -7,7 +7,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(request: Request) {
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createServiceClient()
+  const supabase = createClientFromRequest(request as any)
 
     const { data: years, error } = await supabase
       .from('academic_years')
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       )
     }
 
-  const supabase = createServiceClient()
+  const supabase = createClientFromRequest(request as any)
 
     // If this is set as current, unset other current years
     if (is_current) {

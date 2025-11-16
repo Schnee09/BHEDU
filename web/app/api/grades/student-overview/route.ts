@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Student Grades Overview API
  * GET /api/grades/student-overview
  * 
@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
     const { searchParams } = new URL(request.url)
     const classId = searchParams.get('classId')
     const studentId = searchParams.get('studentId')

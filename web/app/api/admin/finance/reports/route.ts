@@ -1,11 +1,11 @@
-/**
+﻿/**
  * Financial Reports API
  * Provides various financial reports and analytics
  */
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
     const { searchParams } = new URL(request.url)
     const reportType = searchParams.get('type') // outstanding, revenue, payment_summary, category
     const academicYearId = searchParams.get('academic_year_id')

@@ -1,11 +1,11 @@
-/**
+﻿/**
  * School Settings API
  * GET /api/admin/settings - Get all settings or by category
  * PUT /api/admin/settings - Update settings
  */
 
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(request: Request) {
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createServiceClient()
+  const supabase = createClientFromRequest(request as any)
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
 
@@ -87,7 +87,7 @@ export async function PUT(request: Request) {
       )
     }
 
-  const supabase = createServiceClient()
+  const supabase = createClientFromRequest(request as any)
     const results = []
 
     // Update each setting

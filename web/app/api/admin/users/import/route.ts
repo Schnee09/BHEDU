@@ -1,10 +1,10 @@
-/**
+﻿/**
  * Bulk User Import API
  * POST /api/admin/users/import - Import users from CSV
  */
 
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 interface UserImportRow {
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
     const results = {
       total: users.length,
       successful: 0,

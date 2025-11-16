@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -17,7 +17,7 @@ export async function GET(request: Request, ctx: Params) {
     }
 
     const { id } = await ctx.params
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
 
     const { data, error } = await supabase
       .from('fee_types')

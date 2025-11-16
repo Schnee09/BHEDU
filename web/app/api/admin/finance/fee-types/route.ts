@@ -1,11 +1,11 @@
-/**
+﻿/**
  * Fee Types Management API
  * Manages different types of fees (tuition, registration, books, etc.)
  */
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       }, { status: 401 })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
     const { searchParams } = new URL(request.url)
     const academicYearId = searchParams.get('academic_year_id')
     const category = searchParams.get('category')
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
 
     const { data, error } = await supabase
       .from('fee_types')

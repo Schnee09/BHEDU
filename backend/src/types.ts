@@ -6,6 +6,10 @@ export interface Profile {
   full_name: string;
   role: Role;
   avatar_url?: string;
+ email?: string;
+ phone?: string;
+ address?: string;
+ date_of_birth?: string;
   metadata?: Record<string, any>;
   created_at?: string;
 }

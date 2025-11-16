@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Bulk Attendance Marking API
  * POST /api/attendance/bulk
  * 
@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 import type { AttendanceRecord } from '@/lib/attendanceService'
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-  const supabase = createServiceClient()
+   const supabase = createClientFromRequest(req as any)
     const body = await req.json()
     const { classId, date, records } = body as {
       classId: string

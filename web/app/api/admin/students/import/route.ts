@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Bulk Student Import API
  * POST /api/admin/students/import
  * 
@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 import type { StudentImportRow } from '@/lib/importService'
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-  const supabase = createServiceClient()
+   const supabase = createClientFromRequest(req as any)
     const body = await req.json()
     const { students } = body as { students: StudentImportRow[] }
 

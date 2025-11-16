@@ -1,11 +1,11 @@
-/**
+﻿/**
  * Payments API
  * Records and manages payments from students
  */
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
     const { searchParams } = new URL(request.url)
     const studentId = searchParams.get('student_id')
     const startDate = searchParams.get('start_date')
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
 
     // Generate receipt number
     const timestamp = Date.now()

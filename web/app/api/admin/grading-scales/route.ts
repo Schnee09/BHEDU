@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Grading Scales API
  * GET /api/admin/grading-scales - Get all grading scales
  * POST /api/admin/grading-scales - Create grading scale
@@ -7,7 +7,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(request: Request) {
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createServiceClient()
+  const supabase = createClientFromRequest(request as any)
 
     const { data: scales, error } = await supabase
       .from('grading_scales')
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       )
     }
 
-  const supabase = createServiceClient()
+  const supabase = createClientFromRequest(request as any)
 
     // If this is set as default, unset other defaults
     if (is_default) {

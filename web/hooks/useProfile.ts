@@ -8,6 +8,10 @@ export type Profile = {
   full_name: string | null;
   role: "admin" | "teacher" | "student";
   avatar_url?: string | null;
+ email?: string | null;
+ phone?: string | null;
+ address?: string | null;
+ date_of_birth?: string | null;
 };
 
 export function useProfile() {

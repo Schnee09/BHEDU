@@ -8,7 +8,7 @@
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { ALLOWED_TABLES } from '../tables/route'
 
 type Params = { params: Promise<{ table: string }> }
@@ -28,7 +28,7 @@ export async function GET(request: Request, ctx: Params) {
     return NextResponse.json({ error: 'Table not allowed' }, { status: 400 })
   }
 
-  const supabase = createServiceClient()
+  const supabase = createClientFromRequest(request as any)
   const { searchParams } = new URL(request.url)
   const page = parseInt(searchParams.get('page') || '1', 10)
   const limit = parseInt(searchParams.get('limit') || '25', 10)

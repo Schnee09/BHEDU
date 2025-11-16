@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Import History API
  * GET /api/admin/students/import/history
  * 
@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       )
     }
 
-  const supabase = createServiceClient()
+   const supabase = createClientFromRequest(req as any)
     const searchParams = req.nextUrl.searchParams
     const limit = parseInt(searchParams.get('limit') || '20', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)

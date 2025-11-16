@@ -8,7 +8,7 @@
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { sendEmail, generateWelcomeEmail } from '@/lib/email/emailService'
 
 export async function GET(request: Request) {
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createServiceClient()
+  const supabase = createClientFromRequest(request as any)
     const { searchParams } = new URL(request.url)
     
     // Get query parameters

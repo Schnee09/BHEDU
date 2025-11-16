@@ -1,11 +1,11 @@
-/**
+﻿/**
  * Payment Schedules API
  * Manages payment schedules and installments
  */
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
     const { searchParams } = new URL(request.url)
     const academicYearId = searchParams.get('academic_year_id')
 
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClientFromRequest(request as any)
 
     // Create schedule
     const { data: schedule, error: scheduleError } = await supabase
