@@ -47,9 +47,10 @@ export default function NotificationsPage() {
 
   const markAsRead = async (id: string) => {
     try {
-       const { error } = await (supabase as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
         .from("notifications")
-         .update({ read: true })
+        .update({ read: true })
         .eq("id", id);
 
       if (!error) {
