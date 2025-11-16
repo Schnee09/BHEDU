@@ -29,6 +29,12 @@ const adminCandidates = [
   { email: 'admin@demo.com', password: 'Admin123!' }
 ]
 
+const legacyUsers = [
+  { email: 'admin@demo.com', password: 'Admin123!', label: 'Admin (demo)' },
+  { email: 'teacher@demo.com', password: 'Teacher123!', label: 'Teacher (demo)' },
+  { email: 'student@demo.com', password: 'Student123!', label: 'Student (demo)' }
+]
+
 async function loginAsAdmin() {
   for (const creds of adminCandidates) {
     const { data, error } = await supabase.auth.signInWithPassword(creds)
@@ -96,6 +102,21 @@ async function sampleClasses() {
   } else {
     console.log('\n📚 Sample Classes:')
     classes.forEach(c => console.log(` - ${c.name} (${c.id})`))
+  }
+
+  // Try legacy demo logins as a smoke test
+  console.log('\n🔐 Testing legacy demo logins...')
+  for (const u of legacyUsers) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email: u.email, password: u.password })
+    if (error) {
+      console.log(` - ${u.label}: ❌ ${error.message}`)
+    } else if (data?.user) {
+      console.log(` - ${u.label}: ✅ OK (id=${data.user.id})`)
+    } else {
+      console.log(` - ${u.label}: ⚠️ Unknown state`)
+    }
+    // sign out between attempts to avoid session carryover
+    await supabase.auth.signOut()
   }
 
   console.log('\n✅ Verification completed.')

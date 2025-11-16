@@ -9,7 +9,9 @@ const { createClient } = require('@supabase/supabase-js')
 const dotenv = require('dotenv')
 const path = require('path')
 
-// Load environment variables
+// Load environment variables from backend/.env (server secrets) first,
+// then web/.env.local (public values). Later calls do not overwrite existing vars.
+dotenv.config({ path: path.join(__dirname, '..', 'backend', '.env') })
 dotenv.config({ path: path.join(__dirname, '..', 'web', '.env.local') })
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
