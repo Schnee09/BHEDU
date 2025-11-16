@@ -1,0 +1,2 @@
+Trigger Vercel GitHub Action on push to main. Safe no-op file to deploy latest backend/migrations changes.
+Created: 2025-11-16
