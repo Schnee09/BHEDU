@@ -35,8 +35,15 @@ export default function ClearOldAuthPage() {
     setPreview(JSON.stringify(state, null, 2));
   }, []);
 
-  const clearAll = () => {
+  const clearAll = async () => {
     try {
+      // First, call server logout API to clear server-side session
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (logoutErr) {
+        console.warn('Server logout failed:', logoutErr);
+      }
+
       // Clear localStorage/sessionStorage fully
       try { localStorage.clear(); } catch {}
       try { sessionStorage.clear(); } catch {}
