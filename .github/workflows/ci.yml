@@ -33,10 +33,10 @@ jobs:
           pnpm run typecheck
           pnpm run build
 
-      - name: Build web (npm)
+      - name: Build web (pnpm)
         working-directory: ./web
         run: |
           export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://example.com}"
           export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-public-anon-key}"
-          npm ci
-          npm run build
+          pnpm install --frozen-lockfile
+          pnpm run build
