@@ -17,6 +17,8 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const pageSize = 50;
 
   // Simple debounce to avoid spamming queries while typing
   const debouncedSearch = useMemo(() => {
@@ -61,7 +63,12 @@ export default function StudentsPage() {
         }
       }
 
-      const { data, error } = await query.order("created_at", { ascending: false }).limit(50);
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = (query as any)
+        .order("created_at", { ascending: false })
+        .range(from, to);
       if (error) console.error("❌ Error fetching students:", error);
       const mapped: Student[] = Array.isArray(data)
         ? (data as unknown[]).map((raw) => {
@@ -84,7 +91,7 @@ export default function StudentsPage() {
     };
 
     fetchStudents();
-  }, [profile, profileLoading, debouncedSearch]);
+  }, [profile, profileLoading, debouncedSearch, page]);
 
   if (profileLoading || loading) return <p>Loading students...</p>;
   if (!students.length) return <p>No students found.</p>;
@@ -103,7 +110,7 @@ export default function StudentsPage() {
           />
         </div>
       </div>
-      <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+  <table className="min-w-full bg-white border border-gray-200 rounded-lg">
         <thead className="bg-gray-100">
           <tr>
             <th className="p-3 text-left">Full Name</th>
@@ -127,6 +134,22 @@ export default function StudentsPage() {
           ))}
         </tbody>
       </table>
+      <div className="flex items-center justify-between mt-4">
+        <button
+          className="px-3 py-2 border rounded disabled:opacity-50"
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          disabled={page === 0}
+        >
+          Previous
+        </button>
+        <div className="text-sm text-gray-600">Page {page + 1}</div>
+        <button
+          className="px-3 py-2 border rounded"
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 }
