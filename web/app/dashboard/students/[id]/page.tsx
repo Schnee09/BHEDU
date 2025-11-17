@@ -59,7 +59,7 @@ async function fetchStudent(id: string) {
       .limit(10),
     supabase
       .from("payments")
-      .select("id, amount, method, payment_date, reference, invoice_id")
+      .select("id, amount, payment_date, transaction_reference, invoice_id, payment_methods(name)")
       .eq("student_id", id)
       .order("payment_date", { ascending: false })
       .limit(10),
@@ -87,6 +87,16 @@ async function fetchStudent(id: string) {
 export default async function StudentDetail({ params }: { params: { id: string } }) {
   const { id } = params;
   const { profile, enrollments, attendance, grades, account, invoices, payments, audits } = await fetchStudent(id);
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const user = auth?.user ?? null;
+  let viewerRole: string | null = null;
+  if (user) {
+    const { data: viewer } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    viewerRole = (viewer as { role?: string } | null)?.role ?? null;
+  }
+  const showFinance = viewerRole === "admin" || (user?.id === id);
+  const showActivity = viewerRole === "admin";
 
   type StudentAccount = {
     id: string;
@@ -108,10 +118,10 @@ export default async function StudentDetail({ params }: { params: { id: string }
   type PaymentRow = {
     id: string;
     amount: number | string;
-    method: string | null;
     payment_date: string | null;
-    reference: string | null;
+    transaction_reference: string | null;
     invoice_id: string | null;
+    payment_methods?: { name: string } | null;
   };
   type AuditRow = {
     id: string;
@@ -331,8 +341,8 @@ export default async function StudentDetail({ params }: { params: { id: string }
                     <tr key={p.id}>
                       <td className="px-3 py-2">{p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '—'}</td>
                       <td className="px-3 py-2">{p.amount}</td>
-                      <td className="px-3 py-2">{p.method}</td>
-                      <td className="px-3 py-2">{p.reference ?? '—'}</td>
+                      <td className="px-3 py-2">{p.payment_methods?.name ?? '—'}</td>
+                      <td className="px-3 py-2">{p.transaction_reference ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -388,18 +398,19 @@ export default async function StudentDetail({ params }: { params: { id: string }
         <Link href="/dashboard/students" className="text-sm text-blue-700 hover:underline">← Back to Students</Link>
       </div>
 
-      <Tabs
-        tabs={[
+      {(() => {
+        const tabs: { key: string; label: string; content: React.ReactNode }[] = [
           { key: "overview", label: "Overview", content: overview },
           { key: "enrollments", label: "Enrollments", content: enrollmentsSection },
           { key: "attendance", label: "Attendance", content: attendanceSection },
           { key: "grades", label: "Grades", content: gradesSection },
-          { key: "finance", label: "Finance", content: financeSection },
           { key: "documents", label: "Documents", content: documentsSection },
           { key: "notes", label: "Notes", content: notesSection },
-          { key: "activity", label: "Activity", content: activitySection },
-        ]}
-      />
+        ];
+        if (showFinance) tabs.splice(4, 0, { key: "finance", label: "Finance", content: financeSection });
+        if (showActivity) tabs.push({ key: "activity", label: "Activity", content: activitySection });
+        return <Tabs tabs={tabs} />;
+      })()}
     </div>
   );
 }
