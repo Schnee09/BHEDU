@@ -4,13 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import Tabs from "@/components/ui/tabs";
 import Badge from "@/components/ui/badge";
 import Empty from "@/components/ui/empty";
+import StudentActions from "@/components/StudentActions";
+import GuardianManagement from "@/components/GuardianManagement";
+import EnrollmentManager from "@/components/EnrollmentManager";
+import StudentPhotoUpload from "@/components/StudentPhotoUpload";
 
 async function fetchStudent(id: string) {
   const supabase = await createClient();
 
   const { data: profile, error: pErr } = await supabase
     .from("profiles")
-    .select("id, full_name, email, phone, address, date_of_birth, created_at, role")
+    .select("id, full_name, email, phone, address, date_of_birth, photo_url, created_at, role")
     .eq("id", id)
     .maybeSingle();
 
@@ -140,66 +144,59 @@ export default async function StudentDetail({ params }: { params: { id: string }
   if (!profile) return notFound();
 
   const overview = (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <section className="bg-white border border-gray-200 rounded-lg p-4 lg:col-span-2">
-        <h2 className="text-lg font-semibold mb-3">Profile</h2>
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <h3 className="text-2xl font-bold">{profile.full_name}</h3>
-            <p className="text-gray-600">{profile.email}</p>
-            <div className="mt-2 text-sm text-gray-700 space-y-1">
-              {profile.phone && <p>Phone: {profile.phone}</p>}
-              {profile.address && <p>Address: {profile.address}</p>}
-              {profile.date_of_birth && <p>DOB: {new Date(profile.date_of_birth).toLocaleDateString()}</p>}
-              <p>Joined: {new Date(profile.created_at).toLocaleDateString()}</p>
+    <div className="space-y-6">
+      {/* Photo Upload Section */}
+      <StudentPhotoUpload 
+        studentId={id} 
+        currentPhotoUrl={(profile as { photo_url?: string | null }).photo_url}
+      />
+
+      {/* Profile and Summary Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="bg-white border border-gray-200 rounded-lg p-4 lg:col-span-2">
+          <h2 className="text-lg font-semibold mb-3">Profile</h2>
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <h3 className="text-2xl font-bold">{profile.full_name}</h3>
+              <p className="text-gray-600">{profile.email}</p>
+              <div className="mt-2 text-sm text-gray-700 space-y-1">
+                {profile.phone && <p>Phone: {profile.phone}</p>}
+                {profile.address && <p>Address: {profile.address}</p>}
+                {profile.date_of_birth && <p>DOB: {new Date(profile.date_of_birth).toLocaleDateString()}</p>}
+                <p>Joined: {new Date(profile.created_at).toLocaleDateString()}</p>
+              </div>
+            </div>
+            <Badge color="purple">{profile.role}</Badge>
+          </div>
+        </section>
+        <section className="bg-white border border-gray-200 rounded-lg p-4">
+          <h2 className="text-lg font-semibold mb-3">Summary</h2>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="bg-blue-50 p-3 rounded">
+              <div className="text-xl font-bold text-blue-600">{enrollments.length}</div>
+              <div className="text-gray-600">Classes</div>
+            </div>
+            <div className="bg-green-50 p-3 rounded">
+              <div className="text-xl font-bold text-green-600">{attendance.length}</div>
+              <div className="text-gray-600">Recent Attendance</div>
+            </div>
+            <div className="bg-purple-50 p-3 rounded">
+              <div className="text-xl font-bold text-purple-600">{grades.length}</div>
+              <div className="text-gray-600">Recent Grades</div>
+            </div>
+            <div className="bg-gray-50 p-3 rounded">
+              <div className="text-xl font-bold text-gray-700">{accountInfo?.balance ?? '—'}</div>
+              <div className="text-gray-600">Balance</div>
             </div>
           </div>
-          <Badge color="purple">{profile.role}</Badge>
-        </div>
-      </section>
-      <section className="bg-white border border-gray-200 rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-3">Summary</h2>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="bg-blue-50 p-3 rounded">
-            <div className="text-xl font-bold text-blue-600">{enrollments.length}</div>
-            <div className="text-gray-600">Classes</div>
-          </div>
-          <div className="bg-green-50 p-3 rounded">
-            <div className="text-xl font-bold text-green-600">{attendance.length}</div>
-            <div className="text-gray-600">Recent Attendance</div>
-          </div>
-          <div className="bg-purple-50 p-3 rounded">
-            <div className="text-xl font-bold text-purple-600">{grades.length}</div>
-            <div className="text-gray-600">Recent Grades</div>
-          </div>
-          <div className="bg-gray-50 p-3 rounded">
-            <div className="text-xl font-bold text-gray-700">{accountInfo?.balance ?? '—'}</div>
-            <div className="text-gray-600">Balance</div>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 
   const enrollmentsSection = (
-    <section className="bg-white border border-gray-200 rounded-lg p-4">
-      <h2 className="text-lg font-semibold mb-3">Classes & Enrollments</h2>
-      {enrollments.length === 0 ? (
-        <Empty title="No enrollments" description="This student is not enrolled in any classes." />
-      ) : (
-        <ul className="space-y-2">
-          {/* eslint-disable @typescript-eslint/no-explicit-any */}
-          {enrollments.map((e: any) => (
-            <li key={e.id} className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">{e.classes?.name ?? e.class_id}</p>
-                <p className="text-xs text-gray-500">Grade: {e.classes?.grade ?? '-'}</p>
-              </div>
-              <span className="text-xs text-gray-500">{new Date(e.enrolled_at).toLocaleDateString()}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+    <section>
+      <EnrollmentManager studentId={id} />
     </section>
   );
 
@@ -368,6 +365,12 @@ export default async function StudentDetail({ params }: { params: { id: string }
     </section>
   );
 
+  const guardiansSection = (
+    <section className="bg-white border border-gray-200 rounded-lg p-4">
+      <GuardianManagement studentId={id} />
+    </section>
+  );
+
   const activitySection = (
     <section className="bg-white border border-gray-200 rounded-lg p-4">
       <h2 className="text-lg font-semibold mb-3">Activity</h2>
@@ -394,20 +397,26 @@ export default async function StudentDetail({ params }: { params: { id: string }
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <Link href="/dashboard/students" className="text-sm text-blue-700 hover:underline">← Back to Students</Link>
+        <StudentActions 
+          studentId={id} 
+          studentName={profile.full_name} 
+          isAdmin={viewerRole === 'admin'}
+        />
       </div>
 
       {(() => {
         const tabs: { key: string; label: string; content: React.ReactNode }[] = [
           { key: "overview", label: "Overview", content: overview },
           { key: "enrollments", label: "Enrollments", content: enrollmentsSection },
+          { key: "guardians", label: "Guardians", content: guardiansSection },
           { key: "attendance", label: "Attendance", content: attendanceSection },
           { key: "grades", label: "Grades", content: gradesSection },
           { key: "documents", label: "Documents", content: documentsSection },
           { key: "notes", label: "Notes", content: notesSection },
         ];
-        if (showFinance) tabs.splice(4, 0, { key: "finance", label: "Finance", content: financeSection });
+        if (showFinance) tabs.splice(5, 0, { key: "finance", label: "Finance", content: financeSection });
         if (showActivity) tabs.push({ key: "activity", label: "Activity", content: activitySection });
         return <Tabs tabs={tabs} />;
       })()}

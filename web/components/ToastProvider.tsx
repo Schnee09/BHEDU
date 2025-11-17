@@ -1,41 +1,54 @@
 "use client"
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react'
-
-export type Toast = { id: number; message: string; type?: 'success' | 'error' | 'info' };
-
-type ToastCtx = {
-  show: (message: string, type?: Toast['type']) => void
-}
-
-const Ctx = createContext<ToastCtx | null>(null)
+import { Toaster, toast } from 'react-hot-toast'
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([])
-
-  const show = useCallback((message: string, type: Toast['type'] = 'info') => {
-    const id = Date.now() + Math.random()
-    setToasts((prev) => [...prev, { id, message, type }])
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000)
-  }, [])
-
-  const value = useMemo(() => ({ show }), [show])
-
   return (
-    <Ctx.Provider value={value}>
+    <>
       {children}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
-        {toasts.map((t) => (
-          <div key={t.id} className={`px-4 py-2 rounded shadow text-white ${t.type === 'error' ? 'bg-red-600' : t.type === 'success' ? 'bg-green-600' : 'bg-gray-800'}`}>
-            {t.message}
-          </div>
-        ))}
-      </div>
-    </Ctx.Provider>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            fontSize: '14px',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+    </>
   )
 }
 
+// Export toast functions directly
+export const showToast = {
+  success: (message: string) => toast.success(message),
+  error: (message: string) => toast.error(message),
+  loading: (message: string) => toast.loading(message),
+  dismiss: (id?: string) => toast.dismiss(id),
+}
+
+// For backward compatibility with existing useToast hook
 export function useToast() {
-  const ctx = useContext(Ctx)
-  if (!ctx) throw new Error('useToast must be used within ToastProvider')
-  return ctx
+  return {
+    show: (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+      if (type === 'success') toast.success(message)
+      else if (type === 'error') toast.error(message)
+      else toast(message)
+    }
+  }
 }
