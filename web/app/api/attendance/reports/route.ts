@@ -15,6 +15,7 @@ export async function GET(request: Request) {
     // Teacher or admin authentication
     const authResult = await teacherAuth(request)
     if (!authResult.authorized) {
+      logger.warn('Unauthorized attendance reports request', { reason: authResult.reason })
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
         { status: 401 }
@@ -106,9 +107,9 @@ export async function GET(request: Request) {
     const { data: records, error } = await query
 
     if (error) {
-      logger.error('Failed to fetch attendance reports:', error)
+      logger.error('Failed to fetch attendance reports:', { error: error.message, userId: authResult.userId })
       return NextResponse.json(
-        { error: 'Failed to fetch reports' },
+        { error: 'Failed to fetch reports', details: error.message },
         { status: 500 }
       )
     }

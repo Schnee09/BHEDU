@@ -15,6 +15,7 @@ export async function GET(request: Request) {
     // Teacher or admin authentication
     const authResult = await teacherAuth(request)
     if (!authResult.authorized) {
+      logger.warn('Unauthorized my-classes request', { reason: authResult.reason })
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
         { status: 401 }
@@ -36,9 +37,9 @@ export async function GET(request: Request) {
     const { data: classes, error } = await query
 
     if (error) {
-      logger.error('Failed to fetch classes', { error: error.message })
+      logger.error('Failed to fetch classes', { error: error.message, userId: authResult.userId })
       return NextResponse.json(
-        { error: 'Failed to fetch classes' },
+        { error: 'Failed to fetch classes', details: error.message },
         { status: 500 }
       )
     }

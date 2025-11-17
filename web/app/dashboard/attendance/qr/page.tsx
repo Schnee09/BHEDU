@@ -55,13 +55,15 @@ export default function QRGenerationPage() {
       const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
-        setClasses(data.classes || [])
-        if (data.classes.length > 0) {
-          setSelectedClass(data.classes[0].id)
+        const classList = data.classes || []
+        setClasses(classList)
+        if (classList.length > 0) {
+          setSelectedClass(classList[0].id)
         }
       }
     } catch (error) {
       console.error('Failed to load classes', error)
+      setClasses([])
     }
   }
 

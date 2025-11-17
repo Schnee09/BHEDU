@@ -52,7 +52,7 @@ export async function adminAuth(request?: NextRequest | Request): Promise<AuthRe
       .from('profiles')
       .select('id, full_name, role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (profileError) {
       return {
@@ -123,12 +123,12 @@ export async function teacherAuth(request?: NextRequest | Request): Promise<Auth
       .from('profiles')
       .select('id, role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (profileError || !profile) {
       return {
         authorized: false,
-        reason: 'Profile not found'
+        reason: profileError ? `Profile query error: ${profileError.message}` : 'Profile not found'
       }
     }
 
