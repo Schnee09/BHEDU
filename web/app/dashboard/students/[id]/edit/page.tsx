@@ -52,6 +52,7 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
       setStudentId(p.id)
       loadStudent(p.id)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params])
 
   const loadStudent = async (id: string) => {

@@ -61,6 +61,7 @@ export default function GuardianManagement({ studentId }: { studentId: string })
 
   useEffect(() => {
     loadGuardians()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentId])
 
   const loadGuardians = async () => {
