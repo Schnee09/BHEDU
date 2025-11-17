@@ -40,13 +40,18 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Cache npm dependencies
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Cache pnpm dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('web/package-lock.json') }}
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('web/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-npm-
+            ${{ runner.os }}-pnpm-
 
       - name: Validate required deployment secrets
         run: |
@@ -65,28 +70,28 @@ jobs:
         run: |
           export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://example.com}"
           export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-public-anon-key}"
-          npm ci
+          pnpm install --frozen-lockfile
 
       - name: Lint web (ESLint, no warnings allowed)
         working-directory: ./web
         run: |
           export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://example.com}"
           export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-public-anon-key}"
-          npm run lint -- --max-warnings=0
+          pnpm run lint -- --max-warnings=0
 
       - name: Typecheck web (TS noEmit)
         working-directory: ./web
         run: |
           export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://example.com}"
           export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-public-anon-key}"
-          npx tsc --noEmit
+          pnpm exec tsc --noEmit
 
       - name: Build web (Next production build)
         working-directory: ./web
         run: |
           export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://example.com}"
           export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-public-anon-key}"
-          npm run build
+          pnpm run build
 
       # Production deploy on push to main
       - name: Vercel Deploy (production)
