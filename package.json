@@ -29,7 +29,7 @@
   },
   "lint-staged": {
     "web/**/*.{js,jsx,ts,tsx}": [
-      "bash -lc 'cd web && npm run lint -- --fix --max-warnings=0'"
+      "npm --prefix web run lint:fix"
     ]
   }
 }

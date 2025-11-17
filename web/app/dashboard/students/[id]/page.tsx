@@ -20,7 +20,15 @@ async function fetchStudent(id: string) {
   }
   if (!profile) return { profile: null, enrollments: [], classes: [], attendance: [], grades: [] };
 
-  const [{ data: enrollments }, { data: attendance }, { data: grades }] = await Promise.all([
+  const [
+    { data: enrollments },
+    { data: attendance },
+    { data: grades },
+    { data: account },
+    { data: invoices },
+    { data: payments },
+    { data: audits },
+  ] = await Promise.all([
     supabase
       .from("enrollments")
       .select("id, class_id, enrolled_at, classes(name, grade)")
@@ -38,14 +46,86 @@ async function fetchStudent(id: string) {
       .eq("student_id", id)
       .order("graded_at", { ascending: false })
       .limit(20),
+    supabase
+      .from("student_accounts")
+      .select("id, student_id, balance, status, last_payment_date")
+      .eq("student_id", id)
+      .maybeSingle(),
+    supabase
+      .from("invoices")
+      .select("id, invoice_number, status, total_amount, paid_amount, balance, issue_date, due_date")
+      .eq("student_id", id)
+      .order("issue_date", { ascending: false })
+      .limit(10),
+    supabase
+      .from("payments")
+      .select("id, amount, method, payment_date, reference, invoice_id")
+      .eq("student_id", id)
+      .order("payment_date", { ascending: false })
+      .limit(10),
+    supabase
+      .from("audit_logs")
+      .select("id, actor_id, action, resource_type, resource_id, created_at")
+      .eq("resource_type", "student")
+      .eq("resource_id", id)
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
 
-  return { profile, enrollments: (enrollments as unknown[]) ?? [], attendance: (attendance as unknown[]) ?? [], grades: (grades as unknown[]) ?? [] };
+  return {
+    profile,
+    enrollments: (enrollments as unknown[]) ?? [],
+    attendance: (attendance as unknown[]) ?? [],
+    grades: (grades as unknown[]) ?? [],
+    account: (account ?? null) as unknown,
+    invoices: (invoices as unknown[]) ?? [],
+    payments: (payments as unknown[]) ?? [],
+    audits: (audits as unknown[]) ?? [],
+  };
 }
 
 export default async function StudentDetail({ params }: { params: { id: string } }) {
   const { id } = params;
-  const { profile, enrollments, attendance, grades } = await fetchStudent(id);
+  const { profile, enrollments, attendance, grades, account, invoices, payments, audits } = await fetchStudent(id);
+
+  type StudentAccount = {
+    id: string;
+    student_id: string;
+    balance: number | string | null;
+    status: string | null;
+    last_payment_date: string | null;
+  } | null;
+  type InvoiceRow = {
+    id: string;
+    invoice_number: string;
+    status: string;
+    total_amount: number | string;
+    paid_amount: number | string;
+    balance: number | string;
+    issue_date: string | null;
+    due_date: string | null;
+  };
+  type PaymentRow = {
+    id: string;
+    amount: number | string;
+    method: string | null;
+    payment_date: string | null;
+    reference: string | null;
+    invoice_id: string | null;
+  };
+  type AuditRow = {
+    id: string;
+    actor_id: string | null;
+    action: string;
+    resource_type: string;
+    resource_id: string;
+    created_at: string;
+  };
+
+  const accountInfo = account as StudentAccount;
+  const invoiceRows = invoices as InvoiceRow[];
+  const paymentRows = payments as PaymentRow[];
+  const auditRows = audits as AuditRow[];
 
   if (!profile) return notFound();
 
@@ -83,7 +163,7 @@ export default async function StudentDetail({ params }: { params: { id: string }
             <div className="text-gray-600">Recent Grades</div>
           </div>
           <div className="bg-gray-50 p-3 rounded">
-            <div className="text-xl font-bold text-gray-700">—</div>
+            <div className="text-xl font-bold text-gray-700">{accountInfo?.balance ?? '—'}</div>
             <div className="text-gray-600">Balance</div>
           </div>
         </div>
@@ -180,7 +260,87 @@ export default async function StudentDetail({ params }: { params: { id: string }
   const financeSection = (
     <section className="bg-white border border-gray-200 rounded-lg p-4">
       <h2 className="text-lg font-semibold mb-3">Finance</h2>
-      <Empty title="Coming soon" description="Student accounts, invoices, and payments will appear here." />
+      {accountInfo ? (
+        <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div className="bg-gray-50 p-3 rounded">
+            <div className="text-xs text-gray-500">Account Status</div>
+            <div className="font-semibold">{accountInfo?.status ?? '—'}</div>
+          </div>
+          <div className="bg-gray-50 p-3 rounded">
+            <div className="text-xs text-gray-500">Balance</div>
+            <div className="font-semibold">{accountInfo?.balance ?? '—'}</div>
+          </div>
+          <div className="bg-gray-50 p-3 rounded">
+            <div className="text-xs text-gray-500">Last Payment</div>
+            <div className="font-semibold">{accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString() : '—'}</div>
+          </div>
+        </div>
+      ) : (
+        <Empty title="No account" description="No student account found." />
+      )}
+
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="font-semibold mb-2">Recent Invoices</h3>
+          {invoiceRows.length === 0 ? (
+            <Empty title="No invoices" />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="text-left px-3 py-2">#</th>
+                    <th className="text-left px-3 py-2">Status</th>
+                    <th className="text-left px-3 py-2">Total</th>
+                    <th className="text-left px-3 py-2">Balance</th>
+                    <th className="text-left px-3 py-2">Due</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {invoiceRows.map((inv) => (
+                    <tr key={inv.id}>
+                      <td className="px-3 py-2">{inv.invoice_number}</td>
+                      <td className="px-3 py-2 capitalize">{inv.status}</td>
+                      <td className="px-3 py-2">{inv.total_amount}</td>
+                      <td className="px-3 py-2">{inv.balance}</td>
+                      <td className="px-3 py-2">{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+        <div>
+          <h3 className="font-semibold mb-2">Recent Payments</h3>
+          {paymentRows.length === 0 ? (
+            <Empty title="No payments" />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="text-left px-3 py-2">Date</th>
+                    <th className="text-left px-3 py-2">Amount</th>
+                    <th className="text-left px-3 py-2">Method</th>
+                    <th className="text-left px-3 py-2">Ref</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {paymentRows.map((p) => (
+                    <tr key={p.id}>
+                      <td className="px-3 py-2">{p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '—'}</td>
+                      <td className="px-3 py-2">{p.amount}</td>
+                      <td className="px-3 py-2">{p.method}</td>
+                      <td className="px-3 py-2">{p.reference ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </section>
   );
 
@@ -201,7 +361,24 @@ export default async function StudentDetail({ params }: { params: { id: string }
   const activitySection = (
     <section className="bg-white border border-gray-200 rounded-lg p-4">
       <h2 className="text-lg font-semibold mb-3">Activity</h2>
-      <Empty title="Coming soon" description="A unified timeline of attendance, grades, and other events." />
+      {auditRows.length === 0 ? (
+        <Empty title="No recent activity" />
+      ) : (
+        <ul className="space-y-3">
+          {auditRows.map((a) => (
+            <li key={a.id} className="flex items-start gap-3">
+              <div className="w-2 h-2 mt-2 rounded-full bg-gray-400" />
+              <div>
+                <div className="text-sm">
+                  <span className="font-medium">{a.action}</span>
+                  <span className="text-gray-500"> · {new Date(a.created_at).toLocaleString()}</span>
+                </div>
+                <div className="text-xs text-gray-600">Actor: {a.actor_id}</div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 
