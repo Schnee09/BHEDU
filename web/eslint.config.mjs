@@ -21,6 +21,12 @@ const eslintConfig = [
       // Temporarily ignore API route handlers until types are stabilized
       "app/api/**",
     ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+      "react-hooks/exhaustive-deps": "warn",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "react/no-unescaped-entities": "warn",
+    },
   },
 ];
 

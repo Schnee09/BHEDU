@@ -76,7 +76,7 @@ export default function AcademicYearsPage() {
       setEditingYear(null);
       setFormData({ name: '', start_date: '', end_date: '', is_current: false });
       fetchYears();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving academic year:', error);
       alert(error.message || 'Failed to save academic year');
     }
@@ -105,7 +105,7 @@ export default function AcademicYearsPage() {
         throw new Error(error.error || 'Failed to delete');
       }
       fetchYears();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting academic year:', error);
       alert(error.message || 'Failed to delete academic year');
     }
@@ -122,7 +122,7 @@ export default function AcademicYearsPage() {
         throw new Error(error.error || 'Failed to set current');
       }
       fetchYears();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error setting current year:', error);
       alert(error.message || 'Failed to set current year');
     }

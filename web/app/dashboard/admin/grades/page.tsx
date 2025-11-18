@@ -142,7 +142,7 @@ export default function GradesManagementPage() {
       setGrades(response.grades || [])
       setTotalPages(response.pagination?.total_pages || 1)
       setTotalGrades(response.pagination?.total || 0)
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Failed to fetch grades')
     } finally {
       setLoading(false)
@@ -199,7 +199,7 @@ export default function GradesManagementPage() {
       await Promise.all(deletes)
       setSelectedGrades(new Set())
       fetchGrades()
-    } catch (err: any) {
+    } catch (err) {
       alert(err.message || 'Failed to delete grades')
     }
   }
@@ -434,7 +434,7 @@ export default function GradesManagementPage() {
               onClick={handleBulkDelete}
               className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
             >
-              🗑️ Delete Selected
+              🗑�E�EDelete Selected
             </button>
           </div>
         </div>
@@ -483,7 +483,7 @@ export default function GradesManagementPage() {
                       onClick={() => handleSort('points_earned')}
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     >
-                      Score {sortBy === 'points_earned' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      Score {sortBy === 'points_earned' && (sortOrder === 'asc' ? 'ↁE : 'ↁE)}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Percentage

@@ -129,7 +129,7 @@ export default function AttendanceManagementPage() {
       setRecords(response.records || [])
       setTotalPages(response.pagination?.total_pages || 1)
       setTotalRecords(response.pagination?.total || 0)
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Failed to fetch attendance records')
     } finally {
       setLoading(false)
@@ -189,7 +189,7 @@ export default function AttendanceManagementPage() {
       await Promise.all(updates)
       setSelectedRecords(new Set())
       fetchRecords()
-    } catch (err: any) {
+    } catch (err) {
       alert(err.message || 'Failed to update attendance records')
     }
   }
@@ -212,7 +212,7 @@ export default function AttendanceManagementPage() {
       await Promise.all(deletes)
       setSelectedRecords(new Set())
       fetchRecords()
-    } catch (err: any) {
+    } catch (err) {
       alert(err.message || 'Failed to delete attendance records')
     }
   }
@@ -280,7 +280,7 @@ export default function AttendanceManagementPage() {
       setShowBulkMarkModal(false)
       fetchRecords()
       alert(`Successfully marked attendance for ${records.length} students`)
-    } catch (err: any) {
+    } catch (err) {
       alert(err.message || 'Failed to mark attendance')
     } finally {
       setBulkMarkLoading(false)
@@ -311,7 +311,7 @@ export default function AttendanceManagementPage() {
       })
       setEditingRecord(null)
       fetchRecords()
-    } catch (err: any) {
+    } catch (err) {
       alert(err.message || 'Failed to update record')
     }
   }
@@ -385,7 +385,7 @@ export default function AttendanceManagementPage() {
             onClick={() => setShowBulkMarkModal(true)}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
-            ➕ Bulk Mark Attendance
+            ➁EBulk Mark Attendance
           </button>
         </div>
       </div>
@@ -548,7 +548,7 @@ export default function AttendanceManagementPage() {
               onClick={handleBulkDelete}
               className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm"
             >
-              🗑️ Delete
+              🗑�E�EDelete
             </button>
           </div>
         </div>
@@ -588,7 +588,7 @@ export default function AttendanceManagementPage() {
                       onClick={() => handleSort('date')}
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     >
-                      Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      Date {sortBy === 'date' && (sortOrder === 'asc' ? 'ↁE : 'ↁE)}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Student
@@ -600,7 +600,7 @@ export default function AttendanceManagementPage() {
                       onClick={() => handleSort('status')}
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     >
-                      Status {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      Status {sortBy === 'status' && (sortOrder === 'asc' ? 'ↁE : 'ↁE)}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Notes
@@ -674,13 +674,13 @@ export default function AttendanceManagementPage() {
                               onClick={() => handleSaveEdit(record.id)}
                               className="text-green-600 hover:text-green-800 mr-2"
                             >
-                              ✓ Save
+                              ✁ESave
                             </button>
                             <button
                               onClick={handleCancelEdit}
                               className="text-gray-600 hover:text-gray-800"
                             >
-                              ✕ Cancel
+                              ✁ECancel
                             </button>
                           </>
                         ) : (
@@ -689,7 +689,7 @@ export default function AttendanceManagementPage() {
                               onClick={() => handleStartEdit(record)}
                               className="text-blue-600 hover:text-blue-800 mr-3"
                             >
-                              ✏️ Edit
+                              ✏︁EEdit
                             </button>
                             <button
                               onClick={() => {
@@ -701,7 +701,7 @@ export default function AttendanceManagementPage() {
                               }}
                               className="text-red-600 hover:text-red-800"
                             >
-                              🗑️ Delete
+                              🗑�E�EDelete
                             </button>
                           </>
                         )}
@@ -751,7 +751,7 @@ export default function AttendanceManagementPage() {
                   onClick={() => setShowBulkMarkModal(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
                 >
-                  ✕
+                  ✁E
                 </button>
               </div>
               <p className="text-gray-600 mt-1">Mark attendance for an entire class at once</p>

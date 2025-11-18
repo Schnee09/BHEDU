@@ -122,7 +122,7 @@ export default function StudentAccountsPage() {
       } else {
         setError(response.error || 'Failed to fetch accounts')
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Failed to fetch accounts')
     } finally {
       setLoading(false)

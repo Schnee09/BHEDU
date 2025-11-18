@@ -176,7 +176,7 @@ export default function InvoicesPage() {
       } else {
         setError(response.error || 'Failed to fetch invoices')
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Failed to fetch invoices')
     } finally {
       setLoading(false)
@@ -252,7 +252,7 @@ export default function InvoicesPage() {
       } else {
         alert(response.error || 'Failed to create invoice')
       }
-    } catch (err: any) {
+    } catch (err) {
       alert(err.message || 'Failed to create invoice')
     } finally {
       setCreating(false)
@@ -643,7 +643,7 @@ export default function InvoicesPage() {
                             onClick={() => handleRemoveItem(index)}
                             className="text-red-600 hover:text-red-700 text-sm"
                           >
-                            ✕
+                            ✁E
                           </button>
                         </div>
                       </div>

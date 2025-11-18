@@ -8,7 +8,7 @@ import { adminAuth } from '@/lib/auth/adminAuth';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request);
@@ -19,11 +19,12 @@ export async function GET(
       );
     }
 
+    const resolvedParams = await params;
     const supabase = createServiceClient();
     const { data, error } = await supabase
       .from('academic_years')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single();
 
     if (error) {
@@ -51,7 +52,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request);
@@ -62,6 +63,7 @@ export async function PATCH(
       );
     }
 
+    const resolvedParams = await params;
     const body = await request.json();
     const { name, start_date, end_date, is_current, terms } = body;
 
@@ -81,10 +83,10 @@ export async function PATCH(
         .from('academic_years')
         .update({ is_current: false })
         .eq('is_current', true)
-        .neq('id', params.id); // Don't update the current record
+        .neq('id', resolvedParams.id); // Don't update the current record
     }
 
-    const updates: any = { updated_at: new Date().toISOString() };
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (name !== undefined) updates.name = name;
     if (start_date !== undefined) updates.start_date = start_date;
     if (end_date !== undefined) updates.end_date = end_date;
@@ -94,7 +96,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('academic_years')
       .update(updates)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select()
       .single();
 
@@ -110,9 +112,10 @@ export async function PATCH(
     }
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in PATCH /api/admin/academic-years/[id]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -122,7 +125,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request);
@@ -133,13 +136,14 @@ export async function DELETE(
       );
     }
 
+    const resolvedParams = await params;
     const supabase = createServiceClient();
 
     // Check if year exists
     const { data: existing } = await supabase
       .from('academic_years')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single();
 
     if (!existing) {
@@ -152,7 +156,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('academic_years')
       .delete()
-      .eq('id', params.id);
+      .eq('id', resolvedParams.id);
 
     if (error) {
       console.error('Error deleting academic year:', error);
@@ -160,8 +164,9 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true, message: 'Academic year deleted' });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in DELETE /api/admin/academic-years/[id]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

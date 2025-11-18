@@ -121,7 +121,7 @@ export default function FeeTypesPage() {
         academic_year_id: '',
       });
       fetchData();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving fee type:', error);
       alert(error.message || 'Failed to save fee type');
     }
@@ -153,7 +153,7 @@ export default function FeeTypesPage() {
         throw new Error(error.error || 'Failed to delete');
       }
       fetchData();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting fee type:', error);
       alert(error.message || 'Failed to delete fee type');
     }

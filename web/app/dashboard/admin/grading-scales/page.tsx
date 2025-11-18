@@ -90,7 +90,7 @@ export default function GradingScalesPage() {
       setEditingScale(null);
       setFormData({ name: '', description: '', is_default: false, scale: DEFAULT_SCALE });
       fetchScales();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving grading scale:', error);
       alert(error.message || 'Failed to save grading scale');
     }
@@ -119,7 +119,7 @@ export default function GradingScalesPage() {
         throw new Error(error.error || 'Failed to delete');
       }
       fetchScales();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting grading scale:', error);
       alert(error.message || 'Failed to delete grading scale');
     }
@@ -136,7 +136,7 @@ export default function GradingScalesPage() {
         throw new Error(error.error || 'Failed to set default');
       }
       fetchScales();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error setting default scale:', error);
       alert(error.message || 'Failed to set default scale');
     }

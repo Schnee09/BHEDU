@@ -236,7 +236,7 @@ export default function PaymentsPage() {
       } else {
         setError(response.error || 'Failed to fetch payments')
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Failed to fetch payments')
     } finally {
       setLoading(false)
@@ -312,7 +312,7 @@ export default function PaymentsPage() {
       } else {
         alert(response.error || 'Failed to record payment')
       }
-    } catch (err: any) {
+    } catch (err) {
       alert(err.message || 'Failed to record payment')
     } finally {
       setCreating(false)
