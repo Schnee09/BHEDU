@@ -1,8 +1,8 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/api/client';
+import { useState, useEffect, use, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { apiFetch } from '@/lib/api/client'
 
 interface Student {
   id: string;
@@ -76,20 +76,15 @@ export default function AssignmentDetailsPage({ params }: { params: Promise<{ id
     params.then(p => setResolvedParams(p));
   }, [params]);
 
-  useEffect(() => {
-    if (resolvedParams) {
-      fetchAssignmentDetails();
-    }
-  }, [resolvedParams]);
-
-  const fetchAssignmentDetails = async () => {
+  const fetchAssignmentDetails = useCallback(async () => {
     if (!resolvedParams) return;
     
     try {
       setLoading(true);
       setError('');
-      const response: any = await apiFetch(`/api/admin/assignments/${resolvedParams.id}`);
-      if (response.success) {
+      const res = await apiFetch(`/api/admin/assignments/${resolvedParams.id}`);
+      const response: { success: boolean; assignment?: Assignment; error?: string } = await res.json();
+      if (response.success && response.assignment) {
         setAssignment(response.assignment);
       } else {
         setError(response.error || 'Failed to load assignment details');
@@ -100,13 +95,19 @@ export default function AssignmentDetailsPage({ params }: { params: Promise<{ id
     } finally {
       setLoading(false);
     }
-  };
+  }, [resolvedParams]);
+
+  useEffect(() => {
+    if (resolvedParams) {
+      fetchAssignmentDetails();
+    }
+  }, [resolvedParams, fetchAssignmentDetails]);
 
   const handleTogglePublish = async () => {
     if (!assignment) return;
 
     try {
-      const response: any = await apiFetch(`/api/admin/assignments/${assignment.id}`, {
+      const response: { success: boolean; error?: string } = await apiFetch(`/api/admin/assignments/${assignment.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ published: !assignment.published })
       });
@@ -130,7 +131,7 @@ export default function AssignmentDetailsPage({ params }: { params: Promise<{ id
     }
 
     try {
-      const response: any = await apiFetch(`/api/admin/assignments/${assignment.id}`, {
+      const response: { success: boolean; error?: string } = await apiFetch(`/api/admin/assignments/${assignment.id}`, {
         method: 'DELETE'
       });
 

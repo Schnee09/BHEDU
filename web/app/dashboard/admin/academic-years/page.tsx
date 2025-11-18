@@ -1,7 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api/client';
+
+interface Term {
+  name: string;
+  start_date: string;
+  end_date: string;
+}
 
 interface AcademicYear {
   id: string;
@@ -9,7 +15,7 @@ interface AcademicYear {
   start_date: string;
   end_date: string;
   is_current: boolean;
-  terms: any[];
+  terms: Term[];
   created_at: string;
   updated_at: string;
 }
@@ -77,8 +83,9 @@ export default function AcademicYearsPage() {
       setFormData({ name: '', start_date: '', end_date: '', is_current: false });
       fetchYears();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save academic year';
       console.error('Error saving academic year:', error);
-      alert(error.message || 'Failed to save academic year');
+      alert(errorMessage);
     }
   };
 
@@ -106,8 +113,9 @@ export default function AcademicYearsPage() {
       }
       fetchYears();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete academic year';
       console.error('Error deleting academic year:', error);
-      alert(error.message || 'Failed to delete academic year');
+      alert(errorMessage);
     }
   };
 
@@ -123,8 +131,9 @@ export default function AcademicYearsPage() {
       }
       fetchYears();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to set current year';
       console.error('Error setting current year:', error);
-      alert(error.message || 'Failed to set current year');
+      alert(errorMessage);
     }
   };
 
@@ -169,7 +178,7 @@ export default function AcademicYearsPage() {
         />
         <select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as any)}
+          onChange={(e) => setFilterStatus(e.target.value as 'all' | 'current' | 'past')}
           className="px-4 py-2 border rounded-lg"
         >
           <option value="all">All Years</option>
