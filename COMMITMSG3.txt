@@ -1,1 +1,0 @@
-fix deploy workflow use manual npm cache to avoid pnpm detection

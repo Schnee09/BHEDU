@@ -36,8 +36,8 @@ export default function Sidebar() {
         {
           title: "Academic",
           links: [
-            { href: "/dashboard/courses", label: "Courses", icon: "📚" },
-            { href: "/dashboard/classes", label: "Classes", icon: "📘" },
+            { href: "/dashboard/courses", label: "Course Catalog", icon: "📚" },
+            { href: "/dashboard/classes", label: "My Classes", icon: "📘" },
             { href: "/dashboard/students", label: "Students", icon: "👥" },
           ]
         },
@@ -61,23 +61,35 @@ export default function Sidebar() {
         {
           title: "Administration",
           links: [
+            { href: "/dashboard/admin/classes", label: "Classes Management", icon: "📚" },
+            { href: "/dashboard/admin/teachers", label: "Teachers Management", icon: "👨‍🏫" },
+            { href: "/dashboard/admin/assignments", label: "Assignments Management", icon: "📝" },
+            { href: "/dashboard/admin/attendance", label: "Attendance Management", icon: "📅" },
+            { href: "/dashboard/admin/attendance/reports", label: "Attendance Reports", icon: "📊" },
+            { href: "/dashboard/admin/grades", label: "Grades Management", icon: "🎓" },
             { href: "/dashboard/users", label: "User Management", icon: "👤" },
             { href: "/dashboard/users/import", label: "Import Users", icon: "📥" },
             { href: "/dashboard/students/import", label: "Import Students", icon: "📥" },
             { href: "/dashboard/admin/data", label: "Data Viewer", icon: "🔍" },
             { href: "/dashboard/reports", label: "Reports", icon: "📑" },
-            { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
+          ]
+        },
+        {
+          title: "Settings",
+          links: [
+            { href: "/dashboard/admin/academic-years", label: "Academic Years", icon: "📅" },
+            { href: "/dashboard/admin/grading-scales", label: "Grading Scales", icon: "📊" },
+            { href: "/dashboard/admin/fee-types", label: "Fee Types", icon: "💵" },
+            { href: "/dashboard/settings", label: "General Settings", icon: "⚙️" },
           ]
         },
         {
           title: "Financial",
           links: [
-            { href: "/dashboard/finance", label: "Dashboard", icon: "💰" },
-            { href: "/dashboard/finance/fees", label: "Fee Management", icon: "💵" },
-            { href: "/dashboard/finance/accounts", label: "Student Accounts", icon: "👥" },
-            { href: "/dashboard/finance/invoices", label: "Invoices", icon: "📄" },
-            { href: "/dashboard/finance/payments", label: "Payments", icon: "💳" },
-            { href: "/dashboard/finance/reports", label: "Financial Reports", icon: "📊" },
+            { href: "/dashboard/admin/finance/student-accounts", label: "Student Accounts", icon: "👥" },
+            { href: "/dashboard/admin/finance/invoices", label: "Invoices", icon: "📄" },
+            { href: "/dashboard/admin/finance/payments", label: "Payments", icon: "💳" },
+            { href: "/dashboard/admin/finance/reports", label: "Financial Reports", icon: "📊" },
           ]
         }
       ];

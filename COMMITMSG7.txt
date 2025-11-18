@@ -1,1 +1,0 @@
-ci/deploy: set safe NEXT_PUBLIC_SUPABASE_* fallbacks during builds to avoid prerender error

@@ -1,1 +1,0 @@
-ci+deploy: run on feature branch and allow manual dispatch

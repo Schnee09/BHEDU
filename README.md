@@ -1,25 +1,29 @@
-# BH-EDU — Local dev notes
+# BH-EDU — School Management System
 
-This repository contains two apps:
+This is a modern school management system built with:
+- **Frontend & API**: Next.js 14 (App Router) with built-in API routes
+- **Database**: Supabase (PostgreSQL + Auth + Realtime)
+- **UI**: shadcn/ui + Tailwind CSS
+- **Deployment**: Vercel
 
-- `backend` — Node + TypeScript server using Supabase (server-side).
-- `web` — Next.js frontend.
+## Architecture
+
+All APIs are built as Next.js API routes in `web/app/api/`. No separate backend server needed.
 
 Environment
 -----------
 
-- The frontend should only use public keys:
+- The frontend uses public keys:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-- The Supabase service role key is a server-only secret. Do NOT store it in client env files.
-  - Put the service role key in the backend environment as `SUPABASE_SERVICE_ROLE_KEY`.
-  - Use `backend/.env.example` as a template. Do not commit real secrets.
+- The Supabase service role key is server-only. Store in Vercel environment variables or `.env.local` for API routes.
+  - `SUPABASE_SERVICE_ROLE_KEY` (server-side only, never expose to client)
 
 CI / GitHub Actions
 -------------------
 
-The repository includes a GitHub Actions workflow at `.github/workflows/ci.yml` that builds the backend and the web app on push and pull requests to `main`.
+The repository includes a GitHub Actions workflow at `.github/workflows/ci.yml` that builds the web app on push and pull requests to `main`.
 
 If you need the CI to perform operations that require the service role key, add it to GitHub Actions secrets:
 
@@ -29,17 +33,7 @@ If you need the CI to perform operations that require the service role key, add 
 Local development
 -----------------
 
-Backend:
-
-```cmd
-cd /d e:\TTGDBH\BH-EDU\backend
-pnpm install
-pnpm run typecheck
-pnpm run build
-pnpm run dev
-```
-
-Web:
+Web (includes frontend + API routes):
 
 ```cmd
 cd /d e:\TTGDBH\BH-EDU\web
@@ -48,11 +42,43 @@ npm run build
 npm run dev
 ```
 
+Open http://localhost:3000 to view the application.
+
 Security checklist
 ------------------
 
 - If the service role key was ever pushed to a remote, rotate it immediately in Supabase.
-- Keep `backend/.env` out of version control; prefer platform secrets or GitHub Actions secrets.
 
-If you want, I can also add an example GitHub Actions step showing how to inject the secret into the backend job (without printing it). Say the word and I'll add it.
+## 📚 Documentation
+
+Comprehensive documentation is available in the `/docs` folder:
+
+- **Deployment**: See `/docs/deployment/DEPLOYMENT_GUIDE.md`
+- **Quick Start**: See `/docs/guides/QUICK_START.md`
+- **Testing**: See `/docs/guides/TESTING_GUIDE.md`
+- **Project Plan**: See `PROJECT_ANALYSIS_AND_REWORK_PLAN.md` (root)
+- **Full Documentation**: See `/docs/README.md` for complete documentation index
+
+## 📂 Project Structure
+
+```
+BH-EDU/
+├── web/                          # Next.js application
+│   ├── app/                      # App Router
+│   │   ├── api/                  # API routes
+│   │   └── dashboard/            # Dashboard pages
+│   ├── components/               # React components
+│   └── lib/                      # Utilities
+├── supabase/                     # Database
+│   └── migrations/               # SQL migrations
+├── scripts/                      # Utility scripts
+├── docs/                         # Documentation
+│   ├── deployment/               # Deployment guides
+│   ├── guides/                   # User guides
+│   └── archive/                  # Historical docs
+├── README.md                     # This file
+└── PROJECT_ANALYSIS_AND_REWORK_PLAN.md  # Master project plan
+```
+- Keep `.env.local` out of version control; use Vercel environment variables for production.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client side.
 # BHEDU
