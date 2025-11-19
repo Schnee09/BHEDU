@@ -3,18 +3,30 @@
 -- This migration restores admin access using a helper function
 
 ------------------------------------------------------------
--- Create helper function to check if user is admin
+-- Create helper function to check if user is admin (if not exists)
 ------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN AS $$
+-- Note: This function may already exist from migration 20251120_fix_infinite_recursion.sql
+-- We use CREATE OR REPLACE to handle both cases
+DO $$
 BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = auth.uid()
-    AND role = 'admin'
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+  -- Only create if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc 
+    WHERE proname = 'is_admin' 
+    AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+  ) THEN
+    CREATE FUNCTION public.is_admin()
+    RETURNS BOOLEAN AS $func$
+    BEGIN
+      RETURN EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid()
+        AND role = 'admin'
+      );
+    END;
+    $func$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+  END IF;
+END $$;
 
 ------------------------------------------------------------
 -- CLASSES - Add admin policy
