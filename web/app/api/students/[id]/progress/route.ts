@@ -67,7 +67,7 @@ export async function GET(
       .order('created_at', { ascending: false })
 
     // Get all grades for the student
-    let gradesQuery = supabase
+    const gradesQuery = supabase
       .from('grades')
       .select(`
         id,

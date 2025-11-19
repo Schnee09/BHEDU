@@ -18,14 +18,15 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
-      // Temporarily ignore API route handlers until types are stabilized
-      "app/api/**",
+      ".eslintignore",
     ],
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
       "react-hooks/exhaustive-deps": "warn",
       "@typescript-eslint/no-unused-vars": "warn",
       "react/no-unescaped-entities": "warn",
+      "prefer-const": "warn",
+      "@typescript-eslint/ban-ts-comment": "warn",
     },
   },
 ];
