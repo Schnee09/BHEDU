@@ -1,16 +1,12 @@
-// web/middleware.ts
+// web/proxy.ts
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Check for required environment variables
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.error('Missing Supabase environment variables in middleware')
-    return NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    })
+    console.error('Missing Supabase environment variables in proxy')
+    return NextResponse.next()
   }
 
   let response = NextResponse.next({
@@ -28,13 +24,11 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          // Set the cookie on the request for the current request
           request.cookies.set({
             name,
             value,
             ...options,
           })
-          // Update the response to include the new cookie
           response = NextResponse.next({
             request: {
               headers: request.headers,
@@ -47,13 +41,11 @@ export async function middleware(request: NextRequest) {
           })
         },
         remove(name: string, options: CookieOptions) {
-          // Remove the cookie from the request for the current request
           request.cookies.set({
             name,
             value: '',
             ...options,
           })
-          // Update the response to remove the cookie
           response = NextResponse.next({
             request: {
               headers: request.headers,
@@ -68,9 +60,6 @@ export async function middleware(request: NextRequest) {
       },
     }
   )
-
-  // The session is automatically refreshed through the cookie handlers above
-  // No need to explicitly call getSession() or getUser()
 
   return response
 }
