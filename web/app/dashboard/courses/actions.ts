@@ -59,14 +59,14 @@ export async function createCourse(formData: FormData) {
       details: { title }
     })
     
-    revalidatePath('/admin/courses')
-    redirect('/admin/courses?toast=created_course')
+    revalidatePath('/dashboard/courses')
+    redirect('/dashboard/courses?toast=created_course')
   } catch (err) {
     logger.error('Failed to create course', { error: err })
     if (err instanceof ValidationError) {
-      redirect(`/admin/courses?toast=error:${encodeURIComponent(err.message)}`)
+      redirect(`/dashboard/courses?toast=error:${encodeURIComponent(err.message)}`)
     }
-    redirect('/admin/courses?toast=error:Failed_to_create_course')
+    redirect('/dashboard/courses?toast=error:Failed_to_create_course')
   }
 }
 
@@ -96,14 +96,14 @@ export async function createLesson(formData: FormData) {
       details: { title, courseId }
     })
     
-    revalidatePath('/admin/courses')
-    redirect('/admin/courses?toast=created_lesson')
+    revalidatePath('/dashboard/courses')
+    redirect('/dashboard/courses?toast=created_lesson')
   } catch (err) {
     logger.error('Failed to create lesson', { error: err })
     if (err instanceof ValidationError) {
-      redirect(`/admin/courses?toast=error:${encodeURIComponent(err.message)}`)
+      redirect(`/dashboard/courses?toast=error:${encodeURIComponent(err.message)}`)
     }
-    redirect('/admin/courses?toast=error:Failed_to_create_lesson')
+    redirect('/dashboard/courses?toast=error:Failed_to_create_lesson')
   }
 }
 
@@ -156,14 +156,14 @@ export async function editCourse(formData: FormData) {
       details: payload
     })
     
-    revalidatePath('/admin/courses')
-    redirect('/admin/courses?toast=updated_course')
+    revalidatePath('/dashboard/courses')
+    redirect('/dashboard/courses?toast=updated_course')
   } catch (err) {
     logger.error('Failed to edit course', { error: err })
     if (err instanceof ValidationError) {
-      redirect(`/admin/courses?toast=error:${encodeURIComponent(err.message)}`)
+      redirect(`/dashboard/courses?toast=error:${encodeURIComponent(err.message)}`)
     }
-    redirect('/admin/courses?toast=error:Failed_to_update_course')
+    redirect('/dashboard/courses?toast=error:Failed_to_update_course')
   }
 }
 
@@ -184,11 +184,11 @@ export async function deleteCourse(formData: FormData) {
       details: {}
     })
     
-    revalidatePath('/admin/courses')
-    redirect('/admin/courses?toast=deleted_course')
+    revalidatePath('/dashboard/courses')
+    redirect('/dashboard/courses?toast=deleted_course')
   } catch (err) {
     logger.error('Failed to delete course', { error: err })
-    redirect('/admin/courses?toast=error:Failed_to_delete_course')
+    redirect('/dashboard/courses?toast=error:Failed_to_delete_course')
   }
 }
 
@@ -220,14 +220,14 @@ export async function editLesson(formData: FormData) {
       details: payload
     })
     
-    revalidatePath('/admin/courses')
-    redirect('/admin/courses?toast=updated_lesson')
+    revalidatePath('/dashboard/courses')
+    redirect('/dashboard/courses?toast=updated_lesson')
   } catch (err) {
     logger.error('Failed to edit lesson', { error: err })
     if (err instanceof ValidationError) {
-      redirect(`/admin/courses?toast=error:${encodeURIComponent(err.message)}`)
+      redirect(`/dashboard/courses?toast=error:${encodeURIComponent(err.message)}`)
     }
-    redirect('/admin/courses?toast=error:Failed_to_update_lesson')
+    redirect('/dashboard/courses?toast=error:Failed_to_update_lesson')
   }
 }
 
@@ -248,10 +248,10 @@ export async function deleteLesson(formData: FormData) {
       details: {}
     })
     
-    revalidatePath('/admin/courses')
-    redirect('/admin/courses?toast=deleted_lesson')
+    revalidatePath('/dashboard/courses')
+    redirect('/dashboard/courses?toast=deleted_lesson')
   } catch (err) {
     logger.error('Failed to delete lesson', { error: err })
-    redirect('/admin/courses?toast=error:Failed_to_delete_lesson')
+    redirect('/dashboard/courses?toast=error:Failed_to_delete_lesson')
   }
 }
