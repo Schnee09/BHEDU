@@ -35,11 +35,11 @@ export async function GET(
     }
 
     // Get teacher's classes with enrollment counts
-    const { data: classes, error: classesError } = await supabase
+      const { data: classes, error: classesError } = await supabase
       .from('classes')
       .select(`
         *,
-        academic_year:academic_years(id, year_name, status),
+        academic_year:academic_years(id, name, status),
         enrollments:enrollments(count)
       `)
       .eq('teacher_id', id)

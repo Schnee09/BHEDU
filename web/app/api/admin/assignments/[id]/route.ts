@@ -34,7 +34,7 @@ export async function GET(
           grade_level,
           academic_year:academic_years(
             id,
-            year_name,
+            name,
             status
           ),
           teacher:profiles!classes_teacher_id_fkey(

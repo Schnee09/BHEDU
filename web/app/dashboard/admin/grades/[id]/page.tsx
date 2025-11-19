@@ -44,7 +44,7 @@ interface GradeDetails {
       }
       academic_year: {
         id: string
-        year_name: string
+        name: string
         start_date: string
         end_date: string
       }
@@ -386,7 +386,7 @@ export default function GradeDetailsPage({
           <div>
             <div className="text-sm text-gray-600">Academic Year</div>
             <div className="text-lg font-medium text-gray-900">
-              {grade.assignment.class.academic_year.year_name}
+              {grade.assignment.class.academic_year.name}
             </div>
           </div>
         </div>

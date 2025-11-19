@@ -39,7 +39,7 @@ interface Assignment {
     grade_level: string;
     academic_year: {
       id: string;
-      year_name: string;
+      name: string;
       status: string;
     };
     teacher: {
@@ -338,7 +338,7 @@ export default function AssignmentDetailsPage({ params }: { params: Promise<{ id
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Academic Year</dt>
-                <dd className="text-gray-900">{assignment.class.academic_year.year_name}</dd>
+                <dd className="text-gray-900">{assignment.class.academic_year.name}</dd>
               </div>
             </dl>
           </div>

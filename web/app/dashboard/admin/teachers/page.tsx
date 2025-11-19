@@ -27,7 +27,7 @@ interface Teacher {
 
 interface AcademicYear {
   id: string;
-  year_name: string;
+  name: string;
   status: string;
 }
 
@@ -277,7 +277,7 @@ export default function AdminTeachersPage() {
           >
             <option value="">All Academic Years</option>
             {academicYears.map(year => (
-              <option key={year.id} value={year.id}>{year.year_name}</option>
+              <option key={year.id} value={year.id}>{year.name}</option>
             ))}
           </select>
         </div>

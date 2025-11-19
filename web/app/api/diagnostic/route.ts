@@ -131,7 +131,8 @@ export async function GET(req: NextRequest) {
     try {
       const { data, error } = await supabase
         .from('academic_years')
-        .select('id, title')
+        // schema uses `name` for the academic year label (e.g. '2024-2025')
+        .select('id, name')
         .limit(1)
         .maybeSingle()
       
@@ -151,7 +152,8 @@ export async function GET(req: NextRequest) {
     try {
       const { data, error } = await supabase
         .from('classes')
-        .select('id, title')
+        // classes table uses `name` for the class label
+        .select('id, name')
         .limit(1)
         .maybeSingle()
       

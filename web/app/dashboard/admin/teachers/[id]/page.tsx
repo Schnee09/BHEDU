@@ -13,7 +13,7 @@ interface Class {
   room_number: string | null;
   academic_year: {
     id: string;
-    year_name: string;
+    name: string;
     status: string;
   };
   enrollments: { count: number }[];
@@ -337,7 +337,7 @@ export default function TeacherDetailsPage({ params }: { params: Promise<{ id: s
                     )}
                     <div className="flex justify-between">
                       <span className="text-gray-500">Year:</span>
-                      <span className="text-xs">{cls.academic_year.year_name}</span>
+                      <span className="text-xs">{cls.academic_year.name}</span>
                     </div>
                   </div>
                 </a>

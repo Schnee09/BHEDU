@@ -58,7 +58,7 @@ export async function GET(
           name,
           academic_year_id,
           academic_years:academic_years!inner(
-            year_name,
+            name,
             semester
           )
         )
@@ -83,7 +83,7 @@ export async function GET(
             name,
             academic_year_id,
             academic_years:academic_years(
-              year_name,
+              name,
               semester
             )
           ),
@@ -108,7 +108,7 @@ export async function GET(
         class:classes!inner(
           academic_year_id,
           academic_years:academic_years(
-            year_name,
+            name,
             semester
           )
         )
@@ -122,9 +122,9 @@ export async function GET(
     if (grades) {
       grades.forEach((grade: any) => {
         const assignment = grade.assignment
-        if (!assignment || !assignment.class || !assignment.class.academic_years) return
+  if (!assignment || !assignment.class || !assignment.class.academic_years) return
 
-        const academicYear = assignment.class.academic_years.year_name
+  const academicYear = assignment.class.academic_years.name
         const semester = assignment.class.academic_years.semester || 'HK1'
         const key = `${academicYear}-${semester}`
 
@@ -162,9 +162,9 @@ export async function GET(
     // Add attendance data
     if (attendance) {
       attendance.forEach((record: any) => {
-        if (!record.class || !record.class.academic_years) return
+  if (!record.class || !record.class.academic_years) return
 
-        const academicYear = record.class.academic_years.year_name
+  const academicYear = record.class.academic_years.name
         const semester = record.class.academic_years.semester || 'HK1'
         const key = `${academicYear}-${semester}`
 

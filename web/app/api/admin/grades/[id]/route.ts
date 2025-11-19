@@ -47,7 +47,7 @@ export async function GET(
             ),
             academic_year:academic_years(
               id,
-              year_name,
+              name,
               start_date,
               end_date
             )

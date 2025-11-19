@@ -13,7 +13,7 @@ interface Teacher {
 
 interface AcademicYear {
   id: string;
-  year_name: string;
+  name: string;
   start_date: string;
   end_date: string;
   status: string;
@@ -428,7 +428,7 @@ export default function ClassDetailsPage({ params }: { params: Promise<{ id: str
           {/* Academic Year Card */}
           <div className="bg-white p-6 rounded-lg border">
             <h3 className="text-sm font-medium text-gray-500 mb-3">Academic Year</h3>
-            <p className="text-xl font-bold mb-1">{classData.academic_year.year_name}</p>
+            <p className="text-xl font-bold mb-1">{classData.academic_year.name}</p>
             <p className="text-sm text-gray-600">
               {new Date(classData.academic_year.start_date).toLocaleDateString()} - {' '}
               {new Date(classData.academic_year.end_date).toLocaleDateString()}
