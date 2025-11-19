@@ -46,8 +46,7 @@ export async function GET(request: Request) {
         ),
         class:classes!attendance_class_id_fkey(
           id,
-          title,
-          code
+          name
         )
       `)
       .order('date', { ascending: false })
@@ -138,7 +137,7 @@ export async function GET(request: Request) {
       const classKey = record.class_id
       if (!byClass[classKey]) {
         byClass[classKey] = {
-          name: record.class?.title || 'Unknown',
+          name: record.class?.name || 'Unknown',
           count: 0,
           present: 0,
           rate: 0
