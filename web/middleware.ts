@@ -69,12 +69,8 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired - required for Server Components
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-  } catch (error) {
-    console.error('Error refreshing session in middleware:', error)
-  }
+  // The session is automatically refreshed through the cookie handlers above
+  // No need to explicitly call getSession() or getUser()
 
   return response
 }
