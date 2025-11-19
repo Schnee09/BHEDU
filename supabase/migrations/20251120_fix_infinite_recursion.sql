@@ -157,6 +157,7 @@ CREATE POLICY "Students read class assignments"
 ALTER TABLE public.grades ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Admins manage grades" ON public.grades;
+DROP POLICY IF EXISTS "grades_admin_all" ON public.grades;
 CREATE POLICY "Admins manage grades"
   ON public.grades
   FOR ALL
@@ -164,28 +165,24 @@ CREATE POLICY "Admins manage grades"
   USING (public.is_admin());
 
 DROP POLICY IF EXISTS "Teachers manage class grades" ON public.grades;
+DROP POLICY IF EXISTS "grades_teacher_all" ON public.grades;
 CREATE POLICY "Teachers manage class grades"
   ON public.grades
   FOR ALL
   USING (
     EXISTS (
-      SELECT 1 FROM enrollments e
-      INNER JOIN classes c ON e.class_id = c.id
-      WHERE e.id = grades.enrollment_id
+      SELECT 1 FROM assignments a
+      INNER JOIN classes c ON a.class_id = c.id
+      WHERE a.id = grades.assignment_id
       AND c.teacher_id = auth.uid()
     )
   );
 
 DROP POLICY IF EXISTS "Students read own grades" ON public.grades;
+DROP POLICY IF EXISTS "grades_student_read" ON public.grades;
 CREATE POLICY "Students read own grades"
   ON public.grades FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM enrollments
-      WHERE enrollments.id = grades.enrollment_id
-      AND enrollments.student_id = auth.uid()
-    )
-  );
+  USING (student_id = auth.uid());
 
 ------------------------------------------------------------
 -- 7. Fix attendance policies
