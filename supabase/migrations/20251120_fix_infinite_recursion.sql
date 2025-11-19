@@ -27,6 +27,7 @@ DROP POLICY IF EXISTS "Admins read all profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Admins read all profiles (fn)" ON public.profiles;
 DROP POLICY IF EXISTS "Teachers read student profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Read teacher profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users read own profile" ON public.profiles;
 
 -- Admins can read all profiles (using security definer function)
 CREATE POLICY "Admins read all profiles"
