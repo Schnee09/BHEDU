@@ -3,6 +3,23 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api/client";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from "recharts";
 
 interface SubjectGrade {
   subject_name: string;
@@ -270,11 +287,174 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
         ))}
       </div>
 
-      {/* Performance Chart Placeholder */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Biểu đồ Tiến độ</h2>
-        <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <p className="text-gray-500">Biểu đồ sẽ được thêm vào sau</p>
+      {/* Performance Charts */}
+      <div className="space-y-6">
+        {/* GPA Trend Line Chart */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Xu hướng Điểm Trung Bình (GPA)</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart
+              data={progress.semesters.map((s, i) => ({
+                name: `${s.semester} ${s.academic_year}`,
+                gpa: parseFloat(s.gpa.toFixed(2)),
+                semester: s.semester
+              }))}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" angle={-15} textAnchor="end" height={80} />
+              <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+                labelStyle={{ fontWeight: 'bold' }}
+              />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="gpa" 
+                stroke="#d97706" 
+                strokeWidth={3}
+                name="Điểm TB"
+                dot={{ fill: '#d97706', r: 6 }}
+                activeDot={{ r: 8 }}
+              />
+              {/* Reference lines for classifications */}
+              <Line 
+                type="monotone" 
+                dataKey={() => 8} 
+                stroke="#10b981" 
+                strokeDasharray="5 5"
+                strokeWidth={1}
+                name="Giỏi (8.0)"
+                dot={false}
+              />
+              <Line 
+                type="monotone" 
+                dataKey={() => 6.5} 
+                stroke="#3b82f6" 
+                strokeDasharray="5 5"
+                strokeWidth={1}
+                name="Khá (6.5)"
+                dot={false}
+              />
+              <Line 
+                type="monotone" 
+                dataKey={() => 5} 
+                stroke="#eab308" 
+                strokeDasharray="5 5"
+                strokeWidth={1}
+                name="TB (5.0)"
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Subject Comparison Bar Chart */}
+        {progress.semesters.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">So sánh Điểm theo Môn học (Học kỳ gần nhất)</h2>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart
+                data={progress.semesters[progress.semesters.length - 1].subjects
+                  .filter(s => s.final_grade !== null)
+                  .map(s => ({
+                    subject: s.subject_name,
+                    'Học kỳ 1': s.semester_1_grade || 0,
+                    'Học kỳ 2': s.semester_2_grade || 0,
+                    'Cả năm': s.final_grade || 0,
+                  }))}
+                margin={{ top: 5, right: 30, left: 20, bottom: 80 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="subject" angle={-45} textAnchor="end" height={100} interval={0} />
+                <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+                />
+                <Legend />
+                <Bar dataKey="Học kỳ 1" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="Học kỳ 2" fill="#10b981" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="Cả năm" fill="#d97706" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Radar Chart for Multi-dimensional Performance */}
+        {progress.semesters.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Phân tích Đa chiều (Radar Chart)</h2>
+            <ResponsiveContainer width="100%" height={500}>
+              <RadarChart
+                data={progress.semesters[progress.semesters.length - 1].subjects
+                  .filter(s => s.final_grade !== null)
+                  .slice(0, 8) // Limit to 8 subjects for readability
+                  .map(s => ({
+                    subject: s.subject_name.length > 15 
+                      ? s.subject_name.substring(0, 12) + '...' 
+                      : s.subject_name,
+                    grade: s.final_grade || 0,
+                    fullMark: 10
+                  }))}
+              >
+                <PolarGrid stroke="#ddd" />
+                <PolarAngleAxis dataKey="subject" />
+                <PolarRadiusAxis angle={90} domain={[0, 10]} />
+                <Radar 
+                  name="Điểm số" 
+                  dataKey="grade" 
+                  stroke="#d97706" 
+                  fill="#d97706" 
+                  fillOpacity={0.6}
+                />
+                <Legend />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Attendance & Conduct Trend */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Chuyên cần & Hạnh kiểm</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart
+              data={progress.semesters.map((s, i) => ({
+                name: `${s.semester}`,
+                'Chuyên cần (%)': s.attendance_rate,
+                'GPA': s.gpa
+              }))}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" />
+              <YAxis yAxisId="left" domain={[0, 100]} />
+              <YAxis yAxisId="right" orientation="right" domain={[0, 10]} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+              />
+              <Legend />
+              <Line 
+                yAxisId="left"
+                type="monotone" 
+                dataKey="Chuyên cần (%)" 
+                stroke="#10b981" 
+                strokeWidth={2}
+                dot={{ fill: '#10b981', r: 5 }}
+              />
+              <Line 
+                yAxisId="right"
+                type="monotone" 
+                dataKey="GPA" 
+                stroke="#d97706" 
+                strokeWidth={2}
+                dot={{ fill: '#d97706', r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

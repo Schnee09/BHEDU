@@ -33,6 +33,9 @@ export default function NavBar() {
           <Link href="/" className="font-semibold">BH EDU</Link>
           <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-800">Dashboard</Link>
           <Link href="/dashboard/courses" className="text-sm text-gray-500 hover:text-gray-800">Admin</Link>
+          {(role === 'teacher' || role === 'admin') && (
+            <Link href="/dashboard/grades/vietnamese-entry" className="text-sm text-amber-600 hover:text-amber-800 font-semibold">📝 Nhập điểm</Link>
+          )}
         </div>
         <div className="flex items-center gap-3 text-sm">
           {email ? (
