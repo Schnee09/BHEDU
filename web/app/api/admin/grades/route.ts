@@ -45,7 +45,7 @@ export async function GET(request: Request) {
         assignment:assignments!grades_assignment_id_fkey(
           id,
           title,
-          max_points,
+          total_points,
           type,
           due_date,
           class:classes!assignments_class_id_fkey(
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
       // Verify assignment exists
       const { data: assignment } = await supabase
         .from('assignments')
-        .select('id, max_points')
+        .select('id, total_points')
         .eq('id', grade.assignment_id)
         .single()
 
@@ -175,9 +175,9 @@ export async function POST(request: Request) {
 
       // Validate points if provided
       if (grade.points_earned !== null && grade.points_earned !== undefined) {
-        if (grade.points_earned < 0 || grade.points_earned > assignment.max_points) {
+        if (grade.points_earned < 0 || grade.points_earned > assignment.total_points) {
           return NextResponse.json(
-            { error: `Points must be between 0 and ${assignment.max_points}` },
+            { error: `Points must be between 0 and ${assignment.total_points}` },
             { status: 400 }
           )
         }

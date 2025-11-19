@@ -90,7 +90,7 @@ export async function GET(
           graded_submissions: gradedSubmissions,
           pending_submissions: totalSubmissions - gradedSubmissions,
           average_score: averageScore,
-          max_points: assignment.max_points
+          total_points: assignment.total_points
         }
       }
     })
@@ -131,7 +131,7 @@ export async function PATCH(
       'title',
       'description',
       'type',
-      'max_points',
+      'total_points',
       'due_date',
       'published',
       'category_id',

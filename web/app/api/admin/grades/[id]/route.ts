@@ -30,7 +30,7 @@ export async function GET(
           id,
           title,
           description,
-          max_points,
+          total_points,
           type,
           due_date,
           published,
@@ -79,8 +79,8 @@ export async function GET(
     let percentage = null
     let calculatedLetterGrade = null
     
-    if (grade.points_earned !== null && grade.assignment?.max_points) {
-      percentage = (grade.points_earned / grade.assignment.max_points) * 100
+    if (grade.points_earned !== null && grade.assignment?.total_points) {
+      percentage = (grade.points_earned / grade.assignment.total_points) * 100
       
       // Simple letter grade calculation (can be enhanced with grading scales)
       if (percentage >= 90) calculatedLetterGrade = 'A'
@@ -126,7 +126,7 @@ export async function PATCH(
         *,
         assignment:assignments!grades_assignment_id_fkey(
           id,
-          max_points
+          total_points
         )
       `)
       .eq('id', id)
@@ -148,14 +148,14 @@ export async function PATCH(
 
     // Validate points if being updated
     if (updates.points_earned !== undefined && updates.points_earned !== null) {
-      const maxPoints = existingGrade.assignment?.max_points
+      const totalPoints = existingGrade.assignment?.total_points
       const pointsValue = updates.points_earned as number
-      if (!maxPoints) {
-        return NextResponse.json({ error: 'Assignment max_points not found' }, { status: 400 })
+      if (!totalPoints) {
+        return NextResponse.json({ error: 'Assignment total_points not found' }, { status: 400 })
       }
-      if (pointsValue < 0 || pointsValue > maxPoints) {
+      if (pointsValue < 0 || pointsValue > totalPoints) {
         return NextResponse.json(
-          { error: `Points must be between 0 and ${maxPoints}` },
+          { error: `Points must be between 0 and ${totalPoints}` },
           { status: 400 }
         )
       }

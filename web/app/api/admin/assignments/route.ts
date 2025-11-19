@@ -98,7 +98,7 @@ export async function GET(request: Request) {
     }
 
     // Apply sorting
-    const validSortFields = ['title', 'due_date', 'created_at', 'max_points', 'type']
+    const validSortFields = ['title', 'due_date', 'created_at', 'total_points', 'type']
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'due_date'
     query = query.order(sortField, { ascending: sortOrder === 'asc' })
 
@@ -152,15 +152,15 @@ export async function POST(request: Request) {
       title,
       description,
       type,
-      max_points,
+      total_points,
       due_date,
       published
     } = body
 
     // Validate required fields
-    if (!class_id || !title || !max_points) {
+    if (!class_id || !title || !total_points) {
       return NextResponse.json(
-        { error: 'Class ID, title, and max points are required' },
+        { error: 'Class ID, title, and total points are required' },
         { status: 400 }
       )
     }
@@ -198,7 +198,7 @@ export async function POST(request: Request) {
         title,
         description,
         type: type || 'homework',
-        max_points,
+        total_points,
         due_date,
         published: published !== undefined ? published : false,
         created_at: new Date().toISOString()
