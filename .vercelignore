@@ -1,0 +1,6 @@
+# Vercel should only build the web directory
+backend/
+supabase/
+scripts/
+docs/
+*.md
