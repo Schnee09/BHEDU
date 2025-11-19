@@ -26,8 +26,8 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('classes')
-      .select('id, title, description, created_at')
-      .order('title', { ascending: true })
+      .select('id, name, description, created_at')
+      .order('name', { ascending: true })
 
     // If not admin, filter by teacher_id
     if (authResult.userRole !== 'admin') {

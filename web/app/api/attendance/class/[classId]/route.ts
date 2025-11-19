@@ -49,7 +49,7 @@ export async function GET(
     // Get class info
     const { data: classInfo, error: classError } = await supabase
       .from('classes')
-      .select('id, title')
+      .select('id, name')
       .eq('id', classId)
       .single()
 
