@@ -382,7 +382,7 @@ export default function BulkImportPage() {
                   Import More Students
                 </button>
                 <button
-                  onClick={() => router.push('/admin/students')}
+                  onClick={() => router.push('/dashboard/students')}
                   className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-medium transition"
                 >
                   View Students

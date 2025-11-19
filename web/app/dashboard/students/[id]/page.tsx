@@ -398,7 +398,15 @@ export default async function StudentDetail({ params }: { params: { id: string }
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
       <div className="mb-4 flex items-center justify-between">
-        <Link href="/dashboard/students" className="text-sm text-blue-700 hover:underline">← Back to Students</Link>
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/students" className="text-sm text-blue-700 hover:underline">← Back to Students</Link>
+          <Link 
+            href={`/dashboard/students/${id}/progress`}
+            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium text-sm flex items-center gap-2"
+          >
+            📊 Theo dõi Tiến độ
+          </Link>
+        </div>
         <StudentActions 
           studentId={id} 
           studentName={profile.full_name} 

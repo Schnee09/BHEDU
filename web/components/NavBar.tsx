@@ -32,7 +32,7 @@ export default function NavBar() {
         <div className="flex items-center gap-4">
           <Link href="/" className="font-semibold">BH EDU</Link>
           <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-800">Dashboard</Link>
-          <Link href="/admin/courses" className="text-sm text-gray-500 hover:text-gray-800">Admin</Link>
+          <Link href="/dashboard/courses" className="text-sm text-gray-500 hover:text-gray-800">Admin</Link>
         </div>
         <div className="flex items-center gap-3 text-sm">
           {email ? (
