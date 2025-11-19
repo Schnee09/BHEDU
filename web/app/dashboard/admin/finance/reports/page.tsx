@@ -86,7 +86,7 @@ export default function FinancialReportsPage() {
       if (response.success) {
         setAcademicYears(response.academic_years)
         // Auto-select current academic year
-        const currentYear = response.academic_years.find((y) => y.is_current)
+        const currentYear = response.academic_years.find((y: { is_current: boolean; id: string }) => y.is_current)
         if (currentYear) {
           setFilters({ ...filters, academic_year_id: currentYear.id })
         }
@@ -115,7 +115,8 @@ export default function FinancialReportsPage() {
         setError(response.error || 'Failed to fetch report data')
       }
     } catch (err) {
-      setError(err.message || 'Failed to fetch report data')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch report data'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

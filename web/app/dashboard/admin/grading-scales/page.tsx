@@ -92,7 +92,8 @@ export default function GradingScalesPage() {
       fetchScales();
     } catch (error) {
       console.error('Error saving grading scale:', error);
-      alert(error.message || 'Failed to save grading scale');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save grading scale';
+      alert(errorMessage);
     }
   };
 
@@ -121,7 +122,8 @@ export default function GradingScalesPage() {
       fetchScales();
     } catch (error) {
       console.error('Error deleting grading scale:', error);
-      alert(error.message || 'Failed to delete grading scale');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete grading scale';
+      alert(errorMessage);
     }
   };
 
@@ -138,7 +140,8 @@ export default function GradingScalesPage() {
       fetchScales();
     } catch (error) {
       console.error('Error setting default scale:', error);
-      alert(error.message || 'Failed to set default scale');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to set default scale';
+      alert(errorMessage);
     }
   };
 

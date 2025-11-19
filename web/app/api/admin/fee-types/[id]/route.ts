@@ -8,7 +8,7 @@ import { adminAuth } from '@/lib/auth/adminAuth';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request);
@@ -19,11 +19,12 @@ export async function GET(
       );
     }
 
+    const resolvedParams = await params;
     const supabase = createServiceClient();
     const { data, error } = await supabase
       .from('fee_types')
       .select('*, academic_years(name)')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single();
 
     if (error) {
@@ -38,9 +39,10 @@ export async function GET(
     }
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in GET /api/admin/fee-types/[id]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -51,7 +53,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request);
@@ -62,6 +64,7 @@ export async function PATCH(
       );
     }
 
+    const resolvedParams = await params;
     const body = await request.json();
     const { name, description, amount, category, is_mandatory, is_active, academic_year_id } = body;
 
@@ -75,7 +78,7 @@ export async function PATCH(
 
     const supabase = createServiceClient();
 
-    const updates: any = { updated_at: new Date().toISOString() };
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
     if (amount !== undefined) updates.amount = amount;
@@ -87,7 +90,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('fee_types')
       .update(updates)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select()
       .single();
 
@@ -109,9 +112,10 @@ export async function PATCH(
     }
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in PATCH /api/admin/fee-types/[id]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -121,7 +125,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request);
@@ -132,13 +136,14 @@ export async function DELETE(
       );
     }
 
+    const resolvedParams = await params;
     const supabase = createServiceClient();
 
     // Check if fee type exists
     const { data: existing } = await supabase
       .from('fee_types')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single();
 
     if (!existing) {
@@ -151,7 +156,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('fee_types')
       .delete()
-      .eq('id', params.id);
+      .eq('id', resolvedParams.id);
 
     if (error) {
       console.error('Error deleting fee type:', error);
@@ -159,8 +164,9 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true, message: 'Fee type deleted' });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in DELETE /api/admin/fee-types/[id]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

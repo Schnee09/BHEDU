@@ -237,7 +237,8 @@ export default function PaymentsPage() {
         setError(response.error || 'Failed to fetch payments')
       }
     } catch (err) {
-      setError(err.message || 'Failed to fetch payments')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch payments'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -313,7 +314,8 @@ export default function PaymentsPage() {
         alert(response.error || 'Failed to record payment')
       }
     } catch (err) {
-      alert(err.message || 'Failed to record payment')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to record payment'
+      alert(errorMessage)
     } finally {
       setCreating(false)
     }

@@ -107,10 +107,11 @@ export default function AssignmentDetailsPage({ params }: { params: Promise<{ id
     if (!assignment) return;
 
     try {
-      const response: { success: boolean; error?: string } = await apiFetch(`/api/admin/assignments/${assignment.id}`, {
+      const res = await apiFetch(`/api/admin/assignments/${assignment.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ published: !assignment.published })
       });
+      const response: { success: boolean; error?: string } = await res.json();
 
       if (response.success) {
         fetchAssignmentDetails();
@@ -131,9 +132,10 @@ export default function AssignmentDetailsPage({ params }: { params: Promise<{ id
     }
 
     try {
-      const response: { success: boolean; error?: string } = await apiFetch(`/api/admin/assignments/${assignment.id}`, {
+      const res = await apiFetch(`/api/admin/assignments/${assignment.id}`, {
         method: 'DELETE'
       });
+      const response: { success: boolean; error?: string } = await res.json();
 
       if (response.success) {
         router.push('/dashboard/admin/assignments');

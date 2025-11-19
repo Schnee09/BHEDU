@@ -11,7 +11,7 @@ import { logger } from '@/lib/logger'
 // GET /api/admin/classes/[id] - Get single class details
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request)
@@ -19,8 +19,9 @@ export async function GET(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
+    const resolvedParams = await params
     const supabase = createClientFromRequest(request as any)
-    const { id } = params
+    const { id } = resolvedParams
 
     const { data: classData, error } = await supabase
       .from('classes')
@@ -75,7 +76,7 @@ export async function GET(
 // PATCH /api/admin/classes/[id] - Update class
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request)
@@ -83,8 +84,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
+    const resolvedParams = await params
     const supabase = createClientFromRequest(request as any)
-    const { id } = params
+    const { id } = resolvedParams
     const body = await request.json()
 
     // Check if class exists
@@ -198,7 +200,7 @@ export async function PATCH(
 // DELETE /api/admin/classes/[id] - Delete class
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request)
@@ -206,8 +208,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
+    const resolvedParams = await params
     const supabase = createClientFromRequest(request as any)
-    const { id } = params
+    const { id } = resolvedParams
 
     // Check if class has enrollments
     const { data: enrollments, error: enrollError } = await supabase

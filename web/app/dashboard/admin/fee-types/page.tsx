@@ -123,7 +123,8 @@ export default function FeeTypesPage() {
       fetchData();
     } catch (error) {
       console.error('Error saving fee type:', error);
-      alert(error.message || 'Failed to save fee type');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save fee type';
+      alert(errorMessage);
     }
   };
 
@@ -155,7 +156,8 @@ export default function FeeTypesPage() {
       fetchData();
     } catch (error) {
       console.error('Error deleting fee type:', error);
-      alert(error.message || 'Failed to delete fee type');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete fee type';
+      alert(errorMessage);
     }
   };
 

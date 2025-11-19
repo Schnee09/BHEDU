@@ -122,8 +122,9 @@ export default function StudentAccountDetailsPage({ params }: { params: Promise<
         setPayments(paymentsResponse.payments || [])
       }
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch account details')
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch account details'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

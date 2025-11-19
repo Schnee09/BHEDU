@@ -98,8 +98,9 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
       } else {
         setError(response.error || 'Failed to fetch invoice')
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch invoice')
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch invoice'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -123,8 +124,9 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
       } else {
         alert(response.error || 'Failed to update status')
       }
-    } catch (err: any) {
-      alert(err.message || 'Failed to update status')
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update status'
+      alert(errorMessage)
     } finally {
       setUpdating(false)
     }
@@ -147,8 +149,9 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
       } else {
         alert(response.error || 'Failed to delete invoice')
       }
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete invoice')
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete invoice'
+      alert(errorMessage)
     } finally {
       setUpdating(false)
     }

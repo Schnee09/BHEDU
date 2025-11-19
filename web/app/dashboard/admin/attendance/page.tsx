@@ -130,7 +130,8 @@ export default function AttendanceManagementPage() {
       setTotalPages(response.pagination?.total_pages || 1)
       setTotalRecords(response.pagination?.total || 0)
     } catch (err) {
-      setError(err.message || 'Failed to fetch attendance records')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch attendance records'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -190,7 +191,8 @@ export default function AttendanceManagementPage() {
       setSelectedRecords(new Set())
       fetchRecords()
     } catch (err) {
-      alert(err.message || 'Failed to update attendance records')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update attendance records'
+      alert(errorMessage)
     }
   }
 
@@ -213,7 +215,8 @@ export default function AttendanceManagementPage() {
       setSelectedRecords(new Set())
       fetchRecords()
     } catch (err) {
-      alert(err.message || 'Failed to delete attendance records')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete attendance records'
+      alert(errorMessage)
     }
   }
   
@@ -281,7 +284,8 @@ export default function AttendanceManagementPage() {
       fetchRecords()
       alert(`Successfully marked attendance for ${records.length} students`)
     } catch (err) {
-      alert(err.message || 'Failed to mark attendance')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to mark attendance'
+      alert(errorMessage)
     } finally {
       setBulkMarkLoading(false)
     }
@@ -312,7 +316,8 @@ export default function AttendanceManagementPage() {
       setEditingRecord(null)
       fetchRecords()
     } catch (err) {
-      alert(err.message || 'Failed to update record')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update record'
+      alert(errorMessage)
     }
   }
 
@@ -548,7 +553,7 @@ export default function AttendanceManagementPage() {
               onClick={handleBulkDelete}
               className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm"
             >
-              🗑�E�EDelete
+              🗑�E�EDelete
             </button>
           </div>
         </div>
@@ -588,7 +593,7 @@ export default function AttendanceManagementPage() {
                       onClick={() => handleSort('date')}
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     >
-                      Date {sortBy === 'date' && (sortOrder === 'asc' ? 'ↁE : 'ↁE)}
+                      Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Student
@@ -600,7 +605,7 @@ export default function AttendanceManagementPage() {
                       onClick={() => handleSort('status')}
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     >
-                      Status {sortBy === 'status' && (sortOrder === 'asc' ? 'ↁE : 'ↁE)}
+                      Status {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Notes
@@ -701,7 +706,7 @@ export default function AttendanceManagementPage() {
                               }}
                               className="text-red-600 hover:text-red-800"
                             >
-                              🗑�E�EDelete
+                              🗑�E�EDelete
                             </button>
                           </>
                         )}

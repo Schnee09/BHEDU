@@ -123,7 +123,8 @@ export default function StudentAccountsPage() {
         setError(response.error || 'Failed to fetch accounts')
       }
     } catch (err) {
-      setError(err.message || 'Failed to fetch accounts')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch accounts'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

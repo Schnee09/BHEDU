@@ -8,7 +8,7 @@ import { adminAuth } from '@/lib/auth/adminAuth';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request);
@@ -19,11 +19,12 @@ export async function GET(
       );
     }
 
+    const resolvedParams = await params;
     const supabase = createServiceClient();
     const { data, error } = await supabase
       .from('grading_scales')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single();
 
     if (error) {
@@ -38,9 +39,10 @@ export async function GET(
     }
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in GET /api/admin/grading-scales/[id]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -51,7 +53,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request);
@@ -62,6 +64,7 @@ export async function PATCH(
       );
     }
 
+    const resolvedParams = await params;
     const body = await request.json();
     const { name, description, scale, is_default } = body;
 
@@ -99,10 +102,10 @@ export async function PATCH(
         .from('grading_scales')
         .update({ is_default: false })
         .eq('is_default', true)
-        .neq('id', params.id);
+        .neq('id', resolvedParams.id);
     }
 
-    const updates: any = { updated_at: new Date().toISOString() };
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
     if (scale !== undefined) updates.scale = scale;
@@ -111,7 +114,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('grading_scales')
       .update(updates)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select()
       .single();
 
@@ -127,9 +130,10 @@ export async function PATCH(
     }
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in PATCH /api/admin/grading-scales/[id]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -139,7 +143,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await adminAuth(request);
@@ -150,13 +154,14 @@ export async function DELETE(
       );
     }
 
+    const resolvedParams = await params;
     const supabase = createServiceClient();
 
     // Check if scale exists
     const { data: existing } = await supabase
       .from('grading_scales')
       .select('id, is_default')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single();
 
     if (!existing) {
@@ -177,7 +182,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('grading_scales')
       .delete()
-      .eq('id', params.id);
+      .eq('id', resolvedParams.id);
 
     if (error) {
       console.error('Error deleting grading scale:', error);
@@ -185,8 +190,9 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true, message: 'Grading scale deleted' });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in DELETE /api/admin/grading-scales/[id]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

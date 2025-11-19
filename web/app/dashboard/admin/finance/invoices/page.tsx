@@ -177,7 +177,8 @@ export default function InvoicesPage() {
         setError(response.error || 'Failed to fetch invoices')
       }
     } catch (err) {
-      setError(err.message || 'Failed to fetch invoices')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch invoices'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -253,7 +254,8 @@ export default function InvoicesPage() {
         alert(response.error || 'Failed to create invoice')
       }
     } catch (err) {
-      alert(err.message || 'Failed to create invoice')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create invoice'
+      alert(errorMessage)
     } finally {
       setCreating(false)
     }
