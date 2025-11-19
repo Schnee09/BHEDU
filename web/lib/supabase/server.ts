@@ -1,4 +1,5 @@
 // web/lib/supabase/server.ts
+// Updated: 2025-01-20 - Force Vercel rebuild with clean cache
 import { cookies } from 'next/headers'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
