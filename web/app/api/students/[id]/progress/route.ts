@@ -71,10 +71,11 @@ export async function GET(
       .from('grades')
       .select(`
         id,
-        grade_value,
-        grade_type,
-        weight,
-        recorded_at,
+        points_earned,
+        late,
+        excused,
+        missing,
+        graded_at,
         assignment:assignments!inner(
           id,
           title,
@@ -94,7 +95,7 @@ export async function GET(
         )
       `)
       .eq('student_id', resolvedParams.id)
-      .order('recorded_at', { ascending: true })
+      .order('graded_at', { ascending: true })
 
     const { data: grades } = await gradesQuery
 
@@ -154,8 +155,8 @@ export async function GET(
           })
         }
 
-        semData.subjects.get(subjectCode).grades.push(grade.grade_value)
-        semData.total_grades.push(grade.grade_value)
+        semData.subjects.get(subjectCode).grades.push(grade.points_earned)
+        semData.total_grades.push(grade.points_earned)
       })
     }
 
