@@ -1,4 +1,5 @@
 // Jest setup file
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 require('dotenv').config({ path: '.env.local' });
 
 // Mock Next.js headers and cookies

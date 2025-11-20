@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/middleware';
-import { success, created, noContent } from '@/lib/api/responses';
-import { handleApiError, NotFoundError } from '@/lib/api/errors';
+import { created, noContent } from '@/lib/api/responses';
+import { handleApiError } from '@/lib/api/errors';
 import { uuidSchema } from '@/lib/api/schemas';
 import { StudentService } from '@/lib/services/studentService';
 import { withLogging } from '@/lib/api/logging';

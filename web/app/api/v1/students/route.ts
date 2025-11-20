@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/middleware';
-import { success, created, badRequest } from '@/lib/api/responses';
+import { success, created } from '@/lib/api/responses';
 import { handleApiError } from '@/lib/api/errors';
 import { createStudentSchema } from '@/lib/api/schemas';
 import { StudentService } from '@/lib/services/studentService';
@@ -15,7 +15,7 @@ import { getPaginationParams, getQueryParam } from '@/lib/api/middleware';
 export const GET = withLogging(
   withAuth(async (request: NextRequest) => {
     try {
-      const { page, pageSize, offset } = getPaginationParams(request);
+      const { page, pageSize } = getPaginationParams(request);
       const search = getQueryParam(request, 'search');
 
       const result = await StudentService.getStudents({

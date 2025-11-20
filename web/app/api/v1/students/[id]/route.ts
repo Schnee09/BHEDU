@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/middleware';
-import { success, noContent, notFound } from '@/lib/api/responses';
+import { success, noContent } from '@/lib/api/responses';
 import { handleApiError, NotFoundError } from '@/lib/api/errors';
 import { updateStudentSchema, uuidSchema } from '@/lib/api/schemas';
 import { StudentService } from '@/lib/services/studentService';
