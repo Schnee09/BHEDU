@@ -1,0 +1,52 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+**/__tests__/**
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Environment files (these should be set in Vercel Dashboard)
+.env*.local
+.env.test
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed for deployment)
+*.md
+!README.md
+
+# Config files not needed in production
+jest.config.js
+jest.setup.js
+.prettierrc
+.prettierignore
+.eslintrc.json
+.eslintignore
+tsconfig.test.json
