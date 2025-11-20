@@ -7,6 +7,7 @@
 
 -- Drop the problematic "Teachers read their students" policy
 DROP POLICY IF EXISTS "Teachers read their students" ON public.profiles;
+DROP POLICY IF EXISTS "Teachers read student profiles" ON public.profiles;
 
 -- Simplify: Teachers can read all student profiles (they only see students in their classes through enrollments anyway)
 CREATE POLICY "Teachers read student profiles"
@@ -23,6 +24,9 @@ CREATE POLICY "Teachers read student profiles"
 
 -- Fix classes RLS to avoid recursion
 DROP POLICY IF EXISTS "Teachers read own classes" ON public.classes;
+DROP POLICY IF EXISTS "Admins insert classes" ON public.classes;
+DROP POLICY IF EXISTS "Admins update classes" ON public.classes;
+DROP POLICY IF EXISTS "Admins delete classes" ON public.classes;
 
 CREATE POLICY "Teachers read own classes"
   ON public.classes FOR SELECT
@@ -51,6 +55,9 @@ CREATE POLICY "Admins delete classes"
 
 -- Ensure enrollments policies don't cause recursion
 DROP POLICY IF EXISTS "Teachers read class enrollments" ON public.enrollments;
+DROP POLICY IF EXISTS "Admins insert enrollments" ON public.enrollments;
+DROP POLICY IF EXISTS "Admins update enrollments" ON public.enrollments;
+DROP POLICY IF EXISTS "Admins delete enrollments" ON public.enrollments;
 
 CREATE POLICY "Teachers read class enrollments"
   ON public.enrollments FOR SELECT
