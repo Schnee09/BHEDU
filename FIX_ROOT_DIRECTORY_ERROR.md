@@ -20,8 +20,10 @@ https://vercel.com/[your-username]/[your-project]/settings
 
 ### Step 2: Update Root Directory
 1. Scroll to **"Root Directory"** section
-2. **Clear the field** (leave it empty or set to `.`)
+2. **Set it to `web`** (important: Vercel's Git integration still active)
 3. Click **"Save"**
+
+> **Note:** Even with `git.deploymentEnabled: false` in vercel.json, Vercel's dashboard Git integration may still be active. Setting Root Directory to `web` ensures it looks in the correct folder.
 
 ### Step 3: Add Environment Variables (while you're there)
 Go to: `Settings → Environment Variables`
