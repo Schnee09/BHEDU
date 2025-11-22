@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import type { Session } from "@supabase/supabase-js";
+import { getBrowserSupabase } from "@/lib/supabase/browser";
+import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
+
+const supabase = getBrowserSupabase();
 
 export const useSession = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -16,7 +18,7 @@ export const useSession = () => {
     };
     init();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       setSession(session);
     });
 
