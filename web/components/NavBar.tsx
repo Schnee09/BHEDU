@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase/client";
 
 export default function NavBar() {
   const [email, setEmail] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export default function NavBar() {
       const user = auth.user;
       if (user && !cancelled) {
         setEmail(user.email ?? null);
-        const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const { data } = await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
         if (!cancelled && data && (data as Record<string, unknown>).role) setRole((data as Record<string, unknown>).role as string);
       }
     })();

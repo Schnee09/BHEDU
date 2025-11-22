@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { showToast } from "@/components/ToastProvider";
 

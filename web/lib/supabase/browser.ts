@@ -1,6 +1,6 @@
 // web/lib/supabase/browser.ts
 // Ensure a single browser Supabase client instance to avoid multiple GoTrueClient warnings.
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from './client'
 
 export function getBrowserSupabase() {
   return supabase

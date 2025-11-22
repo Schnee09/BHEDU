@@ -96,7 +96,7 @@ export default async function StudentDetail({ params }: { params: { id: string }
   const user = auth?.user ?? null;
   let viewerRole: string | null = null;
   if (user) {
-    const { data: viewer } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const { data: viewer } = await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
     viewerRole = (viewer as { role?: string } | null)?.role ?? null;
   }
   const showFinance = viewerRole === "admin" || (user?.id === id);

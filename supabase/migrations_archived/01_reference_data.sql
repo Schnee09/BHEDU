@@ -118,9 +118,6 @@ ON CONFLICT (name, academic_year_id) DO UPDATE SET
 -- )
 -- ON CONFLICT (id) DO NOTHING;
 
--- =============================================================================
--- COMPLETION MESSAGE
--- =============================================================================
 
 DO $$
 BEGIN
@@ -128,3 +125,5 @@ BEGIN
   RAISE NOTICE '📊 Seeded: 3 academic years, 2 grading scales, 6 payment methods, 10 fee types';
   RAISE NOTICE '⏭️  Next step: Create test users via scripts/create-admin-users.ts';
 END $$;
+-- Moved to archive for cleanup
+  RAISE NOTICE '⏭️  Next step: Create test users via scripts/create-admin-users.ts';

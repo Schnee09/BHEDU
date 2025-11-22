@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SUPABASE_ANON_KEY:
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "public-anon-key",
   },
+    outputFileTracingRoot: __dirname,
+
   // Silence workspace root warning from multiple lockfiles in monorepo
   // See: https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory
   turbopack: {

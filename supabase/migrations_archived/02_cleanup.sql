@@ -1,10 +1,4 @@
--- Cleanup Script: 02_cleanup.sql
--- Description: Remove all seed data (for testing purposes)
--- WARNING: This will delete ALL data including user-created data!
--- Only run in development/testing environments!
-
--- =============================================================================
--- SAFETY CHECK
+-- Moved to archive for cleanup
 -- =============================================================================
 
 DO $$

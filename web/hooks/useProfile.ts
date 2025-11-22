@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase/client";
 
 export type Profile = {
   id: string;
@@ -28,8 +28,8 @@ export function useProfile() {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, role, avatar_url")
-        .eq("id", session.user.id)
+        .select("id, full_name, role, avatar_url, email, phone, address, date_of_birth")
+        .eq("user_id", session.user.id)
         .maybeSingle();
 
       if (!error && data) setProfile(data);

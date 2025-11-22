@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import LoadingScreen from "@/components/LoadingScreen";
 

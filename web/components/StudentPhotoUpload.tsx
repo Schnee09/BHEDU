@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase/client";
 import { showToast } from "@/components/ToastProvider";
 
 interface StudentPhotoUploadProps {

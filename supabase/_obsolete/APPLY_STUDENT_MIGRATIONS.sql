@@ -574,9 +574,7 @@ GRANT EXECUTE ON FUNCTION is_email_unique TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION batch_insert_enrollments TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION get_student_with_enrollments TO authenticated, service_role;
 
-------------------------------------------------------------
--- 🎉 Migration Complete!
-------------------------------------------------------------
+-- Moved to archive for cleanup
 
 -- Verify by running these queries:
 -- SELECT column_name FROM information_schema.columns WHERE table_name = 'profiles';

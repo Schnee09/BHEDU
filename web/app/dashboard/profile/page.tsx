@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 
 export default function ProfilePage() {
@@ -51,7 +51,7 @@ export default function ProfilePage() {
           address: formData.address,
           date_of_birth: formData.date_of_birth || null,
          })
-        .eq("id", user.id);
+  .eq("user_id", user.id);
 
       if (error) {
         setMessage(`Error: ${error.message}`);
