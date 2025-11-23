@@ -112,14 +112,14 @@ export default function StudentAccountDetailsPage({ params }: { params: Promise<
       const invoicesRes = await apiFetch(`/api/admin/finance/invoices?student_id=${accountResponse.account.student_id}`)
       const invoicesResponse = await invoicesRes.json()
       if (invoicesResponse.success) {
-        setInvoices(invoicesResponse.invoices || [])
+        setInvoices(invoicesResponse.data || invoicesResponse.invoices || [])
       }
 
       // Fetch payments for this student
       const paymentsRes = await apiFetch(`/api/admin/finance/payments?student_id=${accountResponse.account.student_id}`)
       const paymentsResponse = await paymentsRes.json()
       if (paymentsResponse.success) {
-        setPayments(paymentsResponse.payments || [])
+        setPayments(paymentsResponse.data || paymentsResponse.payments || [])
       }
 
     } catch (err) {
