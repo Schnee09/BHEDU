@@ -115,7 +115,7 @@ export default function InvoicesPage() {
       const res = await apiFetch('/api/admin/users?role=student&status=active&limit=1000')
       const response = await res.json()
       if (response.success) {
-        setStudents(response.users)
+        setStudents(response.data || response.users || [])
       }
     } catch (err) {
       console.error('Error fetching students:', err)
@@ -127,7 +127,7 @@ export default function InvoicesPage() {
       const res = await apiFetch('/api/admin/fee-types?is_active=true')
       const response = await res.json()
       if (response.success) {
-        setFeeTypes(response.fee_types)
+        setFeeTypes(response.data || response.fee_types || [])
       }
     } catch (err) {
       console.error('Error fetching fee types:', err)
@@ -139,7 +139,7 @@ export default function InvoicesPage() {
       const res = await apiFetch('/api/admin/academic-years')
       const response = await res.json()
       if (response.success) {
-        setAcademicYears(response.academic_years)
+        setAcademicYears(response.data || response.academic_years || [])
       }
     } catch (err) {
       console.error('Error fetching academic years:', err)
@@ -160,7 +160,7 @@ export default function InvoicesPage() {
       const response = await res.json()
       
       if (response.success) {
-        let filteredInvoices = response.invoices || []
+        let filteredInvoices = response.data || response.invoices || []
         
         // Client-side search filter
         if (filters.search) {

@@ -159,7 +159,7 @@ export default function PaymentsPage() {
       const res = await apiFetch(`/api/admin/finance/invoices?student_id=${studentId}&status=issued&status=overdue`)
       const response = await res.json()
       if (response.success) {
-        const unpaidInvoices = (response.invoices || []).filter((inv: Invoice) => inv.balance > 0)
+        const unpaidInvoices = (response.data || response.invoices || []).filter((inv: Invoice) => inv.balance > 0)
         setSelectedStudentInvoices(unpaidInvoices)
         
         // Auto-allocate payment amount to invoices
@@ -207,7 +207,7 @@ export default function PaymentsPage() {
       const response = await res.json()
       
       if (response.success) {
-        let filteredPayments = response.payments || []
+        let filteredPayments = response.data || response.payments || []
         
         // Client-side search filter
         if (filters.search) {

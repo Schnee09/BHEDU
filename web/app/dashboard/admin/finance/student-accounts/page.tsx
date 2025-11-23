@@ -92,7 +92,7 @@ export default function StudentAccountsPage() {
       const response = await res.json()
       
       if (response.success) {
-        let filteredAccounts = response.accounts || []
+        let filteredAccounts = response.data || response.accounts || []
         
         // Client-side search filter
         if (filters.search) {
