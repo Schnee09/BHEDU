@@ -43,7 +43,7 @@ export default function AcademicYearsPage() {
       setLoading(true);
       const response = await apiFetch('/api/admin/academic-years');
       const data = await response.json();
-      setYears(data.academic_years || data);
+      setYears(data.data || data);
     } catch (error) {
       console.error('Error fetching academic years:', error);
       alert('Failed to fetch academic years');
