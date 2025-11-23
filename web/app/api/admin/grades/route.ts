@@ -13,45 +13,64 @@ export async function GET(request: NextRequest) {
     const assignmentId = searchParams.get("assignment_id");
     const classId = searchParams.get("class_id");
 
+    // First, get grade records
     let query = supabase
       .from("grades")
-      .select(`
-        id,
-        assignment_id,
-        student_id,
-        score,
-        feedback,
-        graded_at,
-        graded_by,
-        created_at,
-        updated_at,
-        student:profiles!grades_student_id_fkey(id, full_name, email),
-        assignment:assignments!grades_assignment_id_fkey(id, title)
-      `)
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (studentId) query = query.eq("student_id", studentId);
     if (assignmentId) query = query.eq("assignment_id", assignmentId);
 
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data: gradeData, error: gradeError } = await query;
+    if (gradeError) throw gradeError;
 
-    // If filtering by class, get assignments for that class first
-    let filteredData = data || [];
-    if (classId) {
-      const { data: assignments } = await supabase
-        .from("assignments")
-        .select("id")
-        .eq("class_id", classId);
-      
-      const assignmentIds = assignments?.map(a => a.id) || [];
-      filteredData = filteredData.filter(g => assignmentIds.includes(g.assignment_id));
+    if (!gradeData || gradeData.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        total: 0,
+      });
     }
+
+    // Get unique student and assignment IDs
+    const studentIds = [...new Set(gradeData.map(g => g.student_id))];
+    const assignmentIds = [...new Set(gradeData.map(g => g.assignment_id))];
+
+    // Fetch students
+    const { data: students } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", studentIds);
+
+    // Fetch assignments
+    const { data: assignments } = await supabase
+      .from("assignments")
+      .select("id, title, class_id, max_points")
+      .in("id", assignmentIds);
+
+    // Create lookup maps
+    const studentMap = new Map(students?.map(s => [s.id, s]) || []);
+    const assignmentMap = new Map(assignments?.map(a => [a.id, a]) || []);
+
+    // Filter by class if specified
+    let filteredData = gradeData;
+    if (classId) {
+      const classAssignmentIds = assignments?.filter(a => a.class_id === classId).map(a => a.id) || [];
+      filteredData = gradeData.filter(g => classAssignmentIds.includes(g.assignment_id));
+    }
+
+    // Combine data
+    const enrichedData = filteredData.map(grade => ({
+      ...grade,
+      student: studentMap.get(grade.student_id) || null,
+      assignment: assignmentMap.get(grade.assignment_id) || null,
+    }));
 
     return NextResponse.json({
       success: true,
-      data: filteredData,
-      total: filteredData.length,
+      data: enrichedData,
+      total: enrichedData.length,
     });
   } catch (error: any) {
     console.error("[API] Grades error:", error);

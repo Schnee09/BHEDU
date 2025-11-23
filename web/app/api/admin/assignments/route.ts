@@ -12,33 +12,57 @@ export async function GET(request: NextRequest) {
     const classId = searchParams.get("class_id");
     const categoryId = searchParams.get("category_id");
 
+    // First, get assignment records
     let query = supabase
       .from("assignments")
-      .select(`
-        id,
-        class_id,
-        category_id,
-        title,
-        description,
-        due_date,
-        max_points,
-        created_at,
-        updated_at,
-        class:classes!assignments_class_id_fkey(id, name),
-        category:assignment_categories!assignments_category_id_fkey(id, name)
-      `)
+      .select("*")
       .order("due_date", { ascending: false });
 
     if (classId) query = query.eq("class_id", classId);
     if (categoryId) query = query.eq("category_id", categoryId);
 
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data: assignmentData, error: assignmentError } = await query;
+    if (assignmentError) throw assignmentError;
+
+    if (!assignmentData || assignmentData.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        total: 0,
+      });
+    }
+
+    // Get unique class and category IDs
+    const classIds = [...new Set(assignmentData.map(a => a.class_id).filter(Boolean))];
+    const categoryIds = [...new Set(assignmentData.map(a => a.category_id).filter(Boolean))];
+
+    // Fetch classes
+    const { data: classes } = await supabase
+      .from("classes")
+      .select("id, name")
+      .in("id", classIds);
+
+    // Fetch categories
+    const { data: categories } = await supabase
+      .from("assignment_categories")
+      .select("id, name")
+      .in("id", categoryIds);
+
+    // Create lookup maps
+    const classMap = new Map(classes?.map(c => [c.id, c]) || []);
+    const categoryMap = new Map(categories?.map(c => [c.id, c]) || []);
+
+    // Combine data
+    const enrichedData = assignmentData.map(assignment => ({
+      ...assignment,
+      class: assignment.class_id ? classMap.get(assignment.class_id) || null : null,
+      category: assignment.category_id ? categoryMap.get(assignment.category_id) || null : null,
+    }));
 
     return NextResponse.json({
       success: true,
-      data: data || [],
-      total: data?.length || 0,
+      data: enrichedData,
+      total: enrichedData.length,
     });
   } catch (error: any) {
     console.error("[API] Assignments error:", error);

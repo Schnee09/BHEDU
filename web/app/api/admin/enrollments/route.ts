@@ -13,30 +13,58 @@ export async function GET(request: NextRequest) {
     const classId = searchParams.get("class_id");
     const status = searchParams.get("status");
 
+    // First, get enrollment records
     let query = supabase
       .from("enrollments")
-      .select(`
-        id,
-        student_id,
-        class_id,
-        enrollment_date,
-        status,
-        student:profiles!enrollments_student_id_fkey(id, full_name, email),
-        class:classes!enrollments_class_id_fkey(id, name)
-      `)
+      .select("*")
       .order("enrollment_date", { ascending: false });
 
     if (studentId) query = query.eq("student_id", studentId);
     if (classId) query = query.eq("class_id", classId);
     if (status) query = query.eq("status", status);
 
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data: enrollmentData, error: enrollmentError } = await query;
+    if (enrollmentError) throw enrollmentError;
+
+    if (!enrollmentData || enrollmentData.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        total: 0,
+      });
+    }
+
+    // Get unique student and class IDs
+    const studentIds = [...new Set(enrollmentData.map(e => e.student_id))];
+    const classIds = [...new Set(enrollmentData.map(e => e.class_id))];
+
+    // Fetch students
+    const { data: students } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", studentIds);
+
+    // Fetch classes
+    const { data: classes } = await supabase
+      .from("classes")
+      .select("id, name")
+      .in("id", classIds);
+
+    // Create lookup maps
+    const studentMap = new Map(students?.map(s => [s.id, s]) || []);
+    const classMap = new Map(classes?.map(c => [c.id, c]) || []);
+
+    // Combine data
+    const enrichedData = enrollmentData.map(enrollment => ({
+      ...enrollment,
+      student: studentMap.get(enrollment.student_id) || null,
+      class: classMap.get(enrollment.class_id) || null,
+    }));
 
     return NextResponse.json({
       success: true,
-      data: data || [],
-      total: data?.length || 0,
+      data: enrichedData,
+      total: enrichedData.length,
     });
   } catch (error: any) {
     console.error("[API] Enrollments error:", error);
