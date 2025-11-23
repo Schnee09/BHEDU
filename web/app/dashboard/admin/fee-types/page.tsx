@@ -6,10 +6,8 @@ import { apiFetch } from '@/lib/api/client';
 interface FeeType {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   amount: number;
-  category: string;
-  is_mandatory: boolean;
   is_active: boolean;
   academic_year_id: string | null;
   academic_years?: { name: string } | null;
@@ -22,25 +20,11 @@ interface AcademicYear {
   name: string;
 }
 
-const CATEGORIES = [
-  'tuition',
-  'registration',
-  'books',
-  'uniform',
-  'transport',
-  'laboratory',
-  'library',
-  'technology',
-  'sports',
-  'misc'
-];
-
 export default function FeeTypesPage() {
   const [feeTypes, setFeeTypes] = useState<FeeType[]>([]);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingFeeType, setEditingFeeType] = useState<FeeType | null>(null);
@@ -48,8 +32,6 @@ export default function FeeTypesPage() {
     name: '',
     description: '',
     amount: 0,
-    category: 'tuition',
-    is_mandatory: true,
     is_active: true,
     academic_year_id: '',
   });
@@ -65,12 +47,12 @@ export default function FeeTypesPage() {
       // Fetch fee types
       const feeResponse = await apiFetch('/api/admin/fee-types');
       const feeData = await feeResponse.json();
-      setFeeTypes(feeData);
+      setFeeTypes(feeData.data || feeData);
 
       // Fetch academic years
       const yearResponse = await apiFetch('/api/admin/academic-years');
       const yearData = await yearResponse.json();
-      setAcademicYears(yearData.academic_years || yearData);
+      setAcademicYears(yearData.data || yearData);
     } catch (error) {
       console.error('Error fetching data:', error);
       alert('Failed to fetch data');
@@ -115,8 +97,6 @@ export default function FeeTypesPage() {
         name: '',
         description: '',
         amount: 0,
-        category: 'tuition',
-        is_mandatory: true,
         is_active: true,
         academic_year_id: '',
       });
@@ -134,8 +114,6 @@ export default function FeeTypesPage() {
       name: feeType.name,
       description: feeType.description || '',
       amount: feeType.amount,
-      category: feeType.category,
-      is_mandatory: feeType.is_mandatory,
       is_active: feeType.is_active,
       academic_year_id: feeType.academic_year_id || '',
     });
@@ -163,25 +141,13 @@ export default function FeeTypesPage() {
 
   const filteredFeeTypes = feeTypes.filter((fee) => {
     const matchesSearch = fee.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || fee.category === filterCategory;
     const matchesStatus =
       filterStatus === 'all' ||
       (filterStatus === 'active' && fee.is_active) ||
-      (filterStatus === 'inactive' && !fee.is_active) ||
-      (filterStatus === 'mandatory' && fee.is_mandatory) ||
-      (filterStatus === 'optional' && !fee.is_mandatory);
+      (filterStatus === 'inactive' && !fee.is_active);
 
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
-
-  // Group by category
-  const groupedFees = filteredFeeTypes.reduce((acc, fee) => {
-    if (!acc[fee.category]) {
-      acc[fee.category] = [];
-    }
-    acc[fee.category].push(fee);
-    return acc;
-  }, {} as Record<string, FeeType[]>);
 
   return (
     <div className="p-6">
@@ -198,8 +164,6 @@ export default function FeeTypesPage() {
               name: '',
               description: '',
               amount: 0,
-              category: 'tuition',
-              is_mandatory: true,
               is_active: true,
               academic_year_id: '',
             });
@@ -220,18 +184,6 @@ export default function FeeTypesPage() {
           className="flex-1 px-4 py-2 border rounded-lg"
         />
         <select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
-        >
-          <option value="all">All Categories</option>
-          {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat.charAt(0).toUpperCase() + cat.slice(1)}
-            </option>
-          ))}
-        </select>
-        <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
           className="px-4 py-2 border rounded-lg"
@@ -239,8 +191,6 @@ export default function FeeTypesPage() {
           <option value="all">All Status</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
-          <option value="mandatory">Mandatory</option>
-          <option value="optional">Optional</option>
         </select>
       </div>
 
@@ -287,21 +237,6 @@ export default function FeeTypesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Category *</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
                 <label className="block text-sm font-medium mb-1">Academic Year</label>
                 <select
                   value={formData.academic_year_id}
@@ -316,16 +251,7 @@ export default function FeeTypesPage() {
                   ))}
                 </select>
               </div>
-              <div className="flex items-center space-x-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_mandatory}
-                    onChange={(e) => setFormData({ ...formData, is_mandatory: e.target.checked })}
-                    className="mr-2"
-                  />
-                  <span className="text-sm">Mandatory</span>
-                </label>
+              <div className="flex items-center">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
@@ -367,69 +293,60 @@ export default function FeeTypesPage() {
           No fee types found. Create your first fee type to get started.
         </div>
       ) : (
-        <div className="space-y-6">
-          {Object.entries(groupedFees).map(([category, fees]) => (
-            <div key={category} className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 bg-gray-50 border-b">
-                <h3 className="text-lg font-semibold capitalize flex items-center gap-2">
-                  {category}
-                  <span className="text-sm font-normal text-gray-500">({fees.length})</span>
-                </h3>
-              </div>
-              <div className="divide-y">
-                {fees.map((fee) => (
-                  <div key={fee.id} className="px-6 py-4 hover:bg-gray-50">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">{fee.name}</h4>
-                          {fee.is_mandatory && (
-                            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                              Mandatory
-                            </span>
-                          )}
-                          {!fee.is_active && (
-                            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                              Inactive
-                            </span>
-                          )}
-                        </div>
-                        {fee.description && (
-                          <p className="text-sm text-gray-600 mt-1">{fee.description}</p>
-                        )}
-                        {fee.academic_years && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Academic Year: {fee.academic_years.name}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-green-600">
-                            ${fee.amount.toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEdit(fee)}
-                            className="text-sm text-blue-600 hover:text-blue-900"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(fee.id)}
-                            className="text-sm text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </div>
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 bg-gray-50 border-b">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              All Fee Types
+              <span className="text-sm font-normal text-gray-500">({filteredFeeTypes.length})</span>
+            </h3>
+          </div>
+          <div className="divide-y">
+            {filteredFeeTypes.map((fee) => (
+              <div key={fee.id} className="px-6 py-4 hover:bg-gray-50">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">{fee.name}</h4>
+                      {!fee.is_active && (
+                        <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                    {fee.description && (
+                      <p className="text-sm text-gray-600 mt-1">{fee.description}</p>
+                    )}
+                    {fee.academic_years && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Academic Year: {fee.academic_years.name}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-green-600">
+                        ${fee.amount.toFixed(2)}
                       </div>
                     </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(fee)}
+                        className="text-sm text-blue-600 hover:text-blue-900"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(fee.id)}
+                        className="text-sm text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
