@@ -1,224 +1,84 @@
-/**
- * Admin Classes API
- * Full CRUD operations for classes (admin only)
- */
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
-import { adminAuth } from '@/lib/auth/adminAuth'
-import { logger } from '@/lib/logger'
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-// GET /api/admin/classes - List classes with filters, pagination, sorting
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const authResult = await adminAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    const searchParams = request.nextUrl.searchParams;
+    const search = searchParams.get("search");
+    const teacherId = searchParams.get("teacher_id");
 
-    const supabase = createClientFromRequest(request as any)
-    const { searchParams } = new URL(request.url)
-
-    // Pagination
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const offset = (page - 1) * limit
-
-    // Filters
-    const gradeLevel = searchParams.get('grade_level')
-    const teacherId = searchParams.get('teacher_id')
-    const academicYearId = searchParams.get('academic_year_id')
-    const status = searchParams.get('status')
-    const search = searchParams.get('search')
-
-    // Sorting
-    const sortBy = searchParams.get('sort_by') || 'name'
-    const sortOrder = (searchParams.get('sort_order') || 'asc') as 'asc' | 'desc'
-
-    // Build query
     let query = supabase
-      .from('classes')
-      .select(`
-        id,
-        name,
-        code,
-        description,
-        grade_level,
-        status,
-        academic_year_id,
-        teacher_id,
-        room_number,
-        schedule,
-        max_students,
-        created_at,
-        updated_at,
-        teacher:profiles!classes_teacher_id_fkey(
-          id,
-          full_name,
-          email
-        ),
-        academic_year:academic_years!classes_academic_year_id_fkey(
-          id,
-          name
-        ),
-        enrollments:enrollments(count)
-      `, { count: 'exact' })
+      .from("classes")
+      .select("id, name, teacher_id, created_at")
+      .order("name", { ascending: true });
 
-    // Apply filters
-    if (gradeLevel) query = query.eq('grade_level', gradeLevel)
-    if (teacherId) query = query.eq('teacher_id', teacherId)
-    if (academicYearId) query = query.eq('academic_year_id', academicYearId)
-    if (status) query = query.eq('status', status)
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%,description.ilike.%${search}%`)
-    }
+    if (search) query = query.ilike("name", `%${search}%`);
+    if (teacherId) query = query.eq("teacher_id", teacherId);
 
-    // Apply sorting
-    query = query.order(sortBy, { ascending: sortOrder === 'asc' })
+    const { data, error } = await query;
+    if (error) throw error;
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1)
+    const classesWithStats = await Promise.all(
+      (data || []).map(async (cls) => {
+        const [enrollments, teacher] = await Promise.all([
+          supabase.from("enrollments").select("id", { count: "exact", head: true }).eq("class_id", cls.id),
+          supabase.from("profiles").select("id, full_name, email").eq("id", cls.teacher_id).single()
+        ]);
 
-    const { data: classes, error, count } = await query
-
-    if (error) {
-      logger.error('Failed to fetch classes', { error: error.message })
-      return NextResponse.json(
-        { error: 'Failed to fetch classes', details: error.message },
-        { status: 500 }
-      )
-    }
-
-    // Calculate enrollment counts
-    const classesWithCount = classes?.map(cls => ({
-      ...cls,
-      enrollment_count: cls.enrollments?.[0]?.count || 0
-    })) || []
+        return {
+          ...cls,
+          enrollment_count: enrollments.count || 0,
+          teacher: teacher.data,
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
-      classes: classesWithCount,
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-        total_pages: Math.ceil((count || 0) / limit)
-      }
-    })
-
-  } catch (error) {
-    logger.error('Get classes error', error)
+      data: classesWithStats,
+      classes: classesWithStats,
+      total: classesWithStats.length,
+    });
+  } catch (error: any) {
+    console.error("[API] Classes error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { success: false, error: error.message },
       { status: 500 }
-    )
+    );
   }
 }
 
-// POST /api/admin/classes - Create new class
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const authResult = await adminAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    const body = await request.json();
+    const { name, teacher_id } = body;
 
-    const supabase = createClientFromRequest(request as any)
-    const body = await request.json()
-
-    // Validate required fields
-    const { name, code, grade_level, teacher_id, academic_year_id } = body
-    if (!name || !grade_level || !teacher_id || !academic_year_id) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, grade_level, teacher_id, academic_year_id' },
+        { success: false, error: "Class name is required" },
         { status: 400 }
-      )
+      );
     }
 
-    // Check if code is unique (if provided)
-    if (code) {
-      const { data: existing } = await supabase
-        .from('classes')
-        .select('id')
-        .eq('code', code)
-        .single()
-
-      if (existing) {
-        return NextResponse.json(
-          { error: 'Class code already exists' },
-          { status: 409 }
-        )
-      }
-    }
-
-    // Verify teacher exists and is a teacher
-    const { data: teacher, error: teacherError } = await supabase
-      .from('profiles')
-      .select('id, role')
-      .eq('id', teacher_id)
-      .single()
-
-    if (teacherError || !teacher || teacher.role !== 'teacher') {
-      return NextResponse.json(
-        { error: 'Invalid teacher ID or user is not a teacher' },
-        { status: 400 }
-      )
-    }
-
-    // Verify academic year exists
-    const { data: academicYear, error: yearError } = await supabase
-      .from('academic_years')
-      .select('id')
-      .eq('id', academic_year_id)
-      .single()
-
-    if (yearError || !academicYear) {
-      return NextResponse.json(
-        { error: 'Invalid academic year ID' },
-        { status: 400 }
-      )
-    }
-
-    // Create class
-    const { data: newClass, error: createError } = await supabase
-      .from('classes')
-      .insert({
-        name,
-        code: code || null,
-        description: body.description || null,
-        grade_level,
-        status: body.status || 'active',
-        teacher_id,
-        academic_year_id,
-        room_number: body.room_number || null,
-        schedule: body.schedule || null,
-        max_students: body.max_students || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+    const { data, error } = await supabase
+      .from("classes")
+      .insert({ name, teacher_id })
       .select()
-      .single()
+      .single();
 
-    if (createError) {
-      logger.error('Failed to create class', { error: createError.message })
-      return NextResponse.json(
-        { error: 'Failed to create class', details: createError.message },
-        { status: 500 }
-      )
-    }
+    if (error) throw error;
 
-    logger.info('Class created', { classId: newClass.id, name: newClass.name })
-
-    return NextResponse.json({
-      success: true,
-      class: newClass
-    }, { status: 201 })
-
-  } catch (error) {
-    logger.error('Create class error', error)
+    return NextResponse.json({ success: true, data });
+  } catch (error: any) {
+    console.error("[API] Create class error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { success: false, error: error.message },
       { status: 500 }
-    )
+    );
   }
 }
