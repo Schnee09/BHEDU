@@ -10,8 +10,9 @@ type Student = {
   full_name: string;
   email: string | null;
   role: string;
-  status: string;
   date_of_birth: string | null;
+  phone: string | null;
+  address: string | null;
   created_at: string;
 };
 
@@ -20,7 +21,6 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
@@ -36,14 +36,13 @@ export default function StudentsPage() {
     if (profileLoading || !profile) return;
 
     const fetchStudents = async () => {
-      console.log('[Students] Fetching via API, search:', debouncedSearch, 'filter:', statusFilter);
+      console.log('[Students] Fetching via API, search:', debouncedSearch);
       setLoading(true);
 
       try {
         // Build query params
         const params = new URLSearchParams();
         if (debouncedSearch) params.append("search", debouncedSearch);
-        if (statusFilter !== "all") params.append("status", statusFilter);
 
         // Fetch from API route (bypasses RLS)
         const response = await fetch(`/api/admin/students?${params.toString()}`);
@@ -72,7 +71,7 @@ export default function StudentsPage() {
     };
 
     fetchStudents();
-  }, [profile, profileLoading, debouncedSearch, statusFilter, page]);
+  }, [profile, profileLoading, debouncedSearch, page]);
 
   const handleSelectAll = () => {
     if (selectedIds.size === students.length) {
@@ -131,7 +130,6 @@ export default function StudentsPage() {
         try {
           const params = new URLSearchParams();
           if (debouncedSearch) params.append("search", debouncedSearch);
-          if (statusFilter !== "all") params.append("status", statusFilter);
 
           const response = await fetch(`/api/admin/students?${params.toString()}`);
           const result = await response.json();
@@ -164,12 +162,12 @@ export default function StudentsPage() {
       : students;
 
     // Create CSV content
-    const headers = ["ID", "Full Name", "Email", "Status", "Date of Birth", "Joined"];
+    const headers = ["ID", "Full Name", "Email", "Phone", "Date of Birth", "Joined"];
     const rows = studentsToExport.map(s => [
       s.id,
       s.full_name,
       s.email || "",
-      s.status,
+      s.phone || "",
       s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString() : "",
       new Date(s.created_at).toLocaleDateString(),
     ]);
@@ -218,21 +216,6 @@ export default function StudentsPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(0);
-            }}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="pending">Pending</option>
-          </select>
 
           {/* Export Button */}
           <button
@@ -283,7 +266,7 @@ export default function StudentsPage() {
                   )}
                   <th className="p-3 text-left">Full Name</th>
                   <th className="p-3 text-left">Email</th>
-                  <th className="p-3 text-left">Status</th>
+                  <th className="p-3 text-left">Phone</th>
                   <th className="p-3 text-left">Date of Birth</th>
                   <th className="p-3 text-left">Joined</th>
                 </tr>
@@ -307,15 +290,7 @@ export default function StudentsPage() {
                       </Link>
                     </td>
                     <td className="p-3 text-gray-600">{s.email || "-"}</td>
-                    <td className="p-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        s.status === "active" ? "bg-green-100 text-green-800" :
-                        s.status === "inactive" ? "bg-gray-100 text-gray-800" :
-                        "bg-yellow-100 text-yellow-800"
-                      }`}>
-                        {s.status}
-                      </span>
-                    </td>
+                    <td className="p-3 text-gray-600">{s.phone || "-"}</td>
                     <td className="p-3 text-gray-600">
                       {s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString() : "-"}
                     </td>

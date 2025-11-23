@@ -15,22 +15,18 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search");
-    const status = searchParams.get("status");
     const classId = searchParams.get("class_id");
 
-    // Build query
+    // Build query - Note: profiles table doesn't have 'status' column
     let query = supabase
       .from("profiles")
-      .select("id, full_name, email, role, status, date_of_birth, created_at")
+      .select("id, full_name, email, role, date_of_birth, phone, address, created_at")
       .eq("role", "student")
       .order("full_name", { ascending: true });
 
     // Apply filters
     if (search) {
       query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
-    }
-    if (status) {
-      query = query.eq("status", status);
     }
 
     // If filtering by class, join with enrollments
@@ -87,7 +83,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, full_name, date_of_birth, status = "active" } = body;
+    const { email, full_name, date_of_birth } = body;
 
     // Validation
     if (!email || !full_name) {
@@ -106,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     if (authError) throw authError;
 
-    // Create profile
+    // Create profile (no status column in database)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .insert({
@@ -114,7 +110,6 @@ export async function POST(request: NextRequest) {
         email,
         full_name,
         role: "student",
-        status,
         date_of_birth,
       })
       .select()
