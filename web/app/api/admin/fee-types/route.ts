@@ -6,9 +6,7 @@ import { adminAuth } from '@/lib/auth/adminAuth';
  * GET /api/admin/fee-types
  * List all fee types with optional filters
  * Query params:
- * - category: string (filter by category)
  * - is_active: boolean
- * - is_mandatory: boolean
  * - academic_year_id: uuid (filter by academic year)
  */
 export async function GET(request: NextRequest) {
@@ -24,28 +22,17 @@ export async function GET(request: NextRequest) {
     const supabase = createServiceClient();
     const { searchParams } = new URL(request.url);
     
-    const category = searchParams.get('category');
     const is_active = searchParams.get('is_active');
-    const is_mandatory = searchParams.get('is_mandatory');
     const academic_year_id = searchParams.get('academic_year_id');
 
     let query = supabase
       .from('fee_types')
       .select('*, academic_years(name)')
-      .order('category', { ascending: true })
       .order('name', { ascending: true });
 
     // Apply filters
-    if (category) {
-      query = query.eq('category', category);
-    }
-
     if (is_active !== null) {
       query = query.eq('is_active', is_active === 'true');
-    }
-
-    if (is_mandatory !== null) {
-      query = query.eq('is_mandatory', is_mandatory === 'true');
     }
 
     if (academic_year_id) {
@@ -59,7 +46,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({ success: true, data: data || [] });
   } catch (error: any) {
     console.error('Error in GET /api/admin/fee-types:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -73,8 +60,6 @@ export async function GET(request: NextRequest) {
  *   name, 
  *   description?, 
  *   amount,
- *   category,
- *   is_mandatory?,
  *   is_active?,
  *   academic_year_id?
  * }
@@ -90,12 +75,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, amount, category, is_mandatory, is_active, academic_year_id } = body;
+    const { name, description, amount, is_active, academic_year_id } = body;
 
     // Validation
-    if (!name || amount === undefined || !category) {
+    if (!name || amount === undefined) {
       return NextResponse.json(
-        { error: 'name, amount, and category are required' },
+        { error: 'name and amount are required' },
         { status: 400 }
       );
     }
@@ -115,11 +100,8 @@ export async function POST(request: NextRequest) {
         name,
         description,
         amount,
-        category,
-        is_mandatory: is_mandatory !== undefined ? is_mandatory : true,
         is_active: is_active !== undefined ? is_active : true,
         academic_year_id,
-        created_by: authResult.userId,
       })
       .select()
       .single();
@@ -135,7 +117,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json({ success: true, data }, { status: 201 });
   } catch (error: any) {
     console.error('Error in POST /api/admin/fee-types:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
