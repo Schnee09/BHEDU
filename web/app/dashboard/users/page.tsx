@@ -6,8 +6,7 @@ import { apiFetch } from '@/lib/api/client'
 interface User {
   id: string
   email: string
-  first_name: string
-  last_name: string
+  full_name: string
   role: 'admin' | 'teacher' | 'student'
   is_active: boolean
   last_login_at: string | null
@@ -45,8 +44,7 @@ export default function UserManagementPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    first_name: '',
-    last_name: '',
+    full_name: '',
     role: 'student' as 'admin' | 'teacher' | 'student',
     phone: '',
     department: '',
@@ -207,8 +205,7 @@ export default function UserManagementPage() {
     setFormData({
       email: user.email,
       password: '',
-      first_name: user.first_name,
-      last_name: user.last_name,
+      full_name: user.full_name,
       role: user.role,
       phone: user.phone || '',
       department: user.department || '',
@@ -224,8 +221,7 @@ export default function UserManagementPage() {
     setFormData({
       email: '',
       password: '',
-      first_name: '',
-      last_name: '',
+      full_name: '',
       role: 'student',
       phone: '',
       department: '',
@@ -346,10 +342,10 @@ export default function UserManagementPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white font-semibold">
-                          {user.first_name[0]}{user.last_name[0]}
+                          {user.full_name ? user.full_name.substring(0, 2).toUpperCase() : user.email.substring(0, 2).toUpperCase()}
                         </div>
                         <div className="ml-3">
-                          <div className="font-medium text-gray-900">{user.first_name} {user.last_name}</div>
+                          <div className="font-medium text-gray-900">{user.full_name || user.email}</div>
                           <div className="text-sm text-gray-500">{user.email}</div>
                           {user.student_id && <div className="text-xs text-gray-400">ID: {user.student_id}</div>}
                         </div>
@@ -431,27 +427,15 @@ export default function UserManagementPage() {
               <h2 className="text-2xl font-bold text-amber-900">Create New User</h2>
             </div>
             <form onSubmit={handleCreateUser} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.first_name}
-                    onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.last_name}
-                    onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                />
               </div>
 
               <div>
@@ -594,27 +578,15 @@ export default function UserManagementPage() {
             </div>
             <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
               {/* Same form fields as Create, but password is optional */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.first_name}
-                    onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.last_name}
-                    onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                />
               </div>
 
               <div>
