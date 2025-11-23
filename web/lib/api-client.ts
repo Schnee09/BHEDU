@@ -47,8 +47,9 @@ async function apiRequest<T>(
 // Students API
 export const studentsApi = {
   list: (params?: { search?: string }) => {
-    const query = new URLSearchParams(params as any).toString();
-    return apiRequest<any[]>(`/api/admin/students${query ? `?${query}` : ''}`);
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    return apiRequest<any[]>(`/api/admin/students${query.toString() ? `?${query}` : ''}`);
   },
   
   get: (id: string) => 
@@ -64,8 +65,9 @@ export const studentsApi = {
 // Teachers API
 export const teachersApi = {
   list: (params?: { search?: string }) => {
-    const query = new URLSearchParams(params as any).toString();
-    return apiRequest<any[]>(`/api/admin/teachers${query ? `?${query}` : ''}`);
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    return apiRequest<any[]>(`/api/admin/teachers${query.toString() ? `?${query}` : ''}`);
   },
   
   get: (id: string) => 
