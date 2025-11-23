@@ -37,7 +37,7 @@ export function useProfile() {
       // Try user_id first
       let { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, role, avatar_url, email, phone, address, date_of_birth, user_id")
+        .select("id, full_name, role, email, phone, address, date_of_birth, user_id")
         .eq("user_id", session.user.id)
         .maybeSingle();
 
@@ -53,7 +53,7 @@ export function useProfile() {
       if (!data && !error) {
         const result = await supabase
           .from("profiles")
-          .select("id, full_name, role, avatar_url, email, phone, address, date_of_birth, user_id")
+          .select("id, full_name, role, email, phone, address, date_of_birth, user_id")
           .eq("id", session.user.id)
           .maybeSingle();
         
