@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+    const supabase = createClientFromRequest(request as any)
 
     let query = supabase
       .from('classes')

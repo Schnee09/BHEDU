@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+    const supabase = createClientFromRequest(request as any)
     const { searchParams } = new URL(request.url)
     
     // Get query parameters
@@ -84,7 +84,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      data: users,
+      users: users,
+      data: users,  // Keep both for compatibility
       pagination: {
         page,
         limit,

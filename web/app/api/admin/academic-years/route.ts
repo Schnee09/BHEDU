@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+    const supabase = createClientFromRequest(request as any)
 
     const { data: years, error } = await supabase
       .from('academic_years')

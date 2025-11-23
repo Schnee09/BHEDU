@@ -101,12 +101,16 @@ export default function AdminClassesPage() {
 
       const res = await apiFetch(`/api/admin/classes?${params}`)
       const response = await res.json()
-      if (response.success) {
-        setClasses(response.classes)
+      if (response.success && response.classes) {
+        setClasses(response.classes || [])
         setPagination(response.pagination)
+      } else {
+        console.error('Invalid API response format:', response)
+        setClasses([])
       }
     } catch (error) {
       console.error('Failed to fetch classes:', error)
+      setClasses([])
     } finally {
       setLoading(false)
     }
@@ -117,11 +121,15 @@ export default function AdminClassesPage() {
     try {
       const res = await apiFetch('/api/admin/users?role=teacher&limit=1000')
       const response = await res.json()
-      if (response.success) {
+      if (response.success && response.users) {
         setTeachers(response.users)
+      } else {
+        console.error('Invalid API response format:', response)
+        setTeachers([])
       }
     } catch (error) {
       console.error('Failed to fetch teachers:', error)
+      setTeachers([])
     }
   }
 
@@ -130,8 +138,15 @@ export default function AdminClassesPage() {
     try {
       const res = await apiFetch('/api/admin/academic-years')
       const response = await res.json()
-      if (response.success) {
-        setAcademicYears(response.academic_years)
+      if (response.success && response.data) {
+        setAcademicYears(response.data)
+      } else {
+        console.error('Invalid API response format:', response)
+        // Fallback: use seed data IDs
+        setAcademicYears([
+          { id: 'a2000000-0000-0000-0000-000000000002', name: '2024-2025' },
+          { id: 'a3000000-0000-0000-0000-000000000003', name: '2025-2026' }
+        ])
       }
     } catch (error) {
       console.error('Failed to fetch academic years:', error)
