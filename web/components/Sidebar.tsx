@@ -61,6 +61,7 @@ export default function Sidebar() {
         {
           title: "Administration",
           links: [
+            { href: "/dashboard/admin/diagnostic", label: "🔧 API Diagnostic", icon: "🔧" },
             { href: "/dashboard/admin/classes", label: "Classes Management", icon: "📚" },
             { href: "/dashboard/admin/teachers", label: "Teachers Management", icon: "👨‍🏫" },
             { href: "/dashboard/admin/assignments", label: "Assignments Management", icon: "📝" },
