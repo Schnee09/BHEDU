@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { showToast } from "@/components/ToastProvider";
 
@@ -37,101 +36,39 @@ export default function StudentsPage() {
     if (profileLoading || !profile) return;
 
     const fetchStudents = async () => {
-      console.log('[Students] Fetching students, page:', page, 'search:', debouncedSearch, 'filter:', statusFilter);
+      console.log('[Students] Fetching via API, search:', debouncedSearch, 'filter:', statusFilter);
       setLoading(true);
-      let query = supabase
-        .from("profiles")
-        .select("id, full_name, email, role, status, date_of_birth, created_at", { count: "exact" })
-        .eq("role", "student");
 
-      // Apply status filter
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-        console.log('[Students] Applying status filter:', statusFilter);
-      }
+      try {
+        // Build query params
+        const params = new URLSearchParams();
+        if (debouncedSearch) params.append("search", debouncedSearch);
+        if (statusFilter !== "all") params.append("status", statusFilter);
 
-      if (debouncedSearch) {
-        query = query.ilike("full_name", `%${debouncedSearch}%`);
-        console.log('[Students] Applying search:', debouncedSearch);
-      }
+        // Fetch from API route (bypasses RLS)
+        const response = await fetch(`/api/admin/students?${params.toString()}`);
+        const result = await response.json();
 
-      // Teachers only see students in their classes
-      // Admins see all students (no filtering)
-      if (profile.role === "teacher") {
-        console.log('[Students] Teacher role, fetching classes for teacher:', profile.id);
-        const { data: teacherClasses } = await supabase
-          .from("classes")
-          .select("id")
-          .eq("teacher_id", profile.id);
-        console.log('[Students] Teacher classes:', teacherClasses);
-        const classIds = (teacherClasses as Array<{ id: string }> | null)?.map((c) => c.id) || [];
-        if (classIds.length) {
-          const { data: enrollments } = await supabase
-            .from("enrollments")
-            .select("student_id")
-            .in("class_id", classIds);
-          console.log('[Students] Enrollments:', enrollments);
-          const studentIds = (enrollments as Array<{ student_id: string }> | null)?.map((e) => e.student_id) || [];
-          if (studentIds.length) {
-            query = query.in("id", studentIds);
-            console.log('[Students] Filtering to', studentIds.length, 'student IDs');
-          } else {
-            console.log('[Students] No students found for teacher');
-            setStudents([]);
-            setTotalCount(0);
-            setLoading(false);
-            return;
-          }
-        } else {
-          console.log('[Students] Teacher has no classes');
+        if (!result.success) {
+          console.error("[Students] API error:", result.error);
+          showToast.error("Failed to load students");
           setStudents([]);
           setTotalCount(0);
           setLoading(false);
           return;
         }
-      } else if (profile.role === "admin") {
-        console.log('[Students] Admin role, showing all students (no filtering)');
-      }
 
-      const from = page * pageSize;
-      const to = from + pageSize - 1;
-      console.log('[Students] Fetching range:', from, 'to', to);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error, count } = (query as any)
-        .order("created_at", { ascending: false })
-        .range(from, to);
-      
-      if (error) {
-        console.error("[Students] ❌ Error fetching students:", error);
-      } else {
-        console.log('[Students] Fetched', data?.length || 0, 'students, total count:', count);
+        console.log('[Students] Fetched', result.data?.length || 0, 'students from API');
+        setStudents(result.data || []);
+        setTotalCount(result.total || 0);
+        setLoading(false);
+      } catch (error) {
+        console.error("[Students] Fetch error:", error);
+        showToast.error("Failed to load students");
+        setStudents([]);
+        setTotalCount(0);
+        setLoading(false);
       }
-      
-      const mapped: Student[] = Array.isArray(data)
-        ? (data as unknown[]).map((raw) => {
-            const r = raw as {
-              id: unknown;
-              full_name?: unknown;
-              email?: unknown;
-              role?: unknown;
-              status?: unknown;
-              date_of_birth?: unknown;
-              created_at?: unknown;
-            };
-            return {
-              id: String(r.id as string | number),
-              full_name: String((r.full_name as string | undefined) || "Unknown"),
-              email: r.email as string | null,
-              role: String((r.role as string | undefined) || "student"),
-              status: String((r.status as string | undefined) || "active"),
-              date_of_birth: r.date_of_birth as string | null,
-              created_at: String((r.created_at as string | undefined) || new Date().toISOString()),
-            };
-          })
-        : [];
-      setStudents(mapped);
-      setTotalCount(count || 0);
-      setLoading(false);
     };
 
     fetchStudents();
@@ -188,56 +125,27 @@ export default function StudentsPage() {
       
       setSelectedIds(new Set());
       
-      // Refresh the list
-      const fetchStudents = async () => {
+      // Refresh the list using API
+      const refreshStudents = async () => {
         setLoading(true);
-        let query = supabase
-          .from("profiles")
-          .select("id, full_name, email, role, status, date_of_birth, created_at", { count: "exact" })
-          .eq("role", "student");
+        try {
+          const params = new URLSearchParams();
+          if (debouncedSearch) params.append("search", debouncedSearch);
+          if (statusFilter !== "all") params.append("status", statusFilter);
 
-        if (statusFilter !== "all") {
-          query = query.eq("status", statusFilter);
+          const response = await fetch(`/api/admin/students?${params.toString()}`);
+          const result = await response.json();
+
+          if (result.success) {
+            setStudents(result.data || []);
+            setTotalCount(result.total || 0);
+          }
+        } catch (error) {
+          console.error("[Students] Refresh error:", error);
         }
-
-        if (debouncedSearch) {
-          query = query.ilike("full_name", `%${debouncedSearch}%`);
-        }
-
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, count } = await (query as any)
-          .order("created_at", { ascending: false })
-          .range(from, to);
-
-        const mapped: Student[] = Array.isArray(data)
-          ? (data as unknown[]).map((raw) => {
-              const r = raw as {
-                id: unknown;
-                full_name?: unknown;
-                email?: unknown;
-                role?: unknown;
-                status?: unknown;
-                date_of_birth?: unknown;
-                created_at?: unknown;
-              };
-              return {
-                id: String(r.id as string | number),
-                full_name: String((r.full_name as string | undefined) || "Unknown"),
-                email: r.email as string | null,
-                role: String((r.role as string | undefined) || "student"),
-                status: String((r.status as string | undefined) || "active"),
-                date_of_birth: r.date_of_birth as string | null,
-                created_at: String((r.created_at as string | undefined) || new Date().toISOString()),
-              };
-            })
-          : [];
-        setStudents(mapped);
-        setTotalCount(count || 0);
         setLoading(false);
       };
-      await fetchStudents();
+      await refreshStudents();
     } catch (error) {
       console.error("Error archiving students:", error);
       showToast.dismiss(toastId);
