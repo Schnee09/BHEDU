@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useProfile } from "@/hooks/useProfile";
 import { showToast } from "@/components/ToastProvider";
+import { api } from "@/lib/api-client";
 
 type Student = {
   id: string;
@@ -40,26 +41,13 @@ export default function StudentsPage() {
       setLoading(true);
 
       try {
-        // Build query params
-        const params = new URLSearchParams();
-        if (debouncedSearch) params.append("search", debouncedSearch);
+        const result = await api.students.list({ 
+          search: debouncedSearch || undefined 
+        });
 
-        // Fetch from API route (bypasses RLS)
-        const response = await fetch(`/api/admin/students?${params.toString()}`);
-        const result = await response.json();
-
-        if (!result.success) {
-          console.error("[Students] API error:", result.error);
-          showToast.error("Failed to load students");
-          setStudents([]);
-          setTotalCount(0);
-          setLoading(false);
-          return;
-        }
-
-        console.log('[Students] Fetched', result.data?.length || 0, 'students from API');
-        setStudents(result.data || []);
-        setTotalCount(result.total || 0);
+        console.log('[Students] Fetched', result.length, 'students from API');
+        setStudents(result);
+        setTotalCount(result.length);
         setLoading(false);
       } catch (error) {
         console.error("[Students] Fetch error:", error);
@@ -128,16 +116,11 @@ export default function StudentsPage() {
       const refreshStudents = async () => {
         setLoading(true);
         try {
-          const params = new URLSearchParams();
-          if (debouncedSearch) params.append("search", debouncedSearch);
-
-          const response = await fetch(`/api/admin/students?${params.toString()}`);
-          const result = await response.json();
-
-          if (result.success) {
-            setStudents(result.data || []);
-            setTotalCount(result.total || 0);
-          }
+          const result = await api.students.list({ 
+            search: debouncedSearch || undefined 
+          });
+          setStudents(result);
+          setTotalCount(result.length);
         } catch (error) {
           console.error("[Students] Refresh error:", error);
         }
