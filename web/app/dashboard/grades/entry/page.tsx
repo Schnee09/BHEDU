@@ -64,7 +64,7 @@ export default function GradeEntryPage() {
       const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
-        setClasses(data)
+        setClasses(data.data || data.classes || data)
       }
     } catch (error) {
       console.error('Failed to load classes:', error)
@@ -77,7 +77,7 @@ export default function GradeEntryPage() {
       const response = await apiFetch(`/api/grades/assignments?classId=${selectedClass}&published=true`)
       if (response.ok) {
         const data = await response.json()
-        setAssignments(data)
+        setAssignments(data.data || data.assignments || data)
       }
     } catch (error) {
       console.error('Failed to load assignments:', error)
@@ -92,7 +92,7 @@ export default function GradeEntryPage() {
       const response = await apiFetch(`/api/grades?assignmentId=${selectedAssignment}`)
       if (response.ok) {
         const data = await response.json()
-        setGrades(data)
+        setGrades(data.data || data.grades || data)
         setHasChanges(false)
       }
     } catch (error) {

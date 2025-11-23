@@ -58,7 +58,7 @@ export default function AttendanceMarkingPage() {
       const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
-        const classList = data.classes || []
+        const classList = data.data || data.classes || []
         setClasses(classList)
         if (classList.length > 0) {
           setSelectedClass(classList[0].id)

@@ -54,7 +54,7 @@ export default function AssignmentManagementPage() {
       const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
-        const classList = data.classes || []
+        const classList = data.data || data.classes || []
         setClasses(classList)
         if (classList.length > 0) {
           setSelectedClass(classList[0].id)
@@ -75,7 +75,7 @@ export default function AssignmentManagementPage() {
       const response = await apiFetch(`/api/grades/categories?classId=${selectedClass}`)
       if (response.ok) {
         const data = await response.json()
-        setCategories(data.categories || [])
+        setCategories(data.data || data.categories || [])
       }
     } catch (error) {
       console.error('Failed to load categories:', error)
@@ -89,7 +89,7 @@ export default function AssignmentManagementPage() {
       const response = await apiFetch(`/api/grades/assignments?classId=${selectedClass}`)
       if (response.ok) {
         const data = await response.json()
-        setAssignments(data.assignments || [])
+        setAssignments(data.data || data.assignments || [])
       }
     } catch (error) {
       console.error('Failed to load assignments:', error)

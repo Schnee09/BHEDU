@@ -15,8 +15,7 @@ interface AttendanceRecord {
   student: {
     id: string
     email: string
-    first_name: string
-    last_name: string
+    full_name: string
     student_id: string
     grade_level: string
   }
@@ -76,7 +75,7 @@ export default function AttendanceReportsPage() {
       const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
-        setClasses(data.classes || [])
+        setClasses(data.data || data.classes || [])
       }
     } catch (error) {
       console.error('Failed to load classes:', error)
@@ -145,7 +144,7 @@ export default function AttendanceReportsPage() {
       const headers = ['Date', 'Student Name', 'Student ID', 'Class', 'Status', 'Check In', 'Check Out', 'Notes']
       const rows = records.map(record => [
         new Date(record.date).toLocaleDateString(),
-        `${record.student?.first_name || ''} ${record.student?.last_name || ''}`.trim(),
+        record.student?.full_name || record.student?.email || '',
         record.student?.student_id || '',
         record.class?.title || '',
         record.status,
@@ -550,7 +549,7 @@ export default function AttendanceReportsPage() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
                               <div className="text-sm font-medium text-gray-900">
-                                {record.student?.first_name} {record.student?.last_name}
+                                {record.student?.full_name || record.student?.email}
                               </div>
                               <div className="text-xs text-gray-500">
                                 {record.student?.student_id}
