@@ -26,10 +26,11 @@ export function useProfile() {
         return;
       }
 
+      // Try to find profile by user_id first, then by id (for legacy profiles)
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, role, avatar_url, email, phone, address, date_of_birth")
-        .eq("user_id", session.user.id)
+        .or(`user_id.eq.${session.user.id},id.eq.${session.user.id}`)
         .maybeSingle();
 
       if (!error && data) setProfile(data);
