@@ -57,7 +57,7 @@ export async function GET(request: Request) {
           full_name,
           email
         ),
-        academic_year:academic_years(
+        academic_year:academic_years!classes_academic_year_id_fkey(
           id,
           name
         ),

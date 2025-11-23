@@ -36,9 +36,15 @@ export async function GET(request: Request) {
       )
     }
 
+    // Parse scale field if it's a string
+    const parsedScales = scales?.map(scale => ({
+      ...scale,
+      scale: typeof scale.scale === 'string' ? JSON.parse(scale.scale) : scale.scale
+    })) || []
+
     return NextResponse.json({
       success: true,
-      data: scales
+      data: parsedScales
     })
 
   } catch (error) {

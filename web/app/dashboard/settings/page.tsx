@@ -367,7 +367,7 @@ export default function SettingsPage() {
 
                     {/* Scale Preview */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-3">
-                       {scale.scale.map((grade, idx: number) => (
+                       {Array.isArray(scale.scale) && scale.scale.map((grade, idx: number) => (
                         <div key={idx} className="text-center p-2 bg-gradient-to-br from-amber-50 to-yellow-50 rounded border border-amber-200">
                           <div className="font-bold text-amber-900">{grade.letter}</div>
                           <div className="text-xs text-gray-600">{grade.min}-{grade.max}%</div>

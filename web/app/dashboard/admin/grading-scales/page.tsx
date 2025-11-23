@@ -251,7 +251,7 @@ export default function GradingScalesPage() {
                   </button>
                 </div>
                 <div className="space-y-2">
-                  {formData.scale.map((grade, index) => (
+                  {Array.isArray(formData.scale) && formData.scale.map((grade, index) => (
                     <div key={index} className="flex gap-2 items-center p-3 bg-gray-50 rounded">
                       <input
                         type="text"
@@ -378,7 +378,7 @@ export default function GradingScalesPage() {
 
               {/* Grade Scale Display */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                {scale.scale.map((grade, index) => (
+                {Array.isArray(scale.scale) && scale.scale.map((grade, index) => (
                   <div key={index} className="border rounded-lg p-3 text-center">
                     <div className="text-2xl font-bold text-blue-600">{grade.letter}</div>
                     <div className="text-sm text-gray-600 mt-1">
