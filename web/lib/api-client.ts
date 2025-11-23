@@ -102,8 +102,11 @@ export const classesApi = {
 // Enrollments API
 export const enrollmentsApi = {
   list: (params?: { student_id?: string; class_id?: string; status?: string }) => {
-    const query = new URLSearchParams(params as any).toString();
-    return apiRequest<any[]>(`/api/admin/enrollments${query ? `?${query}` : ''}`);
+    const query = new URLSearchParams();
+    if (params?.student_id) query.append('student_id', params.student_id);
+    if (params?.class_id) query.append('class_id', params.class_id);
+    if (params?.status) query.append('status', params.status);
+    return apiRequest<any[]>(`/api/admin/enrollments${query.toString() ? `?${query}` : ''}`);
   },
   
   create: (data: { student_id: string; class_id: string; status?: string }) =>
@@ -116,8 +119,11 @@ export const enrollmentsApi = {
 // Grades API
 export const gradesApi = {
   list: (params?: { student_id?: string; assignment_id?: string; class_id?: string }) => {
-    const query = new URLSearchParams(params as any).toString();
-    return apiRequest<any[]>(`/api/admin/grades${query ? `?${query}` : ''}`);
+    const query = new URLSearchParams();
+    if (params?.student_id) query.append('student_id', params.student_id);
+    if (params?.assignment_id) query.append('assignment_id', params.assignment_id);
+    if (params?.class_id) query.append('class_id', params.class_id);
+    return apiRequest<any[]>(`/api/admin/grades${query.toString() ? `?${query}` : ''}`);
   },
   
   create: (data: any) =>
@@ -130,8 +136,12 @@ export const gradesApi = {
 // Attendance API
 export const attendanceApi = {
   list: (params?: { student_id?: string; class_id?: string; date?: string; status?: string }) => {
-    const query = new URLSearchParams(params as any).toString();
-    return apiRequest<any[]>(`/api/admin/attendance${query ? `?${query}` : ''}`);
+    const query = new URLSearchParams();
+    if (params?.student_id) query.append('student_id', params.student_id);
+    if (params?.class_id) query.append('class_id', params.class_id);
+    if (params?.date) query.append('date', params.date);
+    if (params?.status) query.append('status', params.status);
+    return apiRequest<any[]>(`/api/admin/attendance${query.toString() ? `?${query}` : ''}`);
   },
   
   create: (data: any) =>
@@ -144,8 +154,10 @@ export const attendanceApi = {
 // Assignments API
 export const assignmentsApi = {
   list: (params?: { class_id?: string; category_id?: string }) => {
-    const query = new URLSearchParams(params as any).toString();
-    return apiRequest<any[]>(`/api/admin/assignments${query ? `?${query}` : ''}`);
+    const query = new URLSearchParams();
+    if (params?.class_id) query.append('class_id', params.class_id);
+    if (params?.category_id) query.append('category_id', params.category_id);
+    return apiRequest<any[]>(`/api/admin/assignments${query.toString() ? `?${query}` : ''}`);
   },
   
   create: (data: any) =>
