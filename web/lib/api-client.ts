@@ -83,8 +83,10 @@ export const teachersApi = {
 // Classes API
 export const classesApi = {
   list: (params?: { search?: string; teacher_id?: string }) => {
-    const query = new URLSearchParams(params as any).toString();
-    return apiRequest<any[]>(`/api/admin/classes${query ? `?${query}` : ''}`);
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.teacher_id) query.append('teacher_id', params.teacher_id);
+    return apiRequest<any[]>(`/api/admin/classes${query.toString() ? `?${query}` : ''}`);
   },
   
   get: (id: string) => 

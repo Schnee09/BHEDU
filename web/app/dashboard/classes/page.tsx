@@ -1,105 +1,120 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+import { api } from "@/lib/api-client";
+import { showToast } from "@/components/ToastProvider";
+import Link from "next/link";
 
 interface ClassData {
   id: string;
   name: string;
   created_at: string;
   teacher_id: string;
-  teacher: {
+  teacher?: {
     full_name: string;
-  } | null; // ✅ single object or null
+  };
+  enrollment_count?: number;
 }
 
 export default function ClassesPage() {
-  const supabase = createClient();
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!profile) return;
+    if (profileLoading || !profile) return;
 
     const fetchClasses = async () => {
       console.log('[Classes] Fetching classes for profile:', profile.role, profile.id);
-      let query = supabase
-        .from("classes")
-        .select(`
-          id,
-          name,
-          created_at,
-          teacher_id,
-          teacher:profiles(full_name)
-        `);
+      setLoading(true);
 
-      // Example: teachers only see their classes
-      if (profile.role === "teacher") {
-        query = query.eq("teacher_id", profile.id);
-        console.log('[Classes] Filtering to teacher classes');
+      try {
+        // Teachers only see their own classes
+        const params = profile.role === 'teacher' 
+          ? { teacher_id: profile.id }
+          : undefined;
+
+        const result = await api.classes.list(params);
+        console.log('[Classes] Fetched', result.length, 'classes');
+        setClasses(result);
+      } catch (error) {
+        console.error('[Classes] Fetch error:', error);
+        showToast.error('Failed to load classes');
+        setClasses([]);
+      } finally {
+        setLoading(false);
       }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("[Classes] Error fetching classes:", error);
-      } else if (Array.isArray(data)) {
-        console.log('[Classes] Fetched', data.length, 'classes');
-        const flattened: ClassData[] = (data as unknown[]).map((raw) => {
-          const r = raw as {
-            id: unknown;
-            name?: unknown;
-            created_at?: unknown;
-            teacher_id?: unknown;
-            teacher?: { full_name?: unknown } | Array<{ full_name?: unknown }>;
-          };
-          const teacherObj = Array.isArray(r.teacher)
-            ? (r.teacher[0] as { full_name?: unknown }) || null
-            : (r.teacher as { full_name?: unknown } | undefined) || null;
-          return {
-            id: String(r.id as string | number),
-            name: String((r.name as string | undefined) || "Untitled"),
-            created_at: String((r.created_at as string | undefined) || new Date().toISOString()),
-            teacher_id: String((r.teacher_id as string | number | undefined) || ""),
-            teacher: teacherObj ? { full_name: String(teacherObj.full_name || "Unknown") } : null,
-          };
-        });
-        setClasses(flattened);
-      }
-
-      setLoading(false);
     };
 
     fetchClasses();
-  }, [profile, supabase]);
+  }, [profile, profileLoading]);
 
-  if (loading) return <p>Loading classes...</p>;
+  if (profileLoading || loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Loading classes...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Classes</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {classes.length > 0 ? (
-          classes.map((cls) => (
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Classes</h1>
+        <p className="text-gray-600">
+          {profile?.role === 'teacher' 
+            ? 'Your assigned classes' 
+            : 'All classes in the system'}
+        </p>
+      </div>
+
+      {classes.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {classes.map((cls) => (
             <div
               key={cls.id}
-              className="border p-4 rounded-lg shadow-sm hover:shadow-md transition"
+              className="border border-gray-200 bg-white p-5 rounded-lg shadow-sm hover:shadow-md transition"
             >
-              <h2 className="font-semibold">{cls.name}</h2>
-              <p className="text-sm text-gray-500">
-                Teacher: {cls.teacher?.full_name || "Unknown"}
-              </p>
-              <p className="text-xs text-gray-400">
-                Created: {new Date(cls.created_at).toLocaleDateString()}
-              </p>
+              <h2 className="font-semibold text-lg mb-2">{cls.name}</h2>
+              <div className="space-y-1 text-sm text-gray-600">
+                <p>
+                  <span className="font-medium">Teacher:</span>{' '}
+                  {cls.teacher?.full_name || 'Not assigned'}
+                </p>
+                {cls.enrollment_count !== undefined && (
+                  <p>
+                    <span className="font-medium">Students:</span>{' '}
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {cls.enrollment_count}
+                    </span>
+                  </p>
+                )}
+                <p className="text-xs text-gray-400">
+                  Created: {new Date(cls.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Link
+                  href={`/dashboard/classes/${cls.id}`}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  View Details
+                </Link>
+              </div>
             </div>
-          ))
-        ) : (
-          <p>No classes found.</p>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+          <p className="text-gray-500 text-lg">No classes found</p>
+          <p className="text-gray-400 text-sm mt-2">
+            {profile?.role === 'teacher' 
+              ? 'You have not been assigned to any classes yet' 
+              : 'No classes have been created yet'}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
