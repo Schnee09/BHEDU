@@ -48,7 +48,11 @@ export default function AssignmentsPage() {
       }
 
       const { data, error } = await query;
-      if (error) console.error("❌ Error fetching assignments:", error);
+      if (error) {
+        console.error("[Assignments] ❌ Error fetching assignments:", error);
+      } else {
+        console.log('[Assignments] Fetched', data?.length || 0, 'assignments');
+      }
       const mapped: Assignment[] = Array.isArray(data)
         ? (data as unknown[]).map((raw) => {
             const r = raw as {

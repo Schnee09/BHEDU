@@ -37,6 +37,7 @@ export default function StudentsPage() {
     if (profileLoading || !profile) return;
 
     const fetchStudents = async () => {
+      console.log('[Students] Fetching students, page:', page, 'search:', debouncedSearch, 'filter:', statusFilter);
       setLoading(true);
       let query = supabase
         .from("profiles")
@@ -46,43 +47,59 @@ export default function StudentsPage() {
       // Apply status filter
       if (statusFilter !== "all") {
         query = query.eq("status", statusFilter);
+        console.log('[Students] Applying status filter:', statusFilter);
       }
 
       if (debouncedSearch) {
         query = query.ilike("full_name", `%${debouncedSearch}%`);
+        console.log('[Students] Applying search:', debouncedSearch);
       }
 
       // Teachers only see students in their classes
       if (profile.role === "teacher") {
+        console.log('[Students] Teacher role, fetching classes for teacher:', profile.id);
         const { data: teacherClasses } = await supabase
           .from("classes")
           .select("id")
           .eq("teacher_id", profile.id);
+        console.log('[Students] Teacher classes:', teacherClasses);
         const classIds = (teacherClasses as Array<{ id: string }> | null)?.map((c) => c.id) || [];
         if (classIds.length) {
           const { data: enrollments } = await supabase
             .from("enrollments")
             .select("student_id")
             .in("class_id", classIds);
+          console.log('[Students] Enrollments:', enrollments);
           const studentIds = (enrollments as Array<{ student_id: string }> | null)?.map((e) => e.student_id) || [];
           if (studentIds.length) {
             query = query.in("id", studentIds);
+            console.log('[Students] Filtering to', studentIds.length, 'student IDs');
           } else {
+            console.log('[Students] No students found for teacher');
             setStudents([]);
             setTotalCount(0);
             setLoading(false);
             return;
           }
+        } else {
+          console.log('[Students] Teacher has no classes');
         }
       }
 
       const from = page * pageSize;
       const to = from + pageSize - 1;
+      console.log('[Students] Fetching range:', from, 'to', to);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error, count } = (query as any)
         .order("created_at", { ascending: false })
         .range(from, to);
-      if (error) console.error("❌ Error fetching students:", error);
+      
+      if (error) {
+        console.error("[Students] ❌ Error fetching students:", error);
+      } else {
+        console.log('[Students] Fetched', data?.length || 0, 'students, total count:', count);
+      }
+      
       const mapped: Student[] = Array.isArray(data)
         ? (data as unknown[]).map((raw) => {
             const r = raw as {

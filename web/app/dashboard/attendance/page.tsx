@@ -23,6 +23,7 @@ export default function AttendancePage() {
     if (profileLoading || !profile) return;
 
     const fetchAttendance = async () => {
+      console.log('[Attendance] Fetching attendance for profile:', profile.role, profile.id);
       setLoading(true);
       let query = supabase
         .from("attendance")
@@ -41,21 +42,28 @@ export default function AttendancePage() {
 
       // Teacher: only attendance of own classes
       if (profile.role === "teacher") {
+        console.log('[Attendance] Teacher role, fetching classes');
         const { data: classesRaw } = await supabase
           .from("classes")
           .select("id")
           .eq("teacher_id", profile.id);
+        console.log('[Attendance] Teacher classes:', classesRaw);
         const classIds = (classesRaw as Array<{ id: string }> | null)?.map((c) => c.id) || [];
         query = query.in("class_id", classIds);
       }
 
       // Student: only own attendance
       if (profile.role === "student") {
+        console.log('[Attendance] Student role, filtering to student ID');
         query = query.eq("student_id", profile.id);
       }
 
       const { data, error } = await query;
-      if (error) console.error("❌ Error fetching attendance:", error);
+      if (error) {
+        console.error("[Attendance] ❌ Error fetching attendance:", error);
+      } else {
+        console.log('[Attendance] Fetched', data?.length || 0, 'attendance records');
+      }
       const mapped = Array.isArray(data)
         ? (data as unknown[]).map((raw) => {
             const r = raw as {

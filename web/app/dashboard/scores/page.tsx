@@ -24,6 +24,7 @@ export default function ScoresPage() {
     if (profileLoading || !profile) return;
 
     const fetchScores = async () => {
+      console.log('[Scores] Fetching scores for profile:', profile.role, profile.id);
       setLoading(true);
       let query = supabase
         .from("scores")
@@ -43,21 +44,28 @@ export default function ScoresPage() {
 
       // Teacher: only scores from their classes
       if (profile.role === "teacher") {
+        console.log('[Scores] Teacher role, fetching classes');
         const { data: classesRaw } = await supabase
           .from("classes")
           .select("id")
           .eq("teacher_id", profile.id);
+        console.log('[Scores] Teacher classes:', classesRaw);
         const classIds = (classesRaw as Array<{ id: string }> | null)?.map((c) => c.id) || [];
         query = query.in("class_id", classIds);
       }
 
       // Student: only own scores
       if (profile.role === "student") {
+        console.log('[Scores] Student role, filtering to student ID');
         query = query.eq("student_id", profile.id);
       }
 
       const { data, error } = await query;
-      if (error) console.error("❌ Error fetching scores:", error);
+      if (error) {
+        console.error("[Scores] ❌ Error fetching scores:", error);
+      } else {
+        console.log('[Scores] Fetched', data?.length || 0, 'scores');
+      }
       const mapped = Array.isArray(data)
         ? (data as unknown[]).map((raw) => {
             const r = raw as {

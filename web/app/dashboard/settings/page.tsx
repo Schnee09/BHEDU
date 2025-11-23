@@ -47,9 +47,11 @@ export default function SettingsPage() {
   }, [])
 
   const fetchSettings = async () => {
+    console.log('[Settings] Fetching settings...');
     try {
       const response = await apiFetch('/api/admin/settings')
       const data = await response.json()
+      console.log('[Settings] Settings response:', data);
       if (data.success) {
         setSettings(data.data)
         // Initialize form with current values
@@ -58,35 +60,48 @@ export default function SettingsPage() {
           formData[s.setting_key] = s.setting_value || ''
         })
         setSettingsForm(formData)
+        console.log('[Settings] Loaded', data.data.length, 'settings');
+      } else {
+        console.error('[Settings] Failed to fetch settings:', data);
       }
     } catch (error) {
-      console.error('Error fetching settings:', error)
+      console.error('[Settings] Error fetching settings:', error)
     } finally {
       setLoading(false)
     }
   }
 
   const fetchAcademicYears = async () => {
+    console.log('[Settings] Fetching academic years...');
     try {
       const response = await apiFetch('/api/admin/academic-years')
       const data = await response.json()
+      console.log('[Settings] Academic years response:', data);
       if (data.success) {
         setAcademicYears(data.data)
+        console.log('[Settings] Loaded', data.data?.length || 0, 'academic years');
+      } else {
+        console.error('[Settings] Failed to fetch academic years:', data);
       }
     } catch (error) {
-      console.error('Error fetching academic years:', error)
+      console.error('[Settings] Error fetching academic years:', error)
     }
   }
 
   const fetchGradingScales = async () => {
+    console.log('[Settings] Fetching grading scales...');
     try {
       const response = await apiFetch('/api/admin/grading-scales')
       const data = await response.json()
+      console.log('[Settings] Grading scales response:', data);
       if (data.success) {
         setGradingScales(data.data)
+        console.log('[Settings] Loaded', data.data?.length || 0, 'grading scales');
+      } else {
+        console.error('[Settings] Failed to fetch grading scales:', data);
       }
     } catch (error) {
-      console.error('Error fetching grading scales:', error)
+      console.error('[Settings] Error fetching grading scales:', error)
     }
   }
 

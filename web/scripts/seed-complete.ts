@@ -34,7 +34,7 @@ const supabase = createClient(url, service, {
 // ============================================================================
 
 const USERS = [
-  { email: "admin@bhedu.com", password: "Password123!", role: "admin", full_name: "Admin User", first_name: "Admin", last_name: "User" },
+  { email: "admin@bhedu.com", password: "test123", role: "admin", full_name: "Admin User", first_name: "Admin", last_name: "User" },
   { email: "schnee@example.com", password: "Password123!", role: "admin", full_name: "Schnee Ookami", first_name: "Schnee", last_name: "Ookami" },
   { email: "teacher1@bhedu.com", password: "Password123!", role: "teacher", full_name: "John Smith", first_name: "John", last_name: "Smith" },
   { email: "teacher2@bhedu.com", password: "Password123!", role: "teacher", full_name: "Emily Johnson", first_name: "Emily", last_name: "Johnson" },
@@ -56,29 +56,40 @@ const ACADEMIC_YEARS = [
 ];
 
 const GRADING_SCALES = [
-  { name: "Standard Scale", description: "Traditional A-F grading", is_default: true },
-  { name: "Pass/Fail", description: "Simple pass or fail", is_default: false },
-];
-
-const GRADE_SCALE_ITEMS = [
-  // Standard Scale
-  { grade: "A", min_score: 90, max_score: 100, gpa_value: 4.0, description: "Excellent" },
-  { grade: "B", min_score: 80, max_score: 89, gpa_value: 3.0, description: "Good" },
-  { grade: "C", min_score: 70, max_score: 79, gpa_value: 2.0, description: "Average" },
-  { grade: "D", min_score: 60, max_score: 69, gpa_value: 1.0, description: "Below Average" },
-  { grade: "F", min_score: 0, max_score: 59, gpa_value: 0.0, description: "Failing" },
-  // Pass/Fail
-  { grade: "P", min_score: 60, max_score: 100, gpa_value: null, description: "Pass" },
-  { grade: "F", min_score: 0, max_score: 59, gpa_value: null, description: "Fail" },
+  { 
+    name: "Standard Scale", 
+    description: "Traditional A-F grading", 
+    is_default: true,
+    scale: {
+      grades: [
+        { grade: "A", min_score: 90, max_score: 100, gpa_value: 4.0, description: "Excellent" },
+        { grade: "B", min_score: 80, max_score: 89, gpa_value: 3.0, description: "Good" },
+        { grade: "C", min_score: 70, max_score: 79, gpa_value: 2.0, description: "Average" },
+        { grade: "D", min_score: 60, max_score: 69, gpa_value: 1.0, description: "Below Average" },
+        { grade: "F", min_score: 0, max_score: 59, gpa_value: 0.0, description: "Failing" },
+      ]
+    }
+  },
+  { 
+    name: "Pass/Fail", 
+    description: "Simple pass or fail", 
+    is_default: false,
+    scale: {
+      grades: [
+        { grade: "P", min_score: 60, max_score: 100, gpa_value: null, description: "Pass" },
+        { grade: "F", min_score: 0, max_score: 59, gpa_value: null, description: "Fail" },
+      ]
+    }
+  },
 ];
 
 const CLASSES = [
-  { name: "Mathematics 101", description: "Introduction to Algebra", grade_level: "9th Grade" },
-  { name: "English Literature", description: "Classic and Modern Literature", grade_level: "9th Grade" },
-  { name: "Biology", description: "Introduction to Life Sciences", grade_level: "10th Grade" },
-  { name: "World History", description: "Ancient to Modern History", grade_level: "10th Grade" },
-  { name: "Chemistry", description: "Introduction to Chemical Sciences", grade_level: "11th Grade" },
-  { name: "Physics", description: "Classical and Modern Physics", grade_level: "11th Grade" },
+  { name: "Mathematics 101" },
+  { name: "English Literature" },
+  { name: "Biology" },
+  { name: "World History" },
+  { name: "Chemistry" },
+  { name: "Physics" },
 ];
 
 // ============================================================================
@@ -91,6 +102,8 @@ async function deleteUser(email: string) {
   if (user) {
     await supabase.auth.admin.deleteUser(user.id);
     console.log(`   🗑️  Deleted existing user: ${email}`);
+    // Wait a bit for the deletion to propagate
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
 }
 
@@ -105,7 +118,31 @@ async function createUser(userData: typeof USERS[0]) {
     email_confirm: true,
   });
 
-  if (error) throw new Error(`Failed to create user ${userData.email}: ${error.message}`);
+  if (error) {
+    // If user still exists, try to get their ID
+    if (error.message.includes("already been registered")) {
+      const { data: users } = await supabase.auth.admin.listUsers();
+      const existingUser = users.users.find(u => u.email === userData.email);
+      if (existingUser) {
+        console.log(`   ℹ️  Using existing user: ${userData.email}`);
+        
+        // Update profile
+        await supabase.from("profiles").upsert({
+          id: existingUser.id,
+          user_id: existingUser.id,
+          email: userData.email,
+          full_name: userData.full_name,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          role: userData.role,
+        });
+        
+        return existingUser.id;
+      }
+    }
+    throw new Error(`Failed to create user ${userData.email}: ${error.message}`);
+  }
+  
   if (!data.user) throw new Error(`No user returned for ${userData.email}`);
 
   // Create profile
@@ -170,20 +207,11 @@ async function seedGradingScales() {
 
   if (error) throw new Error(`Failed to seed grading scales: ${error.message}`);
 
-  // Seed grade scale items
-  const items = GRADE_SCALE_ITEMS.map((item, idx) => ({
-    ...item,
-    grading_scale_id: scales[idx < 5 ? 0 : 1].id, // First 5 items to Standard, rest to Pass/Fail
-  }));
-
-  const { error: itemsError } = await supabase.from("grade_scale_items").insert(items);
-  if (itemsError) throw new Error(`Failed to seed grade scale items: ${itemsError.message}`);
-
-  console.log(`   ✅ Created ${scales.length} grading scales with ${items.length} items`);
+  console.log(`   ✅ Created ${scales.length} grading scales`);
   return scales;
 }
 
-async function seedClasses(userIds: Record<string, string>, academicYearId: string) {
+async function seedClasses(userIds: Record<string, string>) {
   console.log("\n🏫 Seeding Classes...");
   
   // Clear existing
@@ -193,7 +221,6 @@ async function seedClasses(userIds: Record<string, string>, academicYearId: stri
   const classesData = CLASSES.map((cls, idx) => ({
     ...cls,
     teacher_id: userIds[teachers[idx % teachers.length].email],
-    academic_year_id: academicYearId,
   }));
 
   const { data, error } = await supabase
@@ -253,8 +280,8 @@ async function seedAssignments(classes: any[]) {
         class_id: cls.id,
         title: `Assignment ${i}`,
         description: `${cls.name} - Assignment ${i}`,
-        due_date: new Date(2024, 10, i * 7).toISOString(), // Spread across weeks
-        max_score: 100,
+        due_date: new Date(2024, 10, i * 7).toISOString().split('T')[0], // Spread across weeks
+        max_points: 100,
       });
     }
   }
@@ -347,7 +374,6 @@ async function verifyData() {
     { name: "profiles", expectedMin: 13 },
     { name: "academic_years", expectedMin: 3 },
     { name: "grading_scales", expectedMin: 2 },
-    { name: "grade_scale_items", expectedMin: 7 },
     { name: "classes", expectedMin: 6 },
     { name: "enrollments", expectedMin: 20 },
     { name: "assignments", expectedMin: 18 },
@@ -390,7 +416,7 @@ async function main() {
     const userIds = await seedUsers();
     const academicYears = await seedAcademicYears();
     const gradingScales = await seedGradingScales();
-    const classes = await seedClasses(userIds, academicYears[0].id);
+    const classes = await seedClasses(userIds);
     const enrollments = await seedEnrollments(userIds, classes);
     const assignments = await seedAssignments(classes);
     await seedGrades(enrollments, assignments);

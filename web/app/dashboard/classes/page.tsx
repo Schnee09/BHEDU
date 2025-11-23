@@ -24,6 +24,7 @@ export default function ClassesPage() {
     if (!profile) return;
 
     const fetchClasses = async () => {
+      console.log('[Classes] Fetching classes for profile:', profile.role, profile.id);
       let query = supabase
         .from("classes")
         .select(`
@@ -37,13 +38,15 @@ export default function ClassesPage() {
       // Example: teachers only see their classes
       if (profile.role === "teacher") {
         query = query.eq("teacher_id", profile.id);
+        console.log('[Classes] Filtering to teacher classes');
       }
 
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error fetching classes:", error);
+        console.error("[Classes] Error fetching classes:", error);
       } else if (Array.isArray(data)) {
+        console.log('[Classes] Fetched', data.length, 'classes');
         const flattened: ClassData[] = (data as unknown[]).map((raw) => {
           const r = raw as {
             id: unknown;
