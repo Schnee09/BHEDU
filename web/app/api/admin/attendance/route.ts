@@ -14,22 +14,10 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get("date");
     const status = searchParams.get("status");
 
+    // First, get attendance records
     let query = supabase
       .from("attendance")
-      .select(`
-        id,
-        student_id,
-        class_id,
-        date,
-        status,
-        check_in_time,
-        check_out_time,
-        notes,
-        marked_by,
-        created_at,
-        student:profiles!attendance_student_id_fkey(id, full_name, email),
-        class:classes!attendance_class_id_fkey(id, name)
-      `)
+      .select("*")
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -38,13 +26,48 @@ export async function GET(request: NextRequest) {
     if (date) query = query.eq("date", date);
     if (status) query = query.eq("status", status);
 
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data: attendanceData, error: attendanceError } = await query;
+    if (attendanceError) throw attendanceError;
+
+    if (!attendanceData || attendanceData.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        total: 0,
+      });
+    }
+
+    // Get unique student and class IDs
+    const studentIds = [...new Set(attendanceData.map(a => a.student_id))];
+    const classIds = [...new Set(attendanceData.map(a => a.class_id))];
+
+    // Fetch students
+    const { data: students } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", studentIds);
+
+    // Fetch classes
+    const { data: classes } = await supabase
+      .from("classes")
+      .select("id, name")
+      .in("id", classIds);
+
+    // Create lookup maps
+    const studentMap = new Map(students?.map(s => [s.id, s]) || []);
+    const classMap = new Map(classes?.map(c => [c.id, c]) || []);
+
+    // Combine data
+    const enrichedData = attendanceData.map(attendance => ({
+      ...attendance,
+      student: studentMap.get(attendance.student_id) || null,
+      class: classMap.get(attendance.class_id) || null,
+    }));
 
     return NextResponse.json({
       success: true,
-      data: data || [],
-      total: data?.length || 0,
+      data: enrichedData,
+      total: enrichedData.length,
     });
   } catch (error: any) {
     console.error("[API] Attendance error:", error);
