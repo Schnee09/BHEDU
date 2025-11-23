@@ -84,7 +84,7 @@ export default function AttendanceReportsPage() {
     try {
       const res = await apiFetch('/api/admin/classes?limit=1000')
       const response = await res.json()
-      setClasses(response.classes || [])
+      setClasses(response.data || response.classes || [])
     } catch (err) {
       console.error('Error fetching classes:', err)
     }
@@ -102,7 +102,7 @@ export default function AttendanceReportsPage() {
       // Fetch all attendance records for the date range
       const res = await apiFetch(`/api/admin/attendance?${params}&limit=10000`)
       const response = await res.json()
-      const records = response.records || []
+      const records = response.data || response.records || []
 
       if (activeTab === 'student') {
         calculateStudentSummaries(records)
@@ -122,12 +122,15 @@ export default function AttendanceReportsPage() {
     const studentMap = new Map<string, StudentSummary>()
 
     records.forEach((record: any) => {
-      const studentId = record.enrollment.student.id
+      const studentId = record.student_id
+      const student = record.student
+      if (!student) return
+
       if (!studentMap.has(studentId)) {
         studentMap.set(studentId, {
           student_id: studentId,
-          student_name: `${record.enrollment.student.first_name} ${record.enrollment.student.last_name}`,
-          student_number: record.enrollment.student.student_number || '',
+          student_name: student.full_name || student.email || 'Unknown',
+          student_number: '', // Not available in current schema
           total_days: 0,
           present: 0,
           absent: 0,
@@ -160,14 +163,17 @@ export default function AttendanceReportsPage() {
     const studentsByClass = new Map<string, Set<string>>()
 
     records.forEach((record: any) => {
-      const classId = record.enrollment.class.id
-      const studentId = record.enrollment.student.id
+      const classId = record.class_id
+      const studentId = record.student_id
+      const classData = record.class
+
+      if (!classData) return
 
       if (!classMap.has(classId)) {
         classMap.set(classId, {
           class_id: classId,
-          class_name: record.enrollment.class.name,
-          class_code: record.enrollment.class.code,
+          class_name: classData.name || 'Unknown',
+          class_code: '', // Not available in current schema
           total_students: 0,
           total_records: 0,
           present: 0,
