@@ -17,8 +17,7 @@ interface Class {
 interface Student {
   id: string
   email: string
-  first_name: string
-  last_name: string
+  full_name: string
 }
 
 interface GeneratedQR {
@@ -55,7 +54,7 @@ export default function QRGenerationPage() {
       const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
-        const classList = data.classes || []
+        const classList = data.data || data.classes || []
         setClasses(classList)
         if (classList.length > 0) {
           setSelectedClass(classList[0].id)
@@ -73,7 +72,7 @@ export default function QRGenerationPage() {
       const response = await apiFetch(`/api/classes/${selectedClass}/students`)
       if (response.ok) {
         const data = await response.json()
-        setStudents(data.students || [])
+        setStudents(data.data || data.students || [])
       }
     } catch (error) {
       console.error('Failed to load students', error)
@@ -131,7 +130,7 @@ export default function QRGenerationPage() {
             const student = students.find(s => s.id === r.studentId)
             return {
               studentId: r.studentId,
-              studentName: student ? `${student.first_name} ${student.last_name}` : 'Unknown',
+              studentName: student ? student.full_name : 'Unknown',
               code: r.code,
               expiresAt: r.expiresAt
             }
@@ -278,7 +277,7 @@ export default function QRGenerationPage() {
                     />
                     <div>
                       <div className="font-medium text-gray-900">
-                        {student.first_name} {student.last_name}
+                        {student.full_name}
                       </div>
                       <div className="text-sm text-gray-500">{student.email}</div>
                     </div>

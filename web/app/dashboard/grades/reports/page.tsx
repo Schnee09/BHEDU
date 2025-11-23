@@ -65,7 +65,7 @@ export default function ReportCardsPage() {
       const response = await apiFetch('/api/classes/my-classes')
       if (response.ok) {
         const data = await response.json()
-        setClasses(data)
+        setClasses(data.data || data.classes || data)
       }
     } catch (error) {
       console.error('Failed to load classes:', error)
@@ -77,7 +77,7 @@ export default function ReportCardsPage() {
       const response = await apiFetch(`/api/classes/${selectedClass}/students`)
       if (response.ok) {
         const data = await response.json()
-        setStudents(data)
+        setStudents(data.data || data.students || data)
       }
     } catch (error) {
       console.error('Failed to load students:', error)
@@ -90,7 +90,7 @@ export default function ReportCardsPage() {
       const response = await apiFetch(`/api/grades/student-overview?classId=${selectedClass}`)
       if (response.ok) {
         const data = await response.json()
-        setGrades(data)
+        setGrades(data.data || data.grades || data)
       }
     } catch (error) {
       console.error('Failed to load grades:', error)
