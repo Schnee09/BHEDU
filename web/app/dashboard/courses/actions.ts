@@ -46,9 +46,8 @@ export async function createCourse(formData: FormData) {
     
     const result = await internalFetch('/api/courses','POST',{ 
       title, 
-      description, 
-      is_published: true,
-      author_id: user.id 
+      description,
+      teacher_id: user.id // Use teacher_id instead of author_id
     })
     
     await logAuditAction({
@@ -84,8 +83,7 @@ export async function createLesson(formData: FormData) {
       course_id: courseId, 
       title, 
       content, 
-      order_index: 1, 
-      is_published: true 
+      lesson_order: 1
     })
     
     await logAuditAction({
@@ -140,11 +138,9 @@ export async function editCourse(formData: FormData) {
     const payload: Record<string, unknown> = {}
     const titleRaw = formData.get('title')
     const descriptionRaw = formData.get('description')
-    const is_published_raw = formData.get('is_published')
     
     if (titleRaw !== null) payload.title = validateTitle(titleRaw)
     if (descriptionRaw !== null) payload.description = validateDescription(descriptionRaw)
-    if (is_published_raw !== null) payload.is_published = String(is_published_raw) === 'on' || String(is_published_raw) === 'true'
     
     await internalFetch(`/api/courses/${id}`, 'PUT', payload)
     

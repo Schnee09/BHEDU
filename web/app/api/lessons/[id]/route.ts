@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     return new Response(JSON.stringify({ error: 'Invalid signature format' }), { status: 400 })
   }
 
-  let body: { title?: unknown; content?: unknown; video_url?: unknown; order_index?: unknown; is_published?: unknown } = {}
+  let body: { title?: unknown; content?: unknown; lesson_order?: unknown } = {}
   try { body = raw ? JSON.parse(raw) : {} } catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 }) }
 
   const updates: Record<string, unknown> = {}
@@ -43,17 +43,9 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     if (body.content !== null && typeof body.content !== 'string') return new Response(JSON.stringify({ error: 'content must be string|null' }), { status: 400 })
     updates.content = body.content
   }
-  if (typeof body.video_url !== 'undefined') {
-    if (body.video_url !== null && typeof body.video_url !== 'string') return new Response(JSON.stringify({ error: 'video_url must be string|null' }), { status: 400 })
-    updates.video_url = body.video_url
-  }
-  if (typeof body.order_index !== 'undefined') {
-    if (typeof body.order_index !== 'number') return new Response(JSON.stringify({ error: 'order_index must be number' }), { status: 400 })
-    updates.order_index = body.order_index
-  }
-  if (typeof body.is_published !== 'undefined') {
-    if (typeof body.is_published !== 'boolean') return new Response(JSON.stringify({ error: 'is_published must be boolean' }), { status: 400 })
-    updates.is_published = body.is_published
+  if (typeof body.lesson_order !== 'undefined') {
+    if (typeof body.lesson_order !== 'number') return new Response(JSON.stringify({ error: 'lesson_order must be number' }), { status: 400 })
+    updates.lesson_order = body.lesson_order
   }
 
   if (Object.keys(updates).length === 0) return new Response(JSON.stringify({ error: 'No valid fields to update' }), { status: 400 })

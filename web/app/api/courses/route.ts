@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { logger } from '@/lib/logger';
 import { validateTitle, validateDescription, ValidationError } from '@/lib/validation';
+import { TableColumns, mapCourseToAPI, type Course } from '@/lib/database.types';
 
 function computeHmac(key: string, msg: string) {
   return crypto.createHmac('sha256', key).update(msg).digest('hex');
@@ -48,14 +49,16 @@ export async function GET(req: Request) {
     const sb = createClient(supabaseUrl, serviceRoleKey);
     const { data, error } = await sb
       .from('courses')
-      .select('id, title, description, thumbnail, author_id, is_published, created_at, updated_at')
+      .select(TableColumns.courses)
       .order('created_at', { ascending: false });
 
     if (error) {
       logger.error('Failed to fetch courses', { error });
       return new Response(JSON.stringify({ error: error.message }), { status: 400 });
     }
-    return new Response(JSON.stringify({ data }), { status: 200 });
+    // Map name to title for frontend compatibility
+    const coursesWithTitle = (data as Course[])?.map(mapCourseToAPI) || [];
+    return new Response(JSON.stringify({ data: coursesWithTitle }), { status: 200 });
   } catch (err) {
     logger.error('Unexpected error in GET /api/courses', { error: err });
     return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
@@ -100,9 +103,9 @@ export async function POST(req: Request) {
     let body: {
       title?: unknown;
       description?: unknown;
-      thumbnail?: unknown;
-      author_id?: unknown;
-      is_published?: unknown;
+      subject_id?: unknown;
+      teacher_id?: unknown;
+      academic_year_id?: unknown;
     } = {};
     try { 
       body = raw ? JSON.parse(raw) : {}; 
@@ -115,17 +118,17 @@ export async function POST(req: Request) {
     try {
       const title = validateTitle(body.title);
       const description = body.description ? validateDescription(body.description) : null;
-      const thumbnail = typeof body.thumbnail === 'string' ? body.thumbnail : null;
-      const author_id = typeof body.author_id === 'string' ? body.author_id : null;
-      const is_published = typeof body.is_published === 'boolean' ? body.is_published : false;
+      const subject_id = typeof body.subject_id === 'string' ? body.subject_id : null;
+      const teacher_id = typeof body.teacher_id === 'string' ? body.teacher_id : null;
+      const academic_year_id = typeof body.academic_year_id === 'string' ? body.academic_year_id : null;
 
       const sb = createClient(supabaseUrl, serviceRoleKey);
       const insert = {
-        title,
+        name: title, // Map title to name for database
         description,
-        thumbnail,
-        author_id,
-        is_published
+        subject_id,
+        teacher_id,
+        academic_year_id
       };
 
       const { data, error } = await sb.from('courses').insert(insert).select().single();
@@ -133,7 +136,9 @@ export async function POST(req: Request) {
         logger.error('Failed to create course', { error, insert });
         return new Response(JSON.stringify({ error: error.message }), { status: 400 });
       }
-      return new Response(JSON.stringify({ data }), { status: 201 });
+      // Map name back to title for frontend
+      const courseWithTitle = data ? mapCourseToAPI(data as Course) : data;
+      return new Response(JSON.stringify({ data: courseWithTitle }), { status: 201 });
     } catch (err) {
       if (err instanceof ValidationError) {
         return new Response(JSON.stringify({ error: err.message }), { status: 400 });

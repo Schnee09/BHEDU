@@ -12,13 +12,12 @@ type ProfileRecord = { id: string; full_name?: string; role?: string };
 export async function requireAdmin() {
   const supabase = await createClient();
   
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  // Use getUser() instead of getSession() for security (authenticates with Auth server)
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
   
-  if (sessionError || !session?.user) {
+  if (userError || !user) {
     redirect('/login?redirectTo=/admin');
   }
-
-  const user = session.user;
 
   // Fetch profile to check role (using anon key with RLS)
   const { data: profile, error: profileError } = await supabase
@@ -46,13 +45,14 @@ export async function requireAdmin() {
 export async function isAdmin(): Promise<boolean> {
   const supabase = await createClient();
   
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) return false;
+  // Use getUser() instead of getSession() for security
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
 
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
   return (profile as ProfileRecord | null)?.role === 'admin';
 }

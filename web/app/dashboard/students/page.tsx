@@ -56,6 +56,7 @@ export default function StudentsPage() {
       }
 
       // Teachers only see students in their classes
+      // Admins see all students (no filtering)
       if (profile.role === "teacher") {
         console.log('[Students] Teacher role, fetching classes for teacher:', profile.id);
         const { data: teacherClasses } = await supabase
@@ -83,7 +84,13 @@ export default function StudentsPage() {
           }
         } else {
           console.log('[Students] Teacher has no classes');
+          setStudents([]);
+          setTotalCount(0);
+          setLoading(false);
+          return;
         }
+      } else if (profile.role === "admin") {
+        console.log('[Students] Admin role, showing all students (no filtering)');
       }
 
       const from = page * pageSize;

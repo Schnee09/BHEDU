@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { logger } from '@/lib/logger';
 import { validateTitle, validateContent, validateUUID, ValidationError } from '@/lib/validation';
+import { TableColumns, type Lesson } from '@/lib/database.types';
 
 function computeHmac(key: string, msg: string) {
   return crypto.createHmac('sha256', key).update(msg).digest('hex');
@@ -66,9 +67,9 @@ export async function GET(req: Request) {
     const sb = createClient(supabaseUrl, serviceRoleKey);
     const { data, error } = await sb
       .from('lessons')
-      .select('id, course_id, title, content, video_url, order_index, is_published, created_at, updated_at')
+      .select(TableColumns.lessons)
       .eq('course_id', course_id)
-      .order('order_index', { ascending: true });
+      .order('lesson_order', { ascending: true });
 
     if (error) {
       logger.error('Failed to fetch lessons', { error, course_id });
@@ -120,9 +121,7 @@ export async function POST(req: Request) {
       course_id?: unknown;
       title?: unknown;
       content?: unknown;
-      video_url?: unknown;
-      order_index?: unknown;
-      is_published?: unknown;
+      lesson_order?: unknown;
     } = {};
     try { 
       body = raw ? JSON.parse(raw) : {}; 
@@ -136,18 +135,14 @@ export async function POST(req: Request) {
       const course_id = validateUUID(body.course_id);
       const title = validateTitle(body.title);
       const content = body.content ? validateContent(body.content) : null;
-      const video_url = typeof body.video_url === 'string' ? body.video_url : null;
-      const order_index = typeof body.order_index === 'number' ? body.order_index : 0;
-      const is_published = typeof body.is_published === 'boolean' ? body.is_published : false;
+      const lesson_order = typeof body.lesson_order === 'number' ? body.lesson_order : 0;
 
       const sb = createClient(supabaseUrl, serviceRoleKey);
       const insert = {
         course_id,
         title,
         content,
-        video_url,
-        order_index,
-        is_published
+        lesson_order
       };
 
       const { data, error } = await sb.from('lessons').insert(insert).select().single();
