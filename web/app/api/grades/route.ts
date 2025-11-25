@@ -45,9 +45,7 @@ export async function GET(request: Request) {
         student:profiles!grades_student_id_fkey(
           id,
           email,
-          full_name,
-          student_id,
-          grade_level
+          full_name
         )
       `)
 
