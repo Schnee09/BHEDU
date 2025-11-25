@@ -74,14 +74,16 @@ export default function UserManagementPage() {
       const data = await response.json()
 
       if (data.success) {
-        setUsers(data.data)
-        setStats(data.statistics)
-        setTotalPages(data.pagination.pages)
+        setUsers(data.data || data.users || [])
+        setStats(data.statistics || {})
+        setTotalPages(data.pagination?.pages || 1)
       } else {
-        console.error('Failed to fetch users')
+        console.error('Failed to fetch users:', data.error || 'Unknown error')
+        setUsers([])
       }
     } catch (error) {
       console.error('Error fetching users:', error)
+      setUsers([])
     } finally {
       setLoading(false)
     }

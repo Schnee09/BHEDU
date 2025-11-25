@@ -71,10 +71,13 @@ export default function StudentAccountsPage() {
       const res = await apiFetch('/api/admin/academic-years')
       const response = await res.json()
       if (response.success) {
-        setAcademicYears(response.academic_years)
+        setAcademicYears(response.data || response.academic_years || [])
+      } else {
+        setAcademicYears([])
       }
     } catch (err) {
       console.error('Error fetching academic years:', err)
+      setAcademicYears([])
     }
   }
 
@@ -209,7 +212,7 @@ export default function StudentAccountsPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Years</option>
-              {academicYears.map((year) => (
+              {(academicYears || []).map((year) => (
                 <option key={year.id} value={year.id}>
                   {year.name}
                 </option>

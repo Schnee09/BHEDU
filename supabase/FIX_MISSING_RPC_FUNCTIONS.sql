@@ -11,7 +11,7 @@ BEGIN
     WHERE constraint_name = 'attendance_student_class_date_unique'
     AND table_name = 'attendance'
   ) THEN
-    EXECUTE 'ALTER TABLE attendance ADD CONSTRAINT attendance_student_class_date_unique UNIQUE (student_id, class_id, date)';
+    ALTER TABLE attendance ADD CONSTRAINT attendance_student_class_date_unique UNIQUE (student_id, class_id, date);
   END IF;
 END $$;
 
@@ -26,11 +26,11 @@ DECLARE
 BEGIN
   SELECT jsonb_build_object(
     'total_users', COUNT(*),
-    'active_users', COUNT(*) FILTER (WHERE is_active = true),
+    'active_users', COUNT(*),
     'students', COUNT(*) FILTER (WHERE role = 'student'),
     'teachers', COUNT(*) FILTER (WHERE role = 'teacher'),
     'admins', COUNT(*) FILTER (WHERE role = 'admin'),
-    'parents', COUNT(*) FILTER (WHERE role = 'parent')
+    'parents', 0
   )
   INTO result
   FROM profiles;
@@ -60,18 +60,19 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT 
-    e.student_id AS student_id,
-    p.full_name AS student_name,
-    COALESCE(p.student_id, '') AS student_number,
-    COALESCE(att.status, 'absent'::text) AS status,
-    att.check_in_time AS check_in_time,
-    att.notes AS notes
+    e.student_id,
+    p.full_name,
+    p.id::text as student_number,
+    COALESCE(att.status, 'absent'::text) as status,
+    att.check_in_time,
+    att.notes
   FROM enrollments e
   INNER JOIN profiles p ON p.id = e.student_id
   LEFT JOIN attendance att ON att.student_id = e.student_id 
     AND att.class_id = p_class_id 
     AND att.date = p_date
   WHERE e.class_id = p_class_id
+    AND e.status = 'active'
   ORDER BY p.full_name;
 END;
 $$;
@@ -158,23 +159,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION calculate_overall_grade TO authenticated;
 
--- Create qr_codes table BEFORE functions that use it
-CREATE TABLE IF NOT EXISTS qr_codes (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  student_id uuid REFERENCES profiles(id) ON DELETE CASCADE,
-  code text NOT NULL UNIQUE,
-  date date NOT NULL,
-  expires_at timestamptz NOT NULL,
-  used boolean DEFAULT false,
-  created_at timestamptz DEFAULT now(),
-  UNIQUE(student_id, date)
-);
-
--- Create index on qr_codes
-CREATE INDEX IF NOT EXISTS idx_qr_codes_code ON qr_codes(code);
-CREATE INDEX IF NOT EXISTS idx_qr_codes_student_date ON qr_codes(student_id, date);
-
--- 4. generate_qr_code function
+-- 4. generate_qr_code function (uses existing qr_codes table)
 CREATE OR REPLACE FUNCTION generate_qr_code(
   p_student_id uuid,
   p_date date,
@@ -195,14 +180,13 @@ BEGIN
   v_code := encode(gen_random_bytes(16), 'hex');
   v_expires_at := now() + (p_expiry_hours || ' hours')::interval;
   
-  -- Insert or update the QR code
-  INSERT INTO qr_codes (student_id, code, date, expires_at, used)
-  VALUES (p_student_id, v_code, p_date, v_expires_at, false)
-  ON CONFLICT (student_id, date) 
+  -- Insert QR code (update if exists for same student/date)
+  INSERT INTO qr_codes (student_id, code, valid_date, expires_at)
+  VALUES (p_student_id, v_code, p_date, v_expires_at)
+  ON CONFLICT (code) 
   DO UPDATE SET 
-    code = v_code,
     expires_at = v_expires_at,
-    used = false;
+    used_at = NULL;
   
   RETURN QUERY SELECT v_code, v_expires_at;
 END;
@@ -210,7 +194,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION generate_qr_code TO authenticated;
 
--- 5. check_in_with_qr function
+-- 5. check_in_with_qr function (uses existing qr_codes table)
 CREATE OR REPLACE FUNCTION check_in_with_qr(
   p_code text,
   p_class_id uuid
@@ -221,13 +205,13 @@ SECURITY DEFINER
 AS $$
 DECLARE
   v_student_id uuid;
-  v_date date;
+  v_valid_date date;
   v_expires_at timestamptz;
-  v_used boolean;
+  v_used_at timestamptz;
 BEGIN
   -- Find the QR code
-  SELECT student_id, date, expires_at, used
-  INTO v_student_id, v_date, v_expires_at, v_used
+  SELECT student_id, valid_date, expires_at, used_at
+  INTO v_student_id, v_valid_date, v_expires_at, v_used_at
   FROM qr_codes
   WHERE code = p_code
   LIMIT 1;
@@ -237,7 +221,7 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Invalid QR code');
   END IF;
   
-  IF v_used THEN
+  IF v_used_at IS NOT NULL THEN
     RETURN jsonb_build_object('success', false, 'error', 'QR code already used');
   END IF;
   
@@ -247,49 +231,20 @@ BEGIN
   
   -- Mark attendance
   INSERT INTO attendance (student_id, class_id, date, status, check_in_time)
-  VALUES (v_student_id, p_class_id, v_date, 'present', CURRENT_TIME)
+  VALUES (v_student_id, p_class_id, v_valid_date, 'present', CURRENT_TIME)
   ON CONFLICT (student_id, class_id, date)
   DO UPDATE SET 
     status = 'present', 
     check_in_time = CURRENT_TIME;
   
   -- Mark QR code as used
-  UPDATE qr_codes SET used = true WHERE code = p_code;
+  UPDATE qr_codes SET used_at = now() WHERE code = p_code;
   
   RETURN jsonb_build_object('success', true, 'student_id', v_student_id);
 END;
 $$;
 
 GRANT EXECUTE ON FUNCTION check_in_with_qr TO authenticated;
-
--- Enable RLS on qr_codes
-ALTER TABLE qr_codes ENABLE ROW LEVEL SECURITY;
-
--- RLS policies for qr_codes
-CREATE POLICY "Users can view their own QR codes"
-  ON qr_codes FOR SELECT
-  USING (
-    auth.uid() = student_id 
-    OR EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = auth.uid() 
-      AND role IN ('teacher', 'admin')
-    )
-  );
-
-CREATE POLICY "Teachers and admins can create QR codes"
-  ON qr_codes FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = auth.uid() 
-      AND role IN ('teacher', 'admin')
-    )
-  );
-
-CREATE POLICY "System can update QR codes"
-  ON qr_codes FOR UPDATE
-  USING (true);
 
 COMMENT ON FUNCTION get_user_statistics IS 'Returns statistics about users by role';
 COMMENT ON FUNCTION get_class_attendance IS 'Gets attendance records for a class on a specific date';
