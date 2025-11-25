@@ -26,10 +26,8 @@ export async function GET(request: Request) {
         *,
         student:profiles!invoices_student_id_fkey(
           id,
-          student_id,
           full_name,
-          email,
-          grade_level
+          email
         ),
         academic_year:academic_years(id, name),
         items:invoice_items(
@@ -169,10 +167,8 @@ export async function POST(request: Request) {
         *,
         student:profiles!invoices_student_id_fkey(
           id,
-          student_id,
           full_name,
-          email,
-          grade_level
+          email
         ),
         academic_year:academic_years(id, name),
         items:invoice_items(

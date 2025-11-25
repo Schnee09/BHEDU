@@ -58,10 +58,8 @@ export async function GET(
             id,
             student:profiles!enrollments_student_id_fkey(
               id,
-              first_name,
-              last_name,
-              email,
-              student_number
+              full_name,
+              email
             )
           )
         )

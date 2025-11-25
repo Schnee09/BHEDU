@@ -24,10 +24,8 @@ export async function GET(
         *,
         student:profiles!enrollments_student_id_fkey(
           id,
-          first_name,
-          last_name,
+          full_name,
           email,
-          student_number,
           status
         ),
         class:classes!enrollments_class_id_fkey(
@@ -37,8 +35,7 @@ export async function GET(
           grade_level,
           teacher:profiles!classes_teacher_id_fkey(
             id,
-            first_name,
-            last_name,
+            full_name,
             email
           )
         )

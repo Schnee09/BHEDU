@@ -41,8 +41,7 @@ export async function GET(
           student:profiles!enrollments_student_id_fkey(
             id,
             full_name,
-            email,
-            student_id
+            email
           )
         )
       `)

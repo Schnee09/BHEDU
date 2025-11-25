@@ -27,10 +27,8 @@ export async function GET(request: Request) {
         *,
         student:profiles!student_accounts_student_id_fkey(
           id,
-          student_id,
           full_name,
-          email,
-          grade_level
+          email
         ),
         academic_year:academic_years(id, name)
       `)
@@ -113,10 +111,8 @@ export async function POST(request: Request) {
         *,
         student:profiles!student_accounts_student_id_fkey(
           id,
-          student_id,
           full_name,
-          email,
-          grade_level
+          email
         ),
         academic_year:academic_years(id, name)
       `)

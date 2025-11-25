@@ -52,8 +52,6 @@ export async function GET(
           id,
           email,
           full_name,
-          student_id,
-          grade_level,
           status
         )
       `)

@@ -60,10 +60,8 @@ export async function GET(
         ),
         student:profiles!grades_student_id_fkey(
           id,
-          first_name,
-          last_name,
+          full_name,
           email,
-          student_number,
           date_of_birth,
           phone
         )

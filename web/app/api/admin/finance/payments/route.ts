@@ -27,10 +27,8 @@ export async function GET(request: Request) {
         *,
         student:profiles!payments_student_id_fkey(
           id,
-          student_id,
           full_name,
-          email,
-          grade_level
+          email
         ),
         payment_method:payment_methods(id, name, type),
         received_by_user:profiles!payments_received_by_fkey(
@@ -169,10 +167,8 @@ export async function POST(request: Request) {
         *,
         student:profiles!payments_student_id_fkey(
           id,
-          student_id,
           full_name,
-          email,
-          grade_level
+          email
         ),
         payment_method:payment_methods(id, name, type),
         received_by_user:profiles!payments_received_by_fkey(
