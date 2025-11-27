@@ -191,7 +191,7 @@ export async function DELETE(
     // Check if teacher exists
     const { data: teacher, error: fetchError } = await supabase
       .from('profiles')
-      .select('id, role, status, first_name, last_name')
+      .select('id, role, status, full_name')
       .eq('id', id)
       .eq('role', 'teacher')
       .single()

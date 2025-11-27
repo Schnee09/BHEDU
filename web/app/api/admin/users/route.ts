@@ -45,9 +45,7 @@ export async function GET(request: Request) {
         created_at,
         phone,
         department,
-        notes,
-        student_id,
-        grade_level
+        notes
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
 
@@ -61,7 +59,7 @@ export async function GET(request: Request) {
     }
 
     if (search) {
-      query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%,student_id.ilike.%${search}%`)
+      query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%`)
     }
 
     // Apply pagination
@@ -122,8 +120,6 @@ export async function POST(request: Request) {
       role,
       phone,
       department,
-      student_id,
-      grade_level,
       notes,
       is_active = true
     } = body
@@ -173,8 +169,6 @@ export async function POST(request: Request) {
         role,
         phone,
         department,
-        student_id,
-        grade_level,
         notes,
         is_active,
         created_by: authResult.userId

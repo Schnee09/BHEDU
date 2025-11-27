@@ -68,7 +68,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     // Validate student exists and is a student
     const { data: existingStudent } = await supabase
       .from('profiles')
-      .select('id, role, first_name, last_name')
+      .select('id, role, full_name')
       .eq('id', id)
       .single()
 
@@ -116,8 +116,8 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     // Build update object with allowed fields
     const updateData: Record<string, any> = {}
     const allowedFields = [
-      'first_name', 'last_name', 'email', 'phone', 'address',
-      'date_of_birth', 'gender', 'student_id', 'grade_level',
+      'full_name', 'email', 'phone', 'address',
+      'date_of_birth', 'gender',
       'status', 'enrollment_date', 'notes', 'photo_url'
     ]
 
@@ -126,8 +126,6 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
         updateData[field] = body[field]
       }
     })
-
-    // Update full_name if first/last name changed
     if (body.first_name || body.last_name) {
       const firstName = body.first_name || existingStudent.first_name || ''
       const lastName = body.last_name || existingStudent.last_name || ''
