@@ -1,70 +1,109 @@
-# 🚀 START HERE - Quick Fix Guide
+# 🚀 Quick Start - BH-EDU
 
-## Current Problem
-- ❌ 500 errors on 8 pages
-- ❌ Database missing columns
-- ❌ Lint blocking commits
+Get BH-EDU running in **3 simple steps** (5 minutes total).
 
-## ✅ SOLUTION (10 minutes)
+## Step 1: Setup Database (2 minutes)
 
-### 1️⃣ Fix Database (2 min)
-1. Open Supabase Dashboard → SQL Editor
-2. Copy ALL from: `supabase/NUCLEAR_FIX_COMPLETE_REBUILD.sql`
-3. Click RUN
-4. Wait for ✅ Success
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
+2. Open your project → **SQL Editor**
+3. Copy **ALL** content from `supabase/NUCLEAR_FIX_COMPLETE_REBUILD.sql`
+4. Click **RUN** (Ctrl+Enter)
+5. Wait for ✅ Success message
 
-### 2️⃣ Restart Server (30 sec)
+This creates:
+- All database tables with correct schema
+- 5 RPC functions (attendance, grades, QR codes)
+- Indexes for performance
+- Default data
+
+## Step 2: Configure Environment (1 minute)
+
 ```bash
 cd web
+cp .env.example .env.local
+```
+
+Edit `web/.env.local`:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+```
+
+Get these from: Supabase Dashboard → Settings → API
+
+## Step 3: Run Development Server (30 seconds)
+
+```bash
+cd web
+pnpm install  # First time only
 pnpm dev
 ```
 
-### 3️⃣ Test (5 min)
-Visit these pages - should work now:
+Open: **http://localhost:3000**
+
+## ✅ Verify It Works
+
+Test these pages - should load without errors:
+- http://localhost:3000/dashboard
+- http://localhost:3000/dashboard/users
 - http://localhost:3000/dashboard/attendance/mark
 - http://localhost:3000/dashboard/grades/entry
-- http://localhost:3000/dashboard/users
 - http://localhost:3000/dashboard/finance/payments
 
-### 4️⃣ Commit Works Now ✅
-```bash
-git add .
-git commit -m "your message"
-# ✅ No more lint blocking!
+## 🎉 You're Done!
+
+### Next Steps
+
+1. **Create Admin User** (if needed):
+```sql
+-- Run in Supabase SQL Editor
+INSERT INTO auth.users (email, encrypted_password, email_confirmed_at)
+VALUES ('admin@bhedu.com', crypt('your_password', gen_salt('bf')), NOW());
+
+INSERT INTO profiles (user_id, email, role, full_name, is_active)
+VALUES (
+  (SELECT id FROM auth.users WHERE email = 'admin@bhedu.com'),
+  'admin@bhedu.com',
+  'admin',
+  'Admin User',
+  true
+);
 ```
 
+2. **Explore the System**:
+   - Login with admin credentials
+   - Create students, teachers, classes
+   - Mark attendance
+   - Enter grades
+   - Generate reports
+
+3. **Read the Docs**:
+   - `docs/QUICK_START.md` - Detailed setup
+   - `docs/DEPLOYMENT.md` - Deploy to production
+   - `docs/TROUBLESHOOTING.md` - Fix common issues
+
+## 🆘 Troubleshooting
+
+### Database errors?
+- Verify SQL ran successfully (no red errors)
+- Check all columns exist: `SELECT * FROM profiles LIMIT 1;`
+- Re-run the SQL if needed (it's safe)
+
+### Page shows 500 error?
+- Check browser console for errors
+- Verify `.env.local` has correct Supabase credentials
+- Restart dev server: `Ctrl+C` then `pnpm dev`
+
+### Lint blocking commits?
+```bash
+# Already fixed! But if needed:
+git commit --no-verify -m "your message"
+```
+
+### Need more help?
+See `docs/TROUBLESHOOTING.md` for detailed solutions.
+
 ---
 
-## 📁 Documentation
-
-- **`README_FIX_NOW.md`** - Detailed step-by-step guide
-- **`COMPLETE_FIX_SUMMARY.md`** - Full overview of all fixes
-- **`ESLINT_FIX_GUIDE.md`** - ESLint configuration details
-- **`supabase/NUCLEAR_FIX_COMPLETE_REBUILD.sql`** - Database fix SQL
-
----
-
-## ✅ What Was Fixed
-
-### Code (Already Done ✅)
-- ✅ TypeScript errors fixed
-- ✅ ESLint configured (warnings only)
-- ✅ Commits work
-- ✅ Pushed to GitHub
-
-### Database (You Need to Run SQL)
-- ⏳ Add 8 missing columns to `profiles` table
-- ⏳ Create 5 RPC functions
-- ⏳ Create `qr_codes` table
-
----
-
-## 🎯 That's It!
-
-**Just run the SQL and you're done!**
-
-All code fixes are already committed and pushed to GitHub. The only thing left is to run the database SQL in Supabase.
-
----
-
-**Need help?** See `README_FIX_NOW.md` for detailed instructions.
+**That's it!** You should have a fully working BH-EDU installation. 🎉
