@@ -68,7 +68,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     // Validate student exists and is a student
     const { data: existingStudent } = await supabase
       .from('profiles')
-      .select('id, role, full_name')
+      .select('id, role, full_name, first_name, last_name')
       .eq('id', id)
       .single()
 

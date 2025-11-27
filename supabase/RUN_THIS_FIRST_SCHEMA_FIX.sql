@@ -1,18 +1,14 @@
 -- ========================================
 -- CRITICAL: Run this SQL in Supabase SQL Editor FIRST
 -- ========================================
--- This adds all the missing columns that your code expects
--- Based on migration 012_enhanced_student_profiles.sql
+-- This adds ONLY the missing columns that your code expects
+-- Your schema already has: id, user_id, first_name, last_name, full_name, email, 
+-- date_of_birth, phone, address, emergency_contact, role, student_id, grade_level
 
--- Add missing columns to profiles table
+-- Add ONLY the missing columns to profiles table
 ALTER TABLE profiles 
-  ADD COLUMN IF NOT EXISTS phone VARCHAR(20),
-  ADD COLUMN IF NOT EXISTS address TEXT,
-  ADD COLUMN IF NOT EXISTS date_of_birth DATE,
   ADD COLUMN IF NOT EXISTS gender VARCHAR(10),
-  ADD COLUMN IF NOT EXISTS student_id VARCHAR(50),
   ADD COLUMN IF NOT EXISTS enrollment_date DATE DEFAULT CURRENT_DATE,
-  ADD COLUMN IF NOT EXISTS grade_level VARCHAR(20),
   ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active',
   ADD COLUMN IF NOT EXISTS photo_url TEXT,
   ADD COLUMN IF NOT EXISTS department TEXT,
