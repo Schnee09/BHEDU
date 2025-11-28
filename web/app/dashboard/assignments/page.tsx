@@ -27,8 +27,13 @@ export default function AssignmentsPage() {
         .select("id, title, due_date, class_id, classes(name)")
         .order("due_date", { ascending: true });
 
-      // Teachers: only own classes’ assignments
-      if (profile.role === "teacher") {
+      // Admin: see all assignments (no filter needed)
+      if (profile.role === "admin") {
+        console.log('[Assignments] Admin role, fetching all assignments');
+        // No filter - admins see everything
+      }
+      // Teachers: only own classes' assignments
+      else if (profile.role === "teacher") {
         const { data: classesData } = await supabase
           .from("classes")
           .select("id")
@@ -36,9 +41,8 @@ export default function AssignmentsPage() {
         const classIds = (classesData as Array<{ id: string }> | null)?.map((c) => c.id) || [];
         query = query.in("class_id", classIds);
       }
-
       // Students: only enrolled class assignments
-      if (profile.role === "student") {
+      else if (profile.role === "student") {
         const { data: enrollmentsData } = await supabase
           .from("enrollments")
           .select("class_id")

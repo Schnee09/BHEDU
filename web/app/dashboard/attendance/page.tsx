@@ -40,8 +40,13 @@ export default function AttendancePage() {
         )
         .order("date", { ascending: false });
 
+      // Admin: see all attendance (no filter needed)
+      if (profile.role === "admin") {
+        console.log('[Attendance] Admin role, fetching all attendance');
+        // No filter - admins see everything
+      }
       // Teacher: only attendance of own classes
-      if (profile.role === "teacher") {
+      else if (profile.role === "teacher") {
         console.log('[Attendance] Teacher role, fetching classes');
         const { data: classesRaw } = await supabase
           .from("classes")
@@ -51,9 +56,8 @@ export default function AttendancePage() {
         const classIds = (classesRaw as Array<{ id: string }> | null)?.map((c) => c.id) || [];
         query = query.in("class_id", classIds);
       }
-
       // Student: only own attendance
-      if (profile.role === "student") {
+      else if (profile.role === "student") {
         console.log('[Attendance] Student role, filtering to student ID');
         query = query.eq("student_id", profile.id);
       }
