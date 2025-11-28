@@ -20,10 +20,21 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (profileLoading || !profile) return;
+    if (profileLoading || !profile) {
+      console.log('[Attendance] Waiting for profile...', { profileLoading, hasProfile: !!profile });
+      return;
+    }
 
     const fetchAttendance = async () => {
-      console.log('[Attendance] Fetching attendance for profile:', profile.role, profile.id);
+      console.log('========================================');
+      console.log('[Attendance] START FETCH');
+      console.log('[Attendance] Profile:', {
+        id: profile.id,
+        role: profile.role,
+        email: profile.email,
+        full_name: profile.full_name
+      });
+      
       setLoading(true);
       let query = supabase
         .from("attendance")
@@ -42,32 +53,57 @@ export default function AttendancePage() {
 
       // Admin: see all attendance (no filter needed)
       if (profile.role === "admin") {
-        console.log('[Attendance] Admin role, fetching all attendance');
+        console.log('[Attendance] ✅ ADMIN ROLE DETECTED - No filters applied');
+        console.log('[Attendance] Query will fetch ALL attendance records');
         // No filter - admins see everything
       }
       // Teacher: only attendance of own classes
       else if (profile.role === "teacher") {
         console.log('[Attendance] Teacher role, fetching classes');
-        const { data: classesRaw } = await supabase
+        const { data: classesRaw, error: classError } = await supabase
           .from("classes")
           .select("id")
           .eq("teacher_id", profile.id);
+        
+        if (classError) {
+          console.error('[Attendance] ❌ Error fetching teacher classes:', classError);
+        }
+        
         console.log('[Attendance] Teacher classes:', classesRaw);
         const classIds = (classesRaw as Array<{ id: string }> | null)?.map((c) => c.id) || [];
+        console.log('[Attendance] Class IDs to filter:', classIds);
+        
+        if (classIds.length === 0) {
+          console.warn('[Attendance] ⚠️ Teacher has NO classes assigned');
+        }
+        
         query = query.in("class_id", classIds);
       }
       // Student: only own attendance
       else if (profile.role === "student") {
-        console.log('[Attendance] Student role, filtering to student ID');
+        console.log('[Attendance] Student role, filtering to student ID:', profile.id);
         query = query.eq("student_id", profile.id);
       }
-
-      const { data, error } = await query;
-      if (error) {
-        console.error("[Attendance] ❌ Error fetching attendance:", error);
-      } else {
-        console.log('[Attendance] Fetched', data?.length || 0, 'attendance records');
+      else {
+        console.warn('[Attendance] ⚠️ UNKNOWN ROLE:', profile.role);
       }
+
+      console.log('[Attendance] Executing query...');
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("[Attendance] ❌ Error fetching attendance:");
+        console.error(error);
+      } else {
+        console.log('[Attendance] ✅ Query successful!');
+        console.log('[Attendance] Records fetched:', data?.length || 0);
+        if (data && data.length > 0) {
+          console.log('[Attendance] First record sample:', data[0]);
+        } else {
+          console.warn('[Attendance] ⚠️ NO RECORDS FOUND');
+        }
+      }
+      console.log('========================================');
       const mapped = Array.isArray(data)
         ? (data as unknown[]).map((raw) => {
             const r = raw as {

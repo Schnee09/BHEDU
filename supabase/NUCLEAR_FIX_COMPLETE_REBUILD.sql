@@ -73,11 +73,59 @@ CREATE INDEX IF NOT EXISTS idx_profiles_grade_level ON profiles(grade_level) WHE
 CREATE INDEX IF NOT EXISTS idx_profiles_department ON profiles(department) WHERE department IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_profiles_enrollment_date ON profiles(enrollment_date);
 
--- Step 3: Create/Replace ALL RPC functions
+-- Step 3: Ensure qr_codes table exists BEFORE creating functions
+-- ================================================================
+-- First, make sure classes table exists (should already exist)
+CREATE TABLE IF NOT EXISTS classes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Drop and recreate qr_codes table to ensure clean state
+DROP TABLE IF EXISTS qr_codes CASCADE;
+
+CREATE TABLE qr_codes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  class_id UUID REFERENCES classes(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  valid_until TIMESTAMP WITH TIME ZONE NOT NULL,
+  used_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_qr_codes_token ON qr_codes(token);
+CREATE INDEX idx_qr_codes_valid ON qr_codes(valid_until) WHERE used_at IS NULL;
+
+-- Step 4: Fix attendance table constraints
+-- ================================================================
+DO $$ 
+BEGIN
+  -- Add unique constraint if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'attendance_student_class_date_unique'
+    AND table_name = 'attendance'
+  ) THEN
+    ALTER TABLE attendance 
+    ADD CONSTRAINT attendance_student_class_date_unique 
+    UNIQUE (student_id, class_id, date);
+    RAISE NOTICE 'Added attendance unique constraint';
+  END IF;
+END $$;
+
+-- Step 5: Create/Replace ALL RPC functions
 -- ================================================================
 
+-- Drop existing functions first to avoid type conflicts
+DROP FUNCTION IF EXISTS get_user_statistics();
+DROP FUNCTION IF EXISTS get_class_attendance(UUID, DATE);
+DROP FUNCTION IF EXISTS calculate_overall_grade(UUID, UUID);
+DROP FUNCTION IF EXISTS generate_qr_code(UUID, INTEGER);
+DROP FUNCTION IF EXISTS check_in_with_qr(TEXT, UUID);
+
 -- Function 1: get_user_statistics
-CREATE OR REPLACE FUNCTION get_user_statistics()
+CREATE FUNCTION get_user_statistics()
 RETURNS JSON AS $$
 DECLARE
   result JSON;
@@ -94,7 +142,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function 2: get_class_attendance
-CREATE OR REPLACE FUNCTION get_class_attendance(p_class_id UUID, p_date DATE)
+CREATE FUNCTION get_class_attendance(p_class_id UUID, p_date DATE)
 RETURNS TABLE (
   student_id UUID,
   student_name TEXT,
@@ -119,7 +167,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function 3: calculate_overall_grade
-CREATE OR REPLACE FUNCTION calculate_overall_grade(p_student_id UUID, p_class_id UUID)
+CREATE FUNCTION calculate_overall_grade(p_student_id UUID, p_class_id UUID)
 RETURNS NUMERIC AS $$
 DECLARE
   avg_grade NUMERIC;
@@ -137,12 +185,11 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function 4: generate_qr_code
-CREATE OR REPLACE FUNCTION generate_qr_code(p_class_id UUID, p_valid_minutes INTEGER DEFAULT 15)
+CREATE FUNCTION generate_qr_code(p_class_id UUID, p_valid_minutes INTEGER DEFAULT 15)
 RETURNS JSON AS $$
 DECLARE
   qr_token TEXT;
   valid_until TIMESTAMP WITH TIME ZONE;
-  result JSON;
 BEGIN
   -- Generate a random token
   qr_token := encode(gen_random_bytes(32), 'base64');
@@ -150,19 +197,19 @@ BEGIN
   
   -- Store in qr_codes table
   INSERT INTO qr_codes (class_id, token, valid_until, created_at)
-  VALUES (p_class_id, qr_token, valid_until, NOW())
-  RETURNING json_build_object(
-    'token', token,
-    'valid_until', valid_until,
-    'class_id', class_id
-  ) INTO result;
+  VALUES (p_class_id, qr_token, valid_until, NOW());
   
-  RETURN result;
+  -- Return the result
+  RETURN json_build_object(
+    'token', qr_token,
+    'valid_until', valid_until,
+    'class_id', p_class_id
+  );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function 5: check_in_with_qr
-CREATE OR REPLACE FUNCTION check_in_with_qr(p_token TEXT, p_student_id UUID)
+CREATE FUNCTION check_in_with_qr(p_token TEXT, p_student_id UUID)
 RETURNS JSON AS $$
 DECLARE
   qr_record RECORD;
@@ -196,37 +243,6 @@ BEGIN
   RETURN json_build_object('success', true, 'class_id', qr_record.class_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Step 4: Ensure qr_codes table exists
--- ================================================================
-CREATE TABLE IF NOT EXISTS qr_codes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-  token TEXT NOT NULL UNIQUE,
-  valid_until TIMESTAMP WITH TIME ZONE NOT NULL,
-  used_at TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_qr_codes_token ON qr_codes(token);
-CREATE INDEX IF NOT EXISTS idx_qr_codes_valid ON qr_codes(valid_until) WHERE used_at IS NULL;
-
--- Step 5: Fix attendance table constraints
--- ================================================================
-DO $$ 
-BEGIN
-  -- Add unique constraint if it doesn't exist
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.table_constraints 
-    WHERE constraint_name = 'attendance_student_class_date_unique'
-    AND table_name = 'attendance'
-  ) THEN
-    ALTER TABLE attendance 
-    ADD CONSTRAINT attendance_student_class_date_unique 
-    UNIQUE (student_id, class_id, date);
-    RAISE NOTICE 'Added attendance unique constraint';
-  END IF;
-END $$;
 
 -- Step 6: Update existing NULL values to defaults
 -- ================================================================

@@ -18,9 +18,21 @@ export default function AssignmentsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (profileLoading || !profile) return;
+    if (profileLoading || !profile) {
+      console.log('[Assignments] Waiting for profile...', { profileLoading, hasProfile: !!profile });
+      return;
+    }
 
     const fetchAssignments = async () => {
+      console.log('========================================');
+      console.log('[Assignments] START FETCH');
+      console.log('[Assignments] Profile:', {
+        id: profile.id,
+        role: profile.role,
+        email: profile.email,
+        full_name: profile.full_name
+      });
+      
       setLoading(true);
       let query = supabase
         .from("assignments")
@@ -29,34 +41,74 @@ export default function AssignmentsPage() {
 
       // Admin: see all assignments (no filter needed)
       if (profile.role === "admin") {
-        console.log('[Assignments] Admin role, fetching all assignments');
+        console.log('[Assignments] ✅ ADMIN ROLE DETECTED - No filters applied');
+        console.log('[Assignments] Query will fetch ALL assignments');
         // No filter - admins see everything
       }
       // Teachers: only own classes' assignments
       else if (profile.role === "teacher") {
-        const { data: classesData } = await supabase
+        console.log('[Assignments] Teacher role, fetching classes');
+        const { data: classesData, error: classError } = await supabase
           .from("classes")
           .select("id")
           .eq("teacher_id", profile.id);
+        
+        if (classError) {
+          console.error('[Assignments] ❌ Error fetching teacher classes:', classError);
+        }
+        
+        console.log('[Assignments] Teacher classes:', classesData);
         const classIds = (classesData as Array<{ id: string }> | null)?.map((c) => c.id) || [];
+        console.log('[Assignments] Class IDs to filter:', classIds);
+        
+        if (classIds.length === 0) {
+          console.warn('[Assignments] ⚠️ Teacher has NO classes assigned');
+        }
+        
         query = query.in("class_id", classIds);
       }
       // Students: only enrolled class assignments
       else if (profile.role === "student") {
-        const { data: enrollmentsData } = await supabase
+        console.log('[Assignments] Student role, fetching enrollments');
+        const { data: enrollmentsData, error: enrollError } = await supabase
           .from("enrollments")
           .select("class_id")
           .eq("student_id", profile.id);
+        
+        if (enrollError) {
+          console.error('[Assignments] ❌ Error fetching enrollments:', enrollError);
+        }
+        
+        console.log('[Assignments] Student enrollments:', enrollmentsData);
         const enrolledIds = (enrollmentsData as Array<{ class_id: string }> | null)?.map((e) => e.class_id) || [];
+        console.log('[Assignments] Enrolled class IDs to filter:', enrolledIds);
+        
+        if (enrolledIds.length === 0) {
+          console.warn('[Assignments] ⚠️ Student has NO enrollments');
+        }
+        
         query = query.in("class_id", enrolledIds);
       }
-
-      const { data, error } = await query;
-      if (error) {
-        console.error("[Assignments] ❌ Error fetching assignments:", error);
-      } else {
-        console.log('[Assignments] Fetched', data?.length || 0, 'assignments');
+      else {
+        console.warn('[Assignments] ⚠️ UNKNOWN ROLE:', profile.role);
       }
+
+      console.log('[Assignments] Executing query...');
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("[Assignments] ❌ Error fetching assignments:");
+        console.error(error);
+      } else {
+        console.log('[Assignments] ✅ Query successful!');
+        console.log('[Assignments] Records fetched:', data?.length || 0);
+        if (data && data.length > 0) {
+          console.log('[Assignments] First record sample:', data[0]);
+        } else {
+          console.warn('[Assignments] ⚠️ NO RECORDS FOUND');
+        }
+      }
+      console.log('========================================');
       const mapped: Assignment[] = Array.isArray(data)
         ? (data as unknown[]).map((raw) => {
             const r = raw as {
