@@ -141,10 +141,10 @@ export async function DELETE(
     const supabase = createClientFromRequest(request as any);
     const { id } = await context.params;
 
-    // Check if enrollment exists
+    // Check if enrollment exists and get student_id, class_id for deletion checks
     const { data: enrollment, error: fetchError } = await supabase
       .from('enrollments')
-      .select('id, status')
+      .select('id, status, student_id, class_id')
       .eq('id', id)
       .single();
 
@@ -156,15 +156,18 @@ export async function DELETE(
     }
 
     // Check if there are attendance records or grades
+    // Note: attendance table has student_id and class_id, not enrollment_id
     const { count: attendanceCount } = await supabase
-      .from('attendance_records')
+      .from('attendance')
       .select('id', { count: 'exact', head: true })
-      .eq('enrollment_id', id);
+      .eq('student_id', enrollment.student_id)
+      .eq('class_id', enrollment.class_id);
 
+    // Note: grades table may have enrollment_id or student_id
     const { count: gradesCount } = await supabase
       .from('grades')
       .select('id', { count: 'exact', head: true })
-      .eq('enrollment_id', id);
+      .eq('student_id', enrollment.student_id);
 
     if ((attendanceCount && attendanceCount > 0) || (gradesCount && gradesCount > 0)) {
       return NextResponse.json(

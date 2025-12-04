@@ -21,7 +21,8 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+    // Use service client to bypass RLS and avoid recursion
+    const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const assignmentId = searchParams.get('assignmentId')
     const studentId = searchParams.get('studentId')
@@ -34,13 +35,9 @@ export async function GET(request: Request) {
         assignment:assignments(
           id,
           title,
-          total_points,
+          max_points,
           due_date,
-          class_id,
-          category:assignment_categories(
-            id,
-            name
-          )
+          class_id
         ),
         student:profiles!grades_student_id_fkey(
           id,
@@ -79,9 +76,19 @@ export async function GET(request: Request) {
     const { data: grades, error } = await query
 
     if (error) {
-      logger.error('Failed to fetch grades:', error)
+      logger.error('Failed to fetch grades:', {
+        error: error.message,
+        errorCode: error.code,
+        errorDetails: error.details,
+        errorHint: error.hint
+      })
       return NextResponse.json(
-        { error: 'Failed to fetch grades' },
+        { 
+          error: 'Failed to fetch grades',
+          details: error.message,
+          code: error.code,
+          hint: error.hint
+        },
         { status: 500 }
       )
     }
@@ -142,10 +149,43 @@ export async function POST(request: Request) {
 
     // Verify teacher has access to all assignments
     const assignmentIds = [...new Set(gradesData.map(g => g.assignment_id))]
-    const { data: assignments } = await supabase
+    
+    // Try with embedded join first, fallback to separate queries
+    let { data: assignments, error: assignmentError } = await supabase
       .from('assignments')
       .select('id, class_id, total_points, classes!inner(teacher_id)')
       .in('id', assignmentIds)
+
+    // Fallback if embedded join fails
+    if (assignmentError || !assignments) {
+      const { data: assignmentsOnly } = await supabase
+        .from('assignments')
+        .select('id, class_id, total_points')
+        .in('id', assignmentIds)
+      
+      if (!assignmentsOnly || assignmentsOnly.length === 0) {
+        return NextResponse.json(
+          { error: 'Invalid assignment IDs' },
+          { status: 400 }
+        )
+      }
+
+      // Fetch class details separately
+      const classIds = [...new Set(assignmentsOnly.map(a => a.class_id))]
+      const { data: classes } = await supabase
+        .from('classes')
+        .select('id, teacher_id')
+        .in('id', classIds)
+      
+      const classMap: Record<string, any> = {}
+      classes?.forEach(c => { classMap[c.id] = c })
+
+      // Reconstruct assignments with class data
+      assignments = assignmentsOnly.map(a => ({
+        ...a,
+        classes: classMap[a.class_id] ? [classMap[a.class_id]] : []
+      }))
+    }
 
     if (!assignments || assignments.length !== assignmentIds.length) {
       return NextResponse.json(

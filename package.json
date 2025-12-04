@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "husky"
+    "prepare": "husky",
+    "seed": "node scripts/seed-data.js"
   },
   "keywords": [],
   "author": "",

@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(
@@ -19,32 +19,18 @@ export async function GET(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const supabase = createClientFromRequest(request as any)
+    const supabase = createServiceClient()
     const { id } = await context.params
 
     const { data: record, error } = await supabase
-      .from('attendance_records')
+      .from('attendance')
       .select(`
         *,
-        enrollment:enrollments!attendance_records_enrollment_id_fkey(
+        student:profiles!attendance_student_id_fkey(
           id,
-          student:profiles!enrollments_student_id_fkey(
-            id,
-            full_name,
-            email
-          ),
-          class:classes!enrollments_class_id_fkey(
-            id,
-            name,
-            code,
-            grade_level,
-            teacher:profiles!classes_teacher_id_fkey(
-              id,
-              first_name,
-              last_name,
-              email
-            )
-          )
+          full_name,
+          email,
+          student_code
         )
       `)
       .eq('id', id)
@@ -54,9 +40,33 @@ export async function GET(
       return NextResponse.json({ error: 'Attendance record not found' }, { status: 404 })
     }
 
+    // Fetch class info separately since there's no FK constraint
+    let classInfo = null;
+    if (record.class_id) {
+      const { data: classData } = await supabase
+        .from('classes')
+        .select(`
+          id,
+          name,
+          teacher:profiles!classes_teacher_id_fkey(
+            full_name
+          )
+        `)
+        .eq('id', record.class_id)
+        .single();
+      
+      classInfo = classData;
+    }
+
+    // Attach class info to record
+    const recordWithClass = {
+      ...record,
+      class: classInfo
+    };
+
     return NextResponse.json({
       success: true,
-      record
+      record: recordWithClass
     })
 
   } catch (error) {
@@ -75,13 +85,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const supabase = createClientFromRequest(request as any)
+    const supabase = createServiceClient()
     const { id } = await context.params
     const body = await request.json()
 
     // Verify record exists
     const { data: existingRecord, error: fetchError } = await supabase
-      .from('attendance_records')
+      .from('attendance')
       .select('id')
       .eq('id', id)
       .single()
@@ -106,7 +116,7 @@ export async function PATCH(
 
     // Update record
     const { data: updatedRecord, error: updateError } = await supabase
-      .from('attendance_records')
+      .from('attendance')
       .update(updates)
       .eq('id', id)
       .select()
@@ -138,12 +148,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const supabase = createClientFromRequest(request as any)
+    const supabase = createServiceClient()
     const { id } = await context.params
 
     // Check if record exists
     const { data: record, error: fetchError } = await supabase
-      .from('attendance_records')
+      .from('attendance')
       .select('id')
       .eq('id', id)
       .single()
@@ -154,7 +164,7 @@ export async function DELETE(
 
     // Delete the record
     const { error: deleteError } = await supabase
-      .from('attendance_records')
+      .from('attendance')
       .delete()
       .eq('id', id)
 

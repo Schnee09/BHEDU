@@ -52,27 +52,67 @@ export async function GET(
           id,
           email,
           full_name,
-          status
+          student_id,
+          grade_level
         )
       `)
       .eq('class_id', classId)
 
     if (error) {
-      logger.error('Failed to fetch class students', { error: error.message })
-      return NextResponse.json(
-        { error: 'Failed to fetch students' },
-        { status: 500 }
-      )
+      logger.error('Failed to fetch class students', new Error(error.message))
+      
+      // Fallback: fetch enrollments and students separately
+      const { data: enrollData, error: enrollError } = await supabase
+        .from('enrollments')
+        .select('student_id')
+        .eq('class_id', classId)
+
+      if (enrollError) {
+        return NextResponse.json(
+          { error: 'Failed to fetch students', details: enrollError.message },
+          { status: 500 }
+        )
+      }
+
+      const studentIds = enrollData?.map(e => e.student_id) || []
+      
+      if (studentIds.length === 0) {
+        return NextResponse.json({
+          success: true,
+          data: [],
+          students: []
+        })
+      }
+
+      const { data: students, error: studentsError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, student_id, grade_level')
+        .in('id', studentIds)
+        .eq('role', 'student')
+
+      if (studentsError) {
+        return NextResponse.json(
+          { error: 'Failed to fetch student details', details: studentsError.message },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: students || [],
+        students: students || []
+      })
     }
 
     // Extract student data from enrollments
     const students = enrollments
-      .map((e: { student: unknown }) => e.student)
+      .map((e: any) => e.student)
       .filter(Boolean)
 
     return NextResponse.json({
       success: true,
-      students
+      data: students,
+      students: students
     })
 
   } catch (error) {

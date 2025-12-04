@@ -76,7 +76,7 @@ export default function NotificationsPage() {
       <h1 className="text-3xl font-bold mb-6">Notifications</h1>
 
       {notifications.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-600">
           <p>No notifications yet</p>
         </div>
       ) : (
@@ -84,7 +84,7 @@ export default function NotificationsPage() {
           {notifications.map((notification) => (
             <div
               key={notification.id}
-              className={`border rounded-lg p-4 ${
+              className={`border rounded-lg p-4 cursor-pointer ${
                 notification.read ? "bg-white" : "bg-blue-50 border-blue-200"
               }`}
               onClick={() => !notification.read && markAsRead(notification.id)}
@@ -95,7 +95,7 @@ export default function NotificationsPage() {
                     {notification.title}
                   </h3>
                   <p className="text-gray-600 mb-2">{notification.message}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-600">
                     {new Date(notification.created_at).toLocaleString()}
                   </p>
                 </div>

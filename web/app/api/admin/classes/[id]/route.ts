@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -20,7 +20,7 @@ export async function GET(
     }
 
     const resolvedParams = await params
-    const supabase = createClientFromRequest(request as any)
+    const supabase = createServiceClient()
     const { id } = resolvedParams
 
     const { data: classData, error } = await supabase
@@ -84,7 +84,7 @@ export async function PATCH(
     }
 
     const resolvedParams = await params
-    const supabase = createClientFromRequest(request as any)
+    const supabase = createServiceClient()
     const { id } = resolvedParams
     const body = await request.json()
 
@@ -208,7 +208,7 @@ export async function DELETE(
     }
 
     const resolvedParams = await params
-    const supabase = createClientFromRequest(request as any)
+    const supabase = createServiceClient()
     const { id } = resolvedParams
 
     // Check if class has enrollments

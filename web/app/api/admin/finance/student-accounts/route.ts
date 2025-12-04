@@ -54,7 +54,23 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error('Error fetching student accounts:', error)
-      return NextResponse.json({ error: 'Failed to fetch student accounts' }, { status: 500 })
+      
+      // If table doesn't exist, return empty data with note
+      if (error.code === 'PGRST205' || error.code === '42P01') {
+        return NextResponse.json({ 
+          success: true,
+          data: [],
+          note: 'Student accounts table not yet created. Run migrations to enable this feature.',
+          error: error.message
+        })
+      }
+      
+      return NextResponse.json({ 
+        error: 'Failed to fetch student accounts', 
+        details: error.message, 
+        code: error.code, 
+        hint: error.hint 
+      }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, data })

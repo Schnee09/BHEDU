@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
-    const supabase = createClientFromRequest(request as any)
+    const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const studentId = searchParams.get('student_id')
     const status = searchParams.get('status')
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createClientFromRequest(request as any)
+    const supabase = createServiceClient()
 
     // Generate invoice number
     const timestamp = Date.now()

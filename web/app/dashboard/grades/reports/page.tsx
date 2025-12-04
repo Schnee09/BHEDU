@@ -443,11 +443,11 @@ export default function ReportCardsPage() {
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-gray-600">
               Loading students and grades...
             </div>
           ) : students.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-gray-600">
               No students enrolled in this class
             </div>
           ) : (
@@ -494,7 +494,7 @@ export default function ReportCardsPage() {
                             </div>
                           </div>
                         ) : (
-                          <div className="mt-3 text-sm text-gray-500 italic">
+                          <div className="mt-3 text-sm text-gray-600 italic">
                             No grades posted yet
                           </div>
                         )}
@@ -562,7 +562,7 @@ export default function ReportCardsPage() {
                               ))}
                             </div>
                           ) : (
-                            <div className="text-center text-gray-500 italic py-8">
+                            <div className="text-center text-gray-600 italic py-8">
                               No grades have been posted yet for this class.
                             </div>
                           )}

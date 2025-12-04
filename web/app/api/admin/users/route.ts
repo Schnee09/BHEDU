@@ -41,7 +41,6 @@ export async function GET(request: Request) {
         full_name,
         role,
         is_active,
-        last_login_at,
         created_at,
         phone,
         department,
@@ -70,7 +69,7 @@ export async function GET(request: Request) {
     if (error) {
       console.error('Error fetching users:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch users' },
+        { error: 'Failed to fetch users', details: error.message, code: error.code, hint: error.hint },
         { status: 500 }
       )
     }

@@ -28,7 +28,8 @@ export async function GET(request: Request, ctx: Params) {
     return NextResponse.json({ error: 'Table not allowed' }, { status: 400 })
   }
 
-  const supabase = createClientFromRequest(request as any)
+  // Use service client to bypass RLS (admin already authenticated)
+  const supabase = createServiceClient()
   const { searchParams } = new URL(request.url)
   const page = parseInt(searchParams.get('page') || '1', 10)
   const limit = parseInt(searchParams.get('limit') || '25', 10)

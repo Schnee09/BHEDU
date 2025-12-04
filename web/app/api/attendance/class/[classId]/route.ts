@@ -67,10 +67,80 @@ export async function GET(
         p_date: date
       })
 
+    // If RPC doesn't exist, fall back to manual query
+    if (attendanceError && (attendanceError.code === '42883' || attendanceError.message?.includes('function') || attendanceError.message?.includes('does not exist'))) {
+      logger.warn('get_class_attendance RPC not found, using fallback query', { error: attendanceError.message })
+      
+      // Get students enrolled in the class
+      const { data: enrollments, error: enrollError } = await supabase
+        .from('enrollments')
+        .select(`
+          student_id,
+          profiles!enrollments_student_id_fkey (
+            id,
+            full_name,
+            email,
+            student_id
+          )
+        `)
+        .eq('class_id', classId)
+
+      if (enrollError) {
+        logger.error('Failed to fetch enrollments', new Error(enrollError.message))
+        return NextResponse.json(
+          { error: 'Failed to fetch class enrollments', details: enrollError.message },
+          { status: 500 }
+        )
+      }
+
+      // Get attendance records for this date
+      const { data: attendance } = await supabase
+        .from('attendance')
+        .select('student_id, status, notes')
+        .eq('class_id', classId)
+        .eq('date', date)
+
+      // Combine enrollment and attendance data
+      const attendanceMap = new Map(attendance?.map(a => [a.student_id, a]) || [])
+      
+      const records = (enrollments || []).map((enrollment: any) => ({
+        studentId: enrollment.student_id,
+        studentName: enrollment.profiles?.full_name || 'Unknown',
+        studentCode: enrollment.profiles?.student_id || '',
+        email: enrollment.profiles?.email || '',
+        status: attendanceMap.get(enrollment.student_id)?.status || 'unmarked',
+        notes: attendanceMap.get(enrollment.student_id)?.notes || ''
+      }))
+
+      // Calculate summary with fallback data
+      const summary = {
+        totalStudents: records.length,
+        presentCount: records.filter(r => r.status === 'present').length,
+        absentCount: records.filter(r => r.status === 'absent').length,
+        lateCount: records.filter(r => r.status === 'late').length,
+        excusedCount: records.filter(r => r.status === 'excused').length,
+        halfDayCount: records.filter(r => r.status === 'half_day').length,
+        unmarkedCount: records.filter(r => r.status === 'unmarked').length,
+        attendanceRate: 0
+      }
+
+      summary.attendanceRate = summary.totalStudents > 0
+        ? Math.round(((summary.presentCount + summary.lateCount + summary.halfDayCount) / summary.totalStudents) * 100 * 100) / 100
+        : 0
+
+      return NextResponse.json({
+        success: true,
+        class: classInfo,
+        date,
+        summary,
+        students: records
+      })
+    }
+
     if (attendanceError) {
-      logger.error('Failed to fetch class attendance', { error: attendanceError.message })
+      logger.error('Failed to fetch class attendance', new Error(attendanceError.message))
       return NextResponse.json(
-        { error: 'Failed to fetch attendance records' },
+        { error: 'Failed to fetch attendance records', details: attendanceError.message, code: attendanceError.code },
         { status: 500 }
       )
     }

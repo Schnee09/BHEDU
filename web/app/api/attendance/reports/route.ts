@@ -32,21 +32,10 @@ export async function GET(request: Request) {
     const endDate = searchParams.get('endDate')
     const status = searchParams.get('status')
 
-    // Build the query
+    // Build the query - avoid embedded joins, fetch separately
     let query = supabase
       .from('attendance')
-      .select(`
-        *,
-        student:profiles!attendance_student_id_fkey(
-          id,
-          email,
-          full_name
-        ),
-        class:classes!attendance_class_id_fkey(
-          id,
-          name
-        )
-      `)
+      .select('*')
       .order('date', { ascending: false })
 
     // Apply filters
@@ -104,20 +93,51 @@ export async function GET(request: Request) {
     const { data: records, error } = await query
 
     if (error) {
-      logger.error('Failed to fetch attendance reports:', { error: error.message, userId: authResult.userId })
+      logger.error('Failed to fetch attendance reports:', new Error(error.message))
       return NextResponse.json(
         { error: 'Failed to fetch reports', details: error.message },
         { status: 500 }
       )
     }
 
-    // Calculate analytics
-    const totalRecords = records?.length || 0
-    const totalPresent = records?.filter(r => r.status === 'present').length || 0
-    const totalAbsent = records?.filter(r => r.status === 'absent').length || 0
-    const totalLate = records?.filter(r => r.status === 'late').length || 0
-    const totalExcused = records?.filter(r => r.status === 'excused').length || 0
-    const totalHalfDay = records?.filter(r => r.status === 'half_day').length || 0
+    // Batch fetch student and class data
+    const studentIds = Array.from(new Set((records || []).map(r => r.student_id).filter(Boolean)))
+    const classIds = Array.from(new Set((records || []).map(r => r.class_id).filter(Boolean)))
+
+    const studentsMap: Record<string, any> = {}
+    if (studentIds.length > 0) {
+      const { data: students } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, student_id, grade_level')
+        .in('id', studentIds as string[])
+      
+      students?.forEach(s => { studentsMap[s.id] = s })
+    }
+
+    const classesMap: Record<string, any> = {}
+    if (classIds.length > 0) {
+      const { data: classes } = await supabase
+        .from('classes')
+        .select('id, name')
+        .in('id', classIds as string[])
+      
+      classes?.forEach(c => { classesMap[c.id] = c })
+    }
+
+    // Attach student and class data to records
+    const enrichedRecords = records?.map(record => ({
+      ...record,
+      student: studentsMap[record.student_id] || null,
+      class: classesMap[record.class_id] || null
+    })) || []
+
+    // Calculate analytics using enriched records
+    const totalRecords = enrichedRecords?.length || 0
+    const totalPresent = enrichedRecords?.filter(r => r.status === 'present').length || 0
+    const totalAbsent = enrichedRecords?.filter(r => r.status === 'absent').length || 0
+    const totalLate = enrichedRecords?.filter(r => r.status === 'late').length || 0
+    const totalExcused = enrichedRecords?.filter(r => r.status === 'excused').length || 0
+    const totalHalfDay = enrichedRecords?.filter(r => r.status === 'half_day').length || 0
     
     const attendanceRate = totalRecords > 0
       ? Math.round(((totalPresent + totalLate + totalHalfDay * 0.5) / totalRecords) * 100)
@@ -125,13 +145,13 @@ export async function GET(request: Request) {
 
     // Group by status
     const byStatus: Record<string, number> = {}
-    records?.forEach(record => {
+    enrichedRecords?.forEach(record => {
       byStatus[record.status] = (byStatus[record.status] || 0) + 1
     })
 
     // Group by class
     const byClass: Record<string, { name: string; count: number; present: number; rate: number }> = {}
-    records?.forEach(record => {
+    enrichedRecords?.forEach(record => {
       const classKey = record.class_id
       if (!byClass[classKey]) {
         byClass[classKey] = {
@@ -156,7 +176,7 @@ export async function GET(request: Request) {
 
     // Group by student
     const byStudent: Record<string, { name: string; studentId: string; count: number; present: number; rate: number }> = {}
-    records?.forEach(record => {
+    enrichedRecords?.forEach(record => {
       const studentKey = record.student_id
       if (!byStudent[studentKey]) {
         byStudent[studentKey] = {
@@ -182,7 +202,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      data: records,
+      data: enrichedRecords,
       analytics: {
         totalRecords,
         totalPresent,

@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -22,11 +22,12 @@ export async function GET(request: Request) {
       )
     }
 
-    const supabase = createClientFromRequest(request as any)
+    // Use service client to bypass RLS and avoid recursion
+    const supabase = createServiceClient()
 
     let query = supabase
       .from('classes')
-      .select('id, name, description, created_at')
+      .select('id, name, teacher_id, created_at')
       .order('name', { ascending: true })
 
     // If not admin, filter by teacher_id
@@ -37,9 +38,20 @@ export async function GET(request: Request) {
     const { data: classes, error } = await query
 
     if (error) {
-      logger.error('Failed to fetch classes', { error: error.message, userId: authResult.userId })
+      logger.error('Failed to fetch classes', { 
+        error: error.message, 
+        errorCode: error.code,
+        errorDetails: error.details,
+        errorHint: error.hint,
+        userId: authResult.userId 
+      })
       return NextResponse.json(
-        { error: 'Failed to fetch classes', details: error.message },
+        { 
+          error: 'Failed to fetch classes', 
+          details: error.message,
+          code: error.code,
+          hint: error.hint 
+        },
         { status: 500 }
       )
     }

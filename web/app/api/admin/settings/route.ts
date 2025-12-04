@@ -20,42 +20,34 @@ export async function GET(request: Request) {
 
   const supabase = createClientFromRequest(request as any)
     const { searchParams } = new URL(request.url)
-    const category = searchParams.get('category')
 
-    let query = supabase
+    // Try to query settings - handle different schema versions gracefully
+    const { data: settings, error } = await supabase
       .from('school_settings')
       .select('*')
-      .order('category', { ascending: true })
-      .order('setting_key', { ascending: true })
-
-    if (category) {
-      query = query.eq('category', category)
-    }
-
-    const { data: settings, error } = await query
 
     if (error) {
       console.error('Error fetching settings:', error)
+      
+      // If table or columns don't exist, return empty with helpful message
+      if (error.code === '42703' || error.code === '42P01' || error.code === 'PGRST204') {
+        return NextResponse.json({
+          success: true,
+          data: [],
+          note: 'School settings table exists but schema may need updating. Please run: supabase db pull && supabase db push',
+          schemaError: error.message
+        })
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to fetch settings' },
+        { error: 'Failed to fetch settings', details: error.message, code: error.code, hint: error.hint },
         { status: 500 }
       )
     }
 
-    // Group by category
-     type SettingGroup = Record<string, typeof settings>
-     const grouped = settings?.reduce((acc: SettingGroup, setting) => {
-      if (!acc[setting.category]) {
-        acc[setting.category] = []
-      }
-      acc[setting.category].push(setting)
-      return acc
-     }, {} as SettingGroup)
-
     return NextResponse.json({
       success: true,
-      data: settings,
-      grouped: grouped || {}
+      data: settings
     })
 
   } catch (error) {

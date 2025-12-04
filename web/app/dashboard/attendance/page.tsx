@@ -1,176 +1,95 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
-import { useProfile } from "@/hooks/useProfile";
+import Link from "next/link";
+import { Card } from "@/components/ui";
 
-type Attendance = {
-  id: string;
-  class_id: string;
-  student_id: string;
-  date: string;
-  status: string;
-  student_name?: string;
-  class_name?: string;
-};
-
-export default function AttendancePage() {
-  const { profile, loading: profileLoading } = useProfile();
-  const [attendance, setAttendance] = useState<Attendance[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (profileLoading || !profile) {
-      console.log('[Attendance] Waiting for profile...', { profileLoading, hasProfile: !!profile });
-      return;
+export default function AttendanceLandingPage() {
+  const sections = [
+    {
+      title: "Mark Attendance",
+      description: "Manually mark student attendance for classes",
+      href: "/dashboard/attendance/mark",
+      icon: "✓",
+      gradient: "from-blue-50 to-indigo-50",
+      iconBg: "bg-blue-500",
+      borderColor: "border-blue-200"
+    },
+    {
+      title: "QR Code Attendance",
+      description: "Generate QR codes for students to self-check in",
+      href: "/dashboard/attendance/qr",
+      icon: "⊡",
+      gradient: "from-green-50 to-emerald-50",
+      iconBg: "bg-green-500",
+      borderColor: "border-green-200"
+    },
+    {
+      title: "Attendance Reports",
+      description: "View and analyze attendance data and trends",
+      href: "/dashboard/attendance/reports",
+      icon: "📊",
+      gradient: "from-purple-50 to-pink-50",
+      iconBg: "bg-purple-500",
+      borderColor: "border-purple-200"
     }
-
-    const fetchAttendance = async () => {
-      console.log('========================================');
-      console.log('[Attendance] START FETCH');
-      console.log('[Attendance] Profile:', {
-        id: profile.id,
-        role: profile.role,
-        email: profile.email,
-        full_name: profile.full_name
-      });
-      
-      setLoading(true);
-      let query = supabase
-        .from("attendance")
-        .select(
-          `
-          id,
-          class_id,
-          student_id,
-          date,
-          status,
-          profiles(full_name),
-          classes(name)
-        `
-        )
-        .order("date", { ascending: false });
-
-      // Admin: see all attendance (no filter needed)
-      if (profile.role === "admin") {
-        console.log('[Attendance] ✅ ADMIN ROLE DETECTED - No filters applied');
-        console.log('[Attendance] Query will fetch ALL attendance records');
-        // No filter - admins see everything
-      }
-      // Teacher: only attendance of own classes
-      else if (profile.role === "teacher") {
-        console.log('[Attendance] Teacher role, fetching classes');
-        const { data: classesRaw, error: classError } = await supabase
-          .from("classes")
-          .select("id")
-          .eq("teacher_id", profile.id);
-        
-        if (classError) {
-          console.error('[Attendance] ❌ Error fetching teacher classes:', classError);
-        }
-        
-        console.log('[Attendance] Teacher classes:', classesRaw);
-        const classIds = (classesRaw as Array<{ id: string }> | null)?.map((c) => c.id) || [];
-        console.log('[Attendance] Class IDs to filter:', classIds);
-        
-        if (classIds.length === 0) {
-          console.warn('[Attendance] ⚠️ Teacher has NO classes assigned');
-        }
-        
-        query = query.in("class_id", classIds);
-      }
-      // Student: only own attendance
-      else if (profile.role === "student") {
-        console.log('[Attendance] Student role, filtering to student ID:', profile.id);
-        query = query.eq("student_id", profile.id);
-      }
-      else {
-        console.warn('[Attendance] ⚠️ UNKNOWN ROLE:', profile.role);
-      }
-
-      console.log('[Attendance] Executing query...');
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error("[Attendance] ❌ Error fetching attendance:");
-        console.error(error);
-      } else {
-        console.log('[Attendance] ✅ Query successful!');
-        console.log('[Attendance] Records fetched:', data?.length || 0);
-        if (data && data.length > 0) {
-          console.log('[Attendance] First record sample:', data[0]);
-        } else {
-          console.warn('[Attendance] ⚠️ NO RECORDS FOUND');
-        }
-      }
-      console.log('========================================');
-      const mapped = Array.isArray(data)
-        ? (data as unknown[]).map((raw) => {
-            const r = raw as {
-              id: unknown;
-              class_id?: unknown;
-              student_id?: unknown;
-              date?: unknown;
-              status?: unknown;
-              profiles?: { full_name?: unknown };
-              classes?: { name?: unknown };
-            };
-            return {
-              id: String(r.id as string | number),
-              class_id: String((r.class_id as string | number | undefined) || ""),
-              student_id: String((r.student_id as string | number | undefined) || ""),
-              date: String((r.date as string | undefined) || new Date().toISOString()),
-              status: String((r.status as string | undefined) || "Unknown"),
-              student_name: (r.profiles?.full_name as string | undefined) || "Unknown",
-              class_name: (r.classes?.name as string | undefined) || "Unknown",
-            };
-          })
-        : [];
-      setAttendance(mapped);
-      setLoading(false);
-    };
-
-    fetchAttendance();
-  }, [profile, profileLoading]);
-
-  if (profileLoading || loading) return <p>Loading attendance...</p>;
-  if (!attendance.length) return <p>No attendance records found.</p>;
+  ];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Attendance Records</h1>
-      <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-3 text-left">Student</th>
-            <th className="p-3 text-left">Class</th>
-            <th className="p-3 text-left">Date</th>
-            <th className="p-3 text-left">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {attendance.map((a) => (
-            <tr key={a.id} className="border-t hover:bg-gray-50">
-              <td className="p-3">{a.student_name}</td>
-              <td className="p-3">{a.class_name}</td>
-              <td className="p-3">
-                {new Date(a.date).toLocaleDateString()}
-              </td>
-              <td
-                className={`p-3 font-medium ${
-                  a.status === "Present"
-                    ? "text-green-600"
-                    : a.status === "Absent"
-                    ? "text-red-600"
-                    : "text-gray-600"
-                }`}
-              >
-                {a.status}
-              </td>
-            </tr>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-10">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Attendance Management</h1>
+          <p className="text-lg text-gray-600">
+            Choose an attendance management option below
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          {sections.map((section) => (
+            <Link key={section.href} href={section.href}>
+              <Card className={`h-full bg-gradient-to-br ${section.gradient} ${section.borderColor} hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer`} padding="lg">
+                <div className="flex flex-col items-center text-center">
+                  <div className={`${section.iconBg} text-white p-6 rounded-2xl text-4xl mb-6 shadow-lg`}>
+                    {section.icon}
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    {section.title}
+                  </h3>
+                  <p className="text-gray-700 text-base leading-relaxed">
+                    {section.description}
+                  </p>
+                </div>
+              </Card>
+            </Link>
           ))}
-        </tbody>
-      </table>
+        </div>
+
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200" padding="lg">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-blue-500 text-white rounded-lg flex items-center justify-center text-2xl flex-shrink-0">
+              💡
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-blue-900 mb-3">Quick Tips</h3>
+              <ul className="text-base text-blue-800 space-y-2">
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-500 font-bold">•</span>
+                  <span>Use <strong>Mark Attendance</strong> for traditional roll call</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-500 font-bold">•</span>
+                  <span>Use <strong>QR Code</strong> for contactless student check-ins</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-500 font-bold">•</span>
+                  <span>View <strong>Reports</strong> to track attendance patterns and trends</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
+

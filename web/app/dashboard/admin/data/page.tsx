@@ -204,14 +204,14 @@ export default function AdminDataViewerPage() {
                     <td className="px-3 py-2 text-right whitespace-nowrap">
                       {editing && editing.id === row.id ? (
                         <>
-                          <button onClick={saveEdit} className="mr-2 px-3 py-1 rounded bg-amber-600 text-white">Save</button>
-                          <button onClick={cancelEdit} className="px-3 py-1 rounded bg-gray-200 text-gray-800">Cancel</button>
+                          <button onClick={saveEdit} className="mr-2 px-3 py-1 rounded bg-amber-600 text-white cursor-pointer hover:bg-amber-700">Save</button>
+                          <button onClick={cancelEdit} className="px-3 py-1 rounded bg-gray-200 text-gray-800 cursor-pointer hover:bg-gray-300">Cancel</button>
                         </>
                       ) : (
                         <>
-                          <button onClick={() => startEdit(row)} className="mr-2 px-3 py-1 rounded bg-amber-100 text-amber-900 border border-amber-300">Edit</button>
+                          <button onClick={() => startEdit(row)} className="mr-2 px-3 py-1 rounded bg-amber-100 text-amber-900 border border-amber-300 cursor-pointer hover:bg-amber-200">Edit</button>
                           {row.id && (
-                            <button onClick={() => deleteRow(String(row.id))} className="px-3 py-1 rounded bg-red-100 text-red-700 border border-red-300">Delete</button>
+                            <button onClick={() => deleteRow(String(row.id))} className="px-3 py-1 rounded bg-red-100 text-red-700 border border-red-300 cursor-pointer hover:bg-red-200">Delete</button>
                           )}
                         </>
                       )}

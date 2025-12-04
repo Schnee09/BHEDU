@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { useProfile } from "@/hooks/useProfile";
 
 type Assignment = {
   id: string;
@@ -13,128 +12,54 @@ type Assignment = {
 };
 
 export default function AssignmentsPage() {
-  const { profile, loading: profileLoading } = useProfile();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profileLoading || !profile) {
-      console.log('[Assignments] Waiting for profile...', { profileLoading, hasProfile: !!profile });
-      return;
-    }
-
     const fetchAssignments = async () => {
-      console.log('========================================');
-      console.log('[Assignments] START FETCH');
-      console.log('[Assignments] Profile:', {
-        id: profile.id,
-        role: profile.role,
-        email: profile.email,
-        full_name: profile.full_name
-      });
-      
-      setLoading(true);
-      let query = supabase
-        .from("assignments")
-        .select("id, title, due_date, class_id, classes(name)")
-        .order("due_date", { ascending: true });
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Admin: see all assignments (no filter needed)
-      if (profile.role === "admin") {
-        console.log('[Assignments] ✅ ADMIN ROLE DETECTED - No filters applied');
-        console.log('[Assignments] Query will fetch ALL assignments');
-        // No filter - admins see everything
-      }
-      // Teachers: only own classes' assignments
-      else if (profile.role === "teacher") {
-        console.log('[Assignments] Teacher role, fetching classes');
-        const { data: classesData, error: classError } = await supabase
-          .from("classes")
-          .select("id")
-          .eq("teacher_id", profile.id);
-        
-        if (classError) {
-          console.error('[Assignments] ❌ Error fetching teacher classes:', classError);
-        }
-        
-        console.log('[Assignments] Teacher classes:', classesData);
-        const classIds = (classesData as Array<{ id: string }> | null)?.map((c) => c.id) || [];
-        console.log('[Assignments] Class IDs to filter:', classIds);
-        
-        if (classIds.length === 0) {
-          console.warn('[Assignments] ⚠️ Teacher has NO classes assigned');
-        }
-        
-        query = query.in("class_id", classIds);
-      }
-      // Students: only enrolled class assignments
-      else if (profile.role === "student") {
-        console.log('[Assignments] Student role, fetching enrollments');
-        const { data: enrollmentsData, error: enrollError } = await supabase
-          .from("enrollments")
-          .select("class_id")
-          .eq("student_id", profile.id);
-        
-        if (enrollError) {
-          console.error('[Assignments] ❌ Error fetching enrollments:', enrollError);
-        }
-        
-        console.log('[Assignments] Student enrollments:', enrollmentsData);
-        const enrolledIds = (enrollmentsData as Array<{ class_id: string }> | null)?.map((e) => e.class_id) || [];
-        console.log('[Assignments] Enrolled class IDs to filter:', enrolledIds);
-        
-        if (enrolledIds.length === 0) {
-          console.warn('[Assignments] ⚠️ Student has NO enrollments');
-        }
-        
-        query = query.in("class_id", enrolledIds);
-      }
-      else {
-        console.warn('[Assignments] ⚠️ UNKNOWN ROLE:', profile.role);
-      }
+        // Get current session
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      console.log('[Assignments] Executing query...');
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error("[Assignments] ❌ Error fetching assignments:");
-        console.error(error);
-      } else {
-        console.log('[Assignments] ✅ Query successful!');
-        console.log('[Assignments] Records fetched:', data?.length || 0);
-        if (data && data.length > 0) {
-          console.log('[Assignments] First record sample:', data[0]);
-        } else {
-          console.warn('[Assignments] ⚠️ NO RECORDS FOUND');
+        if (!session) {
+          setError("Not authenticated");
+          setLoading(false);
+          return;
         }
+
+        // Call API endpoint with auth token
+        const response = await fetch("/api/assignments", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to fetch assignments");
+        }
+
+        const { data } = await response.json();
+        setAssignments(data || []);
+      } catch (err: any) {
+        console.error("[Assignments] Error:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-      console.log('========================================');
-      const mapped: Assignment[] = Array.isArray(data)
-        ? (data as unknown[]).map((raw) => {
-            const r = raw as {
-              id: unknown;
-              title?: unknown;
-              due_date?: unknown;
-              class_id?: unknown;
-              classes?: { name?: unknown };
-            };
-            return {
-              id: String(r.id as string | number),
-              title: String((r.title as string | undefined) || "Untitled"),
-              due_date: (r.due_date as string | null | undefined) ?? null,
-              class_id: String((r.class_id as string | number | undefined) || ""),
-              class_name: (r.classes?.name as string | undefined) || "Unknown",
-            };
-          })
-        : [];
-      setAssignments(mapped);
-      setLoading(false);
     };
 
     fetchAssignments();
-  }, [profile, profileLoading]);
+  }, []);
 
-  if (profileLoading || loading) return <p>Loading assignments...</p>;
+  if (loading) return <p>Loading assignments...</p>;
+  if (error) return <p className="text-red-600">Error: {error}</p>;
   if (!assignments.length) return <p>No assignments found.</p>;
 
   return (

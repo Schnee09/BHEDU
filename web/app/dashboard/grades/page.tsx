@@ -1,73 +1,169 @@
+/**
+ * Grades Navigation Page - Refactored with Modern Components
+ * 
+ * Features:
+ * - Uses Card components for navigation
+ * - Uses useUser hook for role checking
+ * - Better visual hierarchy
+ * - Responsive grid layout
+ */
+
 "use client";
 
 import Link from "next/link";
-import { useProfile } from "@/hooks/useProfile";
+import { useUser } from "@/hooks";
+import { Card, CardHeader, LoadingState } from "@/components/ui";
 
-export default function GradesPage() {
-  const { profile, loading } = useProfile();
+interface NavCard {
+  href: string;
+  title: string;
+  description: string;
+  icon: string;
+  roles: string[];
+}
 
+const navCards: NavCard[] = [
+  {
+    href: "/dashboard/grades/entry",
+    title: "Grade Entry",
+    description: "Enter and update student grades for assignments",
+    icon: "✏️",
+    roles: ["teacher", "admin"],
+  },
+  {
+    href: "/dashboard/grades/assignments",
+    title: "Manage Assignments",
+    description: "Create and manage assignments and categories",
+    icon: "📋",
+    roles: ["teacher", "admin"],
+  },
+  {
+    href: "/dashboard/grades/analytics",
+    title: "Grade Analytics",
+    description: "View class performance and grade distributions",
+    icon: "📊",
+    roles: ["teacher", "admin"],
+  },
+  {
+    href: "/dashboard/grades/reports",
+    title: "Grade Reports",
+    description: "Generate and export detailed grade reports",
+    icon: "📄",
+    roles: ["teacher", "admin"],
+  },
+  {
+    href: "/dashboard/scores",
+    title: "My Grades",
+    description: "View your grades and assignment scores",
+    icon: "🎓",
+    roles: ["student"],
+  },
+];
+
+export default function GradesPageModern() {
+  const { user, loading } = useUser();
+  
   if (loading) {
-    return (
-      <div className="p-6">
-        <p>Loading...</p>
-      </div>
-    );
+    return <LoadingState message="Loading..." />;
   }
-
-  const isTeacherOrAdmin = profile?.role === "teacher" || profile?.role === "admin";
-
+  
+  const userRole = user?.role || "";
+  const availableCards = navCards.filter(card => 
+    card.roles.includes(userRole)
+  );
+  
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Grades</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {isTeacherOrAdmin && (
-          <>
-            <Link href="/dashboard/grades/entry">
-              <div className="border rounded-lg p-6 hover:shadow-lg transition cursor-pointer bg-white">
-                <h2 className="text-xl font-semibold mb-2">Grade Entry</h2>
-                <p className="text-gray-600">Enter and update student grades for assignments</p>
-              </div>
-            </Link>
-
-            <Link href="/dashboard/grades/assignments">
-              <div className="border rounded-lg p-6 hover:shadow-lg transition cursor-pointer bg-white">
-                <h2 className="text-xl font-semibold mb-2">Manage Assignments</h2>
-                <p className="text-gray-600">Create and manage assignments and categories</p>
-              </div>
-            </Link>
-
-            <Link href="/dashboard/grades/analytics">
-              <div className="border rounded-lg p-6 hover:shadow-lg transition cursor-pointer bg-white">
-                <h2 className="text-xl font-semibold mb-2">Grade Analytics</h2>
-                <p className="text-gray-600">View class performance and grade distributions</p>
-              </div>
-            </Link>
-
-            <Link href="/dashboard/grades/reports">
-              <div className="border rounded-lg p-6 hover:shadow-lg transition cursor-pointer bg-white">
-                <h2 className="text-xl font-semibold mb-2">Grade Reports</h2>
-                <p className="text-gray-600">Generate and export detailed grade reports</p>
-              </div>
-            </Link>
-          </>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-10">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Grades & Assignments</h1>
+          <p className="text-lg text-gray-600">
+            {userRole === "student" 
+              ? "View your grades and academic progress"
+              : "Manage grades, assignments, and reports"}
+          </p>
+        </div>
+        
+        {/* Navigation Cards */}
+        {availableCards.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
+            {availableCards.map((card) => (
+              <Link key={card.href} href={card.href}>
+                <Card 
+                  padding="lg"
+                  className="h-full bg-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border-gray-200"
+                >
+                  <div className="flex flex-col h-full items-center text-center">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-md">
+                      {card.icon}
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                      {card.title}
+                    </h2>
+                    <p className="text-gray-600 text-base flex-grow leading-relaxed">
+                      {card.description}
+                    </p>
+                    <div className="mt-6 px-6 py-2 bg-blue-500 text-white rounded-lg font-semibold flex items-center gap-2 hover:bg-blue-600 transition-colors">
+                      Open
+                      <span>→</span>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <Card className="text-center py-16" padding="lg">
+            <div className="text-6xl mb-6">🔒</div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              Access Restricted
+            </h3>
+            <p className="text-gray-600 text-lg">
+              You don't have access to grades features.
+            </p>
+          </Card>
         )}
-
-        {profile?.role === "student" && (
-          <Link href="/dashboard/scores">
-            <div className="border rounded-lg p-6 hover:shadow-lg transition cursor-pointer bg-white">
-              <h2 className="text-xl font-semibold mb-2">My Grades</h2>
-              <p className="text-gray-600">View your grades and assignments</p>
-            </div>
-          </Link>
+        
+        {/* Quick Stats for Teachers/Admins */}
+        {(userRole === "teacher" || userRole === "admin") && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card padding="lg" className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Stats</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
+                  <span className="text-gray-700 font-medium">Pending Grades</span>
+                  <span className="font-bold text-2xl text-orange-600">-</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
+                  <span className="text-gray-700 font-medium">Active Assignments</span>
+                  <span className="font-bold text-2xl text-blue-600">-</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
+                  <span className="text-gray-700 font-medium">Total Students</span>
+                  <span className="font-bold text-2xl text-green-600">-</span>
+                </div>
+              </div>
+            </Card>
+            
+            <Card padding="lg" className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
+              <div className="text-center py-8 text-gray-600">
+                <div className="text-4xl mb-2">📝</div>
+                <p>No recent activity</p>
+              </div>
+            </Card>
+            
+            <Card padding="lg" className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Upcoming Deadlines</h3>
+              <div className="text-center py-8 text-gray-600">
+                <div className="text-4xl mb-2">📅</div>
+                <p>No upcoming deadlines</p>
+              </div>
+            </Card>
+          </div>
         )}
       </div>
-
-      {!isTeacherOrAdmin && profile?.role !== "student" && (
-        <div className="text-center text-gray-500 mt-8">
-          <p>You don&apos;t have access to grades features.</p>
-        </div>
-      )}
     </div>
   );
 }

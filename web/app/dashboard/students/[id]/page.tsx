@@ -4,10 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import Tabs from "@/components/ui/tabs";
 import Badge from "@/components/ui/badge";
 import Empty from "@/components/ui/empty";
+import { Card } from "@/components/ui";
 import StudentActions from "@/components/StudentActions";
 import GuardianManagement from "@/components/GuardianManagement";
 import EnrollmentManager from "@/components/EnrollmentManager";
 import StudentPhotoUpload from "@/components/StudentPhotoUpload";
+import { theme } from "@/styles/theme";
 
 async function fetchStudent(id: string) {
   const supabase = await createClient();
@@ -88,8 +90,8 @@ async function fetchStudent(id: string) {
   };
 }
 
-export default async function StudentDetail({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function StudentDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const { profile, enrollments, attendance, grades, account, invoices, payments, audits } = await fetchStudent(id);
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -153,43 +155,96 @@ export default async function StudentDetail({ params }: { params: { id: string }
 
       {/* Profile and Summary Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <section className="bg-white border border-gray-200 rounded-lg p-4 lg:col-span-2">
-          <h2 className="text-lg font-semibold mb-3">Profile</h2>
+        <Card padding="lg" className="lg:col-span-2">
+          <h2 className="text-lg font-semibold mb-4 text-gray-900">Profile Information</h2>
           <div className="flex items-start justify-between gap-6">
-            <div>
-              <h3 className="text-2xl font-bold">{profile.full_name}</h3>
-              <p className="text-gray-600">{profile.email}</p>
-              <div className="mt-2 text-sm text-gray-700 space-y-1">
-                {profile.phone && <p>Phone: {profile.phone}</p>}
-                {profile.address && <p>Address: {profile.address}</p>}
-                {profile.date_of_birth && <p>DOB: {new Date(profile.date_of_birth).toLocaleDateString()}</p>}
-                <p>Joined: {new Date(profile.created_at).toLocaleDateString()}</p>
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold text-gray-900">{profile.full_name}</h3>
+              <p className="text-gray-600 mt-1">{profile.email}</p>
+              <div className="mt-4 space-y-2">
+                {profile.phone && (
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <span className="text-gray-500">📱 Phone:</span>
+                    <span className="font-medium">{profile.phone}</span>
+                  </div>
+                )}
+                {profile.address && (
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <span className="text-gray-500">📍 Address:</span>
+                    <span className="font-medium">{profile.address}</span>
+                  </div>
+                )}
+                {profile.date_of_birth && (
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <span className="text-gray-500">🎂 Date of Birth:</span>
+                    <span className="font-medium">{new Date(profile.date_of_birth).toLocaleDateString()}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <span className="text-gray-500">📅 Joined:</span>
+                  <span className="font-medium">{new Date(profile.created_at).toLocaleDateString()}</span>
+                </div>
               </div>
             </div>
             <Badge color="purple">{profile.role}</Badge>
           </div>
-        </section>
-        <section className="bg-white border border-gray-200 rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-3">Summary</h2>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="bg-blue-50 p-3 rounded">
-              <div className="text-xl font-bold text-blue-600">{enrollments.length}</div>
-              <div className="text-gray-600">Classes</div>
+        </Card>
+
+        {/* Modern Stat Cards with Gradients */}
+        <div className="space-y-4">
+          <Card padding="md" className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-700">Active Classes</p>
+                <p className="text-3xl font-bold text-blue-900 mt-1">{enrollments.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span className="text-2xl">📚</span>
+              </div>
             </div>
-            <div className="bg-green-50 p-3 rounded">
-              <div className="text-xl font-bold text-green-600">{attendance.length}</div>
-              <div className="text-gray-600">Recent Attendance</div>
+          </Card>
+
+          <Card padding="md" className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-700">Attendance</p>
+                <p className="text-3xl font-bold text-green-900 mt-1">{attendance.length}</p>
+                <p className="text-xs text-green-600 mt-1">Recent records</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <span className="text-2xl">✓</span>
+              </div>
             </div>
-            <div className="bg-purple-50 p-3 rounded">
-              <div className="text-xl font-bold text-purple-600">{grades.length}</div>
-              <div className="text-gray-600">Recent Grades</div>
+          </Card>
+
+          <Card padding="md" className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-700">Recent Grades</p>
+                <p className="text-3xl font-bold text-purple-900 mt-1">{grades.length}</p>
+                <p className="text-xs text-purple-600 mt-1">Assignments</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <span className="text-2xl">🎯</span>
+              </div>
             </div>
-            <div className="bg-gray-50 p-3 rounded">
-              <div className="text-xl font-bold text-gray-700">{accountInfo?.balance ?? '—'}</div>
-              <div className="text-gray-600">Balance</div>
-            </div>
-          </div>
-        </section>
+          </Card>
+
+          {accountInfo && (
+            <Card padding="md" className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-amber-700">Account Balance</p>
+                  <p className="text-3xl font-bold text-amber-900 mt-1">{accountInfo.balance ?? '0'}</p>
+                  <p className="text-xs text-amber-600 mt-1 capitalize">{accountInfo.status}</p>
+                </div>
+                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">💰</span>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -201,116 +256,129 @@ export default async function StudentDetail({ params }: { params: { id: string }
   );
 
   const attendanceSection = (
-    <section className="bg-white border border-gray-200 rounded-lg p-4">
-      <h2 className="text-lg font-semibold mb-3">Attendance</h2>
+    <Card padding="lg">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Attendance Records</h2>
       {attendance.length === 0 ? (
         <Empty title="No attendance" description="No attendance records found for this student." />
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="text-left px-3 py-2">Date</th>
-                <th className="text-left px-3 py-2">Class</th>
-                <th className="text-left px-3 py-2">Status</th>
-                <th className="text-left px-3 py-2">Notes</th>
+              <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Date</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Class</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Notes</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100">
               {/* eslint-disable @typescript-eslint/no-explicit-any */}
               {attendance.map((a: any) => (
-                <tr key={a.id}>
-                  <td className="px-3 py-2">{new Date(a.date).toLocaleDateString()}</td>
-                  <td className="px-3 py-2">{a.class_id}</td>
-                  <td className="px-3 py-2 capitalize">{a.status}</td>
-                  <td className="px-3 py-2">{a.notes ?? '-'}</td>
+                <tr key={a.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3">{new Date(a.date).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">{a.class_id}</td>
+                  <td className="px-4 py-3">
+                    <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'}>
+                      {a.status}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{a.notes ?? '-'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-    </section>
+    </Card>
   );
 
   const gradesSection = (
-    <section className="bg-white border border-gray-200 rounded-lg p-4">
-      <h2 className="text-lg font-semibold mb-3">Grades</h2>
+    <Card padding="lg">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Grades & Assignments</h2>
       {grades.length === 0 ? (
         <Empty title="No grades" description="No recent grades available." />
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="text-left px-3 py-2">Assignment</th>
-                <th className="text-left px-3 py-2">Points</th>
-                <th className="text-left px-3 py-2">Graded At</th>
+              <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Assignment</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Points</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Graded At</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100">
               {/* eslint-disable @typescript-eslint/no-explicit-any */}
               {grades.map((g: any) => (
-                <tr key={g.id}>
-                  <td className="px-3 py-2">{g.assignments?.title ?? g.assignment_id}</td>
-                  <td className="px-3 py-2">{g.points_earned} / {g.assignments?.total_points ?? '-'}</td>
-                  <td className="px-3 py-2">{g.graded_at ? new Date(g.graded_at).toLocaleString() : '-'}</td>
+                <tr key={g.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 font-medium text-gray-900">{g.assignments?.title ?? g.assignment_id}</td>
+                  <td className="px-4 py-3">
+                    <span className="font-semibold text-blue-600">{g.points_earned}</span>
+                    <span className="text-gray-500"> / {g.assignments?.total_points ?? '-'}</span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString() : '-'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-    </section>
+    </Card>
   );
 
   const financeSection = (
-    <section className="bg-white border border-gray-200 rounded-lg p-4">
-      <h2 className="text-lg font-semibold mb-3">Finance</h2>
+    <Card padding="lg">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Finance Overview</h2>
       {accountInfo ? (
-        <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-          <div className="bg-gray-50 p-3 rounded">
-            <div className="text-xs text-gray-500">Account Status</div>
-            <div className="font-semibold">{accountInfo?.status ?? '—'}</div>
-          </div>
-          <div className="bg-gray-50 p-3 rounded">
-            <div className="text-xs text-gray-500">Balance</div>
-            <div className="font-semibold">{accountInfo?.balance ?? '—'}</div>
-          </div>
-          <div className="bg-gray-50 p-3 rounded">
-            <div className="text-xs text-gray-500">Last Payment</div>
-            <div className="font-semibold">{accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString() : '—'}</div>
-          </div>
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card padding="md" className="bg-gradient-to-br from-slate-50 to-gray-100">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Account Status</p>
+            <p className="text-xl font-bold text-gray-900 mt-2 capitalize">{accountInfo?.status ?? '—'}</p>
+          </Card>
+          <Card padding="md" className="bg-gradient-to-br from-amber-50 to-orange-50">
+            <p className="text-xs font-medium text-amber-700 uppercase tracking-wide">Current Balance</p>
+            <p className="text-xl font-bold text-amber-900 mt-2">${accountInfo?.balance ?? '0'}</p>
+          </Card>
+          <Card padding="md" className="bg-gradient-to-br from-blue-50 to-indigo-50">
+            <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Last Payment</p>
+            <p className="text-sm font-semibold text-blue-900 mt-2">
+              {accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString() : 'No payments yet'}
+            </p>
+          </Card>
         </div>
       ) : (
         <Empty title="No account" description="No student account found." />
       )}
 
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h3 className="font-semibold mb-2">Recent Invoices</h3>
+          <h3 className="font-semibold mb-3 text-gray-900">Recent Invoices</h3>
           {invoiceRows.length === 0 ? (
             <Empty title="No invoices" />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50">
-                    <th className="text-left px-3 py-2">#</th>
-                    <th className="text-left px-3 py-2">Status</th>
-                    <th className="text-left px-3 py-2">Total</th>
-                    <th className="text-left px-3 py-2">Balance</th>
-                    <th className="text-left px-3 py-2">Due</th>
+                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">#</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Total</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Balance</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Due</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100">
                   {invoiceRows.map((inv) => (
-                    <tr key={inv.id}>
-                      <td className="px-3 py-2">{inv.invoice_number}</td>
-                      <td className="px-3 py-2 capitalize">{inv.status}</td>
-                      <td className="px-3 py-2">{inv.total_amount}</td>
-                      <td className="px-3 py-2">{inv.balance}</td>
-                      <td className="px-3 py-2">{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '—'}</td>
+                    <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-900">{inv.invoice_number}</td>
+                      <td className="px-4 py-3">
+                        <Badge color={inv.status === 'paid' ? 'green' : inv.status === 'overdue' ? 'red' : 'yellow'}>
+                          {inv.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 font-medium">${inv.total_amount}</td>
+                      <td className="px-4 py-3 font-semibold text-red-600">${inv.balance}</td>
+                      <td className="px-4 py-3 text-gray-600">{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -319,27 +387,27 @@ export default async function StudentDetail({ params }: { params: { id: string }
           )}
         </div>
         <div>
-          <h3 className="font-semibold mb-2">Recent Payments</h3>
+          <h3 className="font-semibold mb-3 text-gray-900">Recent Payments</h3>
           {paymentRows.length === 0 ? (
             <Empty title="No payments" />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50">
-                    <th className="text-left px-3 py-2">Date</th>
-                    <th className="text-left px-3 py-2">Amount</th>
-                    <th className="text-left px-3 py-2">Method</th>
-                    <th className="text-left px-3 py-2">Ref</th>
+                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Date</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Amount</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Method</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Ref</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100">
                   {paymentRows.map((p) => (
-                    <tr key={p.id}>
-                      <td className="px-3 py-2">{p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '—'}</td>
-                      <td className="px-3 py-2">{p.amount}</td>
-                      <td className="px-3 py-2">{p.payment_methods?.name ?? '—'}</td>
-                      <td className="px-3 py-2">{p.transaction_reference ?? '—'}</td>
+                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-gray-600">{p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '—'}</td>
+                      <td className="px-4 py-3 font-semibold text-green-600">${p.amount}</td>
+                      <td className="px-4 py-3">{p.payment_methods?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-gray-600">{p.transaction_reference ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -348,71 +416,80 @@ export default async function StudentDetail({ params }: { params: { id: string }
           )}
         </div>
       </div>
-    </section>
+    </Card>
   );
 
   const documentsSection = (
-    <section className="bg-white border border-gray-200 rounded-lg p-4">
-      <h2 className="text-lg font-semibold mb-3">Documents</h2>
+    <Card padding="lg">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Documents</h2>
       <Empty title="Coming soon" description="Upload and manage student documents here." />
-    </section>
+    </Card>
   );
 
   const notesSection = (
-    <section className="bg-white border border-gray-200 rounded-lg p-4">
-      <h2 className="text-lg font-semibold mb-3">Notes</h2>
+    <Card padding="lg">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Notes</h2>
       <Empty title="Coming soon" description="Keep private notes and important remarks." />
-    </section>
+    </Card>
   );
 
   const guardiansSection = (
-    <section className="bg-white border border-gray-200 rounded-lg p-4">
+    <Card padding="lg">
       <GuardianManagement studentId={id} />
-    </section>
+    </Card>
   );
 
   const activitySection = (
-    <section className="bg-white border border-gray-200 rounded-lg p-4">
-      <h2 className="text-lg font-semibold mb-3">Activity</h2>
+    <Card padding="lg">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Activity Log</h2>
       {auditRows.length === 0 ? (
         <Empty title="No recent activity" />
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {auditRows.map((a) => (
-            <li key={a.id} className="flex items-start gap-3">
-              <div className="w-2 h-2 mt-2 rounded-full bg-gray-400" />
-              <div>
-                <div className="text-sm">
-                  <span className="font-medium">{a.action}</span>
-                  <span className="text-gray-500"> · {new Date(a.created_at).toLocaleString()}</span>
+            <li key={a.id} className="flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge color="blue">{a.action}</Badge>
+                  <span className="text-sm text-gray-600">·</span>
+                  <span className="text-sm text-gray-500">{new Date(a.created_at).toLocaleString()}</span>
                 </div>
-                <div className="text-xs text-gray-600">Actor: {a.actor_id}</div>
+                <p className="text-xs text-gray-600 mt-1">Actor ID: {a.actor_id}</p>
               </div>
             </li>
           ))}
         </ul>
       )}
-    </section>
+    </Card>
   );
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/students" className="text-sm text-blue-700 hover:underline">← Back to Students</Link>
-          <Link 
-            href={`/dashboard/students/${id}/progress`}
-            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium text-sm flex items-center gap-2"
-          >
-            📊 Theo dõi Tiến độ
-          </Link>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="p-4 md:p-6 max-w-7xl mx-auto">
+        <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <Link 
+              href="/dashboard/students" 
+              className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors"
+            >
+              <span>←</span>
+              <span>Back to Students</span>
+            </Link>
+            <Link 
+              href={`/dashboard/students/${id}/progress`}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg font-medium text-sm"
+            >
+              <span>📊</span>
+              <span>Theo dõi Tiến độ</span>
+            </Link>
+          </div>
+          <StudentActions 
+            studentId={id} 
+            studentName={profile.full_name} 
+            isAdmin={viewerRole === 'admin'}
+          />
         </div>
-        <StudentActions 
-          studentId={id} 
-          studentName={profile.full_name} 
-          isAdmin={viewerRole === 'admin'}
-        />
-      </div>
 
       {(() => {
         const tabs: { key: string; label: string; content: React.ReactNode }[] = [
@@ -428,6 +505,7 @@ export default async function StudentDetail({ params }: { params: { id: string }
         if (showActivity) tabs.push({ key: "activity", label: "Activity", content: activitySection });
         return <Tabs tabs={tabs} />;
       })()}
+      </div>
     </div>
   );
 }

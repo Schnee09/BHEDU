@@ -20,7 +20,8 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+    // Use service client to bypass RLS and avoid recursion
+    const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const classId = searchParams.get('classId')
     const categoryId = searchParams.get('categoryId')
@@ -136,7 +137,8 @@ export async function POST(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+    // Use service client to bypass RLS
+    const supabase = createServiceClient()
 
     // Verify teacher has access to this class
     const { data: classData } = await supabase

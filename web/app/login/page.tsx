@@ -75,19 +75,32 @@ export default function LoginPage() {
 
   return (
     <GuestGuard>
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">
-          Welcome Back 👋
-        </h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 px-4 py-12">
+      <div className="w-full max-w-md">
+        {/* Card with glass effect */}
+        <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl shadow-amber-500/20 border border-amber-100/50 p-8">
+          {/* Logo and Header */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="bg-gradient-to-br from-amber-400 to-yellow-600 p-3 rounded-2xl shadow-lg shadow-amber-500/50">
+                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold bg-gradient-to-br from-amber-600 to-yellow-700 bg-clip-text text-transparent font-heading mb-2">
+              Welcome Back
+            </h2>
+            <p className="text-stone-600">Sign in to access your dashboard</p>
+          </div>
 
-        <form onSubmit={signInWithPassword} className="space-y-4">
+        <form onSubmit={signInWithPassword} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-600">
-              Email
+            <label className="block text-sm font-semibold text-stone-700 mb-2">
+              Email Address
             </label>
             <input
-              className="mt-1 w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+              className="w-full border-2 border-stone-200 px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white text-stone-900 placeholder-stone-400"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
@@ -97,11 +110,11 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            <label className="block text-sm font-semibold text-stone-700 mb-2">
               Password
             </label>
             <input
-              className="mt-1 w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+              className="w-full border-2 border-stone-200 px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white text-stone-900 placeholder-stone-400"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
@@ -113,50 +126,82 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+            className="w-full py-3.5 bg-gradient-to-br from-amber-400 to-yellow-600 hover:from-amber-500 hover:to-yellow-700 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Signing in...
+              </span>
+            ) : "Sign In"}
           </button>
 
-          <div className="flex justify-between text-sm mt-2">
+          <div className="flex justify-between items-center text-sm mt-4">
             <button
               type="button"
               onClick={signInWithMagicLink}
-              className="text-blue-600 hover:underline"
+              className="text-amber-700 hover:text-amber-800 font-medium hover:underline transition-colors"
             >
-              Magic Link
+              Use Magic Link
             </button>
             <a
               href="/forgot-password"
-              className="text-gray-600 hover:text-blue-600"
+              className="text-stone-600 hover:text-amber-700 font-medium transition-colors"
             >
               Forgot Password?
             </a>
           </div>
 
-          <div className="text-center text-sm text-gray-500 mt-4">OR</div>
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-stone-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-stone-700 font-medium">OR</span>
+            </div>
+          </div>
 
           <button
             type="button"
             onClick={signInDemo}
             disabled={loading}
-            className="w-full py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-md transition"
+            className="w-full py-3 bg-stone-700 hover:bg-stone-800 text-white font-semibold rounded-lg transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2"
           >
             Demo Login
           </button>
 
-          {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm font-medium flex items-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </p>
+            </div>
+          )}
           {message && (
-            <p className="text-green-600 text-sm text-center">{message}</p>
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-700 text-sm font-medium flex items-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                {message}
+              </p>
+            </div>
           )}
         </form>
 
-        <p className="text-center text-sm mt-6 text-gray-500">
-          Don’t have an account?{" "}
-          <a href="/signup" className="text-blue-600 hover:underline">
+        <p className="text-center text-sm mt-6 text-stone-600">
+          Don't have an account?{" "}
+          <a href="/signup" className="text-amber-700 hover:text-amber-800 font-semibold hover:underline transition-colors">
             Create one
           </a>
         </p>
+        </div>
       </div>
     </div>
     </GuestGuard>

@@ -137,7 +137,7 @@ export default function VietnameseGradeEntryPage() {
 
   const getGradeClassification = (avg: string) => {
     const num = parseFloat(avg);
-    if (isNaN(num)) return { label: "-", color: "text-gray-400" };
+    if (isNaN(num)) return { label: "-", color: "text-gray-600" };
     if (num >= 8) return { label: "Giỏi", color: "text-green-600 font-bold" };
     if (num >= 6.5) return { label: "Khá", color: "text-blue-600 font-semibold" };
     if (num >= 5) return { label: "TB", color: "text-yellow-600" };
@@ -311,7 +311,7 @@ export default function VietnameseGradeEntryPage() {
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
-          <p className="text-gray-500 text-lg">
+          <p className="text-gray-600 text-lg">
             {selectedClass && selectedSubject
               ? "Không có học sinh trong lớp này"
               : "Vui lòng chọn lớp học và môn học để bắt đầu"}

@@ -471,7 +471,7 @@ export default function AttendanceReportsPage() {
                       <h2 className="text-lg font-semibold text-gray-900 mb-4">🏆 Top Attendance</h2>
                       <div className="space-y-3">
                         {topPerformers.map((student, index) => (
-                          <div key={student.studentId} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <div key={`top-${student.studentId || index}-${student.name}`} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                             <div className="flex items-center space-x-3">
                               <span className="text-lg font-bold text-gray-500">#{index + 1}</span>
                               <div>
@@ -489,10 +489,10 @@ export default function AttendanceReportsPage() {
 
                     {/* Bottom Performers */}
                     <div className="bg-white rounded-lg shadow p-6">
-                      <h2 className="text-lg font-semibold text-gray-900 mb-4">⚠�E�ENeeds Attention</h2>
+                      <h2 className="text-lg font-semibold text-gray-900 mb-4">⚠️ Needs Attention</h2>
                       <div className="space-y-3">
-                        {bottomPerformers.map((student) => (
-                          <div key={student.studentId} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                        {bottomPerformers.map((student, index) => (
+                          <div key={`bottom-${student.studentId || index}-${student.name}`} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                             <div>
                               <p className="font-medium text-gray-900">{student.name}</p>
                               <p className="text-xs text-gray-600">{student.studentId}</p>

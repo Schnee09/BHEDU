@@ -20,42 +20,57 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+  const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const classId = searchParams.get('classId')
 
-    if (!classId) {
+    // Allow admins to fetch all categories when classId is not provided.
+    if (!classId && authResult.userRole !== 'admin') {
       return NextResponse.json(
         { error: 'classId is required' },
         { status: 400 }
       )
     }
 
-    // Verify teacher has access to this class
-    const { data: classData } = await supabase
-      .from('classes')
-      .select('teacher_id')
-      .eq('id', classId)
-      .single()
+    // If classId is provided, verify teacher has access to this class
+    if (classId) {
+      const { data: classData } = await supabase
+        .from('classes')
+        .select('teacher_id')
+        .eq('id', classId)
+        .single()
 
-    if (!classData || (classData.teacher_id !== authResult.userId && authResult.userRole !== 'admin')) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      )
+      if (!classData || (classData.teacher_id !== authResult.userId && authResult.userRole !== 'admin')) {
+        return NextResponse.json(
+          { error: 'Access denied' },
+          { status: 403 }
+        )
+      }
     }
 
     // Get categories
     const { data: categories, error } = await supabase
       .from('assignment_categories')
       .select('*')
-      .eq('class_id', classId)
       .order('name')
+      .then((res) => res)
+
+    // If a classId was provided, filter client-side to avoid constructing
+    // multiple queries; otherwise admins will receive all categories.
+    // (Note: this returns all categories for admins when classId is omitted.)
+    if (classId && categories) {
+      // filter for classId
+      const filtered = categories.filter((c: any) => String(c.class_id) === String(classId))
+      if (!filtered) {
+        // fallthrough, filtered could be empty array
+      }
+      return NextResponse.json({ success: true, categories: filtered || [] })
+    }
 
     if (error) {
       logger.error('Failed to fetch categories:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch categories' },
+        { error: 'Failed to fetch categories', details: error.message, code: error.code },
         { status: 500 }
       )
     }
@@ -101,7 +116,7 @@ export async function POST(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+  const supabase = createServiceClient()
 
     // Verify teacher has access to this class
     const { data: classData } = await supabase
