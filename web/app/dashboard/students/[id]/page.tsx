@@ -9,7 +9,6 @@ import StudentActions from "@/components/StudentActions";
 import GuardianManagement from "@/components/GuardianManagement";
 import EnrollmentManager from "@/components/EnrollmentManager";
 import StudentPhotoUpload from "@/components/StudentPhotoUpload";
-import { theme } from "@/styles/theme";
 
 async function fetchStudent(id: string) {
   const supabase = await createClient();

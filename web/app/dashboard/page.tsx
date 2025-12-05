@@ -14,7 +14,6 @@ import { useEffect, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import LoadingScreen from "@/components/LoadingScreen";
 import { StatCard } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { Icons } from "@/components/ui/Icons";
 import { logger } from "@/lib/logger";
 import Link from "next/link";

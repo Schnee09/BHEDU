@@ -64,6 +64,7 @@ export default function TranscriptPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     fetchStudent();
     fetchAcademicYears();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch transcript data when selections change
@@ -71,6 +72,7 @@ export default function TranscriptPage({ params }: { params: Promise<{ id: strin
     if (selectedYear && selectedSemester) {
       fetchTranscriptData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedSemester]);
 
   const fetchStudent = async () => {
@@ -125,12 +127,6 @@ export default function TranscriptPage({ params }: { params: Promise<{ id: strin
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN');
   };
 
   if (!student) {

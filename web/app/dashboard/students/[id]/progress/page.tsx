@@ -55,10 +55,11 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
   const router = useRouter();
   const [progress, setProgress] = useState<StudentProgress | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedYear] = useState<string>("all");
 
   useEffect(() => {
     fetchProgress();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedParams.id, selectedYear]);
 
   const fetchProgress = async () => {
@@ -302,7 +303,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Xu hướng Điểm Trung Bình (GPA)</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart
-              data={progress.semesters.map((s, i) => ({
+              data={progress.semesters.map((s) => ({
                 name: `${s.semester} ${s.academic_year}`,
                 gpa: parseFloat(s.gpa.toFixed(2)),
                 semester: s.semester
@@ -430,7 +431,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Chuyên cần & Hạnh kiểm</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart
-              data={progress.semesters.map((s, i) => ({
+              data={progress.semesters.map((s) => ({
                 name: `${s.semester}`,
                 'Chuyên cần (%)': s.attendance_rate,
                 'GPA': s.gpa
