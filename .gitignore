@@ -13,3 +13,9 @@ COMMITMSG*
 tmp/
 *.bak
 *_backup.*
+lint-output*.txt
+lint-final.txt
+.deploy-trigger*
+.vercel-*-trigger
+*_OLD.*
+README.old.md
