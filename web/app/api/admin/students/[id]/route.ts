@@ -3,12 +3,15 @@
  * GET /api/admin/students/[id] - Get student details
  * PUT /api/admin/students/[id] - Update student profile
  * DELETE /api/admin/students/[id] - Archive student (soft delete)
+ * Updated: 2025-12-05
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClientFromRequest } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
+import { handleApiError, NotFoundError } from '@/lib/api/errors'
+import { updateStudentSchema } from '@/lib/schemas/students'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -35,19 +38,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       .single()
 
     if (error || !student) {
-      return NextResponse.json(
-        { error: 'Student not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Student not found')
     }
 
     return NextResponse.json({ success: true, data: student })
   } catch (error) {
-    logger.error('Failed to fetch student:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 
@@ -64,6 +60,9 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     const { id } = await params
     const supabase = createClientFromRequest(req as any)
     const body = await req.json()
+    
+    // Validate request body
+    const validatedData = updateStudentSchema.parse({ id, ...body })
 
     // Validate student exists and is a student
     const { data: existingStudent } = await supabase
@@ -73,35 +72,32 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
       .single()
 
     if (!existingStudent || existingStudent.role !== 'student') {
-      return NextResponse.json(
-        { error: 'Student not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Student not found')
     }
 
-    // Validate student_id uniqueness if provided and changed
-    if (body.student_id) {
+    // Validate student_code uniqueness if provided
+    if (validatedData.student_code) {
       const { data: duplicateCheck } = await supabase
         .from('profiles')
-        .select('id, student_id')
-        .eq('student_id', body.student_id)
+        .select('id, student_code')
+        .eq('student_code', validatedData.student_code)
         .neq('id', id)
         .maybeSingle()
 
       if (duplicateCheck) {
         return NextResponse.json(
-          { error: `Student ID ${body.student_id} is already in use` },
+          { error: `Student code ${validatedData.student_code} is already in use` },
           { status: 400 }
         )
       }
     }
 
     // Validate email uniqueness if changed
-    if (body.email) {
+    if (validatedData.email) {
       const { data: emailCheck } = await supabase
         .from('profiles')
         .select('id, email')
-        .eq('email', body.email.toLowerCase())
+        .eq('email', validatedData.email.toLowerCase())
         .neq('id', id)
         .maybeSingle()
 
@@ -113,25 +109,9 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Build update object with allowed fields
-    const updateData: Record<string, any> = {}
-    const allowedFields = [
-      'full_name', 'email', 'phone', 'address',
-      'date_of_birth', 'gender',
-      'status', 'enrollment_date', 'notes', 'photo_url'
-    ]
-
-    allowedFields.forEach(field => {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field]
-      }
-    })
-    if (body.first_name || body.last_name) {
-      const firstName = body.first_name || existingStudent.first_name || ''
-      const lastName = body.last_name || existingStudent.last_name || ''
-      updateData.full_name = `${firstName} ${lastName}`.trim()
-    }
-
+    // Build update object from validated data (exclude id)
+    const { id: _id, ...updateData } = validatedData
+    
     // Perform update
     const { data: updatedStudent, error: updateError } = await supabase
       .from('profiles')
@@ -142,10 +122,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
     if (updateError) {
       logger.error('Failed to update student:', updateError)
-      return NextResponse.json(
-        { error: updateError.message || 'Failed to update student' },
-        { status: 500 }
-      )
+      throw new Error(`Failed to update student: ${updateError.message}`)
     }
 
     // Log audit trail
@@ -165,11 +142,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
       message: 'Student updated successfully'
     })
   } catch (error) {
-    logger.error('Failed to update student:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 
@@ -194,10 +167,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       .single()
 
     if (!existingStudent || existingStudent.role !== 'student') {
-      return NextResponse.json(
-        { error: 'Student not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Student not found')
     }
 
     // Soft delete: set status to inactive
@@ -208,10 +178,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
 
     if (updateError) {
       logger.error('Failed to archive student:', updateError)
-      return NextResponse.json(
-        { error: updateError.message || 'Failed to archive student' },
-        { status: 500 }
-      )
+      throw new Error(`Failed to archive student: ${updateError.message}`)
     }
 
     // Log audit trail
@@ -233,10 +200,6 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       message: 'Student archived successfully'
     })
   } catch (error) {
-    logger.error('Failed to archive student:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

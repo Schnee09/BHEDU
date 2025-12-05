@@ -1,5 +1,17 @@
+/**
+ * Students API
+ * GET/POST /api/admin/students
+ * 
+ * Manage student records
+ * Updated: 2025-12-05
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { handleApiError } from '@/lib/api/errors';
+import { validateQuery } from '@/lib/api/validation';
+import { createStudentSchema, studentQuerySchema } from '@/lib/schemas/students';
+import { logger } from '@/lib/logger';
 
 // Supabase admin client (bypasses RLS)
 const supabase = createClient(
@@ -13,11 +25,13 @@ const supabase = createClient(
  */
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const search = searchParams.get("search") || "";
-    const classId = searchParams.get("class_id");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    // Validate query parameters
+    const queryParams = validateQuery(request, studentQuerySchema);
+    
+    const search = queryParams.search || "";
+    const classId = queryParams.class_id;
+    const page = queryParams.page || 1;
+    const limit = queryParams.limit || 50;
     const offset = (page - 1) * limit;
 
     // Build base query
@@ -105,12 +119,8 @@ export async function GET(request: NextRequest) {
       total: count || 0,
       statistics,
     });
-  } catch (error: any) {
-    console.error("[API] Students error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }
 
@@ -167,44 +177,15 @@ async function generateStudentCode(): Promise<string> {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      email,
-      full_name,
-      phone,
-      address,
-      date_of_birth,
-      gender,
-      grade_level,
-      student_code: providedCode,
-      photo_url,
-      notes,
-      status = "active",
-      is_active = true,
-      enrollment_date,
-    } = body;
-
-    // Validation
-    if (!email || !full_name) {
-      return NextResponse.json(
-        { success: false, error: "Email and full name are required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
+    
+    // Validate request body with schema
+    const validatedData = createStudentSchema.parse(body);
 
     // Check if email already exists
-    const { data: existingProfile, error: _checkError } = await supabase
+    const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("email", email)
+      .eq("email", validatedData.email)
       .single();
 
     if (existingProfile) {
@@ -215,30 +196,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate student code if not provided
-    const studentCode = providedCode || (await generateStudentCode());
+    const studentCode = validatedData.student_code || (await generateStudentCode());
 
-    // Validate student code format if provided
-    if (providedCode) {
-      // Vietnamese format: HS + 4-digit year + 3-digit sequential (e.g., HS2025001)
-      const vietnameseFormatRegex = /^HS\d{4}\d{3}$/;
-      // Legacy format: STU-YYYY-NNNN (for backward compatibility)
-      const legacyFormatRegex = /^STU-\d{4}-\d{4}$/;
-      
-      if (!vietnameseFormatRegex.test(providedCode) && !legacyFormatRegex.test(providedCode)) {
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: "Invalid student code format. Use Vietnamese format: HS + Year + 3 digits (e.g., HS2025001)" 
-          },
-          { status: 400 }
-        );
-      }
-
-      // Check if student code already exists
+    // Check if student code already exists
+    if (validatedData.student_code) {
       const { data: existingCode } = await supabase
         .from("profiles")
         .select("id")
-        .eq("student_code", providedCode)
+        .eq("student_code", validatedData.student_code)
         .single();
 
       if (existingCode) {
@@ -252,11 +217,11 @@ export async function POST(request: NextRequest) {
     // Create auth user first
     const tempPassword = Math.random().toString(36).slice(-10) + "A1!"; // Strong temp password
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
+      email: validatedData.email,
       password: tempPassword,
       email_confirm: true,
       user_metadata: {
-        full_name,
+        full_name: validatedData.full_name,
         role: "student",
       },
     });
@@ -269,7 +234,8 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      throw authError;
+      logger.error('Failed to create auth user:', authError);
+      throw new Error(`Authentication error: ${authError.message}`);
     }
 
     // Create profile with all fields
@@ -277,20 +243,22 @@ export async function POST(request: NextRequest) {
       .from("profiles")
       .insert({
         user_id: authData.user.id,
-        email,
-        full_name,
+        email: validatedData.email,
+        first_name: validatedData.first_name,
+        last_name: validatedData.last_name,
+        full_name: validatedData.full_name,
         role: "student",
         student_code: studentCode,
-        phone: phone || null,
-        address: address || null,
-        date_of_birth: date_of_birth || null,
-        gender: gender || null,
-        grade_level: grade_level || null,
-        photo_url: photo_url || null,
-        notes: notes || null,
-        status,
-        is_active,
-        enrollment_date: enrollment_date || new Date().toISOString().split("T")[0],
+        phone: validatedData.phone || null,
+        address: validatedData.address || null,
+        date_of_birth: validatedData.date_of_birth || null,
+        gender: validatedData.gender || null,
+        grade_level: validatedData.grade_level || null,
+        photo_url: validatedData.photo_url || null,
+        notes: validatedData.notes || null,
+        status: validatedData.status || "active",
+        is_active: validatedData.is_active !== false,
+        enrollment_date: validatedData.enrollment_date || new Date().toISOString().split("T")[0],
       })
       .select()
       .single();
@@ -298,7 +266,8 @@ export async function POST(request: NextRequest) {
     if (profileError) {
       // If profile creation fails, delete the auth user
       await supabase.auth.admin.deleteUser(authData.user.id);
-      throw profileError;
+      logger.error('Failed to create profile:', profileError);
+      throw new Error(`Profile creation error: ${profileError.message}`);
     }
 
     return NextResponse.json({
@@ -306,12 +275,8 @@ export async function POST(request: NextRequest) {
       data: profile,
       message: `Student created successfully with code ${studentCode}`,
       tempPassword, // Return temp password so admin can give it to student
-    });
-  } catch (error: any) {
-    console.error("[API] Create student error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    }, { status: 201 });
+  } catch (error) {
+    return handleApiError(error);
   }
 }

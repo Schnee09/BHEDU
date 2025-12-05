@@ -8,16 +8,21 @@ import { z } from 'zod';
  * Student creation schema
  */
 export const createStudentSchema = z.object({
-  first_name: z.string().min(1, 'First name is required').max(100),
-  last_name: z.string().min(1, 'Last name is required').max(100),
-  date_of_birth: z.string().date('Invalid date format'),
-  gender: z.enum(['male', 'female', 'other']),
-  student_code: z.string().min(1, 'Student code is required').max(50),
-  email: z.string().email('Invalid email format').optional().nullable(),
+  first_name: z.string().min(1, 'First name is required').max(100).optional(),
+  last_name: z.string().min(1, 'Last name is required').max(100).optional(),
+  full_name: z.string().min(1, 'Full name is required').max(200),
+  date_of_birth: z.string().date('Invalid date format').optional().nullable(),
+  gender: z.enum(['male', 'female', 'other']).optional().nullable(),
+  student_code: z.string().min(1, 'Student code is required').max(50).optional(),
+  email: z.string().email('Invalid email format'),
   phone: z.string().max(20).optional().nullable(),
   address: z.string().max(500).optional().nullable(),
-  enrollment_date: z.string().date('Invalid enrollment date').optional(),
+  grade_level: z.string().max(50).optional().nullable(),
+  photo_url: z.string().url('Invalid photo URL').optional().nullable(),
+  notes: z.string().max(1000).optional().nullable(),
+  enrollment_date: z.string().date('Invalid enrollment date').optional().nullable(),
   status: z.enum(['active', 'inactive', 'graduated', 'suspended']).optional().default('active'),
+  is_active: z.boolean().optional().default(true),
 });
 
 /**
@@ -27,14 +32,19 @@ export const updateStudentSchema = z.object({
   id: z.string().uuid('Invalid student ID format'),
   first_name: z.string().min(1).max(100).optional(),
   last_name: z.string().min(1).max(100).optional(),
-  date_of_birth: z.string().date().optional(),
-  gender: z.enum(['male', 'female', 'other']).optional(),
+  full_name: z.string().min(1).max(200).optional(),
+  date_of_birth: z.string().date().optional().nullable(),
+  gender: z.enum(['male', 'female', 'other']).optional().nullable(),
   student_code: z.string().min(1).max(50).optional(),
   email: z.string().email().optional().nullable(),
   phone: z.string().max(20).optional().nullable(),
   address: z.string().max(500).optional().nullable(),
-  enrollment_date: z.string().date().optional(),
+  grade_level: z.string().max(50).optional().nullable(),
+  photo_url: z.string().url('Invalid photo URL').optional().nullable(),
+  notes: z.string().max(1000).optional().nullable(),
+  enrollment_date: z.string().date().optional().nullable(),
   status: z.enum(['active', 'inactive', 'graduated', 'suspended']).optional(),
+  is_active: z.boolean().optional(),
 });
 
 /**
