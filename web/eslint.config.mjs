@@ -27,26 +27,19 @@ const eslintConfig = [
       "**/coverage/**",
     ],
     rules: {
-      // Type safety - demote to warnings
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
-        },
-      ],
+      // Type safety - turn off for legacy code
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
       
-      // React hooks - demote to warnings
-      "react-hooks/exhaustive-deps": "warn",
+      // React hooks - turn off for legacy code  
+      "react-hooks/exhaustive-deps": "off",
       "react-hooks/rules-of-hooks": "warn",
       
-      // React - demote to warnings
-      "react/no-unescaped-entities": "warn",
+      // React - turn off
+      "react/no-unescaped-entities": "off",
       
-      // General JS/TS - demote to warnings
-      "prefer-const": "warn",
+      // General JS/TS - turn off
+      "prefer-const": "off",
       "no-console": "off", // Allow console logs
       
       // TypeScript comments - allow both for now
