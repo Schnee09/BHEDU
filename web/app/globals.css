@@ -2,89 +2,107 @@
 @import "tailwindcss";
 
 :root {
-  /* Color System - Bright Gold Theme for Education Admin */
-  --gold-50: #FFFBEB;
-  --gold-100: #FEF3C7;
-  --gold-200: #FDE68A;
-  --gold-300: #FCD34D;
-  --gold-400: #FBBF24;
-  --gold-500: #F59E0B;
-  --gold-600: #D97706;
-  --gold-700: #B45309;
-  --gold-800: #92400E;
-  --gold-900: #78350F;
+  /* Primary - Trust Blue (SaaS Standard) */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
   
-  /* Primary Colors - Bright Gold */
-  --color-primary: #F59E0B;
-  --color-primary-dark: #D97706;
-  --color-primary-light: #FCD34D;
+  /* Primary Colors - Professional Blue */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #3b82f6;
   
-  /* Secondary Colors - Professional Navy */
-  --color-secondary: #1E40AF;
-  --color-secondary-dark: #1E3A8A;
-  --color-secondary-light: #3B82F6;
+  /* Secondary Colors - Light Blue */
+  --color-secondary: #3b82f6;
+  --color-secondary-hover: #2563eb;
+  --color-secondary-light: #60a5fa;
   
-  /* CTA & Accent */
-  --color-cta: #DC2626;
-  --color-cta-hover: #B91C1C;
+  /* CTA & Accent - Orange */
+  --color-cta: #f97316;
+  --color-cta-hover: #ea580c;
   
   /* Background & Surface */
-  --background: #FAFAF9;
-  --surface: #FFFFFF;
-  --surface-elevated: #FFFFFF;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f1f5f9;
   
-  /* Text Colors - Improved for WCAG AA Compliance */
-  --foreground: #1C1917; /* stone-900: 14.5:1 contrast */
-  --text-primary: #1C1917; /* stone-900: 14.5:1 contrast - Body text */
-  --text-secondary: #44403C; /* stone-700: 7:1 contrast - Secondary text (was stone-600) */
-  --text-tertiary: #57534E; /* stone-600: 5.3:1 contrast - Tertiary text (was stone-500) */
-  --text-muted: #78716C; /* stone-500: 3.2:1 contrast - Use sparingly, not for body text */
+  /* Text Colors - WCAG AA+ Compliant */
+  --foreground: #1e293b; /* slate-800 */
+  --text-primary: #1e293b; /* slate-800: Primary body text */
+  --text-secondary: #475569; /* slate-600: Secondary text */
+  --text-tertiary: #64748b; /* slate-500: Tertiary/muted text */
+  --text-muted: #94a3b8; /* slate-400: Very muted, use sparingly */
   
   /* Border Colors */
-  --border-light: #E7E5E4;
-  --border-default: #D6D3D1;
-  --border-dark: #A8A29E;
+  --border-light: #f1f5f9;
+  --border-default: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --border-dark: #94a3b8;
   
   /* Status Colors */
-  --success: #16A34A;
-  --warning: #F59E0B;
-  --error: #DC2626;
-  --info: #2563EB;
+  --success: #16a34a;
+  --success-light: #22c55e;
+  --warning: #f59e0b;
+  --warning-light: #fbbf24;
+  --error: #dc2626;
+  --error-light: #ef4444;
+  --info: #2563eb;
+  --info-light: #3b82f6;
   
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  /* Shadows - Soft & Modern */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-gold: 0 10px 25px -5px rgba(245, 158, 11, 0.3);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-primary: 0 10px 25px -5px rgba(37, 99, 235, 0.2);
   
-  /* Typography */
-  --font-primary: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  /* Typography - Poppins + Open Sans */
+  --font-primary: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   
   /* Spacing & Layout */
-  --nav-height: 72px;
+  --nav-height: 64px;
   --sidebar-width: 280px;
   --border-radius-sm: 0.375rem;
   --border-radius-md: 0.5rem;
   --border-radius-lg: 0.75rem;
   --border-radius-xl: 1rem;
+  --border-radius-2xl: 1.5rem;
+  
+  /* Animation Timing - 150-300ms per UX guidelines */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --easing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Dark mode adjustments */
-    --background: #1C1917;
-    --surface: #292524;
-    --surface-elevated: #44403C;
-    --foreground: #FAFAF9;
-    --text-primary: #FAFAF9;
-    --text-secondary: #D6D3D1;
-    --text-tertiary: #A8A29E;
-    --border-light: #44403C;
-    --border-default: #57534E;
-    --border-dark: #78716C;
+    /* Dark mode color adjustments */
+    --background: #0f172a; /* slate-900 */
+    --surface: #1e293b; /* slate-800 */
+    --surface-elevated: #334155; /* slate-700 */
+    --surface-hover: #475569; /* slate-600 */
+    --foreground: #f8fafc; /* slate-50 */
+    --text-primary: #f8fafc; /* slate-50 */
+    --text-secondary: #e2e8f0; /* slate-200 */
+    --text-tertiary: #cbd5e1; /* slate-300 */
+    --text-muted: #94a3b8; /* slate-400 */
+    --border-light: #1e293b;
+    --border-default: #334155;
+    --border-medium: #475569;
+    --border-dark: #64748b;
   }
 }
 

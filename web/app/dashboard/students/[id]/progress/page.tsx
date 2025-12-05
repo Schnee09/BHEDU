@@ -126,13 +126,21 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
       {/* Header */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-start justify-between">
-          <div>
-            <button
-              onClick={() => router.back()}
-              className="text-amber-600 hover:text-amber-700 mb-4 flex items-center gap-2"
-            >
-              ← Quay lại
-            </button>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => router.back()}
+                className="text-amber-600 hover:text-amber-700 flex items-center gap-2"
+              >
+                ← Quay lại
+              </button>
+              <button
+                onClick={() => router.push(`/dashboard/students/${resolvedParams.id}/transcript`)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2"
+              >
+                📄 In học bạ
+              </button>
+            </div>
             <h1 className="text-3xl font-bold text-gray-800">Theo dõi Tiến độ Học tập</h1>
             <div className="mt-4 space-y-2">
               <p className="text-lg">
