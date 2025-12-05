@@ -76,7 +76,7 @@ export default function ClassesPageModern() {
       toast.error('Failed to load classes', error);
       logger.error('Classes fetch error', new Error(error));
     }
-  }, [error]);
+  }, [error, toast]);
   
   const classes = data?.classes || data?.data || [];
   const statistics = data?.statistics;

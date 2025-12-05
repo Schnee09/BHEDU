@@ -96,7 +96,7 @@ export default function GradeEntryPageModern() {
       toast.error('Failed to load classes', classesError);
       logger.error('Classes fetch error', new Error(classesError));
     }
-  }, [classesError]);
+  }, [classesError, toast]);
   
   // Fetch assignments for selected class
   const { 
@@ -115,7 +115,7 @@ export default function GradeEntryPageModern() {
       toast.error('Failed to load assignments', assignmentsError);
       logger.error('Assignments fetch error', new Error(assignmentsError));
     }
-  }, [assignmentsError]);
+  }, [assignmentsError, toast]);
   
   // Fetch grades for selected assignment
   const { 
@@ -142,7 +142,7 @@ export default function GradeEntryPageModern() {
       toast.error('Failed to load grades', gradesError);
       logger.error('Grades fetch error', new Error(gradesError));
     }
-  }, [gradesError]);
+  }, [gradesError, toast]);
   
   // Save grades mutation
   const { mutate: saveGrades, loading: saving } = useMutation('/api/grades', 'POST');

@@ -103,11 +103,13 @@ export default function InvoicesPage() {
     }>
   })
 
+   
   useEffect(() => {
     fetchStudents()
     fetchFeeTypes()
     fetchAcademicYears()
     fetchInvoices()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
   const fetchStudents = async () => {

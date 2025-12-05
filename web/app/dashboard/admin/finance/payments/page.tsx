@@ -113,12 +113,15 @@ export default function PaymentsPage() {
     today_amount: 0
   })
 
+   
   useEffect(() => {
     fetchStudents()
     fetchPaymentMethods()
     fetchPayments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
+   
   useEffect(() => {
     if (formData.student_id) {
       fetchStudentInvoices(formData.student_id)
@@ -126,6 +129,7 @@ export default function PaymentsPage() {
       setSelectedStudentInvoices([])
       setFormData({ ...formData, allocations: [] })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.student_id])
 
   const fetchStudents = async () => {

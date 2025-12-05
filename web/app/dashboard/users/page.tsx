@@ -98,11 +98,6 @@ export default function UserManagementPage() {
     confirm_password: ''
   });
 
-  // Fetch users when filters change
-  useEffect(() => {
-    fetchUsers();
-  }, [roleFilter, activeFilter, searchQuery, page]);
-
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -138,6 +133,11 @@ export default function UserManagementPage() {
       setLoading(false);
     }
   }, [roleFilter, activeFilter, searchQuery, page]);
+
+  // Fetch users when filters change
+  useEffect(() => {
+    fetchUsers();
+  }, [roleFilter, activeFilter, searchQuery, page, fetchUsers]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();

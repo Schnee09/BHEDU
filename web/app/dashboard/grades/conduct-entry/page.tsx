@@ -41,10 +41,12 @@ export default function ConductGradeEntryPage() {
     fetchClasses();
   }, []);
 
+   
   useEffect(() => {
     if (selectedClass && academicYearId) {
       fetchStudentConductGrades();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClass, selectedSemester, academicYearId]);
 
   const fetchCurrentAcademicYear = async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api/client';
 import { Card } from '@/components/ui';
 
@@ -33,9 +33,9 @@ export default function DataViewerPage() {
       }
     };
     fetchTables();
-  }, []);
+  }, [selectedTable]);
 
-  const fetchTableData = async (tableName: string) => {
+  const fetchTableData = useCallback(async (tableName: string) => {
     setTableData(prev => ({
       ...prev,
       [tableName]: { tableName, count: 0, data: [], loading: true }
@@ -73,12 +73,12 @@ export default function DataViewerPage() {
         }
       }));
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Fetch all table counts on mount
     tables.forEach(table => fetchTableData(table));
-  }, []);
+  }, [tables, fetchTableData]);
 
   const selectedData = tableData[selectedTable];
 

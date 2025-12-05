@@ -61,9 +61,11 @@ export default function StudentAccountsPage() {
     overdue_count: 0
   })
 
+   
   useEffect(() => {
     fetchAcademicYears()
     fetchAccounts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
   const fetchAcademicYears = async () => {

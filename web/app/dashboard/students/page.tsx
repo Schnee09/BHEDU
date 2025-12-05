@@ -103,7 +103,7 @@ export default function StudentsPage() {
       pagination.setTotalItems(data.total);
       logger.info('Students loaded', { count: data.students.length });
     }
-  }, [data]);
+  }, [data, pagination]);
   
   // Handle errors
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function StudentsPage() {
       toast.error('Failed to load students', error);
       logger.error('Error loading students', new Error(error));
     }
-  }, [error]);
+  }, [error, toast]);
   
   // Bulk archive mutation
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

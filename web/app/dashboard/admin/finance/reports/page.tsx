@@ -69,14 +69,18 @@ export default function FinancialReportsPage() {
     end_date: ''
   })
 
+   
   useEffect(() => {
     fetchAcademicYears()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+   
   useEffect(() => {
     if (filters.academic_year_id || (filters.start_date && filters.end_date)) {
       fetchReportData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
   const fetchAcademicYears = async () => {

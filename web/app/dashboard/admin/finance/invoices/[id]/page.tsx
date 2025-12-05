@@ -5,7 +5,7 @@
  * View and manage individual invoice
  */
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useCallback } from 'react'
 import { apiFetch } from '@/lib/api/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -78,13 +78,7 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
   const [error, setError] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
 
-  useEffect(() => {
-    if (resolvedParams) {
-      fetchInvoice()
-    }
-  }, [resolvedParams])
-
-  const fetchInvoice = async () => {
+  const fetchInvoice = useCallback(async () => {
     if (!resolvedParams) return
 
     setLoading(true)
@@ -104,7 +98,13 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
     } finally {
       setLoading(false)
     }
-  }
+  }, [resolvedParams])
+
+  useEffect(() => {
+    if (resolvedParams) {
+      fetchInvoice()
+    }
+  }, [resolvedParams, fetchInvoice])
 
   const handleStatusChange = async (newStatus: string) => {
     if (!invoice) return

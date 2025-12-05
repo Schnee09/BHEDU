@@ -84,10 +84,12 @@ export default function StudentAccountDetailsPage({ params }: { params: Promise<
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'payments'>('overview')
 
+   
   useEffect(() => {
     if (resolvedParams) {
       fetchAccountDetails()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedParams])
 
   const fetchAccountDetails = async () => {

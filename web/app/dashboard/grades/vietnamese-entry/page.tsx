@@ -42,10 +42,12 @@ export default function VietnameseGradeEntryPage() {
     fetchSubjects();
   }, []);
 
+   
   useEffect(() => {
     if (selectedClass && selectedSubject) {
       fetchStudentGrades();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClass, selectedSubject, selectedSemester]);
 
   const fetchClasses = async () => {
