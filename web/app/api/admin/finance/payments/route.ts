@@ -1,13 +1,18 @@
 /**
  * Payments API
  * Records and manages payments from students
+ * Updated: 2025-12-05
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { createClientFromRequest } from '@/lib/supabase/server'
+import { handleApiError, ValidationError } from '@/lib/api/errors'
+import { validateQuery } from '@/lib/api/validation'
+import { createPaymentSchema } from '@/lib/schemas/finance'
+import { logger } from '@/lib/logger'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const authResult = await adminAuth(request)
     if (!authResult.authorized) {
@@ -23,7 +28,7 @@ export async function GET(request: Request) {
       .limit(1)
     
     if (tableCheckError) {
-      console.error('Payments table check failed:', tableCheckError)
+      logger.warn('Payments table not configured:', { error: tableCheckError.message })
       return NextResponse.json({ 
         success: true, 
         data: [],
@@ -157,26 +162,12 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ success: true, data })
-  } catch (error: any) {
-    console.error('Error in GET /api/admin/finance/payments:', error)
-    
-    // Handle missing table gracefully
-    if (error?.message?.includes('relation') || error?.code === '42P01') {
-      return NextResponse.json({ 
-        success: true,
-        data: [],
-        note: 'Payments table not yet configured'
-      })
-    }
-    
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error?.message || 'Unknown error'
-    }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error)
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const authResult = await adminAuth(request)
     if (!authResult.authorized) {
@@ -184,23 +175,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const {
-      student_id,
-      student_account_id,
-      payment_method_id,
-      amount,
-      payment_date,
-      transaction_reference,
-      notes,
-      allocations // Array of { invoice_id, amount }
-    } = body
-
-    if (!student_id || !payment_method_id || !amount || amount <= 0) {
-      return NextResponse.json(
-        { error: 'Student ID, payment method, and valid amount are required' },
-        { status: 400 }
-      )
-    }
+    
+    // Validate request body with schema
+    const validatedData = createPaymentSchema.parse(body)
 
     const supabase = createClientFromRequest(request as any)
 
@@ -208,14 +185,11 @@ export async function POST(request: Request) {
     const timestamp = Date.now()
     const receiptNumber = `RCP-${timestamp}`
 
-    // Verify total allocation matches payment amount
-    if (allocations && Array.isArray(allocations)) {
-      const totalAllocated = allocations.reduce((sum: number, alloc: { amount: number }) => sum + alloc.amount, 0)
-      if (Math.abs(totalAllocated - amount) > 0.01) { // Allow small floating point differences
-        return NextResponse.json(
-          { error: 'Total allocated amount must equal payment amount' },
-          { status: 400 }
-        )
+    // Verify total allocation matches payment amount if allocations provided
+    if (validatedData.allocations && validatedData.allocations.length > 0) {
+      const totalAllocated = validatedData.allocations.reduce((sum, alloc) => sum + alloc.amount, 0)
+      if (Math.abs(totalAllocated - validatedData.amount) > 0.01) { // Allow small floating point differences
+        throw new ValidationError('Total allocated amount must equal payment amount')
       }
     }
 
@@ -224,29 +198,26 @@ export async function POST(request: Request) {
       .from('payments')
       .insert({
         receipt_number: receiptNumber,
-        student_id,
-        student_account_id,
-        payment_method_id,
-        amount,
-        payment_date: payment_date || new Date().toISOString().split('T')[0],
-        transaction_reference,
-        notes,
+        student_id: validatedData.student_id,
+        student_account_id: validatedData.student_account_id || null,
+        payment_method_id: validatedData.payment_method_id,
+        amount: validatedData.amount,
+        payment_date: validatedData.payment_date || new Date().toISOString().split('T')[0],
+        transaction_reference: validatedData.transaction_reference || null,
+        notes: validatedData.notes || null,
         received_by: authResult.userId
       })
       .select()
       .single()
 
     if (paymentError) {
-      console.error('Error creating payment:', paymentError)
-      return NextResponse.json({ error: 'Failed to create payment' }, { status: 500 })
+      logger.error('Error creating payment:', paymentError)
+      throw new Error(`Failed to create payment: ${paymentError.message}`)
     }
 
     // Create payment allocations if provided
-    if (allocations && Array.isArray(allocations) && allocations.length > 0) {
-      const allocationRecords = allocations.map((alloc: {
-        invoice_id: string
-        amount: number
-      }) => ({
+    if (validatedData.allocations && validatedData.allocations.length > 0) {
+      const allocationRecords = validatedData.allocations.map(alloc => ({
         payment_id: payment.id,
         invoice_id: alloc.invoice_id,
         amount: alloc.amount
@@ -257,10 +228,10 @@ export async function POST(request: Request) {
         .insert(allocationRecords)
 
       if (allocError) {
-        console.error('Error creating payment allocations:', allocError)
+        logger.error('Error creating payment allocations:', allocError)
         // Rollback: delete the payment
         await supabase.from('payments').delete().eq('id', payment.id)
-        return NextResponse.json({ error: 'Failed to allocate payment' }, { status: 500 })
+        throw new Error(`Failed to allocate payment: ${allocError.message}`)
       }
     }
 
@@ -329,20 +300,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, data: completePayment }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error in POST /api/admin/finance/payments:', error)
-    
-    // Handle missing table gracefully
-    if (error?.message?.includes('relation') || error?.code === '42P01') {
-      return NextResponse.json({ 
-        error: 'Payments table not yet configured',
-        note: 'Please set up the payments table in the database'
-      }, { status: 500 })
-    }
-    
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error?.message || 'Unknown error'
-    }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error)
   }
 }

@@ -9,12 +9,20 @@ import { z } from 'zod';
  */
 export const createPaymentSchema = z.object({
   student_id: z.string().uuid('Invalid student ID'),
+  student_account_id: z.string().uuid('Invalid student account ID').optional().nullable(),
   amount: z.number().positive('Amount must be positive'),
-  payment_date: z.string().date('Invalid payment date'),
+  payment_date: z.string().date('Invalid payment date').optional(),
   payment_method_id: z.string().uuid('Invalid payment method ID'),
+  transaction_reference: z.string().max(100).optional().nullable(),
   reference_number: z.string().max(100).optional().nullable(),
   notes: z.string().max(500).optional().nullable(),
   academic_year_id: z.string().uuid('Invalid academic year ID').optional(),
+  allocations: z.array(
+    z.object({
+      invoice_id: z.string().uuid('Invalid invoice ID'),
+      amount: z.number().positive('Allocation amount must be positive'),
+    })
+  ).optional(),
 });
 
 /**

@@ -1,10 +1,13 @@
 /**
  * Current User API
  * GET /api/auth/me - Get current authenticated user
+ * Updated: 2025-12-05
  */
 
 import { NextResponse } from 'next/server'
 import { createClientFromRequest } from '@/lib/supabase/server'
+import { handleApiError, AuthenticationError } from '@/lib/api/errors'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: Request) {
   try {
@@ -13,7 +16,7 @@ export async function GET(request: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      throw new AuthenticationError('Not authenticated')
     }
 
     // Get profile info
@@ -24,8 +27,8 @@ export async function GET(request: Request) {
       .maybeSingle()
 
     if (profileError) {
-      console.error('Error fetching profile:', profileError)
-      return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
+      logger.error('Error fetching profile:', profileError)
+      throw new Error(`Failed to fetch profile: ${profileError.message}`)
     }
 
     return NextResponse.json({
@@ -37,7 +40,6 @@ export async function GET(request: Request) {
       }
     })
   } catch (error) {
-    console.error('Error in /api/auth/me:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(error)
   }
 }
