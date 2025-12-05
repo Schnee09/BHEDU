@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { createServiceClient } from '@/lib/supabase/server'
 import { ALLOWED_TABLES } from '../tables/route'
+import { handleApiError, ValidationError } from '@/lib/api/errors'
 
 type Params = { params: Promise<{ table: string }> }
 
@@ -18,22 +19,23 @@ function validateTable(table: string) {
 }
 
 export async function GET(request: Request, ctx: Params) {
-  const authResult = await adminAuth(request)
-  if (!authResult.authorized) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  try {
+    const authResult = await adminAuth(request)
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
+    }
 
-  const { table } = await ctx.params
-  if (!validateTable(table)) {
-    return NextResponse.json({ error: 'Table not allowed' }, { status: 400 })
-  }
+    const { table } = await ctx.params
+    if (!validateTable(table)) {
+      throw new ValidationError(`Table '${table}' is not allowed or does not exist`)
+    }
 
-  // Use service client to bypass RLS (admin already authenticated)
-  const supabase = createServiceClient()
-  const { searchParams } = new URL(request.url)
-  const page = parseInt(searchParams.get('page') || '1', 10)
-  const limit = parseInt(searchParams.get('limit') || '25', 10)
-  const offset = (page - 1) * limit
+    // Use service client to bypass RLS (admin already authenticated)
+    const supabase = createServiceClient()
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '25', 10)))
+    const offset = (page - 1) * limit
   // For MVP, we won’t server-filter by q (it varies by columns). Client can filter the JSON.
 
   // Try ordering by created_at then fall back to id
@@ -59,92 +61,120 @@ export async function GET(request: Request, ctx: Params) {
     error = res.error
   }
 
-  if (error) {
-    console.error('Admin Data Viewer GET error:', error)
-    return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 })
-  }
-
-  return NextResponse.json({
-    success: true,
-    data: data || [],
-    pagination: {
-      page,
-      limit,
-      total: count || 0,
-      pages: Math.ceil((count || 0) / limit)
+    if (error) {
+      console.error('Admin Data Viewer GET error:', error)
+      throw new Error(`Failed to fetch data from table '${table}'`)
     }
-  })
+
+    return NextResponse.json({
+      success: true,
+      data: data || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
+      }
+    })
+  } catch (error) {
+    return handleApiError(error)
+  }
 }
 
 export async function POST(request: Request, ctx: Params) {
-  const authResult = await adminAuth(request)
-  if (!authResult.authorized) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  try {
+    const authResult = await adminAuth(request)
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
+    }
 
-  const { table } = await ctx.params
-  if (!validateTable(table)) {
-    return NextResponse.json({ error: 'Table not allowed' }, { status: 400 })
-  }
+    const { table } = await ctx.params
+    if (!validateTable(table)) {
+      throw new ValidationError(`Table '${table}' is not allowed or does not exist`)
+    }
 
-  const supabase = createServiceClient()
-  const body = await request.json()
-  const { data, error } = await supabase.from(table).insert(body).select().single()
-  if (error) {
-    console.error('Admin Data Viewer POST error:', error)
-    return NextResponse.json({ error: 'Failed to create record' }, { status: 500 })
+    const supabase = createServiceClient()
+    const body = await request.json()
+    
+    if (!body || typeof body !== 'object') {
+      throw new ValidationError('Request body must be a valid JSON object')
+    }
+
+    const { data, error } = await supabase.from(table).insert(body).select().single()
+    if (error) {
+      console.error('Admin Data Viewer POST error:', error)
+      throw new Error(`Failed to create record in table '${table}': ${error.message}`)
+    }
+    return NextResponse.json({ success: true, data }, { status: 201 })
+  } catch (error) {
+    return handleApiError(error)
   }
-  return NextResponse.json({ success: true, data })
 }
 
 export async function PUT(request: Request, ctx: Params) {
-  const authResult = await adminAuth(request)
-  if (!authResult.authorized) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  try {
+    const authResult = await adminAuth(request)
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
+    }
 
-  const { table } = await ctx.params
-  if (!validateTable(table)) {
-    return NextResponse.json({ error: 'Table not allowed' }, { status: 400 })
-  }
+    const { table } = await ctx.params
+    if (!validateTable(table)) {
+      throw new ValidationError(`Table '${table}' is not allowed or does not exist`)
+    }
 
-  const supabase = createServiceClient()
-  const body = await request.json()
-  const { id, ...updates } = body as { id?: string | number; [k: string]: unknown }
-  if (id === undefined || id === null) {
-    return NextResponse.json({ error: 'Missing id' }, { status: 400 })
-  }
+    const supabase = createServiceClient()
+    const body = await request.json()
+    const { id, ...updates } = body as { id?: string | number; [k: string]: unknown }
+    
+    if (id === undefined || id === null) {
+      throw new ValidationError('Missing required field: id')
+    }
 
-  const { data, error } = await supabase.from(table).update(updates).eq('id', id).select().single()
-  if (error) {
-    console.error('Admin Data Viewer PUT error:', error)
-    return NextResponse.json({ error: 'Failed to update record' }, { status: 500 })
+    if (Object.keys(updates).length === 0) {
+      throw new ValidationError('No fields to update')
+    }
+
+    const { data, error } = await supabase.from(table).update(updates).eq('id', id).select().single()
+    if (error) {
+      console.error('Admin Data Viewer PUT error:', error)
+      throw new Error(`Failed to update record in table '${table}': ${error.message}`)
+    }
+    return NextResponse.json({ success: true, data })
+  } catch (error) {
+    return handleApiError(error)
   }
-  return NextResponse.json({ success: true, data })
 }
 
 export async function DELETE(request: Request, ctx: Params) {
-  const authResult = await adminAuth(request)
-  if (!authResult.authorized) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  try {
+    const authResult = await adminAuth(request)
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
+    }
 
-  const { table } = await ctx.params
-  if (!validateTable(table)) {
-    return NextResponse.json({ error: 'Table not allowed' }, { status: 400 })
-  }
+    const { table } = await ctx.params
+    if (!validateTable(table)) {
+      throw new ValidationError(`Table '${table}' is not allowed or does not exist`)
+    }
 
-  const { searchParams } = new URL(request.url)
-  const id = searchParams.get('id')
-  if (!id) {
-    return NextResponse.json({ error: 'Missing id' }, { status: 400 })
-  }
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    
+    if (!id) {
+      throw new ValidationError('Missing required query parameter: id')
+    }
 
-  const supabase = createServiceClient()
-  const { error } = await supabase.from(table).delete().eq('id', id)
-  if (error) {
-    console.error('Admin Data Viewer DELETE error:', error)
-    return NextResponse.json({ error: 'Failed to delete record' }, { status: 500 })
+    const supabase = createServiceClient()
+    const { error } = await supabase.from(table).delete().eq('id', id)
+    
+    if (error) {
+      console.error('Admin Data Viewer DELETE error:', error)
+      throw new Error(`Failed to delete record from table '${table}': ${error.message}`)
+    }
+    
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return handleApiError(error)
   }
-  return NextResponse.json({ success: true })
 }

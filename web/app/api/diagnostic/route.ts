@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
       
       diagnostics.tests.academicYears = {
         success: !error,
-        hasData: !!data,
+        hasData: !!_data,
         error: error?.message || null
       }
     } catch (error: any) {
@@ -159,7 +159,7 @@ export async function GET(req: NextRequest) {
       
       diagnostics.tests.classes = {
         success: !error,
-        hasData: !!data,
+        hasData: !!_data,
         error: error?.message || null
       }
     } catch (error: any) {

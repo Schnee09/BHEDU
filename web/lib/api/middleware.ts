@@ -21,6 +21,20 @@ export type AuthenticatedHandler = (
 ) => Promise<Response>;
 
 /**
+ * Wrap any route handler with error handling
+ * This ensures all errors are caught and returned as proper responses
+ */
+export function withErrorHandler(handler: RouteHandler): RouteHandler {
+  return async (request, context) => {
+    try {
+      return await handler(request, context);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  };
+}
+
+/**
  * Require authentication for a route handler
  */
 export function withAuth(handler: AuthenticatedHandler): RouteHandler {
