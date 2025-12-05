@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {

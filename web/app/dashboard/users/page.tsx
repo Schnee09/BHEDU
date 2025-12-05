@@ -14,11 +14,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api/client';
 import { logger } from '@/lib/logger';
-import { createAuditLog, AuditActions } from '@/lib/audit';
 import { 
   Button, 
-  Card, 
-  CardHeader, 
+  Card,
   Badge, 
   LoadingState, 
   EmptyState, 

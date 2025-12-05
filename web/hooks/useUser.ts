@@ -6,7 +6,6 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClientFromRequest } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 
 export interface User {

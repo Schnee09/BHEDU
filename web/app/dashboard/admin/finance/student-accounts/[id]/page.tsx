@@ -75,7 +75,7 @@ interface Payment {
 }
 
 export default function StudentAccountDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const router = useRouter()
+  const _router = useRouter()
   const resolvedParams = use(params)
   const [account, setAccount] = useState<StudentAccount | null>(null)
   const [invoices, setInvoices] = useState<Invoice[]>([])

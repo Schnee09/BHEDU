@@ -20,8 +20,7 @@ import {
   Button, 
   Card, 
   CardHeader,
-  Badge, 
-  LoadingState, 
+  Badge,
   EmptyState, 
   Input, 
   Table,
@@ -115,6 +114,7 @@ export default function StudentsPage() {
   }, [error]);
   
   // Bulk archive mutation
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { mutate: archiveStudent, loading: archiving } = useMutation('/api/admin/students', 'DELETE');
   
   const students = data?.students || [];

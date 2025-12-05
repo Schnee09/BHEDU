@@ -38,7 +38,7 @@ describe('Database Helpers', () => {
       const supabase = await createClient();
       
       // Call with dummy UUID - we're testing function existence, not auth
-      const { error } = await supabase.rpc('is_admin', {
+      const { error: _error } = await supabase.rpc('is_admin', {
         uid: '00000000-0000-0000-0000-000000000000'
       });
 
@@ -50,7 +50,7 @@ describe('Database Helpers', () => {
       it.skip('should have is_teacher RPC function available (integration test)', async () => {
       const supabase = await createClient();
       
-      const { error } = await supabase.rpc('is_teacher', {
+      const { error: _error2 } = await supabase.rpc('is_teacher', {
         uid: '00000000-0000-0000-0000-000000000000'
       });
 
@@ -60,7 +60,7 @@ describe('Database Helpers', () => {
       it.skip('should have is_enrolled_in_class RPC function available (integration test)', async () => {
       const supabase = await createClient();
       
-      const { error } = await supabase.rpc('is_enrolled_in_class', {
+      const { error: _error3 } = await supabase.rpc('is_enrolled_in_class', {
         class_id: '00000000-0000-0000-0000-000000000000',
         student_id: '00000000-0000-0000-0000-000000000000'
       });

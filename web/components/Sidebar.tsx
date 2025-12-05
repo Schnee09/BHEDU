@@ -131,21 +131,21 @@ export default function Sidebar() {
   const { profile } = useProfile();
   const pathname = usePathname();
   const router = useRouter();
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [collapsedSections, setCollapsedSections] = useState<string[]>([]);
+  const [_showProfileMenu, _setShowProfileMenu] = useState(false);
+  const [_collapsedSections, setCollapsedSections] = useState<string[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (!profile) return null;
 
   const role = (profile.role ?? "student") as "admin" | "teacher" | "student";
 
-  const handleLogout = async () => {
+  const _handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
   };
 
-  const toggleSection = (title: string) => {
+  const _toggleSection = (title: string) => {
     setCollapsedSections(prev => 
       prev.includes(title) 
         ? prev.filter(t => t !== title)

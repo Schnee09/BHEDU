@@ -4,13 +4,6 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api/client";
 import { showToast } from "@/components/ToastProvider";
 
-interface GradeComponent {
-  type: string;
-  name_vi: string;
-  name_en: string;
-  weight: number;
-}
-
 interface Student {
   id: string;
   student_code: string;

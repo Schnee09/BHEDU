@@ -103,6 +103,7 @@ export default function GradeEntryPageModern() {
     data: assignmentsData, 
     loading: assignmentsLoading,
     error: assignmentsError,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     refetch: refetchAssignments 
   } = useFetch<{ assignments: Assignment[] }>(
     selectedClass ? `/api/grades/assignments?classId=${selectedClass}&published=true` : ''

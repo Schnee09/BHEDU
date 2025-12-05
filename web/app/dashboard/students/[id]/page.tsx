@@ -271,7 +271,6 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {/* eslint-disable @typescript-eslint/no-explicit-any */}
               {attendance.map((a: any) => (
                 <tr key={a.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">{new Date(a.date).toLocaleDateString()}</td>
@@ -307,7 +306,6 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {/* eslint-disable @typescript-eslint/no-explicit-any */}
               {grades.map((g: any) => (
                 <tr key={g.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-900">{g.assignments?.title ?? g.assignment_id}</td>

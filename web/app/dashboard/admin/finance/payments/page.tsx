@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from 'react'
 import { apiFetch } from '@/lib/api/client'
-import Link from 'next/link'
 
 interface Payment {
   id: string

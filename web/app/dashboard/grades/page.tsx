@@ -12,7 +12,7 @@
 
 import Link from "next/link";
 import { useUser } from "@/hooks";
-import { Card, CardHeader, LoadingState } from "@/components/ui";
+import { Card, LoadingState } from "@/components/ui";
 
 interface NavCard {
   href: string;

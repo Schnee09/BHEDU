@@ -9,7 +9,7 @@
  * - Authentication events
  */
 
-import { logger, logAdminAction } from './logger';
+import { logger } from './logger';
 
 export interface AuditLogEntry {
   id?: string;

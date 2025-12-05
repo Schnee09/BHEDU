@@ -1,11 +1,11 @@
-﻿/**
+/**
  * Payments API
  * Records and manages payments from students
  */
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
@@ -75,11 +75,12 @@ export async function GET(request: Request) {
       query = query.eq('payment_method_id', paymentMethodId)
     }
 
-    let { data, error } = await query
+    // eslint-disable-next-line prefer-const
+    let { data, error: _error } = await query
 
     // Fallback: fetch without embedded joins and batch fetch related data
-    if (error) {
-      console.warn('Embedded join failed, using fallback:', error.message)
+    if (_error) {
+      console.warn('Embedded join failed, using fallback:', _error.message)
       
       let fallbackQuery = supabase
         .from('payments')
@@ -264,7 +265,8 @@ export async function POST(request: Request) {
     }
 
     // Fetch complete payment with all details
-    let { data: completePayment, error: fetchError } = await supabase
+    // eslint-disable-next-line prefer-const
+    let { data: completePayment, error: _fetchError } = await supabase
       .from('payments')
       .select(`
         *,
@@ -287,7 +289,7 @@ export async function POST(request: Request) {
       .single()
 
     // Fallback if embedded joins fail
-    if (fetchError) {
+    if (_fetchError) {
       const { data: paymentOnly } = await supabase
         .from('payments')
         .select('*')

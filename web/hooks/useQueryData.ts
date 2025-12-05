@@ -30,7 +30,7 @@ interface UseQueryOptions<T> {
   onError?: (error: string) => void;
 }
 
-interface UseMutationOptions<TData, TVariables> {
+interface UseMutationOptions<TData, _TVariables> {
   onSuccess?: (data: TData) => void;
   onError?: (error: string) => void;
   onSettled?: () => void;

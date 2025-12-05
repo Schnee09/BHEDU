@@ -42,7 +42,6 @@ export default function ProfilePage() {
         return;
       }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
         .from("profiles")
          .update({

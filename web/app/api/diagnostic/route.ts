@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
     // Test 2: Database connection
     try {
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('profiles')
         .select('count')
         .limit(1)
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
     // Test 3: Check if new columns exist
     try {
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('grades')
         .select('component_type, semester, academic_year_id')
         .limit(1)
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
 
     // Test 4: Check profiles table
     try {
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('profiles')
         .select('student_code, grade_level')
         .limit(1)
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
 
     // Test 5: Check if grade_component_configs exists
     try {
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('grade_component_configs')
         .select('count')
         .limit(1)
@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
 
     // Test 6: Check if conduct_grades exists
     try {
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('conduct_grades')
         .select('count')
         .limit(1)
@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
 
     // Test 7: Check academic_years
     try {
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('academic_years')
         // schema uses `name` for the academic year label (e.g. '2024-2025')
         .select('id, name')
@@ -150,7 +150,7 @@ export async function GET(req: NextRequest) {
 
     // Test 8: Check classes
     try {
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('classes')
         // classes table uses `name` for the class label
         .select('id, name')

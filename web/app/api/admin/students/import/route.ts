@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Bulk Student Import API
  * POST /api/admin/students/import
  * 
@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 import type { StudentImportRow } from '@/lib/importService'

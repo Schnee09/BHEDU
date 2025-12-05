@@ -1,11 +1,11 @@
-﻿/**
+/**
  * School Settings API
  * GET /api/admin/settings - Get all settings or by category
  * PUT /api/admin/settings - Update settings
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(request: Request) {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     }
 
   const supabase = createClientFromRequest(request as any)
-    const { searchParams } = new URL(request.url)
+    const { searchParams: _searchParams } = new URL(request.url)
 
     // Try to query settings - handle different schema versions gracefully
     const { data: settings, error } = await supabase

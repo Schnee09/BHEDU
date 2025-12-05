@@ -179,7 +179,7 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
 }
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ label, description, error, className = '', ...props }, ref) => {
+  ({ label, description, error, className: _className = '', ...props }, ref) => {
     return (
       <div>
         <label className="flex items-start gap-3 cursor-pointer group">
@@ -400,7 +400,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   error,
   hint,
   disabled = false,
-  preview = false,
+  preview: _preview = false,
 }) => {
   const [dragActive, setDragActive] = React.useState(false);
   const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);

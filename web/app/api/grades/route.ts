@@ -7,7 +7,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -151,13 +151,14 @@ export async function POST(request: Request) {
     const assignmentIds = [...new Set(gradesData.map(g => g.assignment_id))]
     
     // Try with embedded join first, fallback to separate queries
-    let { data: assignments, error: assignmentError } = await supabase
+    // eslint-disable-next-line prefer-const
+    let { data: assignments, error: _assignmentError } = await supabase
       .from('assignments')
       .select('id, class_id, total_points, classes!inner(teacher_id)')
       .in('id', assignmentIds)
 
     // Fallback if embedded join fails
-    if (assignmentError || !assignments) {
+    if (_assignmentError || !assignments) {
       const { data: assignmentsOnly } = await supabase
         .from('assignments')
         .select('id, class_id, total_points')

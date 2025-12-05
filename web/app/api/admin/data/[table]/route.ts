@@ -8,7 +8,7 @@
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { ALLOWED_TABLES } from '../tables/route'
 
 type Params = { params: Promise<{ table: string }> }

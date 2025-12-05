@@ -5,7 +5,7 @@
 
 import { createClient, createClientFromRequest, createClientFromToken } from '@/lib/supabase/server'
 import type { NextRequest } from 'next/server'
-import { getCached, setCached, cacheConfigs, withCache } from './cache'
+import { getCached, setCached, cacheConfigs } from './cache'
 import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from './rateLimit'
 import { logAuthAttempt, logRateLimitEvent } from './auditLog'
 import { hasPermission, type Resource, type Action } from './permissions'

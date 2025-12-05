@@ -26,7 +26,7 @@ export async function GET(
 
     const supabase = createClientFromRequest(request as any)
     const { searchParams } = new URL(request.url)
-    const academicYear = searchParams.get('academic_year')
+    const _academicYear = searchParams.get('academic_year')
 
     // Get student basic info
     const { data: student, error: studentError } = await supabase
@@ -176,7 +176,7 @@ export async function GET(
     }
 
     // Calculate semester statistics
-    const semesters = Array.from(semesterMap.entries()).map(([key, data]) => {
+    const semesters = Array.from(semesterMap.entries()).map(([_key, data]) => {
       // Calculate subject averages
       const subjects = Array.from(data.subjects.values()).map((subject: any) => {
         const avg = subject.grades.reduce((a: number, b: number) => a + b, 0) / subject.grades.length

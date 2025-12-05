@@ -1,10 +1,10 @@
-﻿/**
+/**
  * Bulk User Import API
  * POST /api/admin/users/import - Import users from CSV
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
+import { createClientFromRequest } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 interface UserImportRow {

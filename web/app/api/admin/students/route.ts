@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    const { data: existingProfile, error: checkError } = await supabase
+    const { data: existingProfile, error: _checkError } = await supabase
       .from("profiles")
       .select("id")
       .eq("email", email)

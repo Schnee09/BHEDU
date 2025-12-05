@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { logger } from '@/lib/logger';
 import { validateTitle, validateContent, validateUUID, ValidationError } from '@/lib/validation';
-import { TableColumns, type Lesson } from '@/lib/database.types';
+import { TableColumns } from '@/lib/database.types';
 
 function computeHmac(key: string, msg: string) {
   return crypto.createHmac('sha256', key).update(msg).digest('hex');

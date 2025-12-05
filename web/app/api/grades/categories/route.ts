@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Assignment Categories API
  * GET/POST /api/grades/categories
  * 
@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
