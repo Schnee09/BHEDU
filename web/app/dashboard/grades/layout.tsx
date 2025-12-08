@@ -1,6 +1,8 @@
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 export default async function GradesSectionLayout({ children }: { children: React.ReactNode }) {
   const auth = await teacherAuth()
   if (!auth.authorized) {

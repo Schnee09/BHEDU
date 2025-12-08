@@ -1,21 +1,22 @@
+/**
+ * Classes API
+ * GET /api/classes - Fetch classes
+ * Updated: 2025-12-08 - Standardized error handling
+ */
+
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
+import { handleApiError, AuthenticationError } from '@/lib/api/errors'
 import { logger } from '@/lib/logger'
 
-/**
- * Lightweight /api/classes handler
- * - If called, delegates to teacher/admin behavior and returns classes JSON
- * - This exists to avoid 404 Non-JSON responses for clients that call /api/classes
- */
 export async function GET(request: Request) {
   try {
     const authResult = await teacherAuth(request)
     if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError(authResult.reason || 'Unauthorized')
     }
 
-    // Use service client to bypass RLS and avoid recursion
     const supabase = createServiceClient()
 
     let query = supabase
@@ -30,13 +31,12 @@ export async function GET(request: Request) {
     const { data: classes, error } = await query
 
     if (error) {
-      logger.error('Failed to fetch classes (index):', { error })
-      return NextResponse.json({ error: 'Failed to fetch classes', details: error.message }, { status: 500 })
+      logger.error('Failed to fetch classes:', { error })
+      throw new Error(`Database error: ${error.message}`)
     }
 
     return NextResponse.json({ success: true, classes: classes || [] })
-  } catch (err: any) {
-    logger.error('GET /api/classes error', { error: err })
-    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error)
   }
 }

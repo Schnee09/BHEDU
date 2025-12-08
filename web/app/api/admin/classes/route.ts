@@ -1,13 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Admin Classes API
+ * GET/POST /api/admin/classes
+ * Updated: 2025-12-08 - Standardized error handling
+ */
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { adminAuth } from "@/lib/auth/adminAuth";
+import { handleApiError, AuthenticationError, ValidationError } from "@/lib/api/errors";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await adminAuth(request);
+    if (!authResult.authorized) {
+      throw new AuthenticationError(authResult.reason || "Unauthorized");
+    }
+
+    const supabase = createServiceClient();
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search");
     const teacherId = searchParams.get("teacher_id");
@@ -21,7 +31,10 @@ export async function GET(request: NextRequest) {
     if (teacherId) query = query.eq("teacher_id", teacherId);
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      logger.error("Classes fetch error:", { error });
+      throw new Error(`Database error: ${error.message}`);
+    }
 
     const classesWithStats = await Promise.all(
       (data || []).map(async (cls) => {
@@ -44,25 +57,24 @@ export async function GET(request: NextRequest) {
       classes: classesWithStats,
       total: classesWithStats.length,
     });
-  } catch (error: any) {
-    console.error("[API] Classes error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await adminAuth(request);
+    if (!authResult.authorized) {
+      throw new AuthenticationError(authResult.reason || "Unauthorized");
+    }
+
+    const supabase = createServiceClient();
     const body = await request.json();
     const { name, teacher_id } = body;
 
     if (!name) {
-      return NextResponse.json(
-        { success: false, error: "Class name is required" },
-        { status: 400 }
-      );
+      throw new ValidationError("Class name is required");
     }
 
     const { data, error } = await supabase
@@ -71,14 +83,13 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      logger.error("Create class error:", { error });
+      throw new Error(`Database error: ${error.message}`);
+    }
 
     return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    console.error("[API] Create class error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }

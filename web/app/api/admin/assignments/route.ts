@@ -1,13 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Admin Assignments API
+ * GET/POST /api/admin/assignments
+ * Updated: 2025-12-08 - Standardized error handling
+ */
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { adminAuth } from "@/lib/auth/adminAuth";
+import { handleApiError, AuthenticationError, ValidationError } from "@/lib/api/errors";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await adminAuth(request);
+    if (!authResult.authorized) {
+      throw new AuthenticationError(authResult.reason || "Unauthorized");
+    }
+
+    const supabase = createServiceClient();
     const searchParams = request.nextUrl.searchParams;
     const classId = searchParams.get("class_id");
     const categoryId = searchParams.get("category_id");
@@ -22,7 +32,10 @@ export async function GET(request: NextRequest) {
     if (categoryId) query = query.eq("category_id", categoryId);
 
     const { data: assignmentData, error: assignmentError } = await query;
-    if (assignmentError) throw assignmentError;
+    if (assignmentError) {
+      logger.error("Assignments fetch error:", { error: assignmentError });
+      throw new Error(`Database error: ${assignmentError.message}`);
+    }
 
     if (!assignmentData || assignmentData.length === 0) {
       return NextResponse.json({
@@ -64,25 +77,24 @@ export async function GET(request: NextRequest) {
       data: enrichedData,
       total: enrichedData.length,
     });
-  } catch (error: any) {
-    console.error("[API] Assignments error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await adminAuth(request);
+    if (!authResult.authorized) {
+      throw new AuthenticationError(authResult.reason || "Unauthorized");
+    }
+
+    const supabase = createServiceClient();
     const body = await request.json();
     const { class_id, category_id, title, description, due_date, max_points = 100 } = body;
 
     if (!class_id || !title) {
-      return NextResponse.json(
-        { success: false, error: "Class ID and title are required" },
-        { status: 400 }
-      );
+      throw new ValidationError("Class ID and title are required");
     }
 
     const { data, error } = await supabase
@@ -98,14 +110,13 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      logger.error("Create assignment error:", { error });
+      throw new Error(`Database error: ${error.message}`);
+    }
 
     return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    console.error("[API] Create assignment error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }

@@ -1,13 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Admin Attendance API
+ * GET/POST /api/admin/attendance
+ * Updated: 2025-12-08 - Standardized error handling
+ */
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { adminAuth } from "@/lib/auth/adminAuth";
+import { handleApiError, AuthenticationError, ValidationError } from "@/lib/api/errors";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await adminAuth(request);
+    if (!authResult.authorized) {
+      throw new AuthenticationError(authResult.reason || "Unauthorized");
+    }
+
+    const supabase = createServiceClient();
     const searchParams = request.nextUrl.searchParams;
     const studentId = searchParams.get("student_id");
     const classId = searchParams.get("class_id");
@@ -27,7 +37,10 @@ export async function GET(request: NextRequest) {
     if (status) query = query.eq("status", status);
 
     const { data: attendanceData, error: attendanceError } = await query;
-    if (attendanceError) throw attendanceError;
+    if (attendanceError) {
+      logger.error("Attendance fetch error:", { error: attendanceError });
+      throw new Error(`Database error: ${attendanceError.message}`);
+    }
 
     if (!attendanceData || attendanceData.length === 0) {
       return NextResponse.json({
@@ -69,25 +82,24 @@ export async function GET(request: NextRequest) {
       data: enrichedData,
       total: enrichedData.length,
     });
-  } catch (error: any) {
-    console.error("[API] Attendance error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await adminAuth(request);
+    if (!authResult.authorized) {
+      throw new AuthenticationError(authResult.reason || "Unauthorized");
+    }
+
+    const supabase = createServiceClient();
     const body = await request.json();
     const { student_id, class_id, date, status, check_in_time, check_out_time, notes, marked_by } = body;
 
     if (!student_id || !class_id || !date || !status) {
-      return NextResponse.json(
-        { success: false, error: "Student ID, Class ID, date, and status are required" },
-        { status: 400 }
-      );
+      throw new ValidationError("Student ID, Class ID, date, and status are required");
     }
 
     // Check if record exists for this student/class/date
@@ -108,7 +120,10 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        logger.error("Update attendance error:", { error });
+        throw new Error(`Database error: ${error.message}`);
+      }
       return NextResponse.json({ success: true, data });
     } else {
       // Create new record
@@ -127,14 +142,13 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        logger.error("Create attendance error:", { error });
+        throw new Error(`Database error: ${error.message}`);
+      }
       return NextResponse.json({ success: true, data });
     }
-  } catch (error: any) {
-    console.error("[API] Create/update attendance error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }

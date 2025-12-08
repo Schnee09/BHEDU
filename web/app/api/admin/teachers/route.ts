@@ -1,11 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Admin Teachers API
+ * GET/POST /api/admin/teachers
+ * Updated: 2025-12-08 - Standardized error handling
+ */
 
-// Supabase admin client (bypasses RLS)
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { adminAuth } from "@/lib/auth/adminAuth";
+import { handleApiError, AuthenticationError, ValidationError } from "@/lib/api/errors";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/admin/teachers
@@ -13,10 +16,16 @@ const supabase = createClient(
  */
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await adminAuth(request);
+    if (!authResult.authorized) {
+      throw new AuthenticationError(authResult.reason || "Unauthorized");
+    }
+
+    const supabase = createServiceClient();
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search");
 
-    // Build query - profiles table columns: id, full_name, email, role, date_of_birth, phone, address, created_at
+    // Build query
     let query = supabase
       .from("profiles")
       .select("id, full_name, email, role, date_of_birth, phone, address, created_at")
@@ -31,11 +40,8 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      console.error("[API] Teachers fetch error:", error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      logger.error("Teachers fetch error:", { error });
+      throw new Error(`Database error: ${error.message}`);
     }
 
     // Get class counts for each teacher
@@ -65,12 +71,8 @@ export async function GET(request: NextRequest) {
         total_pages: 1
       }
     });
-  } catch (error: any) {
-    console.error("[API] Teachers error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }
 
@@ -80,15 +82,18 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await adminAuth(request);
+    if (!authResult.authorized) {
+      throw new AuthenticationError(authResult.reason || "Unauthorized");
+    }
+
+    const supabase = createServiceClient();
     const body = await request.json();
     const { email, full_name, date_of_birth, phone } = body;
 
     // Validation
     if (!email || !full_name) {
-      return NextResponse.json(
-        { success: false, error: "Email and full name are required" },
-        { status: 400 }
-      );
+      throw new ValidationError("Email and full name are required");
     }
 
     // Create auth user first
@@ -98,7 +103,10 @@ export async function POST(request: NextRequest) {
       email_confirm: true,
     });
 
-    if (authError) throw authError;
+    if (authError) {
+      logger.error("Create teacher auth error:", { error: authError });
+      throw new Error(`Auth error: ${authError.message}`);
+    }
 
     // Create profile
     const { data: profile, error: profileError } = await supabase
@@ -114,17 +122,16 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (profileError) throw profileError;
+    if (profileError) {
+      logger.error("Create teacher profile error:", { error: profileError });
+      throw new Error(`Database error: ${profileError.message}`);
+    }
 
     return NextResponse.json({
       success: true,
       data: profile,
     });
-  } catch (error: any) {
-    console.error("[API] Create teacher error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }

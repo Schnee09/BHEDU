@@ -8,7 +8,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { createClientFromRequest } from '@/lib/supabase/server'
 import { handleApiError, ValidationError } from '@/lib/api/errors'
-import { validateQuery } from '@/lib/api/validation'
 import { createPaymentSchema } from '@/lib/schemas/finance'
 import { logger } from '@/lib/logger'
 

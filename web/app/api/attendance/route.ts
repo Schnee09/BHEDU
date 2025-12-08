@@ -1,88 +1,60 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Attendance API
+ * GET /api/attendance - Fetch attendance records
+ * Updated: 2025-12-08 - Standardized error handling
+ */
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { teacherAuth } from "@/lib/auth/adminAuth";
+import { handleApiError, AuthenticationError } from "@/lib/api/errors";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
-    // Get auth token from header
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Use standardized auth
+    const authResult = await teacherAuth(request);
+    if (!authResult.authorized) {
+      throw new AuthenticationError(authResult.reason || "Unauthorized");
     }
 
-    const token = authHeader.replace("Bearer ", "");
+    const supabase = createServiceClient();
 
-    // Create client with user's token
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    // Get user from token
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, role")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-
-    // Build base query (don't embed classes join here because FK name may vary)
+    // Build base query
     let query = supabase
       .from("attendance")
       .select(`id, class_id, student_id, date, status`)
       .order("date", { ascending: false });
 
-    if (profile.role === "admin") {
+    if (authResult.userRole === "admin") {
       // Admin sees all
-    } else if (profile.role === "teacher") {
+    } else if (authResult.userRole === "teacher") {
       // Teacher sees own classes
       const { data: classes } = await supabase
         .from("classes")
         .select("id")
-        .eq("teacher_id", profile.id);
+        .eq("teacher_id", authResult.userId);
 
       const classIds = classes?.map((c) => c.id) || [];
       if (classIds.length === 0) {
-        return NextResponse.json({ data: [] });
+        return NextResponse.json({ success: true, data: [] });
       }
       query = query.in("class_id", classIds);
-    } else if (profile.role === "student") {
+    } else if (authResult.userRole === "student") {
       // Student sees own attendance
-      query = query.eq("student_id", profile.id);
+      query = query.eq("student_id", authResult.userId);
     }
 
     const { data, error } = await query;
 
     if (error) {
-      console.error("[API] Attendance query error:", error);
-      return NextResponse.json({ 
-        error: error.message,
-        details: error.details,
-        code: error.code,
-        hint: error.hint
-      }, { status: 500 });
+      logger.error("[API] Attendance query error:", { error });
+      throw new Error(`Database error: ${error.message}`);
     }
 
     // If no attendance records, return empty array
     if (!data || data.length === 0) {
-      return NextResponse.json({ data: [] });
+      return NextResponse.json({ success: true, data: [] });
     }
 
     // Batch fetch profile names and class names to avoid ambiguous embedded relationships
@@ -130,12 +102,8 @@ export async function GET(request: NextRequest) {
       class_name: classesMap[record.class_id]?.name || 'Unknown'
     }));
 
-    return NextResponse.json({ data: attendance });
-  } catch (error: any) {
-    console.error("[API] Attendance unexpected error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true, data: attendance });
+  } catch (error) {
+    return handleApiError(error);
   }
 }
