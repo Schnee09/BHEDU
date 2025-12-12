@@ -31,18 +31,54 @@ interface PerformanceMetrics {
 const isDev = process.env.NODE_ENV === 'development';
 
 /**
+ * Safely serialize values for logging
+ */
+function safeStringify(value: unknown): string {
+  if (value === null || value === undefined) {
+    return String(value);
+  }
+  
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  
+  if (value instanceof Error) {
+    return `${value.name}: ${value.message}`;
+  }
+  
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      // Fallback for circular references or non-serializable objects
+      return Object.prototype.toString.call(value);
+    }
+  }
+  
+  return String(value);
+}
+
+/**
  * Format log output based on environment
  */
 function formatLog(level: LogLevel, msg: string, meta?: Record<string, unknown>): string {
   const timestamp = new Date().toISOString();
   
+  // Safely serialize metadata
+  const safeMeta: Record<string, string> = {};
+  if (meta && Object.keys(meta).length > 0) {
+    for (const [key, value] of Object.entries(meta)) {
+      safeMeta[key] = safeStringify(value);
+    }
+  }
+  
   if (isDev) {
     // Pretty format for development
-    const metaStr = meta && Object.keys(meta).length > 0 ? JSON.stringify(meta, null, 2) : '';
+    const metaStr = Object.keys(safeMeta).length > 0 ? JSON.stringify(safeMeta, null, 2) : '';
     return `[${level.toUpperCase()}] ${timestamp} - ${msg}\n${metaStr}`;
   } else {
     // JSON format for production (log aggregation)
-    return JSON.stringify({ level, msg, timestamp, ...meta });
+    return JSON.stringify({ level, msg, timestamp, ...safeMeta });
   }
 }
 
@@ -76,9 +112,24 @@ export const logger = {
    * ERROR level - Errors with stack traces
    */
   error: (msg: string, error?: Error | unknown, meta?: Record<string, unknown>) => {
-    const errorData = error instanceof Error 
-      ? { errorName: error.name, errorMessage: error.message, stack: error.stack }
-      : { error: String(error) };
+    let errorData: Record<string, unknown> = {};
+    
+    if (error instanceof Error) {
+      errorData = {
+        errorName: error.name,
+        errorMessage: error.message,
+        stack: error.stack
+      };
+    } else if (error !== null && error !== undefined) {
+      // For non-Error objects, safely convert to string
+      errorData = { error: safeStringify(error) };
+    }
+    
+    // Skip logging rate limit errors - they're expected and handled gracefully
+    const errorMessage = (errorData.errorMessage as string) || (errorData.error as string) || '';
+    if (errorMessage.includes('Rate limit exceeded')) {
+      return;
+    }
     
     console.error(formatLog('error', msg, { ...errorData, ...meta }));
   },

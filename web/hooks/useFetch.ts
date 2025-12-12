@@ -30,7 +30,7 @@ interface UseFetchResult<T> {
  * const { data, loading, error, refetch } = useFetch<User[]>('/api/admin/users');
  */
 export function useFetch<T = any>(
-  url: string,
+  url: string | null,
   options: UseFetchOptions = {}
 ): UseFetchResult<T> {
   const { immediate = true, onSuccess, onError } = options;
@@ -67,7 +67,11 @@ export function useFetch<T = any>(
       const errorMsg = err instanceof Error ? err.message : String(err);
       setError(errorMsg);
       onError?.(errorMsg);
-      logger.error('Fetch error', err, { url });
+      
+      // Don't log rate limit errors - they're expected and handled gracefully
+      if (!errorMsg.includes('Rate limit exceeded')) {
+        logger.error('Fetch error', err, { url });
+      }
     } finally {
       setLoading(false);
     }

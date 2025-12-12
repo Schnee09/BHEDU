@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth';
 
 /**
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
     const { searchParams } = new URL(request.url);
     
     const is_active = searchParams.get('is_active');
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
 
     const { data, error } = await supabase
       .from('fee_types')

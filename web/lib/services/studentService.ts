@@ -269,7 +269,7 @@ export class StudentService {
         assignments (
           id,
           title,
-          total_points,
+          max_points,
           due_date,
           class_id,
           classes (

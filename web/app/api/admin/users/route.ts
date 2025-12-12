@@ -8,7 +8,7 @@
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { sendEmail, generateWelcomeEmail } from '@/lib/email/emailService'
 
 export async function GET(request: Request) {
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
     const { searchParams } = new URL(request.url)
     
     // Get query parameters
@@ -138,8 +138,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Use service client to create user (bypasses RLS)
-    const supabase = createServiceClient()
+  // Use centralized helper to pick service client (admin will get service client)
+  const { supabase } = await getDataClient(request)
 
     // Create user in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({

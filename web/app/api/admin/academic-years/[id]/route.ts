@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth';
 
 /**
@@ -20,7 +20,7 @@ export async function GET(
     }
 
     const resolvedParams = await params;
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
     const { data, error } = await supabase
       .from('academic_years')
       .select('*')
@@ -75,7 +75,7 @@ export async function PATCH(
       );
     }
 
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
 
     // If setting as current, unset any other current year
     if (is_current) {
@@ -137,7 +137,7 @@ export async function DELETE(
     }
 
     const resolvedParams = await params;
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
 
     // Check if year exists
     const { data: existing } = await supabase

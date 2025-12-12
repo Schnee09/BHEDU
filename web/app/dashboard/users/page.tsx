@@ -16,22 +16,24 @@ import { apiFetch } from '@/lib/api/client';
 import { logger } from '@/lib/logger';
 import { 
   Button, 
-  Card,
-  Badge, 
-  LoadingState, 
   EmptyState, 
   Alert, 
   Input, 
-  Table, 
   Modal 
 } from '@/components/ui';
+import { Card, StatCard } from '@/components/ui/Card';
+import { SkeletonTable, SkeletonStatCard } from '@/components/ui/skeleton';
+import { Table } from '@/components/ui/table';
+import Badge from '@/components/ui/badge';
 import { Select, Textarea, Checkbox } from '@/components/ui/form';
+import { Icons } from '@/components/ui/Icons';
+import type { UserRole } from '@/lib/database.types';
 
 interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: UserRole;
   is_active: boolean;
   last_login_at: string | null;
   created_at: string;
@@ -84,7 +86,7 @@ export default function UserManagementPage() {
     email: '',
     password: '',
     full_name: '',
-    role: 'student' as 'admin' | 'teacher' | 'student',
+    role: 'student' as UserRole,
     phone: '',
     department: '',
     student_id: '',
@@ -127,7 +129,7 @@ export default function UserManagementPage() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to fetch users';
       setError(errorMsg);
-      logger.error('Error fetching users', { error: errorMsg });
+      logger.error('Error fetching users', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
       setUsers([]);
     } finally {
       setLoading(false);
@@ -182,7 +184,7 @@ export default function UserManagementPage() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to create user';
       setError(errorMsg);
-      logger.error('Error creating user', { error: errorMsg });
+      logger.error('Error creating user', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -223,7 +225,7 @@ export default function UserManagementPage() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to update user';
       setError(errorMsg);
-      logger.error('Error updating user', { error: errorMsg });
+      logger.error('Error updating user', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -268,7 +270,7 @@ export default function UserManagementPage() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to reset password';
       setError(errorMsg);
-      logger.error('Error resetting password', { error: errorMsg });
+      logger.error('Error resetting password', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -306,7 +308,7 @@ export default function UserManagementPage() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to toggle user status';
       setError(errorMsg);
-      logger.error('Error toggling user status', { error: errorMsg });
+      logger.error('Error toggling user status', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -366,45 +368,63 @@ export default function UserManagementPage() {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card padding="md">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-blue-600">{stats.total_users}</p>
-            <p className="text-sm text-gray-600 mt-1">Total Users</p>
-          </div>
-        </Card>
-        <Card padding="md">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-green-600">{stats.active_users}</p>
-            <p className="text-sm text-gray-600 mt-1">Active</p>
-          </div>
-        </Card>
-        <Card padding="md">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-yellow-600">{stats.teacher_count}</p>
-            <p className="text-sm text-gray-600 mt-1">Teachers</p>
-          </div>
-        </Card>
-        <Card padding="md">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-purple-600">{stats.student_count}</p>
-            <p className="text-sm text-gray-600 mt-1">Students</p>
-          </div>
-        </Card>
+        <StatCard
+          label="Total Users"
+          value={stats.total_users}
+          icon={<Icons.Users className="w-6 h-6" />}
+          color="blue"
+        />
+        <StatCard
+          label="Active"
+          value={stats.active_users}
+          icon={<Icons.Success className="w-6 h-6" />}
+          color="green"
+        />
+        <StatCard
+          label="Teachers"
+          value={stats.teacher_count}
+          icon={<Icons.Teachers className="w-6 h-6" />}
+          color="orange"
+        />
+        <StatCard
+          label="Students"
+          value={stats.student_count}
+          icon={<Icons.Students className="w-6 h-6" />}
+          color="purple"
+        />
       </div>
     );
   };
 
   // Main render
   if (loading && users.length === 0) {
-    return <LoadingState message="Loading users..." />;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <div className="h-10 w-64 bg-stone-200 rounded animate-pulse mb-2" />
+          <div className="h-6 w-96 bg-stone-200 rounded animate-pulse" />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+        </div>
+        
+        <Card>
+          <SkeletonTable rows={10} columns={5} />
+        </Card>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
-        <p className="text-gray-600">Manage users, roles, and permissions</p>
+        <h1 className="text-3xl font-bold text-stone-900 mb-2">User Management</h1>
+        <p className="text-stone-600">Manage users, roles, and permissions</p>
       </div>
 
       {/* Alerts */}
@@ -466,7 +486,7 @@ export default function UserManagementPage() {
           <Button 
             variant="primary" 
             onClick={() => setShowCreateModal(true)}
-            leftIcon={<span>+</span>}
+            leftIcon={<Icons.Add className="w-4 h-4" />}
             fullWidth
           >
             Add User
@@ -477,7 +497,7 @@ export default function UserManagementPage() {
       {/* User Table */}
       {users.length === 0 ? (
         <EmptyState
-          icon={<span className="text-6xl">👥</span>}
+          icon={<Icons.Users className="w-12 h-12 text-stone-400" />}
           title="No users found"
           description="Try adjusting your search or filters"
           action={
@@ -491,24 +511,24 @@ export default function UserManagementPage() {
           }
         />
       ) : (
-        <Card padding="none">
+        <Card className="p-0">
           <Table
             data={users}
             keyExtractor={(user) => user.id}
             columns={[
               {
                 key: 'full_name',
-                label: 'Name',
+                header: 'Name',
                 render: (user) => (
                   <div>
-                    <p className="font-medium text-gray-900">{user.full_name}</p>
-                    <p className="text-sm text-gray-500">{user.email}</p>
+                    <p className="font-medium text-stone-900">{user.full_name}</p>
+                    <p className="text-sm text-stone-500">{user.email}</p>
                   </div>
                 )
               },
               {
                 key: 'role',
-                label: 'Role',
+                header: 'Role',
                 render: (user) => (
                   <Badge variant={getRoleBadgeVariant(user.role)}>
                     {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
@@ -517,7 +537,7 @@ export default function UserManagementPage() {
               },
               {
                 key: 'is_active',
-                label: 'Status',
+                header: 'Status',
                 render: (user) => (
                   <Badge variant={user.is_active ? 'success' : 'default'}>
                     {user.is_active ? 'Active' : 'Inactive'}
@@ -526,9 +546,9 @@ export default function UserManagementPage() {
               },
               {
                 key: 'last_login_at',
-                label: 'Last Login',
+                header: 'Last Login',
                 render: (user) => (
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-stone-600">
                     {user.last_login_at 
                       ? new Date(user.last_login_at).toLocaleDateString() 
                       : 'Never'}
@@ -537,7 +557,7 @@ export default function UserManagementPage() {
               },
               {
                 key: 'actions',
-                label: 'Actions',
+                header: 'Actions',
                 render: (user) => (
                   <div className="flex space-x-2">
                     <Button 
@@ -579,7 +599,7 @@ export default function UserManagementPage() {
           >
             Previous
           </Button>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-stone-600">
             Page {page} of {totalPages}
           </span>
           <Button

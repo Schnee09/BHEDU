@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api/client'
+import { Card, StatCard } from '@/components/ui/Card'
+import { Icons } from "@/components/ui/Icons";
 
 interface DashboardData {
   total_outstanding: number
@@ -104,119 +106,118 @@ export default function FinanceDashboard() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-sm text-gray-600 mb-1">Total Outstanding</div>
-          <div className="text-2xl font-bold text-red-600">
-            {formatCurrency(data.total_outstanding)}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {data.accounts_with_balance} accounts with balance
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-sm text-gray-600 mb-1">Total Collected</div>
-          <div className="text-2xl font-bold text-green-600">
-            {formatCurrency(data.total_collected)}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {data.payment_count} payments received
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-sm text-gray-600 mb-1">Total Invoiced</div>
-          <div className="text-2xl font-bold text-blue-600">
-            {formatCurrency(data.total_invoiced)}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {data.paid_invoices} paid invoices
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-sm text-gray-600 mb-1">Collection Rate</div>
-          <div className="text-2xl font-bold text-purple-600">
-            {collectionRate.toFixed(1)}%
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {data.overdue_invoices} overdue invoices
-          </div>
-        </div>
+        <StatCard
+          label="Total Outstanding"
+          value={formatCurrency(data.total_outstanding)}
+          subtitle={`${data.accounts_with_balance} accounts with balance`}
+          icon={<Icons.Warning className="w-6 h-6" />}
+          color="slate"
+        />
+        <StatCard
+          label="Total Collected"
+          value={formatCurrency(data.total_collected)}
+          subtitle={`${data.payment_count} payments received`}
+          icon={<Icons.Finance className="w-6 h-6" />}
+          color="green"
+        />
+        <StatCard
+          label="Total Invoiced"
+          value={formatCurrency(data.total_invoiced)}
+          subtitle={`${data.paid_invoices} paid invoices`}
+          icon={<Icons.Grades className="w-6 h-6" />}
+          color="blue"
+        />
+        <StatCard
+          label="Collection Rate"
+          value={`${collectionRate.toFixed(1)}%`}
+          subtitle={`${data.overdue_invoices} overdue invoices`}
+          icon={<Icons.Chart className="w-6 h-6" />}
+          color="purple"
+        />
       </div>
 
       {/* Account Status */}
-      <div className="bg-white p-6 rounded-lg shadow mb-6">
-        <h2 className="text-lg font-semibold mb-4">Account Status Overview</h2>
+      <Card className="p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4 text-stone-900">Account Status Overview</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-green-50 rounded">
-            <div className="text-3xl font-bold text-green-600">
+          <div className="text-center p-4 bg-stone-50 rounded">
+            <div className="text-3xl font-bold text-stone-600">
               {data.account_status.paid}
             </div>
-            <div className="text-sm text-gray-600 mt-1">Paid</div>
+            <div className="text-sm text-stone-500 mt-1">Paid</div>
           </div>
-          <div className="text-center p-4 bg-yellow-50 rounded">
-            <div className="text-3xl font-bold text-yellow-600">
+          <div className="text-center p-4 bg-stone-50 rounded">
+            <div className="text-3xl font-bold text-stone-600">
               {data.account_status.partial}
             </div>
-            <div className="text-sm text-gray-600 mt-1">Partial</div>
+            <div className="text-sm text-stone-500 mt-1">Partial</div>
           </div>
-          <div className="text-center p-4 bg-red-50 rounded">
-            <div className="text-3xl font-bold text-red-600">
+          <div className="text-center p-4 bg-stone-50 rounded">
+            <div className="text-3xl font-bold text-stone-600">
               {data.account_status.overdue}
             </div>
-            <div className="text-sm text-gray-600 mt-1">Overdue</div>
+            <div className="text-sm text-stone-500 mt-1">Overdue</div>
           </div>
-          <div className="text-center p-4 bg-gray-50 rounded">
-            <div className="text-3xl font-bold text-gray-600">
+          <div className="text-center p-4 bg-stone-50 rounded">
+            <div className="text-3xl font-bold text-stone-600">
               {data.account_status.pending}
             </div>
-            <div className="text-sm text-gray-600 mt-1">Pending</div>
+            <div className="text-sm text-stone-500 mt-1">Pending</div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold mb-4 text-gray-900">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <Link
             href="/dashboard/finance/fees"
-            className="p-4 border rounded hover:bg-gray-50 text-center"
+            className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all text-center group"
           >
-            <div className="text-2xl mb-2">💵</div>
-            <div className="text-sm font-medium">Manage Fees</div>
+            <div className="p-2 bg-gray-100 rounded-lg w-fit mx-auto mb-3 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+              <Icons.Finance className="w-6 h-6 text-gray-600 group-hover:text-blue-600" />
+            </div>
+            <div className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Manage Fees</div>
           </Link>
           <Link
             href="/dashboard/finance/accounts"
-            className="p-4 border rounded hover:bg-gray-50 text-center"
+            className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all text-center group"
           >
-            <div className="text-2xl mb-2">👥</div>
-            <div className="text-sm font-medium">Student Accounts</div>
+            <div className="p-2 bg-gray-100 rounded-lg w-fit mx-auto mb-3 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+              <Icons.Users className="w-6 h-6 text-gray-600 group-hover:text-purple-600" />
+            </div>
+            <div className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Student Accounts</div>
           </Link>
           <Link
             href="/dashboard/finance/invoices"
-            className="p-4 border rounded hover:bg-gray-50 text-center"
+            className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all text-center group"
           >
-            <div className="text-2xl mb-2">📄</div>
-            <div className="text-sm font-medium">Create Invoice</div>
+            <div className="p-2 bg-gray-100 rounded-lg w-fit mx-auto mb-3 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+              <Icons.Grades className="w-6 h-6 text-gray-600 group-hover:text-blue-600" />
+            </div>
+            <div className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Create Invoice</div>
           </Link>
           <Link
             href="/dashboard/finance/payments"
-            className="p-4 border rounded hover:bg-gray-50 text-center"
+            className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all text-center group"
           >
-            <div className="text-2xl mb-2">💳</div>
-            <div className="text-sm font-medium">Record Payment</div>
+            <div className="p-2 bg-gray-100 rounded-lg w-fit mx-auto mb-3 group-hover:bg-green-50 group-hover:text-green-600 transition-colors">
+              <Icons.CreditCard className="w-6 h-6 text-gray-600 group-hover:text-green-600" />
+            </div>
+            <div className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Record Payment</div>
           </Link>
           <Link
             href="/dashboard/finance/reports"
-            className="p-4 border rounded hover:bg-gray-50 text-center"
+            className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all text-center group"
           >
-            <div className="text-2xl mb-2">📊</div>
-            <div className="text-sm font-medium">View Reports</div>
+            <div className="p-2 bg-gray-100 rounded-lg w-fit mx-auto mb-3 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors">
+              <Icons.Chart className="w-6 h-6 text-gray-600 group-hover:text-orange-600" />
+            </div>
+            <div className="text-sm font-medium text-gray-700 group-hover:text-gray-900">View Reports</div>
           </Link>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

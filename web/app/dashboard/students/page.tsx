@@ -15,7 +15,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useFetch, useMutation, usePagination, useDebounce, useToast } from "@/hooks";
+import { useFetch, useMutation, usePagination, useDebounce, useToast, useUser } from "@/hooks";
+import { apiFetch } from "@/lib/api/client";
 import { 
   Button, 
   Card, 
@@ -28,6 +29,9 @@ import {
   SkeletonTable,
   Modal
 } from "@/components/ui";
+import { StatCard } from "@/components/ui/Card";
+import { Icons } from "@/components/ui/Icons";
+import { PageHeader } from "@/components/Breadcrumb";
 import { ToastContainer } from "@/components/ui/Toast";
 import { logger } from "@/lib/logger";
 import { createAuditLog, AuditActions } from "@/lib/audit";
@@ -56,6 +60,7 @@ interface StudentStats {
 
 export default function StudentsPage() {
   const toast = useToast();
+  const { user } = useUser();
   
   // Search with debounce
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,7 +116,7 @@ export default function StudentsPage() {
       toast.error('Failed to load students', error);
       logger.error('Error loading students', new Error(error));
     }
-  }, [error, toast]);
+  }, [error, toast.error]);
   
   // Bulk archive mutation
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -156,7 +161,7 @@ export default function StudentsPage() {
       // Archive each student
       const results = await Promise.allSettled(
         Array.from(selectedIds).map(id =>
-          fetch(`/api/admin/students/${id}`, { method: 'DELETE' })
+          apiFetch(`/api/admin/students/${id}`, { method: 'DELETE' })
         )
       );
       
@@ -171,9 +176,9 @@ export default function StudentsPage() {
       
       // Audit log
       await createAuditLog({
-        userId: 'current-user-id', // TODO: Get from session
-        userEmail: 'admin@example.com', // TODO: Get from session
-        userRole: 'admin',
+        userId: user?.id || 'unknown',
+        userEmail: user?.email || 'unknown',
+        userRole: user?.role || 'admin',
         action: AuditActions.STUDENT_DELETED,
         resourceType: 'student',
         resourceId: 'bulk',
@@ -183,7 +188,7 @@ export default function StudentsPage() {
       setSelectedIds(new Set());
       refetch();
     } catch (error) {
-      logger.error('Bulk archive error', { error });
+      logger.error('Bulk archive error', error instanceof Error ? error : new Error(String(error)), { originalError: String(error) });
       toast.error('Archive failed', 'Failed to archive students');
     }
   };
@@ -249,43 +254,41 @@ export default function StudentsPage() {
     
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card padding="md" className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-blue-700">{statistics.total_students}</p>
-            <p className="text-sm text-blue-600 mt-1 font-medium">Total Students</p>
-          </div>
-        </Card>
-        <Card padding="md" className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-green-700">{statistics.active_students}</p>
-            <p className="text-sm text-green-600 mt-1 font-medium">Active</p>
-          </div>
-        </Card>
-        <Card padding="md" className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-slate-700">{statistics.inactive_students}</p>
-            <p className="text-sm text-slate-600 mt-1 font-medium">Inactive</p>
-          </div>
-        </Card>
-        <Card padding="md" className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-purple-700">
-              {Object.keys(statistics.by_grade || {}).length}
-            </p>
-            <p className="text-sm text-purple-600 mt-1 font-medium">Grade Levels</p>
-          </div>
-        </Card>
+        <StatCard
+          label="Total Students"
+          value={statistics.total_students}
+          color="blue"
+          icon={<Icons.Students className="w-6 h-6" />}
+        />
+        <StatCard
+          label="Active"
+          value={statistics.active_students}
+          color="green"
+          icon={<Icons.Success className="w-6 h-6" />}
+        />
+        <StatCard
+          label="Inactive"
+          value={statistics.inactive_students}
+          color="slate"
+          icon={<Icons.Error className="w-6 h-6" />}
+        />
+        <StatCard
+          label="Grade Levels"
+          value={Object.keys(statistics.by_grade || {}).length}
+          color="purple"
+          icon={<Icons.Classes className="w-6 h-6" />}
+        />
       </div>
     );
   };
   
   if (loading && students.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
-            <div className="h-10 w-48 bg-slate-200 rounded animate-pulse mb-2" />
-            <div className="h-6 w-96 bg-slate-200 rounded animate-pulse" />
+            <div className="h-10 w-48 bg-muted/20 dark:bg-white/10 rounded animate-pulse mb-2" />
+            <div className="h-6 w-96 bg-muted/20 dark:bg-white/10 rounded animate-pulse" />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -296,7 +299,7 @@ export default function StudentsPage() {
           </div>
           
           <Card className="mb-6">
-            <div className="h-12 bg-slate-200 rounded animate-pulse" />
+            <div className="h-12 bg-muted/20 dark:bg-white/10 rounded animate-pulse" />
           </Card>
           
           <Card>
@@ -308,16 +311,25 @@ export default function StudentsPage() {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
       {/* Toast Container */}
       <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
       
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Students</h1>
-        <p className="text-lg text-slate-600">Manage student records and information</p>
-      </div>
+      {/* Header with Breadcrumb */}
+      <PageHeader
+        title="Students"
+        description="Manage student records and information"
+        action={
+          <Button
+            variant="primary"
+            onClick={() => setShowAddModal(true)}
+            leftIcon={<Icons.Add className="w-4 h-4" />}
+          >
+            Add Student
+          </Button>
+        }
+      />
       
       {/* Statistics */}
       {renderStatistics()}
@@ -420,7 +432,7 @@ export default function StudentsPage() {
                 <Button
                   variant="outline"
                   onClick={() => setShowFilters(!showFilters)}
-                  leftIcon={<span>{showFilters ? '✕' : '⚙️'}</span>}
+                  leftIcon={showFilters ? <Icons.Close className="w-4 h-4" /> : <Icons.Filter className="w-4 h-4" />}
                 >
                   {showFilters ? 'Hide' : 'Filters'}
                 </Button>
@@ -428,7 +440,7 @@ export default function StudentsPage() {
                 <Button
                   variant="success"
                   onClick={handleExportCSV}
-                  leftIcon={<span>📥</span>}
+                  leftIcon={<Icons.Download className="w-4 h-4" />}
                   disabled={students.length === 0}
                 >
                   Export
@@ -439,7 +451,7 @@ export default function StudentsPage() {
                     variant="danger"
                     onClick={handleBulkArchive}
                     isLoading={archiving}
-                    leftIcon={<span>🗄️</span>}
+                    leftIcon={<Icons.Archive className="w-4 h-4" />}
                   >
                     Archive ({selectedIds.size})
                   </Button>
@@ -450,14 +462,6 @@ export default function StudentsPage() {
                     Import
                   </Button>
                 </Link>
-                
-                <Button
-                  variant="primary"
-                  onClick={() => setShowAddModal(true)}
-                  leftIcon={<span>➕</span>}
-                >
-                  Add Student
-                </Button>
               </div>
             </div>
             
@@ -495,7 +499,7 @@ export default function StudentsPage() {
       {/* Empty State */}
       {!loading && students.length === 0 && !error && (
         <EmptyState
-          icon={<span className="text-6xl">👨‍🎓</span>}
+          icon={<Icons.Students className="w-12 h-12 text-gray-400" />}
           title="No students found"
           description={
             debouncedSearch
@@ -579,7 +583,7 @@ export default function StudentsPage() {
                   student.grade_level ? (
                     <Badge variant="info">{student.grade_level}</Badge>
                   ) : (
-                    <span className="text-gray-400">-</span>
+                    <span className="text-slate-600">-</span>
                   )
                 ),
               },
@@ -587,7 +591,7 @@ export default function StudentsPage() {
                 key: 'phone',
                 label: 'Phone',
                 render: (student) => (
-                  <span className="text-gray-600">{student.phone || '-'}</span>
+                  <span className="text-slate-700">{student.phone || '-'}</span>
                 ),
               },
               {
@@ -753,9 +757,8 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
       
       const method = student ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
       
@@ -788,7 +791,7 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
             variant="primary"
             onClick={handleSubmit}
             isLoading={submitting}
-            leftIcon={<span>{student ? '💾' : '➕'}</span>}
+            leftIcon={student ? <Icons.Save className="w-4 h-4" /> : <Icons.Add className="w-4 h-4" />}
           >
             {student ? 'Update' : 'Add'} Student
           </Button>

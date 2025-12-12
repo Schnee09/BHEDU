@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api/client";
 import { showToast } from "@/components/ToastProvider";
+import { Icons } from "@/components/ui/Icons";
 
 interface Student {
   id: string;
@@ -191,7 +192,7 @@ export default function VietnameseGradeEntryPage() {
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">-- Chọn lớp --</option>
               {classes.map((cls) => (
@@ -207,7 +208,7 @@ export default function VietnameseGradeEntryPage() {
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">-- Chọn môn --</option>
               {subjects.map((subject) => (
@@ -223,7 +224,7 @@ export default function VietnameseGradeEntryPage() {
             <select
               value={selectedSemester}
               onChange={(e) => setSelectedSemester(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="HK1">Học kỳ 1</option>
               <option value="HK2">Học kỳ 2</option>
@@ -235,9 +236,10 @@ export default function VietnameseGradeEntryPage() {
           <button
             onClick={handleSaveAll}
             disabled={saving || students.length === 0}
-            className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors"
+            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors flex items-center gap-2"
           >
-            {saving ? "Đang lưu..." : "💾 Lưu tất cả"}
+            <Icons.Save className="w-4 h-4" />
+            {saving ? "Đang lưu..." : "Lưu tất cả"}
           </button>
         </div>
       </div>
@@ -245,17 +247,17 @@ export default function VietnameseGradeEntryPage() {
       {/* Grade Entry Table */}
       {loading ? (
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
         </div>
       ) : students.length > 0 ? (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white">
+              <thead className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold sticky left-0 bg-amber-500 z-10">STT</th>
-                  <th className="px-4 py-3 text-left font-semibold sticky left-12 bg-amber-500 z-10">Mã HS</th>
+                  <th className="px-4 py-3 text-left font-semibold sticky left-0 bg-blue-600 z-10">STT</th>
+                  <th className="px-4 py-3 text-left font-semibold sticky left-12 bg-blue-600 z-10">Mã HS</th>
                   <th className="px-4 py-3 text-left font-semibold min-w-[200px]">Họ và tên</th>
                   {GRADE_COMPONENTS.map((component) => (
                     <th key={component.type} className={`px-4 py-3 text-center font-semibold min-w-[120px]`}>
@@ -263,8 +265,8 @@ export default function VietnameseGradeEntryPage() {
                       <div className="text-xs font-normal opacity-90">Hệ số: {component.weight}</div>
                     </th>
                   ))}
-                  <th className="px-4 py-3 text-center font-semibold min-w-[100px] bg-amber-600">Điểm TB</th>
-                  <th className="px-4 py-3 text-center font-semibold min-w-[100px] bg-amber-600">Xếp loại</th>
+                  <th className="px-4 py-3 text-center font-semibold min-w-[100px] bg-blue-700">Điểm TB</th>
+                  <th className="px-4 py-3 text-center font-semibold min-w-[100px] bg-blue-700">Xếp loại</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -286,15 +288,15 @@ export default function VietnameseGradeEntryPage() {
                             max="10"
                             value={student.grades[component.type] ?? ""}
                             onChange={(e) => handleGradeChange(student.id, component.type, e.target.value)}
-                            className="w-full px-3 py-2 text-center border border-gray-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                            className="w-full px-3 py-2 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="-"
                           />
                         </td>
                       ))}
-                      <td className="px-4 py-3 text-center text-lg font-bold text-amber-600 bg-amber-50">
+                      <td className="px-4 py-3 text-center text-lg font-bold text-blue-600 bg-blue-50">
                         {average}
                       </td>
-                      <td className={`px-4 py-3 text-center ${classification.color} bg-amber-50`}>
+                      <td className={`px-4 py-3 text-center ${classification.color} bg-blue-50`}>
                         {classification.label}
                       </td>
                     </tr>

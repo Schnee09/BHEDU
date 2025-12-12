@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { sendEmail, generatePasswordResetEmail } from '@/lib/email/emailService'
 
@@ -34,7 +34,7 @@ export async function POST(
       )
     }
 
-    const supabase = createServiceClient()
+  const { supabase } = await getDataClient(request)
 
     // Update user password
     const { error: passwordError } = await supabase.auth.admin.updateUserById(

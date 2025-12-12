@@ -7,7 +7,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(request: Request) {
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
 
     const { data: scales, error } = await supabase
       .from('grading_scales')
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
 
     // If this is set as default, unset other defaults
     if (is_default) {

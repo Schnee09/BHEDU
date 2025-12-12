@@ -175,7 +175,7 @@ export default function GuardianManagement({ studentId }: { studentId: string })
   }
 
   if (loading) {
-    return <div className="text-center py-8 text-gray-500">Loading guardians...</div>
+    return <div className="text-center py-8 text-slate-600">Loading guardians...</div>
   }
 
   return (
@@ -184,18 +184,18 @@ export default function GuardianManagement({ studentId }: { studentId: string })
         <h2 className="text-lg font-semibold">Guardians & Contacts</h2>
         <button
           onClick={handleAdd}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+          className="px-4 py-2 bg-stone-900 text-white rounded-lg hover:bg-stone-800 text-sm font-medium"
         >
           + Add Guardian
         </button>
       </div>
 
       {guardians.length === 0 ? (
-        <div className="bg-gray-50 rounded-lg p-8 text-center">
-          <p className="text-gray-600 mb-4">No guardians added yet</p>
+        <div className="bg-stone-50 rounded-lg p-8 text-center">
+          <p className="text-stone-600 mb-4">No guardians added yet</p>
           <button
             onClick={handleAdd}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-stone-900 text-white rounded-lg hover:bg-stone-800"
           >
             Add First Guardian
           </button>
@@ -205,16 +205,16 @@ export default function GuardianManagement({ studentId }: { studentId: string })
           {guardians.map((guardian) => (
             <div
               key={guardian.id}
-              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+              className="bg-white border border-stone-200 rounded-lg p-4 hover:shadow-md transition"
             >
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="font-semibold text-lg">{guardian.name}</h3>
-                  <p className="text-sm text-gray-600 capitalize">{guardian.relationship}</p>
+                  <p className="text-sm text-stone-600 capitalize">{guardian.relationship}</p>
                 </div>
                 <div className="flex gap-2">
                   {guardian.is_primary_contact && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">Primary</span>
+                    <span className="px-2 py-1 bg-stone-100 text-stone-700 text-xs rounded">Primary</span>
                   )}
                   {guardian.is_emergency_contact && (
                     <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded">Emergency</span>
@@ -225,7 +225,7 @@ export default function GuardianManagement({ studentId }: { studentId: string })
               <div className="space-y-2 text-sm mb-4">
                 {guardian.phone && (
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-500">📞</span>
+                    <span className="text-slate-600">📞</span>
                     <a href={`tel:${guardian.phone}`} className="text-blue-600 hover:underline">
                       {guardian.phone}
                     </a>
@@ -233,7 +233,7 @@ export default function GuardianManagement({ studentId }: { studentId: string })
                 )}
                 {guardian.email && (
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-500">✉️</span>
+                    <span className="text-slate-600">✉️</span>
                     <a href={`mailto:${guardian.email}`} className="text-blue-600 hover:underline">
                       {guardian.email}
                     </a>
@@ -241,12 +241,12 @@ export default function GuardianManagement({ studentId }: { studentId: string })
                 )}
                 {guardian.occupation && (
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-500">💼</span>
+                    <span className="text-slate-600">💼</span>
                     <span>{guardian.occupation}</span>
                   </div>
                 )}
                 {guardian.workplace && (
-                  <div className="text-xs text-gray-600 ml-6">@ {guardian.workplace}</div>
+                  <div className="text-xs text-slate-600 ml-6">@ {guardian.workplace}</div>
                 )}
               </div>
 

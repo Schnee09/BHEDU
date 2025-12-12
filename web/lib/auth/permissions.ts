@@ -1,6 +1,12 @@
 /**
  * Granular Permission System
  * Defines permissions beyond simple role-based access
+ * 
+ * Role Hierarchy:
+ * - admin: Super admin (full system access)
+ * - staff: Sub-admin/Office staff (operations, no system config)
+ * - teacher: Teaching functions (own classes only)
+ * - student: Self-service (own data only)
  */
 
 export type Action = 'read' | 'write' | 'delete' | 'manage'
@@ -17,6 +23,7 @@ export type Resource =
   | 'reports'
   | 'settings'
   | 'import'
+  | 'system' // System configuration (admin only)
   | '*' // Wildcard for all resources
 
 export interface Permission {
@@ -38,6 +45,58 @@ export const rolePermissions: Record<string, Permission[]> = {
     { resource: '*', action: 'write' },
     { resource: '*', action: 'delete' },
     { resource: '*', action: 'manage' }
+  ],
+  
+  staff: [
+    // Staff have operational access but NO system configuration
+    
+    // Users - can manage teachers and students, not admins/staff
+    { resource: 'users', action: 'read' },
+    { resource: 'users', action: 'write' }, // Limited in UI to teachers/students
+    // NO delete for users
+    
+    // Students - full operational access
+    { resource: 'students', action: 'read' },
+    { resource: 'students', action: 'write' },
+    // NO delete for students (soft delete via admin only)
+    
+    // Classes - full operational access  
+    { resource: 'classes', action: 'read' },
+    { resource: 'classes', action: 'write' },
+    // NO delete for classes
+    
+    // Enrollments - full access
+    { resource: 'enrollments', action: 'read' },
+    { resource: 'enrollments', action: 'write' },
+    { resource: 'enrollments', action: 'delete' },
+    
+    // Grades - read only (oversight)
+    { resource: 'grades', action: 'read' },
+    // NO write/delete for grades
+    
+    // Assignments - read only
+    { resource: 'assignments', action: 'read' },
+    { resource: 'categories', action: 'read' },
+    
+    // Attendance - full operational access
+    { resource: 'attendance', action: 'read' },
+    { resource: 'attendance', action: 'write' },
+    // NO delete for attendance
+    
+    // Finance - operational access
+    { resource: 'finance', action: 'read' },
+    { resource: 'finance', action: 'write' },
+    // NO delete for finance
+    
+    // Reports - full read access
+    { resource: 'reports', action: 'read' },
+    
+    // Import - can import data
+    { resource: 'import', action: 'read' },
+    { resource: 'import', action: 'write' },
+    
+    // NO settings access
+    // NO system access
   ],
   
   teacher: [
@@ -201,11 +260,50 @@ export function getRolePermissions(role: string): Permission[] {
 }
 
 /**
- * Check if role has any admin-level permissions
+ * Check if role has any admin-level permissions (wildcard resource)
  */
 export function isAdminRole(role: string): boolean {
   const permissions = rolePermissions[role] || []
   return permissions.some(p => p.resource === '*')
+}
+
+/**
+ * Check if role has admin-level access (admin or staff)
+ * Use this when checking if a user can access admin features
+ */
+export function hasAdminAccess(role: string): boolean {
+  return role === 'admin' || role === 'staff'
+}
+
+/**
+ * Check if role is super admin (full system access)
+ * Use this for system configuration and critical operations
+ */
+export function isSuperAdmin(role: string): boolean {
+  return role === 'admin'
+}
+
+/**
+ * Check if role can modify students/teachers/classes
+ * Admin and Staff can, but not teachers or students
+ */
+export function canManageUsers(role: string): boolean {
+  return role === 'admin' || role === 'staff'
+}
+
+/**
+ * Check if role can access financial features
+ */
+export function canAccessFinance(role: string): boolean {
+  return role === 'admin' || role === 'staff'
+}
+
+/**
+ * Check if role can access system configuration
+ * Only admin (super admin) can
+ */
+export function canConfigureSystem(role: string): boolean {
+  return role === 'admin'
 }
 
 /**

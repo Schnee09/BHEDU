@@ -16,6 +16,7 @@ import {
   type ImportPreview
 } from '@/lib/importService'
 import { Button, Card, CardHeader, Badge } from '@/components/ui'
+import { ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 
 export default function BulkImportPage() {
   const router = useRouter()
@@ -274,7 +275,7 @@ export default function BulkImportPage() {
                 {preview.warnings.length > 0 && (
                   <div className="mb-6">
                     <h3 className="font-semibold text-amber-700 mb-3 flex items-center gap-2">
-                      <span className="text-2xl">⚠️</span>
+                      <ExclamationTriangleIcon className="w-6 h-6" />
                       Warnings (optional fixes):
                     </h3>
                     <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 max-h-64 overflow-y-auto">
@@ -354,10 +355,10 @@ export default function BulkImportPage() {
             )}
           </div>
         ) : (
-          <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+          <Card className="border-2 border-green-200 bg-green-50">
             <div className="mb-6">
               <h2 className="text-3xl font-bold text-green-700 flex items-center gap-3">
-                <span className="text-4xl">🎉</span>
+                <CheckCircleIcon className="w-10 h-10" />
                 Import Complete!
               </h2>
             </div>
@@ -365,17 +366,17 @@ export default function BulkImportPage() {
             {importResults && (
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200">
+                  <Card className="bg-blue-50 border-2 border-blue-200">
                     <div className="text-3xl font-bold text-blue-700">{importResults.total}</div>
                     <div className="text-sm font-medium text-blue-600">Total Processed</div>
                   </Card>
-                  <Card className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200">
+                  <Card className="bg-green-50 border-2 border-green-200">
                     <div className="text-3xl font-bold text-green-700">
                       {importResults.successCount}
                     </div>
                     <div className="text-sm font-medium text-green-600">Successfully Imported</div>
                   </Card>
-                  <Card className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200">
+                  <Card className="bg-red-50 border-2 border-red-200">
                     <div className="text-3xl font-bold text-red-700">
                       {importResults.errorCount}
                     </div>

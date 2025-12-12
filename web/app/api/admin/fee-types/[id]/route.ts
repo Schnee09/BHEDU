@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth';
 
 /**
@@ -20,7 +20,7 @@ export async function GET(
     }
 
     const resolvedParams = await params;
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
     const { data, error } = await supabase
       .from('fee_types')
       .select('*, academic_years(name)')
@@ -76,7 +76,7 @@ export async function PATCH(
       );
     }
 
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
 
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (name !== undefined) updates.name = name;
@@ -137,7 +137,7 @@ export async function DELETE(
     }
 
     const resolvedParams = await params;
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
 
     // Check if fee type exists
     const { data: existing } = await supabase

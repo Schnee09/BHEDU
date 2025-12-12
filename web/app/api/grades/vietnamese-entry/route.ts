@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
       let assignment;
       const { data: existingAssignment } = await supabase
         .from("assignments")
-        .select("id, total_points")
+        .select("id, max_points")
         .eq("category_id", category.id)
         .eq("title", assignmentTitle)
         .maybeSingle();
@@ -185,11 +185,11 @@ export async function POST(req: NextRequest) {
             category_id: category.id,
             title: assignmentTitle,
             description: `${config.name_vi} cho ${semester}`,
-            total_points: 10, // Vietnamese scale 0-10
+            max_points: 10, // Vietnamese scale 0-10
             due_date: new Date().toISOString(),
             published: true,
           })
-          .select("id, total_points")
+          .select("id, max_points")
           .single();
 
         if (assignError || !newAssignment) {

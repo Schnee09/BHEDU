@@ -1,66 +1,129 @@
-# Supabase Configuration & Database Setup# 🗄️ BH-EDU Supabase Database
+# Supabase Configuration# Supabase Configuration & Database Setup# 🗄️ BH-EDU Supabase Database
 
 
 
-This directory contains all Supabase-related configuration and database scripts.**Single Source of Truth**: `COMPLETE_STUDENT_MANAGEMENT.sql`
+BH-EDU database configuration and migrations.
 
 
 
-## 🚀 Quick Setup---
+## 📁 Directory StructureThis directory contains all Supabase-related configuration and database scripts.**Single Source of Truth**: `COMPLETE_STUDENT_MANAGEMENT.sql`
 
 
 
-### 1. Run Database Setup (ONE FILE ONLY)## 📁 Files in This Folder
+```
+
+supabase/
+
+├── config.toml          # Supabase CLI configuration## 🚀 Quick Setup---
+
+├── migrations/          # SQL migration files
+
+├── functions/           # Edge Functions
+
+├── archive/             # Old/deprecated scripts
+
+└── README.md            # This file### 1. Run Database Setup (ONE FILE ONLY)## 📁 Files in This Folder
+
+```
 
 
+
+## 🗄️ Database Schema
 
 ```sql### ✅ Active Files (Use These)
 
--- Run this in Supabase SQL Editor
+The database supports a 4-role system:
 
--- File: NUCLEAR_FIX_COMPLETE_REBUILD.sql1. **COMPLETE_STUDENT_MANAGEMENT.sql** (951 lines)
+- **admin** - Super admin (full system access)-- Run this in Supabase SQL Editor
+
+- **staff** - Sub-admin (operations, no system config)
+
+- **teacher** - Teaching functions (own classes)-- File: NUCLEAR_FIX_COMPLETE_REBUILD.sql1. **COMPLETE_STUDENT_MANAGEMENT.sql** (951 lines)
+
+- **student** - Self-service (own data)
 
 ```   - Complete database schema
 
+## 🚀 Running Migrations
+
    - All tables (20+)
+
+Migrations are in `migrations/` folder. Run them in Supabase SQL Editor:
 
 This is the **ONLY** SQL file you need to run. It includes:   - RLS policies (with INSERT policies)
 
-- ✅ All table schemas with correct columns   - Helper functions
+1. Open [Supabase Dashboard](https://app.supabase.com)
+
+2. Go to SQL Editor → New Query- ✅ All table schemas with correct columns   - Helper functions
+
+3. Copy the migration SQL and click Run
 
 - ✅ All 5 RPC functions (attendance, grades, QR codes)   - 🎯 **Apply this first for fresh database**
 
+### Key Migrations
+
 - ✅ Performance indexes
 
-- ✅ Default constraints2. **COMPLETE_TEST_SEED.sql**
+| File | Description |
 
-- ✅ Data validation   - Reference data seeding
+|------|-------------|- ✅ Default constraints2. **COMPLETE_TEST_SEED.sql**
+
+| `010_financial_system.sql` | Financial module tables |
+
+| `20241209_add_staff_role_simple.sql` | Adds staff role to system |- ✅ Data validation   - Reference data seeding
+
+| `20251204_vietnamese_student_codes.sql` | Vietnamese student codes |
 
    - Academic years, grading scales, payment methods, fee types
 
+## 📦 Edge Functions
+
 ## 📁 Directory Structure   - 🎯 **Run after schema**
 
+Located in `functions/`:
 
+- `ai_analysis_trigger/` - AI analysis triggers
 
-```3. **VERIFY_MIGRATION.sql**
+- `create_student/` - Student creation function
+
+- `generate_ai_insight/` - AI insights generation```3. **VERIFY_MIGRATION.sql**
+
+- `notify_updates/` - Update notifications
 
 supabase/   - Verification queries
 
+## 🔧 Local Development
+
 ├── NUCLEAR_FIX_COMPLETE_REBUILD.sql  # ⭐ THE ONE TRUE FIX   - Use for debugging
 
-├── README.md                          # This file   - 🔧 **Optional**
+```bash
+
+# Start Supabase locally├── README.md                          # This file   - 🔧 **Optional**
+
+supabase start
 
 ├── config.toml                        # Supabase CLI config
 
-├── functions/                         # Edge Functions### 📚 Documentation
+# Apply migrations
 
-├── migrations_archived/               # Old migrations (archived)
+supabase db push├── functions/                         # Edge Functions### 📚 Documentation
 
-└── _obsolete/                         # Old SQL attempts (ignore)- **SQL_FILES_AUDIT.md** - Complete audit of all SQL files
 
-```- **CONSOLIDATION_COMPLETE.md** - Consolidation summary
 
-- **QUICK_MIGRATION_GUIDE.md** - Quick reference
+# Generate types├── migrations_archived/               # Old migrations (archived)
+
+supabase gen types typescript --local > ../web/lib/database.types.ts
+
+```└── _obsolete/                         # Old SQL attempts (ignore)- **SQL_FILES_AUDIT.md** - Complete audit of all SQL files
+
+
+
+## 📋 Test Accounts```- **CONSOLIDATION_COMPLETE.md** - Consolidation summary
+
+
+
+See `docs/TEST_CREDENTIALS.md` for test account information.- **QUICK_MIGRATION_GUIDE.md** - Quick reference
+
 
 ## 🗄️ Database Schema
 

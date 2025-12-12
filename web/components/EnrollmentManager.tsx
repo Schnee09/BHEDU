@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from '@/lib/api/client';
 import { showToast } from "@/components/ToastProvider";
+import { CalendarDaysIcon, UserIcon } from "@heroicons/react/24/outline";
 
 interface Class {
   id: string;
@@ -228,13 +229,13 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
   return (
     <div className="space-y-4">
       {/* Add Enrollment Section */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
+      <div className="rounded-lg border border-stone-200 bg-white p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-medium text-gray-900">Quick Enrollment</h3>
+          <h3 className="text-lg font-medium text-stone-900">Quick Enrollment</h3>
           {!showAddDropdown && (
             <button
               onClick={() => setShowAddDropdown(true)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2"
             >
               + Add Class
             </button>
@@ -242,9 +243,9 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
         </div>
 
         {showAddDropdown && (
-          <div className="space-y-4 rounded-lg bg-gray-50 p-4">
+          <div className="space-y-4 rounded-lg bg-stone-50 p-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
                 Select Class
               </label>
               <select
@@ -263,7 +264,7 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
                 ))}
               </select>
               {availableClasses.length === 0 && (
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-slate-600">
                   No available classes. Student may already be enrolled in all active classes.
                 </p>
               )}
@@ -284,7 +285,7 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
               <button
                 onClick={handleAddEnrollment}
                 disabled={!selectedClassId || processingEnrollment !== null}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2 disabled:bg-stone-300 disabled:cursor-not-allowed"
               >
                 Enroll Student
               </button>
@@ -295,7 +296,7 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
                   setScheduleConflicts([]);
                 }}
                 disabled={processingEnrollment !== null}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2"
               >
                 Cancel
               </button>
@@ -311,7 +312,7 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
         </h3>
 
         {enrollments.length === 0 ? (
-          <p className="text-sm text-gray-500 py-4">
+          <p className="text-sm text-slate-600 py-4">
             Student is not currently enrolled in any classes.
           </p>
         ) : (
@@ -334,12 +335,12 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 flex gap-4 text-sm text-gray-500">
+                  <div className="mt-1 flex gap-4 text-sm text-slate-600">
                     {enrollment.schedule && (
-                      <span>📅 {enrollment.schedule}</span>
+                      <span className="flex items-center gap-1"><CalendarDaysIcon className="w-4 h-4" /> {enrollment.schedule}</span>
                     )}
                     {enrollment.teacher_name && (
-                      <span>👤 {enrollment.teacher_name}</span>
+                      <span className="flex items-center gap-1"><UserIcon className="w-4 h-4" /> {enrollment.teacher_name}</span>
                     )}
                     <span>Enrolled: {new Date(enrollment.enrollment_date).toLocaleDateString()}</span>
                   </div>

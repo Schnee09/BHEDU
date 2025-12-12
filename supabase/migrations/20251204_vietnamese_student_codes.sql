@@ -149,6 +149,10 @@ WHERE role = 'student';
 /*
 -- Uncomment to enforce Vietnamese format for all new student codes:
 */
+
+-- Drop constraint if it exists (in case of re-running migration)
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS student_code_format_check;
+
 ALTER TABLE profiles
 ADD CONSTRAINT student_code_format_check
 CHECK (

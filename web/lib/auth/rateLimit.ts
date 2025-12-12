@@ -30,19 +30,24 @@ export interface RateLimitConfig {
  */
 export const rateLimitConfigs = {
   auth: {
-    maxAttempts: 10, // 10 attempts
+    maxAttempts: 30, // 30 attempts (increased from 10)
     windowMs: 60 * 1000, // Per minute
     blockDurationMs: 15 * 60 * 1000 // Block for 15 minutes
   },
   authStrict: {
-    maxAttempts: 5, // 5 attempts
+    maxAttempts: 20, // 20 attempts (increased from 5)
     windowMs: 60 * 1000, // Per minute
     blockDurationMs: 30 * 60 * 1000 // Block for 30 minutes
   },
   api: {
-    maxAttempts: 100, // 100 requests
+    maxAttempts: 300, // 300 requests (increased from 100)
     windowMs: 60 * 1000, // Per minute
     blockDurationMs: 5 * 60 * 1000 // Block for 5 minutes
+  },
+  bulk: {
+    maxAttempts: 150, // 150 requests for bulk operations (increased from 50)
+    windowMs: 60 * 1000, // Per minute
+    blockDurationMs: 2 * 60 * 1000 // Block for 2 minutes
   }
 }
 

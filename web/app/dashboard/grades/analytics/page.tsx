@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '@/lib/api/client'
 import { percentageToLetterGrade, getLetterGradeColor } from '@/lib/gradeService'
+import { ExclamationTriangleIcon, SparklesIcon, ChartBarSquareIcon } from '@heroicons/react/24/outline'
 
 interface Class {
   id: string
@@ -355,7 +356,7 @@ export default function GradeAnalyticsPage() {
                 {strugglingStudents.length > 0 && (
                   <div className="bg-white rounded-lg shadow-sm border border-red-200 p-6">
                     <div className="flex items-center gap-2 mb-4">
-                        <span className="text-2xl">⚠️</span>
+                        <ExclamationTriangleIcon className="w-6 h-6 text-red-500" />
                       <h2 className="text-lg font-semibold text-red-900">
                         Students Needing Support
                       </h2>
@@ -397,7 +398,7 @@ export default function GradeAnalyticsPage() {
                 {topPerformers.length > 0 && (
                   <div className="bg-white rounded-lg shadow-sm border border-green-200 p-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <span className="text-2xl">🌟</span>
+                      <SparklesIcon className="w-6 h-6 text-green-500" />
                       <h2 className="text-lg font-semibold text-green-900">
                         Top Performers
                       </h2>
@@ -443,7 +444,7 @@ export default function GradeAnalyticsPage() {
       {/* Empty State */}
       {!selectedClass && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <div className="text-4xl mb-4">📈</div>
+          <ChartBarSquareIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Select a Class
           </h3>

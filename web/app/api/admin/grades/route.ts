@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getDataClient } from '@/lib/auth/dataClient'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,11 +8,13 @@ export async function GET(request: NextRequest) {
     const assignmentId = searchParams.get("assignment_id");
     const classId = searchParams.get("class_id");
 
+    const { supabase } = await getDataClient(request)
+
     // First, get grade records
     let query = supabase
-      .from("grades")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from('grades')
+      .select('*')
+      .order('created_at', { ascending: false })
 
     if (studentId) query = query.eq("student_id", studentId);
     if (assignmentId) query = query.eq("assignment_id", assignmentId);
@@ -33,35 +30,35 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get unique student and assignment IDs
-    const studentIds = [...new Set(gradeData.map(g => g.student_id))];
-    const assignmentIds = [...new Set(gradeData.map(g => g.assignment_id))];
+  // Get unique student and assignment IDs
+  const studentIds = [...new Set(gradeData.map((g: any) => g.student_id))];
+  const assignmentIds = [...new Set(gradeData.map((g: any) => g.assignment_id))];
 
     // Fetch students
     const { data: students } = await supabase
-      .from("profiles")
-      .select("id, full_name, email")
-      .in("id", studentIds);
+      .from('profiles')
+      .select('id, full_name, email')
+      .in('id', studentIds);
 
     // Fetch assignments
     const { data: assignments } = await supabase
-      .from("assignments")
-      .select("id, title, class_id, max_points")
-      .in("id", assignmentIds);
+      .from('assignments')
+      .select('id, title, class_id, max_points')
+      .in('id', assignmentIds);
 
     // Create lookup maps
-    const studentMap = new Map(students?.map(s => [s.id, s]) || []);
-    const assignmentMap = new Map(assignments?.map(a => [a.id, a]) || []);
+  const studentMap = new Map((students || []).map((s: any) => [s.id, s]));
+  const assignmentMap = new Map((assignments || []).map((a: any) => [a.id, a]));
 
     // Filter by class if specified
-    let filteredData = gradeData;
+  let filteredData = gradeData;
     if (classId) {
       const classAssignmentIds = assignments?.filter(a => a.class_id === classId).map(a => a.id) || [];
       filteredData = gradeData.filter(g => classAssignmentIds.includes(g.assignment_id));
     }
 
     // Combine data
-    const enrichedData = filteredData.map(grade => ({
+    const enrichedData = filteredData.map((grade: any) => ({
       ...grade,
       student: studentMap.get(grade.student_id) || null,
       assignment: assignmentMap.get(grade.assignment_id) || null,
@@ -83,6 +80,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { supabase } = await getDataClient(request)
     const body = await request.json();
     const { assignment_id, student_id, score, feedback, graded_by } = body;
 

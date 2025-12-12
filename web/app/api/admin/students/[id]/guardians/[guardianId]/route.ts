@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -24,7 +24,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     }
 
     const { id, guardianId } = await params
-    const supabase = createClientFromRequest(req as any)
+  const { supabase } = await getDataClient(req)
     const body = await req.json()
 
     // Verify guardian exists and belongs to student
@@ -122,7 +122,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     }
 
     const { id, guardianId } = await params
-    const supabase = createClientFromRequest(req as any)
+  const { supabase } = await getDataClient(req)
 
     // Verify guardian exists and belongs to student
     const { data: existingGuardian } = await supabase

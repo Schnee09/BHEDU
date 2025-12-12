@@ -28,5 +28,6 @@
     "**/*.rpymc": true,
     "**/cache/": true
   },
-  "idf.pythonInstallPath": "C:\\Users\\Admin\\.espressif\\tools\\idf-python\\3.8.7\\python.exe"
+  "idf.pythonInstallPath": "C:\\Users\\Admin\\.espressif\\tools\\idf-python\\3.8.7\\python.exe",
+  "css.lint.unknownAtRules": "ignore"
 }

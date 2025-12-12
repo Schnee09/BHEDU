@@ -71,14 +71,13 @@ export async function GET(
       .from('grades')
       .select(`
         id,
-        points_earned,
-        late,
-        excused,
-        missing,
+        score,
+        feedback,
         graded_at,
         assignment:assignments!inner(
           id,
           title,
+          max_points,
           class:classes!inner(
             id,
             name,
@@ -155,8 +154,8 @@ export async function GET(
           })
         }
 
-        semData.subjects.get(subjectCode).grades.push(grade.points_earned)
-        semData.total_grades.push(grade.points_earned)
+        semData.subjects.get(subjectCode).grades.push(grade.score)
+        semData.total_grades.push(grade.score)
       })
     }
 

@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getDataClient } from '@/lib/auth/dataClient'
 
 export async function GET(request: NextRequest) {
   try {
+    const { supabase } = await getDataClient(request)
     const searchParams = request.nextUrl.searchParams;
     const studentId = searchParams.get("student_id");
     const classId = searchParams.get("class_id");
@@ -57,6 +53,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { supabase } = await getDataClient(request)
     const body = await request.json();
     const { student_id, class_id, date, status, check_in_time, check_out_time, notes, marked_by } = body;
 

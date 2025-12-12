@@ -391,7 +391,7 @@ export class ClassService {
     // Get all assignments for the class
     const { data: assignments } = await supabase
       .from('assignments')
-      .select('id, total_points')
+      .select('id, max_points')
       .eq('class_id', classId);
 
     if (!assignments || assignments.length === 0) {
@@ -407,7 +407,7 @@ export class ClassService {
     const assignmentIds = assignments.map((a) => a.id);
     const { data: grades } = await supabase
       .from('grades')
-      .select('points_earned, assignment_id')
+      .select('score, assignment_id')
       .in('assignment_id', assignmentIds);
 
     if (!grades || grades.length === 0) {
@@ -422,8 +422,8 @@ export class ClassService {
     // Calculate percentages
     const percentages = grades.map((grade) => {
       const assignment = assignments.find((a) => a.id === grade.assignment_id);
-      if (!assignment || assignment.total_points === 0) return 0;
-      return (grade.points_earned / assignment.total_points) * 100;
+      if (!assignment || assignment.max_points === 0) return 0;
+      return (grade.score / assignment.max_points) * 100;
     });
 
     const avg = percentages.reduce((sum, p) => sum + p, 0) / percentages.length;

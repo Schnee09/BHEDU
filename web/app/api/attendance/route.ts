@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { teacherAuth } from "@/lib/auth/adminAuth";
+import { hasAdminAccess } from "@/lib/auth/permissions";
 import { handleApiError, AuthenticationError } from "@/lib/api/errors";
 import { logger } from "@/lib/logger";
 
@@ -26,9 +27,11 @@ export async function GET(request: NextRequest) {
       .select(`id, class_id, student_id, date, status`)
       .order("date", { ascending: false });
 
-    if (authResult.userRole === "admin") {
-      // Admin sees all
-    } else if (authResult.userRole === "teacher") {
+    const userRole = authResult.userRole || '';
+    
+    if (hasAdminAccess(userRole)) {
+      // Admin and Staff see all
+    } else if (userRole === "teacher") {
       // Teacher sees own classes
       const { data: classes } = await supabase
         .from("classes")
@@ -40,7 +43,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, data: [] });
       }
       query = query.in("class_id", classIds);
-    } else if (authResult.userRole === "student") {
+    } else if (userRole === "student") {
       // Student sees own attendance
       query = query.eq("student_id", authResult.userId);
     }

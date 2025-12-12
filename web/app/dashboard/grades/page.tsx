@@ -13,12 +13,14 @@
 import Link from "next/link";
 import { useUser } from "@/hooks";
 import { Card, LoadingState } from "@/components/ui";
+import { Icons } from "@/components/ui/Icons";
+import { PencilSquareIcon, ClipboardDocumentListIcon, DocumentChartBarIcon, DocumentTextIcon, AcademicCapIcon } from "@heroicons/react/24/outline";
 
 interface NavCard {
   href: string;
   title: string;
   description: string;
-  icon: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   roles: string[];
 }
 
@@ -27,35 +29,35 @@ const navCards: NavCard[] = [
     href: "/dashboard/grades/entry",
     title: "Grade Entry",
     description: "Enter and update student grades for assignments",
-    icon: "✏️",
+    icon: PencilSquareIcon,
     roles: ["teacher", "admin"],
   },
   {
     href: "/dashboard/grades/assignments",
     title: "Manage Assignments",
     description: "Create and manage assignments and categories",
-    icon: "📋",
+    icon: ClipboardDocumentListIcon,
     roles: ["teacher", "admin"],
   },
   {
     href: "/dashboard/grades/analytics",
     title: "Grade Analytics",
     description: "View class performance and grade distributions",
-    icon: "📊",
+    icon: DocumentChartBarIcon,
     roles: ["teacher", "admin"],
   },
   {
     href: "/dashboard/grades/reports",
     title: "Grade Reports",
     description: "Generate and export detailed grade reports",
-    icon: "📄",
+    icon: DocumentTextIcon,
     roles: ["teacher", "admin"],
   },
   {
     href: "/dashboard/scores",
     title: "My Grades",
     description: "View your grades and assignment scores",
-    icon: "🎓",
+    icon: AcademicCapIcon,
     roles: ["student"],
   },
 ];
@@ -73,7 +75,7 @@ export default function GradesPageModern() {
   );
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-10">
@@ -91,22 +93,21 @@ export default function GradesPageModern() {
             {availableCards.map((card) => (
               <Link key={card.href} href={card.href}>
                 <Card 
-                  padding="lg"
-                  className="h-full bg-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border-gray-200"
+                  className="h-full p-8 bg-white hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-pointer border-gray-200"
                 >
-                  <div className="flex flex-col h-full items-center text-center">
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-md">
-                      {card.icon}
+                  <div className="flex flex-col items-start h-full">
+                    <div className="p-3 bg-stone-100 rounded-xl mb-6 group-hover:scale-110 transition-transform duration-300">
+                      <card.icon className="w-10 h-10 text-stone-600" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                    <h2 className="text-2xl font-bold text-stone-900 mb-3">
                       {card.title}
                     </h2>
-                    <p className="text-gray-600 text-base flex-grow leading-relaxed">
+                    <p className="text-stone-500 text-base flex-grow leading-relaxed">
                       {card.description}
                     </p>
-                    <div className="mt-6 px-6 py-2 bg-blue-500 text-white rounded-lg font-semibold flex items-center gap-2 hover:bg-blue-600 transition-colors">
+                    <div className="mt-6 px-6 py-2 bg-stone-900 text-white rounded-lg font-semibold flex items-center gap-2 hover:bg-stone-800 transition-colors">
                       Open
-                      <span>→</span>
+                      <Icons.ChevronRight className="w-4 h-4" />
                     </div>
                   </div>
                 </Card>
@@ -115,11 +116,11 @@ export default function GradesPageModern() {
           </div>
         ) : (
           <Card className="text-center py-16" padding="lg">
-            <div className="text-6xl mb-6">🔒</div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+            <Icons.Lock className="w-12 h-12 text-stone-400 mx-auto mb-6" />
+            <h3 className="text-2xl font-bold text-stone-900 mb-3">
               Access Restricted
             </h3>
-            <p className="text-gray-600 text-lg">
+            <p className="text-stone-500 text-lg">
               You don't have access to grades features.
             </p>
           </Card>
@@ -128,36 +129,36 @@ export default function GradesPageModern() {
         {/* Quick Stats for Teachers/Admins */}
         {(userRole === "teacher" || userRole === "admin") && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card padding="lg" className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Stats</h3>
+            <Card padding="lg" className="bg-stone-50 border-stone-200">
+              <h3 className="text-lg font-bold text-stone-900 mb-4">Quick Stats</h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
-                  <span className="text-gray-700 font-medium">Pending Grades</span>
-                  <span className="font-bold text-2xl text-orange-600">-</span>
+                  <span className="text-stone-700 font-medium">Pending Grades</span>
+                  <span className="font-bold text-2xl text-stone-600">-</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
-                  <span className="text-gray-700 font-medium">Active Assignments</span>
-                  <span className="font-bold text-2xl text-blue-600">-</span>
+                  <span className="text-stone-700 font-medium">Active Assignments</span>
+                  <span className="font-bold text-2xl text-stone-600">-</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
-                  <span className="text-gray-700 font-medium">Total Students</span>
-                  <span className="font-bold text-2xl text-green-600">-</span>
+                  <span className="text-stone-700 font-medium">Total Students</span>
+                  <span className="font-bold text-2xl text-stone-600">-</span>
                 </div>
               </div>
             </Card>
             
-            <Card padding="lg" className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
-              <div className="text-center py-8 text-gray-600">
-                <div className="text-4xl mb-2">📝</div>
+            <Card padding="lg" className="bg-stone-50 border-stone-200">
+              <h3 className="text-lg font-bold text-stone-900 mb-4">Recent Activity</h3>
+              <div className="text-center py-8 text-stone-500">
+                <Icons.Grades className="w-10 h-10 text-stone-400 mx-auto mb-2" />
                 <p>No recent activity</p>
               </div>
             </Card>
             
-            <Card padding="lg" className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Upcoming Deadlines</h3>
-              <div className="text-center py-8 text-gray-600">
-                <div className="text-4xl mb-2">📅</div>
+            <Card padding="lg" className="bg-stone-50 border-stone-200">
+              <h3 className="text-lg font-bold text-stone-900 mb-4">Upcoming Deadlines</h3>
+              <div className="text-center py-8 text-stone-500">
+                <Icons.Attendance className="w-10 h-10 text-stone-400 mx-auto mb-2" />
                 <p>No upcoming deadlines</p>
               </div>
             </Card>

@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(
@@ -23,7 +23,7 @@ export async function GET(
     }
 
     const { id } = await params
-    const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
 
     // Get user details
     const { data: user, error } = await supabase
@@ -105,7 +105,7 @@ export async function PUT(
       is_active
     } = body
 
-    const supabase = createServiceClient()
+  const { supabase } = await getDataClient(request)
 
     // Check if user exists
     const { data: existingUser, error: fetchError } = await supabase
@@ -204,7 +204,7 @@ export async function DELETE(
     const { searchParams } = new URL(request.url)
     const permanent = searchParams.get('permanent') === 'true'
 
-    const supabase = createServiceClient()
+  const { supabase } = await getDataClient(request)
 
     if (permanent) {
       // Permanent deletion (use with caution)

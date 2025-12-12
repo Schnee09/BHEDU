@@ -17,7 +17,7 @@ export function SubmitButton({
   const { pending } = useFormStatus()
 
   const classesByVariant: Record<string, string> = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white',
+    primary: 'bg-stone-900 hover:bg-stone-800 text-white',
     success: 'bg-green-600 hover:bg-green-700 text-white',
     warning: 'bg-yellow-600 hover:bg-yellow-700 text-white',
     danger: 'bg-red-600 hover:bg-red-700 text-white',

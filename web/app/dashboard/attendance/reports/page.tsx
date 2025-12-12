@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { apiFetch } from '@/lib/api/client'
+import { ChartBarIcon, ArrowTrendingUpIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 
 interface AttendanceRecord {
   id: string
@@ -346,7 +347,7 @@ export default function AttendanceReportsPage() {
                           {analytics.totalRecords}
                         </p>
                       </div>
-                      <div className="text-4xl">📊</div>
+                      <ChartBarIcon className="w-10 h-10 text-gray-400" />
                     </div>
                   </div>
 
@@ -358,7 +359,7 @@ export default function AttendanceReportsPage() {
                           {analytics.attendanceRate}%
                         </p>
                       </div>
-                      <div className="text-4xl">📈</div>
+                      <ArrowTrendingUpIcon className="w-10 h-10 text-green-400" />
                     </div>
                   </div>
 
@@ -370,7 +371,7 @@ export default function AttendanceReportsPage() {
                           {analytics.totalPresent}
                         </p>
                       </div>
-                        <div className="text-4xl">✅</div>
+                        <CheckCircleIcon className="w-10 h-10 text-green-400" />
                     </div>
                   </div>
 
@@ -382,7 +383,7 @@ export default function AttendanceReportsPage() {
                           {analytics.totalAbsent}
                         </p>
                       </div>
-                        <div className="text-4xl">❌</div>
+                        <XCircleIcon className="w-10 h-10 text-red-400" />
                     </div>
                   </div>
                 </div>

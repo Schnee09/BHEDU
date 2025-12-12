@@ -13,7 +13,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useFetch, useMutation, useToast } from "@/hooks";
+import { useFetch, useMutation, useToast, useUser } from "@/hooks";
 import { 
   Button, 
   Card, 
@@ -24,6 +24,7 @@ import {
   EmptyState
 } from "@/components/ui";
 import { ToastContainer } from "@/components/ui/Toast";
+import { Icons } from "@/components/ui/Icons";
 import { logger } from "@/lib/logger";
 import { createAuditLog, AuditActions } from "@/lib/audit";
 
@@ -73,6 +74,7 @@ type QuickActionType = 'all-full' | 'all-missing' | 'clear-all';
 
 export default function GradeEntryPageModern() {
   const toast = useToast();
+  const { user } = useUser();
   
   // Selection state
   const [selectedClass, setSelectedClass] = useState<string>("");
@@ -96,7 +98,7 @@ export default function GradeEntryPageModern() {
       toast.error('Failed to load classes', classesError);
       logger.error('Classes fetch error', new Error(classesError));
     }
-  }, [classesError, toast]);
+  }, [classesError]);
   
   // Fetch assignments for selected class
   const { 
@@ -115,7 +117,7 @@ export default function GradeEntryPageModern() {
       toast.error('Failed to load assignments', assignmentsError);
       logger.error('Assignments fetch error', new Error(assignmentsError));
     }
-  }, [assignmentsError, toast]);
+  }, [assignmentsError]);
   
   // Fetch grades for selected assignment
   const { 
@@ -142,7 +144,7 @@ export default function GradeEntryPageModern() {
       toast.error('Failed to load grades', gradesError);
       logger.error('Grades fetch error', new Error(gradesError));
     }
-  }, [gradesError, toast]);
+  }, [gradesError]);
   
   // Save grades mutation
   const { mutate: saveGrades, loading: saving } = useMutation('/api/grades', 'POST');
@@ -318,9 +320,9 @@ export default function GradeEntryPageModern() {
       );
       
       await createAuditLog({
-        userId: 'current-user-id', // TODO: Get from session
-        userEmail: 'teacher@example.com', // TODO: Get from session
-        userRole: 'teacher',
+        userId: user?.id || 'unknown',
+        userEmail: user?.email || 'unknown',
+        userRole: user?.role || 'teacher',
         action: AuditActions.GRADE_UPDATED,
         resourceType: 'grade',
         resourceId: selectedAssignment,
@@ -341,7 +343,7 @@ export default function GradeEntryPageModern() {
       refetchGrades();
     } catch (err: any) {
       toast.error('Failed to save grades');
-      logger.error('Grade save error', { error: err });
+      logger.error('Grade save error', err instanceof Error ? err : new Error(String(err)), { originalError: String(err) });
     }
   };
   
@@ -532,7 +534,7 @@ export default function GradeEntryPageModern() {
               </Card>
               <Card padding="md">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-yellow-600">{stats.late}</p>
+                  <p className="text-2xl font-bold text-amber-600">{stats.late}</p>
                   <p className="text-xs text-gray-600 mt-1">Late</p>
                 </div>
               </Card>
@@ -546,7 +548,7 @@ export default function GradeEntryPageModern() {
         <LoadingState message="Loading grades..." />
       ) : grades.length === 0 && selectedAssignment ? (
         <EmptyState
-          icon={<span className="text-6xl">📊</span>}
+          icon={<Icons.Chart className="w-12 h-12 text-gray-400" />}
           title="No students enrolled"
           description="There are no students enrolled in this class yet"
         />
@@ -685,7 +687,7 @@ export default function GradeEntryPageModern() {
       {/* Empty States */}
       {!selectedClass && (
         <EmptyState
-          icon={<span className="text-6xl">📚</span>}
+          icon={<Icons.Classes className="w-12 h-12 text-gray-400" />}
           title="Select a Class"
           description="Choose a class from the dropdown above to start entering grades"
         />
@@ -693,7 +695,7 @@ export default function GradeEntryPageModern() {
       
       {selectedClass && !selectedAssignment && (
         <EmptyState
-          icon={<span className="text-6xl">📝</span>}
+          icon={<Icons.Grades className="w-12 h-12 text-gray-400" />}
           title="Select an Assignment"
           description="Choose an assignment to view and enter grades for your students"
         />
@@ -741,7 +743,7 @@ export default function GradeEntryPageModern() {
       {hasChanges && (
         <div className="fixed bottom-6 right-6 bg-white border border-gray-300 rounded-lg shadow-2xl p-4 max-w-sm">
           <div className="flex items-start gap-3">
-            <div className="text-yellow-600 text-2xl">⚠️</div>
+            <Icons.Warning className="w-6 h-6 text-yellow-600" />
             <div className="flex-1">
               <h4 className="font-semibold text-gray-900 mb-1">
                 Unsaved Changes

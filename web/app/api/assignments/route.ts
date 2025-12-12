@@ -32,12 +32,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile - try both user_id and id for compatibility
+    let { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id, role")
-      .eq("id", user.id)
-      .single();
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    // Fallback: try matching by id if user_id didn't work
+    if (!profile && !profileError) {
+      const result = await supabase
+        .from("profiles")
+        .select("id, role")
+        .eq("id", user.id)
+        .maybeSingle();
+      profile = result.data;
+      profileError = result.error;
+    }
 
     if (profileError || !profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });

@@ -32,6 +32,9 @@ export class AuthorizationError extends AppError {
   }
 }
 
+// Alias for AuthorizationError
+export const ForbiddenError = AuthorizationError;
+
 export class NotFoundError extends AppError {
   constructor(message: string = 'Resource not found') {
     super(message, 404, 'NOT_FOUND');

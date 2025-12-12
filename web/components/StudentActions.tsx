@@ -51,9 +51,32 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
     <div className="flex items-center gap-3">
       <Link
         href={`/dashboard/students/${studentId}/edit`}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm"
+        className="px-4 py-2 bg-stone-900 text-white rounded-lg hover:bg-stone-800 font-medium text-sm"
       >
         ✏️ Edit
+      </Link>
+
+      {isAdmin && (
+        <Link
+          href={`/dashboard/admin/impersonate/${studentId}`}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm"
+        >
+          🕵️ Impersonate
+        </Link>
+      )}
+
+      <Link
+        href={`/dashboard/admin/finance/invoices?student_id=${studentId}`}
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm"
+      >
+        💳 Invoices
+      </Link>
+
+      <Link
+        href={`/dashboard/admin/finance/payments?student_id=${studentId}`}
+        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm"
+      >
+        💰 Payments
       </Link>
 
       {isAdmin && (
@@ -62,6 +85,30 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm"
         >
           🗑️ Archive
+        </button>
+      )}
+
+      {isAdmin && (
+        <button
+          onClick={async () => {
+            try {
+              const loading = showToast.loading('Resetting password...')
+              const res = await apiFetch(`/api/admin/users/${studentId}/reset-password`, { method: 'POST' })
+              const json = await res.json()
+              showToast.dismiss(loading)
+              if (res.ok) {
+                showToast.success(json.message || 'Password reset email queued')
+              } else {
+                showToast.error(json.error || 'Failed to reset password')
+              }
+            } catch (err) {
+              console.error(err)
+              showToast.error('Failed to reset password')
+            }
+          }}
+          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium text-sm"
+        >
+          🔐 Reset Password
         </button>
       )}
 

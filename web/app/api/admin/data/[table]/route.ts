@@ -8,7 +8,8 @@
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createServiceClient } from '@/lib/supabase/server'
+import { rateLimitConfigs } from '@/lib/auth/rateLimit'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { ALLOWED_TABLES } from '../tables/route'
 import { handleApiError, ValidationError } from '@/lib/api/errors'
 
@@ -20,7 +21,8 @@ function validateTable(table: string) {
 
 export async function GET(request: Request, ctx: Params) {
   try {
-    const authResult = await adminAuth(request)
+    // Use bulk rate limit config for data operations (50 requests/min vs 10)
+    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
@@ -30,8 +32,8 @@ export async function GET(request: Request, ctx: Params) {
       throw new ValidationError(`Table '${table}' is not allowed or does not exist`)
     }
 
-    // Use service client to bypass RLS (admin already authenticated)
-    const supabase = createServiceClient()
+  // Use centralized helper to pick service client when appropriate
+  const { supabase } = await getDataClient(request)
     const { searchParams } = new URL(request.url)
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '25', 10)))
@@ -46,15 +48,51 @@ export async function GET(request: Request, ctx: Params) {
   const query = supabase.from(table).select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1)
   const res = await query
   if (res.error) {
-    // Retry with id order
+    // Check if table doesn't exist
+    if (res.error.code === '42P01' || res.error.message?.includes('does not exist')) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          pages: 0
+        },
+        note: `Table '${table}' not yet created. Run migrations to enable this feature.`
+      })
+    }
+    
+    // Retry with id order for tables without created_at
     const res2 = await supabase
       .from(table)
       .select('*', { count: 'exact' })
       .order('id', { ascending: false })
       .range(offset, offset + limit - 1)
-    data = res2.data
-    count = res2.count
-    error = res2.error
+    
+    if (res2.error) {
+      // Check again for missing table
+      if (res2.error.code === '42P01' || res2.error.message?.includes('does not exist')) {
+        return NextResponse.json({
+          success: true,
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            pages: 0
+          },
+          note: `Table '${table}' not yet created. Run migrations to enable this feature.`
+        })
+      }
+      data = res2.data
+      count = res2.count
+      error = res2.error
+    } else {
+      data = res2.data
+      count = res2.count
+      error = res2.error
+    }
   } else {
     data = res.data
     count = res.count
@@ -63,7 +101,11 @@ export async function GET(request: Request, ctx: Params) {
 
     if (error) {
       console.error('Admin Data Viewer GET error:', error)
-      throw new Error(`Failed to fetch data from table '${table}'`)
+      return NextResponse.json({
+        error: 'Failed to fetch data',
+        details: error instanceof Error ? error.message : String(error),
+        table
+      }, { status: 500 })
     }
 
     return NextResponse.json({
@@ -83,7 +125,8 @@ export async function GET(request: Request, ctx: Params) {
 
 export async function POST(request: Request, ctx: Params) {
   try {
-    const authResult = await adminAuth(request)
+    // Use bulk rate limit config for data operations
+    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
@@ -93,7 +136,7 @@ export async function POST(request: Request, ctx: Params) {
       throw new ValidationError(`Table '${table}' is not allowed or does not exist`)
     }
 
-    const supabase = createServiceClient()
+  const { supabase } = await getDataClient(request)
     const body = await request.json()
     
     if (!body || typeof body !== 'object') {
@@ -113,7 +156,8 @@ export async function POST(request: Request, ctx: Params) {
 
 export async function PUT(request: Request, ctx: Params) {
   try {
-    const authResult = await adminAuth(request)
+    // Use bulk rate limit config for data operations
+    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
@@ -123,7 +167,7 @@ export async function PUT(request: Request, ctx: Params) {
       throw new ValidationError(`Table '${table}' is not allowed or does not exist`)
     }
 
-    const supabase = createServiceClient()
+  const { supabase } = await getDataClient(request)
     const body = await request.json()
     const { id, ...updates } = body as { id?: string | number; [k: string]: unknown }
     
@@ -148,7 +192,8 @@ export async function PUT(request: Request, ctx: Params) {
 
 export async function DELETE(request: Request, ctx: Params) {
   try {
-    const authResult = await adminAuth(request)
+    // Use bulk rate limit config for data operations
+    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
@@ -165,7 +210,7 @@ export async function DELETE(request: Request, ctx: Params) {
       throw new ValidationError('Missing required query parameter: id')
     }
 
-    const supabase = createServiceClient()
+  const { supabase } = await getDataClient(request)
     const { error } = await supabase.from(table).delete().eq('id', id)
     
     if (error) {

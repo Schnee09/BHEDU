@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api/client";
 import { Card, LoadingState, Badge, Button } from "@/components/ui";
+import { Icons } from "@/components/ui/Icons";
 
 interface ClassDetail {
   id: string;
@@ -74,7 +75,7 @@ export default function ClassDetailPage() {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <Card className="p-8 text-center">
-          <div className="text-6xl mb-4">📚</div>
+          <Icons.Classes className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             {error === "Class not found" ? "Class Not Found" : "Error Loading Class"}
           </h1>
@@ -222,24 +223,24 @@ export default function ClassDetailPage() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link href={`/dashboard/attendance/mark?class=${classId}`}>
-            <button className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left">
-              <div className="text-2xl mb-2">✅</div>
+            <button className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all text-left">
+              <Icons.Attendance className="w-6 h-6 text-green-600 mb-2" />
               <div className="font-semibold text-gray-900">Take Attendance</div>
               <div className="text-sm text-gray-600">Mark attendance for this class</div>
             </button>
           </Link>
 
           <Link href={`/dashboard/grades/entry?class=${classId}`}>
-            <button className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all text-left">
-              <div className="text-2xl mb-2">📝</div>
+            <button className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all text-left">
+              <Icons.Grades className="w-6 h-6 text-orange-600 mb-2" />
               <div className="font-semibold text-gray-900">Enter Grades</div>
               <div className="text-sm text-gray-600">Grade assignments for students</div>
             </button>
           </Link>
 
           <Link href={`/dashboard/grades/assignments?class=${classId}`}>
-            <button className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all text-left">
-              <div className="text-2xl mb-2">📋</div>
+            <button className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-all text-left">
+              <Icons.Assignments className="w-6 h-6 text-teal-600 mb-2" />
               <div className="font-semibold text-gray-900">Manage Assignments</div>
               <div className="text-sm text-gray-600">Create and edit assignments</div>
             </button>

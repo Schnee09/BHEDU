@@ -28,17 +28,17 @@ export default function NavBar() {
 
   const getRoleBadge = (role: string) => {
     const badges = {
-      admin: 'bg-gradient-to-br from-amber-400 to-yellow-600 text-white',
-      teacher: 'bg-gradient-to-br from-blue-500 to-blue-700 text-white',
-      student: 'bg-gradient-to-br from-purple-500 to-purple-700 text-white',
+      admin: 'bg-stone-800 text-white',
+      teacher: 'bg-green-600 text-white',
+      student: 'bg-orange-500 text-white',
     };
     return badges[role as keyof typeof badges] || 'bg-stone-200 text-stone-800';
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-amber-100 shadow-sm">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-sm">
       {/* Skip to Main Content - Accessibility */}
-      <a href="#main-content" className="skip-to-main sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-white focus:rounded-lg focus:shadow-lg">
+      <a href="#main-content" className="skip-to-main sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-stone-900 focus:text-white focus:rounded-lg focus:shadow-lg">
         Skip to main content
       </a>
       
@@ -47,10 +47,10 @@ export default function NavBar() {
           {/* Logo */}
           <Link 
             href="/" 
-            className="flex items-center gap-2 font-heading font-bold text-xl bg-gradient-to-br from-amber-500 to-yellow-600 bg-clip-text text-transparent hover:from-amber-600 hover:to-yellow-700 transition-all"
+            className="flex items-center gap-2 font-heading font-bold text-xl text-stone-900 hover:text-stone-700 transition-all"
             aria-label="BH EDU Home"
           >
-            <svg className="w-8 h-8 text-amber-500" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="w-8 h-8 text-stone-900" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
             </svg>
             BH EDU
@@ -60,14 +60,14 @@ export default function NavBar() {
           <div className="hidden md:flex items-center gap-1">
             <Link 
               href="/dashboard" 
-              className="px-4 py-2 rounded-lg text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-all"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-all"
               aria-label="Go to Dashboard"
             >
               Dashboard
             </Link>
             <Link 
               href="/dashboard/courses" 
-              className="px-4 py-2 rounded-lg text-sm font-medium text-stone-700 hover:text-amber-700 hover:bg-amber-50 transition-all"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-all"
               aria-label="Go to Admin Panel"
             >
               Admin
@@ -75,7 +75,7 @@ export default function NavBar() {
             {(role === 'teacher' || role === 'admin') && (
               <Link 
                 href="/dashboard/grades/vietnamese-entry" 
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-br from-amber-400 to-yellow-600 text-white hover:from-amber-500 hover:to-yellow-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-stone-900 text-white hover:bg-stone-800 transition-all shadow-sm hover:shadow-md flex items-center gap-2"
                 aria-label="Enter grades"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -110,7 +110,7 @@ export default function NavBar() {
           ) : (
             <Link 
               href="/login" 
-              className="px-5 py-2 rounded-lg text-sm font-semibold bg-gradient-to-br from-amber-400 to-yellow-600 text-white hover:from-amber-500 hover:to-yellow-700 transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+              className="px-5 py-2 rounded-lg text-sm font-semibold bg-gradient-to-br from-blue-500 to-blue-700 text-white hover:from-blue-600 hover:to-blue-800 transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               aria-label="Sign in to your account"
             >
               Sign in
