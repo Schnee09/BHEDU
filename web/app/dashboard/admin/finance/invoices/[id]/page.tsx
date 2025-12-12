@@ -440,7 +440,7 @@ export default function InvoiceDetailsPage({ params }: { params: Promise<{ id: s
               {invoice.status !== 'cancelled' && (
                 <button
                   onClick={() => handleStatusChange('cancelled')}
-                  className="w-full px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+                  className="w-full px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
                   disabled={updating}
                 >
                   Cancel Invoice

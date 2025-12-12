@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 import { handleApiError, NotFoundError } from '@/lib/api/errors'
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params
-    const supabase = createClientFromRequest(req as any)
+  const { supabase } = await getDataClient(req)
 
     const { data: student, error } = await supabase
       .from('profiles')
@@ -58,7 +58,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params
-    const supabase = createClientFromRequest(req as any)
+  const { supabase } = await getDataClient(req)
     const body = await req.json()
     
     // Validate request body
@@ -157,7 +157,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params
-    const supabase = createClientFromRequest(req as any)
+  const { supabase } = await getDataClient(req)
 
     // Validate student exists
     const { data: existingStudent } = await supabase

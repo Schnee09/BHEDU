@@ -1,5 +1,5 @@
 /**
- * Form Components for BH-EDU
+ * Form Components for BH-EDU - Swiss Modernism 2.0
  * 
  * Additional form controls to complement the base Input component
  * - Select (dropdown)
@@ -33,18 +33,21 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ label, error, hint, options, placeholder, fullWidth = false, className = '', ...props }, ref) => {
     const selectClasses = `
-      w-full px-4 py-3 border-2 rounded-lg bg-white
-      focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500
-      disabled:bg-stone-100 disabled:cursor-not-allowed
+      w-full px-4 py-3 border rounded-lg 
+      bg-white dark:bg-[#2D2D2D] 
+      text-gray-900 dark:text-[#E8E8E8]
+      border-gray-300 dark:border-[#4A4A4A]
+      focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500
+      disabled:bg-gray-100 dark:disabled:bg-[#252525] disabled:cursor-not-allowed
       transition-all
-      ${error ? 'border-red-500 focus:ring-red-500' : 'border-stone-200'}
+      ${error ? 'border-red-500 focus:ring-red-500' : ''}
       ${className}
     `.trim();
 
     return (
       <div className={fullWidth ? 'w-full' : ''}>
         {label && (
-          <label className="block text-sm font-semibold text-stone-700 mb-2">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-[#C0C0C0] mb-2">
             {label}
             {props.required && <span className="text-red-500 ml-1">*</span>}
           </label>
@@ -74,18 +77,18 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ))}
           </select>
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-            <svg className="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="w-5 h-5 text-gray-500 dark:text-[#9A9A9A]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>
         </div>
 
         {hint && !error && (
-          <p className="mt-1 text-sm text-stone-600" id={`${props.id}-hint`}>{hint}</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-[#9A9A9A]" id={`${props.id}-hint`}>{hint}</p>
         )}
         
         {error && (
-          <p className="mt-1 text-sm text-red-600 flex items-center gap-1" role="alert" id={`${props.id}-error`}>
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1" role="alert" id={`${props.id}-error`}>
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
@@ -113,11 +116,14 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ label, error, hint, fullWidth = false, showCharCount, maxLength, className = '', value, ...props }, ref) => {
     const textareaClasses = `
-      w-full px-4 py-3 border-2 rounded-lg bg-white
-      focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500
-      disabled:bg-stone-100 disabled:cursor-not-allowed
+      w-full px-4 py-3 border rounded-lg 
+      bg-white dark:bg-[#2D2D2D] 
+      text-gray-900 dark:text-[#E8E8E8]
+      border-gray-300 dark:border-[#4A4A4A]
+      focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500
+      disabled:bg-gray-100 dark:disabled:bg-[#252525] disabled:cursor-not-allowed
       resize-y min-h-[120px] transition-all
-      ${error ? 'border-red-500 focus:ring-red-500' : 'border-stone-200'}
+      ${error ? 'border-red-500 focus:ring-red-500' : ''}
       ${className}
     `.trim();
 
@@ -126,7 +132,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className={fullWidth ? 'w-full' : ''}>
         {label && (
-          <label className="block text-sm font-semibold text-stone-700 mb-2">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-[#C0C0C0] mb-2">
             {label}
             {props.required && <span className="text-red-500 ml-1">*</span>}
           </label>
@@ -145,10 +151,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         <div className="flex justify-between items-center mt-1">
           <div>
             {hint && !error && (
-              <p className="text-sm text-stone-600" id={`${props.id}-hint`}>{hint}</p>
+              <p className="text-sm text-gray-500 dark:text-[#9A9A9A]" id={`${props.id}-hint`}>{hint}</p>
             )}
             {error && (
-              <p className="text-sm text-red-600 flex items-center gap-1" role="alert" id={`${props.id}-error`}>
+              <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1" role="alert" id={`${props.id}-error`}>
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
@@ -158,7 +164,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           </div>
           
           {showCharCount && maxLength && (
-            <p className="text-sm text-stone-600 font-medium" aria-live="polite">
+            <p className="text-sm text-gray-500 dark:text-[#9A9A9A] font-medium" aria-live="polite">
               {charCount} / {maxLength}
             </p>
           )}
@@ -190,7 +196,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               className="peer sr-only"
               {...props}
             />
-            <div className="w-5 h-5 border-2 border-stone-300 rounded transition-all peer-checked:bg-gradient-to-br peer-checked:from-amber-400 peer-checked:to-yellow-600 peer-checked:border-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500 peer-focus:ring-offset-2 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+            <div className="w-5 h-5 border-2 border-slate-300 rounded transition-all peer-checked:bg-gradient-to-br peer-checked:from-blue-500 peer-checked:to-blue-700 peer-checked:border-blue-500 peer-focus:ring-2 peer-focus:ring-blue-500 peer-focus:ring-offset-2 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
             <svg
               className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none"
               fill="none"
@@ -201,11 +207,11 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             </svg>
           </div>
           <div className="flex-1">
-            <span className="text-sm font-medium text-stone-700 group-hover:text-amber-700 transition-colors">
+            <span className="text-sm font-medium text-slate-700 group-hover:text-blue-700 transition-colors">
               {label}
             </span>
             {description && (
-              <p className="text-sm text-stone-600 mt-0.5">{description}</p>
+              <p className="text-sm text-slate-600 mt-0.5">{description}</p>
             )}
           </div>
         </label>
@@ -256,7 +262,7 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
   return (
     <div>
       {label && (
-        <label className="block text-sm font-semibold text-stone-700 mb-3">
+        <label className="block text-sm font-semibold text-slate-700 mb-3">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -276,15 +282,15 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
                 disabled={option.disabled}
                 className="peer sr-only"
               />
-              <div className="w-5 h-5 border-2 border-stone-300 rounded-full transition-all peer-checked:border-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500 peer-focus:ring-offset-2 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+              <div className="w-5 h-5 border-2 border-slate-300 rounded-full transition-all peer-checked:border-blue-500 peer-focus:ring-2 peer-focus:ring-blue-500 peer-focus:ring-offset-2 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
             </div>
             <div className="flex-1">
-              <span className="text-sm font-medium text-stone-700 group-hover:text-amber-700 transition-colors">
+              <span className="text-sm font-medium text-slate-700 group-hover:text-blue-700 transition-colors">
                 {option.label}
               </span>
               {option.description && (
-                <p className="text-sm text-stone-600 mt-0.5">{option.description}</p>
+                <p className="text-sm text-slate-600 mt-0.5">{option.description}</p>
               )}
             </div>
           </label>
@@ -317,11 +323,11 @@ export const Toggle = forwardRef<HTMLInputElement, ToggleProps>(
       <div>
         <div className="flex items-center justify-between">
           <div className="flex-grow">
-            <label className="text-sm font-semibold text-stone-700">
+            <label className="text-sm font-semibold text-slate-700">
               {label}
             </label>
             {description && (
-              <p className="text-sm text-stone-600 mt-0.5">{description}</p>
+              <p className="text-sm text-slate-600 mt-0.5">{description}</p>
             )}
           </div>
           
@@ -333,9 +339,9 @@ export const Toggle = forwardRef<HTMLInputElement, ToggleProps>(
               relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer
               rounded-full border-2 border-transparent
               transition-all duration-200 ease-in-out
-              focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
               disabled:cursor-not-allowed disabled:opacity-50
-              ${checked ? 'bg-gradient-to-r from-amber-400 to-yellow-600' : 'bg-stone-300'}
+              ${checked ? 'bg-gradient-to-r from-blue-500 to-blue-700' : 'bg-slate-300'}
               ${className}
             `.trim()}
             onClick={() => {
@@ -348,7 +354,7 @@ export const Toggle = forwardRef<HTMLInputElement, ToggleProps>(
               className={`
                 inline-block h-5 w-5 transform rounded-full
                 bg-white shadow-md ring-0 transition-all duration-200 ease-in-out
-                ${checked ? 'translate-x-5 shadow-amber-500/30' : 'translate-x-0'}
+                ${checked ? 'translate-x-5 shadow-blue-500/30' : 'translate-x-0'}
               `.trim()}
             />
           </button>
@@ -458,7 +464,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   return (
     <div>
       {label && (
-        <label className="block text-sm font-semibold text-stone-700 mb-2">
+        <label className="block text-sm font-semibold text-slate-700 mb-2">
           {label}
         </label>
       )}
@@ -467,7 +473,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         className={`
           relative border-2 border-dashed rounded-xl p-8
           transition-all cursor-pointer
-          ${dragActive ? 'border-amber-500 bg-amber-50 scale-[1.02]' : 'border-stone-300 hover:border-amber-400 hover:bg-amber-50/30'}
+          ${dragActive ? 'border-stone-500 bg-stone-50 scale-[1.02]' : 'border-stone-300 hover:border-stone-400 hover:bg-stone-50/30'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
           ${error ? 'border-red-500 bg-red-50' : ''}
         `.trim()}
@@ -489,7 +495,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         
         <div className="text-center">
           <svg
-            className="mx-auto h-12 w-12 text-amber-500"
+            className="mx-auto h-12 w-12 text-stone-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -499,9 +505,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           <p className="mt-3 text-sm font-semibold text-stone-700">
             Click to upload or drag and drop
           </p>
-          {hint && <p className="mt-1 text-xs text-stone-600">{hint}</p>}
+          {hint && <p className="mt-1 text-xs text-slate-600">{hint}</p>}
           {maxSize && (
-            <p className="mt-1 text-xs text-stone-600">
+            <p className="mt-1 text-xs text-slate-600">
               Max file size: {formatFileSize(maxSize)}
             </p>
           )}
@@ -513,10 +519,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           {selectedFiles.map((file, index) => (
             <div
               key={index}
-              className="flex items-center justify-between p-3 bg-amber-50 border border-amber-100 rounded-lg hover:shadow-md transition-shadow"
+              className="flex items-center justify-between p-3 bg-stone-50 border border-stone-200 rounded-lg hover:shadow-md transition-shadow"
             >
               <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-lg flex items-center justify-center">
+                <div className="flex-shrink-0 w-10 h-10 bg-stone-900 rounded-lg flex items-center justify-center">
                   <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                   </svg>

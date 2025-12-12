@@ -1,11 +1,14 @@
 /**
  * Admin Single Class API
- * CRUD operations for a specific class (admin only)
+ * CRUD operations for a specific class
+ * - GET: Admin/Staff see any class, Teachers see their own classes
+ * - PATCH/DELETE: Admin/Staff only
  */
 
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
-import { adminAuth } from '@/lib/auth/adminAuth'
+import { getDataClient } from '@/lib/auth/dataClient'
+import { adminAuth, teacherAuth } from '@/lib/auth/adminAuth'
+import { hasAdminAccess } from '@/lib/auth/permissions'
 import { logger } from '@/lib/logger'
 
 // GET /api/admin/classes/[id] - Get single class details
@@ -14,15 +17,17 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await adminAuth(request)
+    // Allow teachers to view their own classes
+    const authResult = await teacherAuth(request)
     if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const resolvedParams = await params
-    const supabase = createServiceClient()
+  const resolvedParams = await params
+  const { supabase } = await getDataClient(request)
     const { id } = resolvedParams
 
+    // First, get the class to check ownership
     const { data: classData, error } = await supabase
       .from('classes')
       .select(`
@@ -58,6 +63,11 @@ export async function GET(
       )
     }
 
+    // Teachers can only view their own classes
+    if (!hasAdminAccess(authResult.userRole || '') && classData.teacher_id !== authResult.userId) {
+      return NextResponse.json({ error: 'Access denied - not your class' }, { status: 403 })
+    }
+
     return NextResponse.json({
       success: true,
       class: classData
@@ -83,8 +93,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const resolvedParams = await params
-    const supabase = createServiceClient()
+  const resolvedParams = await params
+  const { supabase } = await getDataClient(request)
     const { id } = resolvedParams
     const body = await request.json()
 
@@ -207,9 +217,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const resolvedParams = await params
-    const supabase = createServiceClient()
-    const { id } = resolvedParams
+  const resolvedParams = await params
+  const { supabase } = await getDataClient(request)
+  const { id } = resolvedParams
 
     // Check if class has enrollments
     const { data: enrollments, error: enrollError } = await supabase

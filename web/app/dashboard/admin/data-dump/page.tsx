@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui';
+import { Icons } from "@/components/ui/Icons";
 
 export default function DataDumpPage() {
   const [data, setData] = useState<any>(null);
@@ -21,6 +22,7 @@ export default function DataDumpPage() {
 
       const results: any = {};
 
+      // Process tables sequentially with delay to avoid rate limiting
       for (const table of tables) {
         try {
           const response = await fetch(`/api/admin/data/${table}?limit=1000`);
@@ -31,13 +33,24 @@ export default function DataDumpPage() {
               data: json.data || [],
               success: true
             };
+            console.log(`✅ ${table}`);
           } else {
+            const errorText = await response.text();
+            let errorData;
+            try {
+              errorData = JSON.parse(errorText);
+            } catch {
+              errorData = { error: errorText };
+            }
+            
             results[table] = {
               count: 0,
               data: [],
-              error: await response.text(),
+              error: errorData.error || errorText,
+              reason: errorData.reason,
               success: false
             };
+            console.log(`❌ ${table}`, errorData);
           }
         } catch (error: any) {
           results[table] = {
@@ -46,7 +59,11 @@ export default function DataDumpPage() {
             error: error.message,
             success: false
           };
+          console.log(`❌ ${table}`, error.message);
         }
+        
+        // Add 200ms delay between requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       setData(results);
@@ -139,7 +156,7 @@ export default function DataDumpPage() {
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
             <div className="flex">
               <div className="flex-shrink-0">
-                <span className="text-2xl">💡</span>
+                <Icons.Info className="w-6 h-6 text-yellow-600" />
               </div>
               <div className="ml-3">
                 <p className="text-sm text-yellow-700 font-medium">
@@ -196,9 +213,9 @@ export default function DataDumpPage() {
                 a.download = `database-dump-${Date.now()}.json`;
                 a.click();
               }}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
             >
-              💾 Download JSON
+              <Icons.Save className="w-4 h-4" /> Download JSON
             </button>
           </div>
         </Card>

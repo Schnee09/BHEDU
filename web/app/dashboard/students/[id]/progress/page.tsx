@@ -103,7 +103,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
         </div>
       </div>
@@ -131,7 +131,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => router.back()}
-                className="text-amber-600 hover:text-amber-700 flex items-center gap-2"
+                className="text-blue-600 hover:text-blue-700 flex items-center gap-2"
               >
                 ← Quay lại
               </button>
@@ -157,7 +157,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
           
           {/* Overall Trend Card */}
           {trend && (
-            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-4 border border-amber-200 min-w-[200px]">
+            <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-lg p-4 border border-blue-200 min-w-[200px]">
               <p className="text-sm text-gray-600 mb-2">Xu hướng tổng thể</p>
               <div className="flex items-center gap-2">
                 <span className={`text-3xl ${
@@ -185,7 +185,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
           const classification = getGradeClassification(semester.gpa);
           
           return (
-            <div key={index} className="bg-white rounded-lg shadow-md p-5 border-l-4 border-amber-500 hover:shadow-lg transition-shadow">
+            <div key={index} className="bg-white rounded-lg shadow-md p-5 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="font-bold text-lg text-gray-800">{semester.semester}</h3>
@@ -199,7 +199,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Điểm TB:</span>
-                  <span className="text-2xl font-bold text-amber-600">{semester.gpa.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-blue-600">{semester.gpa.toFixed(2)}</span>
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -232,7 +232,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
         
         {progress.semesters.map((semester, semIndex) => (
           <div key={semIndex} className="mb-8 last:mb-0">
-            <h3 className="text-xl font-semibold text-amber-600 mb-4 pb-2 border-b-2 border-amber-200">
+            <h3 className="text-xl font-semibold text-blue-600 mb-4 pb-2 border-b-2 border-blue-200">
               {semester.semester} - {semester.academic_year}
             </h3>
             
@@ -274,7 +274,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                         </td>
                         <td className="px-4 py-3 text-center">
                           {subject.final_grade !== null ? (
-                            <span className="text-lg font-bold text-amber-600">
+                            <span className="text-lg font-bold text-blue-600">
                               {subject.final_grade.toFixed(1)}
                             </span>
                           ) : (

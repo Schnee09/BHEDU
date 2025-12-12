@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(
@@ -19,7 +19,7 @@ export async function GET(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
     const { id } = await context.params
 
     // Get teacher profile
@@ -94,7 +94,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
     const { id } = await context.params
     const body = await request.json()
 
@@ -185,7 +185,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
     const { id } = await context.params
 
     // Check if teacher exists

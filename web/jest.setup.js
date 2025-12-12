@@ -2,6 +2,10 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('dotenv').config({ path: '.env.local' });
 
+// Setup @testing-library/jest-dom matchers
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require('@testing-library/jest-dom');
+
 // Mock Next.js headers and cookies
 jest.mock('next/headers', () => ({
   cookies: jest.fn(() => ({

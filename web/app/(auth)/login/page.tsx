@@ -31,12 +31,12 @@ export default function LoginPage() {
         const { data: profileRow } = await supabase
           .from("profiles")
           .select("role")
-          .eq("id", data.user?.id)
+          .eq("user_id", data.user?.id)
           .single();
   userRole = (profileRow as { role?: unknown } | null)?.role as string | undefined;
       }
 
-      if (userRole === "admin") router.replace("/dashboard");
+      if (userRole === "admin" || userRole === "staff") router.replace("/dashboard");
       else if (userRole === "teacher") router.replace("/dashboard/classes");
       else router.replace("/dashboard");
     }
@@ -75,32 +75,32 @@ export default function LoginPage() {
 
   return (
     <GuestGuard>
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-slate-50 to-white px-4 py-12">
       <div className="w-full max-w-md">
         {/* Card with glass effect */}
-        <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl shadow-amber-500/20 border border-amber-100/50 p-8">
+        <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl shadow-blue-500/10 border border-blue-100/50 p-8">
           {/* Logo and Header */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-br from-amber-400 to-yellow-600 p-3 rounded-2xl shadow-lg shadow-amber-500/50">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-3 rounded-2xl shadow-lg shadow-blue-500/30">
                 <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
                 </svg>
               </div>
             </div>
-            <h2 className="text-3xl font-bold bg-gradient-to-br from-amber-600 to-yellow-700 bg-clip-text text-transparent font-heading mb-2">
+            <h2 className="text-3xl font-bold bg-gradient-to-br from-blue-600 to-blue-800 bg-clip-text text-transparent font-heading mb-2">
               Welcome Back
             </h2>
-            <p className="text-stone-600">Sign in to access your dashboard</p>
+            <p className="text-slate-600">Sign in to access your dashboard</p>
           </div>
 
         <form onSubmit={signInWithPassword} className="space-y-5">
           <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-2">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
               Email Address
             </label>
             <input
-              className="w-full border-2 border-stone-200 px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white text-stone-900 placeholder-stone-400"
+              className="w-full border-2 border-slate-200 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
@@ -110,11 +110,11 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-2">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
               Password
             </label>
             <input
-              className="w-full border-2 border-stone-200 px-4 py-3 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white text-stone-900 placeholder-stone-400"
+              className="w-full border-2 border-slate-200 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
@@ -126,7 +126,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-gradient-to-br from-amber-400 to-yellow-600 hover:from-amber-500 hover:to-yellow-700 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            className="w-full py-3.5 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -143,13 +143,13 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={signInWithMagicLink}
-              className="text-amber-700 hover:text-amber-800 font-medium hover:underline transition-colors"
+              className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors"
             >
               Use Magic Link
             </button>
             <a
               href="/forgot-password"
-              className="text-stone-600 hover:text-amber-700 font-medium transition-colors"
+              className="text-slate-600 hover:text-blue-600 font-medium transition-colors"
             >
               Forgot Password?
             </a>
@@ -157,10 +157,10 @@ export default function LoginPage() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-stone-300"></div>
+              <div className="w-full border-t border-slate-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-stone-700 font-medium">OR</span>
+              <span className="px-4 bg-white text-slate-700 font-medium">OR</span>
             </div>
           </div>
 
@@ -195,9 +195,9 @@ export default function LoginPage() {
           )}
         </form>
 
-        <p className="text-center text-sm mt-6 text-stone-600">
+        <p className="text-center text-sm mt-6 text-slate-600">
           Don't have an account?{" "}
-          <a href="/signup" className="text-amber-700 hover:text-amber-800 font-semibold hover:underline transition-colors">
+          <a href="/signup" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline transition-colors">
             Create one
           </a>
         </p>

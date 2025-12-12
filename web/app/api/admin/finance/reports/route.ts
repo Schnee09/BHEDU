@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
-    const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
     const { searchParams } = new URL(request.url)
     const reportType = searchParams.get('type') // outstanding, revenue, payment_summary, category
     const academicYearId = searchParams.get('academic_year_id')

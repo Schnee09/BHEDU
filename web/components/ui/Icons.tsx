@@ -30,6 +30,18 @@ import {
   ChevronRightIcon,
   Bars3Icon,
   XMarkIcon,
+  FunnelIcon,
+  ArrowDownTrayIcon,
+  ArchiveBoxIcon,
+  DocumentArrowDownIcon,
+  CalendarIcon,
+  LockClosedIcon,
+  CreditCardIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  MapPinIcon,
+  ChevronDownIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 
 import {
@@ -66,6 +78,18 @@ export const Icons = {
   Delete: TrashIcon,
   Add: PlusIcon,
   ChevronRight: ChevronRightIcon,
+  ChevronDown: ChevronDownIcon,
+  Filter: FunnelIcon,
+  Search: MagnifyingGlassIcon,
+  Download: ArrowDownTrayIcon,
+  Archive: ArchiveBoxIcon,
+  Save: DocumentArrowDownIcon,
+  Calendar: CalendarIcon,
+  Lock: LockClosedIcon,
+  CreditCard: CreditCardIcon,
+  Phone: PhoneIcon,
+  Mail: EnvelopeIcon,
+  Location: MapPinIcon,
   
   // Status
   Success: CheckCircleIcon,
@@ -98,16 +122,16 @@ interface IconProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export function Icon({ icon: IconComponent, className = '', size = 'md' }: IconProps) {
-  const sizeClasses = {
-    xs: 'w-4 h-4',
-    sm: 'w-5 h-5',
-    md: 'w-6 h-6',
-    lg: 'w-8 h-8',
-    xl: 'w-10 h-10',
-  };
+const SIZE_CLASSES = {
+  xs: 'w-4 h-4',
+  sm: 'w-5 h-5',
+  md: 'w-6 h-6',
+  lg: 'w-8 h-8',
+  xl: 'w-10 h-10',
+} as const;
 
-  return <IconComponent className={`${sizeClasses[size]} ${className}`} />;
+export function Icon({ icon: IconComponent, className = '', size = 'md' }: IconProps) {
+  return <IconComponent className={`${SIZE_CLASSES[size]} ${className}`} />;
 }
 
 export default Icons;

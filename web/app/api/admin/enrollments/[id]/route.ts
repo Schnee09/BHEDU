@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/auth/adminAuth';
-import { createClientFromRequest } from '@/lib/supabase/server';
+import { getDataClient } from '@/lib/auth/dataClient'
 
 export async function GET(
   request: Request,
@@ -15,7 +15,7 @@ export async function GET(
       );
     }
 
-    const supabase = createClientFromRequest(request as any);
+  const { supabase } = await getDataClient(request);
     const { id } = await context.params;
 
     const { data: enrollment, error } = await supabase
@@ -76,7 +76,7 @@ export async function PATCH(
       );
     }
 
-    const supabase = createClientFromRequest(request as any);
+  const { supabase } = await getDataClient(request);
     const { id } = await context.params;
     const body = await request.json();
 
@@ -138,7 +138,7 @@ export async function DELETE(
       );
     }
 
-    const supabase = createClientFromRequest(request as any);
+  const { supabase } = await getDataClient(request);
     const { id } = await context.params;
 
     // Check if enrollment exists and get student_id, class_id for deletion checks

@@ -1,18 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getDataClient } from '@/lib/auth/dataClient';
 import Tabs from "@/components/ui/tabs";
 import Badge from "@/components/ui/badge";
 import Empty from "@/components/ui/empty";
 import { Card } from "@/components/ui";
+import { Icons } from "@/components/ui/Icons";
+import { CakeIcon } from "@heroicons/react/24/outline";
 import StudentActions from "@/components/StudentActions";
 import GuardianManagement from "@/components/GuardianManagement";
 import EnrollmentManager from "@/components/EnrollmentManager";
 import StudentPhotoUpload from "@/components/StudentPhotoUpload";
 
-async function fetchStudent(id: string) {
-  const supabase = await createClient();
-
+/**
+ * Fetch student data using the provided Supabase client.
+ * This allows higher-privilege callers (admin) to pass a service client
+ * so RLS won't hide student-related rows.
+ */
+async function fetchStudentWithClient(supabase: any, id: string) {
   const { data: profile, error: pErr } = await supabase
     .from("profiles")
     .select("id, full_name, email, phone, address, date_of_birth, photo_url, created_at, role")
@@ -36,9 +41,9 @@ async function fetchStudent(id: string) {
   ] = await Promise.all([
     supabase
       .from("enrollments")
-      .select("id, class_id, enrolled_at, classes(name, grade)")
+      .select("id, class_id, enrollment_date, status, classes(id, name)")
       .eq("student_id", id)
-      .order("enrolled_at", { ascending: false }),
+      .order("enrollment_date", { ascending: false }),
     supabase
       .from("attendance")
       .select("id, class_id, date, status, notes")
@@ -47,7 +52,7 @@ async function fetchStudent(id: string) {
       .limit(20),
     supabase
       .from("grades")
-      .select("id, assignment_id, points_earned, graded_at, assignments(title, total_points)")
+      .select("id, assignment_id, score, feedback, graded_at, assignments(title, max_points)")
       .eq("student_id", id)
       .order("graded_at", { ascending: false })
       .limit(20),
@@ -91,15 +96,17 @@ async function fetchStudent(id: string) {
 
 export default async function StudentDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { profile, enrollments, attendance, grades, account, invoices, payments, audits } = await fetchStudent(id);
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth?.user ?? null;
-  let viewerRole: string | null = null;
-  if (user) {
-  const { data: viewer } = await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
-    viewerRole = (viewer as { role?: string } | null)?.role ?? null;
-  }
+
+  // Centralized: choose the appropriate data client for this viewer.
+  // The helper returns the supabase client and the detected viewer role
+  // so pages can adapt what they show.
+  const { supabase: dataClient, viewerRole, user } = await getDataClient();
+
+  const { profile, enrollments, attendance, grades, account, invoices, payments, audits } = await fetchStudentWithClient(
+    dataClient,
+    id
+  );
+
   const showFinance = viewerRole === "admin" || (user?.id === id);
   const showActivity = viewerRole === "admin";
 
@@ -175,12 +182,14 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 )}
                 {profile.date_of_birth && (
                   <div className="flex items-center gap-2 text-sm text-gray-700">
-                    <span className="text-gray-500">🎂 Date of Birth:</span>
+                    <CakeIcon className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-500">Date of Birth:</span>
                     <span className="font-medium">{new Date(profile.date_of_birth).toLocaleDateString()}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <span className="text-gray-500">📅 Joined:</span>
+                  <Icons.Calendar className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-500">Joined:</span>
                   <span className="font-medium">{new Date(profile.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -191,54 +200,54 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
         {/* Modern Stat Cards with Gradients */}
         <div className="space-y-4">
-          <Card padding="md" className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+          <Card padding="md" className="bg-green-50 border-green-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-700">Active Classes</p>
-                <p className="text-3xl font-bold text-blue-900 mt-1">{enrollments.length}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">📚</span>
-              </div>
-            </div>
-          </Card>
-
-          <Card padding="md" className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-700">Attendance</p>
-                <p className="text-3xl font-bold text-green-900 mt-1">{attendance.length}</p>
-                <p className="text-xs text-green-600 mt-1">Recent records</p>
+                <p className="text-sm font-medium text-green-700">Active Classes</p>
+                <p className="text-3xl font-bold text-green-900 mt-1">{enrollments.length}</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">✓</span>
+                <Icons.Classes className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </Card>
 
-          <Card padding="md" className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+          <Card padding="md" className="bg-emerald-50 border-emerald-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-purple-700">Recent Grades</p>
-                <p className="text-3xl font-bold text-purple-900 mt-1">{grades.length}</p>
-                <p className="text-xs text-purple-600 mt-1">Assignments</p>
+                <p className="text-sm font-medium text-emerald-700">Attendance</p>
+                <p className="text-3xl font-bold text-emerald-900 mt-1">{attendance.length}</p>
+                <p className="text-xs text-emerald-600 mt-1">Recent records</p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">🎯</span>
+              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <Icons.Attendance className="w-6 h-6 text-emerald-600" />
+              </div>
+            </div>
+          </Card>
+
+          <Card padding="md" className="bg-orange-50 border-orange-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-orange-700">Recent Grades</p>
+                <p className="text-3xl font-bold text-orange-900 mt-1">{grades.length}</p>
+                <p className="text-xs text-orange-600 mt-1">Assignments</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <Icons.Grades className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </Card>
 
           {accountInfo && (
-            <Card padding="md" className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+            <Card padding="md" className="bg-teal-50 border-teal-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-amber-700">Account Balance</p>
-                  <p className="text-3xl font-bold text-amber-900 mt-1">{accountInfo.balance ?? '0'}</p>
-                  <p className="text-xs text-amber-600 mt-1 capitalize">{accountInfo.status}</p>
+                  <p className="text-sm font-medium text-teal-700">Account Balance</p>
+                  <p className="text-3xl font-bold text-teal-900 mt-1">{accountInfo.balance ?? '0'}</p>
+                  <p className="text-xs text-teal-600 mt-1 capitalize">{accountInfo.status}</p>
                 </div>
-                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">💰</span>
+                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                  <Icons.Finance className="w-6 h-6 text-teal-600" />
                 </div>
               </div>
             </Card>
@@ -310,8 +319,8 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 <tr key={g.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-900">{g.assignments?.title ?? g.assignment_id}</td>
                   <td className="px-4 py-3">
-                    <span className="font-semibold text-blue-600">{g.points_earned}</span>
-                    <span className="text-gray-500"> / {g.assignments?.total_points ?? '-'}</span>
+                    <span className="font-semibold text-blue-600">{g.score}</span>
+                    <span className="text-gray-500"> / {g.assignments?.max_points ?? '-'}</span>
                   </td>
                   <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString() : '-'}</td>
                 </tr>
@@ -332,9 +341,9 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Account Status</p>
             <p className="text-xl font-bold text-gray-900 mt-2 capitalize">{accountInfo?.status ?? '—'}</p>
           </Card>
-          <Card padding="md" className="bg-gradient-to-br from-amber-50 to-orange-50">
-            <p className="text-xs font-medium text-amber-700 uppercase tracking-wide">Current Balance</p>
-            <p className="text-xl font-bold text-amber-900 mt-2">${accountInfo?.balance ?? '0'}</p>
+          <Card padding="md" className="bg-gradient-to-br from-emerald-50 to-green-50">
+            <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Current Balance</p>
+            <p className="text-xl font-bold text-emerald-900 mt-2">${accountInfo?.balance ?? '0'}</p>
           </Card>
           <Card padding="md" className="bg-gradient-to-br from-blue-50 to-indigo-50">
             <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Last Payment</p>
@@ -475,9 +484,9 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
             </Link>
             <Link 
               href={`/dashboard/students/${id}/progress`}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg font-medium text-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-md hover:shadow-lg font-medium text-sm"
             >
-              <span>📊</span>
+              <Icons.Chart className="w-4 h-4" />
               <span>Theo dõi Tiến độ</span>
             </Link>
           </div>

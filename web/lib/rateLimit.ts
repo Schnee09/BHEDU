@@ -5,7 +5,7 @@
 
 const hits = new Map<string, { count: number; reset: number }>()
 const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
-const RATE_LIMIT_MAX = 60 // 60 requests per minute per IP
+const RATE_LIMIT_MAX = 200 // 200 requests per minute per IP (increased from 60)
 
 function getClientIP(req: Request): string {
   return req.headers.get('x-forwarded-for')?.split(',')[0].trim() 

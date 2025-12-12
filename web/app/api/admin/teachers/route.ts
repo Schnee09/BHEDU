@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from "@/lib/auth/adminAuth";
 import { handleApiError, AuthenticationError, ValidationError } from "@/lib/api/errors";
 import { logger } from "@/lib/logger";
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       throw new AuthenticationError(authResult.reason || "Unauthorized");
     }
 
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search");
 
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       throw new AuthenticationError(authResult.reason || "Unauthorized");
     }
 
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
     const body = await request.json();
     const { email, full_name, date_of_birth, phone } = body;
 

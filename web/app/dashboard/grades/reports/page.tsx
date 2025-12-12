@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getLetterGradeColor } from '@/lib/gradeService'
 import { apiFetch } from '@/lib/api/client'
+import { DocumentTextIcon } from '@heroicons/react/24/outline'
 
 interface Class {
   id: string
@@ -580,7 +581,7 @@ export default function ReportCardsPage() {
       {/* Empty State */}
       {!selectedClass && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <div className="text-4xl mb-4">📄</div>
+          <DocumentTextIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Select a Class
           </h3>

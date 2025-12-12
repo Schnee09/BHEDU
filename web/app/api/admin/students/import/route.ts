@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 import type { StudentImportRow } from '@/lib/importService'
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-   const supabase = createClientFromRequest(req as any)
+  const { supabase } = await getDataClient(req)
     const body = await req.json()
     const { students } = body as { students: StudentImportRow[] }
 

@@ -227,21 +227,21 @@ export default function PaymentsPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-sm text-gray-600 mb-1">Total Payments</div>
+          <div className="text-sm text-slate-700 font-medium mb-1">Total Payments</div>
           <div className="text-2xl font-bold">{stats.total}</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-sm text-gray-600 mb-1">Total Collected</div>
+          <div className="text-sm text-slate-700 font-medium mb-1">Total Collected</div>
           <div className="text-2xl font-bold text-green-600">
             {formatCurrency(stats.totalAmount)}
           </div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-sm text-gray-600 mb-1">Today&apos;s Payments</div>
+          <div className="text-sm text-slate-700 font-medium mb-1">Today&apos;s Payments</div>
           <div className="text-2xl font-bold text-blue-600">{stats.today}</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-sm text-gray-600 mb-1">Today&apos;s Collection</div>
+          <div className="text-sm text-slate-700 font-medium mb-1">Today&apos;s Collection</div>
           <div className="text-2xl font-bold text-purple-600">
             {formatCurrency(stats.todayAmount)}
           </div>
@@ -251,7 +251,7 @@ export default function PaymentsPage() {
       {/* Search */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             Search Payments
           </label>
           <input
@@ -269,25 +269,25 @@ export default function PaymentsPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
                 Receipt #
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
                 Student
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
                 Amount
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
                 Payment Method
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
                 Payment Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
                 Reference
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-slate-700 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -295,13 +295,13 @@ export default function PaymentsPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={7} className="px-6 py-4 text-center text-slate-600">
                   Loading payments...
                 </td>
               </tr>
             ) : filteredPayments.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={7} className="px-6 py-4 text-center text-slate-600">
                   No payments found.
                 </td>
               </tr>
@@ -316,7 +316,7 @@ export default function PaymentsPage() {
                       {payment.student_account?.student?.first_name}{' '}
                       {payment.student_account?.student?.last_name}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-slate-600">
                       {payment.student_account?.student?.student_id}
                     </div>
                   </td>
@@ -328,10 +328,10 @@ export default function PaymentsPage() {
                       {payment.payment_method?.name || 'N/A'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                     {formatDate(payment.payment_date)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                     {payment.reference_number || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

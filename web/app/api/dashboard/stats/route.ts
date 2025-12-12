@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
+import { hasAdminAccess } from '@/lib/auth/permissions'
 import { logger } from '@/lib/logger'
 
 export async function GET(request: Request) {
@@ -22,7 +23,8 @@ export async function GET(request: Request) {
 
     // Use service client to bypass RLS for counting
     const supabase = createServiceClient()
-    const isAdmin = authResult.userRole === 'admin'
+    // Admin and Staff see all, teachers see their own
+    const canSeeAll = hasAdminAccess(authResult.userRole || '')
 
     try {
       const today = new Date().toISOString().split('T')[0]
@@ -47,13 +49,13 @@ export async function GET(request: Request) {
           .select("id", { count: "exact", head: true })
           .eq("role", "teacher"),
 
-        // Count classes (all for admin, own for teacher)
-        isAdmin
+        // Count classes (all for admin/staff, own for teacher)
+        canSeeAll
           ? supabase.from("classes").select("id", { count: "exact", head: true })
           : supabase.from("classes").select("id", { count: "exact", head: true }).eq("teacher_id", authResult.userId),
 
-        // Count assignments (all for admin, from teacher's classes for teacher)
-        isAdmin
+        // Count assignments (all for admin/staff, from teacher's classes for teacher)
+        canSeeAll
           ? supabase.from("assignments").select("id", { count: "exact", head: true })
           : (async () => {
               // Get teacher's class IDs first

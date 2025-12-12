@@ -5,16 +5,18 @@
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createServiceClient } from '@/lib/supabase/server'
+import { rateLimitConfigs } from '@/lib/auth/rateLimit'
+import { getDataClient } from '@/lib/auth/dataClient'
 
 export async function GET(request: Request) {
   try {
-    const authResult = await adminAuth(request)
+    // Use bulk rate limit for finance data operations
+    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
-    const supabase = createServiceClient()
+  const { supabase } = await getDataClient(request)
     const { searchParams } = new URL(request.url)
     const studentId = searchParams.get('student_id')
     const status = searchParams.get('status')
@@ -65,7 +67,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authResult = await adminAuth(request)
+    // Use bulk rate limit for finance data operations
+    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
@@ -87,7 +90,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServiceClient()
+  const { supabase } = await getDataClient(request)
 
     // Generate invoice number
     const timestamp = Date.now()

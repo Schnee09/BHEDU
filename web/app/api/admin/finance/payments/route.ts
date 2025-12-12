@@ -6,19 +6,21 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { rateLimitConfigs } from '@/lib/auth/rateLimit'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { handleApiError, ValidationError } from '@/lib/api/errors'
 import { createPaymentSchema } from '@/lib/schemas/finance'
 import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await adminAuth(request)
+    // Use bulk rate limit for finance data operations
+    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
 
-    const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
     
     // Check if payments table exists
     const { error: tableCheckError } = await supabase
@@ -168,7 +170,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await adminAuth(request)
+    // Use bulk rate limit for finance data operations
+    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
       return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
     }
@@ -178,7 +181,7 @@ export async function POST(request: NextRequest) {
     // Validate request body with schema
     const validatedData = createPaymentSchema.parse(body)
 
-    const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
 
     // Generate receipt number
     const timestamp = Date.now()

@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
+import { hasAdminAccess } from '@/lib/auth/permissions'
 import { handleApiError, AuthenticationError } from '@/lib/api/errors'
 import { logger } from '@/lib/logger'
 
@@ -24,7 +25,8 @@ export async function GET(request: Request) {
       .select('id, name, teacher_id, created_at')
       .order('name', { ascending: true })
 
-    if (authResult.userRole !== 'admin') {
+    // Admin and Staff can see all classes, teachers only their own
+    if (!hasAdminAccess(authResult.userRole || '')) {
       query = query.eq('teacher_id', authResult.userId)
     }
 

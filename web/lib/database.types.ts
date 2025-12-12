@@ -21,10 +21,19 @@ export interface Profile {
   phone: string | null;
   address: string | null;
   emergency_contact: string | null;
-  role: 'admin' | 'teacher' | 'student' | null;
+  role: 'admin' | 'staff' | 'teacher' | 'student' | null;
   created_at: string;
   updated_at: string;
 }
+
+/**
+ * User Role Type
+ * - admin: Super admin (full system access, configuration, all operations)
+ * - staff: Sub-admin/Office staff (student/teacher mgmt, finance, attendance)
+ * - teacher: Teaching functions (own classes only)
+ * - student: Self-service (own data only)
+ */
+export type UserRole = 'admin' | 'staff' | 'teacher' | 'student';
 
 export interface AcademicYear {
   id: string;

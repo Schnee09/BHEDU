@@ -1,19 +1,10 @@
 "use client";
 
-/**
- * Modern Dashboard - Swiss Modernism 2.0 Design
- * Following ui-ux-pro-max guidelines:
- * - Professional Blue color scheme
- * - Heroicons SVG icons (NO EMOJIS)
- * - Proper hover states without layout shift
- * - WCAG AA accessibility
- * - 150-300ms animations
- */
-
 import { useEffect, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
-import LoadingScreen from "@/components/LoadingScreen";
-import { StatCard } from "@/components/ui/Card";
+import { apiFetch } from "@/lib/api/client";
+import { Card, StatCard } from "@/components/ui/Card";
+import { SkeletonStatCard, SkeletonCard } from "@/components/ui/skeleton";
 import { Icons } from "@/components/ui/Icons";
 import { logger } from "@/lib/logger";
 import Link from "next/link";
@@ -53,7 +44,11 @@ export default function DashboardPage() {
 
       setLoading(true);
       try {
-        const response = await fetch('/api/dashboard/stats');
+        const response = await apiFetch('/api/dashboard/stats');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to fetch stats');
+        }
         const data = await response.json();
 
         if (mounted && data) {
@@ -69,6 +64,17 @@ export default function DashboardPage() {
         }
       } catch (error) {
         logger.error('Error loading dashboard stats', error as Error);
+        // Set default empty stats to prevent loading state
+        if (mounted) {
+          setStats({
+            totalStudents: 0,
+            totalTeachers: 0,
+            totalClasses: 0,
+            totalAssignments: 0,
+            attendanceToday: 0,
+            recentActivity: [],
+          });
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -80,7 +86,33 @@ export default function DashboardPage() {
     };
   }, [profile]);
 
-  if (profileLoading || loading) return <LoadingScreen />;
+  if (profileLoading || loading) {
+    return (
+      <main className="min-h-screen py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          {/* Header skeleton */}
+          <div className="space-y-2">
+            <div className="h-10 w-64 bg-stone-200 rounded animate-pulse" />
+            <div className="h-6 w-96 bg-stone-200 rounded animate-pulse" />
+          </div>
+          
+          {/* Stats skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+          </div>
+          
+          {/* Quick actions skeleton */}
+          <SkeletonCard />
+          
+          {/* Recent activity skeleton */}
+          <SkeletonCard />
+        </div>
+      </main>
+    );
+  }
 
   const getRoleTitle = () => {
     switch (profile?.role) {
@@ -109,20 +141,28 @@ export default function DashboardPage() {
   };
 
   return (
-    <main id="main-content" className="min-h-screen bg-slate-50 py-8">
+    <main id="main-content" className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         {/* Header */}
-        <header>
-          <h1 className="text-4xl font-bold text-slate-900 font-heading">
-            {getRoleTitle()}
-          </h1>
-          <p className="text-lg text-slate-600 mt-2">
-            Welcome back, {profile?.full_name ?? "User"} • {getRoleDescription()}
-          </p>
-        </header>
+        <Card as="section" className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 font-heading">
+                {getRoleTitle()}
+              </h1>
+              <p className="text-lg text-stone-500 dark:text-stone-400 mt-2">
+                Welcome back, <span className="font-semibold text-stone-900 dark:text-stone-100">{profile?.full_name ?? "User"}</span> • {getRoleDescription()}
+              </p>
+            </div>
+            <div className="hidden md:flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+              <Icons.Calendar className="w-4 h-4" />
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+          </div>
+        </Card>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - Clean Cards */}
         <section aria-label="Dashboard statistics">
           <h2 className="sr-only">Overview Statistics</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -166,9 +206,11 @@ export default function DashboardPage() {
 
         {/* Quick Actions */}
         <section aria-label="Quick actions">
-          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold text-slate-900 mb-6 font-heading flex items-center gap-2">
-              <Icons.Chart className="w-6 h-6 text-blue-600" />
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-3 font-heading">
+              <div className="p-2 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
+                <Icons.Chart className="w-6 h-6" />
+              </div>
               Quick Actions
             </h2>
             
@@ -272,7 +314,7 @@ export default function DashboardPage() {
                 </>
               )}
             </div>
-          </div>
+          </Card>
         </section>
       </div>
     </main>
@@ -281,7 +323,6 @@ export default function DashboardPage() {
 
 /**
  * Quick Action Card Component
- * Clean, accessible action cards with proper hover states
  */
 interface QuickActionCardProps {
   href: string;
@@ -293,29 +334,49 @@ interface QuickActionCardProps {
 
 function QuickActionCard({ href, icon, title, description, color }: QuickActionCardProps) {
   const colorClasses = {
-    blue: 'text-blue-600 group-hover:bg-blue-50',
-    purple: 'text-purple-600 group-hover:bg-purple-50',
-    green: 'text-green-600 group-hover:bg-green-50',
-    orange: 'text-orange-600 group-hover:bg-orange-50',
-    slate: 'text-slate-600 group-hover:bg-slate-50',
+    blue: {
+      bg: 'bg-stone-50 text-stone-700',
+      icon: 'bg-stone-100 text-stone-600',
+    },
+    purple: {
+      bg: 'bg-purple-50 text-purple-700',
+      icon: 'bg-purple-100 text-purple-600',
+    },
+    green: {
+      bg: 'bg-green-50 text-green-700',
+      icon: 'bg-green-100 text-green-600',
+    },
+    orange: {
+      bg: 'bg-orange-50 text-orange-700',
+      icon: 'bg-orange-100 text-orange-600',
+    },
+    slate: {
+      bg: 'bg-stone-50 text-stone-700',
+      icon: 'bg-stone-100 text-stone-600',
+    },
   };
+
+  const styles = colorClasses[color];
 
   return (
     <Link
       href={href}
-      className="group p-5 border border-slate-200 rounded-lg transition-all duration-200 hover:border-slate-300 hover:shadow-md cursor-pointer bg-white"
+      className={`group p-5 rounded-xl transition-all duration-200
+        bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm
+        hover:shadow-md hover:border-stone-300 dark:hover:border-stone-600 hover:-translate-y-0.5`}
     >
       <div className="flex items-start gap-3 mb-3">
-        <div className={`p-2 rounded-lg transition-colors duration-200 ${colorClasses[color]}`}>
+        <div className={`p-2 rounded-lg transition-colors duration-200 ${styles.icon}`}>
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors duration-200">
+          <p className="font-semibold text-stone-900 dark:text-stone-100 group-hover:text-stone-900 dark:group-hover:text-stone-100 transition-colors duration-200 flex items-center gap-2">
             {title}
+            <Icons.ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
           </p>
         </div>
       </div>
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-stone-500 dark:text-stone-400 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors duration-200">
         {description}
       </p>
     </Link>

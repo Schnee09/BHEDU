@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(request: Request) {
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
     const { searchParams: _searchParams } = new URL(request.url)
 
     // Try to query settings - handle different schema versions gracefully
@@ -79,7 +79,7 @@ export async function PUT(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
     const results = []
 
     // Update each setting

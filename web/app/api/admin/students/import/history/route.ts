@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       )
     }
 
-   const supabase = createClientFromRequest(req as any)
+  const { supabase } = await getDataClient(req)
     const searchParams = req.nextUrl.searchParams
     const limit = parseInt(searchParams.get('limit') || '20', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)

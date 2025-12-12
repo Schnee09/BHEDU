@@ -137,7 +137,7 @@ export default function Sidebar() {
 
   if (!profile) return null;
 
-  const role = (profile.role ?? "student") as "admin" | "teacher" | "student";
+  const role = (profile.role ?? "student") as "admin" | "staff" | "teacher" | "student";
 
   const _handleLogout = async () => {
     const supabase = createClient();
@@ -193,14 +193,12 @@ export default function Sidebar() {
           title: "Administration",
           links: [
             { href: "/dashboard/admin/diagnostic", label: "🔧 API Diagnostic", icon: <Icons.Wrench /> },
-            { href: "/dashboard/admin/classes", label: "Classes Management", icon: <Icons.Book /> },
-            { href: "/dashboard/admin/teachers", label: "Teachers Management", icon: <Icons.AcademicCap /> },
-            { href: "/dashboard/admin/assignments", label: "Assignments Management", icon: <Icons.ClipboardList /> },
-            { href: "/dashboard/admin/attendance", label: "Attendance Management", icon: <Icons.Calendar /> },
-            { href: "/dashboard/admin/attendance/reports", label: "Attendance Reports", icon: <Icons.Chart /> },
-            { href: "/dashboard/admin/grades", label: "Grades Management", icon: <Icons.AcademicCap /> },
-            { href: "/dashboard/users", label: "User Management", icon: <Icons.User /> },
-            { href: "/dashboard/users/import", label: "Import Users", icon: <Icons.Download /> },
+            { href: "/dashboard/classes", label: "Classes Management", icon: <Icons.Book /> },
+            { href: "/dashboard/users", label: "Users/Teachers Management", icon: <Icons.User /> },
+            { href: "/dashboard/assignments", label: "Assignments Management", icon: <Icons.ClipboardList /> },
+            { href: "/dashboard/attendance", label: "Attendance Management", icon: <Icons.Calendar /> },
+            { href: "/dashboard/attendance/reports", label: "Attendance Reports", icon: <Icons.Chart /> },
+            { href: "/dashboard/grades", label: "Grades Management", icon: <Icons.AcademicCap /> },
             { href: "/dashboard/students/import", label: "Import Students", icon: <Icons.Download /> },
             { href: "/dashboard/admin/data", label: "Data Viewer", icon: <Icons.Search /> },
             { href: "/dashboard/reports", label: "Reports", icon: <Icons.DocumentText /> },
@@ -222,6 +220,64 @@ export default function Sidebar() {
             { href: "/dashboard/admin/finance/invoices", label: "Invoices", icon: <Icons.Document /> },
             { href: "/dashboard/admin/finance/payments", label: "Payments", icon: <Icons.CreditCard /> },
             { href: "/dashboard/admin/finance/reports", label: "Financial Reports", icon: <Icons.Chart /> },
+          ]
+        }
+      ];
+    } else if (role === "staff") {
+      // Staff: Sub-admin with operational access (no system config)
+      return [
+        {
+          title: "Dashboard",
+          links: [
+            { href: "/dashboard", label: "Home", icon: <Icons.Home /> },
+          ]
+        },
+        {
+          title: "People",
+          links: [
+            { href: "/dashboard/students", label: "Students", icon: <Icons.Users /> },
+            { href: "/dashboard/users", label: "Teachers", icon: <Icons.User /> },
+            { href: "/dashboard/students/import", label: "Import Students", icon: <Icons.Download /> },
+          ]
+        },
+        {
+          title: "Academic",
+          links: [
+            { href: "/dashboard/courses", label: "Courses", icon: <Icons.Book /> },
+            { href: "/dashboard/classes", label: "Classes", icon: <Icons.BookOpen /> },
+          ]
+        },
+        {
+          title: "Attendance",
+          links: [
+            { href: "/dashboard/attendance", label: "Overview", icon: <Icons.Calendar /> },
+            { href: "/dashboard/attendance/mark", label: "Mark Attendance", icon: <Icons.CheckCircle /> },
+            { href: "/dashboard/attendance/qr", label: "QR Codes", icon: <Icons.QrCode /> },
+            { href: "/dashboard/attendance/reports", label: "Reports", icon: <Icons.Chart /> },
+          ]
+        },
+        {
+          title: "Grades",
+          links: [
+            { href: "/dashboard/grades", label: "Overview", icon: <Icons.AcademicCap /> },
+            { href: "/dashboard/grades/reports", label: "Report Cards", icon: <Icons.Document /> },
+            { href: "/dashboard/grades/analytics", label: "Analytics", icon: <Icons.TrendingUp /> },
+          ]
+        },
+        {
+          title: "Financial",
+          links: [
+            { href: "/dashboard/admin/finance/student-accounts", label: "Student Accounts", icon: <Icons.Users /> },
+            { href: "/dashboard/admin/finance/invoices", label: "Invoices", icon: <Icons.Document /> },
+            { href: "/dashboard/admin/finance/payments", label: "Payments", icon: <Icons.CreditCard /> },
+            { href: "/dashboard/admin/finance/reports", label: "Reports", icon: <Icons.Chart /> },
+          ]
+        },
+        {
+          title: "Reports",
+          links: [
+            { href: "/dashboard/reports", label: "All Reports", icon: <Icons.DocumentText /> },
+            { href: "/dashboard/admin/data", label: "Data Export", icon: <Icons.Download /> },
           ]
         }
       ];
@@ -294,7 +350,11 @@ export default function Sidebar() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer"
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 
+          bg-stone-800 text-white rounded-xl 
+          shadow-md
+          hover:bg-stone-900
+          transition-all duration-200 cursor-pointer"
         aria-label="Toggle menu"
       >
         {isMobileMenuOpen ? (
@@ -311,34 +371,38 @@ export default function Sidebar() {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-40"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        w-64 bg-gradient-to-b from-amber-50 to-white shadow-xl border-r border-amber-200 
-        fixed h-full overflow-y-auto z-40 transition-transform duration-300 ease-in-out
+        w-72 fixed h-full overflow-y-auto z-40 transition-all duration-300 ease-out
+        bg-white dark:bg-[#1E1E1E] border-r border-gray-200 dark:border-[#3A3A3A]
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-      <div className="p-4">
-        {/* Header with Brand Colors */}
-        <div className="mb-6 pb-4 border-b-2 border-amber-300">
-          <div className="bg-gradient-to-r from-amber-600 to-yellow-600 text-white px-4 py-3 rounded-lg shadow-md">
-            <h2 className="text-xl font-bold tracking-wide">BH-EDU</h2>
-            <p className="text-xs mt-1 opacity-90">Bethel Heights</p>
+      <div className="p-5">
+        {/* Header - Brand Card */}
+        <div className="mb-8">
+          <div className="px-5 py-4 rounded-2xl bg-green-600 text-white">
+            <h2 className="text-2xl font-bold tracking-tight font-heading">BH-EDU</h2>
+            <p className="text-sm mt-1 text-green-100 font-medium">Bethel Heights Academy</p>
           </div>
-          <div className="mt-3 px-2">
-            <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider">{role} Portal</p>
+          <div className="mt-4 px-1">
+            <span className="inline-block px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-full
+              bg-gray-100 dark:bg-[#3A3A3A] text-gray-700 dark:text-[#C0C0C0] border border-gray-200 dark:border-[#4A4A4A]">
+              {role} Portal
+            </span>
           </div>
         </div>
 
         {/* Navigation Sections */}
         <nav className="space-y-6">
-          {navSections.map((section) => (
+          {navSections.map((section) => {
+            return (
             <div key={section.title}>
-              <h3 className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-3 px-3">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-[#9A9A9A] uppercase tracking-wider mb-3 px-3">
                 {section.title}
               </h3>
               <ul className="space-y-1">
@@ -349,13 +413,13 @@ export default function Sidebar() {
                       <Link
                         href={link.href}
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
+                        className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
                           isActive
-                            ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-semibold shadow-md"
-                            : "text-amber-900 hover:bg-amber-100 hover:text-amber-800"
+                            ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-semibold border border-green-200 dark:border-green-800"
+                            : "text-gray-600 dark:text-[#C0C0C0] hover:bg-gray-50 dark:hover:bg-[#2D2D2D] hover:text-gray-900 dark:hover:text-[#E8E8E8]"
                         }`}
                       >
-                        <span>{link.icon}</span>
+                        <span className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-[#757575] group-hover:text-gray-600 dark:group-hover:text-[#C0C0C0]'}`}>{link.icon}</span>
                         <span className="text-sm">{link.label}</span>
                       </Link>
                     </li>
@@ -363,7 +427,7 @@ export default function Sidebar() {
                 })}
               </ul>
             </div>
-          ))}
+          )})}
         </nav>
       </div>
     </aside>

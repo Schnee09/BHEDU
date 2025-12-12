@@ -230,15 +230,15 @@ export default function TranscriptPage({ params }: { params: Promise<{ id: strin
                   {transcriptData.conduct}
                 </p>
               </div>
-              <div className="bg-amber-50 p-4 rounded-lg">
+              <div className="bg-purple-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Chuyên cần</p>
-                <p className="text-lg font-semibold text-amber-600">
+                <p className="text-lg font-semibold text-purple-600">
                   {transcriptData.attendance_rate.toFixed(1)}%
                 </p>
               </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="bg-slate-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Số môn học</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-2xl font-bold text-slate-600">
                   {transcriptData.subjects.length}
                 </p>
               </div>

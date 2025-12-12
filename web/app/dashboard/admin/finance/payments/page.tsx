@@ -7,6 +7,9 @@
 
 import { useState, useEffect } from 'react'
 import { apiFetch } from '@/lib/api/client'
+import { Card, CardHeader, CardBody } from "@/components/ui/Card"
+import { SkeletonTable, Skeleton } from "@/components/ui/skeleton"
+import { Icons } from "@/components/ui/Icons"
 
 interface Payment {
   id: string
@@ -340,236 +343,287 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payments</h1>
-          <p className="text-gray-600 mt-2">Record and manage student payments</p>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Icons.CreditCard className="w-8 h-8 text-green-600" />
+            Payments
+          </h1>
+          <p className="text-gray-500 mt-1">Record and manage student payments</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
         >
-          + Record Payment
+          <Icons.Add className="w-5 h-5" />
+          Record Payment
         </button>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <p className="text-sm text-gray-600">Total Payments</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.total_payments}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <p className="text-sm text-gray-600">Total Amount</p>
-          <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_amount)}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <p className="text-sm text-gray-600">Today's Payments</p>
-          <p className="text-2xl font-bold text-blue-600">{stats.today_count}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <p className="text-sm text-gray-600">Today's Amount</p>
-          <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.today_amount)}</p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardBody>
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-blue-50 rounded-full text-blue-600">
+                <Icons.CreditCard className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Total Payments</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total_payments}</p>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-50 rounded-full text-green-600">
+                <Icons.Finance className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Total Amount</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_amount)}</p>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-purple-50 rounded-full text-purple-600">
+                <Icons.Calendar className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Today's Payments</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.today_count}</p>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-orange-50 rounded-full text-orange-600">
+                <Icons.TrendUp className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Today's Amount</p>
+                <p className="text-2xl font-bold text-orange-600">{formatCurrency(stats.today_amount)}</p>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {/* Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search
-            </label>
-            <input
-              type="text"
-              placeholder="Student, Reference..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+      <Card>
+        <CardBody>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Search */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Search
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Icons.Filter className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Student, Reference..."
+                  value={filters.search}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                  className="w-full pl-9 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                />
+              </div>
+            </div>
 
-          {/* Student */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Student
-            </label>
-            <select
-              value={filters.student_id}
-              onChange={(e) => setFilters({ ...filters, student_id: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Students</option>
-              {students.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.full_name} ({student.student_id})
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Student */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Student
+              </label>
+              <select
+                value={filters.student_id}
+                onChange={(e) => setFilters({ ...filters, student_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+              >
+                <option value="">All Students</option>
+                {students.map((student) => (
+                  <option key={student.id} value={student.id}>
+                    {student.full_name} ({student.student_id})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Payment Method */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Payment Method
-            </label>
-            <select
-              value={filters.payment_method_id}
-              onChange={(e) => setFilters({ ...filters, payment_method_id: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Methods</option>
-              {paymentMethods.map((method) => (
-                <option key={method.id} value={method.id}>
-                  {method.name}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Payment Method */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Payment Method
+              </label>
+              <select
+                value={filters.payment_method_id}
+                onChange={(e) => setFilters({ ...filters, payment_method_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+              >
+                <option value="">All Methods</option>
+                {paymentMethods.map((method) => (
+                  <option key={method.id} value={method.id}>
+                    {method.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Start Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Start Date
-            </label>
-            <input
-              type="date"
-              value={filters.start_date}
-              onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+            {/* Start Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={filters.start_date}
+                onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+              />
+            </div>
 
-          {/* End Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              End Date
-            </label>
-            <input
-              type="date"
-              value={filters.end_date}
-              onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            {/* End Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={filters.end_date}
+                onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+          <Icons.Error className="w-5 h-5" />
           {error}
         </div>
       )}
 
       {/* Payments Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading payments...</div>
-        ) : payments.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            No payments found. Record your first payment to get started.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Method
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Reference
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Received By
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Allocations
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {payments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {formatDate(payment.payment_date)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {payment.student.full_name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {payment.student.student_id}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm font-bold text-green-600">
-                        {formatCurrency(payment.amount)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {payment.payment_method.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {payment.reference_number || '-'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {payment.received_by_user.full_name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {payment.allocations && payment.allocations.length > 0 ? (
-                        <div className="text-sm">
-                          {payment.allocations.map((alloc) => (
-                            <div key={alloc.id} className="text-gray-600">
-                              {alloc.invoice.invoice_number}: {formatCurrency(alloc.amount)}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-gray-400">No allocations</div>
-                      )}
-                    </td>
+      <Card>
+        <CardBody className="p-0">
+          {loading ? (
+            <SkeletonTable rows={10} columns={7} />
+          ) : payments.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">
+              <Icons.CreditCard className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+              <p>No payments found. Record your first payment to get started.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Student
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Method
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Reference
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Received By
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Allocations
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {payments.map((payment) => (
+                    <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {formatDate(payment.payment_date)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {payment.student.full_name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {payment.student.student_id}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="text-sm font-bold text-green-600">
+                          {formatCurrency(payment.amount)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {payment.payment_method.name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {payment.reference_number || '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {payment.received_by_user.full_name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {payment.allocations && payment.allocations.length > 0 ? (
+                          <div className="text-sm">
+                            {payment.allocations.map((alloc) => (
+                              <div key={alloc.id} className="text-gray-600">
+                                {alloc.invoice.invoice_number}: {formatCurrency(alloc.amount)}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-gray-400">No allocations</div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       {/* Create Payment Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Record Payment</h2>
-            </div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <CardHeader className="border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">Record Payment</h2>
+            </CardHeader>
 
-            <div className="p-6 space-y-6">
+            <CardBody className="space-y-6">
               {/* Student and Payment Details */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Student *
@@ -577,7 +631,7 @@ export default function PaymentsPage() {
                   <select
                     value={formData.student_id}
                     onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                     required
                   >
                     <option value="">Select Student</option>
@@ -597,13 +651,13 @@ export default function PaymentsPage() {
                     type="date"
                     value={formData.payment_date}
                     onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Amount *
@@ -617,7 +671,7 @@ export default function PaymentsPage() {
                         autoAllocatePayment(selectedStudentInvoices, Number(e.target.value))
                       }
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                     placeholder="0.00"
                     step="0.01"
                     min="0"
@@ -632,7 +686,7 @@ export default function PaymentsPage() {
                   <select
                     value={formData.payment_method_id}
                     onChange={(e) => setFormData({ ...formData, payment_method_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                     required
                   >
                     <option value="">Select Method</option>
@@ -653,22 +707,24 @@ export default function PaymentsPage() {
                   type="text"
                   value={formData.reference_number}
                   onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                   placeholder="Check #, Transaction ID, etc."
                 />
               </div>
 
               {/* Invoice Allocations */}
               {formData.student_id && (
-                <div>
+                <div className="border-t border-gray-100 pt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Allocate to Invoices (Optional)
                   </label>
                   
                   {loadingInvoices ? (
-                    <div className="text-sm text-gray-500 py-4">Loading invoices...</div>
+                    <div className="py-4">
+                      <Skeleton count={3} height="2.5rem" />
+                    </div>
                   ) : selectedStudentInvoices.length === 0 ? (
-                    <div className="text-sm text-gray-500 py-4 border border-dashed border-gray-300 rounded p-4 text-center">
+                    <div className="text-sm text-gray-500 py-4 border-2 border-dashed border-gray-200 rounded-lg p-4 text-center bg-gray-50">
                       No unpaid invoices found for this student.
                     </div>
                   ) : (
@@ -676,7 +732,7 @@ export default function PaymentsPage() {
                       {selectedStudentInvoices.map((invoice) => {
                         const allocation = formData.allocations.find(a => a.invoice_id === invoice.id)
                         return (
-                          <div key={invoice.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded">
+                          <div key={invoice.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
                             <div className="flex-1">
                               <div className="text-sm font-medium text-gray-900">
                                 {invoice.invoice_number}
@@ -690,7 +746,7 @@ export default function PaymentsPage() {
                                 type="number"
                                 value={allocation?.amount || 0}
                                 onChange={(e) => handleAllocationChange(invoice.id, Number(e.target.value))}
-                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 outline-none"
                                 placeholder="0.00"
                                 step="0.01"
                                 min="0"
@@ -701,7 +757,7 @@ export default function PaymentsPage() {
                         )
                       })}
                       
-                      <div className="mt-4 p-3 bg-blue-50 rounded">
+                      <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-700">Total Payment:</span>
                           <span className="font-bold text-gray-900">{formatCurrency(Number(formData.amount) || 0)}</span>
@@ -731,41 +787,41 @@ export default function PaymentsPage() {
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                   placeholder="Additional notes..."
                 />
               </div>
-            </div>
 
-            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setShowCreateModal(false)
-                  setFormData({
-                    student_id: '',
-                    payment_date: new Date().toISOString().split('T')[0],
-                    amount: '',
-                    payment_method_id: '',
-                    reference_number: '',
-                    notes: '',
-                    allocations: []
-                  })
-                  setSelectedStudentInvoices([])
-                }}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                disabled={creating}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreatePayment}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400"
-                disabled={creating}
-              >
-                {creating ? 'Recording...' : 'Record Payment'}
-              </button>
-            </div>
-          </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false)
+                    setFormData({
+                      student_id: '',
+                      payment_date: new Date().toISOString().split('T')[0],
+                      amount: '',
+                      payment_method_id: '',
+                      reference_number: '',
+                      notes: '',
+                      allocations: []
+                    })
+                    setSelectedStudentInvoices([])
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                  disabled={creating}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreatePayment}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:bg-green-400 disabled:cursor-not-allowed"
+                  disabled={creating}
+                >
+                  {creating ? 'Recording...' : 'Record Payment'}
+                </button>
+              </div>
+            </CardBody>
+          </Card>
         </div>
       )}
     </div>

@@ -4,14 +4,15 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
+import type { UserRole } from '@/lib/database.types'
 
 interface UserImportRow {
   email: string
   password?: string
   full_name: string
-  role: 'admin' | 'teacher' | 'student'
+  role: UserRole
   phone?: string
   department?: string // for teachers
   student_id?: string // for students
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
     const results = {
       total: users.length,
       successful: 0,

@@ -21,15 +21,15 @@ export default function Tabs({
 
   return (
     <div>
-      <div className="border-b border-gray-200 mb-4 flex gap-2 overflow-x-auto">
+      <div className="border-b border-gray-200 dark:border-gray-700 mb-4 flex gap-2 overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setActive(t.key)}
             className={`px-3 py-2 text-sm rounded-t-lg border-b-2 -mb-[1px] transition-colors ${
               active === t.key
-                ? "border-blue-600 text-blue-700"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+                ? "border-blue-600 dark:border-blue-400 text-blue-700 dark:text-blue-400"
+                : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
             }`}
           >
             {t.label}

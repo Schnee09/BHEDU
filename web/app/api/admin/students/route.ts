@@ -7,17 +7,13 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getDataClient } from '@/lib/auth/dataClient'
 import { handleApiError } from '@/lib/api/errors';
 import { validateQuery } from '@/lib/api/validation';
 import { createStudentSchema, studentQuerySchema } from '@/lib/schemas/students';
 import { logger } from '@/lib/logger';
 
-// Supabase admin client (bypasses RLS)
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Per-request supabase client will be selected via getDataClient(request)
 
 /**
  * GET /api/admin/students
@@ -25,6 +21,7 @@ const supabase = createClient(
  */
 export async function GET(request: NextRequest) {
   try {
+    const { supabase } = await getDataClient(request)
     // Validate query parameters
     const queryParams = validateQuery(request, studentQuerySchema);
     
@@ -129,7 +126,7 @@ export async function GET(request: NextRequest) {
  * Format: HS + Year + Sequential (e.g., HS2025001, HS2025002)
  * HS = Học Sinh (Vietnamese for "student")
  */
-async function generateStudentCode(): Promise<string> {
+async function generateStudentCode(supabase: any): Promise<string> {
   const year = new Date().getFullYear();
   
   // Get the highest existing student code for current year
@@ -144,10 +141,12 @@ async function generateStudentCode(): Promise<string> {
 
   if (error) throw error;
 
+  const studentList = (students || []) as Array<{ student_code?: string }>;
+
   let nextNumber = 1;
-  if (students && students.length > 0) {
+  if (studentList.length > 0) {
     // Find the highest number from both formats
-    students.forEach((student) => {
+    studentList.forEach((student) => {
       if (student.student_code) {
         // New format: HSYYYYNNN (e.g., HS2025001)
         const newFormatMatch = student.student_code.match(/^HS\d{4}(\d{3})$/);
@@ -176,6 +175,7 @@ async function generateStudentCode(): Promise<string> {
  */
 export async function POST(request: NextRequest) {
   try {
+    const { supabase } = await getDataClient(request)
     const body = await request.json();
     
     // Validate request body with schema
@@ -195,8 +195,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate student code if not provided
-    const studentCode = validatedData.student_code || (await generateStudentCode());
+  // Generate student code if not provided
+  const studentCode = validatedData.student_code || (await generateStudentCode(supabase));
 
     // Check if student code already exists
     if (validatedData.student_code) {

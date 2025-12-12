@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { getDataClient } from '@/lib/auth/dataClient'
 import { teacherAuth } from "@/lib/auth/adminAuth";
 import { logger } from "@/lib/logger";
 import { TableColumns, mapCourseToAPI, type Course } from "@/lib/database.types";
@@ -10,11 +10,14 @@ export async function GET(request: NextRequest) {
   try {
     // Authenticate user (admin or teacher)
     const authResult = await teacherAuth(request);
-    if (authResult instanceof NextResponse) {
-      return authResult;
+    if (!authResult.authorized) {
+      return NextResponse.json(
+        { error: authResult.reason || 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request)
 
     const { data, error } = await supabase
       .from("courses")
@@ -46,8 +49,11 @@ export async function POST(request: NextRequest) {
   try {
     // Authenticate user (admin or teacher)
     const authResult = await teacherAuth(request);
-    if (authResult instanceof NextResponse) {
-      return authResult;
+    if (!authResult.authorized) {
+      return NextResponse.json(
+        { error: authResult.reason || 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -60,7 +66,7 @@ export async function POST(request: NextRequest) {
       const teacher_id = typeof body.teacher_id === "string" ? body.teacher_id : null;
       const academic_year_id = typeof body.academic_year_id === "string" ? body.academic_year_id : null;
 
-      const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request)
 
       const insert = {
         name: title, // Map title to name for database

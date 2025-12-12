@@ -7,8 +7,8 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
+import { getDataClient } from '@/lib/auth/dataClient'
 
 export async function GET(request: Request) {
   try {
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
 
     const { data: years, error } = await supabase
       .from('academic_years')
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       )
     }
 
-  const supabase = createClientFromRequest(request as any)
+  const { supabase } = await getDataClient(request)
 
     // If this is set as current, unset other current years
     if (is_current) {

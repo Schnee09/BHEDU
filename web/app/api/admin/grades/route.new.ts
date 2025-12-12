@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getDataClient } from '@/lib/auth/dataClient'
 
 export async function GET(request: NextRequest) {
   try {
+    const { supabase } = await getDataClient(request)
     const searchParams = request.nextUrl.searchParams;
     const studentId = searchParams.get("student_id");
     const assignmentId = searchParams.get("assignment_id");
     const classId = searchParams.get("class_id");
 
     let query = supabase
-      .from("grades")
+      .from('grades')
       .select(`
         id,
         assignment_id,
@@ -28,7 +24,7 @@ export async function GET(request: NextRequest) {
         student:profiles!grades_student_id_fkey(id, full_name, email),
         assignment:assignments!grades_assignment_id_fkey(id, title)
       `)
-      .order("created_at", { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (studentId) query = query.eq("student_id", studentId);
     if (assignmentId) query = query.eq("assignment_id", assignmentId);
@@ -64,6 +60,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { supabase } = await getDataClient(request)
     const body = await request.json();
     const { assignment_id, student_id, score, feedback, graded_by } = body;
 

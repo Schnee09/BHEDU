@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -23,8 +23,8 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { id } = await params
-    const supabase = createClientFromRequest(req as any)
+  const { id } = await params
+  const { supabase } = await getDataClient(req)
 
     // Verify student exists
     const { data: student } = await supabase
@@ -76,8 +76,8 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { id } = await params
-    const supabase = createClientFromRequest(req as any)
+  const { id } = await params
+  const { supabase } = await getDataClient(req)
     const body = await req.json()
 
     // Verify student exists

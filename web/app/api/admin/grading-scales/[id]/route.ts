@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth';
 
 /**
@@ -20,7 +20,7 @@ export async function GET(
     }
 
     const resolvedParams = await params;
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
     const { data, error } = await supabase
       .from('grading_scales')
       .select('*')
@@ -94,7 +94,7 @@ export async function PATCH(
       }
     }
 
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
 
     // If setting as default, unset any other default scale
     if (is_default) {
@@ -155,7 +155,7 @@ export async function DELETE(
     }
 
     const resolvedParams = await params;
-    const supabase = createServiceClient();
+  const { supabase } = await getDataClient(request);
 
     // Check if scale exists
     const { data: existing } = await supabase

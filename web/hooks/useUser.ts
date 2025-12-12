@@ -5,14 +5,15 @@
  * Eliminates duplicate user fetching code
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { logger } from '@/lib/logger';
+import type { UserRole } from '@/lib/database.types';
 
 export interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: UserRole;
   is_active: boolean;
   avatar_url?: string;
   phone?: string;
@@ -26,8 +27,11 @@ interface UseUserResult {
   loading: boolean;
   error: string | null;
   isAdmin: boolean;
+  isStaff: boolean;
   isTeacher: boolean;
   isStudent: boolean;
+  /** Returns true if user is admin or staff (has admin-level access) */
+  hasAdminAccess: boolean;
   refetch: () => Promise<void>;
 }
 
@@ -47,6 +51,7 @@ export function useUser(): UseUserResult {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
 
   const fetchUser = useCallback(async () => {
     try {
@@ -67,7 +72,7 @@ export function useUser(): UseUserResult {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to fetch user';
       setError(errorMsg);
-      logger.error('Error fetching user', { error: errorMsg });
+      logger.error('Error fetching user', new Error(errorMsg));
       setUser(null);
     } finally {
       setLoading(false);
@@ -75,20 +80,28 @@ export function useUser(): UseUserResult {
   }, []);
 
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    // Only fetch once on mount
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchUser();
+    }
+  }, []);
 
   const isAdmin = user?.role === 'admin';
+  const isStaff = user?.role === 'staff';
   const isTeacher = user?.role === 'teacher';
   const isStudent = user?.role === 'student';
+  const hasAdminAccess = isAdmin || isStaff;
 
   return {
     user,
     loading,
     error,
     isAdmin,
+    isStaff,
     isTeacher,
     isStudent,
+    hasAdminAccess,
     refetch: fetchUser,
   };
 }

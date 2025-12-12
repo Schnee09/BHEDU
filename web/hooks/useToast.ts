@@ -5,7 +5,7 @@
  * Better than using window.alert()
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -50,31 +50,52 @@ interface UseToastResult {
  */
 export function useToast(): UseToastResult {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const timeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
+  // Remove toast directly without dependency on other callbacks
   const removeToast = useCallback((id: string) => {
+    // Clear timeout if it exists
+    const timeout = timeoutsRef.current.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeoutsRef.current.delete(id);
+    }
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
+  // Clean up all timeouts on unmount
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+      timeoutsRef.current.clear();
+    };
+  }, []);
+
+  // showToast now uses setToasts directly instead of calling removeToast
   const showToast = useCallback(
     (toast: Omit<Toast, 'id'>) => {
       const id = `toast-${Date.now()}-${Math.random()}`;
+      const duration = toast.duration || 5000;
+      
       const newToast: Toast = {
         ...toast,
         id,
-        duration: toast.duration || 5000,
+        duration,
       };
 
       setToasts((prev) => [...prev, newToast]);
 
       // Auto-remove after duration
-      const duration = newToast.duration || 5000;
       if (duration > 0) {
-        setTimeout(() => {
-          removeToast(id);
+        const timeout = setTimeout(() => {
+          setToasts((prev) => prev.filter((t) => t.id !== id));
+          timeoutsRef.current.delete(id);
         }, duration);
+        
+        timeoutsRef.current.set(id, timeout);
       }
     },
-    [removeToast]
+    []
   );
 
   const success = useCallback(
@@ -106,6 +127,8 @@ export function useToast(): UseToastResult {
   );
 
   const clearAll = useCallback(() => {
+    timeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+    timeoutsRef.current.clear();
     setToasts([]);
   }, []);
 
