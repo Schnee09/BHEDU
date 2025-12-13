@@ -48,24 +48,30 @@ WITH CHECK (
 
 -- Add similar policies for other tables as needed
 -- Students table
-DROP POLICY IF EXISTS "Staff can view all students" ON students;
-CREATE POLICY "Staff can view all students" 
-ON students FOR SELECT 
-TO authenticated
-USING (
-  (SELECT role FROM profiles WHERE user_id = auth.uid()) IN ('admin', 'staff')
-);
+DO $$
+BEGIN
+  IF to_regclass('public.students') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "Staff can view all students" ON public.students;
+    CREATE POLICY "Staff can view all students" 
+    ON public.students FOR SELECT 
+    TO authenticated
+    USING (
+      (SELECT role FROM profiles WHERE user_id = auth.uid()) IN ('admin', 'staff')
+    );
 
-DROP POLICY IF EXISTS "Staff can manage students" ON students;
-CREATE POLICY "Staff can manage students" 
-ON students FOR ALL 
-TO authenticated
-USING (
-  (SELECT role FROM profiles WHERE user_id = auth.uid()) IN ('admin', 'staff')
-)
-WITH CHECK (
-  (SELECT role FROM profiles WHERE user_id = auth.uid()) IN ('admin', 'staff')
-);
+    DROP POLICY IF EXISTS "Staff can manage students" ON public.students;
+    CREATE POLICY "Staff can manage students" 
+    ON public.students FOR ALL 
+    TO authenticated
+    USING (
+      (SELECT role FROM profiles WHERE user_id = auth.uid()) IN ('admin', 'staff')
+    )
+    WITH CHECK (
+      (SELECT role FROM profiles WHERE user_id = auth.uid()) IN ('admin', 'staff')
+    );
+  END IF;
+END
+$$;
 
 -- Classes table
 DROP POLICY IF EXISTS "Staff can view all classes" ON classes;

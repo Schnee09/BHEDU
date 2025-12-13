@@ -1,0 +1,3 @@
+-- Placeholder migration to match remote version 20241209
+-- This file intentionally left as a no-op to align local migrations with the remote schema_migrations table.
+-- If you want to reintroduce the original full migration content, restore it in a new uniquely-numbered migration file.
