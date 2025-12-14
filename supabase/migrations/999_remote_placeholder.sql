@@ -1,0 +1,3 @@
+-- Placeholder migration to match remote migration '999'
+-- No-op file to align local migrations with remote schema_migrations.
+-- Created to allow db push to proceed without altering remote history.
