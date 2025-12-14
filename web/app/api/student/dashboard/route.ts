@@ -9,7 +9,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { handleApiError, AuthenticationError, ForbiddenError } from '@/lib/api/errors'
-import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {

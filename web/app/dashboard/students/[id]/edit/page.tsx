@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api/client'
 import { showToast } from '@/components/ToastProvider'
+import { routes } from '@/lib/routes'
 
 interface StudentFormData {
   first_name: string
@@ -58,7 +59,7 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
   const loadStudent = async (id: string) => {
     try {
       setLoading(true)
-      const response = await apiFetch(`/api/admin/students/${id}`)
+      const response = await apiFetch(`/api/students/${id}`)
       if (response.ok) {
         const result = await response.json()
         const student = result.data
@@ -129,7 +130,7 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
     const loadingToast = showToast.loading('Updating student...')
 
     try {
-      const response = await apiFetch(`/api/admin/students/${studentId}`, {
+      const response = await apiFetch(`/api/students/${studentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -141,7 +142,7 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
       if (response.ok) {
         showToast.success('Student updated successfully!')
         setTimeout(() => {
-          router.push(`/dashboard/students/${studentId}`)
+          router.push(routes.students.detail(studentId))
         }, 1000)
       } else {
         showToast.error(result.error || 'Failed to update student')
@@ -184,9 +185,9 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
     <div className="p-6">
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-          <Link href="/dashboard/students" className="hover:text-blue-600">Students</Link>
+          <Link href={routes.students.list()} className="hover:text-blue-600">Students</Link>
           <span>/</span>
-          <Link href={`/dashboard/students/${studentId}`} className="hover:text-blue-600">
+          <Link href={routes.students.detail(studentId)} className="hover:text-blue-600">
             {formData.first_name} {formData.last_name}
           </Link>
           <span>/</span>

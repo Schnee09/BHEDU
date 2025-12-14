@@ -66,7 +66,7 @@ describe('ErrorBoundary', () => {
     });
 
     it('provides retry functionality', () => {
-      const { rerender } = render(
+      render(
         <ErrorBoundary>
           <ThrowingComponent shouldThrow={true} />
         </ErrorBoundary>
@@ -211,7 +211,7 @@ describe('ErrorBoundary', () => {
     });
 
     it('prevents errors from propagating to parent components', () => {
-      const { container } = render(
+      render(
         <ErrorBoundary>
           <WorkingComponent />
           <ThrowingComponent />

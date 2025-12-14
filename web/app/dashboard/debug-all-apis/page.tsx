@@ -61,14 +61,8 @@ const API_TESTS: ApiTest[] = [
   // Students APIs
   {
     name: 'Students List',
-    endpoint: '/api/admin/students?page=1&limit=10',
+    endpoint: '/api/students?page=1&limit=10',
     description: 'Get paginated student list',
-    category: 'Students'
-  },
-  {
-    name: 'Student Stats',
-    endpoint: '/api/admin/students/stats',
-    description: 'Get student statistics',
     category: 'Students'
   },
 

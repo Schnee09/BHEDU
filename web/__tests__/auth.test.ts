@@ -94,8 +94,10 @@ describe('Rate Limiting', () => {
     resetRateLimit('test-user')
   })
 
+  const AUTH_MAX = rateLimitConfigs.auth.maxAttempts
+
   it('should allow requests within limit', () => {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < AUTH_MAX; i++) {
       const result = checkRateLimit('test-user', rateLimitConfigs.auth)
       expect(result.allowed).toBe(true)
     }
@@ -103,7 +105,7 @@ describe('Rate Limiting', () => {
 
   it('should block requests exceeding limit', () => {
     // Use all attempts
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < AUTH_MAX; i++) {
       checkRateLimit('test-user', rateLimitConfigs.auth)
     }
 
@@ -115,10 +117,10 @@ describe('Rate Limiting', () => {
 
   it('should track remaining attempts', () => {
     const result1 = checkRateLimit('test-user', rateLimitConfigs.auth)
-    expect(result1.remaining).toBe(9) // 10 - 1
+    expect(result1.remaining).toBe(AUTH_MAX - 1)
 
     const result2 = checkRateLimit('test-user', rateLimitConfigs.auth)
-    expect(result2.remaining).toBe(8) // 10 - 2
+    expect(result2.remaining).toBe(AUTH_MAX - 2)
   })
 
   it('should reset after calling resetRateLimit', () => {
@@ -131,7 +133,7 @@ describe('Rate Limiting', () => {
 
     // Should be back to full limit
     const result = checkRateLimit('test-user', rateLimitConfigs.auth)
-    expect(result.remaining).toBe(9)
+    expect(result.remaining).toBe(AUTH_MAX - 1)
   })
 })
 
@@ -212,7 +214,7 @@ describe('Integration Tests', () => {
     // Check rate limit
     const rateLimit = checkRateLimit(`user:${userId}`, rateLimitConfigs.auth)
     expect(rateLimit.allowed).toBe(true)
-    expect(rateLimit.remaining).toBe(9)
+  expect(rateLimit.remaining).toBe(rateLimitConfigs.auth.maxAttempts - 1)
 
     // Clear cache when profile updates
     deleteCached(`profile:${userId}`, 'auth')

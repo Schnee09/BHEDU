@@ -6,6 +6,7 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api/client";
 import { Card, LoadingState, Badge, Button } from "@/components/ui";
 import { Icons } from "@/components/ui/Icons";
+import { routes } from "@/lib/routes";
 
 interface ClassDetail {
   id: string;
@@ -42,18 +43,39 @@ export default function ClassDetailPage() {
     const fetchClassDetail = async () => {
       try {
         setLoading(true);
-        const response = await apiFetch(`/api/admin/classes/${classId}`);
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError("Class not found");
-            return;
+        // Option A: prefer role-aware endpoints under /api/classes
+        // There is no dedicated /api/classes/[id] route today, so we fetch the list and pick the class.
+        const [classesRes, studentsRes] = await Promise.all([
+          apiFetch('/api/classes'),
+          apiFetch(`/api/classes/${classId}/students`)
+        ]);
+
+        if (!classesRes.ok) {
+          if (classesRes.status === 401) {
+            throw new Error('Unauthorized');
           }
-          throw new Error("Failed to fetch class details");
+          throw new Error('Failed to fetch classes');
         }
 
-        const data = await response.json();
-        setClassData(data.class || data.data || data);
+        const classesJson = await classesRes.json();
+        const classes = (classesJson.data || classesJson.classes || []) as any[];
+        const cls = classes.find((c) => c?.id === classId);
+        if (!cls) {
+          setError('Class not found');
+          return;
+        }
+
+        let students: any[] = [];
+        if (studentsRes.ok) {
+          const studentsJson = await studentsRes.json();
+          students = (studentsJson.data || studentsJson.students || []) as any[];
+        }
+
+        setClassData({
+          ...cls,
+          students,
+          enrollment_count: Array.isArray(students) ? students.length : cls.enrollment_count,
+        });
       } catch (err: any) {
         console.error("[ClassDetail] Error:", err);
         setError(err.message || "An error occurred");
@@ -86,7 +108,7 @@ export default function ClassDetailPage() {
             <Button onClick={() => router.back()} variant="outline">
               Go Back
             </Button>
-            <Link href="/dashboard/classes">
+            <Link href={routes.classes.list()}>
               <Button>View All Classes</Button>
             </Link>
           </div>
@@ -110,7 +132,7 @@ export default function ClassDetailPage() {
           <Button onClick={() => router.back()} variant="outline">
             Back
           </Button>
-          <Link href={`/dashboard/classes/${classId}/edit`}>
+          <Link href={routes.classes.detail(classId) + '/edit'}>
             <Button>Edit Class</Button>
           </Link>
         </div>

@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api/client'
+import { routes } from '@/lib/routes'
 import { 
   parseCSV, 
   validateImportData, 
@@ -143,7 +144,7 @@ export default function BulkImportPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/dashboard/students">
+          <Link href={routes.students.list()}>
             <Button variant="ghost" className="mb-4">
               ← Back to Students
             </Button>

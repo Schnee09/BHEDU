@@ -51,7 +51,7 @@ async function fetchStudentWithClient(supabase: any, id: string) {
       .limit(20),
     supabase
       .from('grades')
-      .select('id, assignment_id, score, feedback, graded_at, assignments(title, max_points)')
+      .select('id, assignment_id, points_earned, score, feedback, graded_at, assignments(title, total_points, max_points)')
       .eq('student_id', id)
       .order('graded_at', { ascending: false })
       .limit(20),
@@ -119,7 +119,7 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
         <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4 flex-wrap">
             <Link
-              href="/dashboard/admin/students"
+              href="/dashboard/students"
               className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors"
             >
               <span>←</span>
@@ -279,8 +279,11 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
                             <tr key={g.id} className="hover:bg-gray-50 transition-colors">
                               <td className="px-4 py-3 font-medium text-gray-900">{g.assignments?.title ?? g.assignment_id}</td>
                               <td className="px-4 py-3">
-                                <span className="font-semibold text-blue-600">{g.score}</span>
-                                <span className="text-gray-500"> / {g.assignments?.max_points ?? '-'}</span>
+                                <span className="font-semibold text-blue-600">{g.points_earned ?? g.score ?? '—'}</span>
+                                <span className="text-gray-500">
+                                  {' '}
+                                  / {g.assignments?.total_points ?? g.assignments?.max_points ?? '-'}
+                                </span>
                               </td>
                               <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString() : '-'}</td>
                             </tr>

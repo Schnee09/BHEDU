@@ -16,7 +16,7 @@ type Assignment = {
 };
 
 export default function AssignmentsPage() {
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile: _profile, loading: profileLoading } = useProfile();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,17 +90,17 @@ export default function AssignmentsPage() {
     { 
       key: 'due_date', 
       header: 'Due Date', 
-      render: (row: Assignment) => (
+      render: (r: Assignment) => (
         <div className="flex items-center gap-2 text-stone-600">
           <Icons.Calendar className="w-4 h-4 text-stone-400" />
-          {row.due_date ? new Date(row.due_date).toLocaleDateString() : "No due date"}
+          {r.due_date ? new Date(r.due_date).toLocaleDateString() : "No due date"}
         </div>
       )
     },
     { 
       key: 'actions', 
       header: 'Actions', 
-      render: (row: Assignment) => (
+      render: (_r: Assignment) => (
         <button className="text-stone-600 hover:text-stone-900 font-medium text-sm inline-flex items-center gap-1">
           View Details
           <Icons.ChevronRight className="w-4 h-4" />

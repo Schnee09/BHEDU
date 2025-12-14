@@ -2,7 +2,6 @@
  * Validation schema tests
  */
 
-import { z } from 'zod';
 import {
   createStudentSchema,
   updateStudentSchema,
@@ -10,13 +9,11 @@ import {
 } from '@/lib/schemas/students';
 import {
   createGradeSchema,
-  updateGradeSchema,
   bulkGradeEntrySchema,
 } from '@/lib/schemas/grades';
 import {
   loginSchema,
   signupSchema,
-  changePasswordSchema,
 } from '@/lib/schemas/auth';
 import {
   createPaymentSchema,

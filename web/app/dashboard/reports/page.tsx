@@ -9,18 +9,16 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useFetch, useToast } from "@/hooks";
 import { apiFetch } from "@/lib/api/client";
 import { 
   Button, 
   Card, 
-  CardHeader,
   Badge,
   SkeletonStatCard,
 } from "@/components/ui";
-import { CardBody } from "@/components/ui/Card";
-import { StatCard } from "@/components/ui/Card";
+import { StatCard, CardBody, CardHeader } from "@/components/ui/Card";
 import { Icons } from "@/components/ui/Icons";
 import { ToastContainer } from "@/components/ui/Toast";
 
@@ -89,12 +87,56 @@ const reportTypes: ReportConfig[] = [
     description: 'Student attendance patterns and trends',
     icon: Icons.Attendance,
     color: 'text-orange-600 bg-orange-100',
-    available: false
+    available: true
   }
 ];
 
 export default function ReportsPage() {
   const toast = useToast();
+  // Filters
+  const [academicYears, setAcademicYears] = useState<{ id: string; name: string }[]>([])
+  const [classesList, setClassesList] = useState<any[]>([])
+  const [coursesList, setCoursesList] = useState<any[]>([])
+
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string | null>(null)
+  const [selectedClassFilter, setSelectedClassFilter] = useState<string | null>(null)
+  const [selectedCourseFilter, setSelectedCourseFilter] = useState<string | null>(null)
+
+  // Attendance date range filters
+  const [attendanceStart, setAttendanceStart] = useState<string | null>(null)
+  const [attendanceEnd, setAttendanceEnd] = useState<string | null>(null)
+
+  useEffect(() => {
+    // load academic years, classes, courses for filter selects
+    const load = async () => {
+      try {
+        const ayRes = await apiFetch('/api/admin/academic-years');
+        if (ayRes.ok) {
+          const ayJson = await ayRes.json().catch(() => null)
+          const ay = ayJson?.data || ayJson?.academic_years || []
+          setAcademicYears(ay || [])
+          if (ay && ay.length > 0) setSelectedAcademicYear(prev => prev || ay[0].id)
+        }
+
+        const classesRes = await apiFetch('/api/classes');
+        if (classesRes.ok) {
+          const cjson = await classesRes.json().catch(() => null)
+          const cls = cjson?.data || []
+          setClassesList(cls || [])
+        }
+
+        const coursesRes = await apiFetch('/api/admin/courses');
+        if (coursesRes.ok) {
+          const cojson = await coursesRes.json().catch(() => null)
+          const cos = cojson?.data || []
+          setCoursesList(cos || [])
+        }
+      } catch (e) {
+        console.error('Failed to load filter options', e)
+      }
+    }
+    load()
+  }, [])
   const [selectedReport, setSelectedReport] = useState<ReportType | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
 
@@ -103,11 +145,11 @@ export default function ReportsPage() {
     students: { id: string }[];
     total: number;
     statistics?: { total_students: number; active_students: number; inactive_students: number };
-  }>('/api/admin/students?limit=1');
+  }>('/api/students?limit=1');
   
   const { data: classesData, loading: loadingClasses } = useFetch<{
     data: { id: string }[];
-  }>('/api/admin/classes');
+  }>('/api/classes');
   
   const { data: coursesData, loading: loadingCourses } = useFetch<{
     data: { id: string; teacher_id?: string }[];
@@ -154,45 +196,54 @@ export default function ReportsPage() {
       let csvContent = '';
       let filename = '';
 
+      // Build shared query params for server reports
+      const params = new URLSearchParams()
+      params.set('format', 'csv')
+      if (selectedAcademicYear) params.set('academic_year_id', selectedAcademicYear)
+      if (selectedClassFilter) params.set('class_id', selectedClassFilter)
+      if (selectedCourseFilter) params.set('course_id', selectedCourseFilter)
+
       if (type === 'students') {
-        // Fetch all students for export
-        const response = await apiFetch('/api/admin/students?limit=1000');
-        if (!response.ok) throw new Error('Failed to fetch students');
-        const data = await response.json();
-        
-        if (data.students) {
-          const headers = ["ID", "Full Name", "Email", "Phone", "Grade Level", "Status", "Created At"];
-          const rows = data.students.map((s: Record<string, unknown>) => [
-            s.id,
-            s.full_name || '',
-            s.email || '',
-            s.phone || '',
-            s.grade_level || '',
-            s.status || 'active',
-            s.created_at ? new Date(s.created_at as string).toLocaleDateString() : ''
-          ]);
-          
-          csvContent = [
-            headers.join(","),
-            ...rows.map((row: string[]) => row.map(cell => `"${cell}"`).join(","))
-          ].join("\n");
-          filename = `student_report_${new Date().toISOString().split("T")[0]}.csv`;
+        // Server-side CSV export to avoid client fetching large datasets
+        const url = `/api/reports/students?${params.toString()}`
+        const response = await apiFetch(url)
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ error: 'Failed to generate report' }))
+          throw new Error(err.error || 'Failed to generate report')
         }
+
+        const blob = await response.blob()
+        const contentDisposition = response.headers.get('Content-Disposition') || ''
+        const inferredName = contentDisposition.match(/filename="?([^";]+)"?/)?.[1]
+        filename = inferredName || `student_report_${new Date().toISOString().split('T')[0]}.csv`
+        const urlObj = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.setAttribute('href', urlObj)
+        link.setAttribute('download', filename)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(urlObj)
       } else if (type === 'classes') {
-        const response = await apiFetch('/api/admin/classes');
+        const response = await apiFetch('/api/classes');
         if (!response.ok) throw new Error('Failed to fetch classes');
         const data = await response.json();
-        
-        if (data.data) {
+
+        const classes = data?.data || data?.classes;
+        if (Array.isArray(classes)) {
           const headers = ["ID", "Name", "Grade Level", "Academic Year", "Capacity", "Created At"];
-          const rows = data.data.map((c: Record<string, unknown>) => [
-            c.id,
-            c.name || '',
-            c.grade_level || '',
-            c.academic_year || '',
-            c.capacity || '',
-            c.created_at ? new Date(c.created_at as string).toLocaleDateString() : ''
-          ]);
+          const rows: string[][] = classes.map((c: Record<string, unknown>) => {
+            const createdAt = c.created_at ? new Date(String(c.created_at)).toLocaleDateString() : '';
+            return [
+              String(c.id ?? ''),
+              String(c.name ?? ''),
+              String(c.grade_level ?? ''),
+              String(c.academic_year ?? ''),
+              String(c.capacity ?? ''),
+              createdAt,
+            ];
+          });
           
           csvContent = [
             headers.join(","),
@@ -201,27 +252,52 @@ export default function ReportsPage() {
           filename = `class_report_${new Date().toISOString().split("T")[0]}.csv`;
         }
       } else if (type === 'grades') {
-        const response = await apiFetch('/api/admin/courses');
-        const data = await response.json();
-        
-        if (data.data) {
-          const headers = ["ID", "Course Name", "Description", "Has Teacher", "Created At"];
-          const rows = data.data.map((c: Record<string, unknown>) => [
-            c.id,
-            (c.title || c.name || '') as string,
-            (c.description || '') as string,
-            c.teacher_id ? 'Yes' : 'No',
-            c.created_at ? new Date(c.created_at as string).toLocaleDateString() : ''
-          ]);
-          
-          csvContent = [
-            headers.join(","),
-            ...rows.map((row: string[]) => row.map(cell => `"${cell}"`).join(","))
-          ].join("\n");
-          filename = `academic_report_${new Date().toISOString().split("T")[0]}.csv`;
+        // Use server-side grades report CSV export, include filters
+        const url = `/api/reports/grades?${params.toString()}`
+        const response = await apiFetch(url)
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ error: 'Failed to generate report' }))
+          throw new Error(err.error || 'Failed to generate report')
         }
-      }
 
+        const blob = await response.blob()
+        const contentDisposition = response.headers.get('Content-Disposition') || ''
+        const inferredName = contentDisposition.match(/filename="?([^";]+)"?/)?.[1]
+        filename = inferredName || `grades_report_${new Date().toISOString().split('T')[0]}.csv`
+        const urlObj = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.setAttribute('href', urlObj)
+        link.setAttribute('download', filename)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(urlObj)
+      } else if (type === 'attendance') {
+        // Attendance report uses date range filters plus the shared filters
+        if (attendanceStart) params.set('date_from', attendanceStart)
+        if (attendanceEnd) params.set('date_to', attendanceEnd)
+        const url = `/api/reports/attendance?${params.toString()}`
+        const response = await apiFetch(url)
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ error: 'Failed to generate report' }))
+          throw new Error(err.error || 'Failed to generate report')
+        }
+
+        const blob = await response.blob()
+        const contentDisposition = response.headers.get('Content-Disposition') || ''
+        const inferredName = contentDisposition.match(/filename="?([^";]+)"?/)?.[1]
+        filename = inferredName || `attendance_report_${new Date().toISOString().split('T')[0]}.csv`
+        const urlObj = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.setAttribute('href', urlObj)
+        link.setAttribute('download', filename)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(urlObj)
+      }
       if (csvContent && filename) {
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
@@ -307,6 +383,61 @@ export default function ReportsPage() {
       {/* Report Types */}
       <div>
         <h2 className="text-lg font-semibold text-stone-900 mb-4">Generate Reports</h2>
+        {/* Filters */}
+        <Card className="mb-4">
+          <CardBody>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div>
+                <label className="block text-sm text-stone-600 mb-1">Academic Year</label>
+                <select
+                  value={selectedAcademicYear ?? ''}
+                  onChange={(e) => setSelectedAcademicYear(e.target.value || null)}
+                  className="w-full border rounded px-2 py-1"
+                >
+                  {academicYears.map(ay => (
+                    <option key={ay.id} value={ay.id}>{ay.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-stone-600 mb-1">Class</label>
+                <select
+                  value={selectedClassFilter ?? ''}
+                  onChange={(e) => setSelectedClassFilter(e.target.value || null)}
+                  className="w-full border rounded px-2 py-1"
+                >
+                  <option value="">All</option>
+                  {classesList.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-stone-600 mb-1">Course</label>
+                <select
+                  value={selectedCourseFilter ?? ''}
+                  onChange={(e) => setSelectedCourseFilter(e.target.value || null)}
+                  className="w-full border rounded px-2 py-1"
+                >
+                  <option value="">All</option>
+                  {coursesList.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-stone-600 mb-1">Attendance Date Range</label>
+                <div className="flex gap-2">
+                  <input type="date" value={attendanceStart ?? ''} onChange={e => setAttendanceStart(e.target.value || null)} className="border rounded px-2 py-1 w-1/2" />
+                  <input type="date" value={attendanceEnd ?? ''} onChange={e => setAttendanceEnd(e.target.value || null)} className="border rounded px-2 py-1 w-1/2" />
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {reportTypes.map((report) => (
             <Card 
@@ -350,7 +481,9 @@ export default function ReportsPage() {
 
       {/* Quick Actions */}
       <Card>
-        <CardHeader title="Quick Actions" />
+        <CardHeader>
+          <h3 className="text-lg font-semibold">Quick Actions</h3>
+        </CardHeader>
         <CardBody>
           <div className="flex flex-wrap gap-3">
             <Button 

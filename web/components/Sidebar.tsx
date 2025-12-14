@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/useProfile";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { routes } from "@/lib/routes";
 
 // Heroicons SVG Components
 const Icons = {
@@ -182,25 +183,30 @@ export default function Sidebar() {
         {
           title: "Grades",
           links: [
-            { href: "/dashboard/grades/assignments", label: "Assignments", icon: <Icons.ClipboardList /> },
-            { href: "/dashboard/grades/entry", label: "Grade Entry", icon: <Icons.Chart /> },
-            { href: "/dashboard/grades/conduct-entry", label: "Conduct Grades", icon: <Icons.AcademicCap /> },
-            { href: "/dashboard/grades/reports", label: "Report Cards", icon: <Icons.Document /> },
-            { href: "/dashboard/grades/analytics", label: "Analytics", icon: <Icons.TrendingUp /> },
+            { href: routes.grades.assignments(), label: "Assignments", icon: <Icons.ClipboardList /> },
+            { href: routes.grades.entry(), label: "Grade Entry", icon: <Icons.Chart /> },
+            { href: routes.grades.conductEntry(), label: "Conduct Grades", icon: <Icons.AcademicCap /> },
+            { href: routes.grades.reports(), label: "Report Cards", icon: <Icons.Document /> },
+            { href: routes.grades.analytics(), label: "Analytics", icon: <Icons.TrendingUp /> },
           ]
         },
         {
           title: "Administration",
           links: [
             { href: "/dashboard/admin/diagnostic", label: "🔧 API Diagnostic", icon: <Icons.Wrench /> },
+            { href: "/dashboard/admin/students", label: "Admin — Students", icon: <Icons.Users /> },
             { href: "/dashboard/classes", label: "Classes Management", icon: <Icons.Book /> },
             { href: "/dashboard/users", label: "Users/Teachers Management", icon: <Icons.User /> },
             { href: "/dashboard/assignments", label: "Assignments Management", icon: <Icons.ClipboardList /> },
             { href: "/dashboard/attendance", label: "Attendance Management", icon: <Icons.Calendar /> },
             { href: "/dashboard/attendance/reports", label: "Attendance Reports", icon: <Icons.Chart /> },
-            { href: "/dashboard/grades", label: "Grades Management", icon: <Icons.AcademicCap /> },
+            { href: routes.grades.list(), label: "Grades Management", icon: <Icons.AcademicCap /> },
             { href: "/dashboard/students/import", label: "Import Students", icon: <Icons.Download /> },
-            { href: "/dashboard/admin/data", label: "Data Viewer", icon: <Icons.Search /> },
+            { href: "/dashboard/admin/data", label: "Data — Quick", icon: <Icons.Search /> },
+            { href: "/dashboard/admin/data-viewer", label: "Data Viewer (table)", icon: <Icons.Document /> },
+            { href: "/dashboard/admin/data-dump", label: "Data Dump (export)", icon: <Icons.Download /> },
+            // Impersonation removed: feature disabled / deferred
+            { href: "/dashboard/admin/student", label: "Student (legacy)", icon: <Icons.DocumentText /> },
             { href: "/dashboard/reports", label: "Reports", icon: <Icons.DocumentText /> },
           ]
         },
@@ -259,9 +265,9 @@ export default function Sidebar() {
         {
           title: "Grades",
           links: [
-            { href: "/dashboard/grades", label: "Overview", icon: <Icons.AcademicCap /> },
-            { href: "/dashboard/grades/reports", label: "Report Cards", icon: <Icons.Document /> },
-            { href: "/dashboard/grades/analytics", label: "Analytics", icon: <Icons.TrendingUp /> },
+            { href: routes.grades.list(), label: "Overview", icon: <Icons.AcademicCap /> },
+            { href: routes.grades.reports(), label: "Report Cards", icon: <Icons.Document /> },
+            { href: routes.grades.analytics(), label: "Analytics", icon: <Icons.TrendingUp /> },
           ]
         },
         {
@@ -307,11 +313,11 @@ export default function Sidebar() {
         {
           title: "Grades",
           links: [
-            { href: "/dashboard/grades/assignments", label: "Assignments", icon: <Icons.ClipboardList /> },
-            { href: "/dashboard/grades/entry", label: "Grade Entry", icon: <Icons.Chart /> },
-            { href: "/dashboard/grades/conduct-entry", label: "Conduct Grades", icon: <Icons.AcademicCap /> },
-            { href: "/dashboard/grades/reports", label: "Report Cards", icon: <Icons.Document /> },
-            { href: "/dashboard/grades/analytics", label: "Analytics", icon: <Icons.TrendingUp /> },
+            { href: routes.grades.assignments(), label: "Assignments", icon: <Icons.ClipboardList /> },
+            { href: routes.grades.entry(), label: "Grade Entry", icon: <Icons.Chart /> },
+            { href: routes.grades.conductEntry(), label: "Conduct Grades", icon: <Icons.AcademicCap /> },
+            { href: routes.grades.reports(), label: "Report Cards", icon: <Icons.Document /> },
+            { href: routes.grades.analytics(), label: "Analytics", icon: <Icons.TrendingUp /> },
           ]
         }
       ];

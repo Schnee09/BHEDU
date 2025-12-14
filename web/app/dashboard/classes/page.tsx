@@ -21,7 +21,6 @@ import {
   Button, 
   Card, 
   Badge,
-  LoadingState,
   EmptyState,
   Modal,
 } from "@/components/ui";
@@ -68,7 +67,7 @@ export default function ClassesPageModern() {
   
   // Determine API endpoint based on role - only when profile is loaded
   const isAdminOrStaff = profile?.role === 'admin' || profile?.role === 'staff';
-  const isTeacher = profile?.role === 'teacher';
+  const _isTeacher = profile?.role === 'teacher';
   const isStudent = profile?.role === 'student';
   
   // Choose correct endpoint: admin sees all, teachers see their classes, students see enrolled classes
@@ -76,7 +75,7 @@ export default function ClassesPageModern() {
   const apiEndpoint = !profile 
     ? null 
     : isAdminOrStaff 
-      ? '/api/admin/classes' 
+      ? '/api/classes' 
       : isStudent 
         ? '/api/student/classes'
         : '/api/classes/my-classes';
@@ -108,7 +107,7 @@ export default function ClassesPageModern() {
         logger.error('Classes fetch error', new Error(error));
       }
     }
-  }, [error, toast.warning, toast.error]);
+  }, [error, toast]);
   
   const classes = data?.classes || data?.data || [];
   const statistics = data?.statistics;
@@ -126,7 +125,7 @@ export default function ClassesPageModern() {
     // Fetch available students (not already enrolled in this class)
     try {
       const [studentsRes, enrollmentsRes] = await Promise.all([
-        apiFetch('/api/admin/students?status=active&limit=500'),
+        apiFetch('/api/students?status=active&limit=500'),
         apiFetch(`/api/admin/enrollments?class_id=${classData.id}`)
       ]);
 
@@ -141,7 +140,7 @@ export default function ClassesPageModern() {
         (enrollmentsData.data || []).map((e: { student_id: string }) => e.student_id)
       );
       
-      const available = (studentsData.students || []).filter(
+      const available = (studentsData.students || studentsData.data || []).filter(
         (s: { id: string }) => !enrolledStudentIds.has(s.id)
       );
       
@@ -217,7 +216,7 @@ export default function ClassesPageModern() {
               ? "View your enrolled classes and progress"
               : "View and manage your assigned classes"}
           action={isAdminOrStaff ? (
-            <Link href="/dashboard/admin/classes">
+            <Link href="/dashboard/classes">
               <Button variant="primary" leftIcon={<Icons.Add className="w-4 h-4" />}>
                 Create Class
               </Button>

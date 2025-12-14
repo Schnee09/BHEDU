@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api/client';
-import { Card, CardHeader, CardBody } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { SkeletonTable } from "@/components/ui/skeleton";
-import { Icons } from "@/components/ui/Icons";
 
 interface Term {
   name: string;

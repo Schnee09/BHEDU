@@ -8,6 +8,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { apiFetch } from "@/lib/api/client";
 import { Table } from "@/components/ui/table";
 import Badge from "@/components/ui/badge";
+import { routes } from "@/lib/routes";
 
 interface AttendanceRecord {
   id: string;
@@ -34,7 +35,9 @@ export default function AttendancePage() {
       setIsLoading(true);
       setError(null);
       setIsRateLimited(false);
-      const res = await apiFetch('/api/student/attendance');
+      // Option A: canonical role-aware endpoint.
+      // Server will scope results based on viewer role.
+      const res = await apiFetch('/api/attendance');
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         const errorMessage = errorData.error || 'Failed to fetch attendance';
@@ -56,8 +59,10 @@ export default function AttendancePage() {
         throw new Error(errorMessage);
       }
       const response = await res.json();
-      // Extract records array from response object
-      const recordsData = Array.isArray(response) ? response : (response.records || []);
+      // Extract records array from response object (API returns { data: [] })
+      const recordsData = Array.isArray(response)
+        ? response
+        : (response.data || response.records || []);
       setRecords(recordsData);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load attendance records';
@@ -300,21 +305,21 @@ export default function AttendancePage() {
     {
       title: "Mark Attendance",
       description: "Manually mark student attendance for classes",
-      href: "/dashboard/attendance/mark",
+      href: routes.attendance.mark(),
       icon: Icons.Success,
       color: "text-stone-600 bg-stone-100"
     },
     {
       title: "QR Code Attendance",
       description: "Generate QR codes for students to self-check in",
-      href: "/dashboard/attendance/qr",
+      href: routes.attendance.qr(),
       icon: Icons.View,
       color: "text-stone-600 bg-stone-100"
     },
     {
       title: "Attendance Reports",
       description: "View and analyze attendance data and trends",
-      href: "/dashboard/attendance/reports",
+      href: routes.attendance.reports(),
       icon: Icons.Chart,
       color: "text-stone-600 bg-stone-100"
     }

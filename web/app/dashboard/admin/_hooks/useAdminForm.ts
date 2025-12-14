@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { apiFetch } from '@/lib/api/client';
 import { logger } from '@/lib/logger';
 
 export interface UseAdminFormOptions<T> {

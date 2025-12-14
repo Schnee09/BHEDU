@@ -6,6 +6,10 @@ require('dotenv').config({ path: '.env.local' });
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('@testing-library/jest-dom');
 
+// React 18+/19: silence act() warnings by declaring act environment.
+// Individual tests can still opt-in/out; this is safe for our hooks/component tests.
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
 // Mock Next.js headers and cookies
 jest.mock('next/headers', () => ({
   cookies: jest.fn(() => ({

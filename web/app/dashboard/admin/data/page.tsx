@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '@/lib/api/client'
-import { Card, CardHeader, CardBody } from "@/components/ui/Card"
+import { Card, CardBody } from "@/components/ui/Card"
 import { Icons } from "@/components/ui/Icons"
 
 type Pagination = { page: number; limit: number; total: number; pages: number }

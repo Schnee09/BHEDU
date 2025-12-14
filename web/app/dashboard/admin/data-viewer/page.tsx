@@ -21,19 +21,47 @@ export default function DataViewerPage() {
   useEffect(() => {
     const fetchTables = async () => {
       try {
+        // 1) Fetch allowed tables
         const response = await apiFetch('/api/admin/data/tables');
         const result = await response.json();
         const tableList = result.data || [];
         setTables(tableList);
-        if (tableList.length > 0 && !selectedTable) {
-          setSelectedTable(tableList[0]);
+
+        // 2) Fetch counts for all tables (single request)
+        if (tableList.length > 0) {
+          const countsRes = await apiFetch('/api/admin/data/counts');
+          const countsJson = await countsRes.json();
+
+          const counts: Record<string, number> = countsJson?.counts || {};
+          const errors: Record<string, string> = countsJson?.errors || {};
+
+          setTableData(prev => {
+            const next = { ...prev };
+            for (const table of tableList) {
+              const count = typeof counts[table] === 'number' ? counts[table] : 0;
+              const error = errors[table];
+              next[table] = {
+                tableName: table,
+                count,
+                data: prev[table]?.data || [],
+                loading: false,
+                ...(error ? { error } : {})
+              };
+            }
+            return next;
+          });
+        }
+
+        // default selection
+        if (tableList.length > 0) {
+          setSelectedTable((current) => current || tableList[0]);
         }
       } catch (error) {
         console.error('Failed to fetch tables:', error);
       }
     };
     fetchTables();
-  }, [selectedTable]);
+  }, []);
 
   const fetchTableData = useCallback(async (tableName: string) => {
     setTableData(prev => ({
@@ -56,7 +84,8 @@ export default function DataViewerPage() {
         ...prev,
         [tableName]: {
           tableName,
-          count: result.pagination?.total || 0,
+          // keep existing count if we already fetched counts-first
+          count: (prev?.[tableName]?.count ?? result.pagination?.total) || 0,
           data: result.data || [],
           loading: false
         }
@@ -76,9 +105,10 @@ export default function DataViewerPage() {
   }, []);
 
   useEffect(() => {
-    // Fetch all table counts on mount
-    tables.forEach(table => fetchTableData(table));
-  }, [tables, fetchTableData]);
+    // Fetch only the selected table rows (counts were loaded first).
+    if (!selectedTable) return;
+    fetchTableData(selectedTable);
+  }, [selectedTable, fetchTableData]);
 
   const selectedData = tableData[selectedTable];
 

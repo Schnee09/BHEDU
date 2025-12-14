@@ -35,6 +35,7 @@ import { PageHeader } from "@/components/Breadcrumb";
 import { ToastContainer } from "@/components/ui/Toast";
 import { logger } from "@/lib/logger";
 import { createAuditLog, AuditActions } from "@/lib/audit";
+import { routes } from "@/lib/routes";
 
 interface Student {
   id: string;
@@ -60,7 +61,7 @@ interface StudentStats {
 
 export default function StudentsPage() {
   const toast = useToast();
-  const { user } = useUser();
+  const { user, hasAdminAccess, isTeacher: _isTeacher } = useUser();
   
   // Search with debounce
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,19 +95,28 @@ export default function StudentsPage() {
     ...(filters.gender && { gender: filters.gender })
   });
   
+  // Option A routing model: /dashboard/* pages are role-aware.
+  // Fetch from the role-aware route; server will return the right scope
+  // (admin: all students, others: permitted subset).
   const { data, loading, error, refetch } = useFetch<{
     students: Student[];
     total: number;
     statistics?: StudentStats;
   }>(
-    `/api/admin/students?${queryParams.toString()}`
+    `/api/students?${queryParams.toString()}`
   );
   
   // Handle successful fetch
   useEffect(() => {
     if (data) {
       pagination.setTotalItems(data.total);
-      logger.info('Students loaded', { count: data.students.length });
+      // Guard against unexpected response shapes to avoid runtime errors
+      const count = Array.isArray((data as any).students)
+        ? (data as any).students.length
+        : Array.isArray((data as any).data)
+          ? (data as any).data.length
+          : 0;
+      logger.info('Students loaded', { count });
     }
   }, [data, pagination]);
   
@@ -116,11 +126,11 @@ export default function StudentsPage() {
       toast.error('Failed to load students', error);
       logger.error('Error loading students', new Error(error));
     }
-  }, [error, toast.error]);
+  }, [error, toast]);
   
-  // Bulk archive mutation
+  // Bulk archive mutation (admin/staff only)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { mutate: archiveStudent, loading: archiving } = useMutation('/api/admin/students', 'DELETE');
+  const { mutate: archiveStudent, loading: archiving } = useMutation('/api/students', 'DELETE');
   
   const students = data?.students || [];
   const statistics = data?.statistics;
@@ -146,6 +156,10 @@ export default function StudentsPage() {
   
   // Bulk archive
   const handleBulkArchive = async () => {
+    if (!hasAdminAccess) {
+      toast.warning('Not Allowed', 'Only admins and staff can archive students');
+      return;
+    }
     if (selectedIds.size === 0) {
       toast.warning('No selection', 'Please select students to archive');
       return;
@@ -158,16 +172,22 @@ export default function StudentsPage() {
     try {
       logger.info('Bulk archiving students', { count: selectedIds.size });
       
-      // Archive each student
-      const results = await Promise.allSettled(
-        Array.from(selectedIds).map(id =>
-          apiFetch(`/api/admin/students/${id}`, { method: 'DELETE' })
-        )
-      );
-      
-      const failed = results.filter(r => r.status === 'rejected').length;
-      const succeeded = selectedIds.size - failed;
-      
+      const res = await apiFetch('/api/students/bulk-archive', {
+        method: 'POST',
+        body: JSON.stringify({ studentIds: Array.from(selectedIds) }),
+      });
+
+      const data = await res.json().catch(() => ({} as any));
+
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to archive students');
+      }
+
+      const archivedCount = Number(data?.archivedCount || 0);
+      const failedIds: string[] = Array.isArray(data?.failedIds) ? data.failedIds : [];
+      const failed = failedIds.length;
+      const succeeded = archivedCount;
+
       if (failed > 0) {
         toast.warning('Partial success', `Archived ${succeeded} students, ${failed} failed`);
       } else {
@@ -190,6 +210,44 @@ export default function StudentsPage() {
     } catch (error) {
       logger.error('Bulk archive error', error instanceof Error ? error : new Error(String(error)), { originalError: String(error) });
       toast.error('Archive failed', 'Failed to archive students');
+    }
+  };
+
+  // Single student archive
+  const handleArchiveOne = async (student: Student) => {
+    if (!hasAdminAccess) {
+      toast.warning('Not Allowed', 'Only admins and staff can archive students');
+      return;
+    }
+
+    if (!confirm(`Archive ${student.full_name}? This will set their status to inactive.`)) {
+      return;
+    }
+
+    try {
+      logger.info('Archiving student', { studentId: student.id });
+      const res = await apiFetch(`/api/students/${student.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to archive student');
+      }
+
+      await createAuditLog({
+        userId: user?.id || 'unknown',
+        userEmail: user?.email || 'unknown',
+        userRole: user?.role || 'admin',
+        action: AuditActions.STUDENT_DELETED,
+        resourceType: 'student',
+        resourceId: student.id,
+        metadata: { studentId: student.id },
+      });
+
+      toast.success('Student archived', `${student.full_name} has been archived`);
+      refetch();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Archive failed';
+      toast.error('Archive failed', message);
+      logger.error('Archive student error', err instanceof Error ? err : new Error(String(err)));
     }
   };
   
@@ -431,6 +489,15 @@ export default function StudentsPage() {
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
+                  onClick={refetch}
+                  leftIcon={<Icons.Search className="w-4 h-4" />}
+                  disabled={loading}
+                >
+                  Refresh
+                </Button>
+
+                <Button
+                  variant="outline"
                   onClick={() => setShowFilters(!showFilters)}
                   leftIcon={showFilters ? <Icons.Close className="w-4 h-4" /> : <Icons.Filter className="w-4 h-4" />}
                 >
@@ -446,7 +513,7 @@ export default function StudentsPage() {
                   Export
                 </Button>
                 
-                {selectedIds.size > 0 && (
+                {hasAdminAccess && selectedIds.size > 0 && (
                   <Button
                     variant="danger"
                     onClick={handleBulkArchive}
@@ -456,12 +523,14 @@ export default function StudentsPage() {
                     Archive ({selectedIds.size})
                   </Button>
                 )}
-                
-                <Link href="/dashboard/students/import">
-                  <Button variant="outline" leftIcon={<span>📤</span>}>
-                    Import
-                  </Button>
-                </Link>
+
+                {hasAdminAccess && (
+                  <Link href={routes.students.import()}>
+                    <Button variant="outline" leftIcon={<span>📤</span>}>
+                      Import
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
             
@@ -508,7 +577,7 @@ export default function StudentsPage() {
           }
           action={
             <div className="flex gap-2">
-              <Link href="/dashboard/students/import">
+              <Link href={routes.students.import()}>
                 <Button variant="primary">Import Students</Button>
               </Link>
               {debouncedSearch && (
@@ -610,6 +679,33 @@ export default function StudentsPage() {
                   <span className="text-gray-600 text-sm">
                     {new Date(student.created_at).toLocaleDateString()}
                   </span>
+                ),
+              },
+              {
+                key: 'actions',
+                label: 'Actions',
+                width: '160px',
+                render: (student) => (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingStudent(student)}
+                      leftIcon={<Icons.Edit className="w-4 h-4" />}
+                    >
+                      Edit
+                    </Button>
+                    {hasAdminAccess && (
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleArchiveOne(student)}
+                        leftIcon={<Icons.Archive className="w-4 h-4" />}
+                      >
+                        Archive
+                      </Button>
+                    )}
+                  </div>
                 ),
               },
             ]}
@@ -752,8 +848,8 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
     
     try {
       const url = student
-        ? `/api/admin/students/${student.id}`
-        : '/api/admin/students';
+        ? `/api/students/${student.id}`
+        : '/api/students';
       
       const method = student ? 'PUT' : 'POST';
       

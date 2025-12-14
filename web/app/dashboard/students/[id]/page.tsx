@@ -12,6 +12,9 @@ import GuardianManagement from "@/components/GuardianManagement";
 import EnrollmentManager from "@/components/EnrollmentManager";
 import StudentPhotoUpload from "@/components/StudentPhotoUpload";
 
+import StudentStatusPanel from "../../../../components/StudentStatusPanel";
+import ImportHistoryPanel from "../../../../components/ImportHistoryPanel";
+
 /**
  * Fetch student data using the provided Supabase client.
  * This allows higher-privilege callers (admin) to pass a service client
@@ -52,7 +55,7 @@ async function fetchStudentWithClient(supabase: any, id: string) {
       .limit(20),
     supabase
       .from("grades")
-      .select("id, assignment_id, score, feedback, graded_at, assignments(title, max_points)")
+      .select("id, assignment_id, points_earned, score, feedback, graded_at, assignments(title, total_points, max_points)")
       .eq("student_id", id)
       .order("graded_at", { ascending: false })
       .limit(20),
@@ -319,7 +322,7 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 <tr key={g.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-900">{g.assignments?.title ?? g.assignment_id}</td>
                   <td className="px-4 py-3">
-                    <span className="font-semibold text-blue-600">{g.score}</span>
+                    <span className="font-semibold text-blue-600">{g.score ?? g.points_earned ?? '—'}</span>
                     <span className="text-gray-500"> / {g.assignments?.max_points ?? '-'}</span>
                   </td>
                   <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString() : '-'}</td>
@@ -445,6 +448,18 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
     </Card>
   );
 
+  const statusSection = (
+    <Card padding="lg">
+      <StudentStatusPanel studentId={id} currentStatus={(profile as any).status ?? 'active'} isAdmin={viewerRole === 'admin'} />
+    </Card>
+  );
+
+  const importSection = (
+    <Card padding="lg">
+      <ImportHistoryPanel />
+    </Card>
+  );
+
   const activitySection = (
     <Card padding="lg">
       <h2 className="text-lg font-semibold mb-4 text-gray-900">Activity Log</h2>
@@ -500,10 +515,12 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       {(() => {
         const tabs: { key: string; label: string; content: React.ReactNode }[] = [
           { key: "overview", label: "Overview", content: overview },
+          { key: "status", label: "Status", content: statusSection },
           { key: "enrollments", label: "Enrollments", content: enrollmentsSection },
           { key: "guardians", label: "Guardians", content: guardiansSection },
           { key: "attendance", label: "Attendance", content: attendanceSection },
           { key: "grades", label: "Grades", content: gradesSection },
+          { key: "imports", label: "Imports", content: importSection },
           { key: "documents", label: "Documents", content: documentsSection },
           { key: "notes", label: "Notes", content: notesSection },
         ];

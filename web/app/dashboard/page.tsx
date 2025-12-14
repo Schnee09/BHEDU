@@ -8,6 +8,7 @@ import { SkeletonStatCard, SkeletonCard } from "@/components/ui/skeleton";
 import { Icons } from "@/components/ui/Icons";
 import { logger } from "@/lib/logger";
 import Link from "next/link";
+import { routes } from "@/lib/routes";
 
 interface DashboardStats {
   totalStudents: number;
@@ -218,7 +219,7 @@ export default function DashboardPage() {
               {profile?.role === "admin" && (
                 <>
                   <QuickActionCard
-                    href="/dashboard/students"
+                    href={routes.students.list()}
                     icon={<Icons.Students className="w-6 h-6" />}
                     title="Manage Students"
                     description="View and edit student profiles"
@@ -232,14 +233,14 @@ export default function DashboardPage() {
                     color="purple"
                   />
                   <QuickActionCard
-                    href="/dashboard/classes"
+                    href={routes.classes.list()}
                     icon={<Icons.Classes className="w-6 h-6" />}
                     title="Manage Classes"
                     description="View and organize classes"
                     color="green"
                   />
                   <QuickActionCard
-                    href="/dashboard/attendance"
+                    href={routes.attendance.list()}
                     icon={<Icons.Attendance className="w-6 h-6" />}
                     title="Attendance"
                     description="Track daily attendance"
@@ -251,7 +252,7 @@ export default function DashboardPage() {
               {profile?.role === "teacher" && (
                 <>
                   <QuickActionCard
-                    href="/dashboard/classes"
+                    href={routes.classes.list()}
                     icon={<Icons.Classes className="w-6 h-6" />}
                     title="My Classes"
                     description="View your classes"
@@ -272,7 +273,7 @@ export default function DashboardPage() {
                     color="purple"
                   />
                   <QuickActionCard
-                    href="/dashboard/attendance/mark"
+                    href={routes.attendance.mark()}
                     icon={<Icons.Attendance className="w-6 h-6" />}
                     title="Mark Attendance"
                     description="Take class attendance"
@@ -284,7 +285,7 @@ export default function DashboardPage() {
               {profile?.role === "student" && (
                 <>
                   <QuickActionCard
-                    href="/dashboard/classes"
+                    href={routes.classes.list()}
                     icon={<Icons.Classes className="w-6 h-6" />}
                     title="My Classes"
                     description="View enrolled classes"

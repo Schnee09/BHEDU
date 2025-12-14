@@ -9,13 +9,15 @@ import { SimpleTable } from "@/components/ui/table";
 
 interface Grade {
   id: string;
-  score: number;
+  points_earned?: number;
+  score?: number;
   graded_at: string;
   feedback: string | null;
   assignment: {
     id: string;
     title: string;
-    max_points: number;
+    total_points?: number;
+    max_points?: number;
     due_date: string | null;
     class: {
       id: string;
@@ -95,8 +97,11 @@ export default function StudentGradesPage() {
 
   const calculateAverage = (classGrades: Grade[]) => {
     if (classGrades.length === 0) return 0;
-    const total = classGrades.reduce((sum, grade) => sum + grade.score, 0);
-    const maxTotal = classGrades.reduce((sum, grade) => sum + grade.assignment.max_points, 0);
+    const total = classGrades.reduce((sum, grade) => sum + (grade.points_earned ?? grade.score ?? 0), 0);
+    const maxTotal = classGrades.reduce(
+      (sum, grade) => sum + (grade.assignment.total_points ?? grade.assignment.max_points ?? 0),
+      0
+    );
     return maxTotal > 0 ? (total / maxTotal) * 100 : 0;
   };
 
@@ -164,20 +169,40 @@ export default function StudentGradesPage() {
                         {new Date(grade.graded_at).toLocaleDateString()}
                       </span>,
                       <div key={`${grade.id}-score`} className="font-mono font-medium">
-                        <span className={
-                          grade.score / grade.assignment.max_points >= 0.9 ? 'text-green-700' :
-                          grade.score / grade.assignment.max_points < 0.6 ? 'text-red-700' :
-                          'text-stone-900'
-                        }>
-                          {grade.score}
-                        </span>
-                        <span className="text-stone-400 text-xs ml-1">/ {grade.assignment.max_points}</span>
+                        {(() => {
+                          const earned = grade.points_earned ?? grade.score;
+                          const total = grade.assignment.total_points ?? grade.assignment.max_points;
+                          const ratio = earned !== undefined && total ? earned / total : undefined;
+
+                          return (
+                            <>
+                              <span className={
+                                ratio !== undefined && ratio >= 0.9 ? 'text-green-700' :
+                                ratio !== undefined && ratio < 0.6 ? 'text-red-700' :
+                                'text-stone-900'
+                              }>
+                                {earned ?? '—'}
+                              </span>
+                              <span className="text-stone-400 text-xs ml-1">/ {total ?? '—'}</span>
+                            </>
+                          );
+                        })()}
                       </div>,
                       <Badge 
                         key={`${grade.id}-status`}
-                        variant={grade.score / grade.assignment.max_points >= 0.6 ? 'success' : 'warning'}
+                        variant={(() => {
+                          const earned = grade.points_earned ?? grade.score;
+                          const total = grade.assignment.total_points ?? grade.assignment.max_points;
+                          const ratio = earned !== undefined && total ? earned / total : undefined;
+                          return ratio !== undefined && ratio >= 0.6 ? 'success' : 'warning';
+                        })()}
                       >
-                        {grade.score / grade.assignment.max_points >= 0.6 ? 'Pass' : 'Needs Improvement'}
+                        {(() => {
+                          const earned = grade.points_earned ?? grade.score;
+                          const total = grade.assignment.total_points ?? grade.assignment.max_points;
+                          const ratio = earned !== undefined && total ? earned / total : undefined;
+                          return ratio !== undefined && ratio >= 0.6 ? 'Pass' : 'Needs Improvement';
+                        })()}
                       </Badge>
                     ])}
                   />

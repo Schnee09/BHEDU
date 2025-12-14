@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
-import { SROnly, buildAriaLabel } from "@/lib/a11y";
 import { CheckIcon, UserPlusIcon, ClipboardDocumentListIcon, ChartBarIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import { routes } from "@/lib/routes";
 
 interface Notification {
   id: string;
@@ -118,7 +118,7 @@ export default function Header({ profile }: HeaderProps) {
       setNotifications(mappedNotifications);
       setUnreadCount(mappedNotifications.filter(n => !n.is_read).length);
       */
-    } catch (error) {
+    } catch (_error) {
       // Auth error or other top-level error - fail silently
       setNotifications([]);
       setUnreadCount(0);
@@ -158,12 +158,13 @@ export default function Header({ profile }: HeaderProps) {
   };
 
   const quickActions = [
-    { label: 'Mark Attendance', icon: CheckIcon, href: '/dashboard/attendance', show: true },
-    { label: 'Add Student', icon: UserPlusIcon, href: '/dashboard/students?action=add', show: profile?.role === 'admin' },
+    { label: 'Mark Attendance', icon: CheckIcon, href: routes.attendance.list(), show: true },
+    { label: 'My Grades', icon: ChartBarIcon, href: '/dashboard/scores', show: profile?.role === 'student' },
+    { label: 'Add Student', icon: UserPlusIcon, href: `${routes.students.list()}?action=add`, show: profile?.role === 'admin' || profile?.role === 'staff' },
     { label: 'Create Assignment', icon: ClipboardDocumentListIcon, href: '/dashboard/assignments?action=add', show: profile?.role === 'teacher' || profile?.role === 'admin' },
-    { label: 'View Reports', icon: ChartBarIcon, href: '/dashboard/reports', show: profile?.role === 'admin' },
-    { label: 'Import Students', icon: ArrowDownTrayIcon, href: '/dashboard/import', show: profile?.role === 'admin' },
-  ].filter(action => action.show);
+    { label: 'View Reports', icon: ChartBarIcon, href: '/dashboard/reports', show: profile?.role === 'admin' || profile?.role === 'staff' },
+    { label: 'Import Students', icon: ArrowDownTrayIcon, href: routes.students.import(), show: profile?.role === 'admin' || profile?.role === 'staff' },
+  ].filter((action) => action.show);
 
   return (
    <header className="h-[72px] flex items-center justify-between px-6 relative z-50

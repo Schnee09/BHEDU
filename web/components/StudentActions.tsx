@@ -56,14 +56,7 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
         ✏️ Edit
       </Link>
 
-      {isAdmin && (
-        <Link
-          href={`/dashboard/admin/impersonate/${studentId}`}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm"
-        >
-          🕵️ Impersonate
-        </Link>
-      )}
+      {/* Impersonation action removed */}
 
       <Link
         href={`/dashboard/admin/finance/invoices?student_id=${studentId}`}

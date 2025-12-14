@@ -18,7 +18,7 @@ import {
   Input, 
   Modal
 } from "@/components/ui";
-import { Card, CardHeader, StatCard } from "@/components/ui/Card";
+import { Card, StatCard } from "@/components/ui/Card";
 import { Table } from "@/components/ui/table";
 import Badge from "@/components/ui/badge";
 import { SkeletonStatCard, SkeletonTable } from "@/components/ui/skeleton";
@@ -81,7 +81,7 @@ export default function CoursesPage() {
   
   // Mutations
   const { mutate: createCourse, loading: creating } = useMutation('/api/admin/courses', 'POST');
-  const { mutate: updateCourse, loading: updating } = useMutation('/api/admin/courses', 'PUT');
+  const { mutate: _updateCourse, loading: updating } = useMutation('/api/admin/courses', 'PUT');
   
   // Handle fetch errors
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function CoursesPage() {
       toast.error('Failed to load courses', error);
       logger.error('Error loading courses', new Error(error));
     }
-  }, [error, toast.error]);
+  }, [error, toast]);
   
   // Filter courses by search (memoized for performance)
   const courses = useMemo(() => {
@@ -115,7 +115,7 @@ export default function CoursesPage() {
   }, [courses.length, pagination]);
   
   // Selection handlers
-  const handleSelectAll = () => {
+  const _handleSelectAll = () => {
     if (selectedIds.size === paginatedCourses.length) {
       setSelectedIds(new Set());
     } else {
