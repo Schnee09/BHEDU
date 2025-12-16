@@ -12,17 +12,19 @@ ALTER TABLE IF EXISTS profiles
 -- not be supported on all Postgres versions used by Supabase).
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint con
-    JOIN pg_class rel ON rel.oid = con.conrelid
-    WHERE rel.relname = 'profiles' AND con.conname = 'profiles_role_check'
-  ) THEN
-    EXECUTE 'ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check CHECK (role IN (''admin'', ''staff'', ''teacher'', ''student'') OR role IS NULL)';
+  -- Only try to add the constraint if the profiles table actually exists.
+  IF to_regclass('public.profiles') IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint con
+      JOIN pg_class rel ON rel.oid = con.conrelid
+      WHERE rel.relname = 'profiles' AND con.conname = 'profiles_role_check'
+    ) THEN
+      EXECUTE 'ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check CHECK (role IN (''admin'', ''staff'', ''teacher'', ''student'') OR role IS NULL)';
+    END IF;
   END IF;
 END
 $$;
 
-COMMENT ON COLUMN profiles.role IS 'User role: admin (super admin), staff (sub-admin/office), teacher, student';
 
 -- PART 2: RLS policies (guarded where tables may not exist)
 -- Profiles policies
@@ -53,7 +55,13 @@ BEGIN
 END
 $$;
 
--- Students-specific policies: guard with to_regclass
+DO $$
+BEGIN
+  IF to_regclass('public.profiles') IS NOT NULL THEN
+    EXECUTE 'COMMENT ON COLUMN public.profiles.role IS ''User role: admin (super admin), staff (sub-admin/office), teacher, student''';
+  END IF;
+END
+$$;
 DO $$
 BEGIN
   IF to_regclass('public.students') IS NOT NULL THEN
