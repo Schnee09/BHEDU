@@ -168,7 +168,6 @@ export default function Sidebar() {
           title: "Học thuật",
           links: [
             { href: "/dashboard/courses", label: "Danh mục khóa học", icon: <Icons.Book /> },
-            { href: "/dashboard/courses/subject-groups", label: "Nhóm môn học", icon: <Icons.BookOpen /> },
             { href: "/dashboard/classes", label: "Lớp học của tôi", icon: <Icons.BookOpen /> },
             { href: "/dashboard/students", label: "Học sinh", icon: <Icons.Users /> },
           ]
