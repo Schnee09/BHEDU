@@ -52,13 +52,22 @@ export default function AssignmentManagementPage() {
   const loadClasses = async () => {
     try {
       const response = await apiFetch('/api/classes/my-classes')
-      if (response.ok) {
-        const data = await response.json()
-        const classList = data.data || data.classes || []
-        setClasses(classList)
-        if (classList.length > 0) {
-          setSelectedClass(classList[0].id)
-        }
+      const safeParseJson = async (r: Response) => {
+        try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } }
+      }
+
+      if (!response.ok) {
+        const err = await safeParseJson(response)
+        console.error('Failed to load classes:', err)
+        setClasses([])
+        return
+      }
+
+      const data = await safeParseJson(response)
+      const classList = data.data || data.classes || []
+      setClasses(classList)
+      if (classList.length > 0) {
+        setSelectedClass(classList[0].id)
       }
     } catch (error) {
       console.error('Failed to load classes:', error)
@@ -73,10 +82,17 @@ export default function AssignmentManagementPage() {
 
     try {
       const response = await apiFetch(`/api/grades/categories?classId=${selectedClass}`)
-      if (response.ok) {
-        const data = await response.json()
-        setCategories(data.data || data.categories || [])
+      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
+
+      if (!response.ok) {
+        const err = await safeParseJson(response)
+        console.error('Failed to load categories:', err)
+        setCategories([])
+        return
       }
+
+      const data = await safeParseJson(response)
+      setCategories(data.data || data.categories || [])
     } catch (error) {
       console.error('Failed to load categories:', error)
     }
@@ -87,10 +103,17 @@ export default function AssignmentManagementPage() {
 
     try {
       const response = await apiFetch(`/api/grades/assignments?classId=${selectedClass}`)
-      if (response.ok) {
-        const data = await response.json()
-        setAssignments(data.data || data.assignments || [])
+      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
+
+      if (!response.ok) {
+        const err = await safeParseJson(response)
+        console.error('Failed to load assignments:', err)
+        setAssignments([])
+        return
       }
+
+      const data = await safeParseJson(response)
+      setAssignments(data.data || data.assignments || [])
     } catch (error) {
       console.error('Failed to load assignments:', error)
     }
@@ -114,13 +137,14 @@ export default function AssignmentManagementPage() {
         })
       })
 
+      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
       if (response.ok) {
         alert('Category created successfully!')
         setShowCategoryForm(false)
         setCategoryForm({ name: '', description: '', weight: 0, drop_lowest: 0 })
         loadCategories()
       } else {
-        const error = await response.json()
+        const error = await safeParseJson(response)
         alert(error.error || 'Failed to create category')
       }
     } catch (error) {
@@ -149,6 +173,7 @@ export default function AssignmentManagementPage() {
         })
       })
 
+      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
       if (response.ok) {
         alert('Assignment created successfully!')
         setShowAssignmentForm(false)
@@ -162,7 +187,7 @@ export default function AssignmentManagementPage() {
         })
         loadAssignments()
       } else {
-        const error = await response.json()
+        const error = await safeParseJson(response)
         alert(error.error || 'Failed to create assignment')
       }
     } catch (error) {

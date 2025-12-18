@@ -79,7 +79,21 @@ export default function VietnameseGradeEntryPage() {
   const fetchClasses = async () => {
     try {
       const res = await apiFetch("/api/classes/my-classes");
-      const data = await res.json();
+      const safeParseJson = async (r: Response) => {
+        try {
+          return await r.json();
+        } catch {
+          return { error: r.statusText || `HTTP ${r.status}` };
+        }
+      };
+
+      if (!res.ok) {
+        const err = await safeParseJson(res);
+        console.error('Failed to fetch classes:', err);
+        return;
+      }
+
+      const data = await safeParseJson(res);
       if (data.success) {
         setClasses(data.classes || []);
       }
@@ -91,7 +105,21 @@ export default function VietnameseGradeEntryPage() {
   const fetchSubjects = async () => {
     try {
       const res = await apiFetch("/api/subjects");
-      const data = await res.json();
+      const safeParseJson = async (r: Response) => {
+        try {
+          return await r.json();
+        } catch {
+          return { error: r.statusText || `HTTP ${r.status}` };
+        }
+      };
+
+      if (!res.ok) {
+        const err = await safeParseJson(res);
+        console.error('Failed to fetch subjects:', err);
+        return;
+      }
+
+      const data = await safeParseJson(res);
       if (data.success) {
         setSubjects(data.subjects || []);
       }
@@ -106,7 +134,22 @@ export default function VietnameseGradeEntryPage() {
       const res = await apiFetch(
         `/api/grades/vietnamese-entry?class_id=${selectedClass}&subject_code=${selectedSubject}&semester=${selectedSemester}`
       );
-      const data = await res.json();
+      const safeParseJson = async (r: Response) => {
+        try {
+          return await r.json();
+        } catch {
+          return { error: r.statusText || `HTTP ${r.status}` };
+        }
+      };
+
+      if (!res.ok) {
+        const err = await safeParseJson(res);
+        console.error('Failed to fetch student grades:', err);
+        showToast.error(err?.error || 'Không thể tải dữ liệu điểm');
+        return;
+      }
+
+      const data = await safeParseJson(res);
       if (data.success) {
         setStudents(data.students || []);
       }
@@ -186,8 +229,22 @@ export default function VietnameseGradeEntryPage() {
           }))
         })
       });
+      const safeParseJson = async (r: Response) => {
+        try {
+          return await r.json();
+        } catch {
+          return { error: r.statusText || `HTTP ${r.status}` };
+        }
+      };
 
-      const data = await res.json();
+      if (!res.ok) {
+        const err = await safeParseJson(res);
+        console.error('Failed to save grades:', err);
+        showToast.error(err?.error || 'Lỗi khi lưu điểm');
+        return;
+      }
+
+      const data = await safeParseJson(res);
       if (data.success) {
         showToast.success("Đã lưu điểm thành công!");
       } else {

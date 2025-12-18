@@ -63,10 +63,16 @@ export default function GradeAnalyticsPage() {
   const loadClasses = async () => {
     try {
       const response = await apiFetch('/api/classes/my-classes')
-      if (response.ok) {
-        const data = await response.json()
-        setClasses(data.data || data.classes || data)
+      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
+
+      if (!response.ok) {
+        const err = await safeParseJson(response)
+        console.error('Failed to load classes:', err)
+        return
       }
+
+      const data = await safeParseJson(response)
+      setClasses(data.data || data.classes || data)
     } catch (error) {
       console.error('Failed to load classes:', error)
     }
@@ -76,10 +82,17 @@ export default function GradeAnalyticsPage() {
     try {
       setLoading(true)
       const response = await apiFetch(`/api/grades/student-overview?classId=${selectedClass}`)
-      if (response.ok) {
-        const data = await response.json()
-        setGrades(data.data || data.student_grades || data.grades || data)
+      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
+
+      if (!response.ok) {
+        const err = await safeParseJson(response)
+        console.error('Failed to load grades:', err)
+        setGrades([])
+        return
       }
+
+      const data = await safeParseJson(response)
+      setGrades(data.data || data.student_grades || data.grades || data)
     } catch (error) {
       console.error('Failed to load grades:', error)
     } finally {
