@@ -20,11 +20,71 @@ interface ClassOption {
 }
 
 const CONDUCT_GRADES = [
-  { value: "excellent", label: "Xuất sắc", color: "text-emerald-600 bg-emerald-50" },
-  { value: "good", label: "Tốt", color: "text-blue-600 bg-blue-50" },
-  { value: "fair", label: "Khá", color: "text-yellow-600 bg-yellow-50" },
-  { value: "average", label: "Trung bình", color: "text-orange-600 bg-orange-50" },
-  { value: "weak", label: "Yếu", color: "text-red-600 bg-red-50" },
+  {
+    value: "excellent",
+    label: "Xuất sắc",
+    label_en: "Excellent",
+    color: "text-emerald-600 bg-emerald-50",
+    criteria: [
+      "Tham gia đầy đủ các hoạt động của lớp và nhà trường",
+      "Có ý thức kỷ luật cao, chấp hành nội quy",
+      "Tích cực tham gia các hoạt động tập thể",
+      "Có tinh thần đoàn kết, giúp đỡ bạn bè",
+      "Có thái độ học tập nghiêm túc, chủ động"
+    ]
+  },
+  {
+    value: "good",
+    label: "Tốt",
+    label_en: "Good",
+    color: "text-blue-600 bg-blue-50",
+    criteria: [
+      "Tham gia đầy đủ các hoạt động của lớp",
+      "Có ý thức kỷ luật tốt, chấp hành nội quy",
+      "Tích cực tham gia các hoạt động tập thể",
+      "Có tinh thần đoàn kết với bạn bè",
+      "Có thái độ học tập nghiêm túc"
+    ]
+  },
+  {
+    value: "fair",
+    label: "Khá",
+    label_en: "Fair",
+    color: "text-yellow-600 bg-yellow-50",
+    criteria: [
+      "Tham gia các hoạt động của lớp",
+      "Có ý thức kỷ luật, chấp hành nội quy",
+      "Tham gia các hoạt động tập thể",
+      "Có tinh thần đoàn kết với bạn bè",
+      "Có thái độ học tập nghiêm túc"
+    ]
+  },
+  {
+    value: "average",
+    label: "Trung bình",
+    label_en: "Average",
+    color: "text-orange-600 bg-orange-50",
+    criteria: [
+      "Tham gia một số hoạt động của lớp",
+      "Có ý thức kỷ luật cơ bản",
+      "Thỉnh thoảng vi phạm kỷ luật nhỏ",
+      "Có tinh thần đoàn kết nhưng chưa tích cực",
+      "Thái độ học tập chưa nghiêm túc"
+    ]
+  },
+  {
+    value: "weak",
+    label: "Yếu",
+    label_en: "Weak",
+    color: "text-red-600 bg-red-50",
+    criteria: [
+      "Tham gia ít hoạt động của lớp",
+      "Thường xuyên vi phạm kỷ luật",
+      "Không tích cực trong hoạt động tập thể",
+      "Thiếu tinh thần đoàn kết",
+      "Thái độ học tập kém, lười biếng"
+    ]
+  },
 ];
 
 export default function ConductGradeEntryPage() {
@@ -217,15 +277,25 @@ export default function ConductGradeEntryPage() {
 
           {/* Legend */}
           <div className="pt-4 border-t border-gray-200">
-            <p className="text-sm font-medium text-gray-700 mb-2">Thang đánh giá:</p>
-            <div className="flex flex-wrap gap-3">
+            <p className="text-sm font-medium text-gray-700 mb-3">Tiêu chí đánh giá hạnh kiểm:</p>
+            <div className="space-y-3">
               {CONDUCT_GRADES.map((conduct) => (
-                <span
-                  key={conduct.value}
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${conduct.color}`}
-                >
-                  {conduct.label}
-                </span>
+                <div key={conduct.value} className="border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${conduct.color}`}>
+                      {conduct.label}
+                    </span>
+                    <span className="text-sm text-gray-600">({conduct.label_en})</span>
+                  </div>
+                  <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                    {conduct.criteria.map((criterion, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-gray-400 mt-1">•</span>
+                        <span>{criterion}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
             </div>
           </div>

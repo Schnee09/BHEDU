@@ -159,73 +159,75 @@ export default function Sidebar() {
     if (role === "admin") {
       return [
         {
-          title: "Dashboard",
+          title: "Bảng điều khiển",
           links: [
-            { href: "/dashboard", label: "Home", icon: <Icons.Home /> },
+            { href: "/dashboard", label: "Trang chủ", icon: <Icons.Home /> },
           ]
         },
         {
-          title: "Academic",
+          title: "Học thuật",
           links: [
-            { href: "/dashboard/courses", label: "Course Catalog", icon: <Icons.Book /> },
-            { href: "/dashboard/classes", label: "My Classes", icon: <Icons.BookOpen /> },
-            { href: "/dashboard/students", label: "Students", icon: <Icons.Users /> },
+            { href: "/dashboard/courses", label: "Danh mục khóa học", icon: <Icons.Book /> },
+            { href: "/dashboard/courses/subject-groups", label: "Nhóm môn học", icon: <Icons.BookOpen /> },
+            { href: "/dashboard/classes", label: "Lớp học của tôi", icon: <Icons.BookOpen /> },
+            { href: "/dashboard/students", label: "Học sinh", icon: <Icons.Users /> },
           ]
         },
         {
-          title: "Attendance",
+          title: "Điểm danh",
           links: [
-            { href: "/dashboard/attendance/mark", label: "Mark Attendance", icon: <Icons.CheckCircle /> },
-            { href: "/dashboard/attendance/qr", label: "QR Codes", icon: <Icons.QrCode /> },
-            { href: "/dashboard/attendance/reports", label: "Reports", icon: <Icons.Chart /> },
+            { href: "/dashboard/attendance/mark", label: "Đánh dấu điểm danh", icon: <Icons.CheckCircle /> },
+            { href: "/dashboard/attendance/qr", label: "Mã QR", icon: <Icons.QrCode /> },
+            { href: "/dashboard/attendance/reports", label: "Báo cáo", icon: <Icons.Chart /> },
           ]
         },
         {
-          title: "Grades",
+          title: "Điểm số",
           links: [
-            { href: routes.grades.assignments(), label: "Assignments", icon: <Icons.ClipboardList /> },
-            { href: routes.grades.entry(), label: "Grade Entry", icon: <Icons.Chart /> },
-            { href: routes.grades.conductEntry(), label: "Conduct Grades", icon: <Icons.AcademicCap /> },
-            { href: routes.grades.reports(), label: "Report Cards", icon: <Icons.Document /> },
-            { href: routes.grades.analytics(), label: "Analytics", icon: <Icons.TrendingUp /> },
+            { href: routes.grades.assignments(), label: "Bài tập", icon: <Icons.ClipboardList /> },
+            { href: routes.grades.entry(), label: "Nhập điểm", icon: <Icons.Chart /> },
+            { href: routes.grades.vietnameseEntry(), label: "Nhập điểm VN", icon: <Icons.Chart /> },
+            { href: routes.grades.conductEntry(), label: "Điểm hạnh kiểm", icon: <Icons.AcademicCap /> },
+            { href: routes.grades.reports(), label: "Báo cáo điểm", icon: <Icons.Document /> },
+            { href: routes.grades.analytics(), label: "Phân tích", icon: <Icons.TrendingUp /> },
           ]
         },
         {
-          title: "Administration",
+          title: "Quản trị",
           links: [
-            { href: "/dashboard/admin/diagnostic", label: "🔧 API Diagnostic", icon: <Icons.Wrench /> },
-            { href: "/dashboard/admin/students", label: "Admin — Students", icon: <Icons.Users /> },
-            { href: "/dashboard/classes", label: "Classes Management", icon: <Icons.Book /> },
-            { href: "/dashboard/users", label: "Users/Teachers Management", icon: <Icons.User /> },
-            { href: "/dashboard/assignments", label: "Assignments Management", icon: <Icons.ClipboardList /> },
-            { href: "/dashboard/attendance", label: "Attendance Management", icon: <Icons.Calendar /> },
-            { href: "/dashboard/attendance/reports", label: "Attendance Reports", icon: <Icons.Chart /> },
-            { href: routes.grades.list(), label: "Grades Management", icon: <Icons.AcademicCap /> },
-            { href: "/dashboard/students/import", label: "Import Students", icon: <Icons.Download /> },
-            { href: "/dashboard/admin/data", label: "Data — Quick", icon: <Icons.Search /> },
-            { href: "/dashboard/admin/data-viewer", label: "Data Viewer (table)", icon: <Icons.Document /> },
-            { href: "/dashboard/admin/data-dump", label: "Data Dump (export)", icon: <Icons.Download /> },
+            { href: "/dashboard/admin/diagnostic", label: "🔧 Chẩn đoán API", icon: <Icons.Wrench /> },
+            { href: "/dashboard/admin/students", label: "Quản trị — Học sinh", icon: <Icons.Users /> },
+            { href: "/dashboard/classes", label: "Quản lý lớp học", icon: <Icons.Book /> },
+            { href: "/dashboard/users", label: "Quản lý người dùng/giáo viên", icon: <Icons.User /> },
+            { href: "/dashboard/assignments", label: "Quản lý bài tập", icon: <Icons.ClipboardList /> },
+            { href: "/dashboard/attendance", label: "Quản lý điểm danh", icon: <Icons.Calendar /> },
+            { href: "/dashboard/attendance/reports", label: "Báo cáo điểm danh", icon: <Icons.Chart /> },
+            { href: routes.grades.list(), label: "Quản lý điểm số", icon: <Icons.AcademicCap /> },
+            { href: "/dashboard/students/import", label: "Nhập học sinh", icon: <Icons.Download /> },
+            { href: "/dashboard/admin/data", label: "Dữ liệu — Nhanh", icon: <Icons.Search /> },
+            { href: "/dashboard/admin/data-viewer", label: "Trình xem dữ liệu (bảng)", icon: <Icons.Document /> },
+            { href: "/dashboard/admin/data-dump", label: "Xuất dữ liệu", icon: <Icons.Download /> },
             // Impersonation removed: feature disabled / deferred
-            { href: "/dashboard/admin/student", label: "Student (legacy)", icon: <Icons.DocumentText /> },
-            { href: "/dashboard/reports", label: "Reports", icon: <Icons.DocumentText /> },
+            { href: "/dashboard/admin/student", label: "Học sinh (cũ)", icon: <Icons.DocumentText /> },
+            { href: "/dashboard/reports", label: "Báo cáo", icon: <Icons.DocumentText /> },
           ]
         },
         {
-          title: "Settings",
+          title: "Cài đặt",
           links: [
-            { href: "/dashboard/admin/academic-years", label: "Academic Years", icon: <Icons.Calendar /> },
-            { href: "/dashboard/admin/grading-scales", label: "Grading Scales", icon: <Icons.Chart /> },
-            { href: "/dashboard/admin/fee-types", label: "Fee Types", icon: <Icons.CurrencyDollar /> },
-            { href: "/dashboard/settings", label: "General Settings", icon: <Icons.Cog /> },
+            { href: "/dashboard/admin/academic-years", label: "Năm học", icon: <Icons.Calendar /> },
+            { href: "/dashboard/admin/grading-scales", label: "Thang điểm", icon: <Icons.Chart /> },
+            { href: "/dashboard/admin/fee-types", label: "Loại phí", icon: <Icons.CurrencyDollar /> },
+            { href: "/dashboard/settings", label: "Cài đặt chung", icon: <Icons.Cog /> },
           ]
         },
         {
-          title: "Financial",
+          title: "Tài chính",
           links: [
-            { href: "/dashboard/admin/finance/student-accounts", label: "Student Accounts", icon: <Icons.Users /> },
-            { href: "/dashboard/admin/finance/invoices", label: "Invoices", icon: <Icons.Document /> },
-            { href: "/dashboard/admin/finance/payments", label: "Payments", icon: <Icons.CreditCard /> },
-            { href: "/dashboard/admin/finance/reports", label: "Financial Reports", icon: <Icons.Chart /> },
+            { href: "/dashboard/admin/finance/student-accounts", label: "Tài khoản học sinh", icon: <Icons.Users /> },
+            { href: "/dashboard/admin/finance/invoices", label: "Hóa đơn", icon: <Icons.Document /> },
+            { href: "/dashboard/admin/finance/payments", label: "Thanh toán", icon: <Icons.CreditCard /> },
+            { href: "/dashboard/admin/finance/reports", label: "Báo cáo tài chính", icon: <Icons.Chart /> },
           ]
         }
       ];
@@ -233,91 +235,91 @@ export default function Sidebar() {
       // Staff: Sub-admin with operational access (no system config)
       return [
         {
-          title: "Dashboard",
+          title: "Bảng điều khiển",
           links: [
-            { href: "/dashboard", label: "Home", icon: <Icons.Home /> },
+            { href: "/dashboard", label: "Trang chủ", icon: <Icons.Home /> },
           ]
         },
         {
-          title: "People",
+          title: "Nhân sự",
           links: [
-            { href: "/dashboard/students", label: "Students", icon: <Icons.Users /> },
-            { href: "/dashboard/users", label: "Teachers", icon: <Icons.User /> },
-            { href: "/dashboard/students/import", label: "Import Students", icon: <Icons.Download /> },
+            { href: "/dashboard/students", label: "Học sinh", icon: <Icons.Users /> },
+            { href: "/dashboard/users", label: "Giáo viên", icon: <Icons.User /> },
+            { href: "/dashboard/students/import", label: "Nhập học sinh", icon: <Icons.Download /> },
           ]
         },
         {
-          title: "Academic",
+          title: "Học thuật",
           links: [
-            { href: "/dashboard/courses", label: "Courses", icon: <Icons.Book /> },
-            { href: "/dashboard/classes", label: "Classes", icon: <Icons.BookOpen /> },
+            { href: "/dashboard/courses", label: "Khóa học", icon: <Icons.Book /> },
+            { href: "/dashboard/classes", label: "Lớp học", icon: <Icons.BookOpen /> },
           ]
         },
         {
-          title: "Attendance",
+          title: "Điểm danh",
           links: [
-            { href: "/dashboard/attendance", label: "Overview", icon: <Icons.Calendar /> },
-            { href: "/dashboard/attendance/mark", label: "Mark Attendance", icon: <Icons.CheckCircle /> },
-            { href: "/dashboard/attendance/qr", label: "QR Codes", icon: <Icons.QrCode /> },
-            { href: "/dashboard/attendance/reports", label: "Reports", icon: <Icons.Chart /> },
+            { href: "/dashboard/attendance", label: "Tổng quan", icon: <Icons.Calendar /> },
+            { href: "/dashboard/attendance/mark", label: "Đánh dấu điểm danh", icon: <Icons.CheckCircle /> },
+            { href: "/dashboard/attendance/qr", label: "Mã QR", icon: <Icons.QrCode /> },
+            { href: "/dashboard/attendance/reports", label: "Báo cáo", icon: <Icons.Chart /> },
           ]
         },
         {
-          title: "Grades",
+          title: "Điểm số",
           links: [
-            { href: routes.grades.list(), label: "Overview", icon: <Icons.AcademicCap /> },
-            { href: routes.grades.reports(), label: "Report Cards", icon: <Icons.Document /> },
-            { href: routes.grades.analytics(), label: "Analytics", icon: <Icons.TrendingUp /> },
+            { href: routes.grades.list(), label: "Tổng quan", icon: <Icons.AcademicCap /> },
+            { href: routes.grades.reports(), label: "Báo cáo điểm", icon: <Icons.Document /> },
+            { href: routes.grades.analytics(), label: "Phân tích", icon: <Icons.TrendingUp /> },
           ]
         },
         {
-          title: "Financial",
+          title: "Tài chính",
           links: [
-            { href: "/dashboard/admin/finance/student-accounts", label: "Student Accounts", icon: <Icons.Users /> },
-            { href: "/dashboard/admin/finance/invoices", label: "Invoices", icon: <Icons.Document /> },
-            { href: "/dashboard/admin/finance/payments", label: "Payments", icon: <Icons.CreditCard /> },
-            { href: "/dashboard/admin/finance/reports", label: "Reports", icon: <Icons.Chart /> },
+            { href: "/dashboard/admin/finance/student-accounts", label: "Tài khoản học sinh", icon: <Icons.Users /> },
+            { href: "/dashboard/admin/finance/invoices", label: "Hóa đơn", icon: <Icons.Document /> },
+            { href: "/dashboard/admin/finance/payments", label: "Thanh toán", icon: <Icons.CreditCard /> },
+            { href: "/dashboard/admin/finance/reports", label: "Báo cáo", icon: <Icons.Chart /> },
           ]
         },
         {
-          title: "Reports",
+          title: "Báo cáo",
           links: [
-            { href: "/dashboard/reports", label: "All Reports", icon: <Icons.DocumentText /> },
-            { href: "/dashboard/admin/data", label: "Data Export", icon: <Icons.Download /> },
+            { href: "/dashboard/reports", label: "Tất cả báo cáo", icon: <Icons.DocumentText /> },
+            { href: "/dashboard/admin/data", label: "Xuất dữ liệu", icon: <Icons.Download /> },
           ]
         }
       ];
     } else if (role === "teacher") {
       return [
         {
-          title: "Dashboard",
+          title: "Bảng điều khiển",
           links: [
-            { href: "/dashboard", label: "Home", icon: <Icons.Home /> },
+            { href: "/dashboard", label: "Trang chủ", icon: <Icons.Home /> },
           ]
         },
         {
-          title: "Teaching",
+          title: "Dạy học",
           links: [
-            { href: "/dashboard/courses", label: "My Courses", icon: <Icons.Book /> },
-            { href: "/dashboard/classes", label: "My Classes", icon: <Icons.BookOpen /> },
+            { href: "/dashboard/courses", label: "Khóa học của tôi", icon: <Icons.Book /> },
+            { href: "/dashboard/classes", label: "Lớp học của tôi", icon: <Icons.BookOpen /> },
           ]
         },
         {
-          title: "Attendance",
+          title: "Điểm danh",
           links: [
-            { href: "/dashboard/attendance/mark", label: "Mark Attendance", icon: <Icons.CheckCircle /> },
-            { href: "/dashboard/attendance/qr", label: "QR Codes", icon: <Icons.QrCode /> },
-            { href: "/dashboard/attendance/reports", label: "Reports", icon: <Icons.Chart /> },
+            { href: "/dashboard/attendance/mark", label: "Đánh dấu điểm danh", icon: <Icons.CheckCircle /> },
+            { href: "/dashboard/attendance/qr", label: "Mã QR", icon: <Icons.QrCode /> },
+            { href: "/dashboard/attendance/reports", label: "Báo cáo", icon: <Icons.Chart /> },
           ]
         },
         {
-          title: "Grades",
+          title: "Điểm số",
           links: [
-            { href: routes.grades.assignments(), label: "Assignments", icon: <Icons.ClipboardList /> },
-            { href: routes.grades.entry(), label: "Grade Entry", icon: <Icons.Chart /> },
-            { href: routes.grades.conductEntry(), label: "Conduct Grades", icon: <Icons.AcademicCap /> },
-            { href: routes.grades.reports(), label: "Report Cards", icon: <Icons.Document /> },
-            { href: routes.grades.analytics(), label: "Analytics", icon: <Icons.TrendingUp /> },
+            { href: routes.grades.assignments(), label: "Bài tập", icon: <Icons.ClipboardList /> },
+            { href: routes.grades.entry(), label: "Nhập điểm", icon: <Icons.Chart /> },
+            { href: routes.grades.conductEntry(), label: "Điểm hạnh kiểm", icon: <Icons.AcademicCap /> },
+            { href: routes.grades.reports(), label: "Báo cáo điểm", icon: <Icons.Document /> },
+            { href: routes.grades.analytics(), label: "Phân tích", icon: <Icons.TrendingUp /> },
           ]
         }
       ];
@@ -325,24 +327,24 @@ export default function Sidebar() {
       // Student view
       return [
         {
-          title: "Dashboard",
+          title: "Bảng điều khiển",
           links: [
-            { href: "/dashboard", label: "Home", icon: <Icons.Home /> },
+            { href: "/dashboard", label: "Trang chủ", icon: <Icons.Home /> },
           ]
         },
         {
-          title: "Learning",
+          title: "Học tập",
           links: [
-            { href: "/dashboard/classes", label: "My Classes", icon: <Icons.BookOpen /> },
-            { href: "/dashboard/assignments", label: "Assignments", icon: <Icons.ClipboardList /> },
-            { href: "/dashboard/scores", label: "My Grades", icon: <Icons.Chart /> },
+            { href: "/dashboard/classes", label: "Lớp học của tôi", icon: <Icons.BookOpen /> },
+            { href: "/dashboard/assignments", label: "Bài tập", icon: <Icons.ClipboardList /> },
+            { href: "/dashboard/scores", label: "Điểm của tôi", icon: <Icons.Chart /> },
           ]
         },
         {
-          title: "Attendance",
+          title: "Điểm danh",
           links: [
-            { href: "/dashboard/attendance", label: "My Attendance", icon: <Icons.Calendar /> },
-            { href: "/checkin", label: "QR Check-in", icon: <Icons.QrCode /> },
+            { href: "/dashboard/attendance", label: "Điểm danh của tôi", icon: <Icons.Calendar /> },
+            { href: "/checkin", label: "Check-in QR", icon: <Icons.QrCode /> },
           ]
         }
       ];
@@ -357,9 +359,9 @@ export default function Sidebar() {
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         className="lg:hidden fixed top-4 left-4 z-50 p-3 
-          bg-stone-800 text-white rounded-xl 
+          bg-primary text-white rounded-xl 
           shadow-md
-          hover:bg-stone-900
+          hover:bg-primary-hover
           transition-all duration-200 cursor-pointer"
         aria-label="Toggle menu"
       >
@@ -385,19 +387,19 @@ export default function Sidebar() {
       {/* Sidebar */}
       <aside className={`
         w-72 fixed h-full overflow-y-auto z-40 transition-all duration-300 ease-out
-        bg-white dark:bg-[#1E1E1E] border-r border-gray-200 dark:border-[#3A3A3A]
+        bg-surface border-r border-border
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
       <div className="p-5">
         {/* Header - Brand Card */}
         <div className="mb-8">
-          <div className="px-5 py-4 rounded-2xl bg-green-600 text-white">
+          <div className="px-5 py-4 rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
             <h2 className="text-2xl font-bold tracking-tight font-heading">BH-EDU</h2>
-            <p className="text-sm mt-1 text-green-100 font-medium">Bethel Heights Academy</p>
+            <p className="text-sm mt-1 text-primary-100 font-medium">Bui Hoang Education</p>
           </div>
           <div className="mt-4 px-1">
             <span className="inline-block px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-full
-              bg-gray-100 dark:bg-[#3A3A3A] text-gray-700 dark:text-[#C0C0C0] border border-gray-200 dark:border-[#4A4A4A]">
+              bg-surface-secondary text-secondary border border-border">
               {role} Portal
             </span>
           </div>
@@ -408,7 +410,7 @@ export default function Sidebar() {
           {navSections.map((section) => {
             return (
             <div key={section.title}>
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-[#9A9A9A] uppercase tracking-wider mb-3 px-3">
+              <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3 px-3">
                 {section.title}
               </h3>
               <ul className="space-y-1">
@@ -421,11 +423,11 @@ export default function Sidebar() {
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
                           isActive
-                            ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-semibold border border-green-200 dark:border-green-800"
-                            : "text-gray-600 dark:text-[#C0C0C0] hover:bg-gray-50 dark:hover:bg-[#2D2D2D] hover:text-gray-900 dark:hover:text-[#E8E8E8]"
+                            ? "bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-semibold border border-primary-100 dark:border-primary-800"
+                            : "text-secondary hover:bg-surface-hover hover:text-foreground"
                         }`}
                       >
-                        <span className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-[#757575] group-hover:text-gray-600 dark:group-hover:text-[#C0C0C0]'}`}>{link.icon}</span>
+                        <span className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-primary dark:text-primary-400' : 'text-muted group-hover:text-secondary'}`}>{link.icon}</span>
                         <span className="text-sm">{link.label}</span>
                       </Link>
                     </li>

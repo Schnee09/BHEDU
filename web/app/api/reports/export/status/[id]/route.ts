@@ -7,7 +7,7 @@ import { handleApiError } from '@/lib/api/errors'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const limited = enforceRateLimit(request, { bucketConfig: rateLimitConfigs.apiBucket, keyPrefix: 'reports-export-status' })
     if (limited) return limited.response
@@ -16,7 +16,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     if (!authResult.authorized) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { supabase } = await getDataClient(request)
-    const id = params.id
+    const { id } = await params
     const { data, error } = await (supabase as any).from('report_exports').select('*').eq('id', id).maybeSingle()
     if (error) throw error
     if (!data) return NextResponse.json({ error: 'not_found' }, { status: 404 })

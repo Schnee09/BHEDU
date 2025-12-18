@@ -39,7 +39,7 @@ export default function ProfilePage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setMessage("Not authenticated");
+        setMessage("Chưa xác thực");
         setSaving(false);
         return;
       }
@@ -55,12 +55,12 @@ export default function ProfilePage() {
         .eq("user_id", user.id);
 
       if (error) {
-        setMessage(`Error: ${error.message}`);
+        setMessage(`Lỗi: ${error.message}`);
       } else {
-        setMessage("Profile updated successfully!");
+        setMessage("Hồ sơ đã được cập nhật thành công!");
       }
     } catch (err) {
-      setMessage("Failed to update profile");
+      setMessage("Không thể cập nhật hồ sơ");
       console.error(err);
     } finally {
       setSaving(false);
@@ -70,7 +70,7 @@ export default function ProfilePage() {
   if (profileLoading) {
     return (
       <div className="p-6">
-        <p>Loading profile...</p>
+        <p>Đang tải hồ sơ...</p>
       </div>
     );
   }
@@ -81,22 +81,22 @@ export default function ProfilePage() {
         <div>
           <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
             <Icons.Users className="w-8 h-8 text-stone-600" />
-            My Profile
+            Hồ sơ của tôi
           </h1>
-          <p className="text-stone-500 mt-1">Manage your personal information</p>
+          <p className="text-stone-500 mt-1">Quản lý thông tin cá nhân của bạn</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-stone-900">Personal Details</h2>
+            <h2 className="text-lg font-semibold text-stone-900">Thông tin cá nhân</h2>
           </CardHeader>
           <CardBody className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
-                  Full Name
+                  Họ và tên
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -127,12 +127,12 @@ export default function ProfilePage() {
                     className="w-full pl-10 px-3 py-2 border border-stone-200 bg-stone-50 text-stone-500 rounded-lg cursor-not-allowed"
                   />
                 </div>
-                <p className="mt-1 text-xs text-stone-500">Email cannot be changed</p>
+                <p className="mt-1 text-xs text-stone-500">Không thể thay đổi email</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
-                  Phone Number
+                  Số điện thoại
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -149,7 +149,7 @@ export default function ProfilePage() {
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
-                  Date of Birth
+                  Ngày sinh
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -166,7 +166,7 @@ export default function ProfilePage() {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-stone-700 mb-2">
-                  Address
+                  Địa chỉ
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 pt-2.5 pointer-events-none">
@@ -203,7 +203,7 @@ export default function ProfilePage() {
               onClick={() => window.history.back()}
               className="px-4 py-2 text-sm font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
@@ -213,12 +213,12 @@ export default function ProfilePage() {
               {saving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Saving...
+                  Đang lưu...
                 </>
               ) : (
                 <>
                   <Icons.Save className="w-4 h-4" />
-                  Save Changes
+                  Lưu thay đổi
                 </>
               )}
             </button>

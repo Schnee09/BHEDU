@@ -23,11 +23,19 @@ interface GradingScale {
 }
 
 const DEFAULT_SCALE: GradeEntry[] = [
-  { letter: 'A', min: 90, max: 100, gpa: 4.0 },
-  { letter: 'B', min: 80, max: 89, gpa: 3.0 },
-  { letter: 'C', min: 70, max: 79, gpa: 2.0 },
-  { letter: 'D', min: 60, max: 69, gpa: 1.0 },
-  { letter: 'F', min: 0, max: 59, gpa: 0.0 },
+  { letter: 'A+', min: 9.5, max: 10.0, gpa: 4.0 },
+  { letter: 'A', min: 8.5, max: 9.4, gpa: 3.7 },
+  { letter: 'B+', min: 7.0, max: 8.4, gpa: 3.0 },
+  { letter: 'B', min: 5.0, max: 6.9, gpa: 2.0 },
+  { letter: 'C', min: 0.0, max: 4.9, gpa: 1.0 },
+];
+
+const VIETNAMESE_SCALE: GradeEntry[] = [
+  { letter: 'XS', min: 9.5, max: 10.0, gpa: 4.0 }, // Xuất sắc
+  { letter: 'G', min: 8.5, max: 9.4, gpa: 3.7 },   // Giỏi
+  { letter: 'K', min: 7.0, max: 8.4, gpa: 3.0 },   // Khá
+  { letter: 'TB', min: 5.0, max: 6.9, gpa: 2.0 },  // Trung bình
+  { letter: 'Y', min: 0.0, max: 4.9, gpa: 1.0 },   // Yếu
 ];
 
 export default function GradingScalesPage() {
@@ -55,7 +63,7 @@ export default function GradingScalesPage() {
       setScales(data.data || data);
     } catch (error) {
       console.error('Error fetching grading scales:', error);
-      alert('Failed to fetch grading scales');
+      alert('Không thể tải thang điểm');
     } finally {
       setLoading(false);
     }
@@ -94,7 +102,7 @@ export default function GradingScalesPage() {
       fetchScales();
     } catch (error) {
       console.error('Error saving grading scale:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save grading scale';
+      const errorMessage = error instanceof Error ? error.message : 'Không thể lưu thang điểm';
       alert(errorMessage);
     }
   };
@@ -119,12 +127,12 @@ export default function GradingScalesPage() {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to delete');
+        throw new Error(error.error || 'Không thể xóa');
       }
       fetchScales();
     } catch (error) {
       console.error('Error deleting grading scale:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete grading scale';
+      const errorMessage = error instanceof Error ? error.message : 'Không thể xóa thang điểm';
       alert(errorMessage);
     }
   };
@@ -137,12 +145,12 @@ export default function GradingScalesPage() {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to set default');
+        throw new Error(error.error || 'Không thể đặt mặc định');
       }
       fetchScales();
     } catch (error) {
       console.error('Error setting default scale:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to set default scale';
+      const errorMessage = error instanceof Error ? error.message : 'Không thể đặt thang điểm mặc định';
       alert(errorMessage);
     }
   };
@@ -231,14 +239,25 @@ export default function GradingScalesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    placeholder="Optional description of this grading scale"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                    rows={2}
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Predefined Scales</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, scale: VIETNAMESE_SCALE, name: formData.name || 'Vietnamese Scale' })}
+                      className="p-3 border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
+                    >
+                      <div className="font-medium text-gray-900">Vietnamese Scale</div>
+                      <div className="text-sm text-gray-600">Xuất sắc (9.5-10.0), Giỏi (8.5-9.4), Khá (7.0-8.4), etc.</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, scale: DEFAULT_SCALE, name: formData.name || 'Standard Scale' })}
+                      className="p-3 border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
+                    >
+                      <div className="font-medium text-gray-900">Standard Scale</div>
+                      <div className="text-sm text-gray-600">A+ (90-100), A (80-89), B (70-79), etc.</div>
+                    </button>
+                  </div>
                 </div>
                 <div className="flex items-center">
                   <label className="flex items-center gap-2 cursor-pointer">

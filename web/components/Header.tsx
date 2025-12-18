@@ -178,7 +178,7 @@ export default function Header({ profile }: HeaderProps) {
            BH
          </div>
          <div className="hidden sm:block">
-           <h1 className="font-bold text-gray-900 dark:text-[#E8E8E8] text-xl leading-tight font-heading">Bethel Heights</h1>
+           <h1 className="font-bold text-gray-900 dark:text-[#E8E8E8] text-xl leading-tight font-heading">Bui Hoang Education</h1>
            <p className="text-sm text-gray-500 dark:text-[#9A9A9A] font-medium">Educational Development</p>
          </div>
        </Link>
@@ -309,7 +309,7 @@ export default function Header({ profile }: HeaderProps) {
                            <p className="font-semibold text-sm text-foreground">{notif.title}</p>
                            <p className="text-sm text-muted mt-1 line-clamp-2">{notif.message}</p>
                            <p className="text-xs text-muted/70 mt-1">
-                             {new Date(notif.created_at).toLocaleDateString()}
+                             {new Date(notif.created_at).toLocaleDateString('vi-VN')}
                            </p>
                          </div>
                        </div>
@@ -332,7 +332,7 @@ export default function Header({ profile }: HeaderProps) {
          <button
            onClick={() => setShowUserMenu(!showUserMenu)}
            className="flex items-center gap-2 p-2 rounded-xl transition-all cursor-pointer
-             bg-stone-50 hover:bg-stone-100"
+             bg-surface-secondary hover:bg-surface-hover"
          >
            <div className="w-8 h-8 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-sm">
              {getInitials()}
@@ -352,18 +352,18 @@ export default function Header({ profile }: HeaderProps) {
            <>
              <div className="fixed inset-0" onClick={() => setShowUserMenu(false)} />
              <div className="absolute right-0 mt-3 w-60 py-2 z-50 overflow-hidden rounded-2xl origin-top-right
-               bg-white border border-stone-200 shadow-lg">
-               <div className="px-4 py-3 border-b border-stone-100 bg-stone-50">
-                 <p className="font-semibold text-stone-900">{profile?.full_name || "User"}</p>
-                 <p className="text-sm text-stone-500 truncate">{profile?.email}</p>
-                 <span className="inline-block mt-2 px-3 py-1 bg-stone-100 text-stone-700 text-xs font-medium rounded-full capitalize">
+               bg-surface border border-border shadow-lg">
+               <div className="px-4 py-3 border-b border-border bg-surface-secondary">
+                 <p className="font-semibold text-foreground">{profile?.full_name || "User"}</p>
+                 <p className="text-sm text-muted truncate">{profile?.email}</p>
+                 <span className="inline-block mt-2 px-3 py-1 bg-surface text-secondary text-xs font-medium rounded-full capitalize border border-border">
                    {profile?.role || "user"}
                  </span>
                </div>
                <Link
                  href="/dashboard/profile"
                  onClick={() => setShowUserMenu(false)}
-                 className="group flex items-center gap-3 px-4 py-3 hover:bg-stone-50 transition text-sm font-medium text-stone-700 cursor-pointer"
+                 className="group flex items-center gap-3 px-4 py-3 hover:bg-surface-hover transition text-sm font-medium text-secondary hover:text-foreground cursor-pointer"
                >
                  <svg className="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -373,7 +373,7 @@ export default function Header({ profile }: HeaderProps) {
                <Link
                  href="/dashboard/settings"
                  onClick={() => setShowUserMenu(false)}
-                 className="group flex items-center gap-3 px-4 py-3 hover:bg-stone-50 transition text-sm font-medium text-stone-700 cursor-pointer"
+                 className="group flex items-center gap-3 px-4 py-3 hover:bg-surface-hover transition text-sm font-medium text-secondary hover:text-foreground cursor-pointer"
                >
                  <svg className="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -381,13 +381,13 @@ export default function Header({ profile }: HeaderProps) {
                  </svg>
                  <span className="group-hover:translate-x-1 transition-transform">Settings</span>
                </Link>
-               <div className="border-t border-stone-100 my-2"></div>
+               <div className="border-t border-border my-2"></div>
                <button
                  onClick={() => {
                    setShowUserMenu(false);
                    handleLogout();
                  }}
-                 className="group w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition text-sm font-medium text-red-600 cursor-pointer active:scale-[0.98]"
+                 className="group w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition text-sm font-medium text-red-600 dark:text-red-400 cursor-pointer active:scale-[0.98]"
                >
                  <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -402,7 +402,7 @@ export default function Header({ profile }: HeaderProps) {
 
      {/* Search Overlay */}
      {showSearch && (
-       <div className="absolute top-full left-0 right-0 p-6 bg-white border-b border-gray-200 shadow-lg">
+       <div className="absolute top-full left-0 right-0 p-6 bg-surface border-b border-border shadow-lg">
          <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
            <div className="relative">
              <input
@@ -410,28 +410,28 @@ export default function Header({ profile }: HeaderProps) {
                value={searchQuery}
                onChange={(e) => setSearchQuery(e.target.value)}
                placeholder="Search students, courses, classes..."
-               className="w-full px-5 py-4 pr-14 rounded-xl text-stone-900 font-medium placeholder-stone-400 transition-all
-                 bg-white border border-stone-200 shadow-sm focus:shadow-md focus:border-stone-500
-                 focus:ring-2 focus:ring-stone-100"
+               className="w-full px-5 py-4 pr-14 rounded-xl text-foreground font-medium placeholder-muted transition-all
+                 bg-surface border border-border shadow-sm focus:shadow-md focus:border-primary
+                 focus:ring-2 focus:ring-primary/20"
                autoFocus
              />
              <button
                type="submit"
                className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-lg transition-all cursor-pointer active:scale-95
-                 bg-stone-900 text-white shadow-sm hover:shadow-md hover:bg-stone-800"
+                 bg-primary text-white shadow-sm hover:shadow-md hover:bg-primary-hover"
              >
                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                </svg>
              </button>
            </div>
-           <div className="mt-4 flex items-center gap-4 text-sm text-gray-500">
+           <div className="mt-4 flex items-center gap-4 text-sm text-muted">
              <span className="flex items-center gap-1.5">
-               <kbd className="px-2 py-1 rounded bg-gray-100 font-mono text-xs">↵</kbd>
+               <kbd className="px-2 py-1 rounded bg-surface-secondary border border-border font-mono text-xs">↵</kbd>
                to search
              </span>
              <span className="flex items-center gap-1.5">
-               <kbd className="px-2 py-1 rounded bg-gray-100 font-mono text-xs">Esc</kbd>
+               <kbd className="px-2 py-1 rounded bg-surface-secondary border border-border font-mono text-xs">Esc</kbd>
                to close
              </span>
            </div>

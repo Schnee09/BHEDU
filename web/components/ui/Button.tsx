@@ -19,7 +19,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   iconPosition?: 'left' | 'right';
 }
 
-export function Button({
+function Button({
   children,
   variant = 'primary',
   size = 'md',
@@ -43,8 +43,8 @@ export function Button({
   const variantClasses = {
     primary: `
       bg-primary text-white hover:bg-primary/90 focus:ring-primary/50
-      shadow-[0_4px_12px_rgba(22,163,74,0.3)] hover:shadow-[0_6px_20px_rgba(22,163,74,0.4)]
-      dark:bg-primary dark:hover:bg-primary/80 dark:shadow-[0_0_20px_rgba(6,182,212,0.4)] dark:hover:shadow-[0_0_30px_rgba(6,182,212,0.6)]
+      shadow-sm hover:shadow-md
+      dark:bg-primary dark:hover:bg-primary/80
     `,
     secondary: `
       bg-surface-secondary text-foreground hover:bg-surface border border-border
@@ -163,3 +163,5 @@ export function IconButton({
 }
 
 export default Button;
+
+export { Button };

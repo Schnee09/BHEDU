@@ -101,9 +101,9 @@ export default function ClassesPageModern() {
     if (error) {
       // Show user-friendly rate limit message
       if (error.includes('Rate limit exceeded')) {
-        toast.warning('Please Wait', 'Too many requests. Please wait a moment before trying again.');
+        toast.warning('Vui lòng chờ', 'Quá nhiều yêu cầu. Vui lòng chờ một chút trước khi thử lại.');
       } else {
-        toast.error('Failed to load classes', error);
+        toast.error('Không thể tải lớp học', error);
         logger.error('Classes fetch error', new Error(error));
       }
     }
@@ -130,7 +130,7 @@ export default function ClassesPageModern() {
       ]);
 
       if (!studentsRes.ok || !enrollmentsRes.ok) {
-        throw new Error('Failed to fetch enrollment data');
+        throw new Error('Không thể tải dữ liệu đăng ký');
       }
       
       const studentsData = await studentsRes.json();
@@ -146,14 +146,14 @@ export default function ClassesPageModern() {
       
       setAvailableStudents(available);
     } catch (err) {
-      console.error('Error fetching students:', err);
-      toast.error('Error', 'Failed to load available students');
+      console.error('Lỗi khi tải học sinh:', err);
+      toast.error('Lỗi', 'Không thể tải danh sách học sinh có sẵn');
     }
   };
   
   const handleEnrollStudent = async () => {
     if (!selectedClass || !selectedStudentId) {
-      toast.warning('Selection Required', 'Please select a student to enroll');
+      toast.warning('Cần chọn', 'Vui lòng chọn học sinh để ghi danh');
       return;
     }
     
@@ -170,17 +170,17 @@ export default function ClassesPageModern() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to enroll student');
+        throw new Error(errorData.error || 'Không thể đăng ký học sinh');
       }
       
-      toast.success('Enrollment Success', 'Student has been enrolled in the class');
+      toast.success('Đăng ký thành công', 'Học sinh đã được đăng ký vào lớp học');
       setShowEnrollModal(false);
       setSelectedClass(null);
       setSelectedStudentId("");
       refetch(); // Refresh class list to update enrollment counts
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Enrollment failed';
-      toast.error('Error', message);
+      const message = err instanceof Error ? err.message : 'Đăng ký thất bại';
+      toast.error('Lỗi', message);
     } finally {
       setEnrolling(false);
     }
@@ -192,8 +192,8 @@ export default function ClassesPageModern() {
       <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <PageHeader
-            title="Classes"
-            description="Loading classes..."
+            title="Lớp học"
+            description="Đang tải lớp học..."
           />
           <CardGridSkeleton count={8} />
         </div>
@@ -209,16 +209,16 @@ export default function ClassesPageModern() {
         
         {/* Header with Breadcrumb */}
         <PageHeader
-          title={isAdminOrStaff ? "All Classes" : isStudent ? "My Enrolled Classes" : "My Classes"}
+          title={isAdminOrStaff ? "Tất cả lớp học" : isStudent ? "Lớp học đã đăng ký" : "Lớp học của tôi"}
           description={isAdminOrStaff 
-            ? "Manage all classes and enrollments" 
+            ? "Quản lý tất cả lớp học và đăng ký" 
             : isStudent 
-              ? "View your enrolled classes and progress"
-              : "View and manage your assigned classes"}
+              ? "Xem lớp học đã đăng ký và tiến độ"
+              : "Xem và quản lý lớp học được giao"}
           action={isAdminOrStaff ? (
             <Link href="/dashboard/classes">
               <Button variant="primary" leftIcon={<Icons.Add className="w-4 h-4" />}>
-                Create Class
+                Tạo lớp học
               </Button>
             </Link>
           ) : undefined}
@@ -228,25 +228,25 @@ export default function ClassesPageModern() {
         {statistics && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <StatCard
-              label="Total Classes"
+              label="Tổng số lớp học"
               value={statistics.total_classes}
               icon={<Icons.Classes className="w-6 h-6" />}
               color="blue"
             />
             <StatCard
-              label="Total Students"
+              label="Tổng số học sinh"
               value={statistics.total_students}
               icon={<Icons.Students className="w-6 h-6" />}
               color="green"
             />
             <StatCard
-              label="Avg. Enrollment"
+              label="Sĩ số trung bình"
               value={statistics.average_enrollment.toFixed(1)}
               icon={<Icons.Chart className="w-6 h-6" />}
               color="purple"
             />
             <StatCard
-              label="Teachers"
+              label="Giáo viên"
               value={Object.keys(statistics.by_teacher || {}).length}
               icon={<Icons.Teachers className="w-6 h-6" />}
               color="orange"
@@ -271,12 +271,12 @@ export default function ClassesPageModern() {
       {!loading && classes.length === 0 && !error && (
         <EmptyState
           icon={<Icons.Classes className="w-16 h-16 text-stone-400" />}
-          title={isAdminOrStaff ? "No classes found" : isStudent ? "No enrolled classes" : "No classes assigned"}
+          title={isAdminOrStaff ? "Không tìm thấy lớp học" : isStudent ? "Không có lớp học đã đăng ký" : "Không có lớp học được giao"}
           description={isAdminOrStaff 
-            ? "No classes have been created yet" 
+            ? "Chưa có lớp học nào được tạo" 
             : isStudent
-              ? "You are not enrolled in any classes yet. Contact an administrator to get enrolled."
-              : "You don't have any classes assigned to you yet. Contact an administrator to get assigned to a class."
+              ? "Bạn chưa đăng ký lớp học nào. Liên hệ quản trị viên để được đăng ký."
+              : "Bạn chưa được giao lớp học nào. Liên hệ quản trị viên để được giao lớp học."
           }
         />
       )}
@@ -314,7 +314,7 @@ export default function ClassesPageModern() {
                     <Icons.Teachers className="w-5 h-5 text-stone-500 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-stone-900">
-                        {classData.teacher?.full_name || 'Not assigned'}
+                        {classData.teacher?.full_name || 'Chưa được giao'}
                       </p>
                       {classData.teacher?.email && (
                         <p className="text-xs text-stone-500 mt-0.5">
@@ -346,7 +346,7 @@ export default function ClassesPageModern() {
                   
                   <p className="text-xs text-stone-500 mt-3 flex items-center gap-2">
                     <Icons.Calendar className="w-4 h-4" />
-                    <span>Created: {new Date(classData.created_at).toLocaleDateString()}</span>
+                    <span>Được tạo: {new Date(classData.created_at).toLocaleDateString('vi-VN')}</span>
                   </p>
                 </div>
                 
@@ -354,7 +354,7 @@ export default function ClassesPageModern() {
                 <div className="flex gap-3 pt-4 border-t-2 border-stone-100">
                   <Link href={`/dashboard/classes/${classData.id}`} className="flex-1">
                     <Button variant="outline" fullWidth size="sm" className="font-semibold">
-                      View Details
+                      Xem chi tiết
                     </Button>
                   </Link>
                   {isAdminOrStaff && (
@@ -364,7 +364,7 @@ export default function ClassesPageModern() {
                       onClick={() => handleEnrollClick(classData)}
                       className="px-6 font-semibold"
                     >
-                      Enroll
+                      Đăng ký
                     </Button>
                   )}
                 </div>
@@ -382,45 +382,45 @@ export default function ClassesPageModern() {
           setSelectedClass(null);
           setSelectedStudentId("");
         }}
-        title={`Enroll in ${selectedClass?.name || 'Class'}`}
+        title={`Đăng ký vào ${selectedClass?.name || 'Lớp học'}`}
       >
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-semibold text-blue-900 mb-2">Class Information</h3>
+            <h3 className="font-semibold text-blue-900 mb-2">Thông tin lớp học</h3>
             <div className="space-y-1 text-sm text-blue-800">
-              <p><strong>Code:</strong> {selectedClass?.code}</p>
-              <p><strong>Teacher:</strong> {selectedClass?.teacher?.full_name || 'Not assigned'}</p>
+              <p><strong>Mã lớp:</strong> {selectedClass?.code}</p>
+              <p><strong>Giáo viên:</strong> {selectedClass?.teacher?.full_name || 'Chưa được giao'}</p>
               {selectedClass?.schedule && (
-                <p><strong>Schedule:</strong> {selectedClass.schedule}</p>
+                <p><strong>Lịch học:</strong> {selectedClass.schedule}</p>
               )}
               {selectedClass?.room && (
-                <p><strong>Room:</strong> {selectedClass.room}</p>
+                <p><strong>Phòng:</strong> {selectedClass.room}</p>
               )}
               {selectedClass?.enrollment_count !== undefined && (
-                <p><strong>Current Students:</strong> {selectedClass.enrollment_count}</p>
+                <p><strong>Sĩ số hiện tại:</strong> {selectedClass.enrollment_count}</p>
               )}
             </div>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Student to Enroll
+              Chọn học sinh để đăng ký
             </label>
             <select
               value={selectedStudentId}
               onChange={(e) => setSelectedStudentId(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="">-- Select a student --</option>
+              <option value="">-- Chọn học sinh --</option>
               {availableStudents.map((student) => (
                 <option key={student.id} value={student.id}>
-                  {student.full_name} ({student.email || 'No email'})
+                  {student.full_name} ({student.email || 'Không có email'})
                 </option>
               ))}
             </select>
             {availableStudents.length === 0 && (
               <p className="text-sm text-slate-600 mt-2">
-                No available students or all students are already enrolled.
+                Không có học sinh khả dụng hoặc tất cả học sinh đã đăng ký.
               </p>
             )}
           </div>
@@ -434,7 +434,7 @@ export default function ClassesPageModern() {
                 setSelectedStudentId("");
               }}
             >
-              Cancel
+              Hủy
             </Button>
             <Button
               variant="primary"
@@ -442,7 +442,7 @@ export default function ClassesPageModern() {
               disabled={!selectedStudentId || enrolling}
               isLoading={enrolling}
             >
-              Enroll Student
+              Đăng ký học sinh
             </Button>
           </div>
         </div>

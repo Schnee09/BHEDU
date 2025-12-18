@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* 
- * BH-EDU Clean Design System
- * Anti-AI Design: No shadows, minimal gradients, warm colors
+ * BH-EDU Modern Professional Design System
+ * Clean, Trustworthy, Academic
  */
 
 @theme {
@@ -16,6 +16,7 @@
   --color-muted: var(--text-muted);
   
   --color-primary: var(--color-primary);
+  --color-primary-foreground: #ffffff;
   --color-accent: var(--color-accent);
   
   --color-success: var(--success);
@@ -23,81 +24,76 @@
   --color-error: var(--error);
   --color-info: var(--info);
 
-  /* Shadows - Warm and soft */
-  --shadow-sm: 0 1px 2px 0 rgba(28, 25, 23, 0.05);
-  --shadow: 0 1px 3px 0 rgba(28, 25, 23, 0.1), 0 1px 2px -1px rgba(28, 25, 23, 0.1);
-  --shadow-md: 0 4px 6px -1px rgba(28, 25, 23, 0.1), 0 2px 4px -2px rgba(28, 25, 23, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(28, 25, 23, 0.1), 0 4px 6px -4px rgba(28, 25, 23, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(28, 25, 23, 0.1), 0 8px 10px -6px rgba(28, 25, 23, 0.1);
+  /* Shadows - Modern and diffused */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   
   /* Fonts */
   --font-heading: var(--font-heading);
 }
 
 :root {
-  /* Typography - Be Vietnam Pro for unique feel */
-  --font-primary: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-heading: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Typography - Inter for clean, modern UI */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   
-  --color-primary-50: #F0FDF4;
-  --color-primary-100: #DCFCE7;
-  --color-primary-200: #BBF7D0;
-  --color-primary-300: #86EFAC;
-  --color-primary-400: #4ADE80;
-  --color-primary-500: #22C55E;
-  --color-primary-600: #16A34A;
-  --color-primary-700: #15803D;
-  --color-primary-800: #166534;
-  --color-primary-900: #14532D;
+  /* Primary: Indigo (Trust, Education, Professionalism) */
+  --color-primary-50: #EEF2FF;
+  --color-primary-100: #E0E7FF;
+  --color-primary-200: #C7D2FE;
+  --color-primary-300: #A5B4FC;
+  --color-primary-400: #818CF8;
+  --color-primary-500: #6366F1;
+  --color-primary-600: #4F46E5;
+  --color-primary-700: #4338CA;
+  --color-primary-800: #3730A3;
+  --color-primary-900: #312E81;
   
-  --color-primary: #16A34A;
-  --color-primary-hover: #15803D;
-  --color-primary-light: #4ADE80;
+  --color-primary: #4F46E5;
+  --color-primary-hover: #4338CA;
+  --color-primary-light: #6366F1;
   
-  /* Secondary: Warm Orange */
-  --color-secondary: #EA580C;
-  --color-secondary-hover: #C2410C;
-  --color-secondary-light: #FB923C;
+  /* Secondary: Slate (Neutral, Balanced) */
+  --color-secondary: #64748B;
+  --color-secondary-hover: #475569;
+  --color-secondary-light: #94A3B8;
   
-  /* Accent: Teal */
-  --color-accent: #0D9488;
-  --color-accent-hover: #0F766E;
+  /* Accent: Sky (Freshness) */
+  --color-accent: #0EA5E9;
+  --color-accent-hover: #0284C7;
   
   /* ============================================
-     LIGHT MODE - Warm, Easy on Eyes
+     LIGHT MODE - Clean & Bright
      ============================================ */
   
-  /* Backgrounds - Soft cream/warm white (not harsh white) */
-  --background: #FAF9F7;
-  --background-secondary: #F5F4F1;
+  /* Backgrounds - Cool white/slate */
+  --background: #F8FAFC; /* Slate 50 */
+  --background-secondary: #F1F5F9; /* Slate 100 */
   --surface: #FFFFFF;
   --surface-elevated: #FFFFFF;
-  --surface-hover: #F0EFEC;
+  --surface-hover: #F8FAFC;
   --surface-card: #FFFFFF;
   
-  /* Text - High contrast but not harsh black */
-  --foreground: #1A1A1A;
-  --text-primary: #1A1A1A;
-  --text-secondary: #4A4A4A;
-  --text-tertiary: #6B6B6B;
-  --text-muted: #8C8C8C;
+  /* Text - Sharp contrast */
+  --foreground: #0F172A; /* Slate 900 */
+  --text-primary: #0F172A;
+  --text-secondary: #475569; /* Slate 600 */
+  --text-tertiary: #94A3B8; /* Slate 400 */
+  --text-muted: #CBD5E1; /* Slate 300 */
   
-  /* Borders - Visible but subtle */
-  --border-subtle: #EBEBEB;
-  --border-light: #E0E0E0;
-  --border-default: #D0D0D0;
-  --border-medium: #B0B0B0;
+  /* Borders - Subtle */
+  --border-subtle: #F1F5F9;
+  --border-light: #E2E8F0;
+  --border-default: #CBD5E1;
+  --border-medium: #94A3B8;
   
-  /* Keep shadows minimal - only for specific use cases */
-  --shadow-neu-sm: none;
-  --shadow-neu: none;
-  --shadow-neu-md: none;
-  --shadow-neu-lg: none;
-  --shadow-neu-inset: none;
-  /* Warm stone shadows (rgb 28, 25, 23) */
-  --shadow-soft: 0 1px 2px rgba(28, 25, 23, 0.05);
-  --shadow-soft-md: 0 4px 16px rgba(28, 25, 23, 0.08);
-  --shadow-soft-lg: 0 8px 32px rgba(28, 25, 23, 0.1);
+  /* Shadows */
+  --shadow-soft: 0 2px 4px rgba(15, 23, 42, 0.05);
+  --shadow-soft-md: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -1px rgba(15, 23, 42, 0.06);
+  --shadow-soft-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
   
   --success: #22C55E;
   --success-light: #86EFAC;
@@ -149,57 +145,57 @@
   --chart-6: #0284C7;
 }
 
-/* Dark Mode - Clean solid colors, NO glassmorphism */
+/* Dark Mode - Modern Deep Slate */
 .dark {
-  /* Keep green as primary (consistent branding) */
-  --color-primary-50: #F0FDF4;
-  --color-primary-100: #DCFCE7;
-  --color-primary-200: #BBF7D0;
-  --color-primary-300: #86EFAC;
-  --color-primary-400: #4ADE80;
-  --color-primary-500: #22C55E;
-  --color-primary-600: #16A34A;
-  --color-primary-700: #15803D;
-  --color-primary-800: #166534;
-  --color-primary-900: #14532D;
+  /* Primary: Indigo (Lighter for dark mode) */
+  --color-primary-50: #EEF2FF;
+  --color-primary-100: #E0E7FF;
+  --color-primary-200: #C7D2FE;
+  --color-primary-300: #A5B4FC;
+  --color-primary-400: #818CF8;
+  --color-primary-500: #6366F1;
+  --color-primary-600: #4F46E5;
+  --color-primary-700: #4338CA;
+  --color-primary-800: #3730A3;
+  --color-primary-900: #312E81;
   
-  --color-primary: #22C55E;
-  --color-primary-hover: #4ADE80;
-  --color-primary-light: #86EFAC;
+  --color-primary: #818CF8;
+  --color-primary-hover: #A5B4FC;
+  --color-primary-light: #C7D2FE;
   
-  /* Secondary: Orange */
-  --color-secondary: #FB923C;
-  --color-secondary-hover: #FDBA74;
-  --color-secondary-light: #FED7AA;
+  /* Secondary: Slate */
+  --color-secondary: #94A3B8;
+  --color-secondary-hover: #CBD5E1;
+  --color-secondary-light: #E2E8F0;
   
-  /* Accent: Teal */
-  --color-accent: #2DD4BF;
-  --color-accent-hover: #5EEAD4;
+  /* Accent: Sky */
+  --color-accent: #38BDF8;
+  --color-accent-hover: #7DD3FC;
   
   /* ============================================
-     DARK MODE - Softer, Less Strain
+     DARK MODE - Deep & Rich
      ============================================ */
   
-  /* Backgrounds - Not pure black (easier on eyes) */
-  --background: #1E1E1E;
-  --background-secondary: #252525;
-  --surface: #2D2D2D;
-  --surface-elevated: #3A3A3A;
-  --surface-hover: #404040;
-  --surface-card: #2D2D2D;
+  /* Backgrounds - Deep Slate */
+  --background: #020617; /* Slate 950 */
+  --background-secondary: #0F172A; /* Slate 900 */
+  --surface: #1E293B; /* Slate 800 */
+  --surface-elevated: #334155; /* Slate 700 */
+  --surface-hover: #334155;
+  --surface-card: #1E293B;
   
-  /* Text - Off-white (less harsh than pure white) */
-  --foreground: #E8E8E8;
-  --text-primary: #E8E8E8;
-  --text-secondary: #C0C0C0;
-  --text-tertiary: #9A9A9A;
-  --text-muted: #757575;
+  /* Text */
+  --foreground: #F8FAFC; /* Slate 50 */
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1; /* Slate 300 */
+  --text-tertiary: #94A3B8; /* Slate 400 */
+  --text-muted: #64748B; /* Slate 500 */
   
-  /* Borders - Visible in dark mode */
-  --border-subtle: #3A3A3A;
-  --border-light: #484848;
-  --border-default: #5A5A5A;
-  --border-medium: #707070;
+  /* Borders */
+  --border-subtle: #1E293B;
+  --border-light: #334155;
+  --border-default: #475569;
+  --border-medium: #64748B;
   
   /* No shadows/glows in dark mode */
   --shadow-glass-sm: none;

@@ -153,7 +153,7 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
                       <div className="flex items-center gap-2 text-sm text-gray-700">
                         <CakeIcon className="w-4 h-4 text-gray-500" />
                         <span className="text-gray-500">Date of Birth:</span>
-                        <span className="font-medium">{new Date(profile.date_of_birth).toLocaleDateString()}</span>
+                        <span className="font-medium">{new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}</span>
                       </div>
                     )}
                   </div>
@@ -219,7 +219,7 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
                       <div><strong>Email:</strong> {profile.email}</div>
                       {profile.phone && <div><strong>Phone:</strong> {profile.phone}</div>}
                       {profile.address && <div><strong>Address:</strong> {profile.address}</div>}
-                      {profile.date_of_birth && <div><strong>DOB:</strong> {new Date(profile.date_of_birth).toLocaleDateString()}</div>}
+                      {profile.date_of_birth && <div><strong>DOB:</strong> {new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}</div>}
                     </div>
                   </Card>
                 </div>
@@ -244,7 +244,7 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
                         <tbody className="divide-y divide-gray-100">
                           {attendance.map((a: any) => (
                             <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-4 py-3">{new Date(a.date).toLocaleDateString()}</td>
+                              <td className="px-4 py-3">{new Date(a.date).toLocaleDateString('vi-VN')}</td>
                               <td className="px-4 py-3">{a.class_id}</td>
                               <td className="px-4 py-3">
                                 <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'}>
@@ -304,11 +304,11 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
                       </Card>
                       <Card padding="md" className="bg-gradient-to-br from-emerald-50 to-green-50">
                         <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Current Balance</p>
-                        <p className="text-xl font-bold text-emerald-900 mt-2">${accountInfo?.balance ?? '0'}</p>
+                        <p className="text-xl font-bold text-emerald-900 mt-2">₫{accountInfo?.balance ?? '0'}</p>
                       </Card>
                       <Card padding="md" className="bg-gradient-to-br from-blue-50 to-indigo-50">
                         <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Last Payment</p>
-                        <p className="text-sm font-semibold text-blue-900 mt-2">{accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString() : 'No payments yet'}</p>
+                        <p className="text-sm font-semibold text-blue-900 mt-2">{accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN') : 'No payments yet'}</p>
                       </Card>
                     </div>
                   ) : (
@@ -337,9 +337,9 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
                                 <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
                                   <td className="px-4 py-3 font-medium text-gray-900">{inv.invoice_number}</td>
                                   <td className="px-4 py-3"><Badge color={inv.status === 'paid' ? 'green' : inv.status === 'overdue' ? 'red' : 'yellow'}>{inv.status}</Badge></td>
-                                  <td className="px-4 py-3 font-medium">${inv.total_amount}</td>
-                                  <td className="px-4 py-3 font-semibold text-red-600">${inv.balance}</td>
-                                  <td className="px-4 py-3 text-gray-600">{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '—'}</td>
+                                  <td className="px-4 py-3 font-medium">₫{inv.total_amount}</td>
+                                  <td className="px-4 py-3 font-semibold text-red-600">₫{inv.balance}</td>
+                                  <td className="px-4 py-3 text-gray-600">{inv.due_date ? new Date(inv.due_date).toLocaleDateString('vi-VN') : '—'}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -365,8 +365,8 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
                             <tbody className="divide-y divide-gray-100">
                               {paymentsList.map((p: any) => (
                                 <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                                  <td className="px-4 py-3 text-gray-600">{p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '—'}</td>
-                                  <td className="px-4 py-3 font-semibold text-green-600">${p.amount}</td>
+                                  <td className="px-4 py-3 text-gray-600">{p.payment_date ? new Date(p.payment_date).toLocaleDateString('vi-VN') : '—'}</td>
+                                  <td className="px-4 py-3 font-semibold text-green-600">₫{p.amount}</td>
                                   <td className="px-4 py-3">{p.payment_methods?.name ?? '—'}</td>
                                   <td className="px-4 py-3 text-gray-600">{p.transaction_reference ?? '—'}</td>
                                 </tr>

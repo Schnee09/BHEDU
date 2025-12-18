@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api/client';
-import { Card } from "@/components/ui/Card";
-import { SkeletonTable } from "@/components/ui/skeleton";
+import { Card } from '@/components/ui/Card';
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
 
 interface Term {
   name: string;
@@ -36,6 +37,26 @@ export default function AcademicYearsPage() {
     is_current: false,
   });
 
+  // Calculate Vietnamese semesters for an academic year
+  const getVietnameseSemesters = (startDate: string) => {
+    const startYear = new Date(startDate).getFullYear();
+
+    return [
+      {
+        name: 'Học kỳ I (HK1)',
+        name_en: 'Semester 1',
+        start_date: `${startYear}-09-01`,
+        end_date: `${startYear}-12-31`
+      },
+      {
+        name: 'Học kỳ II (HK2)',
+        name_en: 'Semester 2',
+        start_date: `${startYear + 1}-01-01`,
+        end_date: `${startYear + 1}-06-30`
+      }
+    ];
+  };
+
   useEffect(() => {
     fetchYears();
   }, []);
@@ -48,7 +69,7 @@ export default function AcademicYearsPage() {
       setYears(data.data || data);
     } catch (error) {
       console.error('Error fetching academic years:', error);
-      alert('Failed to fetch academic years');
+      alert('Không thể tải năm học');
     } finally {
       setLoading(false);
     }
@@ -85,7 +106,7 @@ export default function AcademicYearsPage() {
       setFormData({ name: '', start_date: '', end_date: '', is_current: false });
       fetchYears();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save academic year';
+      const errorMessage = error instanceof Error ? error.message : 'Không thể lưu năm học';
       console.error('Error saving academic year:', error);
       alert(errorMessage);
     }
@@ -111,11 +132,11 @@ export default function AcademicYearsPage() {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to delete');
+        throw new Error(error.error || 'Không thể xóa');
       }
       fetchYears();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete academic year';
+      const errorMessage = error instanceof Error ? error.message : 'Không thể xóa năm học';
       console.error('Error deleting academic year:', error);
       alert(errorMessage);
     }
@@ -129,11 +150,11 @@ export default function AcademicYearsPage() {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to set current');
+        throw new Error(error.error || 'Không thể đặt hiện tại');
       }
       fetchYears();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to set current year';
+      const errorMessage = error instanceof Error ? error.message : 'Không thể đặt năm hiện tại';
       console.error('Error setting current year:', error);
       alert(errorMessage);
     }
@@ -155,7 +176,7 @@ export default function AcademicYearsPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Academic Years</h1>
-          <p className="text-gray-600">Manage school academic years and terms</p>
+          <p className="text-gray-600">Manage Vietnamese academic years (Năm học) and semesters (Học kỳ)</p>
         </div>
         <button
           onClick={() => {
@@ -277,33 +298,48 @@ export default function AcademicYearsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase">Year</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase">Start Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase">End Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase">Semesters</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase">Status</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-stone-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-stone-200">
-              {filteredYears.map((year) => (
-                <tr key={year.id} className="hover:bg-stone-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium">{year.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
-                    {new Date(year.start_date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
-                    {new Date(year.end_date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {year.is_current ? (
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        Current
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-stone-100 text-stone-800">
-                        Inactive
-                      </span>
-                    )}
-                  </td>
+              {filteredYears.map((year) => {
+                const semesters = getVietnameseSemesters(year.start_date);
+                return (
+                  <tr key={year.id} className="hover:bg-stone-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="font-medium">{year.name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
+                      {VIETNAMESE_LOCALE.formatDate(year.start_date)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
+                      {VIETNAMESE_LOCALE.formatDate(year.end_date)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-stone-600">
+                      <div className="space-y-1">
+                        {semesters.map((semester, index) => (
+                          <div key={index} className="text-xs">
+                            <div className="font-medium">{semester.name}</div>
+                            <div className="text-stone-500">
+                              {VIETNAMESE_LOCALE.formatDate(semester.start_date)} - {VIETNAMESE_LOCALE.formatDate(semester.end_date)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {year.is_current ? (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          Current
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-stone-100 text-stone-800">
+                          Inactive
+                        </span>
+                      )}
+                    </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2">
                       {!year.is_current && (
@@ -328,8 +364,9 @@ export default function AcademicYearsPage() {
                       </button>
                     </div>
                   </td>
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

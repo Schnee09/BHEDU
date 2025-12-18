@@ -165,8 +165,8 @@ export default function GradeEntryPageModern() {
   // Validation helper
   const validatePoints = (points: number | undefined, maxPoints: number): { valid: boolean; error?: string } => {
     if (points === undefined) return { valid: true };
-    if (points < 0) return { valid: false, error: 'Points cannot be negative' };
-    if (points > maxPoints) return { valid: false, error: `Points cannot exceed ${maxPoints}` };
+    if (points < 0) return { valid: false, error: 'Điểm không thể âm' };
+    if (points > maxPoints) return { valid: false, error: `Điểm không thể vượt quá ${maxPoints}` };
     return { valid: true };
   };
   
@@ -462,7 +462,7 @@ export default function GradeEntryPageModern() {
                   )}
                   {selectedAssignmentData.due_date && (
                     <Badge variant="default">
-                      Due: {new Date(selectedAssignmentData.due_date).toLocaleDateString()}
+                      Due: {new Date(selectedAssignmentData.due_date).toLocaleDateString('vi-VN')}
                     </Badge>
                   )}
                 </div>

@@ -52,7 +52,7 @@ export default function StudentGradesPage() {
         setGrades(gradesData);
       } catch (err) {
         console.error("Failed to fetch grades:", err);
-        setError("Failed to load grades. Please try again later.");
+        setError("Không thể tải điểm. Vui lòng thử lại sau.");
         setGrades([]);
       } finally {
         setLoading(false);
@@ -109,8 +109,8 @@ export default function StudentGradesPage() {
     <div className="p-6 max-w-7xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900 font-heading">My Grades</h1>
-          <p className="text-stone-500 mt-1">View your academic performance across all classes</p>
+          <h1 className="text-2xl font-bold text-stone-900 font-heading">Điểm của tôi</h1>
+          <p className="text-stone-500 mt-1">Xem thành tích học tập của bạn trong tất cả các lớp</p>
         </div>
       </div>
 
@@ -119,8 +119,8 @@ export default function StudentGradesPage() {
           <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Icons.Chart className="w-8 h-8 text-stone-400" />
           </div>
-          <h3 className="text-lg font-medium text-stone-900">No grades available</h3>
-          <p className="text-stone-500 mt-2">You haven't received any grades yet.</p>
+          <h3 className="text-lg font-medium text-stone-900">Không có điểm nào</h3>
+          <p className="text-stone-500 mt-2">Bạn chưa nhận được điểm nào.</p>
         </Card>
       ) : (
         <div className="space-y-8">
@@ -138,7 +138,7 @@ export default function StudentGradesPage() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">Current Average</p>
+                      <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">Điểm trung bình hiện tại</p>
                       <p className={`text-xl font-bold ${
                         average >= 90 ? 'text-green-600' :
                         average >= 80 ? 'text-stone-900' :
@@ -152,13 +152,13 @@ export default function StudentGradesPage() {
                 </CardHeader>
                 <CardBody className="p-0">
                   <SimpleTable
-                    headers={["Assignment", "Category", "Date", "Score", "Status"]}
+                    headers={["Bài tập", "Danh mục", "Ngày", "Điểm", "Trạng thái"]}
                     rows={classGrades.map((grade) => [
                       <div key={`${grade.id}-title`} className="font-medium text-stone-900">
                         {grade.assignment.title}
                         {grade.feedback && (
                           <p className="text-xs text-stone-500 mt-0.5 font-normal truncate max-w-xs">
-                            Feedback: {grade.feedback}
+                            Phản hồi: {grade.feedback}
                           </p>
                         )}
                       </div>,
@@ -166,7 +166,7 @@ export default function StudentGradesPage() {
                         {grade.assignment.category.name}
                       </Badge>,
                       <span key={`${grade.id}-date`} className="text-stone-600">
-                        {new Date(grade.graded_at).toLocaleDateString()}
+                        {new Date(grade.graded_at).toLocaleDateString('vi-VN')}
                       </span>,
                       <div key={`${grade.id}-score`} className="font-mono font-medium">
                         {(() => {
@@ -201,7 +201,7 @@ export default function StudentGradesPage() {
                           const earned = grade.points_earned ?? grade.score;
                           const total = grade.assignment.total_points ?? grade.assignment.max_points;
                           const ratio = earned !== undefined && total ? earned / total : undefined;
-                          return ratio !== undefined && ratio >= 0.6 ? 'Pass' : 'Needs Improvement';
+                          return ratio !== undefined && ratio >= 0.6 ? 'Đạt' : 'Cần cải thiện';
                         })()}
                       </Badge>
                     ])}

@@ -59,32 +59,32 @@ interface ReportConfig {
 const reportTypes: ReportConfig[] = [
   {
     id: 'students',
-    title: 'Student Report',
-    description: 'Comprehensive student enrollment and demographics report',
+    title: 'Báo cáo học sinh',
+    description: 'Báo cáo toàn diện về tuyển sinh và nhân khẩu học học sinh',
     icon: Icons.Students,
     color: 'text-blue-600 bg-blue-100',
     available: true
   },
   {
     id: 'classes',
-    title: 'Class Report',
-    description: 'Class distribution and teacher assignments',
+    title: 'Báo cáo lớp học',
+    description: 'Phân bố lớp học và phân công giáo viên',
     icon: Icons.Classes,
     color: 'text-green-600 bg-green-100',
     available: true
   },
   {
     id: 'grades',
-    title: 'Academic Report',
-    description: 'Grade distribution and academic performance analysis',
+    title: 'Báo cáo học tập',
+    description: 'Phân bố điểm và phân tích thành tích học tập',
     icon: Icons.Grades,
     color: 'text-purple-600 bg-purple-100',
     available: true
   },
   {
     id: 'attendance',
-    title: 'Attendance Report',
-    description: 'Student attendance patterns and trends',
+    title: 'Báo cáo điểm danh',
+    description: 'Mô hình và xu hướng điểm danh của học sinh',
     icon: Icons.Attendance,
     color: 'text-orange-600 bg-orange-100',
     available: true
@@ -185,7 +185,7 @@ export default function ReportsPage() {
   const handleGenerateReport = async (type: ReportType) => {
     const reportConfig = reportTypes.find(r => r.id === type);
     if (!reportConfig?.available) {
-      toast.warning('Not Available', 'This report type is coming soon');
+      toast.warning('Không khả dụng', 'Loại báo cáo này sắp có');
       return;
     }
 
@@ -227,14 +227,14 @@ export default function ReportsPage() {
         URL.revokeObjectURL(urlObj)
       } else if (type === 'classes') {
         const response = await apiFetch('/api/classes');
-        if (!response.ok) throw new Error('Failed to fetch classes');
+        if (!response.ok) throw new Error('Không thể tải danh sách lớp');
         const data = await response.json();
 
         const classes = data?.data || data?.classes;
         if (Array.isArray(classes)) {
           const headers = ["ID", "Name", "Grade Level", "Academic Year", "Capacity", "Created At"];
           const rows: string[][] = classes.map((c: Record<string, unknown>) => {
-            const createdAt = c.created_at ? new Date(String(c.created_at)).toLocaleDateString() : '';
+            const createdAt = c.created_at ? new Date(String(c.created_at)).toLocaleDateString('vi-VN') : '';
             return [
               String(c.id ?? ''),
               String(c.name ?? ''),
@@ -309,10 +309,10 @@ export default function ReportsPage() {
         link.click();
         document.body.removeChild(link);
         
-        toast.success('Report Generated', `${reportConfig.title} has been downloaded`);
+        toast.success('Đã tạo báo cáo', `${reportConfig.title} đã được tải xuống`);
       }
     } catch (error) {
-      toast.error('Error', 'Failed to generate report');
+      toast.error('Lỗi', 'Không thể tạo báo cáo');
       console.error('Report generation error:', error);
     } finally {
       setGeneratingReport(false);
@@ -330,15 +330,15 @@ export default function ReportsPage() {
         <div>
           <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
             <Icons.Chart className="w-8 h-8 text-stone-600" />
-            Reports
+            Báo cáo
           </h1>
-          <p className="text-stone-500 mt-1">Generate and download comprehensive school reports</p>
+          <p className="text-stone-500 mt-1">Tạo và tải xuống báo cáo toàn diện của trường</p>
         </div>
       </div>
 
       {/* Overview Statistics */}
       <div>
-        <h2 className="text-lg font-semibold text-stone-900 mb-4">Overview</h2>
+        <h2 className="text-lg font-semibold text-stone-900 mb-4">Tổng quan</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {loading ? (
             <>
@@ -350,27 +350,27 @@ export default function ReportsPage() {
           ) : (
             <>
               <StatCard
-                label="Total Students"
+                label="Tổng số học sinh"
                 value={stats.students.total}
                 color="blue"
                 icon={<Icons.Students className="w-6 h-6" />}
                 trend={stats.students.active > 0 ? { value: stats.students.active, isPositive: true } : undefined}
               />
               <StatCard
-                label="Classes"
+                label="Lớp học"
                 value={stats.classes.total}
                 color="green"
                 icon={<Icons.Classes className="w-6 h-6" />}
               />
               <StatCard
-                label="Courses"
+                label="Môn học"
                 value={stats.courses.total}
                 color="purple"
                 icon={<Icons.Teachers className="w-6 h-6" />}
                 trend={stats.courses.withTeacher > 0 ? { value: stats.courses.withTeacher, isPositive: true } : undefined}
               />
               <StatCard
-                label="Reports"
+                label="Báo cáo"
                 value={reportTypes.filter(r => r.available).length}
                 color="slate"
                 icon={<Icons.Chart className="w-6 h-6" />}
@@ -382,13 +382,13 @@ export default function ReportsPage() {
 
       {/* Report Types */}
       <div>
-        <h2 className="text-lg font-semibold text-stone-900 mb-4">Generate Reports</h2>
+        <h2 className="text-lg font-semibold text-stone-900 mb-4">Tạo báo cáo</h2>
         {/* Filters */}
         <Card className="mb-4">
           <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
-                <label className="block text-sm text-stone-600 mb-1">Academic Year</label>
+                <label className="block text-sm text-stone-600 mb-1">Năm học</label>
                 <select
                   value={selectedAcademicYear ?? ''}
                   onChange={(e) => setSelectedAcademicYear(e.target.value || null)}
@@ -401,13 +401,13 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-stone-600 mb-1">Class</label>
+                <label className="block text-sm text-stone-600 mb-1">Lớp</label>
                 <select
                   value={selectedClassFilter ?? ''}
                   onChange={(e) => setSelectedClassFilter(e.target.value || null)}
                   className="w-full border rounded px-2 py-1"
                 >
-                  <option value="">All</option>
+                  <option value="">Tất cả</option>
                   {classesList.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -415,13 +415,13 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-stone-600 mb-1">Course</label>
+                <label className="block text-sm text-stone-600 mb-1">Môn học</label>
                 <select
                   value={selectedCourseFilter ?? ''}
                   onChange={(e) => setSelectedCourseFilter(e.target.value || null)}
                   className="w-full border rounded px-2 py-1"
                 >
-                  <option value="">All</option>
+                  <option value="">Tất cả</option>
                   {coursesList.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -429,7 +429,7 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-stone-600 mb-1">Attendance Date Range</label>
+                <label className="block text-sm text-stone-600 mb-1">Khoảng thời gian điểm danh</label>
                 <div className="flex gap-2">
                   <input type="date" value={attendanceStart ?? ''} onChange={e => setAttendanceStart(e.target.value || null)} className="border rounded px-2 py-1 w-1/2" />
                   <input type="date" value={attendanceEnd ?? ''} onChange={e => setAttendanceEnd(e.target.value || null)} className="border rounded px-2 py-1 w-1/2" />
@@ -453,7 +453,7 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-semibold text-stone-900">{report.title}</h3>
                       {!report.available && (
-                        <Badge variant="warning">Coming Soon</Badge>
+                        <Badge variant="warning">Sắp có</Badge>
                       )}
                     </div>
                   </div>
@@ -469,9 +469,9 @@ export default function ReportsPage() {
                   {report.available ? (
                     <>
                       <Icons.Download className="w-4 h-4 mr-2" />
-                      Generate & Download
+                      Tạo & Tải xuống
                     </>
-                  ) : 'Coming Soon'}
+                  ) : 'Sắp có'}
                 </Button>
               </CardBody>
             </Card>
@@ -482,7 +482,7 @@ export default function ReportsPage() {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <h3 className="text-lg font-semibold">Quick Actions</h3>
+          <h3 className="text-lg font-semibold">Hành động nhanh</h3>
         </CardHeader>
         <CardBody>
           <div className="flex flex-wrap gap-3">
@@ -492,7 +492,7 @@ export default function ReportsPage() {
               disabled={generatingReport}
             >
               <Icons.Download className="w-4 h-4 mr-2" />
-              Export All Students
+              Xuất tất cả học sinh
             </Button>
             <Button 
               variant="outline" 
@@ -500,7 +500,7 @@ export default function ReportsPage() {
               disabled={generatingReport}
             >
               <Icons.Download className="w-4 h-4 mr-2" />
-              Export All Classes
+              Xuất tất cả lớp học
             </Button>
             <Button 
               variant="outline" 
@@ -508,7 +508,7 @@ export default function ReportsPage() {
               disabled={generatingReport}
             >
               <Icons.Download className="w-4 h-4 mr-2" />
-              Export All Courses
+              Xuất tất cả môn học
             </Button>
           </div>
         </CardBody>

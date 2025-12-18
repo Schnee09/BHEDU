@@ -118,26 +118,26 @@ export default function DashboardPage() {
   const getRoleTitle = () => {
     switch (profile?.role) {
       case "admin":
-        return "Administrator Dashboard";
+        return "Bảng điều khiển Quản trị viên";
       case "teacher":
-        return "Teacher Dashboard";
+        return "Bảng điều khiển Giáo viên";
       case "student":
-        return "Student Portal";
+        return "Cổng thông tin Học sinh";
       default:
-        return "Dashboard";
+        return "Bảng điều khiển";
     }
   };
 
   const getRoleDescription = () => {
     switch (profile?.role) {
       case "admin":
-        return "System overview and management";
+        return "Tổng quan và quản lý hệ thống";
       case "teacher":
-        return "Manage your classes and students";
+        return "Quản lý lớp học và học sinh";
       case "student":
-        return "Track your progress and assignments";
+        return "Theo dõi tiến độ và bài tập";
       default:
-        return "Welcome to your dashboard";
+        return "Chào mừng đến bảng điều khiển";
     }
   };
 
@@ -153,7 +153,7 @@ export default function DashboardPage() {
                 {getRoleTitle()}
               </h1>
               <p className="text-lg text-stone-500 dark:text-stone-400 mt-2">
-                Welcome back, <span className="font-semibold text-stone-900 dark:text-stone-100">{profile?.full_name ?? "User"}</span> • {getRoleDescription()}
+                Chào mừng trở lại, <span className="font-semibold text-stone-900 dark:text-stone-100">{profile?.full_name ?? "Người dùng"}</span> • {getRoleDescription()}
               </p>
             </div>
             <div className="hidden md:flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
@@ -169,35 +169,35 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             
             <StatCard
-              label="Students"
+              label="Học sinh"
               value={stats.totalStudents}
               color="blue"
               icon={<Icons.Students className="w-6 h-6" />}
             />
 
             <StatCard
-              label="Teachers"
+              label="Giáo viên"
               value={stats.totalTeachers}
               color="purple"
               icon={<Icons.Teachers className="w-6 h-6" />}
             />
 
             <StatCard
-              label="Classes"
+              label="Lớp học"
               value={stats.totalClasses}
               color="green"
               icon={<Icons.Classes className="w-6 h-6" />}
             />
 
             <StatCard
-              label="Assignments"
+              label="Bài tập"
               value={stats.totalAssignments}
               color="orange"
               icon={<Icons.Assignments className="w-6 h-6" />}
             />
 
             <StatCard
-              label="Today's Attendance"
+              label="Điểm danh hôm nay"
               value={stats.attendanceToday}
               color="slate"
               icon={<Icons.Attendance className="w-6 h-6" />}
@@ -212,7 +212,7 @@ export default function DashboardPage() {
               <div className="p-2 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
                 <Icons.Chart className="w-6 h-6" />
               </div>
-              Quick Actions
+              Hành động nhanh
             </h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -221,29 +221,29 @@ export default function DashboardPage() {
                   <QuickActionCard
                     href={routes.students.list()}
                     icon={<Icons.Students className="w-6 h-6" />}
-                    title="Manage Students"
-                    description="View and edit student profiles"
+                    title="Quản lý Học sinh"
+                    description="Xem và chỉnh sửa hồ sơ học sinh"
                     color="blue"
                   />
                   <QuickActionCard
                     href="/dashboard/users"
                     icon={<Icons.Teachers className="w-6 h-6" />}
-                    title="Manage Teachers"
-                    description="View and edit teacher profiles"
+                    title="Quản lý Giáo viên"
+                    description="Xem và chỉnh sửa hồ sơ giáo viên"
                     color="purple"
                   />
                   <QuickActionCard
                     href={routes.classes.list()}
                     icon={<Icons.Classes className="w-6 h-6" />}
-                    title="Manage Classes"
-                    description="View and organize classes"
+                    title="Quản lý Lớp học"
+                    description="Xem và tổ chức lớp học"
                     color="green"
                   />
                   <QuickActionCard
                     href={routes.attendance.list()}
                     icon={<Icons.Attendance className="w-6 h-6" />}
-                    title="Attendance"
-                    description="Track daily attendance"
+                    title="Điểm danh"
+                    description="Theo dõi điểm danh hàng ngày"
                     color="orange"
                   />
                 </>
@@ -254,29 +254,29 @@ export default function DashboardPage() {
                   <QuickActionCard
                     href={routes.classes.list()}
                     icon={<Icons.Classes className="w-6 h-6" />}
-                    title="My Classes"
-                    description="View your classes"
+                    title="Lớp học của tôi"
+                    description="Xem lớp học của bạn"
                     color="blue"
                   />
                   <QuickActionCard
                     href="/dashboard/grades/assignments"
                     icon={<Icons.Assignments className="w-6 h-6" />}
-                    title="Assignments"
-                    description="Manage assignments"
+                    title="Bài tập"
+                    description="Quản lý bài tập"
                     color="green"
                   />
                   <QuickActionCard
                     href="/dashboard/grades"
                     icon={<Icons.Grades className="w-6 h-6" />}
-                    title="Grades"
-                    description="Record and view grades"
+                    title="Điểm số"
+                    description="Ghi và xem điểm"
                     color="purple"
                   />
                   <QuickActionCard
                     href={routes.attendance.mark()}
                     icon={<Icons.Attendance className="w-6 h-6" />}
-                    title="Mark Attendance"
-                    description="Take class attendance"
+                    title="Đánh dấu Điểm danh"
+                    description="Điểm danh lớp học"
                     color="orange"
                   />
                 </>
@@ -287,29 +287,29 @@ export default function DashboardPage() {
                   <QuickActionCard
                     href={routes.classes.list()}
                     icon={<Icons.Classes className="w-6 h-6" />}
-                    title="My Classes"
-                    description="View enrolled classes"
+                    title="Lớp học của tôi"
+                    description="Xem lớp học đã đăng ký"
                     color="blue"
                   />
                   <QuickActionCard
                     href="/dashboard/assignments"
                     icon={<Icons.Assignments className="w-6 h-6" />}
-                    title="Assignments"
-                    description="View and submit work"
+                    title="Bài tập"
+                    description="Xem và nộp bài"
                     color="green"
                   />
                   <QuickActionCard
                     href="/dashboard/scores"
                     icon={<Icons.Grades className="w-6 h-6" />}
-                    title="My Grades"
-                    description="View your grades"
+                    title="Điểm của tôi"
+                    description="Xem điểm của bạn"
                     color="purple"
                   />
                   <QuickActionCard
                     href="/dashboard/profile"
                     icon={<Icons.Users className="w-6 h-6" />}
-                    title="Profile"
-                    description="View and edit profile"
+                    title="Hồ sơ"
+                    description="Xem và chỉnh sửa hồ sơ"
                     color="slate"
                   />
                 </>

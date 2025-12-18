@@ -60,7 +60,7 @@ jest.mock('@/lib/auth/dataClient', () => ({
         if (table === 'report_exports') {
           // support insert(...).select('id').single() used by the route
           return {
-            insert: (obj: any) => ({
+            insert: (_obj: any) => ({
               select: (_sel: any) => ({
                 single: async () => ({ data: { id: 'test-job-id' }, error: null })
               })

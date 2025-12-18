@@ -26,37 +26,44 @@ interface NavCard {
 
 const navCards: NavCard[] = [
   {
+    href: "/dashboard/grades/vietnamese-entry",
+    title: "Nhập điểm Việt Nam",
+    description: "Nhập điểm sử dụng thang điểm 10 của Việt Nam với trọng số",
+    icon: AcademicCapIcon,
+    roles: ["teacher", "admin"],
+  },
+  {
     href: "/dashboard/grades/entry",
-    title: "Grade Entry",
-    description: "Enter and update student grades for assignments",
+    title: "Nhập điểm tiêu chuẩn",
+    description: "Nhập và cập nhật điểm của học sinh cho bài tập",
     icon: PencilSquareIcon,
     roles: ["teacher", "admin"],
   },
   {
     href: "/dashboard/grades/assignments",
-    title: "Manage Assignments",
-    description: "Create and manage assignments and categories",
+    title: "Quản lý bài tập",
+    description: "Tạo và quản lý bài tập và danh mục",
     icon: ClipboardDocumentListIcon,
     roles: ["teacher", "admin"],
   },
   {
     href: "/dashboard/grades/analytics",
-    title: "Grade Analytics",
-    description: "View class performance and grade distributions",
+    title: "Phân tích điểm",
+    description: "Xem hiệu suất lớp học và phân bố điểm",
     icon: DocumentChartBarIcon,
     roles: ["teacher", "admin"],
   },
   {
     href: "/dashboard/grades/reports",
-    title: "Grade Reports",
-    description: "Generate and export detailed grade reports",
+    title: "Báo cáo điểm",
+    description: "Tạo và xuất báo cáo điểm chi tiết",
     icon: DocumentTextIcon,
     roles: ["teacher", "admin"],
   },
   {
     href: "/dashboard/scores",
-    title: "My Grades",
-    description: "View your grades and assignment scores",
+    title: "Điểm của tôi",
+    description: "Xem điểm và kết quả bài tập của bạn",
     icon: AcademicCapIcon,
     roles: ["student"],
   },
@@ -66,7 +73,7 @@ export default function GradesPageModern() {
   const { user, loading } = useUser();
   
   if (loading) {
-    return <LoadingState message="Loading..." />;
+    return <LoadingState message="Đang tải..." />;
   }
   
   const userRole = user?.role || "";
@@ -79,11 +86,11 @@ export default function GradesPageModern() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">Grades & Assignments</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Điểm & Bài tập</h1>
           <p className="text-lg text-gray-600">
             {userRole === "student" 
-              ? "View your grades and academic progress"
-              : "Manage grades, assignments, and reports"}
+              ? "Xem điểm và tiến độ học tập của bạn"
+              : "Quản lý điểm, bài tập và báo cáo"}
           </p>
         </div>
         
@@ -106,7 +113,7 @@ export default function GradesPageModern() {
                       {card.description}
                     </p>
                     <div className="mt-6 px-6 py-2 bg-stone-900 text-white rounded-lg font-semibold flex items-center gap-2 hover:bg-stone-800 transition-colors">
-                      Open
+                      Mở
                       <Icons.ChevronRight className="w-4 h-4" />
                     </div>
                   </div>
@@ -118,10 +125,10 @@ export default function GradesPageModern() {
           <Card className="text-center py-16" padding="lg">
             <Icons.Lock className="w-12 h-12 text-stone-400 mx-auto mb-6" />
             <h3 className="text-2xl font-bold text-stone-900 mb-3">
-              Access Restricted
+              Quyền truy cập bị hạn chế
             </h3>
             <p className="text-stone-500 text-lg">
-              You don't have access to grades features.
+              Bạn không có quyền truy cập các tính năng điểm.
             </p>
           </Card>
         )}
@@ -130,36 +137,36 @@ export default function GradesPageModern() {
         {(userRole === "teacher" || userRole === "admin") && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card padding="lg" className="bg-stone-50 border-stone-200">
-              <h3 className="text-lg font-bold text-stone-900 mb-4">Quick Stats</h3>
+              <h3 className="text-lg font-bold text-stone-900 mb-4">Thống kê nhanh</h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
-                  <span className="text-stone-700 font-medium">Pending Grades</span>
+                  <span className="text-stone-700 font-medium">Điểm đang chờ</span>
                   <span className="font-bold text-2xl text-stone-600">-</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
-                  <span className="text-stone-700 font-medium">Active Assignments</span>
+                  <span className="text-stone-700 font-medium">Bài tập đang hoạt động</span>
                   <span className="font-bold text-2xl text-stone-600">-</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
-                  <span className="text-stone-700 font-medium">Total Students</span>
+                  <span className="text-stone-700 font-medium">Tổng số học sinh</span>
                   <span className="font-bold text-2xl text-stone-600">-</span>
                 </div>
               </div>
             </Card>
             
             <Card padding="lg" className="bg-stone-50 border-stone-200">
-              <h3 className="text-lg font-bold text-stone-900 mb-4">Recent Activity</h3>
+              <h3 className="text-lg font-bold text-stone-900 mb-4">Hoạt động gần đây</h3>
               <div className="text-center py-8 text-stone-500">
                 <Icons.Grades className="w-10 h-10 text-stone-400 mx-auto mb-2" />
-                <p>No recent activity</p>
+                <p>Không có hoạt động gần đây</p>
               </div>
             </Card>
             
             <Card padding="lg" className="bg-stone-50 border-stone-200">
-              <h3 className="text-lg font-bold text-stone-900 mb-4">Upcoming Deadlines</h3>
+              <h3 className="text-lg font-bold text-stone-900 mb-4">Hạn nộp sắp tới</h3>
               <div className="text-center py-8 text-stone-500">
                 <Icons.Attendance className="w-10 h-10 text-stone-400 mx-auto mb-2" />
-                <p>No upcoming deadlines</p>
+                <p>Không có hạn nộp sắp tới</p>
               </div>
             </Card>
           </div>

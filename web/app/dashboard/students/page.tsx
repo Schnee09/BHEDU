@@ -123,7 +123,7 @@ export default function StudentsPage() {
   // Handle errors
   useEffect(() => {
     if (error) {
-      toast.error('Failed to load students', error);
+      toast.error('Không thể tải danh sách học sinh', error);
       logger.error('Error loading students', new Error(error));
     }
   }, [error, toast]);
@@ -161,7 +161,7 @@ export default function StudentsPage() {
       return;
     }
     if (selectedIds.size === 0) {
-      toast.warning('No selection', 'Please select students to archive');
+      toast.warning('Chưa chọn', 'Vui lòng chọn học sinh để lưu trữ');
       return;
     }
     
@@ -209,7 +209,7 @@ export default function StudentsPage() {
       refetch();
     } catch (error) {
       logger.error('Bulk archive error', error instanceof Error ? error : new Error(String(error)), { originalError: String(error) });
-      toast.error('Archive failed', 'Failed to archive students');
+      toast.error('Lưu trữ thất bại', 'Không thể lưu trữ học sinh');
     }
   };
 
@@ -229,7 +229,7 @@ export default function StudentsPage() {
       const res = await apiFetch(`/api/students/${student.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to archive student');
+        throw new Error(errData.error || 'Không thể lưu trữ học sinh');
       }
 
       await createAuditLog({
@@ -269,10 +269,10 @@ export default function StudentsPage() {
       s.full_name,
       s.email || "",
       s.phone || "",
-      s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString() : "",
+      s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString('vi-VN') : "",
       s.grade_level || "",
       s.status || "active",
-      new Date(s.created_at).toLocaleDateString(),
+      new Date(s.created_at).toLocaleDateString('vi-VN'),
     ]);
     
     const csvContent = [
@@ -376,15 +376,15 @@ export default function StudentsPage() {
       
       {/* Header with Breadcrumb */}
       <PageHeader
-        title="Students"
-        description="Manage student records and information"
+        title="Học sinh"
+        description="Quản lý hồ sơ và thông tin học sinh"
         action={
           <Button
             variant="primary"
             onClick={() => setShowAddModal(true)}
             leftIcon={<Icons.Add className="w-4 h-4" />}
           >
-            Add Student
+            Thêm Học sinh
           </Button>
         }
       />
@@ -397,7 +397,7 @@ export default function StudentsPage() {
         {/* Filter Sidebar */}
         {showFilters && (
           <Card className="w-64 flex-shrink-0">
-            <CardHeader title="Filters" />
+            <CardHeader title="Bộ lọc" />
             <div className="space-y-4">
               {/* Grade Level Filter */}
               <div>
@@ -466,7 +466,7 @@ export default function StudentsPage() {
                 fullWidth
                 onClick={() => setFilters({ gradeLevel: '', status: '', gender: '' })}
               >
-                Clear Filters
+                Xóa bộ lọc
               </Button>
             </div>
           </Card>
@@ -479,7 +479,7 @@ export default function StudentsPage() {
               <div className="flex-1">
                 <Input
                   type="text"
-                  placeholder="Search students by name, email, or student ID..."
+                  placeholder="Tìm kiếm học sinh theo tên, email hoặc mã học sinh..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   leftIcon={<span>🔍</span>}
@@ -493,7 +493,7 @@ export default function StudentsPage() {
                   leftIcon={<Icons.Search className="w-4 h-4" />}
                   disabled={loading}
                 >
-                  Refresh
+                  Làm mới
                 </Button>
 
                 <Button
@@ -501,7 +501,7 @@ export default function StudentsPage() {
                   onClick={() => setShowFilters(!showFilters)}
                   leftIcon={showFilters ? <Icons.Close className="w-4 h-4" /> : <Icons.Filter className="w-4 h-4" />}
                 >
-                  {showFilters ? 'Hide' : 'Filters'}
+                  {showFilters ? 'Ẩn' : 'Bộ lọc'}
                 </Button>
                 
                 <Button
@@ -510,7 +510,7 @@ export default function StudentsPage() {
                   leftIcon={<Icons.Download className="w-4 h-4" />}
                   disabled={students.length === 0}
                 >
-                  Export
+                  Xuất dữ liệu
                 </Button>
                 
                 {hasAdminAccess && selectedIds.size > 0 && (
@@ -520,14 +520,14 @@ export default function StudentsPage() {
                     isLoading={archiving}
                     leftIcon={<Icons.Archive className="w-4 h-4" />}
                   >
-                    Archive ({selectedIds.size})
+                    Lưu trữ ({selectedIds.size})
                   </Button>
                 )}
 
                 {hasAdminAccess && (
                   <Link href={routes.students.import()}>
                     <Button variant="outline" leftIcon={<span>📤</span>}>
-                      Import
+                      Nhập dữ liệu
                     </Button>
                   </Link>
                 )}
@@ -536,17 +536,17 @@ export default function StudentsPage() {
             
             {/* Results info */}
             <div className="mt-3 text-sm text-slate-600 flex items-center gap-2">
-              <span>Showing {students.length} of {data?.total || 0} students</span>
+              <span>Hiển thị {students.length} trong tổng số {data?.total || 0} học sinh</span>
               {selectedIds.size > 0 && (
                 <>
                   <span>•</span>
-                  <Badge variant="info">{selectedIds.size} selected</Badge>
+                  <Badge variant="info">{selectedIds.size} đã chọn</Badge>
                 </>
               )}
               {(filters.gradeLevel || filters.status || filters.gender) && (
                 <>
                   <span>•</span>
-                  <Badge variant="warning">Filters active</Badge>
+                  <Badge variant="warning">Bộ lọc đang hoạt động</Badge>
                 </>
               )}
             </div>
@@ -556,10 +556,10 @@ export default function StudentsPage() {
       {error && (
         <Card className="mb-6 border-red-500">
           <div className="text-red-600">
-            <p className="font-semibold">Error loading students</p>
+            <p className="font-semibold">Lỗi khi tải danh sách học sinh</p>
             <p className="text-sm mt-1">{error}</p>
             <Button variant="outline" onClick={refetch} className="mt-3">
-              Retry
+              Thử lại
             </Button>
           </div>
         </Card>
@@ -569,20 +569,20 @@ export default function StudentsPage() {
       {!loading && students.length === 0 && !error && (
         <EmptyState
           icon={<Icons.Students className="w-12 h-12 text-gray-400" />}
-          title="No students found"
+          title="Không tìm thấy học sinh nào"
           description={
             debouncedSearch
-              ? "Try adjusting your search query"
-              : "Get started by importing or adding students"
+              ? "Hãy thử điều chỉnh từ khóa tìm kiếm"
+              : "Bắt đầu bằng cách nhập hoặc thêm học sinh"
           }
           action={
             <div className="flex gap-2">
               <Link href={routes.students.import()}>
-                <Button variant="primary">Import Students</Button>
+                <Button variant="primary">Nhập học sinh</Button>
               </Link>
               {debouncedSearch && (
                 <Button variant="outline" onClick={() => setSearchQuery('')}>
-                  Clear Search
+                  Xóa tìm kiếm
                 </Button>
               )}
             </div>
@@ -619,7 +619,7 @@ export default function StudentsPage() {
               },
               {
                 key: 'full_name',
-                label: 'Name',
+                label: 'Tên',
                 render: (student) => (
                   <Link 
                     href={`/dashboard/students/${student.id}`}
@@ -631,7 +631,7 @@ export default function StudentsPage() {
               },
               {
                 key: 'student_code',
-                label: 'Student ID',
+                label: 'Mã học sinh',
                 render: (student) => (
                   <span className="text-gray-600 font-mono text-sm">
                     {student.student_code || '-'}
@@ -647,7 +647,7 @@ export default function StudentsPage() {
               },
               {
                 key: 'grade_level',
-                label: 'Grade',
+                label: 'Lớp',
                 render: (student) => (
                   student.grade_level ? (
                     <Badge variant="info">{student.grade_level}</Badge>
@@ -658,14 +658,14 @@ export default function StudentsPage() {
               },
               {
                 key: 'phone',
-                label: 'Phone',
+                label: 'Điện thoại',
                 render: (student) => (
                   <span className="text-slate-700">{student.phone || '-'}</span>
                 ),
               },
               {
                 key: 'status',
-                label: 'Status',
+                label: 'Trạng thái',
                 render: (student) => (
                   <Badge variant={student.status === 'active' ? 'success' : 'default'}>
                     {student.status || 'active'}
@@ -674,16 +674,16 @@ export default function StudentsPage() {
               },
               {
                 key: 'created_at',
-                label: 'Joined',
+                label: 'Ngày tham gia',
                 render: (student) => (
                   <span className="text-gray-600 text-sm">
-                    {new Date(student.created_at).toLocaleDateString()}
+                    {new Date(student.created_at).toLocaleDateString('vi-VN')}
                   </span>
                 ),
               },
               {
                 key: 'actions',
-                label: 'Actions',
+                label: 'Hành động',
                 width: '160px',
                 render: (student) => (
                   <div className="flex items-center gap-2">
@@ -693,7 +693,7 @@ export default function StudentsPage() {
                       onClick={() => setEditingStudent(student)}
                       leftIcon={<Icons.Edit className="w-4 h-4" />}
                     >
-                      Edit
+                      Chỉnh sửa
                     </Button>
                     {hasAdminAccess && (
                       <Button
@@ -702,7 +702,7 @@ export default function StudentsPage() {
                         onClick={() => handleArchiveOne(student)}
                         leftIcon={<Icons.Archive className="w-4 h-4" />}
                       >
-                        Archive
+                        Lưu trữ
                       </Button>
                     )}
                   </div>
@@ -721,11 +721,11 @@ export default function StudentsPage() {
             onClick={pagination.prevPage}
             disabled={!pagination.hasPrevPage || loading}
           >
-            Previous
+            Trước
           </Button>
           
           <span className="text-sm text-slate-600">
-            Page {pagination.page} of {pagination.totalPages}
+            Trang {pagination.page} của {pagination.totalPages}
           </span>
           
           <Button
@@ -733,7 +733,7 @@ export default function StudentsPage() {
             onClick={pagination.nextPage}
             disabled={!pagination.hasNextPage || loading}
           >
-            Next
+            Tiếp theo
           </Button>
         </div>
       )}
@@ -822,15 +822,15 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
     const newErrors: Record<string, string> = {};
     
     if (!formData.full_name.trim()) {
-      newErrors.full_name = 'Full name is required';
+      newErrors.full_name = 'Họ tên là bắt buộc';
     }
     
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = 'Định dạng email không hợp lệ';
     }
     
     if (formData.phone && !/^\+?[\d\s-()]+$/.test(formData.phone)) {
-      newErrors.phone = 'Invalid phone format';
+      newErrors.phone = 'Định dạng số điện thoại không hợp lệ';
     }
     
     setErrors(newErrors);
@@ -860,7 +860,7 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to save student');
+        throw new Error(error.error || 'Không thể lưu học sinh');
       }
       
       onSuccess();

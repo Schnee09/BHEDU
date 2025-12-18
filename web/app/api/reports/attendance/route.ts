@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
-import { finished as streamFinished } from 'stream/promises'
+// Note: removed unused local fs/os/path imports used by older streaming implementation
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { getDataClient } from '@/lib/auth/dataClient'
 import { enforceRateLimit } from '@/lib/api/rateLimit'
@@ -142,8 +139,8 @@ export async function GET(request: Request) {
 
       // Stream to a temporary file and upload to storage when large to avoid high memory usage
       const STREAM_THRESHOLD = 2000
-      const bucket = process.env.REPORTS_STORAGE_BUCKET || 'reports'
-      const signedExpiry = Math.max(60, parseInt(process.env.REPORTS_STORAGE_SIGNED_EXPIRES || '3600', 10))
+  const _bucket = process.env.REPORTS_STORAGE_BUCKET || 'reports'
+  const _signedExpiry = Math.max(60, parseInt(process.env.REPORTS_STORAGE_SIGNED_EXPIRES || '3600', 10))
 
       if (processed.length > STREAM_THRESHOLD) {
         // Enqueue a background export job instead of writing a local temp file here.

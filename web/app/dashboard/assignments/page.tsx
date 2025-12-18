@@ -35,7 +35,7 @@ export default function AssignmentsPage() {
         const res = await apiFetch("/api/assignments");
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.error || "Failed to fetch assignments");
+          throw new Error(errorData.error || "Không thể tải bài tập");
         }
 
         const { data } = await res.json();
@@ -74,35 +74,35 @@ export default function AssignmentsPage() {
   const columns = [
     { 
       key: 'title', 
-      header: 'Title', 
+      header: 'Tiêu đề', 
       render: (row: Assignment) => <span className="font-medium text-stone-900">{row.title}</span> 
     },
     { 
       key: 'class', 
-      header: 'Class', 
+      header: 'Lớp', 
       render: (row: Assignment) => (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 text-xs font-medium">
           <Icons.Classes className="w-3 h-3" />
-          {row.class_name || 'Unknown Class'}
+          {row.class_name || 'Lớp không xác định'}
         </span>
       )
     },
     { 
       key: 'due_date', 
-      header: 'Due Date', 
+      header: 'Hạn nộp', 
       render: (r: Assignment) => (
         <div className="flex items-center gap-2 text-stone-600">
           <Icons.Calendar className="w-4 h-4 text-stone-400" />
-          {r.due_date ? new Date(r.due_date).toLocaleDateString() : "No due date"}
+          {r.due_date ? new Date(r.due_date).toLocaleDateString() : "Không có hạn"}
         </div>
       )
     },
     { 
       key: 'actions', 
-      header: 'Actions', 
+      header: 'Hành động', 
       render: (_r: Assignment) => (
         <button className="text-stone-600 hover:text-stone-900 font-medium text-sm inline-flex items-center gap-1">
-          View Details
+          Xem chi tiết
           <Icons.ChevronRight className="w-4 h-4" />
         </button>
       )
@@ -115,21 +115,21 @@ export default function AssignmentsPage() {
         <div>
           <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
             <Icons.Assignments className="w-8 h-8 text-stone-600" />
-            Assignments
+            Bài tập
           </h1>
-          <p className="text-stone-500 mt-1">View and manage your class assignments</p>
+          <p className="text-stone-500 mt-1">Xem và quản lý bài tập lớp học của bạn</p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <h2 className="text-lg font-semibold text-stone-900">Current Assignments</h2>
+          <h2 className="text-lg font-semibold text-stone-900">Bài tập hiện tại</h2>
         </CardHeader>
         <CardBody className="p-0">
           {assignments.length === 0 ? (
             <div className="p-8 text-center text-stone-500">
               <Icons.Assignments className="w-12 h-12 mx-auto mb-3 text-stone-400" />
-              <p>No assignments found.</p>
+              <p>Không tìm thấy bài tập nào.</p>
             </div>
           ) : (
             <Table

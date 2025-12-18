@@ -82,7 +82,7 @@ export function generateWelcomeEmail(data: {
   <div class="container">
     <div class="header">
       <h1 style="margin: 0;">Welcome to BH-EDU</h1>
-      <p style="margin: 10px 0 0 0;">Bethel Heights Educational Development</p>
+      <p style="margin: 10px 0 0 0;">Bui Hoang Education</p>
     </div>
     <div class="content">
       <p>Hello <strong>${firstName}</strong>,</p>
@@ -114,7 +114,7 @@ export function generateWelcomeEmail(data: {
       <p>Best regards,<br><strong>BH-EDU Team</strong></p>
     </div>
     <div class="footer">
-      <p>© 2024 Bethel Heights Educational Development. All rights reserved.</p>
+      <p>© 2024 Bui Hoang Education. All rights reserved.</p>
       <p>This is an automated message, please do not reply to this email.</p>
     </div>
   </div>
@@ -188,7 +188,7 @@ export function generatePasswordResetEmail(data: {
       <p>Best regards,<br><strong>BH-EDU Team</strong></p>
     </div>
     <div class="footer">
-      <p>© 2024 Bethel Heights Educational Development. All rights reserved.</p>
+      <p>© 2024 Bui Hoang Education. All rights reserved.</p>
     </div>
   </div>
 </body>

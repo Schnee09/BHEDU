@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api/client";
+import { createClient } from "@/lib/supabase/client";
 import { showToast } from "@/components/ToastProvider";
 import { Icons } from "@/components/ui/Icons";
 
@@ -20,17 +21,19 @@ interface Subject {
   code: string;
 }
 
-const GRADE_COMPONENTS = [
-  { type: 'oral', name_vi: 'Điểm miệng', name_en: 'Oral', weight: 1, color: 'bg-blue-50' },
-  { type: 'fifteen_min', name_vi: 'Điểm 15 phút', name_en: '15-min Test', weight: 1, color: 'bg-green-50' },
-  { type: 'one_period', name_vi: 'Điểm 1 tiết', name_en: '45-min Test', weight: 2, color: 'bg-yellow-50' },
-  { type: 'midterm', name_vi: 'Điểm giữa kỳ', name_en: 'Midterm', weight: 2, color: 'bg-orange-50' },
-  { type: 'final', name_vi: 'Điểm cuối kỳ', name_en: 'Final', weight: 3, color: 'bg-red-50' },
-];
+interface EvaluationType {
+  id: string;
+  name: string;
+  code: string;
+  weight: number;
+  type: string; // derived from code
+  color: string;
+}
 
 export default function VietnameseGradeEntryPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [evaluationTypes, setEvaluationTypes] = useState<EvaluationType[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedSemester, setSelectedSemester] = useState<string>("HK1");
   const [selectedClass, setSelectedClass] = useState<string>("");
@@ -39,9 +42,31 @@ export default function VietnameseGradeEntryPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    fetchEvaluationTypes();
     fetchClasses();
     fetchSubjects();
   }, []);
+
+  const fetchEvaluationTypes = async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('evaluation_types')
+      .select('*')
+      .order('weight', { ascending: true });
+      
+    if (data) {
+      const colors = ['bg-blue-50', 'bg-green-50', 'bg-yellow-50', 'bg-orange-50', 'bg-red-50', 'bg-purple-50'];
+      const mapped = data.map((type: any, index: number) => ({
+        ...type,
+        type: type.code.toLowerCase(),
+        color: colors[index % colors.length]
+      }));
+      setEvaluationTypes(mapped);
+    } else if (error) {
+      console.error("Error fetching evaluation types:", error);
+    }
+  };
+
 
    
   useEffect(() => {
@@ -120,7 +145,7 @@ export default function VietnameseGradeEntryPage() {
     let totalWeighted = 0;
     let totalWeight = 0;
 
-    GRADE_COMPONENTS.forEach(component => {
+    evaluationTypes.forEach(component => {
       const grade = grades[component.type];
       if (grade !== null && grade !== undefined) {
         totalWeighted += grade * component.weight;
@@ -259,9 +284,9 @@ export default function VietnameseGradeEntryPage() {
                   <th className="px-4 py-3 text-left font-semibold sticky left-0 bg-blue-600 z-10">STT</th>
                   <th className="px-4 py-3 text-left font-semibold sticky left-12 bg-blue-600 z-10">Mã HS</th>
                   <th className="px-4 py-3 text-left font-semibold min-w-[200px]">Họ và tên</th>
-                  {GRADE_COMPONENTS.map((component) => (
+                  {evaluationTypes.map((component) => (
                     <th key={component.type} className={`px-4 py-3 text-center font-semibold min-w-[120px]`}>
-                      <div>{component.name_vi}</div>
+                      <div>{component.name}</div>
                       <div className="text-xs font-normal opacity-90">Hệ số: {component.weight}</div>
                     </th>
                   ))}
@@ -279,7 +304,7 @@ export default function VietnameseGradeEntryPage() {
                       <td className="px-4 py-3 text-center font-medium sticky left-0 bg-white">{index + 1}</td>
                       <td className="px-4 py-3 text-sm text-gray-600 sticky left-12 bg-white">{student.student_code}</td>
                       <td className="px-4 py-3 font-medium text-gray-800">{student.full_name}</td>
-                      {GRADE_COMPONENTS.map((component) => (
+                      {evaluationTypes.map((component) => (
                         <td key={component.type} className={`px-2 py-2 ${component.color}`}>
                           <input
                             type="number"

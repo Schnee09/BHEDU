@@ -26,7 +26,7 @@ describe('Header smoke', () => {
     render(<Header profile={profile} />);
 
     // Brand title should be present
-    expect(screen.getByText(/Bethel Heights/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bui Hoang Education/i)).toBeInTheDocument();
 
     // Quick actions button exists (toggled content loads on click normally) - ensure Search/Quick Actions present
     expect(screen.getAllByRole('button').length).toBeGreaterThan(0);

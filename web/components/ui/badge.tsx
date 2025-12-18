@@ -53,6 +53,8 @@ export default function Badge({
   );
 }
 
+export { Badge }
+
 /**
  * Status Dot - Minimal status indicator
  */
