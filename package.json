@@ -35,7 +35,7 @@
   },
   "lint-staged": {
     "web/**/*.{js,jsx,ts,tsx}": [
-      "eslint --ext .ts,.tsx,.js,.jsx --config web/eslint.config.mjs --fix"
+      "web/node_modules/.bin/eslint --ext .ts,.tsx,.js,.jsx --config web/eslint.config.mjs --fix"
     ]
   }
 }
