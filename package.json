@@ -35,7 +35,7 @@
   },
   "lint-staged": {
     "web/**/*.{js,jsx,ts,tsx}": [
-      "npm --prefix web run lint:fix --quiet || true"
+      "eslint --ext .ts,.tsx,.js,.jsx --config web/eslint.config.mjs --fix"
     ]
   }
 }
