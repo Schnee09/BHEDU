@@ -337,7 +337,7 @@ async function seedDatabase() {
     
     if (!existingSettings?.length) {
       const settingsData = [
-        { key: 'school_name', value: 'BH Education Center', description: 'Official name of the school' },
+        { key: 'school_name', value: 'Bui Hoang Education', description: 'Official name of the school' },
         { key: 'school_address', value: '123 Education Street, District 1, Ho Chi Minh City, Vietnam', description: 'School physical address' },
         { key: 'school_phone', value: '+84 28 1234 5678', description: 'Main contact phone number' },
         { key: 'school_email', value: 'contact@bhedu.example.com', description: 'Official school email' },

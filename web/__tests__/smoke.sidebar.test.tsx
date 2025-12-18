@@ -16,10 +16,10 @@ jest.mock('@/hooks/useProfile', () => ({
 
 describe('Sidebar smoke', () => {
   it('renders sidebar and shows Students link for admin role', () => {
-    render(<Sidebar />);
+    const { container } = render(<Sidebar />);
 
-    // Check for Students link text - should be present for admin
-    const studentsLink = screen.getByText(/Students/i);
-    expect(studentsLink).toBeInTheDocument();
+    // Check for the students link by href (label may be localized)
+    const studentsAnchor = container.querySelector('a[href="/dashboard/students"]');
+    expect(studentsAnchor).toBeInTheDocument();
   });
 });

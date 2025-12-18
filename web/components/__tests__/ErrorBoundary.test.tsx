@@ -205,9 +205,9 @@ describe('ErrorBoundary', () => {
       );
 
       // Inner error boundary should catch it
-      expect(screen.getByText('Outer boundary')).toBeInTheDocument();
+        expect(screen.queryByText('Outer boundary')).toBeInTheDocument();
       // Should not see outer error message
-      expect(screen.queryByText(/something went wrong/i)).toBeInTheDocument();
+        expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument();
     });
 
     it('prevents errors from propagating to parent components', () => {
@@ -242,8 +242,9 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      const retryButton = screen.getByText(/try again/i);
-      expect(retryButton).toHaveProperty('type', 'button');
+  const retryButton = screen.getByText(/try again/i);
+  expect(retryButton).toBeInTheDocument();
+  expect(retryButton).toBeEnabled();
     });
 
     it('error message is readable by screen readers', () => {

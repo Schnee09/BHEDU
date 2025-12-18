@@ -10,6 +10,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
     "seed": "node scripts/seed-data.js",
+    "seed-vietnamese-scale": "node scripts/seed-vietnamese-grading-scale.js",
+    "seed-vietnamese-academic-years": "node scripts/seed-vietnamese-academic-years.js",
+    "seed-vietnamese-subjects": "node scripts/seed-vietnamese-subjects.js",
     "check-tables": "node scripts/check-supabase-tables.js"
   },
   "keywords": [],
