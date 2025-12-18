@@ -38,15 +38,38 @@ export default function AttendancePage() {
       // Option A: canonical role-aware endpoint.
       // Server will scope results based on viewer role.
       const res = await apiFetch('/api/attendance');
+
+      // Defensive JSON parsing: some error responses may not be JSON
+      const safeParseJson = async (r: Response) => {
+        try {
+          return await r.json();
+        } catch {
+          return { error: r.statusText || `HTTP ${r.status}` };
+        }
+      };
+
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        const errorMessage = errorData.error || 'Không thể tải điểm danh';
-        
+        const errorData = await safeParseJson(res);
+        const errorMessage = (errorData && (errorData.error || errorData.message)) || 'Không thể tải điểm danh';
+
+        // Handle common auth/permission statuses
+        if (res.status === 401) {
+          setError('Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.');
+          setIsLoading(false);
+          return;
+        }
+
+        if (res.status === 403) {
+          setError('Bạn không có quyền truy cập dữ liệu điểm danh.');
+          setIsLoading(false);
+          return;
+        }
+
         // Check if rate limited
-        if (res.status === 429 || errorMessage.includes('Rate limit')) {
+        if (res.status === 429 || String(errorMessage).toLowerCase().includes('rate limit') || String(errorMessage).toLowerCase().includes('blocked')) {
           setIsRateLimited(true);
           // Extract retry time from error message if available
-          const match = errorMessage.match(/Blocked until ([^"]+)/);
+          const match = String(errorMessage).match(/Blocked until ([^\"]+)/);
           if (match) {
             const blockedUntil = new Date(match[1]).getTime();
             const now = Date.now();
@@ -56,9 +79,11 @@ export default function AttendancePage() {
             setRetryCountdown(60); // Default 60 second countdown
           }
         }
-        throw new Error(errorMessage);
+
+        throw new Error(String(errorMessage));
       }
-      const response = await res.json();
+
+      const response = await safeParseJson(res);
       // Extract records array from response object (API returns { data: [] })
       const recordsData = Array.isArray(response)
         ? response
