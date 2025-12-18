@@ -69,7 +69,7 @@ export default function NotificationsPage() {
       <div className="p-6 max-w-4xl mx-auto flex justify-center items-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3 text-stone-500">
           <Icons.Progress className="w-8 h-8 animate-spin text-stone-600" />
-          <p>Loading notifications...</p>
+          <p>Đang tải thông báo...</p>
         </div>
       </div>
     );
@@ -81,9 +81,9 @@ export default function NotificationsPage() {
         <div>
           <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
             <Icons.Notifications className="w-8 h-8 text-stone-600" />
-            Notifications
+            Thông báo
           </h1>
-          <p className="text-stone-500 mt-1">Stay updated with your latest alerts</p>
+          <p className="text-stone-500 mt-1">Cập nhật với các cảnh báo mới nhất của bạn</p>
         </div>
       </div>
 
@@ -91,7 +91,7 @@ export default function NotificationsPage() {
         <Card>
           <CardBody className="text-center py-12 text-stone-500">
             <Icons.Notifications className="w-12 h-12 mx-auto mb-3 text-stone-400" />
-            <p>No notifications yet</p>
+            <p>Chưa có thông báo nào</p>
           </CardBody>
         </Card>
       ) : (
@@ -119,14 +119,14 @@ export default function NotificationsPage() {
                     </h3>
                     {!notification.is_read && (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-200 text-stone-800">
-                        New
+                        Mới
                       </span>
                     )}
                   </div>
                   <p className="text-stone-600 mb-3 leading-relaxed">{notification.message}</p>
                   <div className="flex items-center gap-2 text-xs text-stone-500">
                     <Icons.Calendar className="w-4 h-4" />
-                    {new Date(notification.created_at).toLocaleString()}
+                    {new Date(notification.created_at).toLocaleString('vi-VN')}
                   </div>
                 </div>
               </CardBody>

@@ -77,6 +77,10 @@ export async function GET(
       .order('due_date', { ascending: false })
       .limit(10)
 
+    if (assignError) {
+      logger.warn('Failed to fetch assignments for class', { classId, error: assignError });
+    }
+
     // Get recent attendance summary
     const { data: recentAttendance } = await supabase
       .from('attendance')

@@ -60,18 +60,37 @@ export async function GET(request: NextRequest) {
       query = query.filter('assignment.class_id', 'eq', queryParams.class_id)
     }
 
-    // Verify access
+    // Verify access: non-admins can only see grades for their classes.
     if (authResult.userRole !== 'admin') {
-      // Get teacher's classes
-      const { data: teacherClasses } = await supabase
+      const { data: teacherClasses, error: classesError } = await supabase
         .from('classes')
         .select('id')
         .eq('teacher_id', authResult.userId)
 
-      const classIds = teacherClasses?.map(c => c.id) || []
-      
+      if (classesError) {
+        logger.error('Failed to fetch teacher classes for grade access check:', {
+          error: classesError.message,
+          errorCode: classesError.code,
+        })
+        throw new Error(`Database error: ${classesError.message}`)
+      }
+
+      const classIds = teacherClasses?.map((c) => c.id) || []
       if (classIds.length === 0) {
         return NextResponse.json({ success: true, grades: [] })
+      }
+
+      // If the caller didn't specify class_id, enforce restriction to teacher's classes.
+      // If caller did specify class_id, ensure it is one of teacher's classes.
+      if (queryParams.class_id) {
+        if (!classIds.includes(queryParams.class_id)) {
+          return NextResponse.json(
+            { error: 'Access denied' },
+            { status: 403 }
+          )
+        }
+      } else {
+        query = query.in('assignment.class_id', classIds)
       }
     }
 
@@ -106,7 +125,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
+  const body = await request.json()
     
     // Check if it's bulk entry or single grade
     let validatedData;
@@ -120,11 +139,35 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient()
     
+    const normalizeRow = (row: any) => {
+      // Prefer points_earned. If only legacy score provided, use it.
+      const pointsEarned = row.points_earned ?? row.score ?? null
+
+      // Keep the points-only workflow: if missing/excused is true, treat points as null.
+      const missing = !!row.missing
+      const excused = !!row.excused
+
+      return {
+        student_id: row.student_id,
+        assignment_id: row.assignment_id,
+        points_earned: missing || excused ? null : pointsEarned,
+        late: !!row.late,
+        excused,
+        missing,
+        feedback: row.feedback ?? row.notes ?? null,
+        graded_at: row.graded_at,
+      }
+    }
+
     if ('grades' in validatedData) {
       // Bulk insert
+      const gradeRows = (validatedData.grades as any[]).map((g) =>
+        normalizeRow({ ...g, assignment_id: validatedData.assignment_id, graded_at: validatedData.graded_at })
+      )
+
       const { data, error } = await supabase
         .from('grades')
-        .insert(validatedData.grades)
+        .insert(gradeRows)
         .select()
       
       if (error) {
@@ -138,9 +181,10 @@ export async function POST(request: NextRequest) {
       }, { status: 201 })
     } else {
       // Single insert
+      const gradeRow = normalizeRow(validatedData)
       const { data, error } = await supabase
         .from('grades')
-        .insert(validatedData)
+        .insert(gradeRow)
         .select()
         .single()
       

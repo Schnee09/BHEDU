@@ -85,7 +85,7 @@ export function useUser(): UseUserResult {
       hasFetchedRef.current = true;
       fetchUser();
     }
-  }, []);
+  }, [fetchUser]);
 
   const isAdmin = user?.role === 'admin';
   const isStaff = user?.role === 'staff';

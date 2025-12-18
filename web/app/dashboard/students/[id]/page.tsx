@@ -12,6 +12,9 @@ import GuardianManagement from "@/components/GuardianManagement";
 import EnrollmentManager from "@/components/EnrollmentManager";
 import StudentPhotoUpload from "@/components/StudentPhotoUpload";
 
+import StudentStatusPanel from "../../../../components/StudentStatusPanel";
+import ImportHistoryPanel from "../../../../components/ImportHistoryPanel";
+
 /**
  * Fetch student data using the provided Supabase client.
  * This allows higher-privilege callers (admin) to pass a service client
@@ -52,7 +55,7 @@ async function fetchStudentWithClient(supabase: any, id: string) {
       .limit(20),
     supabase
       .from("grades")
-      .select("id, assignment_id, score, feedback, graded_at, assignments(title, max_points)")
+      .select("id, assignment_id, points_earned, score, feedback, graded_at, assignments(title, total_points, max_points)")
       .eq("student_id", id)
       .order("graded_at", { ascending: false })
       .limit(20),
@@ -184,13 +187,13 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                   <div className="flex items-center gap-2 text-sm text-gray-700">
                     <CakeIcon className="w-4 h-4 text-gray-500" />
                     <span className="text-gray-500">Date of Birth:</span>
-                    <span className="font-medium">{new Date(profile.date_of_birth).toLocaleDateString()}</span>
+                    <span className="font-medium">{new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-sm text-gray-700">
                   <Icons.Calendar className="w-4 h-4 text-gray-500" />
                   <span className="text-gray-500">Joined:</span>
-                  <span className="font-medium">{new Date(profile.created_at).toLocaleDateString()}</span>
+                  <span className="font-medium">{new Date(profile.created_at).toLocaleDateString('vi-VN')}</span>
                 </div>
               </div>
             </div>
@@ -282,7 +285,7 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
             <tbody className="divide-y divide-gray-100">
               {attendance.map((a: any) => (
                 <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">{new Date(a.date).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">{new Date(a.date).toLocaleDateString('vi-VN')}</td>
                   <td className="px-4 py-3">{a.class_id}</td>
                   <td className="px-4 py-3">
                     <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'}>
@@ -319,7 +322,7 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 <tr key={g.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-900">{g.assignments?.title ?? g.assignment_id}</td>
                   <td className="px-4 py-3">
-                    <span className="font-semibold text-blue-600">{g.score}</span>
+                    <span className="font-semibold text-blue-600">{g.score ?? g.points_earned ?? '—'}</span>
                     <span className="text-gray-500"> / {g.assignments?.max_points ?? '-'}</span>
                   </td>
                   <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString() : '-'}</td>
@@ -343,12 +346,12 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
           </Card>
           <Card padding="md" className="bg-gradient-to-br from-emerald-50 to-green-50">
             <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Current Balance</p>
-            <p className="text-xl font-bold text-emerald-900 mt-2">${accountInfo?.balance ?? '0'}</p>
+            <p className="text-xl font-bold text-emerald-900 mt-2">₫{accountInfo?.balance ?? '0'}</p>
           </Card>
           <Card padding="md" className="bg-gradient-to-br from-blue-50 to-indigo-50">
             <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Last Payment</p>
             <p className="text-sm font-semibold text-blue-900 mt-2">
-              {accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString() : 'No payments yet'}
+              {accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN') : 'No payments yet'}
             </p>
           </Card>
         </div>
@@ -382,9 +385,9 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                           {inv.status}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 font-medium">${inv.total_amount}</td>
-                      <td className="px-4 py-3 font-semibold text-red-600">${inv.balance}</td>
-                      <td className="px-4 py-3 text-gray-600">{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '—'}</td>
+                      <td className="px-4 py-3 font-medium">₫{inv.total_amount}</td>
+                      <td className="px-4 py-3 font-semibold text-red-600">₫{inv.balance}</td>
+                      <td className="px-4 py-3 text-gray-600">{inv.due_date ? new Date(inv.due_date).toLocaleDateString('vi-VN') : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -410,8 +413,8 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 <tbody className="divide-y divide-gray-100">
                   {paymentRows.map((p) => (
                     <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-gray-600">{p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '—'}</td>
-                      <td className="px-4 py-3 font-semibold text-green-600">${p.amount}</td>
+                      <td className="px-4 py-3 text-gray-600">{p.payment_date ? new Date(p.payment_date).toLocaleDateString('vi-VN') : '—'}</td>
+                      <td className="px-4 py-3 font-semibold text-green-600">₫{p.amount}</td>
                       <td className="px-4 py-3">{p.payment_methods?.name ?? '—'}</td>
                       <td className="px-4 py-3 text-gray-600">{p.transaction_reference ?? '—'}</td>
                     </tr>
@@ -442,6 +445,18 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
   const guardiansSection = (
     <Card padding="lg">
       <GuardianManagement studentId={id} />
+    </Card>
+  );
+
+  const statusSection = (
+    <Card padding="lg">
+      <StudentStatusPanel studentId={id} currentStatus={(profile as any).status ?? 'active'} isAdmin={viewerRole === 'admin'} />
+    </Card>
+  );
+
+  const importSection = (
+    <Card padding="lg">
+      <ImportHistoryPanel />
     </Card>
   );
 
@@ -500,10 +515,12 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       {(() => {
         const tabs: { key: string; label: string; content: React.ReactNode }[] = [
           { key: "overview", label: "Overview", content: overview },
+          { key: "status", label: "Status", content: statusSection },
           { key: "enrollments", label: "Enrollments", content: enrollmentsSection },
           { key: "guardians", label: "Guardians", content: guardiansSection },
           { key: "attendance", label: "Attendance", content: attendanceSection },
           { key: "grades", label: "Grades", content: gradesSection },
+          { key: "imports", label: "Imports", content: importSection },
           { key: "documents", label: "Documents", content: documentsSection },
           { key: "notes", label: "Notes", content: notesSection },
         ];

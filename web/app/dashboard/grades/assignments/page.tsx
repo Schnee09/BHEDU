@@ -100,7 +100,7 @@ export default function AssignmentManagementPage() {
     e.preventDefault()
 
     if (!selectedClass) {
-      alert('Please select a class')
+      alert('Vui lòng chọn lớp')
       return
     }
 
@@ -133,7 +133,7 @@ export default function AssignmentManagementPage() {
     e.preventDefault()
 
     if (!selectedClass) {
-      alert('Please select a class')
+      alert('Vui lòng chọn lớp')
       return
     }
 
@@ -301,11 +301,11 @@ export default function AssignmentManagementPage() {
                                 )}
                                 {assignment.due_date && (
                                   <span>
-                                    📅 Due: {new Date(assignment.due_date).toLocaleDateString()}
+                                    📅 Due: {new Date(assignment.due_date).toLocaleDateString('vi-VN')}
                                   </span>
                                 )}
                                 <span>
-                                  📅 Assigned: {new Date(assignment.assigned_date).toLocaleDateString()}
+                                  📅 Assigned: {new Date(assignment.assigned_date).toLocaleDateString('vi-VN')}
                                 </span>
                               </div>
                             </div>

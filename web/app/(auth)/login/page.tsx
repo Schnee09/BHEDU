@@ -89,29 +89,29 @@ export default function LoginPage() {
               </div>
             </div>
             <h2 className="text-3xl font-bold bg-gradient-to-br from-blue-600 to-blue-800 bg-clip-text text-transparent font-heading mb-2">
-              Welcome Back
+              Chào mừng trở lại
             </h2>
-            <p className="text-slate-600">Sign in to access your dashboard</p>
+            <p className="text-slate-600">Đăng nhập để truy cập bảng điều khiển</p>
           </div>
 
         <form onSubmit={signInWithPassword} className="space-y-5">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Email Address
+              Địa chỉ Email
             </label>
             <input
               className="w-full border-2 border-slate-200 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
-              placeholder="you@example.com"
+              placeholder="ban@example.com"
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Password
+              Mật khẩu
             </label>
             <input
               className="w-full border-2 border-slate-200 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
@@ -134,9 +134,9 @@ export default function LoginPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Signing in...
+                Đang đăng nhập...
               </span>
-            ) : "Sign In"}
+            ) : "Đăng nhập"}
           </button>
 
           <div className="flex justify-between items-center text-sm mt-4">
@@ -145,13 +145,13 @@ export default function LoginPage() {
               onClick={signInWithMagicLink}
               className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors"
             >
-              Use Magic Link
+              Sử dụng Magic Link
             </button>
             <a
               href="/forgot-password"
               className="text-slate-600 hover:text-blue-600 font-medium transition-colors"
             >
-              Forgot Password?
+              Quên mật khẩu?
             </a>
           </div>
 
@@ -160,7 +160,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-slate-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-slate-700 font-medium">OR</span>
+              <span className="px-4 bg-white text-slate-700 font-medium">HOẶC</span>
             </div>
           </div>
 
@@ -170,7 +170,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 bg-stone-700 hover:bg-stone-800 text-white font-semibold rounded-lg transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2"
           >
-            Demo Login
+            Đăng nhập Demo
           </button>
 
           {error && (
@@ -196,9 +196,9 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-sm mt-6 text-slate-600">
-          Don't have an account?{" "}
+          Chưa có tài khoản?{" "}
           <a href="/signup" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline transition-colors">
-            Create one
+            Tạo tài khoản
           </a>
         </p>
         </div>

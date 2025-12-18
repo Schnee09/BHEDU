@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api/client";
+import { routes } from "@/lib/routes";
 import {
   LineChart,
   Line,
@@ -136,7 +137,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                 ← Quay lại
               </button>
               <button
-                onClick={() => router.push(`/dashboard/students/${resolvedParams.id}/transcript`)}
+                onClick={() => router.push(routes.students.transcript(resolvedParams.id))}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2"
               >
                 📄 In học bạ

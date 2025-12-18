@@ -60,9 +60,13 @@ export interface StudentWithEnrollments extends Student {
  * - Attaches Supabase access token (Authorization: Bearer) when available
  */
 export async function apiFetch(url: string, options?: RequestInit) {
+  // Be careful with header merging:
+  // - Respect caller-provided Content-Type
+  // - Allow callers to omit Content-Type entirely (e.g. FormData)
+  const incomingHeaders = (options?.headers ?? {}) as Record<string, string>;
   const baseHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options?.headers as Record<string, string> | undefined),
+    ...(incomingHeaders || {}),
+    ...(!('Content-Type' in (incomingHeaders || {})) ? { 'Content-Type': 'application/json' } : {}),
   }
   let authorizationHeader: string | undefined
 

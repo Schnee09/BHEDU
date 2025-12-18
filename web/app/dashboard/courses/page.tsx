@@ -18,7 +18,7 @@ import {
   Input, 
   Modal
 } from "@/components/ui";
-import { Card, CardHeader, StatCard } from "@/components/ui/Card";
+import { Card, StatCard } from "@/components/ui/Card";
 import { Table } from "@/components/ui/table";
 import Badge from "@/components/ui/badge";
 import { SkeletonStatCard, SkeletonTable } from "@/components/ui/skeleton";
@@ -81,15 +81,15 @@ export default function CoursesPage() {
   
   // Mutations
   const { mutate: createCourse, loading: creating } = useMutation('/api/admin/courses', 'POST');
-  const { mutate: updateCourse, loading: updating } = useMutation('/api/admin/courses', 'PUT');
+  const { mutate: _updateCourse, loading: updating } = useMutation('/api/admin/courses', 'PUT');
   
   // Handle fetch errors
   useEffect(() => {
     if (error) {
-      toast.error('Failed to load courses', error);
+      toast.error('Không thể tải môn học', error);
       logger.error('Error loading courses', new Error(error));
     }
-  }, [error, toast.error]);
+  }, [error, toast]);
   
   // Filter courses by search (memoized for performance)
   const courses = useMemo(() => {
@@ -115,7 +115,7 @@ export default function CoursesPage() {
   }, [courses.length, pagination]);
   
   // Selection handlers
-  const handleSelectAll = () => {
+  const _handleSelectAll = () => {
     if (selectedIds.size === paginatedCourses.length) {
       setSelectedIds(new Set());
     } else {
@@ -138,9 +138,9 @@ export default function CoursesPage() {
     const errors: Partial<CourseFormData> = {};
     
     if (!formData.title.trim()) {
-      errors.title = "Course title is required";
+      errors.title = "Tên môn học là bắt buộc";
     } else if (formData.title.length < 3) {
-      errors.title = "Title must be at least 3 characters";
+      errors.title = "Tên phải có ít nhất 3 ký tự";
     }
     
     setFormErrors(errors);
@@ -190,15 +190,15 @@ export default function CoursesPage() {
         
         if (!result.ok) {
           const errorData = await result.json();
-          throw new Error(errorData.error || 'Failed to update course');
+          throw new Error(errorData.error || 'Không thể cập nhật môn học');
         }
         
-        toast.success('Course updated', `"${formData.title}" has been updated`);
+        toast.success('Đã cập nhật môn học', `"${formData.title}" đã được cập nhật`);
         setEditingCourse(null);
       } else {
         // Create new course
         await createCourse(formData);
-        toast.success('Course created', `"${formData.title}" has been created`);
+        toast.success('Đã tạo môn học', `"${formData.title}" đã được tạo`);
         setShowAddModal(false);
       }
       
@@ -221,10 +221,10 @@ export default function CoursesPage() {
       
       if (!result.ok) {
         const errorData = await result.json();
-        throw new Error(errorData.error || 'Failed to delete course');
+        throw new Error(errorData.error || 'Không thể xóa môn học');
       }
       
-      toast.success('Course deleted', `"${courseToDelete.title || courseToDelete.name}" has been deleted`);
+      toast.success('Đã xóa môn học', `"${courseToDelete.title || courseToDelete.name}" đã được xóa`);
       setCourseToDelete(null);
       refetch();
     } catch (err) {
@@ -237,11 +237,11 @@ export default function CoursesPage() {
   // Bulk delete
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) {
-      toast.warning('No selection', 'Please select courses to delete');
+      toast.warning('Chưa chọn', 'Vui lòng chọn môn học để xóa');
       return;
     }
     
-    if (!confirm(`Delete ${selectedIds.size} course(s)? This action cannot be undone.`)) {
+    if (!confirm(`Xóa ${selectedIds.size} môn học? Hành động này không thể hoàn tác.`)) {
       return;
     }
     
@@ -258,13 +258,13 @@ export default function CoursesPage() {
       if (failed > 0) {
         toast.warning('Partial success', `Deleted ${succeeded} courses, ${failed} failed`);
       } else {
-        toast.success('Courses deleted', `Successfully deleted ${succeeded} course(s)`);
+        toast.success('Đã xóa môn học', `Đã xóa thành công ${succeeded} môn học`);
       }
       
       setSelectedIds(new Set());
       refetch();
     } catch (err) {
-      toast.error('Delete failed', 'Failed to delete courses');
+      toast.error('Xóa thất bại', 'Không thể xóa môn học');
       logger.error('Bulk delete error', err as Error);
     }
   };
@@ -285,7 +285,7 @@ export default function CoursesPage() {
       c.id,
       c.title || c.name || "",
       c.description || "",
-      new Date(c.created_at).toLocaleDateString()
+      new Date(c.created_at).toLocaleDateString('vi-VN')
     ]);
     
     const csvContent = [
@@ -303,7 +303,7 @@ export default function CoursesPage() {
     link.click();
     document.body.removeChild(link);
     
-    toast.success('Export complete', `Exported ${coursesToExport.length} course(s)`);
+    toast.success('Xuất hoàn thành', `Đã xuất ${coursesToExport.length} môn học`);
   };
   
   // Table columns
@@ -322,7 +322,7 @@ export default function CoursesPage() {
     },
     {
       key: 'title',
-      header: 'Course Title',
+      header: 'Tên môn học',
       render: (course: Course) => (
         <div>
           <p className="font-medium text-stone-900">{course.title || course.name}</p>
@@ -334,11 +334,11 @@ export default function CoursesPage() {
     },
     {
       key: 'subject',
-      header: 'Subject',
+      header: 'Môn học',
       render: (course: Course) => (
         <span className="text-stone-600">
           {course.subject_id ? (
-            <Badge variant="info">Linked</Badge>
+            <Badge variant="info">Đã liên kết</Badge>
           ) : (
             <span className="text-stone-400">—</span>
           )}
@@ -347,16 +347,16 @@ export default function CoursesPage() {
     },
     {
       key: 'created_at',
-      header: 'Created',
+      header: 'Được tạo',
       render: (course: Course) => (
         <span className="text-sm text-stone-600">
-          {new Date(course.created_at).toLocaleDateString()}
+          {new Date(course.created_at).toLocaleDateString('vi-VN')}
         </span>
       )
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: 'Thao tác',
       render: (course: Course) => (
         <div className="flex gap-2">
           <Button
@@ -364,7 +364,7 @@ export default function CoursesPage() {
             size="sm"
             onClick={() => handleEditClick(course)}
           >
-            Edit
+            Chỉnh sửa
           </Button>
           <Button
             variant="ghost"
@@ -372,7 +372,7 @@ export default function CoursesPage() {
             onClick={() => setCourseToDelete(course)}
             className="text-red-600 hover:text-red-700 hover:bg-red-50"
           >
-            Delete
+            Xóa
           </Button>
         </div>
       )
@@ -411,26 +411,26 @@ export default function CoursesPage() {
         
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-stone-900 mb-2">Courses</h1>
-          <p className="text-lg text-stone-600">Manage courses and curriculum</p>
+          <h1 className="text-4xl font-bold text-stone-900 mb-2">Môn học</h1>
+          <p className="text-lg text-stone-600">Quản lý môn học và chương trình giảng dạy</p>
         </div>
         
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <StatCard
-            label="Total Courses"
+            label="Tổng số môn học"
             value={data?.data?.length || 0}
             icon={<Icons.Classes className="w-6 h-6" />}
             color="slate"
           />
           <StatCard
-            label="With Subject"
+            label="Có môn học"
             value={(data?.data || []).filter(c => c.subject_id).length}
             icon={<Icons.Success className="w-6 h-6" />}
             color="green"
           />
           <StatCard
-            label="With Teacher"
+            label="Có giáo viên"
             value={(data?.data || []).filter(c => c.teacher_id).length}
             icon={<Icons.Teachers className="w-6 h-6" />}
             color="purple"
@@ -442,7 +442,7 @@ export default function CoursesPage() {
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 w-full md:w-auto">
               <Input
-                placeholder="Search courses..."
+                placeholder="Tìm kiếm môn học..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full"
@@ -452,18 +452,18 @@ export default function CoursesPage() {
               {selectedIds.size > 0 && (
                 <>
                   <Badge variant="info" className="py-2 px-3">
-                    {selectedIds.size} selected
+                    {selectedIds.size} đã chọn
                   </Badge>
                   <Button variant="outline" onClick={handleBulkDelete} className="text-red-600">
-                    Delete Selected
+                    Xóa đã chọn
                   </Button>
                 </>
               )}
               <Button variant="outline" onClick={handleExportCSV} leftIcon={<Icons.Download className="w-4 h-4" />}>
-                Export CSV
+                Xuất CSV
               </Button>
               <Button onClick={handleAddClick} leftIcon={<Icons.Add className="w-4 h-4" />}>
-                Add Course
+                Thêm môn học
               </Button>
             </div>
           </div>
@@ -474,11 +474,11 @@ export default function CoursesPage() {
           {courses.length === 0 ? (
             <EmptyState
               icon={<Icons.Classes className="w-12 h-12 text-stone-400" />}
-              title="No courses found"
-              description={searchQuery ? "Try adjusting your search" : "Get started by adding your first course"}
+              title="Không tìm thấy môn học"
+              description={searchQuery ? "Thử điều chỉnh tìm kiếm" : "Bắt đầu bằng cách thêm môn học đầu tiên"}
               action={
                 <Button onClick={handleAddClick} leftIcon={<Icons.Add className="w-4 h-4" />}>
-                  Add Course
+                  Thêm môn học
                 </Button>
               }
             />
@@ -494,9 +494,9 @@ export default function CoursesPage() {
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-stone-200">
                   <p className="text-sm text-stone-600">
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                    {Math.min(pagination.page * pagination.limit, courses.length)} of{' '}
-                    {courses.length} courses
+                    Hiển thị {((pagination.page - 1) * pagination.limit) + 1} đến{' '}
+                    {Math.min(pagination.page * pagination.limit, courses.length)} của{' '}
+                    {courses.length} môn học
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -505,7 +505,7 @@ export default function CoursesPage() {
                       onClick={pagination.prevPage}
                       disabled={pagination.page === 1}
                     >
-                      Previous
+                      Trước
                     </Button>
                     <Button
                       variant="outline"
@@ -513,7 +513,7 @@ export default function CoursesPage() {
                       onClick={pagination.nextPage}
                       disabled={pagination.page === pagination.totalPages}
                     >
-                      Next
+                      Tiếp theo
                     </Button>
                   </div>
                 </div>
@@ -529,17 +529,17 @@ export default function CoursesPage() {
             setShowAddModal(false);
             setEditingCourse(null);
           }}
-          title={editingCourse ? "Edit Course" : "Add New Course"}
+          title={editingCourse ? "Chỉnh sửa môn học" : "Thêm môn học mới"}
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Course Title *
+                Tên môn học *
               </label>
               <Input
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g., Introduction to Mathematics"
+                placeholder="vd: Giới thiệu về Toán học"
                 className={formErrors.title ? "border-red-500" : ""}
               />
               {formErrors.title && (
@@ -549,12 +549,12 @@ export default function CoursesPage() {
             
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Description
+                Mô tả
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Course description..."
+                placeholder="Mô tả môn học..."
                 rows={3}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
@@ -569,13 +569,13 @@ export default function CoursesPage() {
                   setEditingCourse(null);
                 }}
               >
-                Cancel
+                Hủy
               </Button>
               <Button
                 type="submit"
                 isLoading={creating || updating}
               >
-                {editingCourse ? "Update Course" : "Create Course"}
+                {editingCourse ? "Cập nhật môn học" : "Tạo môn học"}
               </Button>
             </div>
           </form>
@@ -585,26 +585,26 @@ export default function CoursesPage() {
         <Modal
           isOpen={!!courseToDelete}
           onClose={() => setCourseToDelete(null)}
-          title="Delete Course"
+          title="Xóa môn học"
         >
           <div className="space-y-4">
             <p className="text-slate-600">
-              Are you sure you want to delete "{courseToDelete?.title || courseToDelete?.name}"? 
-              This action cannot be undone.
+              Bạn có chắc chắn muốn xóa "{courseToDelete?.title || courseToDelete?.name}"? 
+              Hành động này không thể hoàn tác.
             </p>
             <div className="flex gap-3 justify-end">
               <Button
                 variant="outline"
                 onClick={() => setCourseToDelete(null)}
               >
-                Cancel
+                Hủy
               </Button>
               <Button
                 variant="primary"
                 onClick={handleDelete}
                 className="bg-red-600 hover:bg-red-700"
               >
-                Delete Course
+                Xóa môn học
               </Button>
             </div>
           </div>

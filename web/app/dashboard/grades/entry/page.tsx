@@ -98,7 +98,7 @@ export default function GradeEntryPageModern() {
       toast.error('Failed to load classes', classesError);
       logger.error('Classes fetch error', new Error(classesError));
     }
-  }, [classesError]);
+  }, [classesError, toast]);
   
   // Fetch assignments for selected class
   const { 
@@ -117,7 +117,7 @@ export default function GradeEntryPageModern() {
       toast.error('Failed to load assignments', assignmentsError);
       logger.error('Assignments fetch error', new Error(assignmentsError));
     }
-  }, [assignmentsError]);
+  }, [assignmentsError, toast]);
   
   // Fetch grades for selected assignment
   const { 
@@ -144,7 +144,7 @@ export default function GradeEntryPageModern() {
       toast.error('Failed to load grades', gradesError);
       logger.error('Grades fetch error', new Error(gradesError));
     }
-  }, [gradesError]);
+  }, [gradesError, toast]);
   
   // Save grades mutation
   const { mutate: saveGrades, loading: saving } = useMutation('/api/grades', 'POST');
@@ -165,8 +165,8 @@ export default function GradeEntryPageModern() {
   // Validation helper
   const validatePoints = (points: number | undefined, maxPoints: number): { valid: boolean; error?: string } => {
     if (points === undefined) return { valid: true };
-    if (points < 0) return { valid: false, error: 'Points cannot be negative' };
-    if (points > maxPoints) return { valid: false, error: `Points cannot exceed ${maxPoints}` };
+    if (points < 0) return { valid: false, error: 'Điểm không thể âm' };
+    if (points > maxPoints) return { valid: false, error: `Điểm không thể vượt quá ${maxPoints}` };
     return { valid: true };
   };
   
@@ -462,7 +462,7 @@ export default function GradeEntryPageModern() {
                   )}
                   {selectedAssignmentData.due_date && (
                     <Badge variant="default">
-                      Due: {new Date(selectedAssignmentData.due_date).toLocaleDateString()}
+                      Due: {new Date(selectedAssignmentData.due_date).toLocaleDateString('vi-VN')}
                     </Badge>
                   )}
                 </div>

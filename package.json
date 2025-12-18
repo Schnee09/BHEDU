@@ -10,6 +10,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
     "seed": "node scripts/seed-data.js",
+    "seed-vietnamese-scale": "node scripts/seed-vietnamese-grading-scale.js",
+    "seed-vietnamese-academic-years": "node scripts/seed-vietnamese-academic-years.js",
+    "seed-vietnamese-subjects": "node scripts/seed-vietnamese-subjects.js",
     "check-tables": "node scripts/check-supabase-tables.js"
   },
   "keywords": [],
@@ -20,6 +23,7 @@
     "@types/node": "^24.9.1",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
+    "readline-sync": "^1.4.10",
     "supabase": "^2.58.5",
     "typescript": "^5.9.3"
   },
@@ -31,7 +35,7 @@
   },
   "lint-staged": {
     "web/**/*.{js,jsx,ts,tsx}": [
-      "npm --prefix web run lint:fix --quiet || true"
+      "web/node_modules/.bin/eslint --ext .ts,.tsx,.js,.jsx --config web/eslint.config.mjs --fix"
     ]
   }
 }

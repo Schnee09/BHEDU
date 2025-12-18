@@ -65,13 +65,31 @@ export default function NavBar() {
             >
               Dashboard
             </Link>
-            <Link 
-              href="/dashboard/courses" 
-              className="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-all"
-              aria-label="Go to Admin Panel"
-            >
-              Admin
-            </Link>
+            {role === 'admin' ? (
+              <Link 
+                href="/dashboard/admin" 
+                className="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-all"
+                aria-label="Go to Admin tools"
+              >
+                Admin
+              </Link>
+            ) : role === 'teacher' ? (
+              <Link 
+                href="/dashboard/classes" 
+                className="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-all"
+                aria-label="Go to My Classes"
+              >
+                My Classes
+              </Link>
+            ) : role === 'student' ? (
+              <Link 
+                href="/dashboard/scores" 
+                className="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-all"
+                aria-label="Go to My Grades"
+              >
+                My Grades
+              </Link>
+            ) : null}
             {(role === 'teacher' || role === 'admin') && (
               <Link 
                 href="/dashboard/grades/vietnamese-entry" 

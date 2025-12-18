@@ -8,6 +8,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { apiFetch } from "@/lib/api/client";
 import { Table } from "@/components/ui/table";
 import Badge from "@/components/ui/badge";
+import { routes } from "@/lib/routes";
 
 interface AttendanceRecord {
   id: string;
@@ -34,10 +35,12 @@ export default function AttendancePage() {
       setIsLoading(true);
       setError(null);
       setIsRateLimited(false);
-      const res = await apiFetch('/api/student/attendance');
+      // Option A: canonical role-aware endpoint.
+      // Server will scope results based on viewer role.
+      const res = await apiFetch('/api/attendance');
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        const errorMessage = errorData.error || 'Failed to fetch attendance';
+        const errorMessage = errorData.error || 'Không thể tải điểm danh';
         
         // Check if rate limited
         if (res.status === 429 || errorMessage.includes('Rate limit')) {
@@ -56,11 +59,13 @@ export default function AttendancePage() {
         throw new Error(errorMessage);
       }
       const response = await res.json();
-      // Extract records array from response object
-      const recordsData = Array.isArray(response) ? response : (response.records || []);
+      // Extract records array from response object (API returns { data: [] })
+      const recordsData = Array.isArray(response)
+        ? response
+        : (response.data || response.records || []);
       setRecords(recordsData);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load attendance records';
+      const errorMessage = err instanceof Error ? err.message : 'Không thể tải bản ghi điểm danh';
       console.error('Failed to fetch attendance:', err);
       setError(errorMessage);
       setRecords([]);
@@ -111,21 +116,21 @@ export default function AttendancePage() {
         <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg">
           <p className="font-medium flex items-center gap-2">
             <span className="text-xl">⏳</span>
-            Too Many Requests
+            Quá nhiều yêu cầu
           </p>
           <p className="text-sm mt-1">
-            You've made too many requests. Please wait before trying again.
+            Bạn đã thực hiện quá nhiều yêu cầu. Vui lòng đợi trước khi thử lại.
           </p>
           {retryCountdown !== null && retryCountdown > 0 ? (
             <p className="text-sm mt-2">
-              You can retry in <span className="font-bold">{retryCountdown}</span> seconds
+              Bạn có thể thử lại sau <span className="font-bold">{retryCountdown}</span> giây
             </p>
           ) : (
             <button
               onClick={fetchAttendance}
               className="mt-3 px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors text-sm font-medium"
             >
-              Try Again
+              Thử lại
             </button>
           )}
         </div>
@@ -138,21 +143,21 @@ export default function AttendancePage() {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          <p className="font-medium">Error Loading Attendance</p>
+          <p className="font-medium">Lỗi tải điểm danh</p>
           <p className="text-sm mt-1">{error}</p>
           {error.includes('Profile not found') && (
             <p className="text-sm mt-2">
-              Your profile hasn't been set up yet. Please contact your administrator.
+              Hồ sơ của bạn chưa được thiết lập. Vui lòng liên hệ với quản trị viên.
             </p>
           )}
           {error.includes('Database error') && (
             <p className="text-sm mt-2">
-              There was a problem accessing the attendance database. This might be a configuration issue.
+              Có vấn đề khi truy cập cơ sở dữ liệu điểm danh. Điều này có thể là vấn đề cấu hình.
             </p>
           )}
           {error.includes('Internal server error') && (
             <p className="text-sm mt-2">
-              An unexpected error occurred. Please try again later or contact support.
+              Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.
             </p>
           )}
         </div>
@@ -164,10 +169,10 @@ export default function AttendancePage() {
   if (profile?.role === 'student') {
     const getStatusBadge = (status: string) => {
       switch (status) {
-        case 'present': return <Badge variant="success">Present</Badge>;
-        case 'late': return <Badge variant="warning">Late</Badge>;
-        case 'absent': return <Badge variant="danger">Absent</Badge>; // Changed destructive to danger based on badge.tsx
-        case 'excused': return <Badge variant="default">Excused</Badge>; // Changed secondary to default
+        case 'present': return <Badge variant="success">Có mặt</Badge>;
+        case 'late': return <Badge variant="warning">Muộn</Badge>;
+        case 'absent': return <Badge variant="danger">Vắng mặt</Badge>; // Changed destructive to danger based on badge.tsx
+        case 'excused': return <Badge variant="default">Có phép</Badge>; // Changed secondary to default
         default: return <Badge variant="default">{status}</Badge>; // Changed outline to default
       }
     };
@@ -182,27 +187,27 @@ export default function AttendancePage() {
     const columns = [
       { 
         key: 'date', 
-        header: 'Date', 
-        render: (row: AttendanceRecord) => new Date(row.date).toLocaleDateString() 
+        header: 'Ngày', 
+        render: (row: AttendanceRecord) => new Date(row.date).toLocaleDateString('vi-VN') 
       },
       { 
         key: 'class', 
-        header: 'Class', 
-        render: (row: AttendanceRecord) => row.class?.name || 'Unknown Class' 
+        header: 'Lớp', 
+        render: (row: AttendanceRecord) => row.class?.name || 'Lớp không xác định' 
       },
       { 
         key: 'time', 
-        header: 'Time', 
+        header: 'Thời gian', 
         render: (row: AttendanceRecord) => row.check_in_time ? new Date(row.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-' 
       },
       { 
         key: 'status', 
-        header: 'Status', 
+        header: 'Trạng thái', 
         render: (row: AttendanceRecord) => getStatusBadge(row.status) 
       },
       { 
         key: 'notes', 
-        header: 'Notes', 
+        header: 'Ghi chú', 
         render: (row: AttendanceRecord) => row.notes || '-' 
       }
     ];
@@ -213,9 +218,9 @@ export default function AttendancePage() {
           <div>
             <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
               <Icons.Attendance className="w-8 h-8 text-stone-600" />
-              My Attendance
+              Điểm danh của tôi
             </h1>
-            <p className="text-stone-500 mt-1">Track your class attendance history</p>
+            <p className="text-stone-500 mt-1">Theo dõi lịch sử điểm danh lớp học của bạn</p>
           </div>
         </div>
 
@@ -224,7 +229,7 @@ export default function AttendancePage() {
           <Card>
             <CardBody className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-stone-500">Attendance Rate</p>
+                <p className="text-sm font-medium text-stone-500">Tỷ lệ điểm danh</p>
                 <p className="text-2xl font-bold text-stone-900">{attendanceRate}%</p>
               </div>
               <div className="p-2 bg-stone-100 rounded-full">
@@ -235,7 +240,7 @@ export default function AttendancePage() {
           <Card>
             <CardBody className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-stone-500">Present</p>
+                <p className="text-sm font-medium text-stone-500">Có mặt</p>
                 <p className="text-2xl font-bold text-green-600">{present}</p>
               </div>
               <div className="p-2 bg-green-50 rounded-full">
@@ -246,7 +251,7 @@ export default function AttendancePage() {
           <Card>
             <CardBody className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-stone-500">Late</p>
+                <p className="text-sm font-medium text-stone-500">Muộn</p>
                 <p className="text-2xl font-bold text-yellow-600">{late}</p>
               </div>
               <div className="p-2 bg-yellow-50 rounded-full">
@@ -257,7 +262,7 @@ export default function AttendancePage() {
           <Card>
             <CardBody className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-stone-500">Absent</p>
+                <p className="text-sm font-medium text-stone-500">Vắng mặt</p>
                 <p className="text-2xl font-bold text-red-600">{absent}</p>
               </div>
               <div className="p-2 bg-red-50 rounded-full">
@@ -275,12 +280,12 @@ export default function AttendancePage() {
 
         <Card>
           <CardHeader>
-            <h3 className="text-lg font-semibold text-stone-900">Attendance History</h3>
+            <h3 className="text-lg font-semibold text-stone-900">Lịch sử điểm danh</h3>
           </CardHeader>
           <CardBody>
             {records.length === 0 ? (
               <div className="text-center py-8 text-stone-500">
-                No attendance records found.
+                Không tìm thấy bản ghi điểm danh nào.
               </div>
             ) : (
               <Table
@@ -298,23 +303,23 @@ export default function AttendancePage() {
   // TEACHER / ADMIN VIEW
   const sections = [
     {
-      title: "Mark Attendance",
-      description: "Manually mark student attendance for classes",
-      href: "/dashboard/attendance/mark",
+      title: "Điểm danh thủ công",
+      description: "Điểm danh thủ công cho học sinh trong lớp",
+      href: routes.attendance.mark(),
       icon: Icons.Success,
       color: "text-stone-600 bg-stone-100"
     },
     {
-      title: "QR Code Attendance",
-      description: "Generate QR codes for students to self-check in",
-      href: "/dashboard/attendance/qr",
+      title: "Điểm danh bằng mã QR",
+      description: "Tạo mã QR để học sinh tự điểm danh",
+      href: routes.attendance.qr(),
       icon: Icons.View,
       color: "text-stone-600 bg-stone-100"
     },
     {
-      title: "Attendance Reports",
-      description: "View and analyze attendance data and trends",
-      href: "/dashboard/attendance/reports",
+      title: "Báo cáo điểm danh",
+      description: "Xem và phân tích dữ liệu điểm danh và xu hướng",
+      href: routes.attendance.reports(),
       icon: Icons.Chart,
       color: "text-stone-600 bg-stone-100"
     }
@@ -326,9 +331,9 @@ export default function AttendancePage() {
         <div>
           <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
             <Icons.Attendance className="w-8 h-8 text-stone-600" />
-            Attendance Management
+            Quản lý điểm danh
           </h1>
-          <p className="text-stone-500 mt-1">Choose an attendance management option below</p>
+          <p className="text-stone-500 mt-1">Chọn một tùy chọn quản lý điểm danh bên dưới</p>
         </div>
       </div>
 
@@ -358,19 +363,19 @@ export default function AttendancePage() {
             <Icons.Info className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-stone-900 mb-2">Quick Tips</h3>
+            <h3 className="text-lg font-semibold text-stone-900 mb-2">Mẹo nhanh</h3>
             <ul className="space-y-2 text-stone-700">
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-stone-500 rounded-full" />
-                <span>Use <strong>Mark Attendance</strong> for traditional roll call</span>
+                <span>Sử dụng <strong>Điểm danh thủ công</strong> cho việc điểm danh truyền thống</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-stone-500 rounded-full" />
-                <span>Use <strong>QR Code Attendance</strong> for quick student self-check-in</span>
+                <span>Sử dụng <strong>Điểm danh bằng mã QR</strong> để học sinh tự điểm danh nhanh</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-stone-500 rounded-full" />
-                <span>Check <strong>Attendance Reports</strong> for weekly and monthly summaries</span>
+                <span>Kiểm tra <strong>Báo cáo điểm danh</strong> để xem tóm tắt hàng tuần và hàng tháng</span>
               </li>
             </ul>
           </div>

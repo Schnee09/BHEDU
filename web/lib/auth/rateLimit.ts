@@ -11,10 +11,22 @@ interface RateLimitEntry {
 }
 
 /**
+ * Token bucket rate limiting entry.
+ * This is better suited for API request shaping than the auth/bruteforce limiter above.
+ */
+interface TokenBucketEntry {
+  tokens: number
+  lastRefillMs: number
+}
+
+/**
  * In-memory rate limit store
  * In production, consider using Redis for distributed systems
  */
 const rateLimitStore = new Map<string, RateLimitEntry>()
+
+// Separate store for token bucket rate limiting
+const tokenBucketStore = new Map<string, TokenBucketEntry>()
 
 /**
  * Rate limit configuration
@@ -23,6 +35,22 @@ export interface RateLimitConfig {
   maxAttempts: number // Maximum attempts allowed
   windowMs: number // Time window in milliseconds
   blockDurationMs: number // How long to block after max attempts
+}
+
+/**
+ * Token bucket config.
+ * - `capacity`: maximum burst size
+ * - `refillPerSecond`: steady-state rate
+ */
+export interface TokenBucketConfig {
+  capacity: number
+  refillPerSecond: number
+}
+
+export interface TokenBucketResult {
+  allowed: boolean
+  remaining: number
+  retryAfterSeconds: number
 }
 
 /**
@@ -48,7 +76,63 @@ export const rateLimitConfigs = {
     maxAttempts: 150, // 150 requests for bulk operations (increased from 50)
     windowMs: 60 * 1000, // Per minute
     blockDurationMs: 2 * 60 * 1000 // Block for 2 minutes
+  },
+
+  // Token bucket configs (recommended for APIs)
+  apiBucket: {
+    capacity: 60, // allow short bursts
+    refillPerSecond: 2 // ~120/min steady state
+  } satisfies TokenBucketConfig,
+
+  dataViewerBucket: {
+    capacity: 20,
+    refillPerSecond: 1 // ~60/min steady state
+  } satisfies TokenBucketConfig
+}
+
+/**
+ * Token bucket rate limit check.
+ *
+ * Notes:
+ * - No multi-minute "blocking" period; it simply returns 429 until enough tokens refill.
+ * - Intended for API traffic shaping (better UX than hard blocks).
+ */
+export function checkTokenBucketRateLimit(
+  identifier: string,
+  config: TokenBucketConfig
+): TokenBucketResult {
+  const now = Date.now()
+  const entry = tokenBucketStore.get(identifier)
+
+  if (!entry) {
+    const tokensLeft = Math.max(0, config.capacity - 1)
+    tokenBucketStore.set(identifier, { tokens: tokensLeft, lastRefillMs: now })
+    return { allowed: true, remaining: tokensLeft, retryAfterSeconds: 0 }
   }
+
+  const elapsedSeconds = Math.max(0, (now - entry.lastRefillMs) / 1000)
+  const refill = elapsedSeconds * config.refillPerSecond
+  const newTokens = Math.min(config.capacity, entry.tokens + refill)
+
+  // Rebase timer to now (keeps refill stable and prevents float growth)
+  entry.tokens = newTokens
+  entry.lastRefillMs = now
+
+  if (entry.tokens >= 1) {
+    entry.tokens -= 1
+    tokenBucketStore.set(identifier, entry)
+    return { allowed: true, remaining: Math.floor(entry.tokens), retryAfterSeconds: 0 }
+  }
+
+  // Need at least 1 token
+  const deficit = 1 - entry.tokens
+  const retryAfterSeconds = config.refillPerSecond > 0 ? Math.ceil(deficit / config.refillPerSecond) : 60
+  tokenBucketStore.set(identifier, entry)
+  return { allowed: false, remaining: 0, retryAfterSeconds }
+}
+
+export function resetTokenBucketRateLimit(identifier: string): void {
+  tokenBucketStore.delete(identifier)
 }
 
 /**
@@ -165,6 +249,18 @@ export function cleanupRateLimits(): number {
   return cleaned
 }
 
+export function cleanupTokenBuckets(maxIdleMs: number = 10 * 60 * 1000): number {
+  const now = Date.now()
+  let cleaned = 0
+  for (const [identifier, entry] of tokenBucketStore.entries()) {
+    if (now - entry.lastRefillMs > maxIdleMs) {
+      tokenBucketStore.delete(identifier)
+      cleaned++
+    }
+  }
+  return cleaned
+}
+
 /**
  * Get current rate limit status without incrementing
  */
@@ -214,11 +310,15 @@ export function clearAllRateLimits(): void {
 }
 
 // Cleanup task - run every 5 minutes
-if (typeof setInterval !== 'undefined') {
+if (typeof setInterval !== 'undefined' && process.env.NODE_ENV !== 'test') {
   setInterval(() => {
     const cleaned = cleanupRateLimits()
+    const cleanedBuckets = cleanupTokenBuckets()
     if (cleaned > 0) {
       console.log(`[RateLimit] Cleaned up ${cleaned} expired entries`)
+    }
+    if (cleanedBuckets > 0) {
+      console.log(`[RateLimit] Cleaned up ${cleanedBuckets} idle token buckets`)
     }
   }, 5 * 60 * 1000)
 }

@@ -1,0 +1,8 @@
+@echo off
+cd /d E:\TTGDBH\BH-EDU
+set NEXT_PUBLIC_SUPABASE_URL=https://mwncwhkdimnjovxzhtjm.supabase.co
+set SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bmN3aGtkaW1uam92eHpodGptIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDQzODUzMCwiZXhwIjoyMDc2MDE0NTMwfQ.XRfRqGTIvIyGeg6iw8dWDBEh552tBrSI0RetYQkqsjU
+echo Checking/creating table...
+node scripts\create-curriculum-table.js
+echo Running seeding...
+node scripts\seed-curriculum-standards.js

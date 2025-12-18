@@ -5,6 +5,8 @@
 
 import { NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
+import { enforceRateLimit } from '@/lib/api/rateLimit'
+import { rateLimitConfigs } from '@/lib/auth/rateLimit'
 
 // Keep a curated allowlist to avoid exposing sensitive/internal tables
 const ALLOWED_TABLES = [
@@ -55,6 +57,12 @@ const ALLOWED_TABLES = [
 ]
 
 export async function GET(request: Request) {
+  const limited = enforceRateLimit(request, {
+    bucketConfig: rateLimitConfigs.dataViewerBucket,
+    keyPrefix: 'admin-data-tables',
+  })
+  if (limited) return limited.response
+
   const authResult = await adminAuth(request)
   if (!authResult.authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

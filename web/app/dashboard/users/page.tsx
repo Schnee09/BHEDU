@@ -124,7 +124,7 @@ export default function UserManagementPage() {
         setTotalPages(data.pagination?.pages || 1);
         logger.info('Users fetched successfully', { count: data.data?.length || 0 });
       } else {
-        throw new Error(data.error || 'Failed to fetch users');
+        throw new Error(data.error || 'Không thể tải danh sách người dùng');
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to fetch users';
@@ -149,11 +149,11 @@ export default function UserManagementPage() {
     try {
       // Validate form
       if (!formData.email || !formData.password || !formData.full_name) {
-        throw new Error('Please fill in all required fields');
+        throw new Error('Vui lòng điền đầy đủ các trường bắt buộc');
       }
 
       if (formData.password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
+        throw new Error('Mật khẩu phải có ít nhất 6 ký tự');
       }
 
       logger.info('Creating user', { email: formData.email, role: formData.role });
@@ -167,7 +167,7 @@ export default function UserManagementPage() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('User created successfully!');
+        setSuccess('Tạo người dùng thành công!');
         setShowCreateModal(false);
         resetForm();
         fetchUsers();
@@ -179,10 +179,10 @@ export default function UserManagementPage() {
           role: formData.role 
         });
       } else {
-        throw new Error(data.error || 'Failed to create user');
+        throw new Error(data.error || 'Không thể tạo người dùng');
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to create user';
+      const errorMsg = err instanceof Error ? err.message : 'Không thể tạo người dùng';
       setError(errorMsg);
       logger.error('Error creating user', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
     } finally {
@@ -209,7 +209,7 @@ export default function UserManagementPage() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('User updated successfully!');
+        setSuccess('Cập nhật người dùng thành công!');
         setShowEditModal(false);
         setSelectedUser(null);
         resetForm();
@@ -220,10 +220,10 @@ export default function UserManagementPage() {
           changes: formData 
         });
       } else {
-        throw new Error(data.error || 'Failed to update user');
+        throw new Error(data.error || 'Không thể cập nhật người dùng');
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to update user';
+      const errorMsg = err instanceof Error ? err.message : 'Không thể cập nhật người dùng';
       setError(errorMsg);
       logger.error('Error updating user', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
     } finally {
@@ -241,7 +241,7 @@ export default function UserManagementPage() {
     }
 
     if (passwordData.new_password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError('Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
 
@@ -258,17 +258,17 @@ export default function UserManagementPage() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('Password reset successfully!');
+        setSuccess('Đặt lại mật khẩu thành công!');
         setShowResetPasswordModal(false);
         setSelectedUser(null);
         setPasswordData({ new_password: '', confirm_password: '' });
         
         logger.audit('Password reset', {}, { userId: selectedUser.id });
       } else {
-        throw new Error(data.error || 'Failed to reset password');
+        throw new Error(data.error || 'Không thể đặt lại mật khẩu');
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to reset password';
+      const errorMsg = err instanceof Error ? err.message : 'Không thể đặt lại mật khẩu';
       setError(errorMsg);
       logger.error('Error resetting password', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
     } finally {
@@ -295,7 +295,7 @@ export default function UserManagementPage() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess(`User ${user.is_active ? 'deactivated' : 'activated'} successfully!`);
+        setSuccess(`Người dùng đã được ${user.is_active ? 'vô hiệu hóa' : 'kích hoạt'} thành công!`);
         fetchUsers();
         
         logger.audit('User status changed', {}, { 
@@ -369,25 +369,25 @@ export default function UserManagementPage() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <StatCard
-          label="Total Users"
+          label="Tổng số người dùng"
           value={stats.total_users}
           icon={<Icons.Users className="w-6 h-6" />}
           color="blue"
         />
         <StatCard
-          label="Active"
+          label="Đang hoạt động"
           value={stats.active_users}
           icon={<Icons.Success className="w-6 h-6" />}
           color="green"
         />
         <StatCard
-          label="Teachers"
+          label="Giáo viên"
           value={stats.teacher_count}
           icon={<Icons.Teachers className="w-6 h-6" />}
           color="orange"
         />
         <StatCard
-          label="Students"
+          label="Học sinh"
           value={stats.student_count}
           icon={<Icons.Students className="w-6 h-6" />}
           color="purple"
@@ -423,8 +423,8 @@ export default function UserManagementPage() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-stone-900 mb-2">User Management</h1>
-        <p className="text-stone-600">Manage users, roles, and permissions</p>
+        <h1 className="text-3xl font-bold text-stone-900 mb-2">Quản lý người dùng</h1>
+        <p className="text-stone-600">Quản lý người dùng, vai trò và quyền hạn</p>
       </div>
 
       {/* Alerts */}
@@ -456,30 +456,30 @@ export default function UserManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Input
             type="text"
-            placeholder="Search users..."
+            placeholder="Tìm kiếm người dùng..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             leftIcon={<span>🔍</span>}
           />
 
           <Select
-            placeholder="All Roles"
+            placeholder="Tất cả vai trò"
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
             options={[
-              { value: 'all', label: 'All Roles' },
+              { value: 'all', label: 'Tất cả vai trò' },
               ...roleOptions
             ]}
           />
 
           <Select
-            placeholder="All Status"
+            placeholder="Tất cả trạng thái"
             value={activeFilter}
             onChange={(e) => setActiveFilter(e.target.value)}
             options={[
-              { value: 'all', label: 'All Status' },
-              { value: 'true', label: 'Active Only' },
-              { value: 'false', label: 'Inactive Only' },
+              { value: 'all', label: 'Tất cả trạng thái' },
+              { value: 'true', label: 'Chỉ hoạt động' },
+              { value: 'false', label: 'Chỉ không hoạt động' },
             ]}
           />
 
@@ -489,7 +489,7 @@ export default function UserManagementPage() {
             leftIcon={<Icons.Add className="w-4 h-4" />}
             fullWidth
           >
-            Add User
+            Thêm người dùng
           </Button>
         </div>
       </Card>
@@ -498,15 +498,15 @@ export default function UserManagementPage() {
       {users.length === 0 ? (
         <EmptyState
           icon={<Icons.Users className="w-12 h-12 text-stone-400" />}
-          title="No users found"
-          description="Try adjusting your search or filters"
+          title="Không tìm thấy người dùng"
+          description="Thử điều chỉnh tìm kiếm hoặc bộ lọc"
           action={
             <Button onClick={() => {
               setSearchQuery('');
               setRoleFilter('all');
               setActiveFilter('all');
             }}>
-              Clear Filters
+              Xóa bộ lọc
             </Button>
           }
         />
@@ -518,7 +518,7 @@ export default function UserManagementPage() {
             columns={[
               {
                 key: 'full_name',
-                header: 'Name',
+                header: 'Họ tên',
                 render: (user) => (
                   <div>
                     <p className="font-medium text-stone-900">{user.full_name}</p>
@@ -528,7 +528,7 @@ export default function UserManagementPage() {
               },
               {
                 key: 'role',
-                header: 'Role',
+                header: 'Vai trò',
                 render: (user) => (
                   <Badge variant={getRoleBadgeVariant(user.role)}>
                     {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
@@ -537,27 +537,27 @@ export default function UserManagementPage() {
               },
               {
                 key: 'is_active',
-                header: 'Status',
+                header: 'Trạng thái',
                 render: (user) => (
                   <Badge variant={user.is_active ? 'success' : 'default'}>
-                    {user.is_active ? 'Active' : 'Inactive'}
+                    {user.is_active ? 'Hoạt động' : 'Không hoạt động'}
                   </Badge>
                 )
               },
               {
                 key: 'last_login_at',
-                header: 'Last Login',
+                header: 'Đăng nhập cuối',
                 render: (user) => (
                   <span className="text-sm text-stone-600">
                     {user.last_login_at 
-                      ? new Date(user.last_login_at).toLocaleDateString() 
+                      ? new Date(user.last_login_at).toLocaleDateString('vi-VN') 
                       : 'Never'}
                   </span>
                 )
               },
               {
                 key: 'actions',
-                header: 'Actions',
+                header: 'Thao tác',
                 render: (user) => (
                   <div className="flex space-x-2">
                     <Button 
@@ -565,21 +565,21 @@ export default function UserManagementPage() {
                       variant="outline" 
                       onClick={() => openEditModal(user)}
                     >
-                      Edit
+                      Chỉnh sửa
                     </Button>
                     <Button 
                       size="sm" 
                       variant="outline" 
                       onClick={() => openResetPasswordModal(user)}
                     >
-                      Reset Password
+                      Đặt lại mật khẩu
                     </Button>
                     <Button 
                       size="sm" 
                       variant={user.is_active ? 'danger' : 'success'}
                       onClick={() => handleToggleActive(user)}
                     >
-                      {user.is_active ? 'Deactivate' : 'Activate'}
+                      {user.is_active ? 'Vô hiệu hóa' : 'Kích hoạt'}
                     </Button>
                   </div>
                 )
@@ -597,17 +597,17 @@ export default function UserManagementPage() {
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
           >
-            Previous
+            Trước
           </Button>
           <span className="text-sm text-stone-600">
-            Page {page} of {totalPages}
+            Trang {page} của {totalPages}
           </span>
           <Button
             variant="outline"
             disabled={page === totalPages}
             onClick={() => setPage(page + 1)}
           >
-            Next
+            Tiếp theo
           </Button>
         </div>
       )}
@@ -619,7 +619,7 @@ export default function UserManagementPage() {
           setShowCreateModal(false);
           resetForm();
         }}
-        title="Create New User"
+        title="Tạo người dùng mới"
         size="lg"
       >
         <form onSubmit={handleCreateUser}>
@@ -634,26 +634,26 @@ export default function UserManagementPage() {
             />
 
             <Input
-              label="Password"
+              label="Mật khẩu"
               type="password"
-              placeholder="At least 6 characters"
+              placeholder="Ít nhất 6 ký tự"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
-              hint="Minimum 6 characters"
+              hint="Tối thiểu 6 ký tự"
             />
 
             <Input
-              label="Full Name"
+              label="Họ và tên"
               type="text"
-              placeholder="John Doe"
+              placeholder="Nguyễn Văn A"
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               required
             />
 
             <Select
-              label="Role"
+              label="Vai trò"
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
               options={roleOptions}
@@ -661,18 +661,18 @@ export default function UserManagementPage() {
             />
 
             <Input
-              label="Phone Number"
+              label="Số điện thoại"
               type="tel"
-              placeholder="(123) 456-7890"
+              placeholder="0123 456 789"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
 
             {formData.role === 'teacher' && (
               <Input
-                label="Department"
+                label="Bộ môn"
                 type="text"
-                placeholder="Mathematics, Science, etc."
+                placeholder="Toán học, Ngữ văn, v.v."
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
               />
@@ -681,14 +681,14 @@ export default function UserManagementPage() {
             {formData.role === 'student' && (
               <>
                 <Input
-                  label="Student ID"
+                  label="Mã học sinh"
                   type="text"
-                  placeholder="STU-12345"
+                  placeholder="HS-12345"
                   value={formData.student_id}
                   onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
                 />
                 <Input
-                  label="Grade Level"
+                  label="Khối lớp"
                   type="text"
                   placeholder="10, 11, 12"
                   value={formData.grade_level}
@@ -698,15 +698,15 @@ export default function UserManagementPage() {
             )}
 
             <Textarea
-              label="Notes"
-              placeholder="Additional information..."
+              label="Ghi chú"
+              placeholder="Thông tin bổ sung..."
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />
 
             <Checkbox
-              label="Active"
-              description="User can log in and access the system"
+              label="Hoạt động"
+              description="Người dùng có thể đăng nhập và truy cập hệ thống"
               checked={formData.is_active}
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
             />
@@ -721,10 +721,10 @@ export default function UserManagementPage() {
                 resetForm();
               }}
             >
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" variant="primary" isLoading={loading}>
-              Create User
+              Tạo người dùng
             </Button>
           </div>
         </form>
@@ -738,7 +738,7 @@ export default function UserManagementPage() {
           setSelectedUser(null);
           resetForm();
         }}
-        title="Edit User"
+        title="Chỉnh sửa người dùng"
         size="lg"
       >
         <form onSubmit={handleUpdateUser}>
@@ -808,7 +808,7 @@ export default function UserManagementPage() {
 
             <Checkbox
               label="Active"
-              description="User can log in and access the system"
+              description="Người dùng có thể đăng nhập và truy cập hệ thống"
               checked={formData.is_active}
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
             />
@@ -824,10 +824,10 @@ export default function UserManagementPage() {
                 resetForm();
               }}
             >
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" variant="primary" isLoading={loading}>
-              Save Changes
+              Lưu thay đổi
             </Button>
           </div>
         </form>
@@ -841,38 +841,38 @@ export default function UserManagementPage() {
           setSelectedUser(null);
           setPasswordData({ new_password: '', confirm_password: '' });
         }}
-        title="Reset Password"
+        title="Đặt lại mật khẩu"
         size="md"
       >
         <form onSubmit={handleResetPassword}>
           <div className="space-y-4">
             <Alert 
               variant="info" 
-              title="Password Reset" 
-              message={`You are resetting the password for ${selectedUser?.full_name}`}
+              title="Đặt lại mật khẩu" 
+              message={`Bạn đang đặt lại mật khẩu cho ${selectedUser?.full_name}`}
             />
 
             <Input
-              label="New Password"
+              label="Mật khẩu mới"
               type="password"
-              placeholder="At least 6 characters"
+              placeholder="Ít nhất 6 ký tự"
               value={passwordData.new_password}
               onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
               required
-              hint="Minimum 6 characters"
+              hint="Tối thiểu 6 ký tự"
             />
 
             <Input
-              label="Confirm Password"
+              label="Xác nhận mật khẩu"
               type="password"
-              placeholder="Re-enter password"
+              placeholder="Nhập lại mật khẩu"
               value={passwordData.confirm_password}
               onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
               required
               error={
                 passwordData.confirm_password && 
                 passwordData.new_password !== passwordData.confirm_password 
-                  ? 'Passwords do not match' 
+                  ? 'Mật khẩu không khớp' 
                   : undefined
               }
             />
@@ -888,10 +888,10 @@ export default function UserManagementPage() {
                 setPasswordData({ new_password: '', confirm_password: '' });
               }}
             >
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" variant="danger" isLoading={loading}>
-              Reset Password
+              Đặt lại mật khẩu
             </Button>
           </div>
         </form>

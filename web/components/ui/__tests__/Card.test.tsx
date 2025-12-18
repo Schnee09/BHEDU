@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { Card, CardHeader, CardBody, CardFooter, StatCard } from '@/components/ui/Card';
@@ -29,8 +30,8 @@ describe('Card Components', () => {
         <Card>Content</Card>
       );
 
-      const card = container.firstChild;
-      expect(card).toHaveClass('rounded-xl', 'bg-white', 'border');
+  const card = container.firstChild;
+  expect(card).toHaveClass('rounded-xl', 'bg-surface', 'border');
     });
 
     it('applies hover class when hover is true', () => {
@@ -38,8 +39,8 @@ describe('Card Components', () => {
         <Card hover={true}>Content</Card>
       );
 
-      const card = container.firstChild;
-      expect(card).toHaveClass('hover:shadow-md', 'hover:border-stone-300');
+  const card = container.firstChild;
+  expect(card).toHaveClass('hover:shadow-md', 'hover:border-primary/20');
     });
 
     it('handles click events', () => {
@@ -120,8 +121,8 @@ describe('Card Components', () => {
         </CardHeader>
       );
 
-      const header = container.firstChild;
-      expect(header).toHaveClass('border-b', 'border-stone-100', 'bg-stone-50/50');
+  const header = container.firstChild;
+  expect(header).toHaveClass('border-b', 'border-gray-100', 'bg-gray-50');
     });
 
     it('renders multiple children', () => {
@@ -233,8 +234,8 @@ describe('Card Components', () => {
         <CardFooter>Footer</CardFooter>
       );
 
-      const footer = container.firstChild;
-      expect(footer).toHaveClass('border-t', 'border-stone-100');
+  const footer = container.firstChild;
+  expect(footer).toHaveClass('border-t', 'border-gray-100');
     });
 
     it('rounds bottom corners', () => {
@@ -415,8 +416,8 @@ describe('Card Components', () => {
         </Card>
       );
 
-      const card = container.firstChild;
-      expect(card).toHaveClass('bg-white', 'border-stone-200', 'shadow-sm');
+  const card = container.firstChild;
+  expect(card).toHaveClass('bg-surface', 'border-border', 'shadow-sm');
     });
 
     it('applies transition classes for smooth interactions', () => {
@@ -436,11 +437,11 @@ describe('Card Components', () => {
         </Card>
       );
 
-      const header = container.querySelector('div');
-      const body = container.querySelector('div:nth-of-type(2)');
+  const header = screen.getByText('Header').closest('div');
+  const body = screen.getByText('Body').closest('div');
 
-      expect(header).toHaveClass('px-6', 'py-4');
-      expect(body).toHaveClass('px-6', 'py-5');
+  expect(header).toHaveClass('px-6', 'py-4');
+  expect(body).toHaveClass('px-6', 'py-5');
     });
   });
 

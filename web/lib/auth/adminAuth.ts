@@ -3,7 +3,7 @@
  * Verifies that the current user is an admin
  */
 
-import { createClient, createClientFromRequest, createClientFromToken } from '@/lib/supabase/server'
+import { createClientFromToken } from '@/lib/supabase/server'
 import { getDataClient } from './dataClient'
 import type { NextRequest } from 'next/server'
 import { getCached, setCached, cacheConfigs } from './cache'

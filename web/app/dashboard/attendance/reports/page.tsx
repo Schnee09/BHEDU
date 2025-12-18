@@ -123,11 +123,11 @@ export default function AttendanceReportsPage() {
         setRecords(result.data || [])
         setAnalytics(result.analytics || null)
       } else {
-        alert('Failed to load reports')
+        alert('Không thể tải báo cáo')
       }
     } catch (error) {
       console.error('Failed to load reports:', error)
-      alert('Failed to load reports')
+      alert('Không thể tải báo cáo')
     } finally {
       setLoading(false)
     }
@@ -144,7 +144,7 @@ export default function AttendanceReportsPage() {
       // Create CSV content
       const headers = ['Date', 'Student Name', 'Student ID', 'Class', 'Status', 'Check In', 'Check Out', 'Notes']
       const rows = records.map(record => [
-        new Date(record.date).toLocaleDateString(),
+        new Date(record.date).toLocaleDateString('vi-VN'),
         record.student?.full_name || record.student?.email || '',
         record.student?.student_id || '',
         record.class?.title || '',
@@ -171,7 +171,7 @@ export default function AttendanceReportsPage() {
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Export failed:', error)
-      alert('Failed to export data')
+      alert('Không thể xuất dữ liệu')
     } finally {
       setExporting(false)
     }
@@ -545,7 +545,7 @@ export default function AttendanceReportsPage() {
                       {records.map((record) => (
                         <tr key={record.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {new Date(record.date).toLocaleDateString()}
+                            {new Date(record.date).toLocaleDateString('vi-VN')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>

@@ -17,7 +17,7 @@ interface EndpointTest {
   hasRLS?: boolean;
 }
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     const supabase = createServiceClient();
 
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const serviceKeyValid = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     // Test 2: Test basic connectivity
-    const { data: versionData, error: versionError } = await supabase
+    const { error: versionError } = await supabase
       .from('profiles')
       .select('count', { count: 'exact', head: true });
 
@@ -96,17 +96,17 @@ export async function GET(request: Request) {
       .select('id, full_name, role')
       .limit(3);
 
-    const { data: students, error: studentError } = await supabase
+    const { count: studentCount } = await supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('role', 'student');
 
-    const { data: teachers, error: teacherError } = await supabase
+    const { count: teacherCount } = await supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('role', 'teacher');
 
-    const { data: admins, error: adminError } = await supabase
+    const { count: adminCount } = await supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('role', 'admin');
@@ -128,9 +128,9 @@ export async function GET(request: Request) {
       },
       dataQuality: {
         profilesAccessible: !profileError,
-        studentCount: students?.length || 0,
-        teacherCount: teachers?.length || 0,
-        adminCount: admins?.length || 0,
+        studentCount: studentCount || 0,
+        teacherCount: teacherCount || 0,
+        adminCount: adminCount || 0,
         sampleData: sampleProfiles || [],
       },
       recommendations: generateRecommendations(tableTests, serviceKeyValid),

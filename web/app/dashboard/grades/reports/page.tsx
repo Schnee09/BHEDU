@@ -309,7 +309,7 @@ export default function ReportCardsPage() {
 <body>
   <div class="header">
     <h1>ACADEMIC REPORT CARD</h1>
-    <p>Bethel Heights Educational Development</p>
+    <p>Bui Hoang Education</p>
     <p>Academic Year 2025-2026</p>
   </div>
 
@@ -527,7 +527,7 @@ export default function ReportCardsPage() {
                           {/* Preview Header */}
                           <div className="text-center mb-6 pb-4 border-b-2 border-blue-600">
                             <h5 className="text-xl font-bold text-blue-900 mb-2">ACADEMIC REPORT CARD</h5>
-                            <p className="text-sm text-gray-600">Bethel Heights Educational Development</p>
+                            <p className="text-sm text-gray-600">Bui Hoang Education</p>
                           </div>
 
                           {/* Overall Grade */}

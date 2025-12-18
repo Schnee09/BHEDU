@@ -8,6 +8,65 @@
 import { NextResponse } from 'next/server';
 import { createClientFromRequest } from '@/lib/supabase/server';
 import { teacherAuth } from '@/lib/auth/adminAuth';
+import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
+
+// Vietnamese Academic Classification Function
+function getVietnameseClassification(gpa: number, conduct: string): {
+  classification: string;
+  classification_vi: string;
+  description: string;
+} {
+  // Vietnamese academic classifications based on GPA and conduct
+  if (gpa >= 9.0 && conduct === 'Xuất sắc') {
+    return {
+      classification: 'Excellent',
+      classification_vi: 'Xuất sắc',
+      description: 'Outstanding academic performance with excellent conduct'
+    };
+  } else if (gpa >= 8.0 && conduct !== 'Yếu') {
+    return {
+      classification: 'Good',
+      classification_vi: 'Giỏi',
+      description: 'Strong academic performance with good conduct'
+    };
+  } else if (gpa >= 6.5 && conduct !== 'Yếu') {
+    return {
+      classification: 'Fair',
+      classification_vi: 'Khá',
+      description: 'Satisfactory academic performance'
+    };
+  } else if (gpa >= 5.0) {
+    return {
+      classification: 'Average',
+      classification_vi: 'Trung bình',
+      description: 'Average academic performance, needs improvement'
+    };
+  } else {
+    return {
+      classification: 'Weak',
+      classification_vi: 'Yếu',
+      description: 'Below average performance, significant improvement needed'
+    };
+  }
+}
+
+// Vietnamese Grade Letter Conversion
+function _getVietnameseGradeLetter(numericGrade: number): string {
+  if (numericGrade >= 9.5) return 'A+';
+  if (numericGrade >= 8.5) return 'A';
+  if (numericGrade >= 7.0) return 'B+';
+  if (numericGrade >= 5.0) return 'B';
+  return 'C';
+}
+
+// Vietnamese Grade Description
+function _getGradeDescription(numericGrade: number): string {
+  if (numericGrade >= 9.5) return 'Xuất sắc';
+  if (numericGrade >= 8.5) return 'Giỏi';
+  if (numericGrade >= 7.0) return 'Khá';
+  if (numericGrade >= 5.0) return 'Trung bình';
+  return 'Yếu';
+}
 
 export async function GET(
   request: Request,
@@ -289,11 +348,13 @@ export async function GET(
       }
     }
 
+    // Get Vietnamese academic classification
+    const classification = getVietnameseClassification(gpa, conduct);
+
     // Format date
     const formatDate = (dateString: string) => {
       if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('vi-VN');
+      return VIETNAMESE_LOCALE.formatDate(dateString);
     };
 
     // Prepare transcript data
@@ -308,14 +369,16 @@ export async function GET(
       grade_level: student.grade_level || 'N/A',
       academic_year: academicYear.name,
       semester: semester === 'CN' ? 'Cả năm' : semester === 'HK1' ? 'Học kỳ 1' : 'Học kỳ 2',
-      subjects: subjects.sort((a, b) => a.subject_name.localeCompare(b.subject_name)),
-      gpa: Math.round(gpa * 100) / 100,
+      subjects: subjects.sort((a: any, b: any) => a.subject_name.localeCompare(b.subject_name)),
+      gpa: VIETNAMESE_LOCALE.formatGPA(gpa),
       conduct,
       attendance_rate: Math.round(attendanceRate * 10) / 10,
+      academic_classification: classification,
       teacher_comment:
         conductGrades && conductGrades.length > 0 ? conductGrades[0].teacher_comment : null,
       homeroom_teacher: currentClass?.teacher?.full_name || null,
       principal_name: 'Hiệu trưởng',
+      report_date: formatDate(new Date().toISOString()),
     };
 
     return NextResponse.json({

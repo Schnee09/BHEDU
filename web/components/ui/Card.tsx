@@ -25,11 +25,10 @@ export const Card = memo(function Card({
   
   const cardClassName = useMemo(() => `
     rounded-xl transition-all duration-200
-    bg-white dark:bg-[#2D2D2D] 
-    border border-gray-200 dark:border-[#4A4A4A]
-    text-gray-900 dark:text-[#E8E8E8]
-    shadow-sm dark:shadow-none
-    ${hover || isClickable ? 'hover:shadow-md hover:border-gray-300 dark:hover:border-[#5A5A5A]' : ''}
+    bg-surface border border-border
+    text-foreground
+    shadow-sm
+    ${hover || isClickable ? 'hover:shadow-md hover:border-primary/20' : ''}
     ${isClickable ? 'cursor-pointer' : ''}
     ${className}
   `, [hover, isClickable, className]);
@@ -70,6 +69,45 @@ export const CardBody = memo(function CardBody({ children, className = '' }: Car
   );
 });
 
+interface CardContentProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export const CardContent = memo(function CardContent({ children, className = '' }: CardContentProps) {
+  return (
+    <div className={`px-6 py-5 ${className}`}>
+      {children}
+    </div>
+  );
+});
+
+interface CardDescriptionProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export const CardDescription = memo(function CardDescription({ children, className = '' }: CardDescriptionProps) {
+  return (
+    <p className={`text-sm text-muted-foreground ${className}`}>
+      {children}
+    </p>
+  );
+});
+
+interface CardTitleProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export const CardTitle = memo(function CardTitle({ children, className = '' }: CardTitleProps) {
+  return (
+    <h3 className={`text-lg font-semibold leading-none tracking-tight ${className}`}>
+      {children}
+    </h3>
+  );
+});
+
 interface CardFooterProps {
   children: ReactNode;
   className?: string;
@@ -103,19 +141,19 @@ interface StatCardProps {
 
 const COLOR_CLASSES = {
   blue: {
-    icon: 'bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300',
+    icon: 'bg-primary-50 dark:bg-primary-900/20 text-primary dark:text-primary-400',
   },
   green: {
-    icon: 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+    icon: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
   },
   orange: {
-    icon: 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
+    icon: 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400',
   },
   purple: {
-    icon: 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+    icon: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
   },
   slate: {
-    icon: 'bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-400',
+    icon: 'bg-surface-secondary text-secondary',
   },
 } as const;
 
@@ -132,8 +170,8 @@ export const StatCard = memo(function StatCard({
   
   const containerClassName = useMemo(() => `
     group relative overflow-hidden rounded-xl transition-all duration-200
-    bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm
-    hover:shadow-md hover:border-stone-300 dark:hover:border-stone-600
+    bg-surface border border-border shadow-sm
+    hover:shadow-md hover:border-primary/20
     ${onClick ? 'cursor-pointer' : ''}
   `, [onClick]);
 
@@ -144,10 +182,10 @@ export const StatCard = memo(function StatCard({
     >
       <div className="p-5 flex items-start justify-between relative">
         <div className="flex-1">
-          <p className="text-sm font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-1">{label}</p>
-          <p className="text-3xl font-bold text-stone-900 dark:text-stone-100 font-heading tabular-nums">{value}</p>
+          <p className="text-sm font-medium text-muted uppercase tracking-wide mb-1">{label}</p>
+          <p className="text-3xl font-bold text-foreground font-heading tabular-nums">{value}</p>
           {subtitle && (
-            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">{subtitle}</p>
+            <p className="text-xs text-muted mt-1">{subtitle}</p>
           )}
           {trend && (
             <div className="flex items-center gap-1 mt-2">

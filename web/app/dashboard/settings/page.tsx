@@ -128,17 +128,17 @@ export default function SettingsPage() {
       alert('Settings saved successfully')
     } catch (error) {
       console.error('Error saving settings:', error)
-      alert('Failed to save settings')
+      alert('Không thể lưu cài đặt')
     } finally {
       setSaving(false)
     }
   }
 
   const tabs = [
-    { id: 'general', label: 'General', icon: Icons.Settings },
-    { id: 'academic', label: 'Academic Years', icon: Icons.Calendar },
-    { id: 'grading', label: 'Grading Scales', icon: Icons.Grades },
-    { id: 'finance', label: 'Finance', icon: Icons.Finance },
+    { id: 'general', label: 'Tổng quát', icon: Icons.Settings },
+    { id: 'academic', label: 'Năm học', icon: Icons.Calendar },
+    { id: 'grading', label: 'Thang điểm', icon: Icons.Grades },
+    { id: 'finance', label: 'Tài chính', icon: Icons.Finance },
   ]
 
   if (loading) {
@@ -146,7 +146,7 @@ export default function SettingsPage() {
       <div className="p-6 max-w-7xl mx-auto flex justify-center items-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3 text-stone-500">
           <Icons.Progress className="w-8 h-8 animate-spin text-stone-600" />
-          <p>Loading settings...</p>
+          <p>Đang tải cài đặt...</p>
         </div>
       </div>
     )
@@ -158,9 +158,9 @@ export default function SettingsPage() {
         <div>
           <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
             <Icons.Settings className="w-8 h-8 text-stone-600" />
-            System Settings
+            Cài đặt hệ thống
           </h1>
-          <p className="text-stone-500 mt-1">Manage global system configuration</p>
+          <p className="text-stone-500 mt-1">Quản lý cấu hình hệ thống toàn cầu</p>
         </div>
         <button
           onClick={saveSettings}
@@ -170,12 +170,12 @@ export default function SettingsPage() {
           {saving ? (
             <>
               <Icons.Progress className="w-5 h-5 animate-spin" />
-              Saving...
+              Đang lưu...
             </>
           ) : (
             <>
               <Icons.Save className="w-5 h-5" />
-              Save Changes
+              Lưu thay đổi
             </>
           )}
         </button>
@@ -209,7 +209,7 @@ export default function SettingsPage() {
           {activeTab === 'general' && (
             <Card>
               <CardHeader>
-                <h2 className="text-lg font-semibold text-stone-900">General Settings</h2>
+                <h2 className="text-lg font-semibold text-stone-900">Cài đặt tổng quát</h2>
               </CardHeader>
               <CardBody className="space-y-6">
                 {settings.filter(s => s.category === 'general').map((setting) => (
@@ -227,7 +227,7 @@ export default function SettingsPage() {
                   </div>
                 ))}
                 {settings.filter(s => s.category === 'general').length === 0 && (
-                  <p className="text-stone-500 italic">No general settings available.</p>
+                  <p className="text-stone-500 italic">Không có cài đặt tổng quát nào.</p>
                 )}
               </CardBody>
             </Card>
@@ -236,7 +236,7 @@ export default function SettingsPage() {
           {activeTab === 'academic' && (
             <Card>
               <CardHeader>
-                <h2 className="text-lg font-semibold text-stone-900">Academic Years</h2>
+                <h2 className="text-lg font-semibold text-stone-900">Năm học</h2>
               </CardHeader>
               <CardBody>
                 <div className="space-y-4">
@@ -247,21 +247,21 @@ export default function SettingsPage() {
                           <h3 className="font-medium text-stone-900">{year.name}</h3>
                           {year.is_current && (
                             <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                              Current
+                              Hiện tại
                             </span>
                           )}
                         </div>
                         <p className="text-sm text-stone-500 mt-1">
-                          {new Date(year.start_date).toLocaleDateString()} - {new Date(year.end_date).toLocaleDateString()}
+                          {new Date(year.start_date).toLocaleDateString('vi-VN')} - {new Date(year.end_date).toLocaleDateString('vi-VN')}
                         </p>
                       </div>
                       <button className="text-stone-600 hover:text-stone-800 text-sm font-medium">
-                        Edit
+                        Chỉnh sửa
                       </button>
                     </div>
                   ))}
                   {academicYears.length === 0 && (
-                    <p className="text-stone-500 italic">No academic years configured.</p>
+                    <p className="text-stone-500 italic">Chưa cấu hình năm học nào.</p>
                   )}
                 </div>
               </CardBody>
@@ -271,7 +271,7 @@ export default function SettingsPage() {
           {activeTab === 'grading' && (
             <Card>
               <CardHeader>
-                <h2 className="text-lg font-semibold text-stone-900">Grading Scales</h2>
+                <h2 className="text-lg font-semibold text-stone-900">Thang điểm</h2>
               </CardHeader>
               <CardBody>
                 <div className="space-y-4">
@@ -282,12 +282,12 @@ export default function SettingsPage() {
                           <h3 className="font-medium text-stone-900">{scale.name}</h3>
                           {scale.is_default && (
                             <span className="px-2 py-0.5 text-xs font-medium bg-stone-100 text-stone-800 rounded-full">
-                              Default
+                              Mặc định
                             </span>
                           )}
                         </div>
                         <button className="text-stone-600 hover:text-stone-800 text-sm font-medium">
-                          Edit
+                          Chỉnh sửa
                         </button>
                       </div>
                       <p className="text-sm text-stone-500 mb-3">{scale.description}</p>
@@ -301,7 +301,7 @@ export default function SettingsPage() {
                     </div>
                   ))}
                   {gradingScales.length === 0 && (
-                    <p className="text-stone-500 italic">No grading scales configured.</p>
+                    <p className="text-stone-500 italic">Chưa cấu hình thang điểm nào.</p>
                   )}
                 </div>
               </CardBody>
@@ -311,7 +311,7 @@ export default function SettingsPage() {
           {activeTab === 'finance' && (
             <Card>
               <CardHeader>
-                <h2 className="text-lg font-semibold text-stone-900">Finance Settings</h2>
+                <h2 className="text-lg font-semibold text-stone-900">Cài đặt tài chính</h2>
               </CardHeader>
               <CardBody className="space-y-6">
                 {settings.filter(s => s.category === 'finance').map((setting) => (
@@ -329,7 +329,7 @@ export default function SettingsPage() {
                   </div>
                 ))}
                 {settings.filter(s => s.category === 'finance').length === 0 && (
-                  <p className="text-stone-500 italic">No finance settings available.</p>
+                  <p className="text-stone-500 italic">Không có cài đặt tài chính nào.</p>
                 )}
               </CardBody>
             </Card>

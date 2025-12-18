@@ -12,6 +12,7 @@ import { rateLimitConfigs } from '@/lib/auth/rateLimit'
 import { getDataClient } from '@/lib/auth/dataClient'
 import { ALLOWED_TABLES } from '../tables/route'
 import { handleApiError, ValidationError } from '@/lib/api/errors'
+import { enforceRateLimit } from '@/lib/api/rateLimit'
 
 type Params = { params: Promise<{ table: string }> }
 
@@ -21,6 +22,12 @@ function validateTable(table: string) {
 
 export async function GET(request: Request, ctx: Params) {
   try {
+    const limited = enforceRateLimit(request, {
+      bucketConfig: rateLimitConfigs.dataViewerBucket,
+      keyPrefix: 'admin-data',
+    })
+    if (limited) return limited.response
+
     // Use bulk rate limit config for data operations (50 requests/min vs 10)
     const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
@@ -125,6 +132,12 @@ export async function GET(request: Request, ctx: Params) {
 
 export async function POST(request: Request, ctx: Params) {
   try {
+    const limited = enforceRateLimit(request, {
+      bucketConfig: rateLimitConfigs.dataViewerBucket,
+      keyPrefix: 'admin-data',
+    })
+    if (limited) return limited.response
+
     // Use bulk rate limit config for data operations
     const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
@@ -156,6 +169,12 @@ export async function POST(request: Request, ctx: Params) {
 
 export async function PUT(request: Request, ctx: Params) {
   try {
+    const limited = enforceRateLimit(request, {
+      bucketConfig: rateLimitConfigs.dataViewerBucket,
+      keyPrefix: 'admin-data',
+    })
+    if (limited) return limited.response
+
     // Use bulk rate limit config for data operations
     const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {
@@ -192,6 +211,12 @@ export async function PUT(request: Request, ctx: Params) {
 
 export async function DELETE(request: Request, ctx: Params) {
   try {
+    const limited = enforceRateLimit(request, {
+      bucketConfig: rateLimitConfigs.dataViewerBucket,
+      keyPrefix: 'admin-data',
+    })
+    if (limited) return limited.response
+
     // Use bulk rate limit config for data operations
     const authResult = await adminAuth(request, rateLimitConfigs.bulk)
     if (!authResult.authorized) {

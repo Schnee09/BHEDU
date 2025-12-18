@@ -4,7 +4,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { adminAuth } from '@/lib/auth/adminAuth'
 import { getDataClient } from '@/lib/auth/dataClient'
 import { resetRateLimit, clearAllRateLimits, cleanupRateLimits, getRateLimitIdentifier } from '@/lib/auth/rateLimit'
 

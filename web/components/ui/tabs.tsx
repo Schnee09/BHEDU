@@ -41,3 +41,27 @@ export default function Tabs({
     </div>
   );
 }
+
+// Additional exports to match shadcn/ui pattern
+export const TabsComponent = ({ children, defaultValue: _defaultValue, onValueChange: _onValueChange, value: _value, className }: any) => {
+  return <div className={className}>{children}</div>;
+};
+
+export const TabsListComponent = ({ children, className }: any) => {
+  return <div className={`flex gap-2 border-b border-gray-200 dark:border-gray-700 ${className || ''}`}>{children}</div>;
+};
+
+export const TabsTriggerComponent = ({ children, value: _value, className, onClick }: any) => {
+  return (
+    <button
+      className={`px-3 py-2 text-sm transition-colors ${className || ''}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+};
+
+export const TabsContentComponent = ({ children, value: _value, className }: any) => {
+  return <div className={className}>{children}</div>;
+};

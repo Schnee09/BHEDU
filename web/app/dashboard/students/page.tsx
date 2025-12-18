@@ -35,6 +35,7 @@ import { PageHeader } from "@/components/Breadcrumb";
 import { ToastContainer } from "@/components/ui/Toast";
 import { logger } from "@/lib/logger";
 import { createAuditLog, AuditActions } from "@/lib/audit";
+import { routes } from "@/lib/routes";
 
 interface Student {
   id: string;
@@ -60,7 +61,7 @@ interface StudentStats {
 
 export default function StudentsPage() {
   const toast = useToast();
-  const { user } = useUser();
+  const { user, hasAdminAccess, isTeacher: _isTeacher } = useUser();
   
   // Search with debounce
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,33 +95,42 @@ export default function StudentsPage() {
     ...(filters.gender && { gender: filters.gender })
   });
   
+  // Option A routing model: /dashboard/* pages are role-aware.
+  // Fetch from the role-aware route; server will return the right scope
+  // (admin: all students, others: permitted subset).
   const { data, loading, error, refetch } = useFetch<{
     students: Student[];
     total: number;
     statistics?: StudentStats;
   }>(
-    `/api/admin/students?${queryParams.toString()}`
+    `/api/students?${queryParams.toString()}`
   );
   
   // Handle successful fetch
   useEffect(() => {
     if (data) {
       pagination.setTotalItems(data.total);
-      logger.info('Students loaded', { count: data.students.length });
+      // Guard against unexpected response shapes to avoid runtime errors
+      const count = Array.isArray((data as any).students)
+        ? (data as any).students.length
+        : Array.isArray((data as any).data)
+          ? (data as any).data.length
+          : 0;
+      logger.info('Students loaded', { count });
     }
   }, [data, pagination]);
   
   // Handle errors
   useEffect(() => {
     if (error) {
-      toast.error('Failed to load students', error);
+      toast.error('Không thể tải danh sách học sinh', error);
       logger.error('Error loading students', new Error(error));
     }
-  }, [error, toast.error]);
+  }, [error, toast]);
   
-  // Bulk archive mutation
+  // Bulk archive mutation (admin/staff only)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { mutate: archiveStudent, loading: archiving } = useMutation('/api/admin/students', 'DELETE');
+  const { mutate: archiveStudent, loading: archiving } = useMutation('/api/students', 'DELETE');
   
   const students = data?.students || [];
   const statistics = data?.statistics;
@@ -146,8 +156,12 @@ export default function StudentsPage() {
   
   // Bulk archive
   const handleBulkArchive = async () => {
+    if (!hasAdminAccess) {
+      toast.warning('Not Allowed', 'Only admins and staff can archive students');
+      return;
+    }
     if (selectedIds.size === 0) {
-      toast.warning('No selection', 'Please select students to archive');
+      toast.warning('Chưa chọn', 'Vui lòng chọn học sinh để lưu trữ');
       return;
     }
     
@@ -158,16 +172,22 @@ export default function StudentsPage() {
     try {
       logger.info('Bulk archiving students', { count: selectedIds.size });
       
-      // Archive each student
-      const results = await Promise.allSettled(
-        Array.from(selectedIds).map(id =>
-          apiFetch(`/api/admin/students/${id}`, { method: 'DELETE' })
-        )
-      );
-      
-      const failed = results.filter(r => r.status === 'rejected').length;
-      const succeeded = selectedIds.size - failed;
-      
+      const res = await apiFetch('/api/students/bulk-archive', {
+        method: 'POST',
+        body: JSON.stringify({ studentIds: Array.from(selectedIds) }),
+      });
+
+      const data = await res.json().catch(() => ({} as any));
+
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to archive students');
+      }
+
+      const archivedCount = Number(data?.archivedCount || 0);
+      const failedIds: string[] = Array.isArray(data?.failedIds) ? data.failedIds : [];
+      const failed = failedIds.length;
+      const succeeded = archivedCount;
+
       if (failed > 0) {
         toast.warning('Partial success', `Archived ${succeeded} students, ${failed} failed`);
       } else {
@@ -189,7 +209,45 @@ export default function StudentsPage() {
       refetch();
     } catch (error) {
       logger.error('Bulk archive error', error instanceof Error ? error : new Error(String(error)), { originalError: String(error) });
-      toast.error('Archive failed', 'Failed to archive students');
+      toast.error('Lưu trữ thất bại', 'Không thể lưu trữ học sinh');
+    }
+  };
+
+  // Single student archive
+  const handleArchiveOne = async (student: Student) => {
+    if (!hasAdminAccess) {
+      toast.warning('Not Allowed', 'Only admins and staff can archive students');
+      return;
+    }
+
+    if (!confirm(`Archive ${student.full_name}? This will set their status to inactive.`)) {
+      return;
+    }
+
+    try {
+      logger.info('Archiving student', { studentId: student.id });
+      const res = await apiFetch(`/api/students/${student.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Không thể lưu trữ học sinh');
+      }
+
+      await createAuditLog({
+        userId: user?.id || 'unknown',
+        userEmail: user?.email || 'unknown',
+        userRole: user?.role || 'admin',
+        action: AuditActions.STUDENT_DELETED,
+        resourceType: 'student',
+        resourceId: student.id,
+        metadata: { studentId: student.id },
+      });
+
+      toast.success('Student archived', `${student.full_name} has been archived`);
+      refetch();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Archive failed';
+      toast.error('Archive failed', message);
+      logger.error('Archive student error', err instanceof Error ? err : new Error(String(err)));
     }
   };
   
@@ -211,10 +269,10 @@ export default function StudentsPage() {
       s.full_name,
       s.email || "",
       s.phone || "",
-      s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString() : "",
+      s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString('vi-VN') : "",
       s.grade_level || "",
       s.status || "active",
-      new Date(s.created_at).toLocaleDateString(),
+      new Date(s.created_at).toLocaleDateString('vi-VN'),
     ]);
     
     const csvContent = [
@@ -318,15 +376,15 @@ export default function StudentsPage() {
       
       {/* Header with Breadcrumb */}
       <PageHeader
-        title="Students"
-        description="Manage student records and information"
+        title="Học sinh"
+        description="Quản lý hồ sơ và thông tin học sinh"
         action={
           <Button
             variant="primary"
             onClick={() => setShowAddModal(true)}
             leftIcon={<Icons.Add className="w-4 h-4" />}
           >
-            Add Student
+            Thêm Học sinh
           </Button>
         }
       />
@@ -339,7 +397,7 @@ export default function StudentsPage() {
         {/* Filter Sidebar */}
         {showFilters && (
           <Card className="w-64 flex-shrink-0">
-            <CardHeader title="Filters" />
+            <CardHeader title="Bộ lọc" />
             <div className="space-y-4">
               {/* Grade Level Filter */}
               <div>
@@ -408,7 +466,7 @@ export default function StudentsPage() {
                 fullWidth
                 onClick={() => setFilters({ gradeLevel: '', status: '', gender: '' })}
               >
-                Clear Filters
+                Xóa bộ lọc
               </Button>
             </div>
           </Card>
@@ -421,7 +479,7 @@ export default function StudentsPage() {
               <div className="flex-1">
                 <Input
                   type="text"
-                  placeholder="Search students by name, email, or student ID..."
+                  placeholder="Tìm kiếm học sinh theo tên, email hoặc mã học sinh..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   leftIcon={<span>🔍</span>}
@@ -431,10 +489,19 @@ export default function StudentsPage() {
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
+                  onClick={refetch}
+                  leftIcon={<Icons.Search className="w-4 h-4" />}
+                  disabled={loading}
+                >
+                  Làm mới
+                </Button>
+
+                <Button
+                  variant="outline"
                   onClick={() => setShowFilters(!showFilters)}
                   leftIcon={showFilters ? <Icons.Close className="w-4 h-4" /> : <Icons.Filter className="w-4 h-4" />}
                 >
-                  {showFilters ? 'Hide' : 'Filters'}
+                  {showFilters ? 'Ẩn' : 'Bộ lọc'}
                 </Button>
                 
                 <Button
@@ -443,41 +510,43 @@ export default function StudentsPage() {
                   leftIcon={<Icons.Download className="w-4 h-4" />}
                   disabled={students.length === 0}
                 >
-                  Export
+                  Xuất dữ liệu
                 </Button>
                 
-                {selectedIds.size > 0 && (
+                {hasAdminAccess && selectedIds.size > 0 && (
                   <Button
                     variant="danger"
                     onClick={handleBulkArchive}
                     isLoading={archiving}
                     leftIcon={<Icons.Archive className="w-4 h-4" />}
                   >
-                    Archive ({selectedIds.size})
+                    Lưu trữ ({selectedIds.size})
                   </Button>
                 )}
-                
-                <Link href="/dashboard/students/import">
-                  <Button variant="outline" leftIcon={<span>📤</span>}>
-                    Import
-                  </Button>
-                </Link>
+
+                {hasAdminAccess && (
+                  <Link href={routes.students.import()}>
+                    <Button variant="outline" leftIcon={<span>📤</span>}>
+                      Nhập dữ liệu
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
             
             {/* Results info */}
             <div className="mt-3 text-sm text-slate-600 flex items-center gap-2">
-              <span>Showing {students.length} of {data?.total || 0} students</span>
+              <span>Hiển thị {students.length} trong tổng số {data?.total || 0} học sinh</span>
               {selectedIds.size > 0 && (
                 <>
                   <span>•</span>
-                  <Badge variant="info">{selectedIds.size} selected</Badge>
+                  <Badge variant="info">{selectedIds.size} đã chọn</Badge>
                 </>
               )}
               {(filters.gradeLevel || filters.status || filters.gender) && (
                 <>
                   <span>•</span>
-                  <Badge variant="warning">Filters active</Badge>
+                  <Badge variant="warning">Bộ lọc đang hoạt động</Badge>
                 </>
               )}
             </div>
@@ -487,10 +556,10 @@ export default function StudentsPage() {
       {error && (
         <Card className="mb-6 border-red-500">
           <div className="text-red-600">
-            <p className="font-semibold">Error loading students</p>
+            <p className="font-semibold">Lỗi khi tải danh sách học sinh</p>
             <p className="text-sm mt-1">{error}</p>
             <Button variant="outline" onClick={refetch} className="mt-3">
-              Retry
+              Thử lại
             </Button>
           </div>
         </Card>
@@ -500,20 +569,20 @@ export default function StudentsPage() {
       {!loading && students.length === 0 && !error && (
         <EmptyState
           icon={<Icons.Students className="w-12 h-12 text-gray-400" />}
-          title="No students found"
+          title="Không tìm thấy học sinh nào"
           description={
             debouncedSearch
-              ? "Try adjusting your search query"
-              : "Get started by importing or adding students"
+              ? "Hãy thử điều chỉnh từ khóa tìm kiếm"
+              : "Bắt đầu bằng cách nhập hoặc thêm học sinh"
           }
           action={
             <div className="flex gap-2">
-              <Link href="/dashboard/students/import">
-                <Button variant="primary">Import Students</Button>
+              <Link href={routes.students.import()}>
+                <Button variant="primary">Nhập học sinh</Button>
               </Link>
               {debouncedSearch && (
                 <Button variant="outline" onClick={() => setSearchQuery('')}>
-                  Clear Search
+                  Xóa tìm kiếm
                 </Button>
               )}
             </div>
@@ -550,7 +619,7 @@ export default function StudentsPage() {
               },
               {
                 key: 'full_name',
-                label: 'Name',
+                label: 'Tên',
                 render: (student) => (
                   <Link 
                     href={`/dashboard/students/${student.id}`}
@@ -562,7 +631,7 @@ export default function StudentsPage() {
               },
               {
                 key: 'student_code',
-                label: 'Student ID',
+                label: 'Mã học sinh',
                 render: (student) => (
                   <span className="text-gray-600 font-mono text-sm">
                     {student.student_code || '-'}
@@ -578,7 +647,7 @@ export default function StudentsPage() {
               },
               {
                 key: 'grade_level',
-                label: 'Grade',
+                label: 'Lớp',
                 render: (student) => (
                   student.grade_level ? (
                     <Badge variant="info">{student.grade_level}</Badge>
@@ -589,14 +658,14 @@ export default function StudentsPage() {
               },
               {
                 key: 'phone',
-                label: 'Phone',
+                label: 'Điện thoại',
                 render: (student) => (
                   <span className="text-slate-700">{student.phone || '-'}</span>
                 ),
               },
               {
                 key: 'status',
-                label: 'Status',
+                label: 'Trạng thái',
                 render: (student) => (
                   <Badge variant={student.status === 'active' ? 'success' : 'default'}>
                     {student.status || 'active'}
@@ -605,11 +674,38 @@ export default function StudentsPage() {
               },
               {
                 key: 'created_at',
-                label: 'Joined',
+                label: 'Ngày tham gia',
                 render: (student) => (
                   <span className="text-gray-600 text-sm">
-                    {new Date(student.created_at).toLocaleDateString()}
+                    {new Date(student.created_at).toLocaleDateString('vi-VN')}
                   </span>
+                ),
+              },
+              {
+                key: 'actions',
+                label: 'Hành động',
+                width: '160px',
+                render: (student) => (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingStudent(student)}
+                      leftIcon={<Icons.Edit className="w-4 h-4" />}
+                    >
+                      Chỉnh sửa
+                    </Button>
+                    {hasAdminAccess && (
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleArchiveOne(student)}
+                        leftIcon={<Icons.Archive className="w-4 h-4" />}
+                      >
+                        Lưu trữ
+                      </Button>
+                    )}
+                  </div>
                 ),
               },
             ]}
@@ -625,11 +721,11 @@ export default function StudentsPage() {
             onClick={pagination.prevPage}
             disabled={!pagination.hasPrevPage || loading}
           >
-            Previous
+            Trước
           </Button>
           
           <span className="text-sm text-slate-600">
-            Page {pagination.page} of {pagination.totalPages}
+            Trang {pagination.page} của {pagination.totalPages}
           </span>
           
           <Button
@@ -637,7 +733,7 @@ export default function StudentsPage() {
             onClick={pagination.nextPage}
             disabled={!pagination.hasNextPage || loading}
           >
-            Next
+            Tiếp theo
           </Button>
         </div>
       )}
@@ -726,15 +822,15 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
     const newErrors: Record<string, string> = {};
     
     if (!formData.full_name.trim()) {
-      newErrors.full_name = 'Full name is required';
+      newErrors.full_name = 'Họ tên là bắt buộc';
     }
     
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = 'Định dạng email không hợp lệ';
     }
     
     if (formData.phone && !/^\+?[\d\s-()]+$/.test(formData.phone)) {
-      newErrors.phone = 'Invalid phone format';
+      newErrors.phone = 'Định dạng số điện thoại không hợp lệ';
     }
     
     setErrors(newErrors);
@@ -752,8 +848,8 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
     
     try {
       const url = student
-        ? `/api/admin/students/${student.id}`
-        : '/api/admin/students';
+        ? `/api/students/${student.id}`
+        : '/api/students';
       
       const method = student ? 'PUT' : 'POST';
       
@@ -764,7 +860,7 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to save student');
+        throw new Error(error.error || 'Không thể lưu học sinh');
       }
       
       onSuccess();
