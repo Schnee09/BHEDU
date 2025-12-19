@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -242,103 +244,185 @@ function VietnameseEntryInline() {
   // NOTE: student loading is handled by the Vietnamese-specific loader above
 
   return (
-    <div className="p-4 bg-white rounded">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       {loading ? (
-        <div>Loading...</div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading...</span>
+        </div>
       ) : (
-        <div>
-          <h3 className="font-semibold">Vietnamese Entry (partial)</h3>
-          <div className="text-sm text-gray-600">Classes: {classes.length} — Subjects: {subjects.length} — Eval types: {evaluationTypes.length}</div>
+        <div className="space-y-6">
+          {/* Header Section */}
+          <div className="border-b border-gray-200 pb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Vietnamese Grade Entry</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Enter grades for {classes.length} classes, {subjects.length} subjects, {evaluationTypes.length} evaluation types
+            </p>
+          </div>
 
-          <div className="mt-3 flex items-center gap-3">
-            <div>
-              <label className="text-sm block mb-1">Class</label>
-              <select className="border rounded px-2 py-1" value={selectedClassId ?? ''} onChange={(e) => setSelectedClassId(e.target.value || null)}>
-                <option value="">Select class</option>
-                {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name || c.display_name || c.id}</option>)}
-              </select>
-            </div>
+          {/* Filters Section */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Class</label>
+                <Select value={selectedClassId ?? ''} onChange={(e) => setSelectedClassId(e.target.value || null)}>
+                  <option value="">Select class</option>
+                  {classes.map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name || c.display_name || c.id}
+                    </option>
+                  ))}
+                </Select>
+              </div>
 
-            <div>
-              <label className="text-sm block mb-1">Subject</label>
-              <select className="border rounded px-2 py-1" value={selectedSubjectCode ?? ''} onChange={(e) => setSelectedSubjectCode(e.target.value || null)}>
-                <option value="">Select subject</option>
-                {subjects.map((s: any) => <option key={s.code || s.id} value={s.code || s.id}>{s.name || s.title || s.code}</option>)}
-              </select>
-            </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Subject</label>
+                <Select value={selectedSubjectCode ?? ''} onChange={(e) => setSelectedSubjectCode(e.target.value || null)}>
+                  <option value="">Select subject</option>
+                  {subjects.map((s: any) => (
+                    <option key={s.code || s.id} value={s.code || s.id}>
+                      {s.name || s.title || s.code}
+                    </option>
+                  ))}
+                </Select>
+              </div>
 
-            <div>
-              <label className="text-sm block mb-1">Semester</label>
-              <select className="border rounded px-2 py-1" value={selectedSemester} onChange={(e) => setSelectedSemester(e.target.value as any)}>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="final">Final</option>
-              </select>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Semester</label>
+                <Select value={selectedSemester} onChange={(e) => setSelectedSemester(e.target.value as any)}>
+                  <option value="1">Semester 1</option>
+                  <option value="2">Semester 2</option>
+                  <option value="final">Final Exam</option>
+                </Select>
+              </div>
             </div>
           </div>
 
           {students.length > 0 ? (
-            <div className="mt-4">
-              <div className="text-sm font-medium mb-2">Students ({students.length})</div>
-              <div className="overflow-x-auto">
-                <table className="w-full table-auto border-collapse">
-                  <thead>
-                    <tr className="text-left">
-                      <th className="px-2 py-1">#</th>
-                      <th className="px-2 py-1">Name</th>
-                      <th className="px-2 py-1">Oral</th>
-                      <th className="px-2 py-1">15m</th>
-                      <th className="px-2 py-1">1-period</th>
-                      <th className="px-2 py-1">Midterm</th>
-                      <th className="px-2 py-1">Final</th>
+            <div className="space-y-4">
+              {/* Students Header */}
+              <div className="flex items-center justify-between">
+                <h4 className="text-md font-medium text-gray-900">
+                  Students ({students.length})
+                </h4>
+                <div className="text-sm text-gray-500">
+                  {Object.values(studentErrors).some(e => e && Object.values(e).some(Boolean))
+                    ? `${Object.values(studentErrors).filter(e => e && Object.values(e).some(Boolean)).length} validation errors`
+                    : 'All grades valid'
+                  }
+                </div>
+              </div>
+
+              {/* Grades Table */}
+              <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Oral</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">15 Min</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">1 Period</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Midterm</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Final</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200">
                     {students.map((s: any, idx: number) => {
                       const sg = studentGrades[s.id] || {};
+                      const hasErrors = studentErrors[s.id] && Object.values(studentErrors[s.id]).some(Boolean);
                       return (
-                        <tr key={s.id} className="border-t">
-                          <td className="px-2 py-1">{idx + 1}</td>
-                          <td className="px-2 py-1">{s.name || s.full_name || '—'}</td>
-                          <td className="px-2 py-1">
-                            <input
-                              className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.oral ? 'border-red-500' : ''}`}
-                              value={sg.oral ?? ''}
-                              onChange={(e) => handleGradeChange(s.id, 'oral', e.target.value)}
-                            />
-                            {studentErrors[s.id]?.oral && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].oral}</div>}
+                        <tr key={s.id} className={`hover:bg-gray-50 ${hasErrors ? 'bg-red-50' : ''}`}>
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                            {idx + 1}
                           </td>
-                          <td className="px-2 py-1">
-                            <input
-                              className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.fifteen_min ? 'border-red-500' : ''}`}
-                              value={sg.fifteen_min ?? ''}
-                              onChange={(e) => handleGradeChange(s.id, 'fifteen_min', e.target.value)}
-                            />
-                              {studentErrors[s.id]?.fifteen_min && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].fifteen_min}</div>}
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                            {s.name || s.full_name || '—'}
                           </td>
-                          <td className="px-2 py-1">
-                            <input
-                              className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.one_period ? 'border-red-500' : ''}`}
-                              value={sg.one_period ?? ''}
-                              onChange={(e) => handleGradeChange(s.id, 'one_period', e.target.value)}
-                            />
-                              {studentErrors[s.id]?.one_period && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].one_period}</div>}
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col items-center space-y-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="10"
+                                step="0.1"
+                                className={`w-20 text-center ${studentErrors[s.id]?.oral ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                value={sg.oral ?? ''}
+                                onChange={(e) => handleGradeChange(s.id, 'oral', e.target.value)}
+                                placeholder="0-10"
+                              />
+                              {studentErrors[s.id]?.oral && (
+                                <span className="text-xs text-red-600">{studentErrors[s.id].oral}</span>
+                              )}
+                            </div>
                           </td>
-                          <td className="px-2 py-1">
-                            <input
-                              className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.midterm ? 'border-red-500' : ''}`}
-                              value={sg.midterm ?? ''}
-                              onChange={(e) => handleGradeChange(s.id, 'midterm', e.target.value)}
-                            />
-                              {studentErrors[s.id]?.midterm && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].midterm}</div>}
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col items-center space-y-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="10"
+                                step="0.1"
+                                className={`w-20 text-center ${studentErrors[s.id]?.fifteen_min ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                value={sg.fifteen_min ?? ''}
+                                onChange={(e) => handleGradeChange(s.id, 'fifteen_min', e.target.value)}
+                                placeholder="0-10"
+                              />
+                              {studentErrors[s.id]?.fifteen_min && (
+                                <span className="text-xs text-red-600">{studentErrors[s.id].fifteen_min}</span>
+                              )}
+                            </div>
                           </td>
-                          <td className="px-2 py-1">
-                            <input
-                              className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.final ? 'border-red-500' : ''}`}
-                              value={sg.final ?? ''}
-                              onChange={(e) => handleGradeChange(s.id, 'final', e.target.value)}
-                            />
-                              {studentErrors[s.id]?.final && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].final}</div>}
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col items-center space-y-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="10"
+                                step="0.1"
+                                className={`w-20 text-center ${studentErrors[s.id]?.one_period ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                value={sg.one_period ?? ''}
+                                onChange={(e) => handleGradeChange(s.id, 'one_period', e.target.value)}
+                                placeholder="0-10"
+                              />
+                              {studentErrors[s.id]?.one_period && (
+                                <span className="text-xs text-red-600">{studentErrors[s.id].one_period}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col items-center space-y-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="10"
+                                step="0.1"
+                                className={`w-20 text-center ${studentErrors[s.id]?.midterm ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                value={sg.midterm ?? ''}
+                                onChange={(e) => handleGradeChange(s.id, 'midterm', e.target.value)}
+                                placeholder="0-10"
+                              />
+                              {studentErrors[s.id]?.midterm && (
+                                <span className="text-xs text-red-600">{studentErrors[s.id].midterm}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col items-center space-y-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="10"
+                                step="0.1"
+                                className={`w-20 text-center ${studentErrors[s.id]?.final ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                                value={sg.final ?? ''}
+                                onChange={(e) => handleGradeChange(s.id, 'final', e.target.value)}
+                                placeholder="0-10"
+                              />
+                              {studentErrors[s.id]?.final && (
+                                <span className="text-xs text-red-600">{studentErrors[s.id].final}</span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -347,31 +431,93 @@ function VietnameseEntryInline() {
                 </table>
               </div>
 
-              <div className="mt-3 flex items-center gap-3">
-                <Button onClick={() => setShowConfirm(true)} disabled={saveLoading || hasValidationErrors}>
-                  {saveLoading ? 'Saving…' : 'Save grades'}
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReloadTrigger(prev => prev + 1)}
+                    className="flex items-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Reload Data</span>
+                  </Button>
+
+                  {hasValidationErrors && (
+                    <div className="flex items-center space-x-2 text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-md">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Please fix validation errors before saving</span>
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  onClick={() => setShowConfirm(true)}
+                  disabled={saveLoading || hasValidationErrors}
+                  className="flex items-center space-x-2"
+                >
+                  {saveLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Save All Grades</span>
+                    </>
+                  )}
                 </Button>
-
-                <AlertDialog open={showConfirm} onOpenChange={(o) => setShowConfirm(o)}>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirm save</AlertDialogTitle>
-                      <AlertDialogDescription>Are you sure you want to save grades for all students? This will overwrite existing grades.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel onClick={() => setShowConfirm(false)}>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={async () => { setShowConfirm(false); await handleSave(); }}>Confirm</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-
-                <Button onClick={() => {
-                  setReloadTrigger(prev => prev + 1);
-                }}>Reload</Button>
               </div>
+
+              {/* Confirmation Dialog */}
+              <AlertDialog open={showConfirm} onOpenChange={(o) => setShowConfirm(o)}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center space-x-2">
+                      <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Confirm Save Operation</span>
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-gray-600">
+                      You are about to save grades for <strong>{students.length} students</strong> in this class.
+                      This will overwrite any existing grades for the selected subject and semester.
+                      <br /><br />
+                      This action cannot be undone. Are you sure you want to continue?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setShowConfirm(false)}>
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => { setShowConfirm(false); await handleSave(); }}
+                      className="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
+                    >
+                      Yes, Save Grades
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ) : (
-            <div className="mt-4 text-sm text-gray-500">No students loaded yet.</div>
+            <div className="text-center py-12">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No students found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Select a class, subject, and semester to load student data.
+              </p>
+            </div>
           )}
         </div>
       )}
@@ -380,20 +526,60 @@ function VietnameseEntryInline() {
 }
 
 export default function GradeEntryPageModern() {
-  const [mode, setMode] = useState<'modern' | 'vietnamese'>('modern');
+  const [mode, setMode] = useState<'modern' | 'vietnamese'>('vietnamese');
 
   return (
-    <div className="container mx-auto px-6 py-8">
-      <h1 className="text-2xl font-bold mb-4">Grade Entry</h1>
-      <p className="text-gray-600 mb-6">The Grade Entry UI is being repaired; Vietnamese entry is re-introduced incrementally.</p>
-      <div className="mb-4">
-        <button onClick={() => setMode('modern')} className={`px-3 py-1 rounded ${mode === 'modern' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Standard Entry</button>
-        <button onClick={() => setMode('vietnamese')} className={`ml-2 px-3 py-1 rounded ${mode === 'vietnamese' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Vietnamese Entry</button>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Grade Entry System</h1>
+          <p className="mt-2 text-gray-600">
+            Manage student grades efficiently with our modern grade entry interface.
+          </p>
+        </div>
 
-      {mode === 'vietnamese' ? <VietnameseEntryInline /> : (
-        <div className="bg-white rounded p-6">Standard entry UI (placeholder)</div>
-      )}
+        {/* Mode Selector */}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 inline-flex">
+            <button
+              onClick={() => setMode('modern')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                mode === 'modern'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Standard Entry
+            </button>
+            <button
+              onClick={() => setMode('vietnamese')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                mode === 'vietnamese'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Vietnamese Entry
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        {mode === 'vietnamese' ? (
+          <VietnameseEntryInline />
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Standard Entry Coming Soon</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              The standard grade entry interface is currently under development.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
