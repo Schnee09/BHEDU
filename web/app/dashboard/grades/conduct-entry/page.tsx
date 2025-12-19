@@ -121,7 +121,7 @@ export default function ConductGradeEntryPage() {
       };
 
       if (!res.ok) {
-        const errorData = await safeParseJson(res);
+        const _errorData = await safeParseJson(res);
         // Handle auth/permission explicitly
         if (res.status === 401) return;
         if (res.status === 403) return;

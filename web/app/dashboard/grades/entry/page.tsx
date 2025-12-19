@@ -1,768 +1,404 @@
-/**
- * Grade Entry Page - Refactored with Modern Hooks and Audit Logging
- * 
- * Features:
- * - Uses custom hooks (useFetch, useMutation, useToast)
- * - Audit logging for all grade changes
- * - Modal for bulk operations
- * - Table component for grade display
- * - Better validation and error handling
- * - Auto-save warning
- */
-
 "use client";
 
-import { useState, useEffect } from "react";
-import { useFetch, useMutation, useToast, useUser } from "@/hooks";
-import { 
-  Button, 
-  Card, 
-  Badge,
-  Table,
-  Modal,
-  LoadingState,
-  EmptyState
-} from "@/components/ui";
-import { ToastContainer } from "@/components/ui/Toast";
-import { Icons } from "@/components/ui/Icons";
-import { logger } from "@/lib/logger";
-import { createAuditLog, AuditActions } from "@/lib/audit";
+import React, { useState, useEffect, useMemo } from "react";
+import { Button } from "@/components/ui";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { apiFetch } from "@/lib/api/client";
+import { performVietnameseSave } from '@/lib/grades/vietnameseSave';
+import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/hooks";
 
-interface Student {
-  id: string;
-  email: string;
-  full_name: string;
-  student_id?: string;
-}
+// Module-scoped types for the inlined Vietnamese entry (keep them simple for now)
+type VStudent = any;
+type VSubject = any;
+type VEvaluationType = any;
 
-interface GradeCategory {
-  id: string;
-  name: string;
-  weight: number;
-}
-
-interface Assignment {
-  id: string;
-  title: string;
-  description?: string;
-  total_points: number;
-  category?: GradeCategory;
-  due_date?: string;
-  published: boolean;
-}
-
-interface Grade {
-  id: string;
-  assignment_id: string;
-  student_id: string;
-  points_earned?: number;
-  late: boolean;
-  excused: boolean;
-  missing: boolean;
-  feedback?: string;
-  student: Student;
-  graded_at?: string;
-}
-
-interface Class {
-  id: string;
-  name: string;
-  code: string;
-}
-
-type QuickActionType = 'all-full' | 'all-missing' | 'clear-all';
-
-export default function GradeEntryPageModern() {
+function VietnameseEntryInline() {
   const toast = useToast();
-  const { user } = useUser();
-  
-  // Selection state
-  const [selectedClass, setSelectedClass] = useState<string>("");
-  const [selectedAssignment, setSelectedAssignment] = useState<string>("");
-  
-  // Grades state
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [editingFeedback, setEditingFeedback] = useState<string | null>(null);
-  const [showBulkModal, setShowBulkModal] = useState(false);
-  const [bulkAction, setBulkAction] = useState<QuickActionType | null>(null);
-  
-  // Fetch classes
-  const { data: classesData, loading: classesLoading, error: classesError } = useFetch<{ classes: Class[] }>(
-    '/api/classes/my-classes'
-  );
-  
-  // Handle classes error
+  const [classes, setClasses] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<VSubject[]>([]);
+  const [evaluationTypes, setEvaluationTypes] = useState<VEvaluationType[]>([]);
+  const [students, setStudents] = useState<VStudent[]>([]);
+  const [studentGrades, setStudentGrades] = useState<Record<string, {
+    oral?: number | string | null,
+    fifteen_min?: number | string | null,
+    one_period?: number | string | null,
+    midterm?: number | string | null,
+    final?: number | string | null
+  }>>({});
+  const [studentErrors, setStudentErrors] = useState<Record<string, Partial<Record<"oral"|"fifteen_min"|"one_period"|"midterm"|"final", string>>>>({});
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [selectedSubjectCode, setSelectedSubjectCode] = useState<string | null>(null);
+  const [selectedSemester, setSelectedSemester] = useState<'1' | '2' | 'final'>('1');
+
   useEffect(() => {
-    if (classesError) {
-      toast.error('Failed to load classes', classesError);
-      logger.error('Classes fetch error', new Error(classesError));
-    }
-  }, [classesError, toast]);
-  
-  // Fetch assignments for selected class
-  const { 
-    data: assignmentsData, 
-    loading: assignmentsLoading,
-    error: assignmentsError,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    refetch: refetchAssignments 
-  } = useFetch<{ assignments: Assignment[] }>(
-    selectedClass ? `/api/grades/assignments?classId=${selectedClass}&published=true` : ''
-  );
-  
-  // Handle assignments error
-  useEffect(() => {
-    if (assignmentsError) {
-      toast.error('Failed to load assignments', assignmentsError);
-      logger.error('Assignments fetch error', new Error(assignmentsError));
-    }
-  }, [assignmentsError, toast]);
-  
-  // Fetch grades for selected assignment
-  const { 
-    data: gradesData, 
-    loading: gradesLoading,
-    error: gradesError,
-    refetch: refetchGrades 
-  } = useFetch<{ grades: Grade[] }>(
-    selectedAssignment ? `/api/grades?assignmentId=${selectedAssignment}` : ''
-  );
-  
-  // Handle grades success
-  useEffect(() => {
-    if (gradesData) {
-      setGrades(gradesData.grades || []);
-      setHasChanges(false);
-      logger.info('Grades loaded', { count: gradesData.grades?.length || 0 });
-    }
-  }, [gradesData]);
-  
-  // Handle grades error
-  useEffect(() => {
-    if (gradesError) {
-      toast.error('Failed to load grades', gradesError);
-      logger.error('Grades fetch error', new Error(gradesError));
-    }
-  }, [gradesError, toast]);
-  
-  // Save grades mutation
-  const { mutate: saveGrades, loading: saving } = useMutation('/api/grades', 'POST');
-  
-  const classes = classesData?.classes || [];
-  const assignments = assignmentsData?.assignments || [];
-  const selectedAssignmentData = assignments.find(a => a.id === selectedAssignment);
-  
-  // Reset assignment when class changes
-  useEffect(() => {
-    if (selectedClass) {
-      setSelectedAssignment("");
-      setGrades([]);
-      setHasChanges(false);
-    }
-  }, [selectedClass]);
-  
-  // Validation helper
-  const validatePoints = (points: number | undefined, maxPoints: number): { valid: boolean; error?: string } => {
-    if (points === undefined) return { valid: true };
-    if (points < 0) return { valid: false, error: 'Điểm không thể âm' };
-    if (points > maxPoints) return { valid: false, error: `Điểm không thể vượt quá ${maxPoints}` };
-    return { valid: true };
-  };
-  
-  // Grade change handlers
-  const handlePointsChange = (gradeId: string, value: string) => {
-    const numValue = value === '' ? undefined : parseFloat(value);
-    
-    if (numValue !== undefined && selectedAssignmentData) {
-      const validation = validatePoints(numValue, selectedAssignmentData.total_points);
-      if (!validation.valid) {
-        toast.warning('Invalid points', validation.error!);
-        return;
-      }
-    }
-    
-    setGrades(prev => prev.map(g => {
-      if (g.id === gradeId) {
-        const updated = { ...g, points_earned: numValue };
-        
-        // Auto-clear flags when points are entered
-        if (numValue !== undefined) {
-          updated.missing = false;
-          updated.excused = false;
-        }
-        
-        return updated;
-      }
-      return g;
-    }));
-    setHasChanges(true);
-  };
-  
-  const handleFlagToggle = (gradeId: string, flag: 'late' | 'excused' | 'missing') => {
-    setGrades(prev => prev.map(g => {
-      if (g.id === gradeId) {
-        const updated = { ...g, [flag]: !g[flag] };
-        
-        // Auto-clear points when marked as excused or missing
-        if (flag === 'excused' && updated.excused) {
-          updated.points_earned = undefined;
-          updated.missing = false;
-        } else if (flag === 'missing' && updated.missing) {
-          updated.points_earned = undefined;
-          updated.excused = false;
-        }
-        
-        return updated;
-      }
-      return g;
-    }));
-    setHasChanges(true);
-  };
-  
-  const handleFeedbackChange = (gradeId: string, value: string) => {
-    setGrades(prev => prev.map(g => 
-      g.id === gradeId ? { ...g, feedback: value || undefined } : g
-    ));
-    setHasChanges(true);
-  };
-  
-  // Bulk action handlers
-  const handleBulkActionConfirm = () => {
-    if (!bulkAction || !selectedAssignmentData) return;
-    
-    setGrades(prev => prev.map(g => {
-      switch (bulkAction) {
-        case 'all-full':
-          return { 
-            ...g, 
-            points_earned: selectedAssignmentData.total_points, 
-            late: false, 
-            excused: false, 
-            missing: false 
-          };
-        case 'all-missing':
-          return { 
-            ...g, 
-            points_earned: undefined, 
-            late: false, 
-            excused: false, 
-            missing: true 
-          };
-        case 'clear-all':
-          return { 
-            ...g, 
-            points_earned: undefined, 
-            late: false, 
-            excused: false, 
-            missing: false, 
-            feedback: undefined 
-          };
-        default:
-          return g;
-      }
-    }));
-    
-    setHasChanges(true);
-    setShowBulkModal(false);
-    setBulkAction(null);
-    
-    toast.success('Bulk action applied', getBulkActionMessage(bulkAction));
-  };
-  
-  const getBulkActionMessage = (action: QuickActionType): string => {
-    switch (action) {
-      case 'all-full': return 'All students set to full credit';
-      case 'all-missing': return 'All students marked as missing';
-      case 'clear-all': return 'All grades cleared';
-      default: return '';
-    }
-  };
-  
-  // Save handler with audit logging
-  const handleSave = async () => {
-    if (!selectedAssignmentData) return;
-    
-    // Validate all grades
-    for (const grade of grades) {
-      if (grade.points_earned !== undefined) {
-        const validation = validatePoints(grade.points_earned, selectedAssignmentData.total_points);
-        if (!validation.valid) {
-          toast.error(
-            `Invalid grade for ${grade.student.full_name}`, 
-            validation.error!
-          );
+    const fetchClasses = async () => {
+      setLoading(true);
+      try {
+        const res = await apiFetch('/api/classes/my-classes');
+        const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } };
+        if (!res.ok) {
+          const err = await safeParseJson(res);
+          toast.error(err?.error || 'Failed to load classes');
           return;
         }
+        const data = await safeParseJson(res);
+        const cls = data.classes || [];
+        setClasses(cls);
+        if (cls.length > 0 && !selectedClassId) setSelectedClassId(cls[0].id);
+      } catch (_err) {
+        toast.error('Failed to load classes');
+      } finally {
+        setLoading(false);
       }
+    };
+
+    const fetchSubjects = async () => {
+      try {
+        const res = await apiFetch('/api/subjects');
+        const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } };
+        if (!res.ok) {
+          const err = await safeParseJson(res);
+          toast.error(err?.error || 'Failed to load subjects');
+          return;
+        }
+        const data = await safeParseJson(res);
+        const subs = data.subjects || [];
+        setSubjects(subs);
+        if (subs.length > 0 && !selectedSubjectCode) setSelectedSubjectCode(subs[0].code || subs[0].id || null);
+      } catch (_err) {
+        toast.error('Failed to load subjects');
+      }
+    };
+
+    const fetchEvaluationTypes = async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('evaluation_types')
+          .select('*')
+          .order('weight', { ascending: true });
+
+        if (data) {
+          const colors = ['bg-blue-50', 'bg-green-50', 'bg-yellow-50', 'bg-orange-50', 'bg-red-50', 'bg-purple-50'];
+          const mapped = data.map((t: any, index: number) => ({
+            ...t,
+            type: t.code?.toLowerCase?.(),
+            color: colors[index % colors.length]
+          }));
+          setEvaluationTypes(mapped);
+        } else if (error) {
+          toast.error('Failed to load evaluation types');
+        }
+      } catch (_err) {
+        toast.error('Failed to load evaluation types');
+      }
+    };
+
+    fetchClasses();
+    fetchSubjects();
+    fetchEvaluationTypes();
+  }, [toast, selectedClassId, selectedSubjectCode]);
+
+  // Load students + existing Vietnamese grades when class, subject and semester are selected
+  useEffect(() => {
+    const loadStudents = async () => {
+      if (!selectedClassId || !selectedSubjectCode || !selectedSemester) return;
+      setLoading(true);
+      try {
+        const url = `/api/grades/vietnamese-entry?class_id=${encodeURIComponent(selectedClassId)}&subject_code=${encodeURIComponent(selectedSubjectCode)}&semester=${encodeURIComponent(selectedSemester)}`;
+        const res = await apiFetch(url);
+        const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } };
+        if (!res.ok) {
+          const err = await safeParseJson(res);
+          toast.error(err?.error || 'Failed to load student grades');
+          return;
+        }
+        const data = await safeParseJson(res);
+        const studentsData = data.students || [];
+        setStudents(studentsData);
+        const gradesMap: Record<string, any> = {};
+        for (const s of studentsData) {
+          gradesMap[s.id] = {
+            oral: s.grades?.oral ?? '',
+            fifteen_min: s.grades?.fifteen_min ?? '',
+            one_period: s.grades?.one_period ?? '',
+            midterm: s.grades?.midterm ?? '',
+            final: s.grades?.final ?? ''
+          };
+        }
+        setStudentGrades(gradesMap);
+      } catch (_err) {
+        toast.error('Failed to load student grades');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStudents();
+  }, [selectedClassId, selectedSubjectCode, selectedSemester, toast]);
+
+  const hasValidationErrors = useMemo(() => {
+    return Object.values(studentErrors).some(e => e && Object.values(e).some(Boolean));
+  }, [studentErrors]);
+
+  const handleSave = async () => {
+    if (!selectedClassId || !selectedSubjectCode || !selectedSemester) {
+      toast.error('Please select class, subject and semester');
+      return;
     }
-    
-    const gradesToSave = grades.map(g => ({
-      id: g.id,
-      assignment_id: g.assignment_id,
-      student_id: g.student_id,
-      points_earned: g.points_earned,
-      late: g.late,
-      excused: g.excused,
-      missing: g.missing,
-      feedback: g.feedback,
-    }));
-    
+    if (hasValidationErrors) {
+      toast.error('Please fix validation errors before saving');
+      return;
+    }
+
+    // confirmation dialog before bulk save
+    if (!confirm('Are you sure you want to save grades for all students? This will overwrite existing grades.')) return;
+
+    setSaveLoading(true);
     try {
-      await saveGrades({ grades: gradesToSave });
-      
-      setHasChanges(false);
-      toast.success('All grades have been saved successfully');
-      
-      // Audit log for grade changes
-      const changedGrades = grades.filter(g => 
-        g.points_earned !== undefined || g.late || g.excused || g.missing || g.feedback
-      );
-      
-      await createAuditLog({
-        userId: user?.id || 'unknown',
-        userEmail: user?.email || 'unknown',
-        userRole: user?.role || 'teacher',
-        action: AuditActions.GRADE_UPDATED,
-        resourceType: 'grade',
-        resourceId: selectedAssignment,
-        metadata: {
-          assignment: selectedAssignmentData.title,
-          class_id: selectedClass,
-          grades_changed: changedGrades.length,
-          student_count: grades.length,
-        },
-      });
-      
-      logger.info('Grades saved with audit log', { 
-        assignment: selectedAssignment,
-        count: changedGrades.length 
-      });
-      
-      // Refetch to get updated timestamps
-      refetchGrades();
-    } catch (err: any) {
+      const payloadStudents = students.map((s: any) => ({
+        student_id: s.id,
+        grades: {
+          oral: (studentGrades[s.id]?.oral === '' || studentGrades[s.id]?.oral == null) ? null : Number(studentGrades[s.id]?.oral),
+          fifteen_min: (studentGrades[s.id]?.fifteen_min === '' || studentGrades[s.id]?.fifteen_min == null) ? null : Number(studentGrades[s.id]?.fifteen_min),
+          one_period: (studentGrades[s.id]?.one_period === '' || studentGrades[s.id]?.one_period == null) ? null : Number(studentGrades[s.id]?.one_period),
+          midterm: (studentGrades[s.id]?.midterm === '' || studentGrades[s.id]?.midterm == null) ? null : Number(studentGrades[s.id]?.midterm),
+          final: (studentGrades[s.id]?.final === '' || studentGrades[s.id]?.final == null) ? null : Number(studentGrades[s.id]?.final)
+        }
+      }));
+
+      const payload = {
+        class_id: selectedClassId!,
+        subject_code: selectedSubjectCode!,
+        semester: selectedSemester,
+        students: payloadStudents
+      };
+
+      const result = await performVietnameseSave(payload as any);
+      if (!result.ok) {
+        toast.error(result.data?.error || 'Failed to save grades');
+        return;
+      }
+      if (Object.keys(result.studentErrors).length > 0) {
+        const newErrors: Record<string, Partial<Record<"oral"|"fifteen_min"|"one_period"|"midterm"|"final", string>>> = {};
+        for (const [sid, msg] of Object.entries(result.studentErrors)) {
+          newErrors[sid] = { ...(studentErrors[sid] || {}), final: msg };
+        }
+        setStudentErrors(prev => ({ ...prev, ...newErrors }));
+        toast.error(result.data?.message || 'Some students failed to save; see inline errors');
+      } else {
+        toast.success(result.data?.message || 'Grades saved');
+      }
+    } catch (_err) {
       toast.error('Failed to save grades');
-      logger.error('Grade save error', err instanceof Error ? err : new Error(String(err)), { originalError: String(err) });
+    } finally {
+      setSaveLoading(false);
     }
   };
-  
-  // Calculate grade percentage
-  const getGradePercentage = (grade: Grade): string => {
-    if (!selectedAssignmentData) return '-';
-    if (grade.excused) return 'EXC';
-    if (grade.missing) return 'MISS';
-    if (grade.points_earned === undefined) return '-';
-    
-    const percentage = (grade.points_earned / selectedAssignmentData.total_points) * 100;
-    return `${percentage.toFixed(1)}%`;
-  };
-  
-  const getGradeColor = (grade: Grade): 'success' | 'warning' | 'danger' | 'info' | 'default' => {
-    if (grade.excused) return 'info';
-    if (grade.missing) return 'danger';
-    if (grade.points_earned === undefined) return 'default';
-    if (!selectedAssignmentData) return 'default';
-    
-    const percentage = (grade.points_earned / selectedAssignmentData.total_points) * 100;
-    if (percentage >= 90) return 'success';
-    if (percentage >= 70) return 'warning';
-    return 'danger';
-  };
-  
-  // Statistics
-  const stats = {
-    total: grades.length,
-    graded: grades.filter(g => g.points_earned !== undefined && !g.excused && !g.missing).length,
-    missing: grades.filter(g => g.missing).length,
-    excused: grades.filter(g => g.excused).length,
-    late: grades.filter(g => g.late).length,
-  };
-  
-  if (classesLoading) {
-    return <LoadingState message="Loading classes..." />;
-  }
-  
+
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // NOTE: student loading is handled by the Vietnamese-specific loader above
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Toast Container */}
-      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
-      
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Grade Entry</h1>
-        <p className="text-gray-600">Enter and manage student grades for assignments</p>
-      </div>
-      
-      {/* Class & Assignment Selectors */}
-      <Card className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Class
-            </label>
-            <select
-              value={selectedClass}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedClass(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select a class...</option>
-              {classes.map(cls => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.name} ({cls.code})
-                </option>
-              ))}
-            </select>
+    <div className="p-4 bg-white rounded">
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <div>
+          <h3 className="font-semibold">Vietnamese Entry (partial)</h3>
+          <div className="text-sm text-gray-600">Classes: {classes.length} — Subjects: {subjects.length} — Eval types: {evaluationTypes.length}</div>
+
+          <div className="mt-3 flex items-center gap-3">
+            <div>
+              <label className="text-sm block mb-1">Class</label>
+              <select className="border rounded px-2 py-1" value={selectedClassId ?? ''} onChange={(e) => setSelectedClassId(e.target.value || null)}>
+                <option value="">Select class</option>
+                {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name || c.display_name || c.id}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm block mb-1">Subject</label>
+              <select className="border rounded px-2 py-1" value={selectedSubjectCode ?? ''} onChange={(e) => setSelectedSubjectCode(e.target.value || null)}>
+                <option value="">Select subject</option>
+                {subjects.map((s: any) => <option key={s.code || s.id} value={s.code || s.id}>{s.name || s.title || s.code}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm block mb-1">Semester</label>
+              <select className="border rounded px-2 py-1" value={selectedSemester} onChange={(e) => setSelectedSemester(e.target.value as any)}>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="final">Final</option>
+              </select>
+            </div>
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Assignment
-            </label>
-            <select
-              value={selectedAssignment}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedAssignment(e.target.value)}
-              disabled={!selectedClass || assignmentsLoading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              <option value="">Select an assignment...</option>
-              {assignments.map(assignment => (
-                <option key={assignment.id} value={assignment.id}>
-                  {assignment.title} ({assignment.total_points} pts)
-                  {assignment.category ? ` - ${assignment.category.name}` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </Card>
-      
-      {/* Assignment Info & Quick Actions */}
-      {selectedAssignment && selectedAssignmentData && (
-        <>
-          <Card className="mb-6">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-              <div className="flex-1">
-                <h2 className="text-xl font-semibold text-gray-900 mb-1">
-                  {selectedAssignmentData.title}
-                </h2>
-                {selectedAssignmentData.description && (
-                  <p className="text-sm text-gray-600">
-                    {selectedAssignmentData.description}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-3 mt-3">
-                  <Badge variant="info">
-                    {selectedAssignmentData.total_points} points
-                  </Badge>
-                  {selectedAssignmentData.category && (
-                    <Badge variant="info">
-                      {selectedAssignmentData.category.name} ({selectedAssignmentData.category.weight}%)
-                    </Badge>
-                  )}
-                  {selectedAssignmentData.due_date && (
-                    <Badge variant="default">
-                      Due: {new Date(selectedAssignmentData.due_date).toLocaleDateString('vi-VN')}
-                    </Badge>
-                  )}
-                </div>
+
+          {students.length > 0 ? (
+            <div className="mt-4">
+              <div className="text-sm font-medium mb-2">Students ({students.length})</div>
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto border-collapse">
+                  <thead>
+                    <tr className="text-left">
+                      <th className="px-2 py-1">#</th>
+                      <th className="px-2 py-1">Name</th>
+                      <th className="px-2 py-1">Oral</th>
+                      <th className="px-2 py-1">15m</th>
+                      <th className="px-2 py-1">1-period</th>
+                      <th className="px-2 py-1">Midterm</th>
+                      <th className="px-2 py-1">Final</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((s: any, idx: number) => {
+                      const sg = studentGrades[s.id] || {};
+                      return (
+                        <tr key={s.id} className="border-t">
+                          <td className="px-2 py-1">{idx + 1}</td>
+                          <td className="px-2 py-1">{s.name || s.full_name || '—'}</td>
+                          <td className="px-2 py-1">
+                            <input
+                              className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.oral ? 'border-red-500' : ''}`}
+                              value={sg.oral ?? ''}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const parsed = raw === '' ? '' : Number(raw);
+                                setStudentGrades(prev => ({ ...prev, [s.id]: { ...prev[s.id], oral: parsed } }));
+                                // validate
+                                const errMsg = raw === '' ? undefined : (isNaN(Number(raw)) || Number(raw) < 0 || Number(raw) > 10) ? 'Must be 0–10' : undefined;
+                                setStudentErrors(prev => ({ ...prev, [s.id]: { ...prev[s.id], oral: errMsg } }));
+                              }}
+                            />
+                            {studentErrors[s.id]?.oral && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].oral}</div>}
+                          </td>
+                          <td className="px-2 py-1">
+                            <input
+                              className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.fifteen_min ? 'border-red-500' : ''}`}
+                              value={sg.fifteen_min ?? ''}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const parsed = raw === '' ? '' : Number(raw);
+                                setStudentGrades(prev => ({ ...prev, [s.id]: { ...prev[s.id], fifteen_min: parsed } }));
+                                const errMsg = raw === '' ? undefined : (isNaN(Number(raw)) || Number(raw) < 0 || Number(raw) > 10) ? 'Must be 0–10' : undefined;
+                                setStudentErrors(prev => ({ ...prev, [s.id]: { ...prev[s.id], fifteen_min: errMsg } }));
+                              }}
+                            />
+                              {studentErrors[s.id]?.fifteen_min && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].fifteen_min}</div>}
+                          </td>
+                          <td className="px-2 py-1">
+                            <input
+                              className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.one_period ? 'border-red-500' : ''}`}
+                              value={sg.one_period ?? ''}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const parsed = raw === '' ? '' : Number(raw);
+                                setStudentGrades(prev => ({ ...prev, [s.id]: { ...prev[s.id], one_period: parsed } }));
+                                const errMsg = raw === '' ? undefined : (isNaN(Number(raw)) || Number(raw) < 0 || Number(raw) > 10) ? 'Must be 0–10' : undefined;
+                                setStudentErrors(prev => ({ ...prev, [s.id]: { ...prev[s.id], one_period: errMsg } }));
+                              }}
+                            />
+                              {studentErrors[s.id]?.one_period && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].one_period}</div>}
+                          </td>
+                          <td className="px-2 py-1">
+                            <input
+                              className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.midterm ? 'border-red-500' : ''}`}
+                              value={sg.midterm ?? ''}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const parsed = raw === '' ? '' : Number(raw);
+                                setStudentGrades(prev => ({ ...prev, [s.id]: { ...prev[s.id], midterm: parsed } }));
+                                const errMsg = raw === '' ? undefined : (isNaN(Number(raw)) || Number(raw) < 0 || Number(raw) > 10) ? 'Must be 0–10' : undefined;
+                                setStudentErrors(prev => ({ ...prev, [s.id]: { ...prev[s.id], midterm: errMsg } }));
+                              }}
+                            />
+                              {studentErrors[s.id]?.midterm && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].midterm}</div>}
+                          </td>
+                          <td className="px-2 py-1">
+                            <input
+                              className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.final ? 'border-red-500' : ''}`}
+                              value={sg.final ?? ''}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const parsed = raw === '' ? '' : Number(raw);
+                                setStudentGrades(prev => ({ ...prev, [s.id]: { ...prev[s.id], final: parsed } }));
+                                const errMsg = raw === '' ? undefined : (isNaN(Number(raw)) || Number(raw) < 0 || Number(raw) > 10) ? 'Must be 0–10' : undefined;
+                                setStudentErrors(prev => ({ ...prev, [s.id]: { ...prev[s.id], final: errMsg } }));
+                              }}
+                            />
+                              {studentErrors[s.id]?.final && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].final}</div>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              
-              {grades.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="success"
-                    size="sm"
-                    onClick={() => {
-                      setBulkAction('all-full');
-                      setShowBulkModal(true);
-                    }}
-                  >
-                    All Full Credit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => {
-                      setBulkAction('all-missing');
-                      setShowBulkModal(true);
-                    }}
-                  >
-                    All Missing
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setBulkAction('clear-all');
-                      setShowBulkModal(true);
-                    }}
-                  >
-                    Clear All
-                  </Button>
-                </div>
-              )}
+
+              <div className="mt-3 flex items-center gap-3">
+                <Button onClick={() => setShowConfirm(true)} disabled={saveLoading || hasValidationErrors}>
+                  {saveLoading ? 'Saving…' : 'Save grades'}
+                </Button>
+
+                <AlertDialog open={showConfirm} onOpenChange={(o) => setShowConfirm(o)}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirm save</AlertDialogTitle>
+                      <AlertDialogDescription>Are you sure you want to save grades for all students? This will overwrite existing grades.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setShowConfirm(false)}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={async () => { setShowConfirm(false); await handleSave(); }}>Confirm</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                <Button onClick={() => {
+                  // reload handled by effect when selectedClassId/subject/semester are set
+                  setSelectedClassId((c) => c);
+                }}>Reload</Button>
+              </div>
             </div>
-          </Card>
-          
-          {/* Statistics */}
-          {grades.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-              <Card padding="md">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-                  <p className="text-xs text-gray-600 mt-1">Total</p>
-                </div>
-              </Card>
-              <Card padding="md">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-green-600">{stats.graded}</p>
-                  <p className="text-xs text-gray-600 mt-1">Graded</p>
-                </div>
-              </Card>
-              <Card padding="md">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-red-600">{stats.missing}</p>
-                  <p className="text-xs text-gray-600 mt-1">Missing</p>
-                </div>
-              </Card>
-              <Card padding="md">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-500">{stats.excused}</p>
-                  <p className="text-xs text-gray-600 mt-1">Excused</p>
-                </div>
-              </Card>
-              <Card padding="md">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-amber-600">{stats.late}</p>
-                  <p className="text-xs text-gray-600 mt-1">Late</p>
-                </div>
-              </Card>
-            </div>
+          ) : (
+            <div className="mt-4 text-sm text-gray-500">No students loaded yet.</div>
           )}
-        </>
-      )}
-      
-      {/* Grades Table */}
-      {gradesLoading ? (
-        <LoadingState message="Loading grades..." />
-      ) : grades.length === 0 && selectedAssignment ? (
-        <EmptyState
-          icon={<Icons.Chart className="w-12 h-12 text-gray-400" />}
-          title="No students enrolled"
-          description="There are no students enrolled in this class yet"
-        />
-      ) : grades.length > 0 ? (
-        <Card padding="none">
-          <Table
-            data={grades}
-            keyExtractor={(grade) => grade.id}
-            columns={[
-              {
-                key: 'student',
-                label: 'Student',
-                render: (grade) => (
-                  <div>
-                    <div className="font-medium text-gray-900">{grade.student.full_name}</div>
-                    <div className="text-sm text-gray-600">{grade.student.email}</div>
-                  </div>
-                ),
-              },
-              {
-                key: 'student_id',
-                label: 'ID',
-                render: (grade) => (
-                  <span className="text-gray-600 font-mono text-sm">
-                    {grade.student.student_id || '-'}
-                  </span>
-                ),
-              },
-              {
-                key: 'points',
-                label: 'Points',
-                render: (grade) => (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      max={selectedAssignmentData?.total_points}
-                      step="0.5"
-                      value={grade.points_earned ?? ''}
-                      onChange={(e) => handlePointsChange(grade.id, e.target.value)}
-                      disabled={grade.excused || grade.missing}
-                      className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-                      placeholder="-"
-                    />
-                    <span className="text-sm text-gray-600">
-                      / {selectedAssignmentData?.total_points}
-                    </span>
-                  </div>
-                ),
-              },
-              {
-                key: 'grade',
-                label: 'Grade',
-                render: (grade) => (
-                  <Badge variant={getGradeColor(grade)}>
-                    {getGradePercentage(grade)}
-                  </Badge>
-                ),
-              },
-              {
-                key: 'status',
-                label: 'Status',
-                render: (grade) => (
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => handleFlagToggle(grade.id, 'late')}
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        grade.late
-                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
-                          : 'bg-gray-100 text-gray-600 border border-gray-300'
-                      }`}
-                      title="Late submission"
-                    >
-                      Late
-                    </button>
-                    <button
-                      onClick={() => handleFlagToggle(grade.id, 'excused')}
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        grade.excused
-                          ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                          : 'bg-gray-100 text-gray-600 border border-gray-300'
-                      }`}
-                      title="Excused"
-                    >
-                      Exc
-                    </button>
-                    <button
-                      onClick={() => handleFlagToggle(grade.id, 'missing')}
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        grade.missing
-                          ? 'bg-red-100 text-red-800 border border-red-300'
-                          : 'bg-gray-100 text-gray-600 border border-gray-300'
-                      }`}
-                      title="Missing"
-                    >
-                      Miss
-                    </button>
-                  </div>
-                ),
-              },
-              {
-                key: 'feedback',
-                label: 'Feedback',
-                render: (grade) => (
-                  editingFeedback === grade.id ? (
-                    <input
-                      type="text"
-                      value={grade.feedback || ''}
-                      onChange={(e) => handleFeedbackChange(grade.id, e.target.value)}
-                      onBlur={() => setEditingFeedback(null)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') setEditingFeedback(null);
-                        if (e.key === 'Escape') setEditingFeedback(null);
-                      }}
-                      autoFocus
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                      placeholder="Add feedback..."
-                    />
-                  ) : (
-                    <div
-                      onClick={() => setEditingFeedback(grade.id)}
-                      className="text-sm text-gray-600 cursor-pointer hover:text-gray-900 min-h-[24px]"
-                    >
-                      {grade.feedback || (
-                        <span className="text-gray-600 italic">Click to add</span>
-                      )}
-                    </div>
-                  )
-                ),
-              },
-            ]}
-          />
-        </Card>
-      ) : null}
-      
-      {/* Empty States */}
-      {!selectedClass && (
-        <EmptyState
-          icon={<Icons.Classes className="w-12 h-12 text-gray-400" />}
-          title="Select a Class"
-          description="Choose a class from the dropdown above to start entering grades"
-        />
-      )}
-      
-      {selectedClass && !selectedAssignment && (
-        <EmptyState
-          icon={<Icons.Grades className="w-12 h-12 text-gray-400" />}
-          title="Select an Assignment"
-          description="Choose an assignment to view and enter grades for your students"
-        />
-      )}
-      
-      {/* Bulk Action Confirmation Modal */}
-      <Modal
-        isOpen={showBulkModal}
-        onClose={() => {
-          setShowBulkModal(false);
-          setBulkAction(null);
-        }}
-        title="Confirm Bulk Action"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Are you sure you want to apply this action to all {grades.length} students?
-          </p>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-sm text-yellow-800">
-              <strong>Action:</strong> {bulkAction && getBulkActionMessage(bulkAction)}
-            </p>
-          </div>
-          <div className="flex gap-3 justify-end">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowBulkModal(false);
-                setBulkAction(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleBulkActionConfirm}
-            >
-              Confirm
-            </Button>
-          </div>
-        </div>
-      </Modal>
-      
-      {/* Save Changes Button */}
-      {hasChanges && (
-        <div className="fixed bottom-6 right-6 bg-white border border-gray-300 rounded-lg shadow-2xl p-4 max-w-sm">
-          <div className="flex items-start gap-3">
-            <Icons.Warning className="w-6 h-6 text-yellow-600" />
-            <div className="flex-1">
-              <h4 className="font-semibold text-gray-900 mb-1">
-                Unsaved Changes
-              </h4>
-              <p className="text-sm text-gray-600 mb-3">
-                You have unsaved changes. Don't forget to save!
-              </p>
-              <Button
-                variant="primary"
-                onClick={handleSave}
-                isLoading={saving}
-                fullWidth
-              >
-                {saving ? 'Saving...' : 'Save All Changes'}
-              </Button>
-            </div>
-          </div>
         </div>
       )}
     </div>
   );
 }
+
+export default function GradeEntryPageModern() {
+  const [mode, setMode] = useState<'modern' | 'vietnamese'>('modern');
+
+  return (
+    <div className="container mx-auto px-6 py-8">
+      <h1 className="text-2xl font-bold mb-4">Grade Entry</h1>
+      <p className="text-gray-600 mb-6">The Grade Entry UI is being repaired; Vietnamese entry is re-introduced incrementally.</p>
+      <div className="mb-4">
+        <button onClick={() => setMode('modern')} className={`px-3 py-1 rounded ${mode === 'modern' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Standard Entry</button>
+        <button onClick={() => setMode('vietnamese')} className={`ml-2 px-3 py-1 rounded ${mode === 'vietnamese' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Vietnamese Entry</button>
+      </div>
+
+      {mode === 'vietnamese' ? <VietnameseEntryInline /> : (
+        <div className="bg-white rounded p-6">Standard entry UI (placeholder)</div>
+      )}
+    </div>
+  );
+}
+
+export { VietnameseEntryInline };
