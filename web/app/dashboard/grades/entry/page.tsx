@@ -17,17 +17,41 @@ import { performVietnameseSave } from '@/lib/grades/vietnameseSave';
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks";
 
-// Module-scoped types for the inlined Vietnamese entry (keep them simple for now)
-type VStudent = any;
-type VSubject = any;
-type VEvaluationType = any;
+// Module-scoped types for the inlined Vietnamese entry
+interface Student {
+  id: string;
+  name?: string;
+  full_name?: string;
+  grades?: {
+    oral?: number | null;
+    fifteen_min?: number | null;
+    one_period?: number | null;
+    midterm?: number | null;
+    final?: number | null;
+  };
+}
+
+interface Subject {
+  id: string;
+  code?: string;
+  name?: string;
+  title?: string;
+}
+
+interface EvaluationType {
+  id: string;
+  code?: string;
+  weight?: number;
+  type?: string;
+  color?: string;
+}
 
 function VietnameseEntryInline() {
   const toast = useToast();
   const [classes, setClasses] = useState<any[]>([]);
-  const [subjects, setSubjects] = useState<VSubject[]>([]);
-  const [evaluationTypes, setEvaluationTypes] = useState<VEvaluationType[]>([]);
-  const [students, setStudents] = useState<VStudent[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [evaluationTypes, setEvaluationTypes] = useState<EvaluationType[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [studentGrades, setStudentGrades] = useState<Record<string, {
     oral?: number | string | null,
     fifteen_min?: number | string | null,
@@ -41,6 +65,13 @@ function VietnameseEntryInline() {
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [selectedSubjectCode, setSelectedSubjectCode] = useState<string | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<'1' | '2' | 'final'>('1');
+
+  const handleGradeChange = (studentId: string, field: keyof NonNullable<Student['grades']>, value: string) => {
+    const parsed = value === '' ? '' : Number(value);
+    setStudentGrades(prev => ({ ...prev, [studentId]: { ...prev[studentId], [field]: parsed } }));
+    const errMsg = value === '' ? undefined : (isNaN(Number(value)) || Number(value) < 0 || Number(value) > 10) ? 'Must be 0–10' : undefined;
+    setStudentErrors(prev => ({ ...prev, [studentId]: { ...prev[studentId], [field]: errMsg } }));
+  };
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -147,7 +178,7 @@ function VietnameseEntryInline() {
     };
 
     loadStudents();
-  }, [selectedClassId, selectedSubjectCode, selectedSemester, toast]);
+  }, [selectedClassId, selectedSubjectCode, selectedSemester, toast, reloadTrigger]);
 
   const hasValidationErrors = useMemo(() => {
     return Object.values(studentErrors).some(e => e && Object.values(e).some(Boolean));
@@ -162,9 +193,6 @@ function VietnameseEntryInline() {
       toast.error('Please fix validation errors before saving');
       return;
     }
-
-    // confirmation dialog before bulk save
-    if (!confirm('Are you sure you want to save grades for all students? This will overwrite existing grades.')) return;
 
     setSaveLoading(true);
     try {
@@ -209,6 +237,7 @@ function VietnameseEntryInline() {
   };
 
   const [showConfirm, setShowConfirm] = useState(false);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   // NOTE: student loading is handled by the Vietnamese-specific loader above
 
@@ -275,14 +304,7 @@ function VietnameseEntryInline() {
                             <input
                               className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.oral ? 'border-red-500' : ''}`}
                               value={sg.oral ?? ''}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                const parsed = raw === '' ? '' : Number(raw);
-                                setStudentGrades(prev => ({ ...prev, [s.id]: { ...prev[s.id], oral: parsed } }));
-                                // validate
-                                const errMsg = raw === '' ? undefined : (isNaN(Number(raw)) || Number(raw) < 0 || Number(raw) > 10) ? 'Must be 0–10' : undefined;
-                                setStudentErrors(prev => ({ ...prev, [s.id]: { ...prev[s.id], oral: errMsg } }));
-                              }}
+                              onChange={(e) => handleGradeChange(s.id, 'oral', e.target.value)}
                             />
                             {studentErrors[s.id]?.oral && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].oral}</div>}
                           </td>
@@ -290,13 +312,7 @@ function VietnameseEntryInline() {
                             <input
                               className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.fifteen_min ? 'border-red-500' : ''}`}
                               value={sg.fifteen_min ?? ''}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                const parsed = raw === '' ? '' : Number(raw);
-                                setStudentGrades(prev => ({ ...prev, [s.id]: { ...prev[s.id], fifteen_min: parsed } }));
-                                const errMsg = raw === '' ? undefined : (isNaN(Number(raw)) || Number(raw) < 0 || Number(raw) > 10) ? 'Must be 0–10' : undefined;
-                                setStudentErrors(prev => ({ ...prev, [s.id]: { ...prev[s.id], fifteen_min: errMsg } }));
-                              }}
+                              onChange={(e) => handleGradeChange(s.id, 'fifteen_min', e.target.value)}
                             />
                               {studentErrors[s.id]?.fifteen_min && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].fifteen_min}</div>}
                           </td>
@@ -304,13 +320,7 @@ function VietnameseEntryInline() {
                             <input
                               className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.one_period ? 'border-red-500' : ''}`}
                               value={sg.one_period ?? ''}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                const parsed = raw === '' ? '' : Number(raw);
-                                setStudentGrades(prev => ({ ...prev, [s.id]: { ...prev[s.id], one_period: parsed } }));
-                                const errMsg = raw === '' ? undefined : (isNaN(Number(raw)) || Number(raw) < 0 || Number(raw) > 10) ? 'Must be 0–10' : undefined;
-                                setStudentErrors(prev => ({ ...prev, [s.id]: { ...prev[s.id], one_period: errMsg } }));
-                              }}
+                              onChange={(e) => handleGradeChange(s.id, 'one_period', e.target.value)}
                             />
                               {studentErrors[s.id]?.one_period && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].one_period}</div>}
                           </td>
@@ -318,13 +328,7 @@ function VietnameseEntryInline() {
                             <input
                               className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.midterm ? 'border-red-500' : ''}`}
                               value={sg.midterm ?? ''}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                const parsed = raw === '' ? '' : Number(raw);
-                                setStudentGrades(prev => ({ ...prev, [s.id]: { ...prev[s.id], midterm: parsed } }));
-                                const errMsg = raw === '' ? undefined : (isNaN(Number(raw)) || Number(raw) < 0 || Number(raw) > 10) ? 'Must be 0–10' : undefined;
-                                setStudentErrors(prev => ({ ...prev, [s.id]: { ...prev[s.id], midterm: errMsg } }));
-                              }}
+                              onChange={(e) => handleGradeChange(s.id, 'midterm', e.target.value)}
                             />
                               {studentErrors[s.id]?.midterm && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].midterm}</div>}
                           </td>
@@ -332,13 +336,7 @@ function VietnameseEntryInline() {
                             <input
                               className={`border rounded px-2 py-1 w-20 ${studentErrors[s.id]?.final ? 'border-red-500' : ''}`}
                               value={sg.final ?? ''}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                const parsed = raw === '' ? '' : Number(raw);
-                                setStudentGrades(prev => ({ ...prev, [s.id]: { ...prev[s.id], final: parsed } }));
-                                const errMsg = raw === '' ? undefined : (isNaN(Number(raw)) || Number(raw) < 0 || Number(raw) > 10) ? 'Must be 0–10' : undefined;
-                                setStudentErrors(prev => ({ ...prev, [s.id]: { ...prev[s.id], final: errMsg } }));
-                              }}
+                              onChange={(e) => handleGradeChange(s.id, 'final', e.target.value)}
                             />
                               {studentErrors[s.id]?.final && <div className="text-xs text-red-600 mt-1">{studentErrors[s.id].final}</div>}
                           </td>
@@ -368,8 +366,7 @@ function VietnameseEntryInline() {
                 </AlertDialog>
 
                 <Button onClick={() => {
-                  // reload handled by effect when selectedClassId/subject/semester are set
-                  setSelectedClassId((c) => c);
+                  setReloadTrigger(prev => prev + 1);
                 }}>Reload</Button>
               </div>
             </div>
