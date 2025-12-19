@@ -53,11 +53,11 @@ function VietnameseEntryInline() {
   const [evaluationTypes, setEvaluationTypes] = useState<EvaluationType[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [studentGrades, setStudentGrades] = useState<Record<string, {
-    oral?: number | string | null,
-    fifteen_min?: number | string | null,
-    one_period?: number | string | null,
-    midterm?: number | string | null,
-    final?: number | string | null
+    oral?: number | null,
+    fifteen_min?: number | null,
+    one_period?: number | null,
+    midterm?: number | null,
+    final?: number | null
   }>>({});
   const [studentErrors, setStudentErrors] = useState<Record<string, Partial<Record<"oral"|"fifteen_min"|"one_period"|"midterm"|"final", string>>>>({});
   const [saveLoading, setSaveLoading] = useState(false);
@@ -67,7 +67,7 @@ function VietnameseEntryInline() {
   const [selectedSemester, setSelectedSemester] = useState<'1' | '2' | 'final'>('1');
 
   const handleGradeChange = (studentId: string, field: keyof NonNullable<Student['grades']>, value: string) => {
-    const parsed = value === '' ? '' : Number(value);
+    const parsed = value === '' ? null : Number(value);
     setStudentGrades(prev => ({ ...prev, [studentId]: { ...prev[studentId], [field]: parsed } }));
     const errMsg = value === '' ? undefined : (isNaN(Number(value)) || Number(value) < 0 || Number(value) > 10) ? 'Must be 0–10' : undefined;
     setStudentErrors(prev => ({ ...prev, [studentId]: { ...prev[studentId], [field]: errMsg } }));
@@ -142,44 +142,6 @@ function VietnameseEntryInline() {
     fetchEvaluationTypes();
   }, [toast, selectedClassId, selectedSubjectCode]);
 
-  // Load students + existing Vietnamese grades when class, subject and semester are selected
-  useEffect(() => {
-    const loadStudents = async () => {
-      if (!selectedClassId || !selectedSubjectCode || !selectedSemester) return;
-      setLoading(true);
-      try {
-        const url = `/api/grades/vietnamese-entry?class_id=${encodeURIComponent(selectedClassId)}&subject_code=${encodeURIComponent(selectedSubjectCode)}&semester=${encodeURIComponent(selectedSemester)}`;
-        const res = await apiFetch(url);
-        const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } };
-        if (!res.ok) {
-          const err = await safeParseJson(res);
-          toast.error(err?.error || 'Failed to load student grades');
-          return;
-        }
-        const data = await safeParseJson(res);
-        const studentsData = data.students || [];
-        setStudents(studentsData);
-        const gradesMap: Record<string, any> = {};
-        for (const s of studentsData) {
-          gradesMap[s.id] = {
-            oral: s.grades?.oral ?? '',
-            fifteen_min: s.grades?.fifteen_min ?? '',
-            one_period: s.grades?.one_period ?? '',
-            midterm: s.grades?.midterm ?? '',
-            final: s.grades?.final ?? ''
-          };
-        }
-        setStudentGrades(gradesMap);
-      } catch (_err) {
-        toast.error('Failed to load student grades');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStudents();
-  }, [selectedClassId, selectedSubjectCode, selectedSemester, toast, reloadTrigger]);
-
   const hasValidationErrors = useMemo(() => {
     return Object.values(studentErrors).some(e => e && Object.values(e).some(Boolean));
   }, [studentErrors]);
@@ -199,11 +161,11 @@ function VietnameseEntryInline() {
       const payloadStudents = students.map((s: any) => ({
         student_id: s.id,
         grades: {
-          oral: (studentGrades[s.id]?.oral === '' || studentGrades[s.id]?.oral == null) ? null : Number(studentGrades[s.id]?.oral),
-          fifteen_min: (studentGrades[s.id]?.fifteen_min === '' || studentGrades[s.id]?.fifteen_min == null) ? null : Number(studentGrades[s.id]?.fifteen_min),
-          one_period: (studentGrades[s.id]?.one_period === '' || studentGrades[s.id]?.one_period == null) ? null : Number(studentGrades[s.id]?.one_period),
-          midterm: (studentGrades[s.id]?.midterm === '' || studentGrades[s.id]?.midterm == null) ? null : Number(studentGrades[s.id]?.midterm),
-          final: (studentGrades[s.id]?.final === '' || studentGrades[s.id]?.final == null) ? null : Number(studentGrades[s.id]?.final)
+          oral: studentGrades[s.id]?.oral == null ? null : Number(studentGrades[s.id]?.oral),
+          fifteen_min: studentGrades[s.id]?.fifteen_min == null ? null : Number(studentGrades[s.id]?.fifteen_min),
+          one_period: studentGrades[s.id]?.one_period == null ? null : Number(studentGrades[s.id]?.one_period),
+          midterm: studentGrades[s.id]?.midterm == null ? null : Number(studentGrades[s.id]?.midterm),
+          final: studentGrades[s.id]?.final == null ? null : Number(studentGrades[s.id]?.final)
         }
       }));
 
@@ -238,6 +200,44 @@ function VietnameseEntryInline() {
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [reloadTrigger, setReloadTrigger] = useState(0);
+
+  // Load students + existing Vietnamese grades when class, subject and semester are selected
+  useEffect(() => {
+    const loadStudents = async () => {
+      if (!selectedClassId || !selectedSubjectCode || !selectedSemester) return;
+      setLoading(true);
+      try {
+        const url = `/api/grades/vietnamese-entry?class_id=${encodeURIComponent(selectedClassId)}&subject_code=${encodeURIComponent(selectedSubjectCode)}&semester=${encodeURIComponent(selectedSemester)}`;
+        const res = await apiFetch(url);
+        const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } };
+        if (!res.ok) {
+          const err = await safeParseJson(res);
+          toast.error(err?.error || 'Failed to load student grades');
+          return;
+        }
+        const data = await safeParseJson(res);
+        const studentsData = data.students || [];
+        setStudents(studentsData);
+        const gradesMap: Record<string, any> = {};
+        for (const s of studentsData) {
+          gradesMap[s.id] = {
+            oral: s.grades?.oral ?? null,
+            fifteen_min: s.grades?.fifteen_min ?? null,
+            one_period: s.grades?.one_period ?? null,
+            midterm: s.grades?.midterm ?? null,
+            final: s.grades?.final ?? null
+          };
+        }
+        setStudentGrades(gradesMap);
+      } catch (_err) {
+        toast.error('Failed to load student grades');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStudents();
+  }, [selectedClassId, selectedSubjectCode, selectedSemester, toast, reloadTrigger]);
 
   // NOTE: student loading is handled by the Vietnamese-specific loader above
 
