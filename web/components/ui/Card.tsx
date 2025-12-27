@@ -14,15 +14,15 @@ interface CardProps {
   as?: 'div' | 'article' | 'section';
 }
 
-export const Card = memo(function Card({ 
-  children, 
-  className = '', 
-  hover = false, 
+export const Card = memo(function Card({
+  children,
+  className = '',
+  hover = false,
   onClick,
   as: Component = 'div'
 }: CardProps) {
   const isClickable = !!onClick;
-  
+
   const cardClassName = useMemo(() => `
     rounded-xl transition-all duration-200
     bg-surface border border-border
@@ -32,7 +32,7 @@ export const Card = memo(function Card({
     ${isClickable ? 'cursor-pointer' : ''}
     ${className}
   `, [hover, isClickable, className]);
-  
+
   return (
     <Component
       onClick={onClick}
@@ -157,17 +157,17 @@ const COLOR_CLASSES = {
   },
 } as const;
 
-export const StatCard = memo(function StatCard({ 
-  label, 
-  value, 
+export const StatCard = memo(function StatCard({
+  label,
+  value,
   subtitle,
-  icon, 
-  trend, 
+  icon,
+  trend,
   color = 'blue',
-  onClick 
+  onClick
 }: StatCardProps) {
   const styles = useMemo(() => COLOR_CLASSES[color], [color]);
-  
+
   const containerClassName = useMemo(() => `
     group relative overflow-hidden rounded-xl transition-all duration-200
     bg-surface border border-border shadow-sm
@@ -176,7 +176,7 @@ export const StatCard = memo(function StatCard({
   `, [onClick]);
 
   return (
-    <div 
+    <div
       onClick={onClick}
       className={containerClassName}
     >

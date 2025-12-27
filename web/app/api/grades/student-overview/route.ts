@@ -1,12 +1,13 @@
 /**
- * Student Grades Overview API
+ * Student Grades Overview API (Simplified)
  * GET /api/grades/student-overview
  * 
- * Get overall grades and category breakdowns for students
+ * Get overall grades and subject breakdowns for students
+ * Uses new schema: grades → subject_id + class_id
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const supabase = createClientFromRequest(request as any)
+    const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const classId = searchParams.get('classId')
     const studentId = searchParams.get('studentId')
@@ -66,36 +67,93 @@ export async function GET(request: Request) {
       })
     }
 
-    // Calculate overall grades for each student
+    // Get all subjects
+    const { data: subjects } = await supabase
+      .from('subjects')
+      .select('id, code, name')
+
+    if (!subjects || subjects.length === 0) {
+      return NextResponse.json({
+        success: true,
+        student_grades: []
+      })
+    }
+
+    // Get student grades
     const studentGrades = await Promise.all(
       studentIds.map(async (sid) => {
-        const { data, error } = await supabase
-          .rpc('calculate_overall_grade', {
-            p_class_id: classId,
-            p_student_id: sid
-          })
-          .single()
-
-        if (error) {
-          logger.error(`Failed to calculate grade for student ${sid}:`, error)
-          return null
-        }
-
         // Get student info
         const { data: student } = await supabase
           .from('profiles')
-          .select('id, email, full_name')
+          .select('id, email, full_name, student_code')
           .eq('id', sid)
           .single()
 
-        // Type assertion for the RPC result
-        const gradeData = data as { overall_percentage: number | null; letter_grade: string | null; category_grades: unknown[] } | null
+        if (!student) return null
+
+        // Get grades for this student in this class
+        const { data: grades } = await supabase
+          .from('grades')
+          .select(`
+            score,
+            points_earned,
+            component_type,
+            subject_id
+          `)
+          .eq('student_id', sid)
+          .eq('class_id', classId)
+
+        // Group by subject
+        const subjectGrades: Record<string, { name: string; scores: number[] }> = {}
+        
+        // Initialize all subjects
+        subjects.forEach(sub => {
+          subjectGrades[sub.id] = { name: sub.name || sub.code, scores: [] }
+        })
+
+        // Add scores to subjects
+        grades?.forEach(g => {
+          const subId = g.subject_id
+          if (subId && subjectGrades[subId]) {
+            // Score is already 0-10 scale (normalized)
+            const score = g.points_earned ?? g.score ?? 0
+            subjectGrades[subId].scores.push(score)
+          }
+        })
+
+        // Calculate averages per subject (10-point scale → percentage)
+        const category_grades = Object.entries(subjectGrades).map(([subId, data]) => {
+          const avgScore = data.scores.length > 0
+            ? data.scores.reduce((sum, s) => sum + s, 0) / data.scores.length
+            : 0
+          
+          // 10-point scale: multiply by 10 for percentage
+          const percentage = avgScore * 10
+          
+          return {
+            category_id: subId,
+            category_name: data.name,
+            percentage: Math.round(percentage * 10) / 10,
+            letter_grade: percentage >= 80 ? 'A' : percentage >= 65 ? 'B' : percentage >= 50 ? 'C' : percentage >= 35 ? 'D' : 'F',
+            points_earned: Math.round(avgScore * 10) / 10,
+            total_points: 10
+          }
+        }).filter(c => c.points_earned > 0) // Only include subjects with grades
+
+        // Overall: average of all subject percentages
+        const overall_percentage = category_grades.length > 0
+          ? category_grades.reduce((sum, c) => sum + c.percentage, 0) / category_grades.length
+          : 0
+        
+        const letter_grade = overall_percentage >= 80 ? 'A' : overall_percentage >= 65 ? 'B' : overall_percentage >= 50 ? 'C' : overall_percentage >= 35 ? 'D' : 'F'
 
         return {
-          student,
-          overall_percentage: gradeData?.overall_percentage || null,
-          letter_grade: gradeData?.letter_grade || null,
-          category_grades: gradeData?.category_grades || []
+          student_id: sid,
+          student_name: student.full_name || student.email || '',
+          student_number: student.student_code || '',
+          overall_percentage: Math.round(overall_percentage * 10) / 10,
+          letter_grade,
+          category_grades
         }
       })
     )
@@ -104,6 +162,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
+      data: validGrades,
       student_grades: validGrades
     })
   } catch (error) {

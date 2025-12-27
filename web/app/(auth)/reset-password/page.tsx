@@ -20,7 +20,7 @@ export default function ResetPasswordPage() {
     setMessage(null);
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError("Mật khẩu không khớp.");
       return;
     }
 
@@ -30,7 +30,7 @@ export default function ResetPasswordPage() {
     if (error) {
       setError(error.message);
     } else {
-      setMessage("Password successfully updated. Redirecting to login...");
+      setMessage("Mật khẩu đã được cập nhật. Đang chuyển đến trang đăng nhập...");
       setTimeout(() => router.push("/login"), 2000);
     }
     setLoading(false);
@@ -40,34 +40,34 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">
-          Set New Password 🔒
+          Đặt mật khẩu mới 🔒
         </h2>
 
         <form onSubmit={handleResetPassword} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-600">
-              New Password
+              Mật khẩu mới
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1 w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter new password"
+              placeholder="Nhập mật khẩu mới"
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-600">
-              Confirm Password
+              Xác nhận mật khẩu
             </label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="mt-1 w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
-              placeholder="Confirm your password"
+              placeholder="Xác nhận mật khẩu của bạn"
               required
             />
           </div>
@@ -77,7 +77,7 @@ export default function ResetPasswordPage() {
             disabled={loading}
             className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
           >
-            {loading ? "Updating..." : "Reset Password"}
+            {loading ? "Đang cập nhật..." : "Reset Password"}
           </button>
 
           {error && <p className="text-red-600 text-sm text-center">{error}</p>}

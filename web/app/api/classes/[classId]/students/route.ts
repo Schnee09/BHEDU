@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -24,7 +24,7 @@ export async function GET(
       )
     }
 
-    const supabase = createClientFromRequest(req as any)
+    const supabase = createServiceClient()
     const { classId } = await params
 
     // Verify teacher has access to this class

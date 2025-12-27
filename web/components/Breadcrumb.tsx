@@ -12,39 +12,38 @@ interface BreadcrumbItem {
 
 // Map routes to friendly names
 const routeLabels: Record<string, string> = {
-  dashboard: "Dashboard",
-  students: "Students",
-  teachers: "Teachers",
-  classes: "Classes",
-  courses: "Courses",
-  attendance: "Attendance",
-  grades: "Grades",
-  assignments: "Assignments",
-  reports: "Reports",
-  settings: "Settings",
-  profile: "Profile",
-  users: "Users",
-  admin: "Admin",
-  finance: "Finance",
-  import: "Import",
-  mark: "Mark Attendance",
-  qr: "QR Codes",
-  entry: "Grade Entry",
-  analytics: "Analytics",
-  invoices: "Invoices",
-  payments: "Payments",
-  accounts: "Accounts",
-  "student-accounts": "Student Accounts",
-  "academic-years": "Academic Years",
-  "grading-scales": "Grading Scales",
-  "fee-types": "Fee Types",
-  "conduct-entry": "Conduct Grades",
-  "vietnamese-entry": "Vietnamese Grades",
-  diagnostic: "Diagnostic",
-  notifications: "Notifications",
-  edit: "Edit",
-  progress: "Progress",
-  transcript: "Transcript",
+  dashboard: "Bảng điều khiển",
+  students: "Học sinh",
+  teachers: "Giáo viên",
+  classes: "Lớp học",
+  courses: "Khóa học",
+  attendance: "Điểm danh",
+  grades: "Điểm số",
+  assignments: "Bài tập",
+  reports: "Báo cáo",
+  settings: "Cài đặt",
+  profile: "Hồ sơ",
+  users: "Người dùng",
+  admin: "Quản trị",
+  finance: "Tài chính",
+  import: "Nhập dữ liệu",
+  mark: "Đánh dấu điểm danh",
+  qr: "Mã QR",
+  entry: "Nhập điểm",
+  analytics: "Phân tích",
+  invoices: "Hóa đơn",
+  payments: "Thanh toán",
+  accounts: "Tài khoản",
+  "student-accounts": "Tài khoản học sinh",
+  "academic-years": "Năm học",
+  "grading-scales": "Thang điểm",
+  "fee-types": "Loại phí",
+  "conduct-entry": "Điểm hạnh kiểm",
+  diagnostic: "Chẩn đoán",
+  notifications: "Thông báo",
+  edit: "Chỉnh sửa",
+  progress: "Tiến độ",
+  transcript: "Bảng điểm",
 };
 
 export default function Breadcrumb() {
@@ -52,25 +51,25 @@ export default function Breadcrumb() {
 
   const breadcrumbs = useMemo((): BreadcrumbItem[] => {
     if (!pathname) return [];
-    
+
     // Split the path and filter empty strings
     const segments = pathname.split("/").filter(Boolean);
-    
+
     // Build breadcrumb items
     const items: BreadcrumbItem[] = [];
     let currentPath = "";
 
     segments.forEach((segment, index) => {
       currentPath += `/${segment}`;
-      
+
       // Skip dynamic segments (IDs) - they start with common ID patterns
-      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment) || 
-                   /^\d+$/.test(segment);
-      
+      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment) ||
+        /^\d+$/.test(segment);
+
       if (isId) {
         // Replace ID with a more meaningful label
         items.push({
-          label: "Details",
+          label: "Chi tiết",
           href: currentPath,
           isCurrentPage: index === segments.length - 1,
         });
@@ -107,7 +106,7 @@ export default function Breadcrumb() {
           </Link>
         </li>
 
-  {breadcrumbs.map((item) => (
+        {breadcrumbs.map((item) => (
           <li key={item.href} className="flex items-center gap-2">
             {/* Separator */}
             <svg className="w-4 h-4 text-muted/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,7 +114,7 @@ export default function Breadcrumb() {
             </svg>
 
             {item.isCurrentPage ? (
-              <span 
+              <span
                 className="px-2.5 py-1 rounded-lg font-medium text-foreground
                   bg-primary/10 dark:bg-primary/20"
                 aria-current="page"

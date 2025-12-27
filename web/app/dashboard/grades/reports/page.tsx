@@ -64,16 +64,16 @@ export default function ReportCardsPage() {
   const loadClasses = async () => {
     try {
       const response = await apiFetch('/api/classes/my-classes')
-      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
 
       if (!response.ok) {
-        const err = await safeParseJson(response)
-        console.error('Failed to load classes:', err)
+        const text = await response.text()
+        console.error(`Failed to load classes: HTTP ${response.status}`, text)
         return
       }
 
-      const data = await safeParseJson(response)
-      setClasses(data.data || data.classes || data)
+      const data = await response.json()
+      const classList = data.data || data.classes || []
+      setClasses(Array.isArray(classList) ? classList : [])
     } catch (error) {
       console.error('Failed to load classes:', error)
     }
@@ -82,19 +82,20 @@ export default function ReportCardsPage() {
   const loadStudents = async () => {
     try {
       const response = await apiFetch(`/api/classes/${selectedClass}/students`)
-      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
 
       if (!response.ok) {
-        const err = await safeParseJson(response)
-        console.error('Failed to load students:', err)
+        const text = await response.text()
+        console.error(`Failed to load students: HTTP ${response.status}`, text)
         setStudents([])
         return
       }
 
-      const data = await safeParseJson(response)
-      setStudents(data.data || data.students || data)
+      const data = await response.json()
+      const studentList = data.data || data.students || []
+      setStudents(Array.isArray(studentList) ? studentList : [])
     } catch (error) {
       console.error('Failed to load students:', error)
+      setStudents([])
     }
   }
 
@@ -102,19 +103,20 @@ export default function ReportCardsPage() {
     try {
       setLoading(true)
       const response = await apiFetch(`/api/grades/student-overview?classId=${selectedClass}`)
-      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
 
       if (!response.ok) {
-        const err = await safeParseJson(response)
-        console.error('Failed to load grades:', err)
+        const text = await response.text()
+        console.error(`Failed to load grades: HTTP ${response.status}`, text)
         setGrades([])
         return
       }
 
-      const data = await safeParseJson(response)
-      setGrades(data.data || data.student_grades || data.grades || data)
+      const data = await response.json()
+      const gradeList = data.data || data.student_grades || []
+      setGrades(Array.isArray(gradeList) ? gradeList : [])
     } catch (error) {
       console.error('Failed to load grades:', error)
+      setGrades([])
     } finally {
       setLoading(false)
     }
@@ -125,7 +127,7 @@ export default function ReportCardsPage() {
       setGeneratingPdf(true)
       const student = students.find(s => s.id === studentId)
       const studentGrade = grades.find(g => g.student_id === studentId)
-      
+
       if (!student || !studentGrade) {
         alert('Student data not found')
         return
@@ -411,7 +413,7 @@ export default function ReportCardsPage() {
 
     printWindow.document.write(reportHTML)
     printWindow.document.close()
-    
+
     // Wait for content to load then print
     setTimeout(() => {
       printWindow.print()
@@ -431,21 +433,21 @@ export default function ReportCardsPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Report Cards</h1>
-        <p className="text-gray-600">Generate and view student report cards</p>
+        <h1 className="text-2xl font-bold text-gray-900">Bảng Điểm Lớp</h1>
+        <p className="text-gray-600">Xem và xuất bảng điểm cho học sinh</p>
       </div>
 
       {/* Class Selector */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Class
+          Chọn lớp
         </label>
         <select
           value={selectedClass}
           onChange={(e) => setSelectedClass(e.target.value)}
           className="w-full md:w-96 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">Choose a class...</option>
+          <option value="">Chọn lớp...</option>
           {classes.map(cls => (
             <option key={cls.id} value={cls.id}>
               {cls.name} ({cls.code})
@@ -465,11 +467,11 @@ export default function ReportCardsPage() {
 
           {loading ? (
             <div className="p-8 text-center text-gray-600">
-              Loading students and grades...
+              Đang tải danh sách học sinh và điểm...
             </div>
           ) : students.length === 0 ? (
             <div className="p-8 text-center text-gray-600">
-              No students enrolled in this class
+              Không có học sinh trong lớp này
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
@@ -603,10 +605,10 @@ export default function ReportCardsPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
           <DocumentTextIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Select a Class
+            Chọn một lớp
           </h3>
           <p className="text-gray-600">
-            Choose a class from the dropdown above to view and generate report cards
+            Chọn lớp từ danh sách ở trên để xem và xuất bảng điểm
           </p>
         </div>
       )}

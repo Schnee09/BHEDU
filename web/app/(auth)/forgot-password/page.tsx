@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
     });
 
     if (error) setError(error.message);
-    else setMessage("Check your email for password reset instructions.");
+    else setMessage("Vui lòng kiểm tra email để nhận hướng dẫn đặt lại mật khẩu.");
     setLoading(false);
   };
 
@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">
-          Reset Password 🔑
+          Quên mật khẩu 🔑
         </h2>
 
         <form onSubmit={handleReset} className="space-y-4">
@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
             disabled={loading}
             className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
           >
-            {loading ? "Sending..." : "Send reset link"}
+            {loading ? "Đang gửi..." : "Gửi liên kết đặt lại"}
           </button>
 
           {error && <p className="text-red-600 text-sm text-center">{error}</p>}

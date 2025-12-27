@@ -92,7 +92,7 @@ export default function NavBar() {
             ) : null}
             {(role === 'teacher' || role === 'admin') && (
               <Link 
-                href="/dashboard/grades/vietnamese-entry" 
+                href="/dashboard/grades/entry" 
                 className="px-4 py-2 rounded-lg text-sm font-semibold bg-stone-900 text-white hover:bg-stone-800 transition-all shadow-sm hover:shadow-md flex items-center gap-2"
                 aria-label="Enter grades"
               >

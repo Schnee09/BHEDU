@@ -8,7 +8,6 @@ jest.mock('@/lib/api/client', () => ({
 
 import { apiFetch } from '@/lib/api/client';
 import { performVietnameseSave } from '@/lib/grades/vietnameseSave';
-import GradeEntryPageModern, { VietnameseEntryInline } from '@/app/dashboard/grades/entry/page';
 
 const mockedApiFetch = apiFetch as jest.MockedFunction<typeof apiFetch>;
 
