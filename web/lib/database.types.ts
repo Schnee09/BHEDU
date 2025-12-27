@@ -2078,3 +2078,35 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// ============================================
+// Custom Types and Helpers (for API compatibility)
+// ============================================
+
+/**
+ * Course type - extracted from Database for convenience
+ */
+export type Course = Database['public']['Tables']['courses']['Row'];
+
+/**
+ * Table column names helper
+ */
+export const TableColumns = {
+  courses: ['id', 'title', 'description', 'is_published', 'created_at', 'updated_at'] as const,
+  lessons: ['id', 'course_id', 'title', 'content', 'order_index', 'is_published', 'created_at', 'updated_at'] as const,
+  profiles: ['id', 'user_id', 'full_name', 'role', 'email', 'phone', 'address', 'date_of_birth', 'created_at', 'updated_at'] as const,
+};
+
+/**
+ * Map database course row to API response format
+ */
+export function mapCourseToAPI(course: Course) {
+  return {
+    id: course.id,
+    title: course.title,
+    description: course.description,
+    is_published: course.is_published,
+    created_at: course.created_at,
+    updated_at: course.updated_at,
+  };
+}
