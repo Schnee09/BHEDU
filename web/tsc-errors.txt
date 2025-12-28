@@ -9,9 +9,6 @@
 .next/types/validator.ts(1367,39): error TS2307: Cannot find module '../../app/api/lessons/[id]/route.js' or its corresponding type declarations.
 .next/types/validator.ts(1376,39): error TS2307: Cannot find module '../../app/api/lessons/route.js' or its corresponding type declarations.
 __tests__/grades-validation.test.ts(67,35): error TS2339: Property 'ORAL' does not exist on type 'typeof EvaluationType'.
-app/api/classes/route.ts(80,53): error TS2345: Argument of type '{ name: any; teacher_id: any; academic_year_id: any; }' is not assignable to parameter of type '{ name: string; teacher_id: string; academic_year_id: string; max_capacity: number; sessions_per_week: number; class_type: "group" | "tutoring"; course_id?: string | undefined; schedule?: string | undefined; room?: string | undefined; capacity?: number | undefined; }'.
-  Type '{ name: any; teacher_id: any; academic_year_id: any; }' is missing the following properties from type '{ name: string; teacher_id: string; academic_year_id: string; max_capacity: number; sessions_per_week: number; class_type: "group" | "tutoring"; course_id?: string | undefined; schedule?: string | undefined; room?: string | undefined; capacity?: number | undefined; }': max_capacity, sessions_per_week, class_type
-app/api/enrollments/route.ts(67,9): error TS2783: 'success' is specified more than once, so this usage will be overwritten.
 app/api/reports/report-card/route.ts(70,40): error TS2339: Property 'id' does not exist on type '{ id: any; name: any; }[]'.
 app/api/reports/report-card/route.ts(71,42): error TS2339: Property 'name' does not exist on type '{ id: any; name: any; }[]'.
 app/api/reports/report-card/route.ts(142,37): error TS2339: Property 'name' does not exist on type '{ id: any; name: any; }[]'.
@@ -27,25 +24,11 @@ app/dashboard/grades/analytics/page.tsx(421,27): error TS2322: Type 'GradeDistri
     Index signature for type 'string' is missing in type 'GradeDistribution'.
 app/dashboard/users/page.tsx(593,27): error TS2322: Type '"success" | "danger"' is not assignable to type '"default" | "warning" | "danger" | undefined'.
   Type '"success"' is not assignable to type '"default" | "warning" | "danger" | undefined'.
-components/dashboard/AnalyticsWidget.tsx(223,76): error TS18048: 'percent' is possibly 'undefined'.
-components/dashboard/index.ts(5,38): error TS2614: Module '"./AnalyticsWidget"' has no exported member 'COLORS'. Did you mean to use 'import COLORS from "./AnalyticsWidget"' instead?
-hooks/usePermissions.tsx(73,21): error TS7006: Parameter 'p' implicitly has an 'any' type.
-hooks/usePermissions.tsx(77,18): error TS7006: Parameter 'p' implicitly has an 'any' type.
 lib/api/response.ts(58,7): error TS2698: Spread types may only be created from object types.
 lib/payments/paymentService.ts(227,31): error TS2339: Property 'full_name' does not exist on type '{ full_name: any; student_id: any; }[]'.
 lib/payments/paymentService.ts(228,31): error TS2339: Property 'student_id' does not exist on type '{ full_name: any; student_id: any; }[]'.
 lib/services/EnrollmentService.ts(158,34): error TS2339: Property 'full_name' does not exist on type '{ full_name: any; student_id: any; }[]'.
 lib/services/EnrollmentService.ts(159,34): error TS2339: Property 'student_id' does not exist on type '{ full_name: any; student_id: any; }[]'.
 lib/services/EnrollmentService.ts(161,30): error TS2339: Property 'name' does not exist on type '{ name: any; }[]'.
-lib/services/index.ts(9,3): error TS2459: Module '"./classService"' declares 'CreateClassInput' locally, but it is not exported.
-lib/services/index.ts(10,3): error TS2459: Module '"./classService"' declares 'UpdateClassInput' locally, but it is not exported.
-lib/services/index.ts(11,8): error TS1149: File name 'E:/TTGDBH/BH-EDU/web/lib/services/ClassService.ts' differs from already included file name 'E:/TTGDBH/BH-EDU/web/lib/services/classService.ts' only in casing.
-  The file is in the program because:
-    Imported via '@/lib/services/classService' from file 'E:/TTGDBH/BH-EDU/web/app/api/classes/route.ts'
-    Imported via '@/lib/services/classService' from file 'E:/TTGDBH/BH-EDU/web/app/api/classes/[classId]/route.ts'
-    Imported via './services/classService' from file 'E:/TTGDBH/BH-EDU/web/lib/index.ts'
-    Matched by include pattern '**/*.ts' in 'E:/TTGDBH/BH-EDU/web/tsconfig.json'
-    Imported via './classService' from file 'E:/TTGDBH/BH-EDU/web/lib/services/index.ts'
-    Imported via './ClassService' from file 'E:/TTGDBH/BH-EDU/web/lib/services/index.ts'
 lib/services/tuitionService.ts(122,25): error TS2352: Conversion of type '{ id: any; name: any; class_type: any; sessions_per_week: any; }[]' to type '{ id: string; name: string; class_type: string | null; sessions_per_week: number | null; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
   Type '{ id: any; name: any; class_type: any; sessions_per_week: any; }[]' is missing the following properties from type '{ id: string; name: string; class_type: string | null; sessions_per_week: number | null; }': id, name, class_type, sessions_per_week

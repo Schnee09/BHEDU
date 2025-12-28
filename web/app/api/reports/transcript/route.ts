@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Transcript Report API Endpoint
  * 

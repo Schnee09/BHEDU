@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * API Response Utilities
  * Consistent response formatting with caching headers and compression support

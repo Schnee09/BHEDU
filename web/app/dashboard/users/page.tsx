@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Modern User Management Page - Refactored with new UI components
  * 

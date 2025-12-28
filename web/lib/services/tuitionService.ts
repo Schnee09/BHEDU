@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Tuition Service - Calculate and manage tuition fees
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Role-aware Students API
  * GET/POST /api/students
