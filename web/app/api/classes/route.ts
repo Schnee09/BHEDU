@@ -77,14 +77,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const classService = new ClassService()
-    const newClass = await classService.createClass({
+    const newClass = await ClassService.createClass({
       name,
-      code,
-      description,
       teacher_id: teacherId,
       academic_year_id: academicYearId,
-      grade,
     })
 
     logger.info('Class created:', { classId: newClass.id, name: newClass.name })

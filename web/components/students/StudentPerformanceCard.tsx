@@ -156,7 +156,7 @@ export default function StudentPerformanceCard({
                                 variant={
                                     standing.color === 'emerald' || standing.color === 'blue' ? 'success' :
                                         standing.color === 'cyan' ? 'info' :
-                                            standing.color === 'amber' ? 'warning' : 'error'
+                                            standing.color === 'amber' ? 'warning' : 'danger'
                                 }
                             >
                                 {standing.label}

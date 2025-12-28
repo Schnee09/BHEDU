@@ -132,7 +132,7 @@ export default function PerformanceTimeline({
                     </div>
                     {stats && (
                         <div className="flex items-center gap-2">
-                            <Badge variant={stats.trend === 'up' ? 'success' : stats.trend === 'down' ? 'error' : 'info'}>
+                            <Badge variant={stats.trend === 'up' ? 'success' : stats.trend === 'down' ? 'danger' : 'info'}>
                                 {stats.trend === 'up' ? '↑ Tiến bộ' : stats.trend === 'down' ? '↓ Giảm' : '→ Ổn định'}
                             </Badge>
                         </div>

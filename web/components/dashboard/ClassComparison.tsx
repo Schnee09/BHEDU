@@ -63,11 +63,11 @@ export default function ClassComparison({ classes, loading = false }: ClassCompa
         return '#ef4444'; // red
     };
 
-    const getGPABadgeVariant = (gpa: number): 'success' | 'info' | 'warning' | 'error' => {
+    const getGPABadgeVariant = (gpa: number): 'success' | 'info' | 'warning' | 'danger' => {
         if (gpa >= 8.0) return 'success';
         if (gpa >= 6.5) return 'info';
         if (gpa >= 5.0) return 'warning';
-        return 'error';
+        return 'danger';
     };
 
     if (loading) {

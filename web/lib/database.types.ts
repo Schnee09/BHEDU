@@ -2084,9 +2084,16 @@ export const Constants = {
 // ============================================
 
 /**
- * Course type - extracted from Database for convenience
+ * Course type - custom interface (courses table may not exist in all DBs)
  */
-export type Course = Database['public']['Tables']['courses']['Row'];
+export interface Course {
+  id: string;
+  title: string | null;
+  description: string | null;
+  is_published: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 /**
  * User role type
