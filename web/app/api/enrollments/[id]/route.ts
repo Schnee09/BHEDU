@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger';
 import { EnrollmentService } from '@/lib/services/EnrollmentService';
 
 interface RouteParams {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
@@ -20,7 +20,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized');
     }
 
-    const { id } = params;
+    const { id } = await params;
     const enrollmentService = new EnrollmentService();
 
     await enrollmentService.deleteEnrollment(id);
@@ -31,3 +31,4 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return handleApiError(error);
   }
 }
+

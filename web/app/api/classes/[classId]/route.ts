@@ -13,7 +13,7 @@ import { logger } from '@/lib/logger'
 import { ClassService } from '@/lib/services/classService'
 
 interface RouteParams {
-  params: { classId: string }
+  params: Promise<{ classId: string }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized')
     }
 
-    const { classId } = params
+    const { classId } = await params
     const classService = new ClassService()
     const classData = await classService.getClassById(classId)
 
@@ -54,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized')
     }
 
-    const { classId } = params
+    const { classId } = await params
     const body = await request.json()
     const { name, code, description, teacherId, academicYearId, grade } = body
 
@@ -90,7 +90,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized')
     }
 
-    const { classId } = params
+    const { classId } = await params
     const classService = new ClassService()
 
     // Check if class exists
@@ -108,3 +108,4 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return handleApiError(error)
   }
 }
+

@@ -11,7 +11,7 @@ import { handleApiError, AuthenticationError, NotFoundError } from '@/lib/api/er
 import { SubjectService } from '@/lib/services/SubjectService';
 
 interface RouteParams {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized');
     }
 
-    const { id } = params;
+    const { id } = await params;
     const subjectService = new SubjectService();
     const subject = await subjectService.getSubjectById(id);
 
@@ -42,7 +42,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized');
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { name, code, description, credits, isActive } = body;
 
@@ -74,7 +74,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized');
     }
 
-    const { id } = params;
+    const { id } = await params;
     const searchParams = request.nextUrl.searchParams;
     const hardDelete = searchParams.get('hard') === 'true';
 
@@ -95,3 +95,4 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return handleApiError(error);
   }
 }
+
