@@ -1,71 +1,112 @@
-# ARCHITECTURE.md (Rev 2.0 - Hybrid Monorepo)
+# BH-EDU Architecture (Rev 3.0)
 
 ## 1. System Overview
-The Student Tracking System (STS) uses a **Supabase backend** and a **Hybrid Monorepo strategy**:
-- **Web (Next.js/React + Tailwind):** Admin & Teachers. Optimized for data grids, analytics.
-- **Mobile (Flutter + Supabase SDK):** Students & quick Teacher tools (attendance, scores).
+
+**BH-EDU** is a comprehensive School Management System built for the Vietnamese education sector.
+
+| Client | Technology | Purpose |
+|--------|------------|---------|
+| **Web** | Next.js 16 + React 19 | Admin, Staff, Teachers |
+| **Mobile** | Flutter (planned) | Students, quick attendance |
 
 ---
 
-## 2. Architecture Diagram (Hybrid)
+## 2. Architecture Diagram
+
 ```
-                    ┌──────────────────────────────┐
-                    │         CLIENT LAYER         │
-                    ├──────────────────────────────┤
-                    │  Web (Next.js + React)       │
-                    │  Mobile (Flutter + Dart)     │
-                    └────────────┬─────────────────┘
-                                 │
-                      HTTPS (REST + WebSocket)
-                                 │
-                    ┌──────────────────────────────┐
-                    │        BACKEND LAYER         │
-                    ├──────────────────────────────┤
-                    │  Supabase (PostgreSQL)       │
-                    │  Supabase Auth & Storage     │
-                    │  Edge Functions (serverless) │
-                    └────────────┬─────────────────┘
-                                 │
-                    ┌──────────────────────────────┐
-                    │     ANALYTICS & AI LAYER     │
-                    ├──────────────────────────────┤
-                    │  Python / OpenAI / Gemini    │
-                    │  RPC connection via Supabase │
-                    └──────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                      CLIENT LAYER                           │
+├─────────────────────────────────────────────────────────────┤
+│  Web App (Next.js 16 App Router)                            │
+│  └─ Dashboard: Grades, Attendance, Classes, Finance, etc.  │
+└────────────────────────┬────────────────────────────────────┘
+                         │ HTTPS (REST)
+┌────────────────────────┴────────────────────────────────────┐
+│                      API LAYER                               │
+├─────────────────────────────────────────────────────────────┤
+│  Next.js API Routes (/api/*)                                │
+│  └─ 21 domains: grades, attendance, classes, auth, etc.    │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+┌────────────────────────┴────────────────────────────────────┐
+│                    SERVICE LAYER                             │
+├─────────────────────────────────────────────────────────────┤
+│  lib/grades/       → GradeService (Vietnamese grading)      │
+│  lib/attendance/   → AttendanceService                      │
+│  lib/auth/         → Auth helpers                           │
+│  lib/supabase/     → DB clients                             │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+┌────────────────────────┴────────────────────────────────────┐
+│                    DATABASE LAYER                            │
+├─────────────────────────────────────────────────────────────┤
+│  Supabase (PostgreSQL + Auth + Storage + RLS)               │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Core Database Tables
+## 3. Core Domains
+
+### Grades (Vietnamese System)
+- **Evaluation Types**: Oral, 15-min, 1-period, Midterm, Final
+- **Scale**: 0-10
+- **Service**: `lib/grades/services/GradeService.ts`
+- **Types**: `lib/grades/types.ts`
+
+### Attendance
+- **Statuses**: Present, Absent, Late, Excused
+- **Service**: `lib/attendance/services/AttendanceService.ts`
+- **Types**: `lib/attendance/types.ts`
+
+---
+
+## 4. Database Tables
+
 | Table | Description |
-|--------|-------------|
-| `profiles` | Extended user metadata linked to `auth.users`. |
-| `classes` | Class/course information (teacher, schedule). |
-| `enrollments` | Many-to-many between students and classes. |
-| `attendance` | Daily attendance tracking. |
-| `assignments` | Homework/project details. |
-| `scores` | Grades linked to assignments and students. |
-| `notifications` | Alerts and announcements. |
-| `ai_feedback` | AI-generated insights and reports. |
+|-------|-------------|
+| `profiles` | User metadata (role: admin/staff/teacher/student) |
+| `classes` | Class info, linked to teacher |
+| `enrollments` | Student-Class relationships |
+| `attendance` | Daily attendance per student/class |
+| `grades` | Vietnamese grading scores |
+| `subjects` | Subject definitions |
+| `academic_years` | School year periods |
+| `fee_types` / `payments` | Financial management |
 
 ---
 
-## 4. Development Phases
-| Phase | Deliverable | Note |
-|--------|--------------|------|
-| 1 (Core) | Auth + DB/RLS setup + Web CRUD | Secure foundation |
-| 1 | AI Analytics Beta (`ai_feedback`) | Edge Function trigger |
-| 2 | Mobile MVP (Flutter) | Student portal |
-| 2 | Teacher Dashboard (Web) | Reporting, PDF export |
-| 3 | AI Optimization + Scaling | Production integration |
-| 3 | Notifications & Caching | Real-time alerts |
+## 5. Tech Stack
+
+| Layer | Technology | Version |
+|-------|------------|---------|
+| Frontend | Next.js | 16.0.10 |
+| UI Library | React | 19.2.3 |
+| Styling | Tailwind CSS | 4.1.18 |
+| State | React Query | 5.x |
+| Database | Supabase (PostgreSQL) | 2.87.1 |
+| Auth | Supabase Auth | Built-in |
+| Language | TypeScript | 5.9.3 |
+| Deployment | Vercel | - |
 
 ---
 
-## 5. Tech Stack Summary
-- **Frontend Web:** Next.js (React) + Tailwind
-- **Frontend Mobile:** Flutter
-- **Backend:** Supabase (Auth, DB, Storage, Edge Functions)
-- **AI Layer:** Python + OpenAI / Gemini API
-- **Deployment:** Vercel (Web), Play Store / TestFlight (Mobile)
-- **Monitoring:** Supabase logs + Sentry
+## 6. Directory Structure
+
+```
+web/
+├── app/
+│   ├── api/              # 21 API route domains
+│   └── dashboard/        # 15 dashboard sections
+├── components/           # Reusable UI
+├── lib/
+│   ├── grades/           # Grades domain (Service, Types, Validation)
+│   ├── attendance/       # Attendance domain (Service, Types, Utils)
+│   ├── auth/             # Auth helpers
+│   └── supabase/         # DB clients
+└── hooks/                # Custom React hooks
+```
+
+---
+
+*Last Updated: December 2025*

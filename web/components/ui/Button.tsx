@@ -42,33 +42,30 @@ function Button({
 
   const variantClasses = {
     primary: `
-      bg-primary text-white hover:bg-primary/90 focus:ring-primary/50
-      shadow-sm hover:shadow-md
-      dark:bg-primary dark:hover:bg-primary/80
+      bg-primary text-white hover:bg-primary-hover focus:ring-primary/50
+      shadow-[var(--shadow-primary)] hover:shadow-[var(--shadow-primary-lg)] hover:-translate-y-0.5
+      dark:bg-primary dark:hover:bg-primary-hover
     `,
     secondary: `
-      bg-surface-secondary text-foreground hover:bg-surface border border-border
-      shadow-neumorphic-xs hover:shadow-neumorphic-sm
-      dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10 dark:shadow-none
-      focus:ring-primary/30
+      bg-surface text-foreground hover:bg-surface-hover border border-border-light
+      shadow-sm hover:shadow-md hover:-translate-y-0.5
+      dark:bg-surface-hover dark:hover:bg-surface-active dark:border-border-subtle
     `,
     outline: `
-      border-2 border-primary text-primary hover:bg-primary/10 focus:ring-primary/50
-      dark:border-primary/50 dark:hover:bg-primary/20 dark:hover:border-primary
+      border-2 border-primary text-primary hover:bg-primary-50 focus:ring-primary/50
+      dark:border-primary dark:text-primary-300 dark:hover:bg-primary-900/20
     `,
     ghost: `
-      text-muted hover:text-foreground hover:bg-surface-secondary focus:ring-primary/30
-      dark:hover:bg-white/10
+      text-muted hover:text-foreground hover:bg-surface-secondary
+      dark:hover:bg-white/5
     `,
     danger: `
-      bg-error text-white hover:bg-error/90 focus:ring-error/50
-      shadow-[0_4px_12px_rgba(239,68,68,0.3)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.4)]
-      dark:shadow-[0_0_20px_rgba(239,68,68,0.4)] dark:hover:shadow-[0_0_30px_rgba(239,68,68,0.6)]
+      bg-error text-white hover:bg-red-600 focus:ring-error/50
+      shadow-lg shadow-red-500/20 hover:shadow-red-500/30 hover:-translate-y-0.5
     `,
     success: `
-      bg-success text-white hover:bg-success/90 focus:ring-success/50
-      shadow-[0_4px_12px_rgba(34,197,94,0.3)] hover:shadow-[0_6px_20px_rgba(34,197,94,0.4)]
-      dark:shadow-[0_0_20px_rgba(34,197,94,0.4)] dark:hover:shadow-[0_0_30px_rgba(34,197,94,0.6)]
+      bg-success text-white hover:bg-emerald-600 focus:ring-success/50
+      shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:-translate-y-0.5
     `,
   };
 
@@ -125,18 +122,18 @@ export function IconButton({
 
   const variantClasses = {
     primary: `
-      bg-primary text-white hover:bg-primary/90 focus:ring-primary/50
-      shadow-neumorphic-xs hover:shadow-neumorphic-sm
-      dark:shadow-glow-sm dark:hover:shadow-glow
+      bg-primary text-white hover:bg-primary-hover focus:ring-primary/50
+      shadow-[var(--shadow-primary)] hover:shadow-[var(--shadow-primary-lg)] hover:-translate-y-0.5
+      dark:bg-primary dark:hover:bg-primary-hover
     `,
     secondary: `
-      bg-surface-secondary text-foreground hover:bg-surface border border-border
-      shadow-neumorphic-xs hover:shadow-neumorphic-sm focus:ring-primary/30
-      dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10 dark:shadow-none
+      bg-surface text-foreground hover:bg-surface-hover border border-border-light
+      shadow-sm hover:shadow-md hover:-translate-y-0.5
+      dark:bg-surface-hover dark:hover:bg-surface-active dark:border-border-subtle
     `,
     ghost: `
-      text-muted hover:text-foreground hover:bg-surface-secondary focus:ring-primary/30
-      dark:hover:bg-white/10
+      text-muted hover:text-foreground hover:bg-surface-secondary
+      dark:hover:bg-white/5
     `,
   };
 

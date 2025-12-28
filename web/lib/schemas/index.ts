@@ -47,3 +47,45 @@ export {
   updateUserSchema,
   updateProfileSchema,
 } from './auth';
+
+// Common schemas
+export {
+  // Pagination
+  paginationSchema,
+  paginationWithDefaults,
+  // Sorting
+  sortOrderSchema,
+  createSortSchema,
+  // Common fields
+  uuidSchema,
+  optionalUuidSchema,
+  dateStringSchema,
+  optionalDateStringSchema,
+  emailSchema,
+  optionalEmailSchema,
+  phoneSchema,
+  optionalPhoneSchema,
+  notesSchema,
+  booleanStringSchema,
+  // Common enums
+  userRoleSchema,
+  studentStatusSchema,
+  genderSchema,
+  semesterSchema,
+  // Query helpers
+  createListQuerySchema,
+  // Class schemas
+  classQuerySchema,
+  createClassSchema,
+  // Enrollment schemas
+  enrollmentQuerySchema,
+  createEnrollmentSchema,
+  bulkEnrollmentSchema,
+  // Attendance schemas
+  attendanceQuerySchema,
+  attendanceRecordSchema,
+  bulkAttendanceSchema,
+  // Subject schemas
+  subjectQuerySchema,
+  createSubjectSchema,
+} from './common';

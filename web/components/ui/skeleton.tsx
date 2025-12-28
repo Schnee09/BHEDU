@@ -21,15 +21,15 @@ export const Skeleton: React.FC<SkeletonProps> = React.memo(({
   count = 1,
 }) => {
   const skeletons = Array.from({ length: count }, (_, i) => i);
-  
-  const baseStyles = 'animate-pulse bg-gradient-to-r from-stone-100 via-stone-200 to-stone-100 dark:from-stone-800 dark:via-stone-700 dark:to-stone-800 bg-[length:200%_100%]';
+
+  const baseStyles = 'animate-pulse bg-gradient-to-r from-surface-secondary via-border to-surface-secondary dark:from-white/5 dark:via-white/10 dark:to-white/5 bg-[length:200%_100%]';
   const shapeStyles = circle ? 'rounded-full' : 'rounded-lg';
-  
+
   const style: React.CSSProperties = {
     width: width || '100%',
     height: height,
   };
-  
+
   if (count === 1) {
     return (
       <div
@@ -40,7 +40,7 @@ export const Skeleton: React.FC<SkeletonProps> = React.memo(({
       />
     );
   }
-  
+
   return (
     <div className="space-y-2" role="status" aria-label="Loading...">
       {skeletons.map(i => (
@@ -59,7 +59,7 @@ Skeleton.displayName = 'Skeleton';
 
 export const SkeletonCard: React.FC = React.memo(() => {
   return (
-    <div className="bg-white rounded-xl border border-stone-200 p-6">
+    <div className="bg-surface rounded-xl border border-border p-6 shadow-sm">
       <div className="space-y-4">
         <Skeleton height="1.5rem" width="60%" />
         <Skeleton height="1rem" count={3} />
@@ -79,7 +79,7 @@ export const SkeletonTable: React.FC<{ rows?: number; columns?: number }> = Reac
 }) => {
   const rowArray = Array.from({ length: rows }, (_, i) => i);
   const colArray = Array.from({ length: columns }, (_, i) => i);
-  
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-stone-200">
@@ -123,7 +123,7 @@ SkeletonStatCard.displayName = 'SkeletonStatCard';
 
 export const SkeletonList: React.FC<{ items?: number }> = React.memo(({ items = 5 }) => {
   const itemArray = Array.from({ length: items }, (_, i) => i);
-  
+
   return (
     <div className="space-y-3">
       {itemArray.map(i => (

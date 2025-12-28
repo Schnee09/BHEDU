@@ -12,9 +12,9 @@
 import { useState, useEffect } from "react";
 import { useFetch, useToast } from "@/hooks";
 import { apiFetch } from "@/lib/api/client";
-import { 
-  Button, 
-  Card, 
+import {
+  Button,
+  Card,
   Badge,
   SkeletonStatCard,
 } from "@/components/ui";
@@ -121,7 +121,7 @@ export default function ReportsPage() {
         const classesRes = await apiFetch('/api/classes');
         if (classesRes.ok) {
           const cjson = await classesRes.json().catch(() => null)
-          const cls = cjson?.data || []
+          const cls = cjson?.classes || cjson?.data || []
           setClassesList(cls || [])
         }
 
@@ -146,11 +146,11 @@ export default function ReportsPage() {
     total: number;
     statistics?: { total_students: number; active_students: number; inactive_students: number };
   }>('/api/students?limit=1');
-  
+
   const { data: classesData, loading: loadingClasses } = useFetch<{
     data: { id: string }[];
   }>('/api/classes');
-  
+
   const { data: coursesData, loading: loadingCourses } = useFetch<{
     data: { id: string; teacher_id?: string }[];
   }>('/api/admin/courses');
@@ -244,7 +244,7 @@ export default function ReportsPage() {
               createdAt,
             ];
           });
-          
+
           csvContent = [
             headers.join(","),
             ...rows.map((row: string[]) => row.map(cell => `"${cell}"`).join(","))
@@ -308,7 +308,7 @@ export default function ReportsPage() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         toast.success('Đã tạo báo cáo', `${reportConfig.title} đã được tải xuống`);
       }
     } catch (error) {
@@ -440,8 +440,8 @@ export default function ReportsPage() {
         </Card>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {reportTypes.map((report) => (
-            <Card 
-              key={report.id} 
+            <Card
+              key={report.id}
               className={`relative ${!report.available ? 'opacity-60' : ''}`}
             >
               <CardBody>
@@ -486,24 +486,24 @@ export default function ReportsPage() {
         </CardHeader>
         <CardBody>
           <div className="flex flex-wrap gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => handleGenerateReport('students')}
               disabled={generatingReport}
             >
               <Icons.Download className="w-4 h-4 mr-2" />
               Xuất tất cả học sinh
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => handleGenerateReport('classes')}
               disabled={generatingReport}
             >
               <Icons.Download className="w-4 h-4 mr-2" />
               Xuất tất cả lớp học
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => handleGenerateReport('grades')}
               disabled={generatingReport}
             >

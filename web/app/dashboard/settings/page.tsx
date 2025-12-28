@@ -21,14 +21,14 @@ interface AcademicYear {
   start_date: string
   end_date: string
   is_current: boolean
- terms: Array<{ name: string; start_date: string; end_date: string }>
+  terms: Array<{ name: string; start_date: string; end_date: string }>
 }
 
 interface GradingScale {
   id: string
   name: string
   description: string
- scale: Array<{ letter: string; min: number; max: number; gpa: number; description: string }>
+  scale: Array<{ letter: string; min: number; max: number; gpa: number; description: string }>
   is_default: boolean
 }
 
@@ -54,7 +54,7 @@ export default function SettingsPage() {
       const response = await apiFetch('/api/admin/settings')
       const data = await response.json()
       console.log('[Settings] Settings response:', data);
-      
+
       const settingsData = Array.isArray(data) ? data : (data?.data || []);
       if (Array.isArray(settingsData) && settingsData.length > 0) {
         setSettings(settingsData)
@@ -83,7 +83,7 @@ export default function SettingsPage() {
       const response = await apiFetch('/api/admin/academic-years')
       const data = await response.json()
       console.log('[Settings] Academic years response:', data);
-      
+
       const yearsData = Array.isArray(data) ? data : (data?.data || []);
       if (Array.isArray(yearsData) && yearsData.length > 0) {
         setAcademicYears(yearsData)
@@ -121,10 +121,10 @@ export default function SettingsPage() {
       // In a real app, we would batch update or update changed fields
       // For now, we'll just log what would be saved
       console.log('Saving settings:', settingsForm)
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       alert('Settings saved successfully')
     } catch (error) {
       console.error('Error saving settings:', error)
@@ -190,11 +190,10 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                    activeTab === tab.id
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.id
                       ? 'bg-stone-100 text-stone-900'
                       : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                  }`}
+                    }`}
                 >
                   <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? 'text-stone-900' : 'text-stone-400'}`} />
                   {tab.label}
@@ -292,7 +291,10 @@ export default function SettingsPage() {
                       </div>
                       <p className="text-sm text-stone-500 mb-3">{scale.description}</p>
                       <div className="flex flex-wrap gap-2">
-                        {scale.scale.map((grade) => (
+                        {(Array.isArray(scale.scale)
+                          ? scale.scale
+                          : (typeof scale.scale === 'string' ? JSON.parse(scale.scale) : [])
+                        ).map((grade: { letter: string; min: number; max: number }) => (
                           <span key={grade.letter} className="px-2 py-1 bg-stone-100 text-stone-700 text-xs rounded border border-stone-200">
                             {grade.letter}: {grade.min}-{grade.max}%
                           </span>

@@ -53,18 +53,14 @@ export async function GET(
       .from('enrollments')
       .select(`
         class_id,
+        enrollment_date,
         classes:classes!inner(
           id,
-          name,
-          academic_year_id,
-          academic_years:academic_years!inner(
-            name,
-            semester
-          )
+          name
         )
       `)
       .eq('student_id', resolvedParams.id)
-      .order('created_at', { ascending: false })
+      .eq('status', 'active')
 
     // Get all grades for the student
     const gradesQuery = supabase
@@ -78,18 +74,14 @@ export async function GET(
           id,
           title,
           max_points,
+          class_id,
           class:classes!inner(
             id,
-            name,
-            academic_year_id,
-            academic_years:academic_years(
-              name,
-              semester
-            )
+            name
           ),
-          category:grade_categories(
-            name,
-            code
+          category:assignment_categories(
+            id,
+            name
           )
         )
       `)
@@ -105,45 +97,39 @@ export async function GET(
         id,
         status,
         date,
-        class:classes!inner(
-          academic_year_id,
-          academic_years:academic_years(
-            name,
-            semester
-          )
-        )
+        class_id
       `)
       .eq('student_id', resolvedParams.id)
 
-    // Process data by semester
-    const semesterMap = new Map<string, any>()
+    // Process data by class (since classes don't have academic_year_id in schema)
+    const classMap = new Map<string, any>()
 
-    // Group grades by semester
+    // Group grades by class
     if (grades) {
       grades.forEach((grade: any) => {
         const assignment = grade.assignment
-  if (!assignment || !assignment.class || !assignment.class.academic_years) return
+        if (!assignment || !assignment.class) return
 
-  const academicYear = assignment.class.academic_years.name
-        const semester = assignment.class.academic_years.semester || 'HK1'
-        const key = `${academicYear}-${semester}`
+        const className = assignment.class.name
+        const classId = assignment.class.id
 
-        if (!semesterMap.has(key)) {
-          semesterMap.set(key, {
-            semester,
-            academic_year: academicYear,
+        if (!classMap.has(classId)) {
+          classMap.set(classId, {
+            semester: 'HK1', // Default semester
+            academic_year: '2024-2025', // Default year
+            class_name: className,
             subjects: new Map(),
             total_grades: [],
             attendance_records: []
           })
         }
 
-        const semData = semesterMap.get(key)
-        const subjectName = assignment.category?.name || 'Chưa phân loại'
-        const subjectCode = assignment.category?.code || 'N/A'
+        const classData = classMap.get(classId)
+        const subjectName = assignment.category?.name || className
+        const subjectCode = assignment.category?.id || classId
 
-        if (!semData.subjects.has(subjectCode)) {
-          semData.subjects.set(subjectCode, {
+        if (!classData.subjects.has(subjectCode)) {
+          classData.subjects.set(subjectCode, {
             subject_name: subjectName,
             subject_code: subjectCode,
             grades: [],
@@ -154,31 +140,30 @@ export async function GET(
           })
         }
 
-        semData.subjects.get(subjectCode).grades.push(grade.score)
-        semData.total_grades.push(grade.score)
+        if (grade.score != null) {
+          classData.subjects.get(subjectCode).grades.push(grade.score)
+          classData.total_grades.push(grade.score)
+        }
       })
     }
 
     // Add attendance data
     if (attendance) {
       attendance.forEach((record: any) => {
-  if (!record.class || !record.class.academic_years) return
-
-  const academicYear = record.class.academic_years.name
-        const semester = record.class.academic_years.semester || 'HK1'
-        const key = `${academicYear}-${semester}`
-
-        if (semesterMap.has(key)) {
-          semesterMap.get(key).attendance_records.push(record.status)
+        const classId = record.class_id
+        if (classMap.has(classId)) {
+          classMap.get(classId).attendance_records.push(record.status)
         }
       })
     }
 
-    // Calculate semester statistics
-    const semesters = Array.from(semesterMap.entries()).map(([_key, data]) => {
+    // Calculate class statistics
+    const semesters = Array.from(classMap.entries()).map(([_key, data]) => {
       // Calculate subject averages
       const subjects = Array.from(data.subjects.values()).map((subject: any) => {
-        const avg = subject.grades.reduce((a: number, b: number) => a + b, 0) / subject.grades.length
+        const avg = subject.grades.length > 0 
+          ? subject.grades.reduce((a: number, b: number) => a + b, 0) / subject.grades.length
+          : 0
         
         return {
           ...subject,

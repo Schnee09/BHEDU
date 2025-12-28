@@ -11,8 +11,11 @@ interface Class {
   code: string;
   schedule?: string;
   teacher_name?: string;
-  capacity?: number;
+  capacity?: number;           // Legacy field
+  max_capacity?: number;       // New: max 12 students
   enrolled_count?: number;
+  class_type?: 'group' | 'tutoring';
+  sessions_per_week?: number;
 }
 
 interface Enrollment {
@@ -41,7 +44,7 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
 
   useEffect(() => {
     fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentId]);
 
   const fetchData = async () => {
@@ -57,7 +60,7 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
         const classesData = await classesRes.json();
 
         setEnrollments(enrollmentsData.enrollments || []);
-        
+
         // Filter out classes the student is already enrolled in
         const enrolledClassIds = new Set(enrollmentsData.enrollments?.map((e: Enrollment) => e.class_id) || []);
         const available = classesData.classes?.filter((c: Class) => !enrolledClassIds.has(c.id)) || [];
@@ -88,10 +91,10 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
     // Format expected: "Mon/Wed 10:00-11:30" or "Tue/Thu 14:00-15:30"
     const days1 = schedule1.split(" ")[0]?.toLowerCase() || "";
     const days2 = schedule2.split(" ")[0]?.toLowerCase() || "";
-    
+
     // Check if any day overlaps
     const dayAbbrevs = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-    const hasDayOverlap = dayAbbrevs.some(day => 
+    const hasDayOverlap = dayAbbrevs.some(day =>
       days1.includes(day) && days2.includes(day)
     );
 
@@ -142,12 +145,16 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
     }
 
     const selectedClass = availableClasses.find(c => c.id === selectedClassId);
-    if (selectedClass?.capacity && selectedClass?.enrolled_count && 
-        selectedClass.enrolled_count >= selectedClass.capacity) {
-      const confirmed = window.confirm(
-        `This class is at full capacity (${selectedClass.capacity} students).\n\nEnroll anyway?`
+
+    // Check class capacity - BLOCK enrollment if at max (default 12)
+    const maxCapacity = selectedClass?.max_capacity ?? selectedClass?.capacity ?? 12;
+    const currentEnrolled = selectedClass?.enrolled_count ?? 0;
+
+    if (currentEnrolled >= maxCapacity) {
+      showToast.error(
+        `Lớp đã đủ sĩ số (${currentEnrolled}/${maxCapacity} học sinh). Không thể đăng ký thêm.`
       );
-      if (!confirmed) return;
+      return;
     }
 
     const toastId = showToast.loading("Enrolling student...");
@@ -255,13 +262,23 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
                 disabled={processingEnrollment !== null}
               >
                 <option value="">-- Choose a class --</option>
-                {availableClasses.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.code} - {cls.name}
-                    {cls.schedule && ` (${cls.schedule})`}
-                    {cls.capacity && ` - ${cls.enrolled_count || 0}/${cls.capacity} enrolled`}
-                  </option>
-                ))}
+                {availableClasses.map((cls) => {
+                  const maxCap = cls.max_capacity ?? cls.capacity ?? 12;
+                  const enrolled = cls.enrolled_count ?? 0;
+                  const isFull = enrolled >= maxCap;
+                  return (
+                    <option
+                      key={cls.id}
+                      value={cls.id}
+                      disabled={isFull}
+                    >
+                      {cls.code} - {cls.name}
+                      {cls.schedule && ` (${cls.schedule})`}
+                      {` - ${enrolled}/${maxCap} học sinh`}
+                      {isFull && ' [ĐẦY]'}
+                    </option>
+                  );
+                })}
               </select>
               {availableClasses.length === 0 && (
                 <p className="mt-2 text-sm text-slate-600">

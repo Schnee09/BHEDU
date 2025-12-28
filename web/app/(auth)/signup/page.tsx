@@ -27,7 +27,7 @@ export default function SignupPage() {
     });
 
     if (error) setError(error.message);
-    else setMessage("Check your email to confirm your account.");
+    else setMessage("Vui lòng kiểm tra email để xác nhận tài khoản.");
     setLoading(false);
   };
 
@@ -35,20 +35,20 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">
-          Create an Account 📝
+          Tạo tài khoản 📝
         </h2>
 
         <form onSubmit={signUp} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-600">
-              Full Name
+              Họ và tên
             </label>
             <input
               className="mt-1 w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
               value={name}
               onChange={(e) => setName(e.target.value)}
               type="text"
-              placeholder="John Doe"
+              placeholder="Nguyễn Văn A"
               required
             />
           </div>
@@ -68,7 +68,7 @@ export default function SignupPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-600">
-              Password
+              Mật khẩu
             </label>
             <input
               className="mt-1 w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
@@ -84,7 +84,7 @@ export default function SignupPage() {
             disabled={loading}
             className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
           >
-            {loading ? "Creating..." : "Sign Up"}
+            {loading ? "Đang tạo..." : "Sign Up"}
           </button>
 
           {error && <p className="text-red-600 text-sm text-center">{error}</p>}
@@ -94,9 +94,9 @@ export default function SignupPage() {
         </form>
 
         <p className="text-center text-sm mt-6 text-gray-500">
-          Already have an account?{" "}
+          Đã có tài khoản?{" "}
           <a href="/login" className="text-blue-600 hover:underline">
-            Sign in
+            Đăng nhập
           </a>
         </p>
       </div>

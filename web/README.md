@@ -1,12 +1,18 @@
 ## BH EDU Web
 
-Next.js 16 production-ready web application with secure internal APIs (HMAC), Supabase backend, admin UI, and comprehensive production hardening.
+Next.js 15 production-ready web application for Vietnamese educational institutions. Features secure authentication, role-based access control, comprehensive student/grade management, and Vietnamese transcript support.
 
 ## 🚀 Production Status
 
-**✅ Production Ready** - Full security hardening, rate limiting, error handling, audit logging, performance optimizations, and comprehensive student CRUD features in place.
+**✅ Production Ready** - Full security hardening, RLS policies, performance optimizations, and bilingual (Vietnamese) interface.
 
-See [PRODUCTION_HARDENING.md](../PRODUCTION_HARDENING.md) for complete production readiness documentation.
+### Recent Updates (Dec 2025)
+- ✅ Dashboard with analytics charts (pie, bar, area, radar)
+- ✅ Teacher-specific class filtering
+- ✅ Comprehensive RLS policies for all tables
+- ✅ Database performance indexes
+- ✅ Mobile-responsive tables with card view
+- ✅ Schema validation overhaul
 
 ## 🔐 Security Features
 

@@ -14,12 +14,12 @@ interface BadgeProps {
   color?: 'gray' | 'blue' | 'green' | 'red' | 'purple' | 'yellow';
 }
 
-export default function Badge({ 
-  children, 
+export default function Badge({
+  children,
   variant,
   color,
   size = 'md',
-  className = '' 
+  className = ''
 }: BadgeProps) {
   // Map legacy color prop to new variant system
   const effectiveVariant = variant || (() => {
@@ -33,11 +33,11 @@ export default function Badge({
   const baseClasses = 'inline-flex items-center font-medium rounded-full';
 
   const variantClasses = {
-    default: 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700',
-    success: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800',
-    warning: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
-    danger: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800',
-    info: 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700',
+    default: 'bg-surface-secondary text-muted-foreground border border-border',
+    success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+    warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+    danger: 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20',
+    info: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
   };
 
   const sizeClasses = {

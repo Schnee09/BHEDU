@@ -12,7 +12,7 @@
 
 import Link from "next/link";
 import { useUser } from "@/hooks";
-import { Card, LoadingState } from "@/components/ui";
+import { LoadingState } from "@/components/ui";
 import { Icons } from "@/components/ui/Icons";
 import { PencilSquareIcon, ClipboardDocumentListIcon, DocumentChartBarIcon, DocumentTextIcon, AcademicCapIcon } from "@heroicons/react/24/outline";
 
@@ -26,24 +26,10 @@ interface NavCard {
 
 const navCards: NavCard[] = [
   {
-    href: "/dashboard/grades/vietnamese-entry",
-    title: "Nhập điểm Việt Nam",
-    description: "Nhập điểm sử dụng thang điểm 10 của Việt Nam với trọng số",
-    icon: AcademicCapIcon,
-    roles: ["teacher", "admin"],
-  },
-  {
     href: "/dashboard/grades/entry",
-    title: "Nhập điểm tiêu chuẩn",
-    description: "Nhập và cập nhật điểm của học sinh cho bài tập",
+    title: "Nhập điểm",
+    description: "Nhập điểm sử dụng thang điểm Việt Nam",
     icon: PencilSquareIcon,
-    roles: ["teacher", "admin"],
-  },
-  {
-    href: "/dashboard/grades/assignments",
-    title: "Quản lý bài tập",
-    description: "Tạo và quản lý bài tập và danh mục",
-    icon: ClipboardDocumentListIcon,
     roles: ["teacher", "admin"],
   },
   {
@@ -71,104 +57,115 @@ const navCards: NavCard[] = [
 
 export default function GradesPageModern() {
   const { user, loading } = useUser();
-  
+
   if (loading) {
     return <LoadingState message="Đang tải..." />;
   }
-  
+
   const userRole = user?.role || "";
-  const availableCards = navCards.filter(card => 
+  const availableCards = navCards.filter(card =>
     card.roles.includes(userRole)
   );
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">Điểm & Bài tập</h1>
-          <p className="text-lg text-gray-600">
-            {userRole === "student" 
-              ? "Xem điểm và tiến độ học tập của bạn"
-              : "Quản lý điểm, bài tập và báo cáo"}
-          </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Điểm & Bài tập</h1>
+              <p className="mt-2 text-gray-600">
+                {userRole === "student"
+                  ? "Xem điểm và tiến độ học tập của bạn"
+                  : "Quản lý điểm, bài tập và báo cáo"}
+              </p>
+            </div>
+          </div>
         </div>
-        
+
         {/* Navigation Cards */}
         {availableCards.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
-            {availableCards.map((card) => (
-              <Link key={card.href} href={card.href}>
-                <Card 
-                  className="h-full p-8 bg-white hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-pointer border-gray-200"
-                >
-                  <div className="flex flex-col items-start h-full">
-                    <div className="p-3 bg-stone-100 rounded-xl mb-6 group-hover:scale-110 transition-transform duration-300">
-                      <card.icon className="w-10 h-10 text-stone-600" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-stone-900 mb-3">
-                      {card.title}
-                    </h2>
-                    <p className="text-stone-500 text-base flex-grow leading-relaxed">
-                      {card.description}
-                    </p>
-                    <div className="mt-6 px-6 py-2 bg-stone-900 text-white rounded-lg font-semibold flex items-center gap-2 hover:bg-stone-800 transition-colors">
-                      Mở
-                      <Icons.ChevronRight className="w-4 h-4" />
+          <div className="mb-12">
+            <h2 className="sr-only">Các chức năng điểm</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {availableCards.map((card) => (
+                <Link key={card.href} href={card.href}>
+                  <div className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200 group cursor-pointer">
+                    <div className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="p-3 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors duration-200">
+                          <card.icon className="w-6 h-6 text-indigo-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors duration-200">
+                            {card.title}
+                          </h3>
+                          <p className="text-gray-600 leading-relaxed">
+                            {card.description}
+                          </p>
+                          <div className="mt-4 flex items-center text-sm font-medium text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <span>Mở chức năng</span>
+                            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </Card>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </div>
           </div>
         ) : (
-          <Card className="text-center py-16" padding="lg">
-            <Icons.Lock className="w-12 h-12 text-stone-400 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-stone-900 mb-3">
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Quyền truy cập bị hạn chế
             </h3>
-            <p className="text-stone-500 text-lg">
+            <p className="text-gray-600">
               Bạn không có quyền truy cập các tính năng điểm.
             </p>
-          </Card>
+          </div>
         )}
-        
+
         {/* Quick Stats for Teachers/Admins */}
         {(userRole === "teacher" || userRole === "admin") && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card padding="lg" className="bg-stone-50 border-stone-200">
-              <h3 className="text-lg font-bold text-stone-900 mb-4">Thống kê nhanh</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
-                  <span className="text-stone-700 font-medium">Điểm đang chờ</span>
-                  <span className="font-bold text-2xl text-stone-600">-</span>
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Thống kê nhanh</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-700 font-medium">Điểm đang chờ</span>
+                  <span className="font-bold text-xl text-gray-600">-</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
-                  <span className="text-stone-700 font-medium">Bài tập đang hoạt động</span>
-                  <span className="font-bold text-2xl text-stone-600">-</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg">
-                  <span className="text-stone-700 font-medium">Tổng số học sinh</span>
-                  <span className="font-bold text-2xl text-stone-600">-</span>
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-700 font-medium">Tổng số học sinh</span>
+                  <span className="font-bold text-xl text-gray-600">-</span>
                 </div>
               </div>
-            </Card>
-            
-            <Card padding="lg" className="bg-stone-50 border-stone-200">
-              <h3 className="text-lg font-bold text-stone-900 mb-4">Hoạt động gần đây</h3>
-              <div className="text-center py-8 text-stone-500">
-                <Icons.Grades className="w-10 h-10 text-stone-400 mx-auto mb-2" />
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Hoạt động gần đây</h3>
+              <div className="text-center py-8 text-gray-500">
+                <Icons.Grades className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                 <p>Không có hoạt động gần đây</p>
               </div>
-            </Card>
-            
-            <Card padding="lg" className="bg-stone-50 border-stone-200">
-              <h3 className="text-lg font-bold text-stone-900 mb-4">Hạn nộp sắp tới</h3>
-              <div className="text-center py-8 text-stone-500">
-                <Icons.Attendance className="w-10 h-10 text-stone-400 mx-auto mb-2" />
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Hạn nộp sắp tới</h3>
+              <div className="text-center py-8 text-gray-500">
+                <Icons.Attendance className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                 <p>Không có hạn nộp sắp tới</p>
               </div>
-            </Card>
+            </div>
           </div>
         )}
       </div>

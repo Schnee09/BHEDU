@@ -49,13 +49,13 @@ async function fetchStudentWithClient(supabase: any, id: string) {
       .order("enrollment_date", { ascending: false }),
     supabase
       .from("attendance")
-      .select("id, class_id, date, status, notes")
+      .select("id, class_id, date, status, notes, classes(id, name)")
       .eq("student_id", id)
       .order("date", { ascending: false })
       .limit(20),
     supabase
       .from("grades")
-      .select("id, assignment_id, points_earned, score, feedback, graded_at, assignments(title, total_points, max_points)")
+      .select("id, score, points_earned, component_type, semester, graded_at, subjects(code, name), classes(name)")
       .eq("student_id", id)
       .order("graded_at", { ascending: false })
       .limit(20),
@@ -154,109 +154,216 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
   if (!profile) return notFound();
 
+  // Calculate statistics
+  const attendanceStats = {
+    total: attendance.length,
+    present: attendance.filter((a: any) => a.status === 'present').length,
+    late: attendance.filter((a: any) => a.status === 'late').length,
+    absent: attendance.filter((a: any) => a.status === 'absent').length,
+  };
+  const attendanceRate = attendanceStats.total > 0
+    ? Math.round(((attendanceStats.present + attendanceStats.late) / attendanceStats.total) * 100)
+    : 100;
+
+  const gradeScores = grades.map((g: any) => g.score ?? g.points_earned).filter((s: any) => s != null);
+  const averageGrade = gradeScores.length > 0
+    ? (gradeScores.reduce((a: number, b: number) => a + b, 0) / gradeScores.length).toFixed(1)
+    : '—';
+
   const overview = (
     <div className="space-y-6">
-      {/* Photo Upload Section */}
-      <StudentPhotoUpload 
-        studentId={id} 
-        currentPhotoUrl={(profile as { photo_url?: string | null }).photo_url}
-      />
-
-      {/* Profile and Summary Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card padding="lg" className="lg:col-span-2">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900">Profile Information</h2>
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex-1">
-              <h3 className="text-2xl font-bold text-gray-900">{profile.full_name}</h3>
-              <p className="text-gray-600 mt-1">{profile.email}</p>
-              <div className="mt-4 space-y-2">
-                {profile.phone && (
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
-                    <span className="text-gray-500">📱 Phone:</span>
-                    <span className="font-medium">{profile.phone}</span>
-                  </div>
-                )}
-                {profile.address && (
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
-                    <span className="text-gray-500">📍 Address:</span>
-                    <span className="font-medium">{profile.address}</span>
-                  </div>
-                )}
-                {profile.date_of_birth && (
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
-                    <CakeIcon className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-500">Date of Birth:</span>
-                    <span className="font-medium">{new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Icons.Calendar className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-500">Joined:</span>
-                  <span className="font-medium">{new Date(profile.created_at).toLocaleDateString('vi-VN')}</span>
+      {/* Hero Section with Photo and Quick Stats */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-xl" />
+        <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-xl p-6 overflow-hidden">
+          {/* Student Info Row */}
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Photo + Name */}
+            <div className="flex items-center gap-4">
+              <StudentPhotoUpload
+                studentId={id}
+                currentPhotoUrl={(profile as { photo_url?: string | null }).photo_url}
+              />
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {profile.full_name}
+                </h2>
+                <p className="text-gray-600">{profile.email}</p>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <Badge color="purple">{profile.role}</Badge>
+                  {enrollments.length > 0 && (
+                    <Badge color="blue">{(enrollments[0] as any)?.classes?.name}</Badge>
+                  )}
                 </div>
               </div>
             </div>
-            <Badge color="purple">{profile.role}</Badge>
+
+            {/* Quick Stats Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:ml-auto">
+              <div className="bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl p-4 text-center border border-emerald-200/50 hover:shadow-lg transition-all">
+                <p className="text-3xl font-bold text-emerald-600">{attendanceRate}%</p>
+                <p className="text-xs font-medium text-emerald-700">Chuyên cần</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-4 text-center border border-blue-200/50 hover:shadow-lg transition-all">
+                <p className="text-3xl font-bold text-blue-600">{averageGrade}</p>
+                <p className="text-xs font-medium text-blue-700">Điểm TB</p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-violet-100 rounded-xl p-4 text-center border border-purple-200/50 hover:shadow-lg transition-all">
+                <p className="text-3xl font-bold text-purple-600">{enrollments.length}</p>
+                <p className="text-xs font-medium text-purple-700">Lớp học</p>
+              </div>
+              <div className="bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl p-4 text-center border border-orange-200/50 hover:shadow-lg transition-all">
+                <p className="text-3xl font-bold text-orange-600">{grades.length}</p>
+                <p className="text-xs font-medium text-orange-700">Điểm số</p>
+              </div>
+            </div>
           </div>
-        </Card>
+        </div>
+      </div>
 
-        {/* Modern Stat Cards with Gradients */}
-        <div className="space-y-4">
-          <Card padding="md" className="bg-green-50 border-green-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-700">Active Classes</p>
-                <p className="text-3xl font-bold text-green-900 mt-1">{enrollments.length}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <Icons.Classes className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </Card>
-
-          <Card padding="md" className="bg-emerald-50 border-emerald-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-emerald-700">Attendance</p>
-                <p className="text-3xl font-bold text-emerald-900 mt-1">{attendance.length}</p>
-                <p className="text-xs text-emerald-600 mt-1">Recent records</p>
-              </div>
-              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <Icons.Attendance className="w-6 h-6 text-emerald-600" />
-              </div>
-            </div>
-          </Card>
-
-          <Card padding="md" className="bg-orange-50 border-orange-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-700">Recent Grades</p>
-                <p className="text-3xl font-bold text-orange-900 mt-1">{grades.length}</p>
-                <p className="text-xs text-orange-600 mt-1">Assignments</p>
-              </div>
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <Icons.Grades className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </Card>
-
-          {accountInfo && (
-            <Card padding="md" className="bg-teal-50 border-teal-200">
-              <div className="flex items-center justify-between">
+      {/* Info Cards Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Personal Info Card */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <Icons.Users className="w-4 h-4 text-indigo-600" />
+            </span>
+            Thông tin cá nhân
+          </h3>
+          <div className="space-y-3">
+            {profile.phone && (
+              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <span className="text-xl">📱</span>
                 <div>
-                  <p className="text-sm font-medium text-teal-700">Account Balance</p>
-                  <p className="text-3xl font-bold text-teal-900 mt-1">{accountInfo.balance ?? '0'}</p>
-                  <p className="text-xs text-teal-600 mt-1 capitalize">{accountInfo.status}</p>
-                </div>
-                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
-                  <Icons.Finance className="w-6 h-6 text-teal-600" />
+                  <p className="text-xs text-gray-500">Điện thoại</p>
+                  <p className="font-medium text-gray-900">{profile.phone}</p>
                 </div>
               </div>
-            </Card>
+            )}
+            {profile.address && (
+              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <span className="text-xl">📍</span>
+                <div>
+                  <p className="text-xs text-gray-500">Địa chỉ</p>
+                  <p className="font-medium text-gray-900">{profile.address}</p>
+                </div>
+              </div>
+            )}
+            {profile.date_of_birth && (
+              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <CakeIcon className="w-5 h-5 text-pink-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Ngày sinh</p>
+                  <p className="font-medium text-gray-900">{new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}</p>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+              <Icons.Calendar className="w-5 h-5 text-blue-500" />
+              <div>
+                <p className="text-xs text-gray-500">Ngày tham gia</p>
+                <p className="font-medium text-gray-900">{new Date(profile.created_at).toLocaleDateString('vi-VN')}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Attendance Summary Card */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <Icons.Attendance className="w-4 h-4 text-emerald-600" />
+            </span>
+            Tổng quan điểm danh
+          </h3>
+          {attendanceStats.total === 0 ? (
+            <div className="text-center py-8 text-gray-500">Chưa có dữ liệu điểm danh</div>
+          ) : (
+            <>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="relative w-20 h-20">
+                  <svg className="w-20 h-20 transform -rotate-90">
+                    <circle cx="40" cy="40" r="35" stroke="#e5e7eb" strokeWidth="6" fill="none" />
+                    <circle
+                      cx="40" cy="40" r="35"
+                      stroke={attendanceRate >= 80 ? '#22c55e' : attendanceRate >= 60 ? '#f59e0b' : '#ef4444'}
+                      strokeWidth="6"
+                      fill="none"
+                      strokeDasharray={`${attendanceRate * 2.2} 220`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center font-bold text-lg">
+                    {attendanceRate}%
+                  </span>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Có mặt</span>
+                    <span className="font-semibold text-green-600">{attendanceStats.present}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Đi muộn</span>
+                    <span className="font-semibold text-yellow-600">{attendanceStats.late}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Vắng mặt</span>
+                    <span className="font-semibold text-red-600">{attendanceStats.absent}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
+                <div className="bg-green-500 transition-all" style={{ width: `${(attendanceStats.present / attendanceStats.total) * 100}%` }} />
+                <div className="bg-yellow-500 transition-all" style={{ width: `${(attendanceStats.late / attendanceStats.total) * 100}%` }} />
+                <div className="bg-red-500 transition-all" style={{ width: `${(attendanceStats.absent / attendanceStats.total) * 100}%` }} />
+              </div>
+            </>
           )}
         </div>
       </div>
+
+      {/* Recent Grades Preview */}
+      {grades.length > 0 && (
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Icons.Grades className="w-4 h-4 text-orange-600" />
+            </span>
+            Điểm gần đây
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {grades.slice(0, 6).map((g: any) => (
+              <div key={g.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-3 text-center hover:shadow-md transition-all hover:scale-[1.02]">
+                <p className="text-2xl font-bold text-gray-900">{g.score ?? g.points_earned}</p>
+                <p className="text-xs text-gray-600 truncate">{g.subjects?.name ?? 'N/A'}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Account Info (if exists) */}
+      {accountInfo && (
+        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-2xl border border-teal-200/50 shadow-lg p-6">
+          <h3 className="text-lg font-semibold text-teal-900 mb-3 flex items-center gap-2">
+            <Icons.Finance className="w-5 h-5 text-teal-600" />
+            Tài khoản
+          </h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-3xl font-bold text-teal-600">₫{accountInfo.balance ?? '0'}</p>
+              <p className="text-sm text-teal-700 capitalize">{accountInfo.status}</p>
+            </div>
+            {accountInfo.last_payment_date && (
+              <div className="text-right">
+                <p className="text-xs text-teal-600">Thanh toán gần nhất</p>
+                <p className="font-medium text-teal-900">{new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN')}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -268,25 +375,25 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
   const attendanceSection = (
     <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Attendance Records</h2>
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Bản ghi điểm danh</h2>
       {attendance.length === 0 ? (
-        <Empty title="No attendance" description="No attendance records found for this student." />
+        <Empty title="Không có điểm danh" description="Không tìm thấy bản ghi điểm danh nào cho học sinh này." />
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Date</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Class</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Notes</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Lớp</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Trạng thái</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Ghi chú</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {attendance.map((a: any) => (
                 <tr key={a.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">{new Date(a.date).toLocaleDateString('vi-VN')}</td>
-                  <td className="px-4 py-3">{a.class_id}</td>
+                  <td className="px-4 py-3">{a.classes?.name ?? a.class_id}</td>
                   <td className="px-4 py-3">
                     <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'}>
                       {a.status}
@@ -304,30 +411,41 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
   const gradesSection = (
     <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Grades & Assignments</h2>
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Điểm số</h2>
       {grades.length === 0 ? (
-        <Empty title="No grades" description="No recent grades available." />
+        <Empty title="Không có điểm" description="Chưa có điểm nào gần đây." />
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Assignment</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Points</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Graded At</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Môn học</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Loại điểm</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Điểm</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày chấm</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {grades.map((g: any) => (
-                <tr key={g.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-900">{g.assignments?.title ?? g.assignment_id}</td>
-                  <td className="px-4 py-3">
-                    <span className="font-semibold text-blue-600">{g.score ?? g.points_earned ?? '—'}</span>
-                    <span className="text-gray-500"> / {g.assignments?.max_points ?? '-'}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString() : '-'}</td>
-                </tr>
-              ))}
+              {grades.map((g: any) => {
+                const componentLabels: Record<string, string> = {
+                  oral: 'Miệng',
+                  fifteen_min: '15 phút',
+                  one_period: '1 tiết',
+                  midterm: 'Giữa kỳ',
+                  final: 'Cuối kỳ',
+                };
+                return (
+                  <tr key={g.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-900">{g.subjects?.name ?? 'N/A'}</td>
+                    <td className="px-4 py-3 text-gray-700">{componentLabels[g.component_type] ?? g.component_type}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-semibold text-blue-600">{g.score ?? g.points_earned ?? '—'}</span>
+                      <span className="text-gray-500"> / 10</span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString('vi-VN') : '-'}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -337,33 +455,33 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
   const financeSection = (
     <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Finance Overview</h2>
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Tổng quan tài chính</h2>
       {accountInfo ? (
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card padding="md" className="bg-gradient-to-br from-slate-50 to-gray-100">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Account Status</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Trạng thái tài khoản</p>
             <p className="text-xl font-bold text-gray-900 mt-2 capitalize">{accountInfo?.status ?? '—'}</p>
           </Card>
           <Card padding="md" className="bg-gradient-to-br from-emerald-50 to-green-50">
-            <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Current Balance</p>
+            <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Số dư hiện tại</p>
             <p className="text-xl font-bold text-emerald-900 mt-2">₫{accountInfo?.balance ?? '0'}</p>
           </Card>
           <Card padding="md" className="bg-gradient-to-br from-blue-50 to-indigo-50">
-            <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Last Payment</p>
+            <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Thanh toán gần nhất</p>
             <p className="text-sm font-semibold text-blue-900 mt-2">
-              {accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN') : 'No payments yet'}
+              {accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN') : 'Chưa có thanh toán'}
             </p>
           </Card>
         </div>
       ) : (
-        <Empty title="No account" description="No student account found." />
+        <Empty title="Không có tài khoản" description="Không tìm thấy tài khoản học sinh." />
       )}
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h3 className="font-semibold mb-3 text-gray-900">Recent Invoices</h3>
+          <h3 className="font-semibold mb-3 text-gray-900">Hóa đơn gần đây</h3>
           {invoiceRows.length === 0 ? (
-            <Empty title="No invoices" />
+            <Empty title="Không có hóa đơn" />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -372,8 +490,8 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">#</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Total</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Balance</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Due</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Số dư</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Hạn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -396,17 +514,17 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
           )}
         </div>
         <div>
-          <h3 className="font-semibold mb-3 text-gray-900">Recent Payments</h3>
+          <h3 className="font-semibold mb-3 text-gray-900">Thanh toán gần đây</h3>
           {paymentRows.length === 0 ? (
-            <Empty title="No payments" />
+            <Empty title="Không có thanh toán" />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Date</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Amount</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Method</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Số tiền</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Phương thức</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Ref</th>
                   </tr>
                 </thead>
@@ -430,15 +548,15 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
   const documentsSection = (
     <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Documents</h2>
-      <Empty title="Coming soon" description="Upload and manage student documents here." />
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Tài liệu</h2>
+      <Empty title="Sắp có" description="Tải lên và quản lý tài liệu học sinh tại đây." />
     </Card>
   );
 
   const notesSection = (
     <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Notes</h2>
-      <Empty title="Coming soon" description="Keep private notes and important remarks." />
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Ghi chú</h2>
+      <Empty title="Sắp có" description="Lưu ghi chú riêng tư và nhận xét quan trọng." />
     </Card>
   );
 
@@ -462,9 +580,9 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
   const activitySection = (
     <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Activity Log</h2>
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Nhật ký hoạt động</h2>
       {auditRows.length === 0 ? (
-        <Empty title="No recent activity" />
+        <Empty title="Không có hoạt động gần đây" />
       ) : (
         <ul className="space-y-4">
           {auditRows.map((a) => (
@@ -490,14 +608,14 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       <div className="p-4 md:p-6 max-w-7xl mx-auto">
         <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4 flex-wrap">
-            <Link 
-              href="/dashboard/students" 
+            <Link
+              href="/dashboard/students"
               className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors"
             >
               <span>←</span>
-              <span>Back to Students</span>
+              <span>Quay lại danh sách</span>
             </Link>
-            <Link 
+            <Link
               href={`/dashboard/students/${id}/progress`}
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-md hover:shadow-lg font-medium text-sm"
             >
@@ -505,29 +623,29 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
               <span>Theo dõi Tiến độ</span>
             </Link>
           </div>
-          <StudentActions 
-            studentId={id} 
-            studentName={profile.full_name} 
+          <StudentActions
+            studentId={id}
+            studentName={profile.full_name}
             isAdmin={viewerRole === 'admin'}
           />
         </div>
 
-      {(() => {
-        const tabs: { key: string; label: string; content: React.ReactNode }[] = [
-          { key: "overview", label: "Overview", content: overview },
-          { key: "status", label: "Status", content: statusSection },
-          { key: "enrollments", label: "Enrollments", content: enrollmentsSection },
-          { key: "guardians", label: "Guardians", content: guardiansSection },
-          { key: "attendance", label: "Attendance", content: attendanceSection },
-          { key: "grades", label: "Grades", content: gradesSection },
-          { key: "imports", label: "Imports", content: importSection },
-          { key: "documents", label: "Documents", content: documentsSection },
-          { key: "notes", label: "Notes", content: notesSection },
-        ];
-        if (showFinance) tabs.splice(5, 0, { key: "finance", label: "Finance", content: financeSection });
-        if (showActivity) tabs.push({ key: "activity", label: "Activity", content: activitySection });
-        return <Tabs tabs={tabs} />;
-      })()}
+        {(() => {
+          const tabs: { key: string; label: string; content: React.ReactNode }[] = [
+            { key: "overview", label: "Tổng quan", content: overview },
+            { key: "status", label: "Trạng thái", content: statusSection },
+            { key: "enrollments", label: "Ghi danh", content: enrollmentsSection },
+            { key: "guardians", label: "Phụ huynh", content: guardiansSection },
+            { key: "attendance", label: "Điểm danh", content: attendanceSection },
+            { key: "grades", label: "Điểm", content: gradesSection },
+            { key: "imports", label: "Nhập", content: importSection },
+            { key: "documents", label: "Tài liệu", content: documentsSection },
+            { key: "notes", label: "Ghi chú", content: notesSection },
+          ];
+          if (showFinance) tabs.splice(5, 0, { key: "finance", label: "Tài chính", content: financeSection });
+          if (showActivity) tabs.push({ key: "activity", label: "Hoạt động", content: activitySection });
+          return <Tabs tabs={tabs} />;
+        })()}
       </div>
     </div>
   );

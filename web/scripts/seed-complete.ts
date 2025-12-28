@@ -1,445 +1,172 @@
 /**
  * scripts/seed-complete.ts
- * Comprehensive database seeding with data for ALL tables
+ * All-in-one seed script for complete Vietnamese Grade Management data
  * 
  * Run with: npx tsx scripts/seed-complete.ts
- * 
- * ✅ Seeds ALL tables with realistic test data
- * ✅ Auto-verifies data after seeding
- * ✅ Replaces existing data (safe for development)
  */
 
 import * as dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import * as path from "path";
 
-// Load environment variables
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const service = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+);
 
-if (!url || !service) {
-  console.error("❌ Missing Supabase credentials");
-  process.exit(1);
-}
-
-const supabase = createClient(url, service, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
-
-// ============================================================================
-// TEST DATA DEFINITIONS
-// ============================================================================
-
-const USERS = [
-  { email: "admin@bhedu.com", password: "test123", role: "admin", full_name: "Admin User", first_name: "Admin", last_name: "User" },
-  { email: "schnee@example.com", password: "Password123!", role: "admin", full_name: "Schnee Ookami", first_name: "Schnee", last_name: "Ookami" },
-  { email: "teacher1@bhedu.com", password: "Password123!", role: "teacher", full_name: "John Smith", first_name: "John", last_name: "Smith" },
-  { email: "teacher2@bhedu.com", password: "Password123!", role: "teacher", full_name: "Emily Johnson", first_name: "Emily", last_name: "Johnson" },
-  { email: "teacher3@bhedu.com", password: "Password123!", role: "teacher", full_name: "Michael Brown", first_name: "Michael", last_name: "Brown" },
-  { email: "student1@bhedu.com", password: "Password123!", role: "student", full_name: "Alice Williams", first_name: "Alice", last_name: "Williams" },
-  { email: "student2@bhedu.com", password: "Password123!", role: "student", full_name: "Bob Davis", first_name: "Bob", last_name: "Davis" },
-  { email: "student3@bhedu.com", password: "Password123!", role: "student", full_name: "Charlie Miller", first_name: "Charlie", last_name: "Miller" },
-  { email: "student4@bhedu.com", password: "Password123!", role: "student", full_name: "Diana Garcia", first_name: "Diana", last_name: "Garcia" },
-  { email: "student5@bhedu.com", password: "Password123!", role: "student", full_name: "Ethan Martinez", first_name: "Ethan", last_name: "Martinez" },
-  { email: "student6@bhedu.com", password: "Password123!", role: "student", full_name: "Fiona Rodriguez", first_name: "Fiona", last_name: "Rodriguez" },
-  { email: "student7@bhedu.com", password: "Password123!", role: "student", full_name: "George Wilson", first_name: "George", last_name: "Wilson" },
-  { email: "student8@bhedu.com", password: "Password123!", role: "student", full_name: "Hannah Anderson", first_name: "Hannah", last_name: "Anderson" },
+// Config
+const SUBJECTS = [
+  { code: "toan", name: "Toán học" },
+  { code: "van", name: "Ngữ văn" },
+  { code: "anh", name: "Tiếng Anh" },
+  { code: "ly", name: "Vật lý" },
+  { code: "hoa", name: "Hóa học" },
+  { code: "khtn", name: "Khoa học tự nhiên" },
 ];
 
-const ACADEMIC_YEARS = [
-  { name: "2024-2025", start_date: "2024-09-01", end_date: "2025-06-30", is_current: true },
-  { name: "2023-2024", start_date: "2023-09-01", end_date: "2024-06-30", is_current: false },
-  { name: "2025-2026", start_date: "2025-09-01", end_date: "2026-06-30", is_current: false },
-];
+const CLASSES = ["10A", "10B", "10C", "11A", "11B", "11C", "12A", "12B", "12C"];
 
-const GRADING_SCALES = [
-  { 
-    name: "Standard Scale", 
-    description: "Traditional A-F grading", 
-    is_default: true,
-    scale: {
-      grades: [
-        { grade: "A", min_score: 90, max_score: 100, gpa_value: 4.0, description: "Excellent" },
-        { grade: "B", min_score: 80, max_score: 89, gpa_value: 3.0, description: "Good" },
-        { grade: "C", min_score: 70, max_score: 79, gpa_value: 2.0, description: "Average" },
-        { grade: "D", min_score: 60, max_score: 69, gpa_value: 1.0, description: "Below Average" },
-        { grade: "F", min_score: 0, max_score: 59, gpa_value: 0.0, description: "Failing" },
-      ]
-    }
-  },
-  { 
-    name: "Pass/Fail", 
-    description: "Simple pass or fail", 
-    is_default: false,
-    scale: {
-      grades: [
-        { grade: "P", min_score: 60, max_score: 100, gpa_value: null, description: "Pass" },
-        { grade: "F", min_score: 0, max_score: 59, gpa_value: null, description: "Fail" },
-      ]
-    }
-  },
-];
+const FIRST_NAMES = ["Minh", "Hải", "Dũng", "Anh", "Tuấn", "Nam", "Đức", "Phong", "Lan", "Hương", "Mai", "Linh"];
+const LAST_NAMES = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ"];
 
-const CLASSES = [
-  { name: "Mathematics 101" },
-  { name: "English Literature" },
-  { name: "Biology" },
-  { name: "World History" },
-  { name: "Chemistry" },
-  { name: "Physics" },
-];
+const COMPONENTS = ['oral', 'fifteen_min', 'one_period', 'midterm', 'final'];
+const SEMESTERS = ['1', '2'];
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-async function deleteUser(email: string) {
-  const { data: existing } = await supabase.auth.admin.listUsers();
-  const user = existing.users.find((u) => u.email === email);
-  if (user) {
-    await supabase.auth.admin.deleteUser(user.id);
-    console.log(`   🗑️  Deleted existing user: ${email}`);
-    // Wait a bit for the deletion to propagate
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
+function randomName() {
+  return `${LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]} ${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]} ${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]}`;
 }
 
-async function createUser(userData: typeof USERS[0]) {
-  // Delete if exists
-  await deleteUser(userData.email);
-
-  // Create auth user
-  const { data, error } = await supabase.auth.admin.createUser({
-    email: userData.email,
-    password: userData.password,
-    email_confirm: true,
-  });
-
-  if (error) {
-    // If user still exists, try to get their ID
-    if (error.message.includes("already been registered")) {
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const existingUser = users.users.find(u => u.email === userData.email);
-      if (existingUser) {
-        console.log(`   ℹ️  Using existing user: ${userData.email}`);
-        
-        // Update profile
-        await supabase.from("profiles").upsert({
-          id: existingUser.id,
-          user_id: existingUser.id,
-          email: userData.email,
-          full_name: userData.full_name,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          role: userData.role,
-        });
-        
-        return existingUser.id;
-      }
-    }
-    throw new Error(`Failed to create user ${userData.email}: ${error.message}`);
-  }
-  
-  if (!data.user) throw new Error(`No user returned for ${userData.email}`);
-
-  // Create profile
-  const { error: profileError } = await supabase.from("profiles").insert({
-    id: data.user.id,
-    user_id: data.user.id,
-    email: userData.email,
-    full_name: userData.full_name,
-    first_name: userData.first_name,
-    last_name: userData.last_name,
-    role: userData.role,
-  });
-
-  if (profileError) throw new Error(`Failed to create profile for ${userData.email}: ${profileError.message}`);
-
-  console.log(`   ✅ Created: ${userData.email} (${userData.role})`);
-  return data.user.id;
+function randomScore() {
+  return Math.round((Math.random() * 5 + 5) * 10) / 10; // 5-10 range
 }
-
-// ============================================================================
-// SEEDING FUNCTIONS
-// ============================================================================
-
-async function seedUsers() {
-  console.log("\n📝 Seeding Users & Profiles...");
-  const userIds: Record<string, string> = {};
-
-  for (const user of USERS) {
-    const userId = await createUser(user);
-    userIds[user.email] = userId;
-  }
-
-  return userIds;
-}
-
-async function seedAcademicYears() {
-  console.log("\n📅 Seeding Academic Years...");
-  
-  // Clear existing
-  await supabase.from("academic_years").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-
-  const { data, error } = await supabase
-    .from("academic_years")
-    .insert(ACADEMIC_YEARS)
-    .select();
-
-  if (error) throw new Error(`Failed to seed academic years: ${error.message}`);
-  console.log(`   ✅ Created ${data.length} academic years`);
-  return data;
-}
-
-async function seedGradingScales() {
-  console.log("\n📊 Seeding Grading Scales...");
-  
-  // Clear existing
-  await supabase.from("grading_scales").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-
-  const { data: scales, error } = await supabase
-    .from("grading_scales")
-    .insert(GRADING_SCALES)
-    .select();
-
-  if (error) throw new Error(`Failed to seed grading scales: ${error.message}`);
-
-  console.log(`   ✅ Created ${scales.length} grading scales`);
-  return scales;
-}
-
-async function seedClasses(userIds: Record<string, string>) {
-  console.log("\n🏫 Seeding Classes...");
-  
-  // Clear existing
-  await supabase.from("classes").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-
-  const teachers = USERS.filter(u => u.role === "teacher");
-  const classesData = CLASSES.map((cls, idx) => ({
-    ...cls,
-    teacher_id: userIds[teachers[idx % teachers.length].email],
-  }));
-
-  const { data, error } = await supabase
-    .from("classes")
-    .insert(classesData)
-    .select();
-
-  if (error) throw new Error(`Failed to seed classes: ${error.message}`);
-  console.log(`   ✅ Created ${data.length} classes`);
-  return data;
-}
-
-async function seedEnrollments(userIds: Record<string, string>, classes: any[]) {
-  console.log("\n👥 Seeding Enrollments...");
-  
-  // Clear existing
-  await supabase.from("enrollments").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-
-  const students = USERS.filter(u => u.role === "student");
-  const enrollments = [];
-
-  // Enroll each student in 3-4 random classes
-  for (const student of students) {
-    const numClasses = 3 + Math.floor(Math.random() * 2); // 3 or 4 classes
-    const studentClasses = classes.sort(() => 0.5 - Math.random()).slice(0, numClasses);
-    
-    for (const cls of studentClasses) {
-      enrollments.push({
-        student_id: userIds[student.email],
-        class_id: cls.id,
-        enrollment_date: "2024-09-01",
-      });
-    }
-  }
-
-  const { error } = await supabase.from("enrollments").insert(enrollments);
-  if (error) throw new Error(`Failed to seed enrollments: ${error.message}`);
-  
-  console.log(`   ✅ Created ${enrollments.length} enrollments`);
-  return enrollments;
-}
-
-async function seedAssignments(classes: any[]) {
-  console.log("\n📚 Seeding Assignments...");
-  
-  // Clear existing
-  await supabase.from("assignments").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-
-  const assignments = [];
-  
-  for (const cls of classes) {
-    // Create 3-5 assignments per class
-    const numAssignments = 3 + Math.floor(Math.random() * 3);
-    
-    for (let i = 1; i <= numAssignments; i++) {
-      assignments.push({
-        class_id: cls.id,
-        title: `Assignment ${i}`,
-        description: `${cls.name} - Assignment ${i}`,
-        due_date: new Date(2024, 10, i * 7).toISOString().split('T')[0], // Spread across weeks
-        max_points: 100,
-      });
-    }
-  }
-
-  const { data, error } = await supabase
-    .from("assignments")
-    .insert(assignments)
-    .select();
-
-  if (error) throw new Error(`Failed to seed assignments: ${error.message}`);
-  console.log(`   ✅ Created ${data.length} assignments`);
-  return data;
-}
-
-async function seedGrades(enrollments: any[], assignments: any[]) {
-  console.log("\n📝 Seeding Grades...");
-  
-  // Clear existing
-  await supabase.from("grades").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-
-  const grades = [];
-
-  // For each enrollment, create grades for assignments in that class
-  for (const enrollment of enrollments) {
-    const classAssignments = assignments.filter(a => a.class_id === enrollment.class_id);
-    
-    for (const assignment of classAssignments) {
-      // Random score between 60-100
-      const score = 60 + Math.floor(Math.random() * 41);
-      
-      grades.push({
-        student_id: enrollment.student_id,
-        assignment_id: assignment.id,
-        score: score,
-        feedback: score >= 90 ? "Excellent work!" : score >= 80 ? "Good job!" : score >= 70 ? "Keep improving" : "Needs more effort",
-      });
-    }
-  }
-
-  const { error } = await supabase.from("grades").insert(grades);
-  if (error) throw new Error(`Failed to seed grades: ${error.message}`);
-  
-  console.log(`   ✅ Created ${grades.length} grades`);
-}
-
-async function seedAttendance(enrollments: any[]) {
-  console.log("\n✅ Seeding Attendance...");
-  
-  // Clear existing
-  await supabase.from("attendance").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-
-  const attendance = [];
-  const statuses = ["present", "absent", "late", "excused"];
-
-  // Create attendance for last 30 days
-  for (let day = 0; day < 30; day++) {
-    const date = new Date();
-    date.setDate(date.getDate() - day);
-    const dateStr = date.toISOString().split("T")[0];
-
-    for (const enrollment of enrollments) {
-      // Random attendance status (80% present, 10% absent, 5% late, 5% excused)
-      const rand = Math.random();
-      const status = rand < 0.8 ? "present" : rand < 0.9 ? "absent" : rand < 0.95 ? "late" : "excused";
-
-      attendance.push({
-        student_id: enrollment.student_id,
-        class_id: enrollment.class_id,
-        date: dateStr,
-        status: status,
-        notes: status === "absent" ? "Unexcused absence" : status === "excused" ? "Doctor's appointment" : null,
-      });
-    }
-  }
-
-  const { error } = await supabase.from("attendance").insert(attendance);
-  if (error) throw new Error(`Failed to seed attendance: ${error.message}`);
-  
-  console.log(`   ✅ Created ${attendance.length} attendance records`);
-}
-
-// ============================================================================
-// VERIFICATION FUNCTIONS
-// ============================================================================
-
-async function verifyData() {
-  console.log("\n🔍 Verifying Seeded Data...\n");
-
-  const tables = [
-    { name: "profiles", expectedMin: 13 },
-    { name: "academic_years", expectedMin: 3 },
-    { name: "grading_scales", expectedMin: 2 },
-    { name: "classes", expectedMin: 6 },
-    { name: "enrollments", expectedMin: 20 },
-    { name: "assignments", expectedMin: 18 },
-    { name: "grades", expectedMin: 50 },
-    { name: "attendance", expectedMin: 500 },
-  ];
-
-  let allPassed = true;
-
-  for (const table of tables) {
-    const { count, error } = await supabase
-      .from(table.name)
-      .select("*", { count: "exact", head: true });
-
-    if (error) {
-      console.log(`   ❌ ${table.name}: Error - ${error.message}`);
-      allPassed = false;
-    } else if (count === null || count < table.expectedMin) {
-      console.log(`   ⚠️  ${table.name}: ${count || 0} records (expected >= ${table.expectedMin})`);
-      allPassed = false;
-    } else {
-      console.log(`   ✅ ${table.name}: ${count} records`);
-    }
-  }
-
-  return allPassed;
-}
-
-// ============================================================================
-// MAIN EXECUTION
-// ============================================================================
 
 async function main() {
-  console.log("🌱 Starting Complete Database Seed...\n");
-  console.log("📍 Supabase URL:", url);
-  console.log("🔑 Service Key:", service.substring(0, 20) + "...");
+  console.log("🌱 Complete Seed\n");
 
-  try {
-    // Seed in order (respecting foreign key dependencies)
-    const userIds = await seedUsers();
-    const academicYears = await seedAcademicYears();
-    const gradingScales = await seedGradingScales();
-    const classes = await seedClasses(userIds);
-    const enrollments = await seedEnrollments(userIds, classes);
-    const assignments = await seedAssignments(classes);
-    await seedGrades(enrollments, assignments);
-    await seedAttendance(enrollments);
+  // 1. Get ALL teachers to distribute classes among them
+  const { data: teachers } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .eq("role", "teacher")
+    .order("created_at");
+  
+  const teacherIds = teachers?.map(t => t.id) || [];
+  console.log(`Found ${teacherIds.length} teachers:`);
+  teachers?.forEach(t => console.log(`  - ${t.full_name} (${t.id.slice(0, 8)}...)`));
 
-    // Verify
-    const verified = await verifyData();
-
-    if (verified) {
-      console.log("\n🎉 Database seeding completed successfully!");
-      console.log("\n📋 Test Credentials:");
-      console.log("   Admin:   admin@bhedu.com / Password123!");
-      console.log("   Admin:   schnee@example.com / Password123!");
-      console.log("   Teacher: teacher1@bhedu.com / Password123!");
-      console.log("   Student: student1@bhedu.com / Password123!");
+  // 2. Ensure subjects exist
+  console.log("\n📚 Subjects:");
+  const subjectIds: Record<string, string> = {};
+  for (const s of SUBJECTS) {
+    const { data: existing } = await supabase.from("subjects").select("id").eq("code", s.code).maybeSingle();
+    if (existing) {
+      subjectIds[s.code] = existing.id;
+      console.log(`  ⏭️  ${s.name}`);
     } else {
-      console.log("\n⚠️  Seeding completed with warnings. Check the verification results above.");
+      const { data, error } = await supabase.from("subjects").insert(s).select("id").single();
+      if (data) { subjectIds[s.code] = data.id; console.log(`  ✅ ${s.name}`); }
+      else console.log(`  ❌ ${s.name}: ${error?.message}`);
     }
-
-  } catch (error) {
-    console.error("\n❌ Seeding failed:", error);
-    process.exit(1);
   }
+
+  // 3. Ensure classes exist - DISTRIBUTE among teachers
+  console.log("\n🏫 Classes:");
+  const classIds: Record<string, string> = {};
+  let teacherIndex = 0;
+  
+  for (const name of CLASSES) {
+    // Rotate through teachers so each gets some classes
+    const assignedTeacherId = teacherIds.length > 0 ? teacherIds[teacherIndex % teacherIds.length] : null;
+    teacherIndex++;
+    
+    const { data: existing } = await supabase.from("classes").select("id, teacher_id").eq("name", name).maybeSingle();
+    if (existing) {
+      classIds[name] = existing.id;
+      // Update teacher_id if not set
+      if (!existing.teacher_id && assignedTeacherId) {
+        await supabase.from("classes").update({ teacher_id: assignedTeacherId }).eq("id", existing.id);
+        console.log(`  🔄 ${name} (assigned to teacher)`);
+      } else {
+        console.log(`  ⏭️  ${name}`);
+      }
+    } else {
+      const { data, error } = await supabase.from("classes").insert({ name, teacher_id: assignedTeacherId }).select("id").single();
+      if (data) { classIds[name] = data.id; console.log(`  ✅ ${name} (teacher: ${assignedTeacherId?.slice(0, 8) || 'none'})`); }
+      else console.log(`  ❌ ${name}: ${error?.message}`);
+    }
+  }
+
+  // 4. Create students + enrollments + grades
+  console.log("\n👨‍🎓 Students + Enrollments + Grades:");
+  let studentNum = 1;
+  let totalGrades = 0;
+
+  for (const className of CLASSES) {
+    const classId = classIds[className];
+    if (!classId) continue;
+
+    for (let i = 0; i < 10; i++) {
+      const code = `HS${String(studentNum++).padStart(3, '0')}`;
+      const name = randomName();
+      
+      // Determine grade level from class name (e.g., "10A" -> "Lớp 10")
+      const gradeLevel = `Lớp ${className.match(/\d+/)?.[0] || '10'}`;
+      // Random gender
+      const genders = ['male', 'female', 'other'] as const;
+      const gender = genders[Math.floor(Math.random() * genders.length)];
+      
+      // Create student with grade_level and gender
+      const { data: student, error: sErr } = await supabase.from("profiles").insert({
+        email: `student${studentNum}@bhedu.vn`,
+        full_name: name,
+        role: "student",
+        grade_level: gradeLevel,
+        gender: gender,
+        status: "active",
+      }).select("id").single();
+
+      if (sErr) {
+        console.log(`  ❌ ${code}: ${sErr.message}`);
+        continue;
+      }
+
+      // Create enrollment
+      await supabase.from("enrollments").insert({
+        student_id: student.id,
+        class_id: classId,
+        status: "active",
+      });
+
+      // Create grades
+      for (const subCode of Object.keys(subjectIds)) {
+        for (const sem of SEMESTERS) {
+          for (const comp of COMPONENTS) {
+            if (Math.random() > 0.15) { // 85% chance
+              await supabase.from("grades").insert({
+                student_id: student.id,
+                class_id: classId,
+                subject_id: subjectIds[subCode],
+                component_type: comp,
+                semester: sem,
+                score: randomScore(),
+                points_earned: randomScore(),
+              });
+              totalGrades++;
+            }
+          }
+        }
+      }
+    }
+    console.log(`  ✅ ${className}: 10 students, grades created`);
+  }
+
+  // Summary
+  console.log(`\n📊 Summary: ${SUBJECTS.length} subjects, ${CLASSES.length} classes, ${studentNum - 1} students, ${totalGrades} grades`);
+  console.log("✨ Done!");
 }
 
-main();
+main().catch(console.error);

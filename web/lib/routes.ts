@@ -27,7 +27,7 @@ export const routes = {
   attendance: {
     list: () => '/dashboard/attendance',
     mark: () => '/dashboard/attendance/mark',
-    qr: () => '/dashboard/attendance/qr',
+    history: () => '/dashboard/attendance/history',
     reports: () => '/dashboard/attendance/reports',
   },
 
@@ -37,8 +37,9 @@ export const routes = {
     assignments: () => '/dashboard/grades/assignments',
     analytics: () => '/dashboard/grades/analytics',
     reports: () => '/dashboard/grades/reports',
+    transcripts: () => '/dashboard/grades/transcripts',
     conductEntry: () => '/dashboard/grades/conduct-entry',
-    vietnameseEntry: () => '/dashboard/grades/vietnamese-entry',
+    vietnameseEntry: () => '/dashboard/grades/entry', // Now unified with standard entry
   },
 
   finance: {

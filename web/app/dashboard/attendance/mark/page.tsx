@@ -7,38 +7,65 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  formatAttendanceStatus,
-  validateAttendanceDate,
-  exportAttendanceToCSV,
-  type StudentAttendanceRecord 
-} from '@/lib/attendanceService'
 import { apiFetch } from '@/lib/api/client'
+import {
+  AttendanceStatus,
+  AttendanceRecord
+} from '@/lib/attendance/types'
+import { AttendanceService } from '@/lib/attendance/services/AttendanceService'
 
+// Types
 interface Class {
   id: string
-  title: string
+  name: string
 }
+
+interface StudentAttendanceView {
+  studentId: string;
+  studentName: string;
+  studentCode?: string;
+  email?: string;
+  status: AttendanceStatus | 'unmarked';
+  checkInTime?: string;
+  notes?: string;
+  // Metadata for matching with DB record
+  recordId?: string;
+}
+
+interface AttendanceSummary {
+  totalStudents: number
+  presentCount: number
+  absentCount: number
+  lateCount: number
+  excusedCount: number
+  unmarkedCount: number
+  attendanceRate: number
+}
+
+// Helpers
+const getStatusFormatted = (status: string) => {
+  switch (status) {
+    case AttendanceStatus.PRESENT: return { color: 'text-green-700', bgColor: 'bg-green-100', label: 'Có mặt' };
+    case AttendanceStatus.ABSENT: return { color: 'text-red-700', bgColor: 'bg-red-100', label: 'Vắng' };
+    default: return { color: 'text-gray-700', bgColor: 'bg-gray-100', label: 'Chưa điểm danh' };
+  }
+};
 
 export default function AttendanceMarkingPage() {
   const router = useRouter()
+
+  // Selection State
   const [classes, setClasses] = useState<Class[]>([])
   const [selectedClass, setSelectedClass] = useState<string>('')
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0])
+
+  // Data State
+  const [students, setStudents] = useState<StudentAttendanceView[]>([])
+  const [summary, setSummary] = useState<AttendanceSummary | null>(null)
+
+  // UI State
   const [loading, setLoading] = useState(false)
-  const [students, setStudents] = useState<StudentAttendanceRecord[]>([])
-  const [summary, setSummary] = useState<{
-    totalStudents: number
-    presentCount: number
-    absentCount: number
-    lateCount: number
-    excusedCount: number
-    halfDayCount: number
-    unmarkedCount: number
-    attendanceRate: number
-  } | null>(null)
   const [saving, setSaving] = useState(false)
-  const [classInfo, setClassInfo] = useState<{ id: string; title: string } | null>(null)
 
   // Load teacher's classes on mount
   useEffect(() => {
@@ -50,7 +77,6 @@ export default function AttendanceMarkingPage() {
     if (selectedClass && date) {
       loadAttendance()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClass, date])
 
   const loadClasses = async () => {
@@ -73,21 +99,26 @@ export default function AttendanceMarkingPage() {
   const loadAttendance = async () => {
     setLoading(true)
     try {
+      // Use the Service to fetch daily attendance
+      // Note: The API response format from previous implementation seems specific 
+      // (contains students list + summary). We might need to keep using the existing 
+      // endpoint via Service or directly if it's a composite view.
+      // For now, let's stick to the existing endpoint pattern but filtered through our understanding.
+
       const response = await apiFetch(
         `/api/attendance/class/${selectedClass}?date=${date}`
       )
-      
+
       if (response.ok) {
         const data = await response.json()
         setStudents(data.students || [])
         setSummary(data.summary || null)
-        setClassInfo(data.class || null)
       } else {
-        alert('Failed to load attendance')
+        alert('Không thể tải điểm danh')
       }
     } catch (error) {
       console.error('Failed to load attendance', error)
-      alert('Failed to load attendance')
+      alert('Không thể tải điểm danh')
     } finally {
       setLoading(false)
     }
@@ -97,14 +128,14 @@ export default function AttendanceMarkingPage() {
     setStudents(prev =>
       prev.map(student =>
         student.studentId === studentId
-          ? { ...student, status }
+          ? { ...student, status: status as any }
           : student
       )
     )
   }
 
-  const markAll = (status: string) => {
-    const confirmed = confirm(`Mark all students as ${status}?`)
+  const markAll = (status: AttendanceStatus) => {
+    const confirmed = confirm(`Đánh dấu tất cả học sinh là ${status === 'present' ? 'Có mặt' : 'Vắng'}?`)
     if (!confirmed) return
 
     setStudents(prev =>
@@ -113,72 +144,40 @@ export default function AttendanceMarkingPage() {
   }
 
   const saveAttendance = async () => {
-    const validation = validateAttendanceDate(date)
-    if (!validation.valid) {
-      alert(validation.error)
-      return
-    }
-
     setSaving(true)
     try {
-      const records = students.map(student => ({
-        studentId: student.studentId,
-        classId: selectedClass,
+      // Convert UI view model to Domain types
+      const recordsToSave: Partial<AttendanceRecord>[] = students.map(student => ({
+        student_id: student.studentId,
+        class_id: selectedClass,
         date: date,
-        status: student.status === 'unmarked' ? 'absent' : student.status,
-        checkInTime: student.checkInTime || undefined,
-        checkOutTime: student.checkOutTime || undefined,
-        notes: student.notes || undefined
+        status: student.status === 'unmarked' ? AttendanceStatus.ABSENT : student.status as AttendanceStatus,
+        remarks: student.notes
       }))
 
-      const response = await apiFetch('/api/attendance/bulk', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          classId: selectedClass,
-          date: date,
-          records
-        })
-      })
+      const success = await AttendanceService.markAttendance(recordsToSave);
 
-      const data = await response.json()
-
-      if (response.ok) {
-        alert(`Attendance saved! ${data.results.successCount} students marked successfully.`)
-        loadAttendance() // Reload to show updated data
+      if (success) {
+        alert(`Đã lưu điểm danh thành công!`)
+        loadAttendance() // Reload to refresh summary
       } else {
-        alert(data.error || 'Failed to save attendance')
+        alert('Không thể lưu điểm danh')
       }
     } catch (error) {
       console.error('Failed to save attendance', error)
-      alert('Failed to save attendance')
+      alert('Không thể lưu điểm danh')
     } finally {
       setSaving(false)
     }
-  }
-
-  const exportCSV = () => {
-    if (!classInfo) return
-    
-    const csv = exportAttendanceToCSV(students, classInfo.title, date)
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `attendance-${classInfo.title}-${date}.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
   }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Mark Attendance</h1>
+        <h1 className="text-3xl font-bold mb-2">Điểm Danh</h1>
         <p className="text-gray-600">
-          Quickly mark attendance for your class
+          Điểm danh nhanh cho lớp học của bạn
         </p>
       </div>
 
@@ -186,7 +185,7 @@ export default function AttendanceMarkingPage() {
       <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Class</label>
+            <label className="block text-sm font-medium mb-2">Lớp học</label>
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
@@ -194,14 +193,14 @@ export default function AttendanceMarkingPage() {
             >
               {classes.map((cls) => (
                 <option key={cls.id} value={cls.id}>
-                  {cls.title}
+                  {cls.name}
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Date</label>
+            <label className="block text-sm font-medium mb-2">Ngày</label>
             <input
               type="date"
               value={date}
@@ -217,7 +216,7 @@ export default function AttendanceMarkingPage() {
               disabled={loading || !selectedClass}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 w-full transition"
             >
-              {loading ? 'Loading...' : 'Load Attendance'}
+              {loading ? 'Đang tải...' : 'Load Attendance'}
             </button>
           </div>
         </div>
@@ -228,31 +227,31 @@ export default function AttendanceMarkingPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="text-2xl font-bold text-blue-600">{summary.totalStudents}</div>
-            <div className="text-sm text-gray-600">Total</div>
+            <div className="text-sm text-gray-600">Tổng</div>
           </div>
           <div className="bg-green-50 p-4 rounded-lg">
             <div className="text-2xl font-bold text-green-600">{summary.presentCount}</div>
-            <div className="text-sm text-gray-600">Present</div>
+            <div className="text-sm text-gray-600">Có mặt</div>
           </div>
           <div className="bg-red-50 p-4 rounded-lg">
             <div className="text-2xl font-bold text-red-600">{summary.absentCount}</div>
-            <div className="text-sm text-gray-600">Absent</div>
+            <div className="text-sm text-gray-600">Vắng</div>
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg">
             <div className="text-2xl font-bold text-yellow-600">{summary.lateCount}</div>
-            <div className="text-sm text-gray-600">Late</div>
+            <div className="text-sm text-gray-600">Đến muộn</div>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg">
             <div className="text-2xl font-bold text-purple-600">{summary.excusedCount}</div>
-            <div className="text-sm text-gray-600">Excused</div>
+            <div className="text-sm text-gray-600">Có phép</div>
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="text-2xl font-bold text-gray-600">{summary.unmarkedCount}</div>
-            <div className="text-sm text-gray-600">Unmarked</div>
+            <div className="text-sm text-gray-600">Chưa điểm danh</div>
           </div>
           <div className="bg-indigo-50 p-4 rounded-lg">
             <div className="text-2xl font-bold text-indigo-600">{summary.attendanceRate}%</div>
-            <div className="text-sm text-gray-600">Rate</div>
+            <div className="text-sm text-gray-600">Tỷ lệ</div>
           </div>
         </div>
       )}
@@ -261,24 +260,18 @@ export default function AttendanceMarkingPage() {
       {students.length > 0 && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
           <div className="flex flex-wrap gap-2">
-            <span className="text-sm font-medium self-center mr-2">Quick Mark:</span>
+            <span className="text-sm font-medium self-center mr-2">Đánh dấu nhanh:</span>
             <button
-              onClick={() => markAll('present')}
+              onClick={() => markAll(AttendanceStatus.PRESENT)}
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm transition"
             >
-              ✁EAll Present
+              Tất cả có mặt
             </button>
             <button
-              onClick={() => markAll('absent')}
+              onClick={() => markAll(AttendanceStatus.ABSENT)}
               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm transition"
             >
-              ✁EAll Absent
-            </button>
-            <button
-              onClick={exportCSV}
-              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm transition ml-auto"
-            >
-              📥 Export CSV
+              Tất cả vắng
             </button>
           </div>
         </div>
@@ -287,11 +280,11 @@ export default function AttendanceMarkingPage() {
       {/* Student List */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="text-gray-500">Loading attendance...</div>
+          <div className="text-gray-500">Đang tải điểm danh...</div>
         </div>
       ) : students.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-gray-500">Select a class and date to view attendance</div>
+          <div className="text-gray-500">Chọn lớp và ngày để xem điểm danh</div>
         </div>
       ) : (
         <div className="bg-white border border-gray-300 rounded-lg overflow-hidden mb-6">
@@ -300,35 +293,35 @@ export default function AttendanceMarkingPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
+                    Học sinh
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student ID
+                    Mã học sinh
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    Trạng thái
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Check-in
+                    Giờ check-in
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Notes
+                    Ghi chú
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {students.map((student) => {
-                  const statusInfo = formatAttendanceStatus(student.status)
+                  const statusInfo = getStatusFormatted(student.status)
                   return (
                     <tr key={student.studentId} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-medium text-gray-900">
-                          {student.firstName} {student.lastName}
+                          {student.studentName}
                         </div>
-                        <div className="text-sm text-gray-500">{student.email}</div>
+                        <div className="text-sm text-gray-500">{student.studentCode || student.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {student.studentNumber || '-'}
+                        {student.studentCode || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <select
@@ -336,12 +329,9 @@ export default function AttendanceMarkingPage() {
                           onChange={(e) => updateStudentStatus(student.studentId, e.target.value)}
                           className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} ${statusInfo.bgColor} border-0`}
                         >
-                          <option value="unmarked">Unmarked</option>
-                          <option value="present">✁EPresent</option>
-                          <option value="absent">✁EAbsent</option>
-                          <option value="late">⏰ Late</option>
-                          <option value="excused">📝 Excused</option>
-                          <option value="half_day">🕐 Half Day</option>
+                          <option value="unmarked">Chưa điểm danh</option>
+                          <option value={AttendanceStatus.PRESENT}>✅ Có mặt</option>
+                          <option value={AttendanceStatus.ABSENT}>❌ Vắng</option>
                         </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -373,10 +363,11 @@ export default function AttendanceMarkingPage() {
             disabled={saving}
             className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-medium transition"
           >
-            {saving ? 'Saving...' : '💾 Save Attendance'}
+            {saving ? 'Đang lưu...' : 'Save Attendance'}
           </button>
         </div>
       )}
     </div>
   )
 }
+
