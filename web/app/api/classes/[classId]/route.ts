@@ -24,8 +24,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const { classId } = await params
-    const classService = new ClassService()
-    const classData = await classService.getClassById(classId)
+    const classData = await ClassService.getClassById(classId)
 
     if (!classData) {
       throw new NotFoundError('Không tìm thấy lớp học')
@@ -58,15 +57,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const body = await request.json()
     const { name, code, description, teacherId, academicYearId, grade } = body
 
-    const classService = new ClassService()
-    
     // Check if class exists
-    const existing = await classService.getClassById(classId)
+    const existing = await ClassService.getClassById(classId)
     if (!existing) {
       throw new NotFoundError('Không tìm thấy lớp học')
     }
 
-    const updated = await classService.updateClass(classId, {
+    const updated = await ClassService.updateClass(classId, {
       name,
       code,
       description,
@@ -91,15 +88,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     const { classId } = await params
-    const classService = new ClassService()
-
     // Check if class exists
-    const existing = await classService.getClassById(classId)
+    const existing = await ClassService.getClassById(classId)
     if (!existing) {
       throw new NotFoundError('Không tìm thấy lớp học')
     }
 
-    await classService.deleteClass(classId)
+    await ClassService.deleteClass(classId)
 
     logger.info('Class deleted:', { classId, name: existing.name })
 
