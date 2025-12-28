@@ -2089,12 +2089,12 @@ export const Constants = {
 export type Course = Database['public']['Tables']['courses']['Row'];
 
 /**
- * Table column names helper
+ * Table column names helper - returns comma-separated string for .select()
  */
 export const TableColumns = {
-  courses: ['id', 'title', 'description', 'is_published', 'created_at', 'updated_at'] as const,
-  lessons: ['id', 'course_id', 'title', 'content', 'order_index', 'is_published', 'created_at', 'updated_at'] as const,
-  profiles: ['id', 'user_id', 'full_name', 'role', 'email', 'phone', 'address', 'date_of_birth', 'created_at', 'updated_at'] as const,
+  courses: 'id, title, description, is_published, created_at, updated_at',
+  lessons: 'id, course_id, title, content, order_index, is_published, created_at, updated_at',
+  profiles: 'id, user_id, full_name, role, email, phone, address, date_of_birth, created_at, updated_at',
 };
 
 /**
