@@ -63,10 +63,12 @@ export async function POST(request: NextRequest) {
     if (studentIds && Array.isArray(studentIds)) {
       const result = await enrollmentService.bulkEnroll(classId, studentIds);
       logger.info('Bulk enrollment:', { classId, ...result });
+      const { success: enrollmentSuccess, ...restResult } = result;
       return NextResponse.json({ 
         success: true, 
-        message: `Đã ghi danh ${result.success} học sinh, ${result.failed} thất bại`,
-        ...result 
+        message: `Đã ghi danh ${restResult.success || 0} học sinh, ${restResult.failed || 0} thất bại`,
+        enrolled: enrollmentSuccess,
+        ...restResult 
       });
     }
 
