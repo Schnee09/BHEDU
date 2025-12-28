@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       const { success: enrollmentSuccess, ...restResult } = result;
       return NextResponse.json({ 
         success: true, 
-        message: `Đã ghi danh ${restResult.success || 0} học sinh, ${restResult.failed || 0} thất bại`,
+        message: `Đã ghi danh ${enrollmentSuccess || 0} học sinh, ${restResult.failed || 0} thất bại`,
         enrolled: enrollmentSuccess,
         ...restResult 
       });
