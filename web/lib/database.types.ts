@@ -2089,6 +2089,11 @@ export const Constants = {
 export type Course = Database['public']['Tables']['courses']['Row'];
 
 /**
+ * User role type
+ */
+export type UserRole = 'admin' | 'staff' | 'teacher' | 'student';
+
+/**
  * Table column names helper - returns comma-separated string for .select()
  */
 export const TableColumns = {
