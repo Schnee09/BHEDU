@@ -81,6 +81,9 @@ export async function POST(request: NextRequest) {
       name,
       teacher_id: teacherId,
       academic_year_id: academicYearId,
+      max_capacity: body.maxCapacity || 40,
+      sessions_per_week: body.sessionsPerWeek || 5,
+      class_type: body.classType || 'group',
     })
 
     logger.info('Class created:', { classId: newClass.id, name: newClass.name })

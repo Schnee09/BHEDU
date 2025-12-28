@@ -9,7 +9,8 @@
 .next/types/validator.ts(1367,39): error TS2307: Cannot find module '../../app/api/lessons/[id]/route.js' or its corresponding type declarations.
 .next/types/validator.ts(1376,39): error TS2307: Cannot find module '../../app/api/lessons/route.js' or its corresponding type declarations.
 __tests__/grades-validation.test.ts(67,35): error TS2339: Property 'ORAL' does not exist on type 'typeof EvaluationType'.
-app/api/classes/route.ts(81,41): error TS2576: Property 'createClass' does not exist on type 'ClassService'. Did you mean to access the static member 'ClassService.createClass' instead?
+app/api/classes/route.ts(80,53): error TS2345: Argument of type '{ name: any; teacher_id: any; academic_year_id: any; }' is not assignable to parameter of type '{ name: string; teacher_id: string; academic_year_id: string; max_capacity: number; sessions_per_week: number; class_type: "group" | "tutoring"; course_id?: string | undefined; schedule?: string | undefined; room?: string | undefined; capacity?: number | undefined; }'.
+  Type '{ name: any; teacher_id: any; academic_year_id: any; }' is missing the following properties from type '{ name: string; teacher_id: string; academic_year_id: string; max_capacity: number; sessions_per_week: number; class_type: "group" | "tutoring"; course_id?: string | undefined; schedule?: string | undefined; room?: string | undefined; capacity?: number | undefined; }': max_capacity, sessions_per_week, class_type
 app/api/enrollments/route.ts(67,9): error TS2783: 'success' is specified more than once, so this usage will be overwritten.
 app/api/reports/report-card/route.ts(70,40): error TS2339: Property 'id' does not exist on type '{ id: any; name: any; }[]'.
 app/api/reports/report-card/route.ts(71,42): error TS2339: Property 'name' does not exist on type '{ id: any; name: any; }[]'.
@@ -27,17 +28,10 @@ app/dashboard/grades/analytics/page.tsx(421,27): error TS2322: Type 'GradeDistri
 app/dashboard/users/page.tsx(593,27): error TS2322: Type '"success" | "danger"' is not assignable to type '"default" | "warning" | "danger" | undefined'.
   Type '"success"' is not assignable to type '"default" | "warning" | "danger" | undefined'.
 components/dashboard/AnalyticsWidget.tsx(223,76): error TS18048: 'percent' is possibly 'undefined'.
-components/dashboard/ClassComparison.tsx(184,48): error TS2322: Type '"error" | "info" | "success" | "warning"' is not assignable to type '"default" | "info" | "success" | "warning" | "danger" | undefined'.
-  Type '"error"' is not assignable to type '"default" | "info" | "success" | "warning" | "danger" | undefined'.
 components/dashboard/index.ts(5,38): error TS2614: Module '"./AnalyticsWidget"' has no exported member 'COLORS'. Did you mean to use 'import COLORS from "./AnalyticsWidget"' instead?
-components/students/PerformanceTimeline.tsx(135,36): error TS2322: Type '"error" | "info" | "success"' is not assignable to type '"default" | "info" | "success" | "warning" | "danger" | undefined'.
-  Type '"error"' is not assignable to type '"default" | "info" | "success" | "warning" | "danger" | undefined'.
-components/students/StudentPerformanceCard.tsx(156,33): error TS2322: Type '"error" | "info" | "success" | "warning"' is not assignable to type '"default" | "info" | "success" | "warning" | "danger" | undefined'.
-  Type '"error"' is not assignable to type '"default" | "info" | "success" | "warning" | "danger" | undefined'.
 hooks/usePermissions.tsx(73,21): error TS7006: Parameter 'p' implicitly has an 'any' type.
 hooks/usePermissions.tsx(77,18): error TS7006: Parameter 'p' implicitly has an 'any' type.
 lib/api/response.ts(58,7): error TS2698: Spread types may only be created from object types.
-lib/database.types.ts(2089,51): error TS2339: Property 'courses' does not exist on type '{ academic_years: { Row: { created_at: string | null; end_date: string | null; id: string; is_current: boolean | null; name: string; start_date: string | null; updated_at: string | null; }; Insert: { ...; }; Update: { ...; }; Relationships: []; }; ... 35 more ...; user_permissions: { ...; }; }'.
 lib/payments/paymentService.ts(227,31): error TS2339: Property 'full_name' does not exist on type '{ full_name: any; student_id: any; }[]'.
 lib/payments/paymentService.ts(228,31): error TS2339: Property 'student_id' does not exist on type '{ full_name: any; student_id: any; }[]'.
 lib/services/EnrollmentService.ts(158,34): error TS2339: Property 'full_name' does not exist on type '{ full_name: any; student_id: any; }[]'.

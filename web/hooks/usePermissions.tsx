@@ -70,11 +70,11 @@ export function usePermissions() {
         } else {
           const now = new Date();
           const validPermissions = (data || [])
-            .filter(p =>
+            .filter((p: { is_denied: boolean; expires_at: string | null; permission_code: string }) =>
               !p.is_denied &&
               (!p.expires_at || new Date(p.expires_at) > now)
             )
-            .map(p => p.permission_code as PermissionCode);
+            .map((p: { permission_code: string }) => p.permission_code as PermissionCode);
 
           setCustomPermissions(new Set(validPermissions));
         }

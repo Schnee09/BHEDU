@@ -2,13 +2,11 @@
  * Services Module Exports
  */
 
-export { ClassService } from './classService';
-export type { 
-  Class as ClassType,
-  ClassWithDetails,
-  CreateClassInput,
-  UpdateClassInput 
-} from './ClassService';
+export { 
+  ClassService,
+  type Class as ClassType,
+  type ClassWithDetails,
+} from './classService';
 
 export { EnrollmentService } from './EnrollmentService';
 export type {
@@ -25,3 +23,4 @@ export type {
   UpdateSubjectInput,
   SubjectListOptions,
 } from './SubjectService';
+
