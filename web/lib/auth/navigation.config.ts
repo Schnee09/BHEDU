@@ -6,7 +6,7 @@
 import {
   Home, BookOpen, Users, CheckCircle, BarChart2, 
   FileText, TrendingUp, Settings, CreditCard, 
-  Download, GraduationCap, Shield, QrCode
+  Download, GraduationCap, Shield, Calendar, Clock
 } from "lucide-react";
 import type { LucideIcon } from 'lucide-react';
 import type { PermissionCode, UserRole } from './permissions.config';
@@ -52,6 +52,13 @@ export const ALL_NAV_ITEMS: NavSection[] = [
     ]
   },
   {
+    title: "Học tập",
+    links: [
+      { href: "/dashboard/timetable", label: "Thời khóa biểu", icon: Clock },
+      { href: "/dashboard/calendar", label: "Lịch học tập", icon: Calendar },
+    ]
+  },
+  {
     title: "Điểm danh",
     links: [
       { href: "/dashboard/attendance/mark", label: "Điểm danh", icon: CheckCircle, permissions: ['attendance.mark'] },
@@ -74,6 +81,8 @@ export const ALL_NAV_ITEMS: NavSection[] = [
       { href: "/dashboard/users", label: "Người dùng", icon: Shield, permissions: ['users.view'] },
       { href: "/dashboard/admin/permissions", label: "Phân quyền", icon: Shield, permissions: ['users.permissions'] },
       { href: "/dashboard/admin/students", label: "Hồ sơ học sinh", icon: Users, permissions: ['students.edit'] },
+      { href: "/dashboard/admin/semesters", label: "Học kỳ", icon: Calendar, permissions: ['system.settings'] },
+      { href: "/dashboard/admin/subjects", label: "Môn học", icon: BookOpen, permissions: ['system.settings'] },
       { href: "/dashboard/admin/data", label: "Xuất dữ liệu", icon: Download, permissions: ['reports.export'] },
     ]
   },
@@ -88,12 +97,6 @@ export const ALL_NAV_ITEMS: NavSection[] = [
     title: "Hệ thống",
     links: [
       { href: "/dashboard/settings", label: "Cài đặt", icon: Settings, permissions: ['system.settings'] },
-    ]
-  },
-  {
-    title: "Công cụ",
-    links: [
-      { href: "/checkin", label: "Check-in QR", icon: QrCode },
     ]
   },
 ];

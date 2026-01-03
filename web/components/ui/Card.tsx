@@ -24,11 +24,9 @@ export const Card = memo(function Card({
   const isClickable = !!onClick;
 
   const cardClassName = useMemo(() => `
-    rounded-xl transition-all duration-200
-    bg-surface border border-border
-    text-foreground
-    shadow-sm
-    ${hover || isClickable ? 'hover:shadow-md hover:border-primary/20' : ''}
+    rounded-2xl transition-all duration-300
+    glass-card text-foreground
+    ${hover || isClickable ? 'hover:shadow-lg hover:-translate-y-1' : ''}
     ${isClickable ? 'cursor-pointer' : ''}
     ${className}
   `, [hover, isClickable, className]);
@@ -50,7 +48,7 @@ interface CardHeaderProps {
 
 export const CardHeader = memo(function CardHeader({ children, className = '' }: CardHeaderProps) {
   return (
-    <div className={`px-6 py-4 border-b border-gray-100 dark:border-[#404040] bg-gray-50 dark:bg-[#252525] rounded-t-xl ${className}`}>
+    <div className={`px-6 py-4 border-b border-gray-100/10 dark:border-white/5 ${className}`}>
       {children}
     </div>
   );
@@ -102,7 +100,7 @@ interface CardTitleProps {
 
 export const CardTitle = memo(function CardTitle({ children, className = '' }: CardTitleProps) {
   return (
-    <h3 className={`text-lg font-semibold leading-none tracking-tight ${className}`}>
+    <h3 className={`text-xl font-bold leading-none tracking-tight text-white dark:text-white ${className}`}>
       {children}
     </h3>
   );
@@ -115,7 +113,7 @@ interface CardFooterProps {
 
 export const CardFooter = memo(function CardFooter({ children, className = '' }: CardFooterProps) {
   return (
-    <div className={`px-6 py-4 border-t border-gray-100 dark:border-[#404040] bg-gray-50 dark:bg-[#252525] rounded-b-xl ${className}`}>
+    <div className={`px-6 py-4 border-t border-gray-100/10 dark:border-white/5 ${className}`}>
       {children}
     </div>
   );

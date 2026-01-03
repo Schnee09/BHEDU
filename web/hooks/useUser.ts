@@ -7,7 +7,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { logger } from '@/lib/logger';
-import type { UserRole } from '@/lib/database.types';
+
+type UserRole = 'admin' | 'teacher' | 'student' | 'staff';
 
 export interface User {
   id: string;

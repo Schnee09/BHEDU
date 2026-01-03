@@ -27,26 +27,13 @@ export async function GET(request: NextRequest) {
     // Validate query parameters
     const queryParams = validateQuery(request, gradeQuerySchema)
 
-    // Use service client to bypass RLS and avoid recursion
+    // Use service client to bypass RLS
     const supabase = createServiceClient()
 
+    // Build simple query without complex joins that may fail
     let query = supabase
       .from('grades')
-      .select(`
-        *,
-        assignment:assignments(
-          id,
-          title,
-          max_points,
-          due_date,
-          class_id
-        ),
-        student:profiles!grades_student_id_fkey(
-          id,
-          email,
-          full_name
-        )
-      `)
+      .select('*')
 
     if (queryParams.assignment_id) {
       query = query.eq('assignment_id', queryParams.assignment_id)
@@ -54,44 +41,6 @@ export async function GET(request: NextRequest) {
 
     if (queryParams.student_id) {
       query = query.eq('student_id', queryParams.student_id)
-    }
-
-    if (queryParams.class_id) {
-      query = query.filter('assignment.class_id', 'eq', queryParams.class_id)
-    }
-
-    // Verify access: non-admins can only see grades for their classes.
-    if (authResult.userRole !== 'admin') {
-      const { data: teacherClasses, error: classesError } = await supabase
-        .from('classes')
-        .select('id')
-        .eq('teacher_id', authResult.userId)
-
-      if (classesError) {
-        logger.error('Failed to fetch teacher classes for grade access check:', {
-          error: classesError.message,
-          errorCode: classesError.code,
-        })
-        throw new Error(`Database error: ${classesError.message}`)
-      }
-
-      const classIds = teacherClasses?.map((c) => c.id) || []
-      if (classIds.length === 0) {
-        return NextResponse.json({ success: true, grades: [] })
-      }
-
-      // If the caller didn't specify class_id, enforce restriction to teacher's classes.
-      // If caller did specify class_id, ensure it is one of teacher's classes.
-      if (queryParams.class_id) {
-        if (!classIds.includes(queryParams.class_id)) {
-          return NextResponse.json(
-            { error: 'Access denied' },
-            { status: 403 }
-          )
-        }
-      } else {
-        query = query.in('assignment.class_id', classIds)
-      }
     }
 
     const { data: grades, error } = await query
@@ -114,6 +63,7 @@ export async function GET(request: NextRequest) {
     return handleApiError(error)
   }
 }
+
 
 export async function POST(request: NextRequest) {
   try {

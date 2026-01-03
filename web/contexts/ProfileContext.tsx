@@ -2,7 +2,8 @@
 
 import { createContext, useContext, ReactNode, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import type { UserRole } from "@/lib/database.types";
+
+type UserRole = 'admin' | 'teacher' | 'student' | 'staff';
 
 export type Profile = {
   id: string;
@@ -29,7 +30,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session?.user) {
         console.log('[ProfileProvider] No session found');
         setLoading(false);
@@ -50,7 +51,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           .select("id, full_name, role, email, phone, address, date_of_birth, user_id")
           .eq("id", session.user.id)
           .maybeSingle();
-        
+
         data = result.data;
         error = result.error;
       }
@@ -61,13 +62,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       } else {
         console.error('[ProfileProvider] Failed to fetch profile:', error);
       }
-      
+
       setLoading(false);
     };
 
     fetchProfile();
   }, []);
-  
+
   return (
     <ProfileContext.Provider value={{ profile, loading }}>
       {children}

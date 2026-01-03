@@ -175,7 +175,7 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       {/* Hero Section with Photo and Quick Stats */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-xl" />
-        <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-xl p-6 overflow-hidden">
+        <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-white/50 dark:border-slate-700/50 shadow-xl p-6 overflow-hidden">
           {/* Student Info Row */}
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Photo + Name */}
@@ -185,10 +185,10 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 currentPhotoUrl={(profile as { photo_url?: string | null }).photo_url}
               />
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {profile.full_name}
                 </h2>
-                <p className="text-gray-600">{profile.email}</p>
+                <p className="text-gray-600 dark:text-gray-300">{profile.email}</p>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <Badge color="purple">{profile.role}</Badge>
                   {enrollments.length > 0 && (
@@ -200,21 +200,21 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
             {/* Quick Stats Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:ml-auto">
-              <div className="bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl p-4 text-center border border-emerald-200/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-emerald-600">{attendanceRate}%</p>
-                <p className="text-xs font-medium text-emerald-700">Chuyên cần</p>
+              <div className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/30 dark:to-green-900/20 rounded-xl p-4 text-center border border-emerald-200/50 dark:border-emerald-700/50 hover:shadow-lg transition-all">
+                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{attendanceRate}%</p>
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Chuyên cần</p>
               </div>
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-4 text-center border border-blue-200/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-blue-600">{averageGrade}</p>
-                <p className="text-xs font-medium text-blue-700">Điểm TB</p>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/20 rounded-xl p-4 text-center border border-blue-200/50 dark:border-blue-700/50 hover:shadow-lg transition-all">
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{averageGrade}</p>
+                <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Điểm TB</p>
               </div>
-              <div className="bg-gradient-to-br from-purple-50 to-violet-100 rounded-xl p-4 text-center border border-purple-200/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-purple-600">{enrollments.length}</p>
-                <p className="text-xs font-medium text-purple-700">Lớp học</p>
+              <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/20 rounded-xl p-4 text-center border border-purple-200/50 dark:border-purple-700/50 hover:shadow-lg transition-all">
+                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{enrollments.length}</p>
+                <p className="text-xs font-medium text-purple-700 dark:text-purple-300">Lớp học</p>
               </div>
-              <div className="bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl p-4 text-center border border-orange-200/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-orange-600">{grades.length}</p>
-                <p className="text-xs font-medium text-orange-700">Điểm số</p>
+              <div className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/20 rounded-xl p-4 text-center border border-orange-200/50 dark:border-orange-700/50 hover:shadow-lg transition-all">
+                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{grades.length}</p>
+                <p className="text-xs font-medium text-orange-700 dark:text-orange-300">Điểm số</p>
               </div>
             </div>
           </div>
@@ -224,10 +224,10 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       {/* Info Cards Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Personal Info Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-              <Icons.Users className="w-4 h-4 text-indigo-600" />
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-slate-700/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
+              <Icons.Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </span>
             Thông tin cá nhân
           </h3>
@@ -270,15 +270,15 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
         </div>
 
         {/* Attendance Summary Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-              <Icons.Attendance className="w-4 h-4 text-emerald-600" />
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-slate-700/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
+              <Icons.Attendance className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </span>
             Tổng quan điểm danh
           </h3>
           {attendanceStats.total === 0 ? (
-            <div className="text-center py-8 text-gray-500">Chưa có dữ liệu điểm danh</div>
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Chưa có dữ liệu điểm danh</div>
           ) : (
             <>
               <div className="flex items-center gap-4 mb-4">
@@ -300,20 +300,20 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 </div>
                 <div className="flex-1 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Có mặt</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Có mặt</span>
                     <span className="font-semibold text-green-600">{attendanceStats.present}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Đi muộn</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Đi muộn</span>
                     <span className="font-semibold text-yellow-600">{attendanceStats.late}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Vắng mặt</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Vắng mặt</span>
                     <span className="font-semibold text-red-600">{attendanceStats.absent}</span>
                   </div>
                 </div>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
+              <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
                 <div className="bg-green-500 transition-all" style={{ width: `${(attendanceStats.present / attendanceStats.total) * 100}%` }} />
                 <div className="bg-yellow-500 transition-all" style={{ width: `${(attendanceStats.late / attendanceStats.total) * 100}%` }} />
                 <div className="bg-red-500 transition-all" style={{ width: `${(attendanceStats.absent / attendanceStats.total) * 100}%` }} />
@@ -325,18 +325,18 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
       {/* Recent Grades Preview */}
       {grades.length > 0 && (
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Icons.Grades className="w-4 h-4 text-orange-600" />
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-slate-700/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
+              <Icons.Grades className="w-4 h-4 text-orange-600 dark:text-orange-400" />
             </span>
             Điểm gần đây
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {grades.slice(0, 6).map((g: any) => (
-              <div key={g.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-3 text-center hover:shadow-md transition-all hover:scale-[1.02]">
-                <p className="text-2xl font-bold text-gray-900">{g.score ?? g.points_earned}</p>
-                <p className="text-xs text-gray-600 truncate">{g.subjects?.name ?? 'N/A'}</p>
+              <div key={g.id} className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-600 rounded-xl p-3 text-center hover:shadow-md transition-all hover:scale-[1.02]">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{g.score ?? g.points_earned}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{g.subjects?.name ?? 'N/A'}</p>
               </div>
             ))}
           </div>
@@ -604,7 +604,7 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950">
       <div className="p-4 md:p-6 max-w-7xl mx-auto">
         <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4 flex-wrap">

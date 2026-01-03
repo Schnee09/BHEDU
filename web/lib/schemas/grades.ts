@@ -91,17 +91,33 @@ export const createAssignmentSchema = z.object({
 
 /**
  * Grade query parameters
+ * Accepts both camelCase (studentId) and snake_case (student_id)
  */
-export const gradeQuerySchema = z.object({
-  student_id: z.string().uuid().optional(),
-  class_id: z.string().uuid().optional(),
-  subject_id: z.string().uuid().optional(),
-  assignment_id: z.string().uuid().optional(),
-  semester: z.string().optional(),
-  academic_year_id: z.string().uuid().optional(),
-  page: z.string().optional().default('1').transform(Number),
-  limit: z.string().optional().default('50').transform(Number),
-});
+export const gradeQuerySchema = z.preprocess(
+  (input) => {
+    const data = input as Record<string, unknown>;
+    return {
+      student_id: data.student_id ?? data.studentId,
+      class_id: data.class_id ?? data.classId,
+      subject_id: data.subject_id ?? data.subjectId,
+      assignment_id: data.assignment_id ?? data.assignmentId,
+      semester: data.semester,
+      academic_year_id: data.academic_year_id ?? data.academicYearId,
+      page: data.page,
+      limit: data.limit,
+    };
+  },
+  z.object({
+    student_id: z.string().uuid().optional(),
+    class_id: z.string().uuid().optional(),
+    subject_id: z.string().uuid().optional(),
+    assignment_id: z.string().uuid().optional(),
+    semester: z.string().optional(),
+    academic_year_id: z.string().uuid().optional(),
+    page: z.string().optional().default('1').transform(Number),
+    limit: z.string().optional().default('50').transform(Number),
+  })
+);
 
 /**
  * Vietnamese transcript entry schema

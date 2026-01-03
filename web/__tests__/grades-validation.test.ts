@@ -64,7 +64,7 @@ describe('validatePayload', () => {
     students: [
       {
         student_id: 'student-1',
-        grades: { [EvaluationType.ORAL]: 8 }
+        grades: { [EvaluationType.MIDTERM]: 8 }
       }
     ]
   };

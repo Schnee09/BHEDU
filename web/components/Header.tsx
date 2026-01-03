@@ -167,21 +167,32 @@ export default function Header({ profile }: HeaderProps) {
   ].filter((action) => action.show);
 
   return (
-    <header className="h-[72px] flex items-center justify-between px-6 sticky top-0 z-30
-     bg-surface/80 backdrop-blur-xl border-b border-border/50">
-      {/* Left Section - Logo & Title */}
-      <div className="flex items-center gap-4">
+    <header className="relative h-[72px] flex items-center justify-between px-6 sticky top-0 z-30
+     bg-white/70 dark:bg-[#1A1410]/80 backdrop-blur-xl shadow-sm dark:shadow-none transition-all duration-300">
+      {/* Top Golden Shine */}
+      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+      {/* Bottom Gradient Divider */}
+      <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-gray-300/50 dark:via-white/10 to-transparent" />
+      {/* Left Section - Title */}
+      <div className="flex items-center gap-4 relative z-10">
         {/* Mobile menu trigger spacing */}
         <div className="w-8 lg:hidden" />
 
         <div className="flex items-center gap-3">
           <div className="hidden sm:block">
-            <h1 className="font-bold text-foreground text-xl leading-tight font-heading">
-              {profile?.role === 'admin' ? 'Cổng Quản Trị' :
-                profile?.role === 'teacher' ? 'Cổng Giáo Viên' :
-                  'Cổng Học Sinh'}
+            <h1 className="font-bold text-xl leading-tight tracking-tight">
+              <span className="text-foreground">
+                {profile?.role === 'admin' ? 'Cổng ' :
+                  profile?.role === 'teacher' ? 'Cổng ' :
+                    'Cổng '}
+              </span>
+              <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">
+                {profile?.role === 'admin' ? 'Quản Trị' :
+                  profile?.role === 'teacher' ? 'Giáo Viên' :
+                    'Học Sinh'}
+              </span>
             </h1>
-            <p className="text-sm text-muted font-medium">Bui Hoang Education</p>
+            <p className="text-sm text-muted-foreground font-medium">Bui Hoang Education</p>
           </div>
         </div>
       </div>

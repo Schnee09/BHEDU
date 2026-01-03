@@ -10,6 +10,7 @@ import { logger } from "@/lib/logger";
 import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { AnalyticsWidget } from "@/components/dashboard/AnalyticsWidget";
+import ActivityFeed from "@/components/dashboard/ActivityFeed";
 
 interface DashboardStats {
   totalStudents: number;
@@ -170,7 +171,7 @@ export default function DashboardPage() {
             <StatCard
               label="Học sinh"
               value={stats.totalStudents}
-              color="blue"
+              color="orange"
               icon={<Icons.Students className="w-6 h-6" />}
             />
 
@@ -330,7 +331,7 @@ export default function DashboardPage() {
                   icon={<Icons.Students className="w-6 h-6" />}
                   title="Quản lý Học sinh"
                   description="Xem và chỉnh sửa hồ sơ học sinh"
-                  color="blue"
+                  color="orange"
                 />
                 <QuickActionCard
                   href="/dashboard/users"
@@ -351,7 +352,7 @@ export default function DashboardPage() {
                   icon={<Icons.Attendance className="w-6 h-6" />}
                   title="Điểm danh"
                   description="Theo dõi điểm danh hàng ngày"
-                  color="orange"
+                  color="slate"
                 />
               </>
             )}
@@ -423,6 +424,13 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+
+        {/* Activity Feed - Admin only */}
+        {profile?.role === "admin" && (
+          <div className="mb-8">
+            <ActivityFeed limit={10} />
+          </div>
+        )}
       </div>
     </div>
   );

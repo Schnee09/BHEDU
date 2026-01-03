@@ -2,17 +2,27 @@
 import React, { Suspense } from 'react'
 import { ToastProvider } from './ToastProvider'
 import ToastBoot from './ToastBoot'
-import { ReactQueryProvider } from '@/providers/ReactQueryProvider'
+import CommandPalette from './CommandPalette'
+import KeyboardShortcutsHelp from './KeyboardShortcutsHelp'
+import { I18nProvider } from '@/contexts/I18nContext'
 
+/**
+ * Client-side providers wrapper
+ * Simplified - using native useFetch hook instead of React Query
+ */
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
-    <ReactQueryProvider>
+    <I18nProvider>
       <ToastProvider>
         <Suspense fallback={null}>
           <ToastBoot />
         </Suspense>
+        <CommandPalette />
+        <KeyboardShortcutsHelp />
         {children}
       </ToastProvider>
-    </ReactQueryProvider>
+    </I18nProvider>
   )
 }
+
+
