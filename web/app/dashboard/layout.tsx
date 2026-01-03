@@ -21,7 +21,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
         {/* Skip Navigation Link */}
         <SkipToMainContent />
 
-        <div className="flex min-h-screen bg-background dark:bg-background">
+        <div className="flex min-h-screen bg-gray-50/50 dark:bg-transparent">
           {/* Sidebar - Dual Theme */}
           <Sidebar />
 
@@ -29,15 +29,15 @@ function DashboardContent({ children }: { children: ReactNode }) {
           <div className="flex-1 ml-0 lg:ml-72 flex flex-col">
             {/* Header */}
             <Header profile={profile} />
-            
+
             {/* Content */}
-            <main 
+            <main
               id="main-content"
               className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8"
               role="main"
             >
               <div className="max-w-[1800px] mx-auto">
-                <ErrorBoundary 
+                <ErrorBoundary
                   showDetails={process.env.NODE_ENV === 'development'}
                   pageName="page content"
                 >

@@ -9,7 +9,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClientFromRequest } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
-import type { AttendanceRecord } from '@/lib/attendanceService'
+import { AttendanceStatus } from '@/lib/attendance/types'
+
+// Define the expected payload structure locally or import from types if available
+interface BulkAttendanceRecord {
+  studentId: string;
+  status: AttendanceStatus;
+  checkInTime?: string;
+  checkOutTime?: string;
+  notes?: string;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +36,7 @@ export async function POST(req: NextRequest) {
     const { classId, date, records } = body as {
       classId: string
       date: string
-      records: AttendanceRecord[]
+      records: BulkAttendanceRecord[]
     }
 
     if (!classId || !date || !records || !Array.isArray(records)) {

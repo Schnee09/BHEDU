@@ -112,7 +112,23 @@ export default function ConductGradeEntryPage() {
   const fetchCurrentAcademicYear = async () => {
     try {
       const res = await apiFetch("/api/academic-years/current");
-      const data = await res.json();
+      const safeParseJson = async (r: Response) => {
+        try {
+          return await r.json();
+        } catch {
+          return { error: r.statusText || `HTTP ${r.status}` };
+        }
+      };
+
+      if (!res.ok) {
+        const _errorData = await safeParseJson(res);
+        // Handle auth/permission explicitly
+        if (res.status === 401) return;
+        if (res.status === 403) return;
+        return;
+      }
+
+      const data = await safeParseJson(res);
       if (data.success && data.academicYear) {
         setAcademicYearId(data.academicYear.id);
       }
@@ -124,7 +140,22 @@ export default function ConductGradeEntryPage() {
   const fetchClasses = async () => {
     try {
       const res = await apiFetch("/api/classes/my-classes");
-      const data = await res.json();
+      const safeParseJson = async (r: Response) => {
+        try {
+          return await r.json();
+        } catch {
+          return { error: r.statusText || `HTTP ${r.status}` };
+        }
+      };
+
+      if (!res.ok) {
+        const errorData = await safeParseJson(res);
+        console.error('Failed to fetch classes:', errorData);
+        showToast.error('Không thể tải danh sách lớp');
+        return;
+      }
+
+      const data = await safeParseJson(res);
       if (data.success) {
         setClasses(data.classes || []);
       }
@@ -140,7 +171,22 @@ export default function ConductGradeEntryPage() {
       const res = await apiFetch(
         `/api/grades/conduct-entry?class_id=${selectedClass}&semester=${selectedSemester}&academic_year_id=${academicYearId}`
       );
-      const data = await res.json();
+      const safeParseJson = async (r: Response) => {
+        try {
+          return await r.json();
+        } catch {
+          return { error: r.statusText || `HTTP ${r.status}` };
+        }
+      };
+
+      if (!res.ok) {
+        const err = await safeParseJson(res);
+        console.error('Failed to fetch conduct grades:', err);
+        showToast.error(err?.error || 'Không thể tải dữ liệu hạnh kiểm');
+        return;
+      }
+
+      const data = await safeParseJson(res);
       if (data.success) {
         setStudents(data.students || []);
       }

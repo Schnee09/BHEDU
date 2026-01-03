@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const supabase = createClientFromRequest(request as any)
+    const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     
     // Get query parameters

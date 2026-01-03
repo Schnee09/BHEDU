@@ -6,7 +6,8 @@
 import { NextResponse } from 'next/server'
 import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
-import type { UserRole } from '@/lib/database.types'
+
+type UserRole = 'admin' | 'teacher' | 'student' | 'staff'
 
 interface UserImportRow {
   email: string

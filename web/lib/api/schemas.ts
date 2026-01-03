@@ -35,12 +35,16 @@ export const courseIdSchema = z.object({
 // Class schemas
 export const createClassSchema = z.object({
   name: z.string().min(1, 'Class name is required').max(200),
-  course_id: uuidSchema,
+  course_id: uuidSchema.optional(), // Made optional for tutoring centers
   teacher_id: uuidSchema,
   academic_year_id: uuidSchema,
   schedule: z.string().max(500).optional(),
   room: z.string().max(100).optional(),
-  capacity: z.number().int().min(1).optional(),
+  capacity: z.number().int().min(1).optional(), // Legacy - use max_capacity instead
+  // New fields for business rules
+  max_capacity: z.number().int().min(1).max(12).default(12),
+  sessions_per_week: z.number().int().min(2).max(3).default(2),
+  class_type: z.enum(['group', 'tutoring']).default('group'),
 });
 
 export const updateClassSchema = createClassSchema.partial();

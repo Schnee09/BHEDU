@@ -10,10 +10,10 @@ interface StudentPhotoUploadProps {
   onPhotoUpdated?: (newUrl: string) => void;
 }
 
-export default function StudentPhotoUpload({ 
-  studentId, 
+export default function StudentPhotoUpload({
+  studentId,
   currentPhotoUrl,
-  onPhotoUpdated 
+  onPhotoUpdated
 }: StudentPhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(currentPhotoUrl);
@@ -89,7 +89,7 @@ export default function StudentPhotoUpload({
       setPhotoUrl(publicUrl);
       showToast.dismiss(toastId);
       showToast.success("Photo uploaded successfully");
-      
+
       if (onPhotoUpdated) {
         onPhotoUpdated(publicUrl);
       }
@@ -137,7 +137,7 @@ export default function StudentPhotoUpload({
       setPhotoUrl(null);
       showToast.dismiss(toastId);
       showToast.success("Photo removed successfully");
-      
+
       if (onPhotoUpdated) {
         onPhotoUpdated("");
       }
@@ -149,10 +149,10 @@ export default function StudentPhotoUpload({
   };
 
   return (
-    <div className="flex items-center gap-6 p-6 bg-white border border-gray-200 rounded-lg">
+    <div className="flex items-center gap-6 p-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg">
       {/* Photo Preview */}
       <div className="flex-shrink-0">
-        <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
+        <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -161,7 +161,7 @@ export default function StudentPhotoUpload({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
+            <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
               <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
                 <path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clipRule="evenodd" />
               </svg>
@@ -172,11 +172,11 @@ export default function StudentPhotoUpload({
 
       {/* Upload Controls */}
       <div className="flex-1">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Photo</h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Profile Photo</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           JPG, PNG or GIF. Max size 5MB. Recommended: square image, at least 200x200px.
         </p>
-        
+
         <div className="flex gap-3">
           <input
             ref={fileInputRef}
@@ -187,12 +187,11 @@ export default function StudentPhotoUpload({
             className="hidden"
             id="photo-upload"
           />
-          
+
           <label
             htmlFor="photo-upload"
-            className={`px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer ${
-              uploading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className={`px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer ${uploading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
           >
             {uploading ? "Uploading..." : photoUrl ? "Change Photo" : "Upload Photo"}
           </label>
@@ -200,7 +199,7 @@ export default function StudentPhotoUpload({
           {photoUrl && !uploading && (
             <button
               onClick={handleRemovePhoto}
-              className="px-4 py-2 border border-red-300 rounded-lg font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              className="px-4 py-2 border border-red-300 dark:border-red-700 rounded-lg font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >
               Remove
             </button>

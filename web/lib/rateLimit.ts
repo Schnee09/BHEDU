@@ -1,45 +1,43 @@
 /**
- * Simple in-memory rate limiter for API routes
- * Production apps should use Redis or similar
+ * Rate Limiting Module
+ * 
+ * @deprecated This file is deprecated. Use '@/lib/auth/rateLimit' instead.
+ * All rate limiting logic has been consolidated into the auth module for SOLID compliance.
+ * 
+ * Migration:
+ * - `checkRateLimit(req)` → `checkRateLimit(getRateLimitIdentifier(req), rateLimitConfigs.api)`
+ * - For new code, consider using `checkTokenBucketRateLimit` for smoother API traffic shaping
  */
 
-const hits = new Map<string, { count: number; reset: number }>()
-const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
-const RATE_LIMIT_MAX = 200 // 200 requests per minute per IP (increased from 60)
-
-function getClientIP(req: Request): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0].trim() 
-    || req.headers.get('x-real-ip') 
-    || '127.0.0.1'
-}
+export { 
+  checkRateLimit,
+  resetRateLimit,
+  cleanupRateLimits,
+  getRateLimitStatus,
+  getRateLimitIdentifier,
+  getAllRateLimits,
+  clearAllRateLimits,
+  rateLimitConfigs,
+  checkTokenBucketRateLimit,
+  resetTokenBucketRateLimit,
+  cleanupTokenBuckets,
+  type RateLimitConfig,
+  type TokenBucketConfig,
+  type TokenBucketResult
+} from '@/lib/auth/rateLimit'
 
 /**
- * Check if request exceeds rate limit
- * @returns true if rate limit exceeded, false if allowed
+ * Legacy compatibility: Simple rate limit check for API routes
+ * @deprecated Use checkRateLimit from '@/lib/auth/rateLimit' directly
  */
-export function checkRateLimit(req: Request): boolean {
-  const ip = getClientIP(req)
-  const now = Date.now()
-  const key = `ratelimit:${ip}`
-  
-  const entry = hits.get(key)
-  if (!entry || entry.reset <= now) {
-    hits.set(key, { count: 1, reset: now + RATE_LIMIT_WINDOW })
-    return false
-  }
-  
-  if (entry.count >= RATE_LIMIT_MAX) return true
-  entry.count += 1
-  return false
-}
+import { 
+  checkRateLimit as authCheckRateLimit,
+  getRateLimitIdentifier,
+  rateLimitConfigs 
+} from '@/lib/auth/rateLimit'
 
-// Cleanup old entries periodically
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const now = Date.now()
-    for (const [key, entry] of hits.entries()) {
-      if (entry.reset <= now) hits.delete(key)
-    }
-  }, RATE_LIMIT_WINDOW)
+export function checkRateLimitLegacy(req: Request): boolean {
+  const identifier = getRateLimitIdentifier(req)
+  const result = authCheckRateLimit(identifier, rateLimitConfigs.api)
+  return !result.allowed
 }
-

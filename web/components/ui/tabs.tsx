@@ -26,11 +26,10 @@ export default function Tabs({
           <button
             key={t.key}
             onClick={() => setActive(t.key)}
-            className={`px-3 py-2 text-sm rounded-t-lg border-b-2 -mb-[1px] transition-colors ${
-              active === t.key
-                ? "border-blue-600 dark:border-blue-400 text-blue-700 dark:text-blue-400"
-                : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-            }`}
+            className={`px-3 py-2 text-sm font-medium rounded-t-lg border-b-2 -mb-[1px] transition-colors whitespace-nowrap ${active === t.key
+              ? "border-blue-600 dark:border-blue-400 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30"
+              : "border-transparent text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+              }`}
           >
             {t.label}
           </button>
@@ -54,7 +53,7 @@ export const TabsListComponent = ({ children, className }: any) => {
 export const TabsTriggerComponent = ({ children, value: _value, className, onClick }: any) => {
   return (
     <button
-      className={`px-3 py-2 text-sm transition-colors ${className || ''}`}
+      className={`px-3 py-2 text-sm font-medium transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white ${className || ''}`}
       onClick={onClick}
     >
       {children}

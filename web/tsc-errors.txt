@@ -1,0 +1,34 @@
+﻿.next/types/validator.ts(278,39): error TS2307: Cannot find module '../../app/dashboard/assignments/page.js' or its corresponding type declarations.
+.next/types/validator.ts(305,39): error TS2307: Cannot find module '../../app/dashboard/attendance/qr/page.js' or its corresponding type declarations.
+.next/types/validator.ts(341,39): error TS2307: Cannot find module '../../app/dashboard/courses/page.js' or its corresponding type declarations.
+.next/types/validator.ts(521,39): error TS2307: Cannot find module '../../app/dashboard/scores/page.js' or its corresponding type declarations.
+.next/types/validator.ts(1142,39): error TS2307: Cannot find module '../../app/api/assignments/route.js' or its corresponding type declarations.
+.next/types/validator.ts(1178,39): error TS2307: Cannot find module '../../app/api/attendance/qr/generate/route.js' or its corresponding type declarations.
+.next/types/validator.ts(1250,39): error TS2307: Cannot find module '../../app/api/courses/[id]/route.js' or its corresponding type declarations.
+.next/types/validator.ts(1259,39): error TS2307: Cannot find module '../../app/api/courses/route.js' or its corresponding type declarations.
+.next/types/validator.ts(1367,39): error TS2307: Cannot find module '../../app/api/lessons/[id]/route.js' or its corresponding type declarations.
+.next/types/validator.ts(1376,39): error TS2307: Cannot find module '../../app/api/lessons/route.js' or its corresponding type declarations.
+__tests__/grades-validation.test.ts(67,35): error TS2339: Property 'ORAL' does not exist on type 'typeof EvaluationType'.
+app/api/reports/report-card/route.ts(70,40): error TS2339: Property 'id' does not exist on type '{ id: any; name: any; }[]'.
+app/api/reports/report-card/route.ts(71,42): error TS2339: Property 'name' does not exist on type '{ id: any; name: any; }[]'.
+app/api/reports/report-card/route.ts(142,37): error TS2339: Property 'name' does not exist on type '{ id: any; name: any; }[]'.
+app/api/reports/transcript/route.ts(98,40): error TS2339: Property 'id' does not exist on type '{ id: any; name: any; }[]'.
+app/api/reports/transcript/route.ts(99,42): error TS2339: Property 'name' does not exist on type '{ id: any; name: any; }[]'.
+app/api/reports/transcript/route.ts(198,37): error TS2339: Property 'name' does not exist on type '{ id: any; name: any; }[]'.
+app/api/students/route.ts(51,7): error TS2322: Type '"active" | "all" | "inactive" | "graduated" | "suspended" | undefined' is not assignable to type '"active" | "inactive" | "graduated" | "transferred" | undefined'.
+  Type '"all"' is not assignable to type '"active" | "inactive" | "graduated" | "transferred" | undefined'.
+app/dashboard/admin/permissions/page.tsx(100,76): error TS18047: 'selectedUser' is possibly 'null'.
+app/dashboard/attendance/reports/page.tsx(639,44): error TS2339: Property 'name' does not exist on type '{ id: string; title: string; code: string; }'.
+app/dashboard/grades/analytics/page.tsx(421,27): error TS2322: Type 'GradeDistribution[]' is not assignable to type 'ChartDataInput[]'.
+  Type 'GradeDistribution' is not assignable to type 'ChartDataInput'.
+    Index signature for type 'string' is missing in type 'GradeDistribution'.
+app/dashboard/users/page.tsx(593,27): error TS2322: Type '"success" | "danger"' is not assignable to type '"default" | "warning" | "danger" | undefined'.
+  Type '"success"' is not assignable to type '"default" | "warning" | "danger" | undefined'.
+lib/api/response.ts(58,7): error TS2698: Spread types may only be created from object types.
+lib/payments/paymentService.ts(227,31): error TS2339: Property 'full_name' does not exist on type '{ full_name: any; student_id: any; }[]'.
+lib/payments/paymentService.ts(228,31): error TS2339: Property 'student_id' does not exist on type '{ full_name: any; student_id: any; }[]'.
+lib/services/EnrollmentService.ts(158,34): error TS2339: Property 'full_name' does not exist on type '{ full_name: any; student_id: any; }[]'.
+lib/services/EnrollmentService.ts(159,34): error TS2339: Property 'student_id' does not exist on type '{ full_name: any; student_id: any; }[]'.
+lib/services/EnrollmentService.ts(161,30): error TS2339: Property 'name' does not exist on type '{ name: any; }[]'.
+lib/services/tuitionService.ts(122,25): error TS2352: Conversion of type '{ id: any; name: any; class_type: any; sessions_per_week: any; }[]' to type '{ id: string; name: string; class_type: string | null; sessions_per_week: number | null; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: any; name: any; class_type: any; sessions_per_week: any; }[]' is missing the following properties from type '{ id: string; name: string; class_type: string | null; sessions_per_week: number | null; }': id, name, class_type, sessions_per_week

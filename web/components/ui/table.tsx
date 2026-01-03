@@ -15,6 +15,10 @@ interface Column<T = any> {
   render?: (row: T) => ReactNode;
   sortable?: boolean;
   width?: string;
+  /** Hide this column on mobile screens */
+  mobileHidden?: boolean;
+  /** Use as primary display in mobile card view */
+  mobilePrimary?: boolean;
 }
 
 interface TableProps<T = any> {
@@ -26,6 +30,8 @@ interface TableProps<T = any> {
   striped?: boolean;
   compact?: boolean;
   className?: string;
+  /** Show stacked cards on mobile instead of table */
+  mobileCards?: boolean;
 }
 
 export function Table<T = any>({
@@ -37,26 +43,125 @@ export function Table<T = any>({
   striped = false,
   compact = false,
   className = '',
+  mobileCards = false,
 }: TableProps<T>) {
   const paddingClass = compact ? 'px-4 py-3' : 'px-6 py-4';
-  
+
+  // Mobile card view
+  if (mobileCards && data.length > 0) {
+    const primaryCol = columns.find(c => c.mobilePrimary) || columns[0];
+
+    return (
+      <>
+        {/* Mobile Cards - shown on small screens */}
+        <div className={`md:hidden space-y-3 ${className}`}>
+          {data.map((row) => (
+            <div
+              key={keyExtractor(row)}
+              onClick={() => onRowClick?.(row)}
+              className={`bg-surface p-4 rounded-xl border border-border shadow-sm ${hoverable ? 'hover:bg-surface-hover cursor-pointer transition-colors' : ''
+                }`}
+            >
+              {/* Primary field as header */}
+              <div className="font-semibold text-foreground mb-2">
+                {primaryCol.render ? primaryCol.render(row) : (row as any)[primaryCol.key]}
+              </div>
+              {/* Other fields */}
+              <div className="space-y-1 text-sm text-muted">
+                {columns.filter(c => c.key !== primaryCol.key && !c.mobileHidden).map((col) => (
+                  <div key={col.key} className="flex justify-between">
+                    <span className="text-muted">{col.header}:</span>
+                    <span className="text-foreground">
+                      {col.render ? col.render(row) : (row as any)[col.key]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table - hidden on small screens */}
+        <div className={`hidden md:block overflow-x-auto rounded-xl border border-border shadow-sm ${className}`}>
+          <table className="min-w-full">
+            <thead className="bg-surface-secondary/50 border-b border-border">
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    scope="col"
+                    className={`${paddingClass} text-left text-sm font-semibold text-muted font-heading uppercase tracking-wider ${column.width || ''}`}
+                  >
+                    {column.header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-surface divide-y divide-border">
+              {data.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-6 py-12 text-center text-gray-500 dark:text-[#9A9A9A]"
+                  >
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-16 h-16 bg-gray-100 dark:bg-[#3A3A3A] rounded-xl flex items-center justify-center">
+                        <svg className="w-8 h-8 text-gray-400 dark:text-[#757575]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                        </svg>
+                      </div>
+                      <p className="font-semibold text-lg text-gray-600 dark:text-[#C0C0C0]">No data available</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                data.map((row, index) => (
+                  <tr
+                    key={keyExtractor(row)}
+                    onClick={() => onRowClick?.(row)}
+                    className={`
+                  ${hoverable ? 'hover:bg-surface-hover cursor-pointer transition-colors' : ''}
+                  ${striped && index % 2 === 1 ? 'bg-surface-secondary/30' : ''}
+                `}
+                  >
+                    {columns.map((column) => (
+                      <td
+                        key={column.key}
+                        className={`${paddingClass} text-sm font-medium text-foreground`}
+                      >
+                        {column.render
+                          ? column.render(row)
+                          : (row as any)[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </>
+    );
+  }
+
+  // Regular table view (no mobileCards)
   return (
-    <div className={`overflow-x-auto rounded-xl border border-gray-200 dark:border-[#4A4A4A] ${className}`}>
+    <div className={`overflow-x-auto rounded-xl border border-border shadow-sm ${className}`}>
       <table className="min-w-full">
-        <thead className="bg-gray-50 dark:bg-[#252525] border-b border-gray-200 dark:border-[#4A4A4A]">
+        <thead className="bg-surface-secondary/50 border-b border-border">
           <tr>
             {columns.map((column) => (
               <th
                 key={column.key}
                 scope="col"
-                className={`${paddingClass} text-left text-sm font-semibold text-gray-700 dark:text-[#C0C0C0] uppercase tracking-wider ${column.width || ''}`}
+                className={`${paddingClass} text-left text-sm font-semibold text-muted font-heading uppercase tracking-wider ${column.width || ''} ${column.mobileHidden ? 'hidden md:table-cell' : ''}`}
               >
                 {column.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white dark:bg-[#2D2D2D] divide-y divide-gray-100 dark:divide-[#3A3A3A]">
+        <tbody className="bg-surface divide-y divide-border">
           {data.length === 0 ? (
             <tr>
               <td
@@ -79,14 +184,14 @@ export function Table<T = any>({
                 key={keyExtractor(row)}
                 onClick={() => onRowClick?.(row)}
                 className={`
-                  ${hoverable ? 'hover:bg-gray-50 dark:hover:bg-[#3A3A3A] cursor-pointer transition-colors' : ''}
-                  ${striped && index % 2 === 1 ? 'bg-gray-50/50 dark:bg-[#252525]' : ''}
+                  ${hoverable ? 'hover:bg-surface-hover cursor-pointer transition-colors' : ''}
+                  ${striped && index % 2 === 1 ? 'bg-surface-secondary/30' : ''}
                 `}
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`${paddingClass} text-sm font-medium text-gray-800 dark:text-[#E8E8E8]`}
+                    className={`${paddingClass} text-sm font-medium text-foreground ${column.mobileHidden ? 'hidden md:table-cell' : ''}`}
                   >
                     {column.render
                       ? column.render(row)
@@ -194,18 +299,18 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
   itemsPerPage,
 }) => {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  
+
   const showPages = () => {
     if (totalPages <= 7) return pages;
-    
+
     if (currentPage <= 3) {
       return [...pages.slice(0, 5), '...', totalPages];
     }
-    
+
     if (currentPage >= totalPages - 2) {
       return [1, '...', ...pages.slice(totalPages - 5)];
     }
-    
+
     return [
       1,
       '...',
@@ -227,7 +332,7 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
           </span>
         )}
       </div>
-      
+
       <div className="flex items-center gap-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}
@@ -238,7 +343,7 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        
+
         {showPages().map((page, index) => (
           <React.Fragment key={index}>
             {page === '...' ? (
@@ -259,7 +364,7 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
             )}
           </React.Fragment>
         ))}
-        
+
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}

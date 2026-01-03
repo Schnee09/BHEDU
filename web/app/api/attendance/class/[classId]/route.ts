@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { teacherAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
@@ -15,6 +15,7 @@ export async function GET(
   { params }: { params: Promise<{ classId: string }> }
 ) {
   try {
+    console.log('🔍 [DEBUG] Attendance API called');
     // Teacher or admin authentication
     const authResult = await teacherAuth(req)
     if (!authResult.authorized) {
@@ -24,7 +25,7 @@ export async function GET(
       )
     }
 
-  const supabase = createClientFromRequest(req as any)
+  const supabase = createServiceClient()
     const { classId } = await params
     const searchParams = req.nextUrl.searchParams
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0]

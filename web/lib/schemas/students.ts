@@ -56,6 +56,8 @@ export const studentQuerySchema = z.object({
   search: z.string().optional(),
   status: z.enum(['active', 'inactive', 'graduated', 'suspended', 'all']).optional(),
   class_id: z.string().uuid().optional(),
+  grade_level: z.string().optional(),
+  gender: z.enum(['male', 'female', 'other']).optional(),
   sort: z.enum(['name', 'student_code', 'enrollment_date', 'created_at']).optional().default('created_at'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
 });
