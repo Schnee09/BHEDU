@@ -65,8 +65,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const updated = await ClassService.updateClass(classId, {
       name,
-      code,
-      description,
       room,
       schedule,
       teacher_id: teacher_id || teacherId,
