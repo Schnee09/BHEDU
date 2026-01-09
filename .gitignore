@@ -3,19 +3,53 @@ node_modules
 # local environment files
 web/.env.local
 .env.local
+.env
 
 # build artifacts
 web/.next/
 .next/
+dist/
+out/
 
 # temporary files
 COMMITMSG*
 tmp/
 *.bak
 *_backup.*
+*-backup.*
 lint-output*.txt
 lint-final.txt
 .deploy-trigger*
 .vercel-*-trigger
 *_OLD.*
+*.old
 README.old.md
+
+# IDE and editor
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+
+# Playwright MCP
+.playwright-mcp/
+
+# Test coverage
+coverage/
+.nyc_output/

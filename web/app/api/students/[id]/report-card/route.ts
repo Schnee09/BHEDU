@@ -260,7 +260,7 @@ export async function POST(
 
     // Prepare report card data
     const reportCardData = {
-      school_name: 'TRƯỜNG TRUNG HỌC PHỔ THÔNG BẮC HÀ',
+      school_name: 'TRUNG TÂM GIÁO DỤC BÙI HOÀNG',
       school_address: 'Lào Cai, Việt Nam',
       student_name: student.full_name,
       student_code: student.student_code || student.student_id || 'N/A',

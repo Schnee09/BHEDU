@@ -29,6 +29,7 @@ import { Table } from '@/components/ui/table';
 import Badge from '@/components/ui/badge';
 import { Select, Textarea, Checkbox } from '@/components/ui/form';
 import { Icons } from '@/components/ui/Icons';
+import PageGuard from '@/components/PageGuard';
 import type { UserRole } from '@/lib/database.types';
 
 interface User {
@@ -63,6 +64,14 @@ const roleOptions = [
 ];
 
 export default function UserManagementPage() {
+  return (
+    <PageGuard permissions="users.view">
+      <UserManagementPageContent />
+    </PageGuard>
+  );
+}
+
+function UserManagementPageContent() {
   // State management
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -74,6 +83,7 @@ export default function UserManagementPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   // Filter states
@@ -311,6 +321,43 @@ export default function UserManagementPage() {
       const errorMsg = err instanceof Error ? err.message : 'Failed to toggle user status';
       setError(errorMsg);
       logger.error('Error toggling user status', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      logger.info('Deleting user', { userId: selectedUser.id, email: selectedUser.email });
+
+      const response = await apiFetch(`/api/admin/users/${selectedUser.id}?permanent=true`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess(`Người dùng "${selectedUser.full_name}" đã được xóa thành công!`);
+        setShowDeleteModal(false);
+        setSelectedUser(null);
+        fetchUsers();
+
+        logger.audit('User deleted', {}, {
+          userId: selectedUser.id,
+          email: selectedUser.email
+        });
+      } else {
+        throw new Error(data.error || 'Không thể xóa người dùng');
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Không thể xóa người dùng';
+      setError(errorMsg);
+      logger.error('Error deleting user', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -595,6 +642,16 @@ export default function UserManagementPage() {
                           icon={user.is_active ? <Icons.Error className="w-4 h-4" /> : <Icons.Success className="w-4 h-4" />}
                         >
                           {user.is_active ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                        </DropdownItem>
+                        <DropdownItem
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowDeleteModal(true);
+                          }}
+                          variant="danger"
+                          icon={<Icons.Trash className="w-4 h-4" />}
+                        >
+                          Xóa người dùng
                         </DropdownItem>
                       </DropdownMenu>
                     </div>
@@ -911,6 +968,74 @@ export default function UserManagementPage() {
               </Button>
             </div>
           </form>
+        </Modal>
+
+        {/* Delete User Confirmation Modal */}
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedUser(null);
+          }}
+          title="Xác nhận xóa người dùng"
+          size="md"
+        >
+          <div className="space-y-4">
+            <Alert
+              variant="error"
+              title="Cảnh báo: Thao tác không thể hoàn tác!"
+              message="Người dùng và tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn."
+            />
+
+            <div className="bg-stone-100 dark:bg-stone-800 rounded-lg p-4">
+              <p className="text-sm text-stone-600 dark:text-stone-400 mb-2">Bạn sắp xóa người dùng:</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <Icons.Users className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-stone-900 dark:text-stone-100">{selectedUser?.full_name}</p>
+                  <p className="text-sm text-stone-500">{selectedUser?.email}</p>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-sm text-stone-600 dark:text-stone-400">
+              Nhập <strong>&quot;{selectedUser?.email}&quot;</strong> để xác nhận xóa.
+            </p>
+            <Input
+              type="text"
+              placeholder="Nhập email để xác nhận"
+              id="delete-confirm-input"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setSelectedUser(null);
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="danger"
+              isLoading={loading}
+              onClick={() => {
+                const input = document.getElementById('delete-confirm-input') as HTMLInputElement;
+                if (input?.value === selectedUser?.email) {
+                  handleDeleteUser();
+                } else {
+                  setError('Email xác nhận không khớp');
+                }
+              }}
+            >
+              Xóa vĩnh viễn
+            </Button>
+          </div>
         </Modal>
       </div>
     </div>

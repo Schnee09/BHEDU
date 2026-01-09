@@ -7,14 +7,15 @@
 
 import { NextResponse } from 'next/server'
 import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth'
+import { createServiceClient } from '@/lib/supabase/server'
+import { staffAuth } from '@/lib/auth/adminAuth'
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await adminAuth(request)
+    const authResult = await staffAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -83,7 +84,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await adminAuth(request)
+    const authResult = await staffAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -107,10 +108,10 @@ export async function PUT(
 
   const { supabase } = await getDataClient(request)
 
-    // Check if user exists
+    // Check if user exists and get current role
     const { data: existingUser, error: fetchError } = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id, email, role')
       .eq('id', id)
       .single()
 
@@ -118,6 +119,22 @@ export async function PUT(
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
+      )
+    }
+
+    // Only admin can change role to admin or staff
+    if (role && (role === 'admin' || role === 'staff') && authResult.userRole !== 'admin') {
+      return NextResponse.json(
+        { error: 'Only administrators can assign admin or staff roles' },
+        { status: 403 }
+      )
+    }
+
+    // Only admin can modify admin/staff users
+    if ((existingUser.role === 'admin' || existingUser.role === 'staff') && authResult.userRole !== 'admin') {
+      return NextResponse.json(
+        { error: 'Only administrators can modify admin or staff accounts' },
+        { status: 403 }
       )
     }
 
@@ -192,7 +209,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await adminAuth(request)
+    const authResult = await staffAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -206,17 +223,68 @@ export async function DELETE(
 
   const { supabase } = await getDataClient(request)
 
+    // Check if target user is admin/staff - only admin can delete those
+    const { data: targetUser } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', id)
+      .single()
+
+    if (targetUser && (targetUser.role === 'admin' || targetUser.role === 'staff') && authResult.userRole !== 'admin') {
+      return NextResponse.json(
+        { error: 'Only administrators can delete admin or staff accounts' },
+        { status: 403 }
+      )
+    }
+
     if (permanent) {
-      // Permanent deletion (use with caution)
-      const { error } = await supabase.auth.admin.deleteUser(id)
+      // Permanent deletion - need to get the auth user_id first
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email')
+        .eq('id', id)
+        .single()
       
-      if (error) {
-        console.error('Error deleting user:', error)
+      if (!profile || !profile.user_id) {
         return NextResponse.json(
-          { error: 'Failed to delete user' },
-          { status: 500 }
+          { error: 'User not found or has no auth account' },
+          { status: 404 }
         )
       }
+
+      // Use service client explicitly for auth admin operations
+      const adminClient = createServiceClient()
+
+      // Delete from Supabase Auth (requires service role key)
+      console.log('[DELETE USER] Deleting auth user:', profile.user_id)
+      const { error: authError } = await adminClient.auth.admin.deleteUser(profile.user_id)
+      
+      if (authError) {
+        console.error('[DELETE USER] Error deleting auth user:', authError)
+        // If auth delete fails, try deleting just the profile
+        const { error: profileError } = await adminClient
+          .from('profiles')
+          .delete()
+          .eq('id', id)
+        
+        if (profileError) {
+          console.error('[DELETE USER] Error deleting profile:', profileError)
+          return NextResponse.json(
+            { error: 'Failed to delete user', details: authError.message },
+            { status: 500 }
+          )
+        }
+      }
+
+      // Log activity
+      await supabase
+        .from('user_activity_logs')
+        .insert({
+          user_id: id,
+          action: 'user_deleted',
+          description: `User ${profile.full_name} (${profile.email}) permanently deleted by admin: ${authResult.userEmail}`,
+          metadata: { deleted_by: authResult.userId }
+        })
 
       return NextResponse.json({
         success: true,

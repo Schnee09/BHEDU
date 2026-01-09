@@ -70,7 +70,6 @@ export const ALL_NAV_ITEMS: NavSection[] = [
     title: "Điểm số",
     links: [
       { href: routes.grades.entry(), label: "Nhập điểm", icon: BarChart2, permissions: ['grades.entry'] },
-      { href: routes.grades.conductEntry(), label: "Hạnh kiểm", icon: GraduationCap, permissions: ['grades.entry'] },
       { href: "/dashboard/grades/transcripts", label: "Bảng điểm", icon: FileText, permissions: ['grades.view'] },
       { href: routes.grades.analytics(), label: "Phân tích", icon: TrendingUp, permissions: ['grades.analytics'] },
     ]
@@ -81,6 +80,7 @@ export const ALL_NAV_ITEMS: NavSection[] = [
       { href: "/dashboard/users", label: "Người dùng", icon: Shield, permissions: ['users.view'] },
       { href: "/dashboard/admin/permissions", label: "Phân quyền", icon: Shield, permissions: ['users.permissions'] },
       { href: "/dashboard/admin/students", label: "Hồ sơ học sinh", icon: Users, permissions: ['students.edit'] },
+      { href: "/dashboard/admin/enrollments", label: "Ghi danh lớp", icon: Users, permissions: ['students.edit'] },
       { href: "/dashboard/admin/semesters", label: "Học kỳ", icon: Calendar, permissions: ['system.settings'] },
       { href: "/dashboard/admin/subjects", label: "Môn học", icon: BookOpen, permissions: ['system.settings'] },
       { href: "/dashboard/admin/data", label: "Xuất dữ liệu", icon: Download, permissions: ['reports.export'] },

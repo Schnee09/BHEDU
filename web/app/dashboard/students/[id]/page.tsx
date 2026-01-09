@@ -11,6 +11,8 @@ import StudentActions from "@/components/StudentActions";
 import GuardianManagement from "@/components/GuardianManagement";
 import EnrollmentManager from "@/components/EnrollmentManager";
 import StudentPhotoUpload from "@/components/StudentPhotoUpload";
+import StudentNotes from "@/components/StudentNotes";
+import StudentDocuments from "@/components/StudentDocuments";
 
 import StudentStatusPanel from "../../../../components/StudentStatusPanel";
 import ImportHistoryPanel from "../../../../components/ImportHistoryPanel";
@@ -548,15 +550,13 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
   const documentsSection = (
     <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Tài liệu</h2>
-      <Empty title="Sắp có" description="Tải lên và quản lý tài liệu học sinh tại đây." />
+      <StudentDocuments studentId={id} />
     </Card>
   );
 
   const notesSection = (
     <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Ghi chú</h2>
-      <Empty title="Sắp có" description="Lưu ghi chú riêng tư và nhận xét quan trọng." />
+      <StudentNotes studentId={id} />
     </Card>
   );
 

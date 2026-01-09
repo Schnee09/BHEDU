@@ -24,42 +24,76 @@ export async function GET(request: Request) {
 
     // Use service client to bypass RLS and avoid recursion
     const supabase = createServiceClient()
+    const userRole = authResult.userRole || ''
+    const profileId = authResult.userId
 
-    let query = supabase
-      .from('classes')
-      .select('id, name, teacher_id, created_at')
-      .order('name', { ascending: true })
+    // Admin/staff see all classes
+    if (userRole === 'admin' || userRole === 'staff') {
+      const { data: classes, error } = await supabase
+        .from('classes')
+        .select('id, name, teacher_id, created_at')
+        .order('name', { ascending: true })
 
-    // If not admin, filter by teacher_id
-    if (authResult.userRole !== 'admin') {
-      query = query.eq('teacher_id', authResult.userId)
+      if (error) {
+        logger.error('Failed to fetch classes', { error: error.message })
+        return NextResponse.json({ error: 'Failed to fetch classes' }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, classes: classes || [] })
     }
 
-    const { data: classes, error } = await query
+    // Teachers see their assigned classes
+    if (userRole === 'teacher' && profileId) {
+      const { data: classes, error } = await supabase
+        .from('classes')
+        .select('id, name, teacher_id, created_at')
+        .eq('teacher_id', profileId)
+        .order('name', { ascending: true })
 
-    if (error) {
-      logger.error('Failed to fetch classes', { 
-        error: error.message, 
-        errorCode: error.code,
-        errorDetails: error.details,
-        errorHint: error.hint,
-        userId: authResult.userId 
-      })
-      return NextResponse.json(
-        { 
-          error: 'Failed to fetch classes', 
-          details: error.message,
-          code: error.code,
-          hint: error.hint 
-        },
-        { status: 500 }
-      )
+      if (error) {
+        logger.error('Failed to fetch classes', { error: error.message })
+        return NextResponse.json({ error: 'Failed to fetch classes' }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, classes: classes || [] })
     }
 
-    return NextResponse.json({
-      success: true,
-      classes: classes || []
-    })
+    // Students see their enrolled classes
+    if (userRole === 'student' && profileId) {
+      // Get enrolled class IDs
+      const { data: enrollments, error: enrollError } = await supabase
+        .from('enrollments')
+        .select('class_id')
+        .eq('student_id', profileId)
+        .eq('status', 'active')
+
+      if (enrollError) {
+        logger.error('Failed to fetch enrollments', { error: enrollError.message })
+        return NextResponse.json({ error: 'Failed to fetch enrollments' }, { status: 500 })
+      }
+
+      const classIds = (enrollments || []).map(e => e.class_id)
+
+      if (classIds.length === 0) {
+        return NextResponse.json({ success: true, classes: [] })
+      }
+
+      const { data: classes, error } = await supabase
+        .from('classes')
+        .select('id, name, teacher_id, created_at')
+        .in('id', classIds)
+        .order('name', { ascending: true })
+
+      if (error) {
+        logger.error('Failed to fetch classes', { error: error.message })
+        return NextResponse.json({ error: 'Failed to fetch classes' }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, classes: classes || [] })
+    }
+
+    // Fallback - return empty
+    return NextResponse.json({ success: true, classes: [] })
 
   } catch (error) {
     logger.error('Get classes error', error)

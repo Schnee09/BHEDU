@@ -23,20 +23,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     const is_active = searchParams.get('is_active');
-    const academic_year_id = searchParams.get('academic_year_id');
 
     let query = supabase
       .from('fee_types')
-      .select('*, academic_years(name)')
+      .select('*')
       .order('name', { ascending: true });
 
     // Apply filters
     if (is_active !== null) {
       query = query.eq('is_active', is_active === 'true');
-    }
-
-    if (academic_year_id) {
-      query = query.eq('academic_year_id', academic_year_id);
     }
 
     const { data, error } = await query;

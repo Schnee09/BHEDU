@@ -42,6 +42,8 @@ import {
   MapPinIcon,
   ChevronDownIcon,
   MagnifyingGlassIcon,
+  ArrowLeftIcon,
+  ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline';
 
 import {
@@ -61,7 +63,7 @@ export const Icons = {
   Notifications: BellIcon,
   Menu: Bars3Icon,
   Close: XMarkIcon,
-  
+
   // Education specific
   Students: UserGroupIcon,
   Teachers: AcademicCapIcon,
@@ -71,17 +73,20 @@ export const Icons = {
   Grades: DocumentTextIcon,
   Progress: PresentationChartLineIcon,
   Finance: CurrencyDollarIcon,
-  
+
   // Actions
   View: EyeIcon,
+  Eye: EyeIcon,
   Edit: PencilIcon,
   Delete: TrashIcon,
+  Trash: TrashIcon,
   Add: PlusIcon,
   ChevronRight: ChevronRightIcon,
   ChevronDown: ChevronDownIcon,
   Filter: FunnelIcon,
   Search: MagnifyingGlassIcon,
   Download: ArrowDownTrayIcon,
+  Upload: ArrowUpTrayIcon,
   Archive: ArchiveBoxIcon,
   Save: DocumentArrowDownIcon,
   Calendar: CalendarIcon,
@@ -90,7 +95,8 @@ export const Icons = {
   Phone: PhoneIcon,
   Mail: EnvelopeIcon,
   Location: MapPinIcon,
-  
+  Back: ArrowLeftIcon,
+
   // Status
   Success: CheckCircleIcon,
   Error: XCircleIcon,
@@ -98,7 +104,7 @@ export const Icons = {
   Info: InformationCircleIcon,
   TrendUp: ArrowTrendingUpIcon,
   TrendDown: ArrowTrendingDownIcon,
-  
+
   // Analytics
   Chart: ChartBarIcon,
 } as const;

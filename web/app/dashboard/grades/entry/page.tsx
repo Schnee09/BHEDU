@@ -25,6 +25,7 @@ import {
 } from "@/lib/grades/types";
 import { GradeService } from "@/lib/grades/services/GradeService";
 import { validateGrade } from "@/lib/grades/validation";
+import PageGuard from "@/components/PageGuard";
 
 // Types
 interface Student {
@@ -47,6 +48,14 @@ interface GradeError {
 
 // Main component
 export default function GradeEntryPage() {
+  return (
+    <PageGuard permissions="grades.entry">
+      <GradeEntryPageContent />
+    </PageGuard>
+  );
+}
+
+function GradeEntryPageContent() {
   const toast = useToast();
 
   // State - Classes
@@ -65,6 +74,9 @@ export default function GradeEntryPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importPreview, setImportPreview] = useState<{ name: string, midterm: number | null, final: number | null }[]>([]);
 
   // Helper: Handle grade input change
   const handleGradeChange = (studentId: string, field: EvaluationType, value: string) => {
@@ -234,6 +246,93 @@ export default function GradeEntryPage() {
   const hasErrors = Object.values(errors).some(e => e.length > 0);
   const selectedClass = classes.find(c => c.id === selectedClassId);
 
+  // Download CSV template
+  const downloadTemplate = () => {
+    const headers = 'Họ tên,Điểm giữa kỳ,Điểm cuối kỳ';
+    const sampleRows = students.map(s =>
+      `"${s.full_name || s.name || ''}",${grades[s.id]?.[EvaluationType.MIDTERM] ?? ''},${grades[s.id]?.[EvaluationType.FINAL] ?? ''}`
+    ).join('\n');
+
+    const csvContent = `${headers}\n${sampleRows}`;
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `diem_${selectedClass?.name || 'lop'}_hk${selectedSemester}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Parse CSV file
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportError(null);
+    setImportPreview([]);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim());
+
+        if (lines.length < 2) {
+          setImportError('File phải có ít nhất 1 dòng dữ liệu');
+          return;
+        }
+
+        // Skip header row
+        const dataRows = lines.slice(1);
+        const preview: { name: string, midterm: number | null, final: number | null }[] = [];
+        const newGrades = { ...grades };
+
+        for (const row of dataRows) {
+          // Parse CSV row (handle quoted values)
+          const values = row.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim()) || [];
+          if (values.length < 1) continue;
+
+          const name = values[0];
+          const midterm = values[1] ? parseFloat(values[1]) : null;
+          const final = values[2] ? parseFloat(values[2]) : null;
+
+          // Find matching student
+          const student = students.find(s =>
+            (s.full_name || s.name || '').toLowerCase() === name.toLowerCase()
+          );
+
+          if (student) {
+            const studentGrades: Partial<GradeRow> = {};
+            if (midterm !== null && !isNaN(midterm) && midterm >= 0 && midterm <= 10) {
+              studentGrades[EvaluationType.MIDTERM] = midterm;
+            }
+            if (final !== null && !isNaN(final) && final >= 0 && final <= 10) {
+              studentGrades[EvaluationType.FINAL] = final;
+            }
+            studentGrades.average = calculateAverageGrade(
+              studentGrades[EvaluationType.MIDTERM] ?? grades[student.id]?.[EvaluationType.MIDTERM],
+              studentGrades[EvaluationType.FINAL] ?? grades[student.id]?.[EvaluationType.FINAL]
+            );
+            newGrades[student.id] = { ...grades[student.id], ...studentGrades };
+          }
+
+          preview.push({ name, midterm, final });
+        }
+
+        setImportPreview(preview);
+        setGrades(newGrades);
+        toast.success(`Đã import ${preview.length} dòng dữ liệu`);
+        setShowImportModal(false);
+
+      } catch (err) {
+        console.error('Import error:', err);
+        setImportError('Không thể đọc file. Vui lòng kiểm tra định dạng CSV.');
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+    event.target.value = ''; // Reset input
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -289,11 +388,29 @@ export default function GradeEntryPage() {
               <div className="text-sm text-muted-foreground">
                 <strong>{students.length}</strong> học sinh trong lớp <strong>{selectedClass?.name}</strong>
               </div>
-              {hasErrors && (
-                <div className="text-sm text-red-600">
-                  ⚠️ {Object.values(errors).reduce((acc, e) => acc + e.length, 0)} lỗi
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {hasErrors && (
+                  <div className="text-sm text-red-600 mr-2">
+                    ⚠️ {Object.values(errors).reduce((acc, e) => acc + e.length, 0)} lỗi
+                  </div>
+                )}
+                <button
+                  onClick={downloadTemplate}
+                  className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg font-medium flex items-center gap-2 transition-colors"
+                  title="Tải mẫu CSV"
+                >
+                  📥 Xuất mẫu
+                </button>
+                <label className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center gap-2 cursor-pointer transition-colors">
+                  📤 Import CSV
+                  <input
+                    type="file"
+                    accept=".csv,.txt"
+                    onChange={handleFileImport}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="bg-surface/80 backdrop-blur-sm rounded-xl shadow-soft border border-border overflow-hidden">

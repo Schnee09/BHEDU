@@ -36,6 +36,7 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { logger } from "@/lib/logger";
 import { createAuditLog, AuditActions } from "@/lib/audit";
 import { routes } from "@/lib/routes";
+import { Copy, Check } from "lucide-react";
 
 interface Student {
   id: string;
@@ -379,13 +380,20 @@ export default function StudentsPage() {
           title="Học sinh"
           description="Quản lý hồ sơ và thông tin học sinh"
           action={
-            <Button
-              variant="primary"
-              onClick={() => setShowAddModal(true)}
-              leftIcon={<Icons.Add className="w-4 h-4" />}
-            >
-              Thêm Học sinh
-            </Button>
+            <div className="flex gap-2">
+              <Link href="/dashboard/students/bulk">
+                <Button variant="outline" leftIcon={<Icons.Upload className="w-4 h-4" />}>
+                  Bulk Create
+                </Button>
+              </Link>
+              <Button
+                variant="primary"
+                onClick={() => setShowAddModal(true)}
+                leftIcon={<Icons.Add className="w-4 h-4" />}
+              >
+                Thêm Học sinh
+              </Button>
+            </div>
           }
         />
 
@@ -787,6 +795,8 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Populate form when editing
   useEffect(() => {
@@ -816,6 +826,8 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
       });
     }
     setErrors({});
+    setErrors({});
+    setTempPassword(null);
   }, [student, isOpen]);
 
   const validate = () => {
@@ -825,7 +837,9 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
       newErrors.full_name = 'Họ tên là bắt buộc';
     }
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email là bắt buộc'; // Enforce email requirement matching backend
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Định dạng email không hợp lệ';
     }
 
@@ -853,17 +867,37 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
 
       const method = student ? 'PUT' : 'POST';
 
+      // Sanitize payload: convert empty strings to null or undefined for optional fields
+      const payload = {
+        ...formData,
+        email: formData.email.trim(),
+        full_name: formData.full_name.trim(),
+        phone: formData.phone.trim() || null,
+        address: formData.address.trim() || null,
+        date_of_birth: formData.date_of_birth || null,
+        student_code: formData.student_code.trim() || null, // Let backend generate if empty
+        grade_level: formData.grade_level || null,
+        gender: formData.gender || null,
+        // Status is always set to a value from select
+      };
+
       const response = await apiFetch(url, {
         method,
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Không thể lưu học sinh');
+        throw new Error(data.error || 'Không thể lưu học sinh');
       }
 
-      onSuccess();
+      if (data.tempPassword) {
+        setTempPassword(data.tempPassword);
+        // Do not close yet - let user see password
+      } else {
+        onSuccess();
+      }
     } catch (error: any) {
       toast.error('Error', error.message);
       logger.error('Student form error', error);
@@ -872,142 +906,225 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
     }
   };
 
+  const handleCopyPassword = () => {
+    if (tempPassword) {
+      navigator.clipboard.writeText(tempPassword);
+      setCopied(true);
+      toast.success("Đã sao chép", "Mật khẩu đã được lưu vào clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={student ? 'Edit Student' : 'Add New Student'}
+      title={tempPassword ? 'Student Created Successfully' : (student ? 'Edit Student' : 'Add New Student')}
       size="lg"
       footer={
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            isLoading={submitting}
-            leftIcon={student ? <Icons.Save className="w-4 h-4" /> : <Icons.Add className="w-4 h-4" />}
-          >
-            {student ? 'Update' : 'Add'} Student
-          </Button>
-        </div>
+        tempPassword ? (
+          <div className="flex justify-end w-full">
+            <Button variant="primary" onClick={onSuccess}>
+              Hoàn tất (Done)
+            </Button>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={onClose} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              isLoading={submitting}
+              leftIcon={student ? <Icons.Save className="w-4 h-4" /> : <Icons.Add className="w-4 h-4" />}
+            >
+              {student ? 'Update' : 'Add'} Student
+            </Button>
+          </div>
+        )
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Full Name */}
-        <Input
-          label="Họ và tên"
-          required
-          value={formData.full_name}
-          onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-          error={errors.full_name}
-          placeholder="Nhập họ và tên học sinh"
-        />
-
-        {/* Email and Student Code */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            error={errors.email}
-            placeholder="hocsinh@example.com"
-          />
-
-          <Input
-            label="Mã học sinh"
-            value={formData.student_code}
-            onChange={(e) => setFormData({ ...formData, student_code: e.target.value })}
-            placeholder="HS2024001"
-          />
-        </div>
-
-        {/* Phone and Date of Birth */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label="Số điện thoại"
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            error={errors.phone}
-            placeholder="0912 345 678"
-          />
-
-          <Input
-            label="Ngày sinh"
-            type="date"
-            value={formData.date_of_birth}
-            onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-          />
-        </div>
-
-        {/* Grade Level, Status, Gender */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Khối lớp
-            </label>
-            <select
-              value={formData.grade_level}
-              onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Chọn khối lớp</option>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(grade => (
-                <option key={grade} value={`Lớp ${grade}`}>Lớp {grade}</option>
-              ))}
-            </select>
+      {tempPassword ? (
+        <div className="space-y-6 py-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+            <Icons.Success className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-green-800">Tài khoản học sinh đã được tạo</h3>
+              <p className="text-green-700 text-sm mt-1">
+                Vui lòng sao chép thông tin đăng nhập dưới đây và gửi cho học sinh.
+                Lưu ý: Mật khẩu này chỉ hiện <strong>một lần duy nhất</strong>.
+              </p>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Trạng thái
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="active">Đang học</option>
-              <option value="inactive">Nghỉ học</option>
-              <option value="graduated">Đã tốt nghiệp</option>
-              <option value="suspended">Đình chỉ</option>
-            </select>
-          </div>
+          <div className="grid gap-4 bg-slate-50 p-6 rounded-xl border border-slate-200">
+            <div>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block">
+                Họ và Tên
+              </label>
+              <div className="text-lg font-medium text-slate-900">{formData.full_name}</div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Giới tính
-            </label>
-            <select
-              value={formData.gender}
-              onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Chọn giới tính</option>
-              <option value="male">Nam</option>
-              <option value="female">Nữ</option>
-              <option value="other">Khác</option>
-            </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block">
+                  Mã Học Sinh (Dùng để đăng nhập)
+                </label>
+                <div className="text-lg font-mono font-medium text-slate-900 bg-white px-3 py-2 rounded border border-slate-200">
+                  {formData.student_code}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block">
+                  Mật khẩu
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="text-lg font-mono font-medium text-slate-900 bg-white px-3 py-2 rounded border border-slate-200 flex-1">
+                    {tempPassword}
+                  </div>
+                  <button
+                    onClick={handleCopyPassword}
+                    className="p-2hover:bg-slate-200 rounded-lg transition-colors text-slate-600 hover:text-slate-900"
+                    title="Copy Password"
+                  >
+                    {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Address */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Địa chỉ
-          </label>
-          <textarea
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            rows={3}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Nhập địa chỉ học sinh"
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Full Name */}
+          <Input
+            label="Họ và tên"
+            required
+            value={formData.full_name}
+            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+            error={errors.full_name}
+            placeholder="Nhập họ và tên học sinh"
           />
-        </div>
-      </form>
+
+          {/* Email and Student Code */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              error={errors.email}
+              placeholder="hocsinh@example.com"
+            />
+
+            <Input
+              label="Mã học sinh"
+              value={formData.student_code}
+              onChange={(e) => setFormData({ ...formData, student_code: e.target.value })}
+              placeholder="HS2024001"
+            />
+          </div>
+
+          {/* Phone and Date of Birth */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Số điện thoại"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              error={errors.phone}
+              placeholder="0912 345 678"
+            />
+
+            <Input
+              label="Ngày sinh"
+              type="date"
+              value={formData.date_of_birth}
+              onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+            />
+          </div>
+
+          {/* Grade Level, Status, Gender */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Khối lớp
+              </label>
+              <select
+                value={formData.grade_level}
+                onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Chọn khối lớp</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(grade => (
+                  <option key={grade} value={`Lớp ${grade}`}>Lớp {grade}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Trạng thái
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="active">Đang học</option>
+                <option value="inactive">Nghỉ học</option>
+                <option value="graduated">Đã tốt nghiệp</option>
+                <option value="suspended">Đình chỉ</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Giới tính
+              </label>
+              <select
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Chọn giới tính</option>
+                <option value="male">Nam</option>
+                <option value="female">Nữ</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Address */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Địa chỉ
+            </label>
+            <textarea
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              rows={3}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Nhập địa chỉ học sinh"
+            />
+          </div>
+          {/* Note */}
+          {!student && (
+            <div className="bg-blue-50 text-blue-700 p-4 rounded-lg text-sm flex items-start gap-3 mt-6">
+              <Icons.Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Thông tin tài khoản</p>
+                <p className="mt-1">
+                  Hệ thống sẽ tự động tạo tài khoản đăng nhập cho học sinh.
+                  Mật khẩu sẽ được hiển thị sau khi tạo thành công.
+                </p>
+              </div>
+            </div>
+          )}
+        </form>
+      )}
     </Modal>
   );
 }

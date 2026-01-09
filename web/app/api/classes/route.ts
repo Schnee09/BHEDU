@@ -30,30 +30,100 @@ export async function GET(request: Request) {
 
     logger.info('Auth successful', { userRole, profileId })
 
-    // Simple query
-    let query = supabase
-      .from('classes')
-      .select('id, name, teacher_id, created_at')
-      .order('name', { ascending: true })
+    // Admin/staff see all classes
+    if (userRole === 'admin' || userRole === 'staff') {
+      const { data: classes, error } = await supabase
+        .from('classes')
+        .select(`
+          id, name, teacher_id, created_at,
+          teacher:profiles!classes_teacher_id_fkey (
+            id,
+            full_name,
+            email
+          )
+        `)
+        .order('name', { ascending: true })
 
-    // Filter for teachers and students - admin/staff see all
-    if (userRole !== 'admin' && userRole !== 'staff') {
-      if (userRole === 'teacher' && profileId) {
-        query = query.eq('teacher_id', profileId)
-        logger.info('Filtering for teacher', { profileId })
+      if (error) {
+        logger.error('DB error:', { error: error.message })
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 })
       }
-      // Students would need enrollment-based filtering (TODO)
+
+      logger.info('Classes fetched for admin/staff', { count: classes?.length || 0, userRole })
+      return NextResponse.json({ success: true, classes: classes || [] })
     }
 
-    const { data: classes, error } = await query
+    // Teachers see only their classes
+    if (userRole === 'teacher' && profileId) {
+      const { data: classes, error } = await supabase
+        .from('classes')
+        .select(`
+          id, name, teacher_id, created_at,
+          teacher:profiles!classes_teacher_id_fkey (
+            id,
+            full_name,
+            email
+          )
+        `)
+        .eq('teacher_id', profileId)
+        .order('name', { ascending: true })
 
-    if (error) {
-      logger.error('DB error:', { error: error.message })
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      if (error) {
+        logger.error('DB error:', { error: error.message })
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      }
+
+      logger.info('Classes fetched for teacher', { count: classes?.length || 0, profileId })
+      return NextResponse.json({ success: true, classes: classes || [] })
     }
 
-    logger.info('Classes fetched', { count: classes?.length || 0, userRole })
-    return NextResponse.json({ success: true, classes: classes || [] })
+    // Students see only classes they're enrolled in
+    if (userRole === 'student' && profileId) {
+      // First get enrolled class IDs
+      const { data: enrollments, error: enrollError } = await supabase
+        .from('enrollments')
+        .select('class_id')
+        .eq('student_id', profileId)
+        .eq('status', 'active')
+
+      if (enrollError) {
+        logger.error('Enrollment fetch error:', { error: enrollError.message })
+        return NextResponse.json({ success: false, error: enrollError.message }, { status: 500 })
+      }
+
+      const classIds = (enrollments || []).map(e => e.class_id)
+
+      if (classIds.length === 0) {
+        logger.info('No enrollments found for student', { profileId })
+        return NextResponse.json({ success: true, classes: [] })
+      }
+
+      // Fetch the enrolled classes
+      const { data: classes, error } = await supabase
+        .from('classes')
+        .select(`
+          id, name, teacher_id, created_at,
+          teacher:profiles!classes_teacher_id_fkey (
+            id,
+            full_name,
+            email
+          )
+        `)
+        .in('id', classIds)
+        .order('name', { ascending: true })
+
+      if (error) {
+        logger.error('DB error:', { error: error.message })
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      }
+
+      logger.info('Classes fetched for student', { count: classes?.length || 0, profileId })
+      return NextResponse.json({ success: true, classes: classes || [] })
+    }
+
+    // Fallback - no classes (shouldn't reach here)
+    logger.warn('Unknown role, returning empty classes', { userRole, profileId })
+    return NextResponse.json({ success: true, classes: [] })
   } catch (error) {
     logger.error('Classes API error', { error: error instanceof Error ? error.message : String(error) })
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })

@@ -134,6 +134,11 @@ export default function Header({ profile }: HeaderProps) {
     router.push("/login");
   };
 
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -299,7 +304,7 @@ export default function Header({ profile }: HeaderProps) {
                dark:bg-glass-bg dark:backdrop-blur-2xl dark:border-white/10 dark:shadow-glow">
                 <div className="px-4 py-3 border-b border-border dark:border-white/10 bg-surface-secondary dark:bg-white/5 flex items-center justify-between">
                   <p className="font-semibold text-foreground">Thông báo</p>
-                  <button className="text-xs font-medium text-primary hover:text-primary/80 px-2 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 transition-all cursor-pointer active:scale-95">Đánh dấu đã đọc</button>
+                  <button onClick={markAllAsRead} className="text-xs font-medium text-primary hover:text-primary/80 px-2 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 transition-all cursor-pointer active:scale-95">Đánh dấu đã đọc</button>
                 </div>
                 <div className="max-h-96 overflow-y-auto">
                   {notifications.length === 0 ? (

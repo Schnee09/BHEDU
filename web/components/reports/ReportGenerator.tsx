@@ -157,7 +157,7 @@ export default function ReportGenerator() {
         try {
             const config: ReportConfig = {
                 title: REPORT_OPTIONS.find(r => r.id === selectedReport)?.titleVi || '',
-                schoolName: 'TRƯỜNG THCS-THPT NGUYỄN BỈNH KHIÊM', // TODO: Get from settings
+                schoolName: 'TRUNG TÂM GIÁO DỤC BÙI HOÀNG', // TODO: Get from settings
                 academicYear: '2024-2025',
                 generatedAt: new Date(),
             };
