@@ -12,6 +12,7 @@ import { handleApiError } from '@/lib/api/errors';
 import { validateQuery } from '@/lib/api/validation';
 import { createStudentSchema, studentQuerySchema } from '@/lib/schemas/students';
 import { logger } from '@/lib/logger';
+import { generateStudentCode } from '@/lib/students/studentCode';
 
 // Per-request supabase client will be selected via getDataClient(request)
 
@@ -121,53 +122,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * Generate unique Vietnamese student code
- * Format: HS + Year + Sequential (e.g., HS2025001, HS2025002)
- * HS = Học Sinh (Vietnamese for "student")
- */
-async function generateStudentCode(supabase: any): Promise<string> {
-  const year = new Date().getFullYear();
-  
-  // Get the highest existing student code for current year
-  // Supports both old format (STU-YYYY-NNNN) and new format (HSYYYYNNN)
-  const { data: students, error } = await supabase
-    .from("profiles")
-    .select("student_code")
-    .eq("role", "student")
-    .or(`student_code.like.HS${year}%,student_code.like.STU-${year}-%`)
-    .order("student_code", { ascending: false })
-    .limit(100); // Get more to handle both formats
-
-  if (error) throw error;
-
-  const studentList = (students || []) as Array<{ student_code?: string }>;
-
-  let nextNumber = 1;
-  if (studentList.length > 0) {
-    // Find the highest number from both formats
-    studentList.forEach((student) => {
-      if (student.student_code) {
-        // New format: HSYYYYNNN (e.g., HS2025001)
-        const newFormatMatch = student.student_code.match(/^HS\d{4}(\d{3})$/);
-        if (newFormatMatch) {
-          const num = parseInt(newFormatMatch[1]);
-          if (num >= nextNumber) nextNumber = num + 1;
-        }
-        
-        // Old format: STU-YYYY-NNNN (for backward compatibility)
-        const oldFormatMatch = student.student_code.match(/^STU-\d{4}-(\d{4})$/);
-        if (oldFormatMatch) {
-          const num = parseInt(oldFormatMatch[1]);
-          if (num >= nextNumber) nextNumber = num + 1;
-        }
-      }
-    });
-  }
-
-  // Return new Vietnamese format: HS + Year + 3-digit number
-  return `HS${year}${String(nextNumber).padStart(3, "0")}`;
-}
+// Student code generation is now handled by @/lib/students/studentCode
 
 /**
  * POST /api/admin/students
@@ -175,14 +130,20 @@ async function generateStudentCode(supabase: any): Promise<string> {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { supabase } = await getDataClient(request)
+    const { supabase: reqClient } = await getDataClient(request)
+    // We need service client for auth admin operations and to bypass potential RLS on profile creation
+    const { createServiceClient } = await import('@/lib/supabase/server');
+    const supabaseService = createServiceClient();
+
     const body = await request.json();
     
     // Validate request body with schema
     const validatedData = createStudentSchema.parse(body);
 
-    // Check if email already exists
-    const { data: existingProfile } = await supabase
+    logger.info('Creating student', { email: validatedData.email, full_name: validatedData.full_name });
+
+    // Check if email already exists (using service client to be sure)
+    const { data: existingProfile } = await supabaseService
       .from("profiles")
       .select("id")
       .eq("email", validatedData.email)
@@ -195,12 +156,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-  // Generate student code if not provided
-  const studentCode = validatedData.student_code || (await generateStudentCode(supabase));
+    // Generate student code if not provided
+    const studentCode = validatedData.student_code || (await generateStudentCode(supabaseService));
 
     // Check if student code already exists
     if (validatedData.student_code) {
-      const { data: existingCode } = await supabase
+      const { data: existingCode } = await supabaseService
         .from("profiles")
         .select("id")
         .eq("student_code", validatedData.student_code)
@@ -216,7 +177,7 @@ export async function POST(request: NextRequest) {
 
     // Create auth user first
     const tempPassword = Math.random().toString(36).slice(-10) + "A1!"; // Strong temp password
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: authError } = await supabaseService.auth.admin.createUser({
       email: validatedData.email,
       password: tempPassword,
       email_confirm: true,
@@ -239,7 +200,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create profile with all fields
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseService
       .from("profiles")
       .insert({
         user_id: authData.user.id,
@@ -265,10 +226,12 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
       // If profile creation fails, delete the auth user
-      await supabase.auth.admin.deleteUser(authData.user.id);
+      await supabaseService.auth.admin.deleteUser(authData.user.id);
       logger.error('Failed to create profile:', profileError);
       throw new Error(`Profile creation error: ${profileError.message}`);
     }
+
+    logger.info('Student created successfully', { studentId: profile.id, code: studentCode });
 
     return NextResponse.json({
       success: true,
@@ -277,6 +240,7 @@ export async function POST(request: NextRequest) {
       tempPassword, // Return temp password so admin can give it to student
     }, { status: 201 });
   } catch (error) {
+    logger.error('Create student API error:', error);
     return handleApiError(error);
   }
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { apiFetch } from '@/lib/api/client'
 import { Card, CardHeader, CardBody } from "@/components/ui/Card"
 import { Icons } from "@/components/ui/Icons"
+import PageGuard from "@/components/PageGuard"
 
 interface Setting {
   id: string
@@ -33,6 +34,14 @@ interface GradingScale {
 }
 
 export default function SettingsPage() {
+  return (
+    <PageGuard permissions="system.settings">
+      <SettingsPageContent />
+    </PageGuard>
+  );
+}
+
+function SettingsPageContent() {
   const [activeTab, setActiveTab] = useState('general')
   const [settings, setSettings] = useState<Setting[]>([])
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
@@ -191,8 +200,8 @@ export default function SettingsPage() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.id
-                      ? 'bg-stone-100 text-stone-900'
-                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                    ? 'bg-stone-100 text-stone-900'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                     }`}
                 >
                   <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? 'text-stone-900' : 'text-stone-400'}`} />
@@ -294,8 +303,8 @@ export default function SettingsPage() {
                         {(Array.isArray(scale.scale)
                           ? scale.scale
                           : (typeof scale.scale === 'string' ? JSON.parse(scale.scale) : [])
-                        ).map((grade: { letter: string; min: number; max: number }) => (
-                          <span key={grade.letter} className="px-2 py-1 bg-stone-100 text-stone-700 text-xs rounded border border-stone-200">
+                        ).map((grade: { letter: string; min: number; max: number }, gradeIndex: number) => (
+                          <span key={`${scale.id}-${gradeIndex}-${grade.letter}`} className="px-2 py-1 bg-stone-100 text-stone-700 text-xs rounded border border-stone-200">
                             {grade.letter}: {grade.min}-{grade.max}%
                           </span>
                         ))}

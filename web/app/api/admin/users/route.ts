@@ -7,13 +7,13 @@
  */
 
 import { NextResponse } from 'next/server'
-import { adminAuth } from '@/lib/auth/adminAuth'
+import { staffAuth } from '@/lib/auth/adminAuth'
 import { getDataClient } from '@/lib/auth/dataClient'
 import { sendEmail, generateWelcomeEmail } from '@/lib/email/emailService'
 
 export async function GET(request: Request) {
   try {
-    const authResult = await adminAuth(request)
+    const authResult = await staffAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -74,10 +74,36 @@ export async function GET(request: Request) {
       )
     }
 
-    // Get statistics
-    const { data: stats } = await supabase
-      .rpc('get_user_statistics')
-      .single()
+    // Calculate statistics directly from fetched data
+    let stats = {
+      total_users: count || 0,
+      active_users: 0,
+      inactive_users: 0,
+      admin_count: 0,
+      staff_count: 0,
+      teacher_count: 0,
+      student_count: 0,
+      recent_signups: 0
+    };
+
+    // Try to get stats from RPC, fallback to calculation
+    const { data: rpcStats } = await supabase.rpc('get_user_statistics').single();
+    
+    if (rpcStats) {
+      stats = { ...stats, ...rpcStats };
+    } else if (users && users.length > 0) {
+      // Calculate from fetched users (only accurate for current page)
+      const now = new Date();
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      stats.active_users = users.filter(u => u.is_active).length;
+      stats.inactive_users = users.filter(u => !u.is_active).length;
+      stats.admin_count = users.filter(u => u.role === 'admin').length;
+      stats.staff_count = users.filter(u => u.role === 'staff').length;
+      stats.teacher_count = users.filter(u => u.role === 'teacher').length;
+      stats.student_count = users.filter(u => u.role === 'student').length;
+      stats.recent_signups = users.filter(u => new Date(u.created_at) > oneWeekAgo).length;
+    }
 
     return NextResponse.json({
       success: true,
@@ -89,7 +115,7 @@ export async function GET(request: Request) {
         total: count || 0,
         pages: Math.ceil((count || 0) / limit)
       },
-      statistics: stats || {}
+      statistics: stats
     })
 
   } catch (error) {
@@ -103,7 +129,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authResult = await adminAuth(request)
+    const authResult = await staffAuth(request)
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -131,10 +157,18 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!['admin', 'teacher', 'student'].includes(role)) {
+    if (!['admin', 'staff', 'teacher', 'student'].includes(role)) {
       return NextResponse.json(
-        { error: 'Invalid role. Must be: admin, teacher, or student' },
+        { error: 'Invalid role. Must be: admin, staff, teacher, or student' },
         { status: 400 }
+      )
+    }
+
+    // Only admin can create admin or staff users
+    if ((role === 'admin' || role === 'staff') && authResult.userRole !== 'admin') {
+      return NextResponse.json(
+        { error: 'Only administrators can create admin or staff accounts' },
+        { status: 403 }
       )
     }
 

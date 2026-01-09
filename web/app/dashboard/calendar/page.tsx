@@ -14,6 +14,9 @@ import {
     Flag,
     AlertCircle,
     PartyPopper,
+    X,
+    Trash2,
+    Edit,
 } from "lucide-react";
 
 interface CalendarEvent {
@@ -44,6 +47,20 @@ export default function AcademicCalendarPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<"month" | "list">("month");
     const [filterType, setFilterType] = useState<string>("all");
+    const [showModal, setShowModal] = useState(false);
+    const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+    const [saving, setSaving] = useState(false);
+    const [formData, setFormData] = useState({
+        title: "",
+        event_type: "general",
+        start_date: "",
+        end_date: "",
+        start_time: "",
+        end_time: "",
+        is_all_day: true,
+        description: "",
+        color: "#6366f1"
+    });
 
     const fetchEvents = async () => {
         setLoading(true);
@@ -111,6 +128,55 @@ export default function AcademicCalendarPage() {
         return date.toDateString() === today.toDateString();
     };
 
+    const saveEvent = async () => {
+        if (!formData.title || !formData.start_date) return;
+
+        setSaving(true);
+        try {
+            const payload = {
+                ...formData,
+                end_date: formData.end_date || null,
+                start_time: formData.is_all_day ? null : formData.start_time,
+                end_time: formData.is_all_day ? null : formData.end_time,
+                color: EVENT_TYPES[formData.event_type as keyof typeof EVENT_TYPES]?.color || "#6366f1"
+            };
+
+            if (editingEvent) {
+                await apiFetch(`/api/calendar/${editingEvent.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            } else {
+                await apiFetch('/api/calendar', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+
+            setShowModal(false);
+            fetchEvents();
+        } catch (error) {
+            console.error('Failed to save event:', error);
+            alert('Lỗi khi lưu sự kiện');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const deleteEvent = async (eventId: string) => {
+        if (!confirm('Bạn có chắc muốn xóa sự kiện này?')) return;
+
+        try {
+            await apiFetch(`/api/calendar/${eventId}`, { method: 'DELETE' });
+            fetchEvents();
+        } catch (error) {
+            console.error('Failed to delete event:', error);
+            alert('Lỗi khi xóa sự kiện');
+        }
+    };
+
     const filteredEvents = filterType === "all"
         ? events
         : events.filter((e) => e.event_type === filterType);
@@ -134,7 +200,24 @@ export default function AcademicCalendarPage() {
                     </div>
 
                     {profile?.role === "admin" && (
-                        <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">
+                        <button
+                            onClick={() => {
+                                setEditingEvent(null);
+                                setFormData({
+                                    title: "",
+                                    event_type: "general",
+                                    start_date: new Date().toISOString().split('T')[0],
+                                    end_date: "",
+                                    start_time: "",
+                                    end_time: "",
+                                    is_all_day: true,
+                                    description: "",
+                                    color: "#6366f1"
+                                });
+                                setShowModal(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+                        >
                             <Plus className="w-4 h-4" />
                             Thêm sự kiện
                         </button>
@@ -173,8 +256,8 @@ export default function AcademicCalendarPage() {
                         <button
                             onClick={() => setViewMode("month")}
                             className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === "month"
-                                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                                    : "text-gray-600 dark:text-gray-400"
+                                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                                : "text-gray-600 dark:text-gray-400"
                                 }`}
                         >
                             Tháng
@@ -182,8 +265,8 @@ export default function AcademicCalendarPage() {
                         <button
                             onClick={() => setViewMode("list")}
                             className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === "list"
-                                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                                    : "text-gray-600 dark:text-gray-400"
+                                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                                : "text-gray-600 dark:text-gray-400"
                                 }`}
                         >
                             Danh sách
@@ -233,8 +316,8 @@ export default function AcademicCalendarPage() {
                                     {date && (
                                         <>
                                             <div className={`text-sm font-medium mb-1 ${isToday(date)
-                                                    ? "w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center"
-                                                    : "text-gray-900 dark:text-white"
+                                                ? "w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center"
+                                                : "text-gray-900 dark:text-white"
                                                 }`}>
                                                 {date.getDate()}
                                             </div>
@@ -324,6 +407,123 @@ export default function AcademicCalendarPage() {
                     ))}
                 </div>
             </div>
+
+            {/* Add/Edit Modal */}
+            {showModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                                {editingEvent ? 'Sửa sự kiện' : 'Thêm sự kiện mới'}
+                            </h2>
+                            <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tiêu đề *</label>
+                                <input
+                                    type="text"
+                                    value={formData.title}
+                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    placeholder="Nhập tiêu đề sự kiện"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Loại sự kiện</label>
+                                <select
+                                    value={formData.event_type}
+                                    onChange={(e) => setFormData({ ...formData, event_type: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                >
+                                    {Object.entries(EVENT_TYPES).map(([key, { label }]) => (
+                                        <option key={key} value={key}>{label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ngày bắt đầu *</label>
+                                    <input
+                                        type="date"
+                                        value={formData.start_date}
+                                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ngày kết thúc</label>
+                                    <input
+                                        type="date"
+                                        value={formData.end_date}
+                                        onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="is_all_day"
+                                    checked={formData.is_all_day}
+                                    onChange={(e) => setFormData({ ...formData, is_all_day: e.target.checked })}
+                                    className="w-4 h-4 text-indigo-600"
+                                />
+                                <label htmlFor="is_all_day" className="text-sm text-gray-700 dark:text-gray-300">Cả ngày</label>
+                            </div>
+                            {!formData.is_all_day && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Giờ bắt đầu</label>
+                                        <input
+                                            type="time"
+                                            value={formData.start_time}
+                                            onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                                            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Giờ kết thúc</label>
+                                        <input
+                                            type="time"
+                                            value={formData.end_time}
+                                            onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                                            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mô tả</label>
+                                <textarea
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    placeholder="Mô tả chi tiết (tùy chọn)"
+                                />
+                            </div>
+                        </div>
+                        <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={saveEvent}
+                                disabled={saving || !formData.title || !formData.start_date}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                                {saving ? 'Đang lưu...' : (editingEvent ? 'Lưu thay đổi' : 'Tạo sự kiện')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -36,30 +36,36 @@ export default function SubjectManagementPage() {
 
             // Check if response is HTML (error page)
             if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
-                throw new Error('API returned HTML instead of JSON');
+                console.warn('API returned HTML instead of JSON, using mock data');
+                useMockData();
+                return;
             }
 
             const data = JSON.parse(text);
             if (data.subjects && data.subjects.length > 0) {
                 setSubjects(data.subjects);
             } else {
-                // Fallback to mock data if API returns empty
-                throw new Error('No subjects returned');
+                // API returned empty, use mock data silently
+                useMockData();
             }
         } catch (error) {
             console.error("Failed to fetch subjects:", error);
-            // Mock data matching database
-            setSubjects([
-                { id: "1", name: "Hóa học", code: "HOA", description: "Môn Hóa học", is_active: true },
-                { id: "2", name: "Môn khác", code: "OTHER", description: "Các môn học khác", is_active: true },
-                { id: "3", name: "Ngữ văn", code: "VAN", description: "Môn Ngữ văn", is_active: true },
-                { id: "4", name: "Tiếng Anh", code: "ANH", description: "Môn Tiếng Anh", is_active: true },
-                { id: "5", name: "Toán học", code: "TOAN", description: "Môn Toán", is_active: true },
-                { id: "6", name: "Vật lý", code: "LY", description: "Môn Vật lý", is_active: true },
-            ]);
+            useMockData();
         } finally {
             setLoading(false);
         }
+    };
+
+    const useMockData = () => {
+        // Mock data matching database
+        setSubjects([
+            { id: "1", name: "Hóa học", code: "HOA", description: "Môn Hóa học", is_active: true },
+            { id: "2", name: "Môn khác", code: "OTHER", description: "Các môn học khác", is_active: true },
+            { id: "3", name: "Ngữ văn", code: "VAN", description: "Môn Ngữ văn", is_active: true },
+            { id: "4", name: "Tiếng Anh", code: "ANH", description: "Môn Tiếng Anh", is_active: true },
+            { id: "5", name: "Toán học", code: "TOAN", description: "Môn Toán", is_active: true },
+            { id: "6", name: "Vật lý", code: "LY", description: "Môn Vật lý", is_active: true },
+        ]);
     };
 
     useEffect(() => {

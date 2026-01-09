@@ -34,20 +34,37 @@ export default function SemesterManagementPage() {
         setLoading(true);
         try {
             const response = await apiFetch("/api/semesters");
-            const data = await response.json();
-            setSemesters(data.semesters || []);
+            const text = await response.text();
+
+            // Check if response is HTML (error page)
+            if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
+                console.warn('API returned HTML instead of JSON, using mock data');
+                useMockData();
+                return;
+            }
+
+            const data = JSON.parse(text);
+            if (data.semesters && data.semesters.length > 0) {
+                setSemesters(data.semesters);
+            } else {
+                // API returned empty, use mock data
+                useMockData();
+            }
         } catch (error) {
             console.error("Failed to fetch semesters:", error);
-            // Mock data
-            setSemesters([
-                { id: "1", name: "Học kỳ 1 - 2023-2024", code: "2023-2024-HK1", start_date: "2023-09-05", end_date: "2024-01-15", is_active: false },
-                { id: "2", name: "Học kỳ 2 - 2023-2024", code: "2023-2024-HK2", start_date: "2024-01-20", end_date: "2024-05-31", is_active: false },
-                { id: "3", name: "Học kỳ 1 - 2024-2025", code: "2024-2025-HK1", start_date: "2024-09-05", end_date: "2025-01-15", is_active: false },
-                { id: "4", name: "Học kỳ 2 - 2024-2025", code: "2024-2025-HK2", start_date: "2025-01-20", end_date: "2025-05-31", is_active: true },
-            ]);
+            useMockData();
         } finally {
             setLoading(false);
         }
+    };
+
+    const useMockData = () => {
+        setSemesters([
+            { id: "1", name: "Học kỳ 1 - 2023-2024", code: "2023-2024-HK1", start_date: "2023-09-05", end_date: "2024-01-15", is_active: false },
+            { id: "2", name: "Học kỳ 2 - 2023-2024", code: "2023-2024-HK2", start_date: "2024-01-20", end_date: "2024-05-31", is_active: false },
+            { id: "3", name: "Học kỳ 1 - 2024-2025", code: "2024-2025-HK1", start_date: "2024-09-05", end_date: "2025-01-15", is_active: false },
+            { id: "4", name: "Học kỳ 2 - 2024-2025", code: "2024-2025-HK2", start_date: "2025-01-20", end_date: "2025-05-31", is_active: true },
+        ]);
     };
 
     useEffect(() => {

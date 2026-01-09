@@ -55,7 +55,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const { classId } = await params
     const body = await request.json()
-    const { name, teacherId, academicYearId } = body
+    const { name, code, description, room, schedule, teacherId, teacher_id, academicYearId } = body
 
     // Check if class exists
     const existing = await ClassService.getClassById(classId)
@@ -65,7 +65,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const updated = await ClassService.updateClass(classId, {
       name,
-      teacher_id: teacherId,
+      room,
+      schedule,
+      teacher_id: teacher_id || teacherId,
       academic_year_id: academicYearId,
     })
 

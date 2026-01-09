@@ -44,6 +44,8 @@ export default function ReportCardsPage() {
   const [loading, setLoading] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<string>('')
   const [generatingPdf, setGeneratingPdf] = useState(false)
+  const [bulkGeneratingPdf, setBulkGeneratingPdf] = useState(false)
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 })
 
   useEffect(() => {
     loadClasses()
@@ -141,6 +143,203 @@ export default function ReportCardsPage() {
     } finally {
       setGeneratingPdf(false)
     }
+  }
+
+  // Bulk PDF generation - opens all students in one printable page
+  const handleBulkGeneratePDF = async () => {
+    try {
+      setBulkGeneratingPdf(true)
+      setBulkProgress({ current: 0, total: students.length })
+
+      const classData = classes.find(c => c.id === selectedClass)
+      if (!classData) return
+
+      // Build HTML for all students
+      const allStudentsHTML = students.map((student, index) => {
+        const studentGrade = grades.find(g => g.student_id === student.id)
+        setBulkProgress({ current: index + 1, total: students.length })
+        return generateStudentReportHTML(student, studentGrade, classData, index > 0)
+      }).join('')
+
+      // Create printable document
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) {
+        alert('Please allow popups to generate report cards')
+        return
+      }
+
+      const fullHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Report Cards - ${classData.name}</title>
+  <style>
+    @media print {
+      @page { margin: 0.5in; }
+      .page-break { page-break-after: always; }
+      .page-break:last-child { page-break-after: auto; }
+    }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 8.5in;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    .report-card { padding: 20px; }
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #2563eb;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 { margin: 0; color: #1e40af; font-size: 28px; }
+    .header p { margin: 5px 0; color: #64748b; }
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 30px;
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .info-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }
+    .info-value { font-size: 16px; color: #1e293b; font-weight: 500; }
+    .overall-grade {
+      text-align: center;
+      padding: 30px;
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      border-radius: 12px;
+      margin-bottom: 30px;
+      color: white;
+    }
+    .overall-grade .label { font-size: 14px; opacity: 0.9; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .overall-grade .grade { font-size: 48px; font-weight: bold; margin: 10px 0; }
+    .overall-grade .percentage { font-size: 24px; opacity: 0.9; }
+    .categories-section h2 {
+      font-size: 20px;
+      color: #1e40af;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 10px;
+    }
+    .category-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .category-name { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+    .category-points { font-size: 14px; color: #64748b; }
+    .category-percentage { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
+    .category-letter {
+      font-size: 18px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .grade-a { color: #16a34a; background: #dcfce7; }
+    .grade-b { color: #65a30d; background: #ecfccb; }
+    .grade-c { color: #ca8a04; background: #fef9c3; }
+    .grade-d { color: #ea580c; background: #fed7aa; }
+    .grade-f { color: #dc2626; background: #fecaca; }
+    .signature-section {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+    .signature-line { border-top: 2px solid #1e293b; padding-top: 8px; text-align: center; }
+    .signature-label { font-size: 12px; color: #64748b; text-transform: uppercase; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center; color: #64748b; font-size: 12px; }
+    .no-grades { text-align: center; padding: 40px; color: #64748b; font-style: italic; }
+  </style>
+</head>
+<body>
+  ${allStudentsHTML}
+</body>
+</html>
+      `
+
+      printWindow.document.write(fullHTML)
+      printWindow.document.close()
+
+      setTimeout(() => {
+        printWindow.print()
+      }, 1000)
+
+    } catch (error) {
+      console.error('Failed to generate bulk PDFs:', error)
+      alert('Failed to generate report cards. Please try again.')
+    } finally {
+      setBulkGeneratingPdf(false)
+      setBulkProgress({ current: 0, total: 0 })
+    }
+  }
+
+  const generateStudentReportHTML = (student: Student, grade: StudentGrade | undefined, classData: Class, addPageBreak: boolean): string => {
+    const hasGrades = grade && grade.category_grades.length > 0
+
+    return `
+      <div class="report-card ${addPageBreak ? 'page-break' : ''}">
+        <div class="header">
+          <h1>ACADEMIC REPORT CARD</h1>
+          <p>Bui Hoang Education</p>
+          <p>Academic Year 2025-2026</p>
+        </div>
+
+        <div class="student-info">
+          <div><div class="info-label">Student Name</div><div class="info-value">${student.full_name}</div></div>
+          <div><div class="info-label">Student ID</div><div class="info-value">${student.student_id || 'N/A'}</div></div>
+          <div><div class="info-label">Class</div><div class="info-value">${classData.name} (${classData.code})</div></div>
+          <div><div class="info-label">Date Generated</div><div class="info-value">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div></div>
+        </div>
+
+        ${hasGrades && grade ? `
+          <div class="overall-grade">
+            <div class="label">Overall Grade</div>
+            <div class="grade">${grade.letter_grade}</div>
+            <div class="percentage">${grade.overall_percentage.toFixed(1)}%</div>
+          </div>
+
+          <div class="categories-section">
+            <h2>Category Breakdown</h2>
+            ${grade.category_grades.map(cat => `
+              <div class="category-card">
+                <div>
+                  <div class="category-name">${cat.category_name}</div>
+                  <div class="category-points">${cat.points_earned.toFixed(1)} / ${cat.total_points.toFixed(1)} points</div>
+                </div>
+                <div style="text-align: right;">
+                  <div class="category-percentage" style="color: ${getGradeColorForPrint(cat.percentage)}">${cat.percentage.toFixed(1)}%</div>
+                  <div class="category-letter grade-${cat.letter_grade.toLowerCase().charAt(0)}">${cat.letter_grade}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <div class="no-grades">No grades have been posted yet for this class.</div>
+        `}
+
+        <div class="signature-section">
+          <div><div class="signature-line"><div class="signature-label">Teacher Signature</div></div></div>
+          <div><div class="signature-line"><div class="signature-label">Parent/Guardian Signature</div></div></div>
+        </div>
+
+        <div class="footer">
+          <p>Generated on ${new Date().toLocaleString('en-US')}</p>
+        </div>
+      </div>
+    `
   }
 
   const generatePDF = async (student: Student, grade: StudentGrade) => {
@@ -459,10 +658,31 @@ export default function ReportCardsPage() {
       {/* Student List with Report Cards */}
       {selectedClass && selectedClassData && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-gray-900">
               {selectedClassData.name} - Report Cards
             </h2>
+            {students.length > 0 && (
+              <button
+                onClick={handleBulkGeneratePDF}
+                disabled={bulkGeneratingPdf || loading}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {bulkGeneratingPdf ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle>
+                      <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75"></path>
+                    </svg>
+                    Đang xuất ({bulkProgress.current}/{bulkProgress.total})
+                  </>
+                ) : (
+                  <>
+                    📄 Xuất tất cả ({students.length})
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {loading ? (

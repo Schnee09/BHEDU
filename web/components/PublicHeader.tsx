@@ -29,6 +29,7 @@ export default function PublicHeader({ showNavLinks = true }: PublicHeaderProps)
                             src="/logo.png"
                             alt="Bùi Hoàng Logo"
                             fill
+                            sizes="48px"
                             className="object-contain p-1"
                             priority
                         />

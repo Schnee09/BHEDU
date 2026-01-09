@@ -35,7 +35,7 @@ interface PaymentInfoProps {
 const DEFAULT_BANK_INFO = {
     bankName: 'Vietcombank',
     accountNumber: '1234567890',
-    accountHolder: 'TRƯỜNG THCS-THPT NGUYỄN BỈNH KHIÊM',
+    accountHolder: 'TRUNG TÂM GIÁO DỤC BÙI HOÀNG',
     branch: 'Chi nhánh TP.HCM',
 };
 

@@ -38,7 +38,6 @@ export const routes = {
     analytics: () => '/dashboard/grades/analytics',
     reports: () => '/dashboard/grades/reports',
     transcripts: () => '/dashboard/grades/transcripts',
-    conductEntry: () => '/dashboard/grades/conduct-entry',
     vietnameseEntry: () => '/dashboard/grades/entry', // Now unified with standard entry
   },
 

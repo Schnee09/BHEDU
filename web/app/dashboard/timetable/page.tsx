@@ -13,6 +13,8 @@ import {
     Edit,
     BookOpen,
     Users,
+    X,
+    Trash2,
 } from "lucide-react";
 
 interface TimetableSlot {
@@ -55,6 +57,18 @@ export default function TimetablePage() {
     const [selectedClass, setSelectedClass] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [currentWeek, setCurrentWeek] = useState(new Date());
+    const [subjects, setSubjects] = useState<{ id: string; name: string; code: string }[]>([]);
+    const [teachers, setTeachers] = useState<{ id: string; full_name: string }[]>([]);
+    const [showModal, setShowModal] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [formData, setFormData] = useState({
+        subject_id: "",
+        teacher_id: "",
+        day_of_week: 0,
+        start_time: "07:00",
+        end_time: "07:45",
+        room: ""
+    });
 
     const fetchTimetable = async () => {
         if (!selectedClass) {
@@ -76,25 +90,12 @@ export default function TimetablePage() {
             const data = JSON.parse(text);
             const slots = data.slots || [];
 
-            // Use mock data if no real data exists
-            if (slots.length === 0) {
-                throw new Error('No timetable data');
-            }
-
+            // Use real data (even if empty) - don't fall back to mock
             setSlots(slots);
         } catch (error) {
             console.error("Failed to fetch timetable:", error);
-            // Mock data for demo
-            setSlots([
-                { id: "1", class_id: selectedClass, subject: { id: "1", name: "Toán", code: "TOAN" }, teacher: { id: "1", full_name: "Nguyễn Văn A" }, day_of_week: 0, start_time: "07:00", end_time: "07:45", room: "A101", notes: null },
-                { id: "2", class_id: selectedClass, subject: { id: "2", name: "Văn", code: "VAN" }, teacher: { id: "2", full_name: "Trần Thị B" }, day_of_week: 0, start_time: "07:45", end_time: "08:30", room: "A101", notes: null },
-                { id: "3", class_id: selectedClass, subject: { id: "3", name: "Anh", code: "ANH" }, teacher: { id: "3", full_name: "Lê Văn C" }, day_of_week: 0, start_time: "08:30", end_time: "09:15", room: "A101", notes: null },
-                { id: "4", class_id: selectedClass, subject: { id: "1", name: "Toán", code: "TOAN" }, teacher: { id: "1", full_name: "Nguyễn Văn A" }, day_of_week: 1, start_time: "07:00", end_time: "07:45", room: "A101", notes: null },
-                { id: "5", class_id: selectedClass, subject: { id: "4", name: "Lý", code: "LY" }, teacher: { id: "4", full_name: "Phạm Thị D" }, day_of_week: 1, start_time: "07:45", end_time: "08:30", room: "Lab1", notes: null },
-                { id: "6", class_id: selectedClass, subject: { id: "5", name: "Hóa", code: "HOA" }, teacher: { id: "5", full_name: "Hoàng Văn E" }, day_of_week: 2, start_time: "07:00", end_time: "07:45", room: "Lab2", notes: null },
-                { id: "7", class_id: selectedClass, subject: { id: "3", name: "Anh", code: "ANH" }, teacher: { id: "3", full_name: "Lê Văn C" }, day_of_week: 3, start_time: "07:00", end_time: "07:45", room: "A102", notes: null },
-                { id: "8", class_id: selectedClass, subject: { id: "6", name: "Khác", code: "OTHER" }, teacher: { id: "6", full_name: "Đinh Văn F" }, day_of_week: 6, start_time: "07:00", end_time: "07:45", room: "A103", notes: null },
-            ]);
+            // On error, show empty timetable instead of mock data
+            setSlots([]);
         } finally {
             setLoading(false);
         }
@@ -127,8 +128,49 @@ export default function TimetablePage() {
         }
     };
 
+    const fetchSubjectsAndTeachers = async () => {
+        try {
+            const [subRes, teacherRes] = await Promise.all([
+                apiFetch('/api/subjects'),
+                apiFetch('/api/admin/users?role=teacher')
+            ]);
+            const subData = await subRes.json();
+            const teacherData = await teacherRes.json();
+            setSubjects(subData.subjects || []);
+            setTeachers(teacherData.users || []);
+        } catch (e) {
+            console.error('Failed to fetch subjects/teachers:', e);
+        }
+    };
+
+    const saveSlot = async () => {
+        if (!selectedClass || !formData.start_time || !formData.end_time) return;
+
+        setSaving(true);
+        try {
+            await apiFetch('/api/timetable', {
+                method: 'POST',
+                body: JSON.stringify({
+                    class_id: selectedClass,
+                    ...formData,
+                    subject_id: formData.subject_id || null,
+                    teacher_id: formData.teacher_id || null
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            setShowModal(false);
+            fetchTimetable();
+        } catch (error) {
+            console.error('Failed to save slot:', error);
+            alert('Lỗi khi lưu tiết học');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     useEffect(() => {
         fetchClasses();
+        fetchSubjectsAndTeachers();
     }, []);
 
     useEffect(() => {
@@ -176,7 +218,20 @@ export default function TimetablePage() {
                     </div>
 
                     {profile?.role === "admin" && (
-                        <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors">
+                        <button
+                            onClick={() => {
+                                setFormData({
+                                    subject_id: "",
+                                    teacher_id: "",
+                                    day_of_week: 0,
+                                    start_time: "07:00",
+                                    end_time: "07:45",
+                                    room: ""
+                                });
+                                setShowModal(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
+                        >
                             <Plus className="w-4 h-4" />
                             Thêm tiết học
                         </button>
@@ -306,6 +361,98 @@ export default function TimetablePage() {
                     ))}
                 </div>
             </div>
+
+            {/* Add Slot Modal */}
+            {showModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg">
+                        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Thêm tiết học mới</h2>
+                            <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Môn học</label>
+                                <select
+                                    value={formData.subject_id}
+                                    onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                >
+                                    <option value="">Chọn môn học</option>
+                                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Giáo viên</label>
+                                <select
+                                    value={formData.teacher_id}
+                                    onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                >
+                                    <option value="">Chọn giáo viên</option>
+                                    {teachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Thứ</label>
+                                <select
+                                    value={formData.day_of_week}
+                                    onChange={(e) => setFormData({ ...formData, day_of_week: parseInt(e.target.value) })}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                >
+                                    {DAYS.map((day, i) => <option key={i} value={i}>{day}</option>)}
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Giờ bắt đầu</label>
+                                    <select
+                                        value={formData.start_time}
+                                        onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                    >
+                                        {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Giờ kết thúc</label>
+                                    <select
+                                        value={formData.end_time}
+                                        onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                    >
+                                        {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phòng</label>
+                                <input
+                                    type="text"
+                                    value={formData.room}
+                                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                    placeholder="Ví dụ: A101"
+                                />
+                            </div>
+                        </div>
+                        <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+                            <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                Hủy
+                            </button>
+                            <button
+                                onClick={saveSlot}
+                                disabled={saving}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400"
+                            >
+                                {saving ? 'Đang lưu...' : 'Tạo tiết học'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

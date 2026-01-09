@@ -155,6 +155,7 @@ export default function LandingPage() {
                       src="/logo.png"
                       alt="Logo Large"
                       fill
+                      sizes="96px"
                       className="object-contain"
                     />
                   </div>
@@ -173,7 +174,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 relative">
-                <Image src="/logo.png" alt="Logo" fill className="object-contain" />
+                <Image src="/logo.png" alt="Logo" fill sizes="32px" className="object-contain" />
               </div>
               <span className="font-bold text-gray-900 dark:text-white">BH-EDU</span>
             </div>

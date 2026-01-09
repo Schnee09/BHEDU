@@ -359,7 +359,7 @@ export async function GET(
 
     // Prepare transcript data
     const transcriptData = {
-      school_name: 'TRƯỜNG TRUNG HỌC PHỔ THÔNG BẮC HÀ',
+      school_name: 'TRUNG TÂM GIÁO DỤC BÙI HOÀNG',
       school_address: 'Lào Cai, Việt Nam',
       student_name: student.full_name,
       student_code: student.student_code || student.student_id || 'N/A',

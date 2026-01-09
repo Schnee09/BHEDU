@@ -80,6 +80,7 @@ export default function Sidebar() {
                   src="/logo.png"
                   alt="Bùi Hoàng Logo"
                   fill
+                  sizes="40px"
                   className="object-contain p-0.5"
                   priority
                 />
@@ -100,6 +101,7 @@ export default function Sidebar() {
                   src="/logo.png"
                   alt="Bùi Hoàng Logo"
                   fill
+                  sizes="32px"
                   className="object-contain"
                   priority
                 />

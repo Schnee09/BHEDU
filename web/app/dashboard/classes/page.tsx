@@ -59,6 +59,19 @@ export default function ClassesPageModern() {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [enrolling, setEnrolling] = useState(false);
 
+  // Create Class Modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [teachers, setTeachers] = useState<{ id: string; full_name: string; email: string }[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [newClass, setNewClass] = useState({
+    name: '',
+    code: '',
+    description: '',
+    teacherId: '',
+    room: '',
+    schedule: ''
+  });
+
   // Permission checks
   const canManageClasses = can('classes.create') || can('classes.edit');
   const canEnrollStudents = can('classes.enroll');
@@ -172,6 +185,60 @@ export default function ClassesPageModern() {
     }
   };
 
+  // Create Class handlers
+  const handleOpenCreateModal = async () => {
+    setShowCreateModal(true);
+    setNewClass({ name: '', code: '', description: '', teacherId: '', room: '', schedule: '' });
+
+    // Fetch teachers for dropdown
+    try {
+      const response = await apiFetch('/api/users?role=teacher');
+      if (response.ok) {
+        const data = await response.json();
+        setTeachers(data.users || data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch teachers:', err);
+    }
+  };
+
+  const handleCreateClass = async () => {
+    if (!newClass.name.trim()) {
+      toast.warning('Thiếu thông tin', 'Vui lòng nhập tên lớp học');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const response = await apiFetch('/api/classes', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newClass.name.trim(),
+          code: newClass.code.trim() || undefined,
+          description: newClass.description.trim() || undefined,
+          teacherId: newClass.teacherId || undefined,
+          room: newClass.room.trim() || undefined,
+          schedule: newClass.schedule.trim() || undefined,
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Không thể tạo lớp học');
+      }
+
+      toast.success('Tạo thành công', 'Lớp học đã được tạo');
+      setShowCreateModal(false);
+      setNewClass({ name: '', code: '', description: '', teacherId: '', room: '', schedule: '' });
+      refetch();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Tạo lớp học thất bại';
+      toast.error('Lỗi', message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   // Show loading while permissions or data is loading
   if (permissionsLoading || loading) {
     return (
@@ -241,11 +308,13 @@ export default function ClassesPageModern() {
                   Làm mới
                 </Button>
                 <PermissionGuard permissions="classes.create">
-                  <Link href="/dashboard/classes">
-                    <Button variant="primary" leftIcon={<Icons.Add className="w-4 h-4" />}>
-                      Tạo lớp học
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="primary"
+                    leftIcon={<Icons.Add className="w-4 h-4" />}
+                    onClick={handleOpenCreateModal}
+                  >
+                    Tạo lớp học
+                  </Button>
                 </PermissionGuard>
               </div>
             )}
@@ -505,6 +574,122 @@ export default function ClassesPageModern() {
                 isLoading={enrolling}
               >
                 Đăng ký học sinh
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Create Class Modal */}
+        <Modal
+          isOpen={showCreateModal}
+          onClose={() => {
+            setShowCreateModal(false);
+            setNewClass({ name: '', code: '', description: '', teacherId: '', room: '', schedule: '' });
+          }}
+          title="Tạo lớp học mới"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tên lớp học <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newClass.name}
+                onChange={(e) => setNewClass(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="VD: Lớp 10A1"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mã lớp
+              </label>
+              <input
+                type="text"
+                value={newClass.code}
+                onChange={(e) => setNewClass(prev => ({ ...prev, code: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="VD: 10A1"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Giáo viên chủ nhiệm
+              </label>
+              <select
+                value={newClass.teacherId}
+                onChange={(e) => setNewClass(prev => ({ ...prev, teacherId: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">-- Chọn giáo viên --</option>
+                {teachers.map((teacher) => (
+                  <option key={teacher.id} value={teacher.id}>
+                    {teacher.full_name} ({teacher.email || 'Không có email'})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mô tả
+              </label>
+              <textarea
+                value={newClass.description}
+                onChange={(e) => setNewClass(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                rows={3}
+                placeholder="Mô tả về lớp học..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phòng học
+                </label>
+                <input
+                  type="text"
+                  value={newClass.room}
+                  onChange={(e) => setNewClass(prev => ({ ...prev, room: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="VD: A101"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Lịch học
+                </label>
+                <input
+                  type="text"
+                  value={newClass.schedule}
+                  onChange={(e) => setNewClass(prev => ({ ...prev, schedule: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="VD: Thứ 2-6, 7:00-11:30"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setNewClass({ name: '', code: '', description: '', teacherId: '', room: '', schedule: '' });
+                }}
+              >
+                Hủy
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCreateClass}
+                disabled={!newClass.name.trim() || creating}
+                isLoading={creating}
+              >
+                Tạo lớp học
               </Button>
             </div>
           </div>

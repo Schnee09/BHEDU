@@ -241,7 +241,7 @@ export const HocBaDocument: React.FC<{ data: TranscriptData }> = ({ data }) => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.schoolName}>
-            {data.school_name || 'TRƯỜNG TRUNG HỌC PHỔ THÔNG'}
+            {data.school_name || 'TRUNG TÂM GIÁO DỤC BÙI HOÀNG'}
           </Text>
           {data.school_address && (
             <Text style={{ fontSize: 9, marginBottom: 5 }}>{data.school_address}</Text>
