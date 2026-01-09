@@ -40,7 +40,12 @@ export async function GET(request: Request) {
       .eq('id', classId)
       .single()
 
-    if (!classData || (classData.teacher_id !== authResult.userId && authResult.userRole !== 'admin')) {
+    // Allow access for: class teacher, admin, or staff
+    const isAdmin = authResult.userRole === 'admin'
+    const isStaff = authResult.userRole === 'staff'
+    const isClassTeacher = classData?.teacher_id === authResult.userId
+
+    if (!classData || (!isClassTeacher && !isAdmin && !isStaff)) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }
