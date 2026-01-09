@@ -6,7 +6,7 @@
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#6366f1",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "icons": [
         {
             "src": "/icons/icon-72x72.png",
@@ -64,5 +64,25 @@
     "lang": "vi",
     "dir": "ltr",
     "scope": "/",
-    "prefer_related_applications": false
+    "prefer_related_applications": false,
+    "shortcuts": [
+        {
+            "name": "Nhập điểm",
+            "short_name": "Điểm",
+            "description": "Vào trang nhập điểm nhanh",
+            "url": "/dashboard/grades/entry"
+        },
+        {
+            "name": "Điểm danh",
+            "short_name": "Điểm danh",
+            "description": "Vào trang điểm danh",
+            "url": "/dashboard/attendance"
+        },
+        {
+            "name": "Học sinh",
+            "short_name": "HS",
+            "description": "Quản lý học sinh",
+            "url": "/dashboard/students"
+        }
+    ]
 }
