@@ -73,7 +73,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const supabase = createServiceClient();\n\n    // Table should exist via migrations - we handle missing table below
+    const supabase = createServiceClient();
 
     const { data: note, error } = await supabase
       .from('student_notes')
