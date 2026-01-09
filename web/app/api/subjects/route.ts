@@ -9,13 +9,14 @@ import { createClientFromRequest } from '@/lib/supabase/server'
 import { staffAuth } from '@/lib/auth/adminAuth'
 import { handleApiError, AuthenticationError } from '@/lib/api/errors'
 import { SubjectService } from '@/lib/services/SubjectService'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
     // RLS policies now allow public SELECT
     const supabase = createClientFromRequest(req)
 
-    console.log('[Subjects API] Fetching subjects...')
+
 
     const { data: subjects, error, count } = await supabase
       .from('subjects')
@@ -23,14 +24,10 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: true }) // Get oldest first for dedup
       .order('name')
 
-    console.log('[Subjects API] Result:', { 
-      count, 
-      dataLength: subjects?.length,
-      error: error?.message 
-    })
+
 
     if (error) {
-      console.error('Supabase error:', error)
+      logger.warn('Subjects query error', { error: error.message })
       return NextResponse.json({ success: true, subjects: [] })
     }
 
@@ -46,11 +43,11 @@ export async function GET(req: NextRequest) {
       is_active: true
     }))
 
-    console.log('[Subjects API] After dedup:', uniqueSubjects.length)
+
 
     return NextResponse.json({ success: true, subjects: uniqueSubjects })
   } catch (error: any) {
-    console.error('Error fetching subjects:', error)
+    logger.error('Error fetching subjects', error)
     return NextResponse.json(
       { success: false, error: error.message, subjects: [] },
       { status: 200 }

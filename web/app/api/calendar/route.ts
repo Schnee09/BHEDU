@@ -5,8 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,7 +15,6 @@ export async function GET(req: NextRequest) {
     const year = searchParams.get('year') || new Date().getFullYear().toString()
     const month = searchParams.get('month') || (new Date().getMonth() + 1).toString()
 
-    // RLS policies now allow public SELECT
     const supabase = createClientFromRequest(req)
 
     // Calculate date range for the month
@@ -23,37 +23,30 @@ export async function GET(req: NextRequest) {
     const nextYear = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year)
     const endDate = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`
 
-    console.log('[Calendar API] Fetching events:', { year, month, startDate, endDate })
-
-    const { data: events, error, count } = await supabase
+    const { data: events, error } = await supabase
       .from('calendar_events')
-      .select('id, title, description, event_type, start_date, end_date, start_time, end_time, is_all_day, color', { count: 'exact' })
+      .select('id, title, description, event_type, start_date, end_date, start_time, end_time, is_all_day, color')
       .gte('start_date', startDate)
       .lt('start_date', endDate)
       .order('start_date')
 
-    console.log('[Calendar API] Result:', { count, error: error?.message })
-
     if (error) {
-      console.error('Calendar fetch error:', error)
+      logger.warn('Calendar fetch error', { error: error.message })
       return NextResponse.json({ success: true, events: [] })
     }
 
     return NextResponse.json({ success: true, events: events || [] })
-  } catch (error: any) {
-    console.error('Error fetching calendar events:', error)
+  } catch (error) {
+    logger.error('Error fetching calendar events', error)
     return NextResponse.json({ success: true, events: [] })
   }
 }
 
 export async function POST(req: NextRequest) {
-  console.log('[Calendar API POST] Starting...')
   try {
     const authResult = await adminAuth(req)
-    console.log('[Calendar API POST] Auth result:', { authorized: authResult.authorized, userId: authResult.userId })
     
     if (!authResult.authorized) {
-      console.log('[Calendar API POST] Unauthorized, returning 401')
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -61,23 +54,16 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    console.log('[Calendar API POST] Request body:', body)
-    
     const { title, event_type, start_date, end_date, start_time, end_time, is_all_day, color, description } = body
 
     if (!title || !event_type || !start_date) {
-      console.log('[Calendar API POST] Missing required fields')
       return NextResponse.json(
         { success: false, error: 'title, event_type, and start_date are required' },
         { status: 400 }
       )
     }
 
-    // Use service client for admin writes to bypass RLS
-    console.log('[Calendar API POST] Creating service client...')
-    const { createServiceClient } = await import('@/lib/supabase/server')
     const supabase = createServiceClient()
-    console.log('[Calendar API POST] Service client created')
 
     const insertData: Record<string, any> = {
       title,
@@ -91,7 +77,6 @@ export async function POST(req: NextRequest) {
       description: description || null,
     }
 
-    // Only add created_by if userId is available
     if (authResult.userId) {
       insertData.created_by = authResult.userId
     }
@@ -103,7 +88,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error creating calendar event:', error)
+      logger.error('Error creating calendar event', error)
       return NextResponse.json(
         { success: false, error: error.message },
         { status: 500 }
@@ -112,7 +97,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, event }, { status: 201 })
   } catch (error: any) {
-    console.error('Error in POST /api/calendar:', error)
+    logger.error('Error in POST /api/calendar', error)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

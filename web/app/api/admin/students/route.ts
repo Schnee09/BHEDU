@@ -95,18 +95,36 @@ export async function GET(request: NextRequest) {
     // Calculate statistics (only if no search/filter applied for performance)
     let statistics = null;
     if (!search && !classId && page === 1) {
-      // Get all students for statistics
+      // Get all students for statistics with grade_level
       const { data: allStudents, error: statsError } = await supabase
         .from("profiles")
-        .select("id, created_at")
+        .select("id, is_active, grade_level")
         .eq("role", "student");
 
       if (!statsError && allStudents) {
+        // Calculate by_grade statistics
+        const byGrade: Record<string, number> = {};
+        let activeCount = 0;
+        let inactiveCount = 0;
+
+        allStudents.forEach((student) => {
+          // Count active/inactive
+          if (student.is_active !== false) {
+            activeCount++;
+          } else {
+            inactiveCount++;
+          }
+
+          // Group by grade_level
+          const gradeLevel = student.grade_level || "Chưa xác định";
+          byGrade[gradeLevel] = (byGrade[gradeLevel] || 0) + 1;
+        });
+
         statistics = {
           total_students: allStudents.length,
-          active_students: allStudents.length, // All are active since we don't have status column
-          inactive_students: 0,
-          by_grade: {}, // TODO: Add when we have grade data
+          active_students: activeCount,
+          inactive_students: inactiveCount,
+          by_grade: byGrade,
         };
       }
     }
