@@ -36,7 +36,7 @@ export async function GET(
       .eq('status', 'active')
 
     if (enrollError) {
-      logger.warn('Failed to fetch enrollments', new Error(enrollError.message))
+      logger.warn('Failed to fetch enrollments', { error: enrollError.message })
     }
 
     // Get unique student IDs from grades for this class
@@ -46,7 +46,7 @@ export async function GET(
       .eq('class_id', classId)
 
     if (gradeError) {
-      logger.warn('Failed to fetch class grades', new Error(gradeError.message))
+      logger.warn('Failed to fetch class grades', { error: gradeError.message })
     }
 
     // Also check attendance for this class
@@ -56,7 +56,7 @@ export async function GET(
       .eq('class_id', classId)
 
     if (attendError) {
-      logger.warn('Failed to fetch class attendance', new Error(attendError.message))
+      logger.warn('Failed to fetch class attendance', { error: attendError.message })
     }
 
     // Combine unique student IDs from all sources
