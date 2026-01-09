@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server'
 import { getDataClient } from '@/lib/auth/dataClient'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { sendEmail, generatePasswordResetEmail } from '@/lib/email/emailService'
+import { logger } from '@/lib/logger'
 
 export async function POST(
   request: Request,
@@ -23,9 +24,7 @@ export async function POST(
 
     const { id } = await params
     const body = await request.json()
-    const { new_password } = body
-    // TODO: Implement email notification
-    // const { send_email = false } = body
+    const { new_password, send_email = true } = body
 
     if (!new_password || new_password.length < 6) {
       return NextResponse.json(
@@ -43,7 +42,7 @@ export async function POST(
     )
 
     if (passwordError) {
-      console.error('Error resetting password:', passwordError)
+      logger.error('Error resetting password', passwordError)
       return NextResponse.json(
         { error: 'Failed to reset password' },
         { status: 500 }
@@ -88,7 +87,7 @@ export async function POST(
     })
 
   } catch (error) {
-    console.error('Error in POST /api/admin/users/[id]/reset-password:', error)
+    logger.error('Error in POST /api/admin/users/[id]/reset-password', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

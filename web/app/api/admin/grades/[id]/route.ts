@@ -184,9 +184,28 @@ export async function PATCH(
       return NextResponse.json({ error: 'Failed to update grade' }, { status: 500 })
     }
 
-    // TODO: Create audit log entry for grade override
-    // This would track who changed the grade, when, and what the old value was
-    // Can be implemented when grade_audit_log table is added
+    // Create audit log entry for grade override
+    await supabase.from('audit_logs').insert({
+      user_id: authResult.userId,
+      action: 'grade_override',
+      resource_type: 'grade',
+      resource_id: id,
+      old_data: {
+        points_earned: existingGrade.points_earned,
+        letter_grade: existingGrade.letter_grade,
+        feedback: existingGrade.feedback
+      },
+      new_data: {
+        points_earned: updatedGrade.points_earned,
+        letter_grade: updatedGrade.letter_grade,
+        feedback: updatedGrade.feedback
+      },
+      metadata: {
+        student_id: existingGrade.student_id,
+        assignment_id: existingGrade.assignment_id,
+        reason: body.reason || 'Admin override'
+      }
+    })
 
     return NextResponse.json({
       success: true,
