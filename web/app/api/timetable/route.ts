@@ -5,8 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,12 +21,9 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // RLS policies now allow public SELECT
     const supabase = createClientFromRequest(req)
 
-    console.log('[Timetable API] Fetching slots for class:', classId)
-
-    const { data: slots, error, count } = await supabase
+    const { data: slots, error } = await supabase
       .from('timetable_slots')
       .select(`
         id,
@@ -37,15 +35,13 @@ export async function GET(req: NextRequest) {
         notes,
         subjects (id, name, code),
         profiles!timetable_slots_teacher_id_fkey (id, full_name)
-      `, { count: 'exact' })
+      `)
       .eq('class_id', classId)
       .order('day_of_week')
       .order('start_time')
 
-    console.log('[Timetable API] Result:', { count, error: error?.message })
-
     if (error) {
-      console.error('Timetable fetch error:', error)
+      logger.warn('Timetable fetch error', { error: error.message })
       return NextResponse.json({ success: true, slots: [] })
     }
 
@@ -63,8 +59,8 @@ export async function GET(req: NextRequest) {
     }))
 
     return NextResponse.json({ success: true, slots: transformedSlots })
-  } catch (error: any) {
-    console.error('Error fetching timetable:', error)
+  } catch (error) {
+    logger.error('Error fetching timetable', error)
     return NextResponse.json({ success: true, slots: [] })
   }
 }
@@ -86,8 +82,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Use service client for admin writes to bypass RLS
-    const { createServiceClient } = await import('@/lib/supabase/server')
     const supabase = createServiceClient()
 
     const { data: slot, error } = await supabase
@@ -116,7 +110,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error creating timetable slot:', error)
+      logger.error('Error creating timetable slot', error)
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
@@ -129,8 +123,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, slot: transformedSlot }, { status: 201 })
   } catch (error: any) {
-    console.error('Error in POST /api/timetable:', error)
+    logger.error('Error in POST /api/timetable', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
-
