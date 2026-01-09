@@ -73,12 +73,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const supabase = createServiceClient();
-
-    // Create the table if it doesn't exist
-    await supabase.rpc('create_student_notes_table_if_not_exists').catch(() => {
-      // If RPC doesn't exist, table might already exist or we'll get an error below
-    });
+    const supabase = createServiceClient();\n\n    // Table should exist via migrations - we handle missing table below
 
     const { data: note, error } = await supabase
       .from('student_notes')
