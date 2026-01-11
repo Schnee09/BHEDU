@@ -246,7 +246,7 @@ export default function TimetablePage() {
 
     const getSlotForCell = (dayIndex: number, startTime: string): TimetableSlot | undefined => {
         return slots.find(
-            (slot) => slot.day_of_week === dayIndex && slot.start_time === startTime
+            (slot) => slot.day_of_week === dayIndex && slot.start_time?.substring(0, 5) === startTime
         );
     };
 
