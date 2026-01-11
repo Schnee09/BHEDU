@@ -659,7 +659,7 @@ export default function TimetablePage() {
                                                                             ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
                                                                             : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
                                                                             } ${canEdit ? 'cursor-pointer' : ''}`}
-                                                                        onClick={() => canEdit && openCreateModalForCell(dayIndex, time)}
+                                                                        onClick={() => canEdit && openCreateModalForCell(dayIndex, period.start)}
                                                                     >
                                                                         {isDragOver && (
                                                                             <div className="h-full flex items-center justify-center text-indigo-500 text-xs">
