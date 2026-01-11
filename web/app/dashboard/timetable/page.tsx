@@ -392,9 +392,9 @@ export default function TimetablePage() {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             <div className="flex">
-                {/* Sidebar - Subject/Teacher Palette */}
+                {/* Sidebar - Subject/Teacher Palette (RIGHT SIDE) */}
                 {canEdit && showSidebar && (
-                    <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 fixed left-0 top-0 h-full overflow-y-auto z-40 pt-20">
+                    <div className="w-64 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 fixed right-0 top-0 h-full overflow-y-auto z-40 pt-20 shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                 <span className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
@@ -464,7 +464,7 @@ export default function TimetablePage() {
                 )}
 
                 {/* Main Content */}
-                <div className={`flex-1 ${canEdit && showSidebar ? 'ml-64' : ''} transition-all duration-300`}>
+                <div className={`flex-1 ${canEdit && showSidebar ? 'mr-64' : ''} transition-all duration-300`}>
                     <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
                         {/* Header */}
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
