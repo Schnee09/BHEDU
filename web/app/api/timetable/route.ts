@@ -84,12 +84,20 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient()
 
+    // Get active semester
+    const { data: activeSemester } = await supabase
+      .from('semesters')
+      .select('id')
+      .eq('is_active', true)
+      .single()
+
     const { data: slot, error } = await supabase
       .from('timetable_slots')
       .insert({
         class_id,
         subject_id: subject_id || null,
         teacher_id: teacher_id || null,
+        semester_id: activeSemester?.id || null,
         day_of_week,
         start_time,
         end_time,
