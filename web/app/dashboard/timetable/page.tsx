@@ -60,16 +60,61 @@ const TIME_SLOTS = [
     "13:00", "13:45", "14:30", "15:15", "16:00", "16:45"
 ];
 
-const SUBJECT_COLORS: Record<string, string> = {
-    TOAN: "bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200",
-    VAN: "bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-700 text-purple-800 dark:text-purple-200",
-    ANH: "bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200",
-    LY: "bg-orange-100 dark:bg-orange-900/40 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-200",
-    HOA: "bg-pink-100 dark:bg-pink-900/40 border-pink-300 dark:border-pink-700 text-pink-800 dark:text-pink-200",
-    SINH: "bg-teal-100 dark:bg-teal-900/40 border-teal-300 dark:border-teal-700 text-teal-800 dark:text-teal-200",
-    SU: "bg-amber-100 dark:bg-amber-900/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200",
-    DIA: "bg-cyan-100 dark:bg-cyan-900/40 border-cyan-300 dark:border-cyan-700 text-cyan-800 dark:text-cyan-200",
-    default: "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200",
+const SUBJECT_COLORS: Record<string, { bg: string; border: string; text: string; gradient: string }> = {
+    TOAN: {
+        bg: "bg-blue-50 dark:bg-blue-950/50",
+        border: "border-blue-200 dark:border-blue-800",
+        text: "text-blue-700 dark:text-blue-300",
+        gradient: "from-blue-500 to-indigo-600"
+    },
+    VAN: {
+        bg: "bg-purple-50 dark:bg-purple-950/50",
+        border: "border-purple-200 dark:border-purple-800",
+        text: "text-purple-700 dark:text-purple-300",
+        gradient: "from-purple-500 to-pink-600"
+    },
+    ANH: {
+        bg: "bg-emerald-50 dark:bg-emerald-950/50",
+        border: "border-emerald-200 dark:border-emerald-800",
+        text: "text-emerald-700 dark:text-emerald-300",
+        gradient: "from-emerald-500 to-teal-600"
+    },
+    LY: {
+        bg: "bg-orange-50 dark:bg-orange-950/50",
+        border: "border-orange-200 dark:border-orange-800",
+        text: "text-orange-700 dark:text-orange-300",
+        gradient: "from-orange-500 to-red-600"
+    },
+    HOA: {
+        bg: "bg-pink-50 dark:bg-pink-950/50",
+        border: "border-pink-200 dark:border-pink-800",
+        text: "text-pink-700 dark:text-pink-300",
+        gradient: "from-pink-500 to-rose-600"
+    },
+    SINH: {
+        bg: "bg-teal-50 dark:bg-teal-950/50",
+        border: "border-teal-200 dark:border-teal-800",
+        text: "text-teal-700 dark:text-teal-300",
+        gradient: "from-teal-500 to-cyan-600"
+    },
+    SU: {
+        bg: "bg-amber-50 dark:bg-amber-950/50",
+        border: "border-amber-200 dark:border-amber-800",
+        text: "text-amber-700 dark:text-amber-300",
+        gradient: "from-amber-500 to-yellow-600"
+    },
+    DIA: {
+        bg: "bg-cyan-50 dark:bg-cyan-950/50",
+        border: "border-cyan-200 dark:border-cyan-800",
+        text: "text-cyan-700 dark:text-cyan-300",
+        gradient: "from-cyan-500 to-sky-600"
+    },
+    default: {
+        bg: "bg-slate-50 dark:bg-slate-800/50",
+        border: "border-slate-200 dark:border-slate-700",
+        text: "text-slate-700 dark:text-slate-300",
+        gradient: "from-slate-500 to-gray-600"
+    },
 };
 
 const ROOMS = ["A101", "A102", "A103", "A201", "A202", "B101", "B102", "B201", "Lab1", "Lab2", "Gym"];
@@ -351,10 +396,15 @@ export default function TimetablePage() {
                 {canEdit && showSidebar && (
                     <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 fixed left-0 top-0 h-full overflow-y-auto z-40 pt-20">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-bold text-gray-900 dark:text-white">Kéo thả</h3>
+                            <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <span className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                    <GripVertical className="w-4 h-4 text-white" />
+                                </span>
+                                Kéo thả
+                            </h3>
                             <button
                                 onClick={() => setShowSidebar(false)}
-                                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -362,42 +412,49 @@ export default function TimetablePage() {
 
                         {/* Subjects */}
                         <div className="mb-6">
-                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider flex items-center gap-2">
                                 <BookOpen className="w-4 h-4" />
                                 Môn học
                             </h4>
-                            <div className="space-y-1">
-                                {subjects.map(subject => (
-                                    <div
-                                        key={subject.id}
-                                        draggable
-                                        onDragStart={(e) => handleDragStart(e, {
-                                            type: 'subject',
-                                            id: subject.id,
-                                            name: subject.name,
-                                            code: subject.code
-                                        })}
-                                        className={`p-2 rounded-lg border cursor-grab active:cursor-grabbing ${getSubjectColor(subject.code)} flex items-center gap-2 hover:shadow-md transition-shadow`}
-                                    >
-                                        <GripVertical className="w-3 h-3 opacity-50" />
-                                        <span className="text-sm font-medium">{subject.name}</span>
-                                    </div>
-                                ))}
+                            <div className="space-y-2">
+                                {subjects.map(subject => {
+                                    const colors = getSubjectColor(subject.code);
+                                    return (
+                                        <div
+                                            key={subject.id}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, {
+                                                type: 'subject',
+                                                id: subject.id,
+                                                name: subject.name,
+                                                code: subject.code
+                                            })}
+                                            className={`rounded-xl overflow-hidden border shadow-sm hover:shadow-lg transition-all duration-200 cursor-grab active:cursor-grabbing active:scale-95 ${colors.bg} ${colors.border}`}
+                                        >
+                                            <div className={`h-1 bg-gradient-to-r ${colors.gradient}`} />
+                                            <div className="p-2.5 flex items-center gap-2">
+                                                <GripVertical className={`w-4 h-4 ${colors.text} opacity-40`} />
+                                                <span className={`text-sm font-semibold ${colors.text}`}>{subject.name}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
                         {/* Rooms Quick Reference */}
                         <div>
-                            <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider flex items-center gap-2">
                                 <Building className="w-4 h-4" />
                                 Phòng học
                             </h4>
-                            <div className="grid grid-cols-2 gap-1">
+                            <div className="grid grid-cols-2 gap-2">
                                 {ROOMS.map(room => (
                                     <div
                                         key={room}
-                                        className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs text-center text-gray-700 dark:text-gray-300"
+                                        className="px-3 py-2 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-lg text-xs text-center font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm"
                                     >
+                                        <MapPin className="w-3 h-3 inline mr-1 opacity-50" />
                                         {room}
                                     </div>
                                 ))}
@@ -541,22 +598,27 @@ export default function TimetablePage() {
                                                             >
                                                                 {slot ? (
                                                                     <div
-                                                                        className={`p-2 rounded-lg border-2 ${getSubjectColor(slot.subject?.code)} cursor-pointer hover:shadow-lg transition-all relative group`}
+                                                                        className={`rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-200 relative group cursor-pointer ${getSubjectColor(slot.subject?.code).bg} border ${getSubjectColor(slot.subject?.code).border}`}
                                                                         onClick={() => openEditModal(slot)}
                                                                     >
-                                                                        <div className="font-semibold text-sm">
-                                                                            {slot.subject?.name || "N/A"}
-                                                                        </div>
-                                                                        <div className="flex items-center gap-1 text-xs mt-1 opacity-80">
-                                                                            <Users className="w-3 h-3" />
-                                                                            {slot.teacher?.full_name || "Chưa phân công"}
-                                                                        </div>
-                                                                        {slot.room && (
-                                                                            <div className="flex items-center gap-1 text-xs mt-0.5 opacity-70">
-                                                                                <MapPin className="w-3 h-3" />
-                                                                                <span className="font-medium">{slot.room}</span>
+                                                                        {/* Gradient header bar */}
+                                                                        <div className={`h-1.5 bg-gradient-to-r ${getSubjectColor(slot.subject?.code).gradient}`} />
+
+                                                                        <div className="p-2">
+                                                                            <div className={`font-bold text-sm ${getSubjectColor(slot.subject?.code).text}`}>
+                                                                                {slot.subject?.name || "N/A"}
                                                                             </div>
-                                                                        )}
+                                                                            <div className={`flex items-center gap-1 text-xs mt-1.5 ${getSubjectColor(slot.subject?.code).text} opacity-75`}>
+                                                                                <Users className="w-3 h-3" />
+                                                                                <span className="truncate">{slot.teacher?.full_name || "Ch\u01b0a ph\u00e2n c\u00f4ng"}</span>
+                                                                            </div>
+                                                                            {slot.room && (
+                                                                                <div className={`flex items-center gap-1 text-xs mt-1 ${getSubjectColor(slot.subject?.code).text} opacity-60`}>
+                                                                                    <MapPin className="w-3 h-3" />
+                                                                                    <span className="font-semibold">{slot.room}</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
 
                                                                         {/* Delete button */}
                                                                         {canEdit && (
@@ -566,8 +628,8 @@ export default function TimetablePage() {
                                                                                     deleteSlot(slot.id);
                                                                                 }}
                                                                                 disabled={deleting === slot.id}
-                                                                                className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded transition-all shadow"
-                                                                                title="Xóa tiết học"
+                                                                                className="absolute top-2 right-1 p-1.5 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all shadow-lg"
+                                                                                title="X\u00f3a ti\u1ebft h\u1ecdc"
                                                                             >
                                                                                 {deleting === slot.id ? (
                                                                                     <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -580,8 +642,8 @@ export default function TimetablePage() {
                                                                 ) : (
                                                                     <div
                                                                         className={`h-16 rounded-lg border-2 border-dashed transition-all ${isDragOver
-                                                                                ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
-                                                                                : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                                                                            ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
+                                                                            : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
                                                                             } ${canEdit ? 'cursor-pointer' : ''}`}
                                                                         onClick={() => canEdit && openCreateModalForCell(dayIndex, time)}
                                                                     >
@@ -604,12 +666,16 @@ export default function TimetablePage() {
                         )}
 
                         {/* Legend */}
-                        <div className="mt-6 flex flex-wrap gap-2">
-                            {subjects.slice(0, 8).map((subject) => (
-                                <div key={subject.id} className={`px-3 py-1 rounded-lg text-xs font-medium border ${getSubjectColor(subject.code)}`}>
-                                    {subject.name}
-                                </div>
-                            ))}
+                        <div className="mt-8 flex flex-wrap gap-3">
+                            {subjects.slice(0, 8).map((subject) => {
+                                const colors = getSubjectColor(subject.code);
+                                return (
+                                    <div key={subject.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-sm ${colors.bg} ${colors.border} ${colors.text}`}>
+                                        <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${colors.gradient}`} />
+                                        {subject.name}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
