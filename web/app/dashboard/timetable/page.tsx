@@ -61,6 +61,8 @@ export default function TimetablePage() {
     const [teachers, setTeachers] = useState<{ id: string; full_name: string }[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [editingSlot, setEditingSlot] = useState<TimetableSlot | null>(null);
+    const [deleting, setDeleting] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         subject_id: "",
         teacher_id: "",
@@ -148,8 +150,12 @@ export default function TimetablePage() {
 
         setSaving(true);
         try {
-            await apiFetch('/api/timetable', {
-                method: 'POST',
+            const isEditing = !!editingSlot;
+            const url = isEditing ? `/api/timetable/${editingSlot.id}` : '/api/timetable';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            await apiFetch(url, {
+                method,
                 body: JSON.stringify({
                     class_id: selectedClass,
                     ...formData,
@@ -159,6 +165,7 @@ export default function TimetablePage() {
                 headers: { 'Content-Type': 'application/json' }
             });
             setShowModal(false);
+            setEditingSlot(null);
             fetchTimetable();
         } catch (error) {
             console.error('Failed to save slot:', error);
@@ -166,6 +173,49 @@ export default function TimetablePage() {
         } finally {
             setSaving(false);
         }
+    };
+
+    const deleteSlot = async (slotId: string) => {
+        if (!confirm('Bạn có chắc muốn xóa tiết học này?')) return;
+
+        setDeleting(slotId);
+        try {
+            await apiFetch(`/api/timetable/${slotId}`, {
+                method: 'DELETE'
+            });
+            fetchTimetable();
+        } catch (error) {
+            console.error('Failed to delete slot:', error);
+            alert('Lỗi khi xóa tiết học');
+        } finally {
+            setDeleting(null);
+        }
+    };
+
+    const openEditModal = (slot: TimetableSlot) => {
+        setEditingSlot(slot);
+        setFormData({
+            subject_id: slot.subject?.id || "",
+            teacher_id: slot.teacher?.id || "",
+            day_of_week: slot.day_of_week,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+            room: slot.room || ""
+        });
+        setShowModal(true);
+    };
+
+    const openCreateModal = () => {
+        setEditingSlot(null);
+        setFormData({
+            subject_id: "",
+            teacher_id: "",
+            day_of_week: 0,
+            start_time: "07:00",
+            end_time: "07:45",
+            room: ""
+        });
+        setShowModal(true);
     };
 
     useEffect(() => {
@@ -219,17 +269,7 @@ export default function TimetablePage() {
 
                     {profile?.role === "admin" && (
                         <button
-                            onClick={() => {
-                                setFormData({
-                                    subject_id: "",
-                                    teacher_id: "",
-                                    day_of_week: 0,
-                                    start_time: "07:00",
-                                    end_time: "07:45",
-                                    room: ""
-                                });
-                                setShowModal(true);
-                            }}
+                            onClick={openCreateModal}
                             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
                         >
                             <Plus className="w-4 h-4" />
@@ -323,19 +363,40 @@ export default function TimetablePage() {
                                                 return (
                                                     <td key={dayIndex} className="p-1">
                                                         {slot ? (
-                                                            <div className={`p-2 rounded-lg border ${getSubjectColor(slot.subject?.code)} cursor-pointer hover:scale-[1.02] transition-transform`}>
+                                                            <div
+                                                                className={`p-2 rounded-lg border ${getSubjectColor(slot.subject?.code)} cursor-pointer hover:scale-[1.02] transition-transform relative group`}
+                                                                onClick={() => profile?.role === "admin" && openEditModal(slot)}
+                                                            >
                                                                 <div className="font-medium text-sm text-gray-900 dark:text-white">
                                                                     {slot.subject?.name || "N/A"}
                                                                 </div>
                                                                 <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mt-1">
                                                                     <Users className="w-3 h-3" />
-                                                                    {slot.teacher?.full_name}
+                                                                    {slot.teacher?.full_name || "N/A"}
                                                                 </div>
                                                                 {slot.room && (
                                                                     <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500 mt-0.5">
                                                                         <MapPin className="w-3 h-3" />
                                                                         {slot.room}
                                                                     </div>
+                                                                )}
+                                                                {/* Delete button (admin only) */}
+                                                                {profile?.role === "admin" && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            deleteSlot(slot.id);
+                                                                        }}
+                                                                        disabled={deleting === slot.id}
+                                                                        className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded transition-all"
+                                                                        title="Xóa tiết học"
+                                                                    >
+                                                                        {deleting === slot.id ? (
+                                                                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                                        ) : (
+                                                                            <Trash2 className="w-3 h-3" />
+                                                                        )}
+                                                                    </button>
                                                                 )}
                                                             </div>
                                                         ) : (
@@ -367,8 +428,10 @@ export default function TimetablePage() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg">
                         <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Thêm tiết học mới</h2>
-                            <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                                {editingSlot ? 'Chỉnh sửa tiết học' : 'Thêm tiết học mới'}
+                            </h2>
+                            <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -439,7 +502,7 @@ export default function TimetablePage() {
                             </div>
                         </div>
                         <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-                            <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                            <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                                 Hủy
                             </button>
                             <button
@@ -447,7 +510,7 @@ export default function TimetablePage() {
                                 disabled={saving}
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400"
                             >
-                                {saving ? 'Đang lưu...' : 'Tạo tiết học'}
+                                {saving ? 'Đang lưu...' : (editingSlot ? 'Cập nhật' : 'Tạo tiết học')}
                             </button>
                         </div>
                     </div>

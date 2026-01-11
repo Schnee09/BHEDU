@@ -5,15 +5,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
-import { adminAuth } from '@/lib/auth/adminAuth'
+import { createServiceClient } from '@/lib/supabase/server'
+import { staffAuth } from '@/lib/auth/adminAuth'
+import { logger } from '@/lib/logger'
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await adminAuth(req)
+    const authResult = await staffAuth(req)
     if (!authResult.authorized) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
@@ -22,7 +23,7 @@ export async function PUT(
     const body = await req.json()
     const { class_id, subject_id, teacher_id, day_of_week, start_time, end_time, room, notes } = body
 
-    const supabase = createClientFromRequest(req)
+    const supabase = createServiceClient()
 
     const { data: slot, error } = await supabase
       .from('timetable_slots')
@@ -52,7 +53,7 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error('Error updating timetable slot:', error)
+      logger.error('Error updating timetable slot', error)
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
@@ -64,7 +65,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true, slot: transformedSlot })
   } catch (error: any) {
-    console.error('Error in PUT /api/timetable/[id]:', error)
+    logger.error('Error in PUT /api/timetable/[id]', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
@@ -74,13 +75,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await adminAuth(req)
+    const authResult = await staffAuth(req)
     if (!authResult.authorized) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
-    const supabase = createClientFromRequest(req)
+    const supabase = createServiceClient()
 
     const { error } = await supabase
       .from('timetable_slots')
@@ -88,13 +89,13 @@ export async function DELETE(
       .eq('id', id)
 
     if (error) {
-      console.error('Error deleting timetable slot:', error)
+      logger.error('Error deleting timetable slot', error)
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Error in DELETE /api/timetable/[id]:', error)
+    logger.error('Error in DELETE /api/timetable/[id]', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
