@@ -54,11 +54,24 @@ interface DragItem {
     code?: string;
 }
 
-const DAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
-const TIME_SLOTS = [
-    "07:00", "07:45", "08:30", "09:15", "10:00", "10:45",
-    "13:00", "13:45", "14:30", "15:15", "16:00", "16:45"
+const DAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
+
+// Period-based time slots matching Vietnamese school schedule
+const PERIODS = [
+    { id: 1, label: "Tiết 1", time: "7:30 - 8:15", start: "07:30", end: "08:15" },
+    { id: 2, label: "Tiết 2", time: "8:15 - 9:00", start: "08:15", end: "09:00" },
+    { id: 3, label: "Tiết 3", time: "9:00 - 9:45", start: "09:00", end: "09:45" },
+    { id: 4, label: "Tiết 4", time: "10:00 - 10:45", start: "10:00", end: "10:45" },
+    { id: 5, label: "Tiết 5", time: "10:45 - 11:30", start: "10:45", end: "11:30" },
+    { id: 6, label: "Tiết 6", time: "13:00 - 13:45", start: "13:00", end: "13:45" },
+    { id: 7, label: "Tiết 7", time: "13:45 - 14:30", start: "13:45", end: "14:30" },
+    { id: 8, label: "Tiết 8", time: "14:30 - 15:15", start: "14:30", end: "15:15" },
+    { id: 9, label: "Tiết 9", time: "15:30 - 16:15", start: "15:30", end: "16:15" },
+    { id: 10, label: "Tiết 10", time: "16:15 - 17:00", start: "16:15", end: "17:00" },
 ];
+
+// For backward compatibility
+const TIME_SLOTS = PERIODS.map(p => p.start);
 
 const SUBJECT_COLORS: Record<string, { bg: string; border: string; text: string; gradient: string }> = {
     TOAN: {
@@ -143,8 +156,8 @@ export default function TimetablePage() {
         room: ""
     });
 
-    // Check if user can edit (staff or admin)
-    const canEdit = profile?.role === "admin" || profile?.role === "staff" || profile?.role === "teacher";
+    // Check if user can edit (staff or admin only)
+    const canEdit = profile?.role === "admin" || profile?.role === "staff";
 
     const fetchTimetable = async () => {
         if (!selectedClass) {
@@ -566,26 +579,27 @@ export default function TimetablePage() {
                                     <table className="w-full min-w-[900px]">
                                         <thead>
                                             <tr className="border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750">
-                                                <th className="w-20 p-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-                                                    <Clock className="w-4 h-4 inline mr-1" /> Giờ
+                                                <th className="w-32 p-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
+                                                    <Clock className="w-4 h-4 inline mr-1" /> Tiết
                                                 </th>
                                                 {DAYS.map((day, i) => (
-                                                    <th key={day} className="p-3 text-center min-w-[120px]">
+                                                    <th key={day} className="p-3 text-center min-w-[130px]">
                                                         <div className="text-sm font-semibold text-gray-900 dark:text-white">{day}</div>
-                                                        <div className="text-xs text-gray-500">{weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</div>
+                                                        <div className="text-xs text-gray-500">({weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })})</div>
                                                     </th>
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                                            {TIME_SLOTS.map((time) => (
-                                                <tr key={time} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20">
-                                                    <td className="p-2 text-sm font-medium text-gray-500 dark:text-gray-400 text-center border-r border-gray-100 dark:border-gray-700">
-                                                        {time}
+                                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                            {PERIODS.map((period) => (
+                                                <tr key={period.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20">
+                                                    <td className="p-2 text-center border-r border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                                                        <div className="text-sm font-bold text-gray-700 dark:text-gray-300">{period.label}</div>
+                                                        <div className="text-xs text-gray-500">({period.time})</div>
                                                     </td>
                                                     {DAYS.map((_, dayIndex) => {
-                                                        const slot = getSlotForCell(dayIndex, time);
-                                                        const cellKey = `${dayIndex}-${time}`;
+                                                        const slot = getSlotForCell(dayIndex, period.start);
+                                                        const cellKey = `${dayIndex}-${period.start}`;
                                                         const isDragOver = dragOverCell === cellKey;
 
                                                         return (
@@ -594,7 +608,7 @@ export default function TimetablePage() {
                                                                 className="p-1"
                                                                 onDragOver={(e) => canEdit && !slot && handleDragOver(e, cellKey)}
                                                                 onDragLeave={handleDragLeave}
-                                                                onDrop={(e) => canEdit && !slot && handleDrop(e, dayIndex, time)}
+                                                                onDrop={(e) => canEdit && !slot && handleDrop(e, dayIndex, period.start)}
                                                             >
                                                                 {slot ? (
                                                                     <div
