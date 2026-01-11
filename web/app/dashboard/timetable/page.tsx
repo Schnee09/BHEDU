@@ -12,6 +12,10 @@ import {
     Users,
     BookOpen,
     Building,
+    Plus,
+    X,
+    Trash2,
+    Edit3,
 } from "lucide-react";
 
 interface TimetableSlot {
@@ -32,20 +36,33 @@ interface ClassOption {
     name: string;
 }
 
+interface SubjectOption {
+    id: string;
+    name: string;
+    code: string;
+}
+
+interface TeacherOption {
+    id: string;
+    full_name: string;
+}
+
 const DAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
 const PERIODS = [
-    { id: 1, label: "Tiết 1", time: "7:30 - 8:15", start: "07:30" },
-    { id: 2, label: "Tiết 2", time: "8:15 - 9:00", start: "08:15" },
-    { id: 3, label: "Tiết 3", time: "9:00 - 9:45", start: "09:00" },
-    { id: 4, label: "Tiết 4", time: "10:00 - 10:45", start: "10:00" },
-    { id: 5, label: "Tiết 5", time: "10:45 - 11:30", start: "10:45" },
-    { id: 6, label: "Tiết 6", time: "13:00 - 13:45", start: "13:00" },
-    { id: 7, label: "Tiết 7", time: "13:45 - 14:30", start: "13:45" },
-    { id: 8, label: "Tiết 8", time: "14:30 - 15:15", start: "14:30" },
-    { id: 9, label: "Tiết 9", time: "15:30 - 16:15", start: "15:30" },
-    { id: 10, label: "Tiết 10", time: "16:15 - 17:00", start: "16:15" },
+    { id: 1, label: "Tiết 1", time: "7:30 - 8:15", start: "07:30", end: "08:15" },
+    { id: 2, label: "Tiết 2", time: "8:15 - 9:00", start: "08:15", end: "09:00" },
+    { id: 3, label: "Tiết 3", time: "9:00 - 9:45", start: "09:00", end: "09:45" },
+    { id: 4, label: "Tiết 4", time: "10:00 - 10:45", start: "10:00", end: "10:45" },
+    { id: 5, label: "Tiết 5", time: "10:45 - 11:30", start: "10:45", end: "11:30" },
+    { id: 6, label: "Tiết 6", time: "13:00 - 13:45", start: "13:00", end: "13:45" },
+    { id: 7, label: "Tiết 7", time: "13:45 - 14:30", start: "13:45", end: "14:30" },
+    { id: 8, label: "Tiết 8", time: "14:30 - 15:15", start: "14:30", end: "15:15" },
+    { id: 9, label: "Tiết 9", time: "15:30 - 16:15", start: "15:30", end: "16:15" },
+    { id: 10, label: "Tiết 10", time: "16:15 - 17:00", start: "16:15", end: "17:00" },
 ];
+
+const ROOMS = ["A101", "A102", "A103", "A201", "A202", "B101", "B102", "B201", "Lab1", "Lab2"];
 
 const SUBJECT_COLORS: Record<string, string> = {
     MATH: "bg-blue-100 border-blue-300 text-blue-800",
@@ -61,9 +78,25 @@ export default function TimetablePage() {
     const { profile, loading: profileLoading } = useProfile();
     const [slots, setSlots] = useState<TimetableSlot[]>([]);
     const [classes, setClasses] = useState<ClassOption[]>([]);
+    const [subjects, setSubjects] = useState<SubjectOption[]>([]);
+    const [teachers, setTeachers] = useState<TeacherOption[]>([]);
     const [selectedClass, setSelectedClass] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [currentWeek, setCurrentWeek] = useState(new Date());
+
+    // Modal state
+    const [showModal, setShowModal] = useState(false);
+    const [editingSlot, setEditingSlot] = useState<TimetableSlot | null>(null);
+    const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState<string | null>(null);
+    const [formData, setFormData] = useState({
+        subject_id: "",
+        teacher_id: "",
+        day_of_week: 0,
+        start_time: "07:30",
+        end_time: "08:15",
+        room: ""
+    });
 
     const isAdmin = profile?.role === "admin" || profile?.role === "staff";
 
@@ -72,12 +105,10 @@ export default function TimetablePage() {
         setLoading(true);
         try {
             if (isAdmin && selectedClass) {
-                // Admin: Fetch for selected class
                 const response = await apiFetch(`/api/timetable?class_id=${selectedClass}`);
                 const data = await response.json();
                 setSlots(data.slots || []);
             } else if (!isAdmin) {
-                // Student/Teacher: Fetch their own timetable
                 const response = await apiFetch('/api/timetable/my');
                 const data = await response.json();
                 setSlots(data.slots || []);
@@ -105,10 +136,103 @@ export default function TimetablePage() {
         }
     };
 
+    const fetchSubjectsAndTeachers = async () => {
+        try {
+            const [subRes, teacherRes] = await Promise.all([
+                apiFetch('/api/subjects'),
+                apiFetch('/api/admin/users?role=teacher')
+            ]);
+            const subData = await subRes.json();
+            const teacherData = await teacherRes.json();
+            setSubjects(subData.subjects || []);
+            setTeachers(teacherData.users || []);
+        } catch (e) {
+            console.error('Failed to fetch subjects/teachers:', e);
+        }
+    };
+
+    const saveSlot = async () => {
+        if (!selectedClass || !formData.subject_id) return;
+
+        setSaving(true);
+        try {
+            const isEditing = !!editingSlot;
+            const url = isEditing ? `/api/timetable/${editingSlot.id}` : '/api/timetable';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            const response = await apiFetch(url, {
+                method,
+                body: JSON.stringify({
+                    class_id: selectedClass,
+                    ...formData,
+                    subject_id: formData.subject_id || null,
+                    teacher_id: formData.teacher_id || null
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to save');
+            }
+
+            setShowModal(false);
+            setEditingSlot(null);
+            fetchTimetable();
+        } catch (error: any) {
+            console.error('Failed to save slot:', error);
+            alert('Lỗi khi lưu: ' + (error.message || 'Unknown error'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const deleteSlot = async (slotId: string) => {
+        if (!confirm('Bạn có chắc muốn xóa tiết học này?')) return;
+
+        setDeleting(slotId);
+        try {
+            await apiFetch(`/api/timetable/${slotId}`, { method: 'DELETE' });
+            fetchTimetable();
+        } catch (error) {
+            console.error('Failed to delete slot:', error);
+            alert('Lỗi khi xóa tiết học');
+        } finally {
+            setDeleting(null);
+        }
+    };
+
+    const openCreateModal = (dayIndex?: number, period?: typeof PERIODS[0]) => {
+        setEditingSlot(null);
+        setFormData({
+            subject_id: "",
+            teacher_id: "",
+            day_of_week: dayIndex ?? 0,
+            start_time: period?.start ?? "07:30",
+            end_time: period?.end ?? "08:15",
+            room: ""
+        });
+        setShowModal(true);
+    };
+
+    const openEditModal = (slot: TimetableSlot) => {
+        setEditingSlot(slot);
+        setFormData({
+            subject_id: slot.subject?.id || "",
+            teacher_id: slot.teacher?.id || "",
+            day_of_week: slot.day_of_week,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+            room: slot.room || ""
+        });
+        setShowModal(true);
+    };
+
     useEffect(() => {
         if (profileLoading) return;
         if (isAdmin) {
             fetchClasses();
+            fetchSubjectsAndTeachers();
         } else {
             fetchTimetable();
         }
@@ -170,6 +294,17 @@ export default function TimetablePage() {
                             {isAdmin && "Chọn lớp để xem và quản lý thời khóa biểu"}
                         </p>
                     </div>
+
+                    {/* Add button for admin */}
+                    {isAdmin && selectedClass && (
+                        <button
+                            onClick={() => openCreateModal()}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-lg"
+                        >
+                            <Plus className="w-5 h-5" />
+                            Thêm tiết học
+                        </button>
+                    )}
                 </div>
 
                 {/* Controls */}
@@ -244,15 +379,6 @@ export default function TimetablePage() {
                         <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-500">Chọn một lớp để xem thời khóa biểu</p>
                     </div>
-                ) : slots.length === 0 ? (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-12 text-center">
-                        <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500">
-                            {profile?.role === "student" && "Bạn chưa có lịch học nào"}
-                            {profile?.role === "teacher" && "Bạn chưa được phân công giảng dạy"}
-                            {isAdmin && "Lớp này chưa có thời khóa biểu"}
-                        </p>
-                    </div>
                 ) : (
                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-lg">
                         <div className="overflow-x-auto">
@@ -285,7 +411,10 @@ export default function TimetablePage() {
                                                 return (
                                                     <td key={dayIndex} className="p-1">
                                                         {slot ? (
-                                                            <div className={`p-2 rounded-lg border-2 ${getSubjectColor(slot.subject?.code)}`}>
+                                                            <div
+                                                                className={`p-2 rounded-lg border-2 ${getSubjectColor(slot.subject?.code)} relative group ${isAdmin ? 'cursor-pointer hover:shadow-md' : ''}`}
+                                                                onClick={() => isAdmin && openEditModal(slot)}
+                                                            >
                                                                 <div className="font-bold text-sm">
                                                                     {slot.subject?.name || "N/A"}
                                                                 </div>
@@ -305,9 +434,33 @@ export default function TimetablePage() {
                                                                         <span className="font-semibold">{slot.room}</span>
                                                                     </div>
                                                                 )}
+
+                                                                {/* Delete button for admin */}
+                                                                {isAdmin && (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); deleteSlot(slot.id); }}
+                                                                        disabled={deleting === slot.id}
+                                                                        className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded transition-all"
+                                                                    >
+                                                                        {deleting === slot.id ? (
+                                                                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                                        ) : (
+                                                                            <Trash2 className="w-3 h-3" />
+                                                                        )}
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         ) : (
-                                                            <div className="h-16 rounded-lg" />
+                                                            <div
+                                                                className={`h-16 rounded-lg border-2 border-dashed border-transparent ${isAdmin ? 'hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer' : ''}`}
+                                                                onClick={() => isAdmin && openCreateModal(dayIndex, period)}
+                                                            >
+                                                                {isAdmin && (
+                                                                    <div className="h-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                                                        <Plus className="w-4 h-4 text-indigo-400" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </td>
                                                 );
@@ -319,26 +472,97 @@ export default function TimetablePage() {
                         </div>
                     </div>
                 )}
+            </div>
 
-                {/* Info panel */}
-                {!isAdmin && slots.length > 0 && (
-                    <div className="mt-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
-                        <h3 className="font-semibold text-indigo-900 dark:text-indigo-200 mb-2">
-                            📚 Tổng quan
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                            <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
-                                <div className="text-2xl font-bold text-indigo-600">{slots.length}</div>
-                                <div className="text-gray-500">Tiết học/tuần</div>
+            {/* Modal for Create/Edit */}
+            {showModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg shadow-2xl">
+                        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                {editingSlot ? <Edit3 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                                {editingSlot ? 'Chỉnh sửa tiết học' : 'Thêm tiết học mới'}
+                            </h2>
+                            <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Môn học *</label>
+                                <select
+                                    value={formData.subject_id}
+                                    onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                >
+                                    <option value="">Chọn môn học</option>
+                                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
                             </div>
-                            <div className="text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
-                                <div className="text-2xl font-bold text-emerald-600">{classes.length}</div>
-                                <div className="text-gray-500">{profile?.role === "student" ? "Lớp đăng ký" : "Lớp giảng dạy"}</div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Giáo viên</label>
+                                <select
+                                    value={formData.teacher_id}
+                                    onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                >
+                                    <option value="">Chọn giáo viên</option>
+                                    {teachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Thứ</label>
+                                <select
+                                    value={formData.day_of_week}
+                                    onChange={(e) => setFormData({ ...formData, day_of_week: parseInt(e.target.value) })}
+                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                >
+                                    {DAYS.map((day, i) => <option key={i} value={i}>{day}</option>)}
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tiết bắt đầu</label>
+                                    <select
+                                        value={formData.start_time}
+                                        onChange={(e) => {
+                                            const period = PERIODS.find(p => p.start === e.target.value);
+                                            setFormData({ ...formData, start_time: e.target.value, end_time: period?.end || formData.end_time });
+                                        }}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                    >
+                                        {PERIODS.map(p => <option key={p.id} value={p.start}>{p.label} ({p.start})</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phòng học</label>
+                                    <select
+                                        value={formData.room}
+                                        onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                    >
+                                        <option value="">Chọn phòng</option>
+                                        {ROOMS.map(room => <option key={room} value={room}>{room}</option>)}
+                                    </select>
+                                </div>
                             </div>
                         </div>
+                        <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+                            <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                                Hủy
+                            </button>
+                            <button
+                                onClick={saveSlot}
+                                disabled={saving || !formData.subject_id}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {saving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                                {saving ? 'Đang lưu...' : (editingSlot ? 'Cập nhật' : 'Tạo tiết học')}
+                            </button>
+                        </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
