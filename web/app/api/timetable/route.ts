@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    const supabase = createClientFromRequest(req)
+    const supabase = createServiceClient()
 
     const { data: slots, error } = await supabase
       .from('timetable_slots')
