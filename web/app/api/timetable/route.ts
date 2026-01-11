@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
-import { adminAuth } from '@/lib/auth/adminAuth'
+import { staffAuth } from '@/lib/auth/adminAuth'
 import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
@@ -67,9 +67,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const authResult = await adminAuth(req)
+    const authResult = await staffAuth(req)
     if (!authResult.authorized) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'Unauthorized - Staff or Admin required' }, { status: 401 })
     }
 
     const body = await req.json()
