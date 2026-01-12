@@ -85,6 +85,28 @@ const SUNDAY_SESSIONS = [
     { id: 6, label: "C4", time: "18:30 - 20:00", start: "18:30", end: "20:00" },
 ];
 
+// All unique sessions across all days for row headers
+const ALL_SESSIONS = [
+    { id: 1, label: "S1", time: "08:00 - 09:30", start: "08:00", end: "09:30", days: [5, 6] },
+    { id: 2, label: "S2", time: "09:30 - 11:00", start: "09:30", end: "11:00", days: [5, 6] },
+    { id: 3, label: "C1", time: "14:00 - 15:30", start: "14:00", end: "15:30", days: [5, 6] },
+    { id: 4, label: "C2", time: "15:30 - 17:00", start: "15:30", end: "17:00", days: [5, 6] },
+    { id: 5, label: "Ca 1", time: "17:00 - 18:30", start: "17:00", end: "18:30", days: [0, 1, 2, 3, 4, 5, 6] },
+    { id: 6, label: "Ca 2", time: "18:30 - 20:00", start: "18:30", end: "20:00", days: [0, 1, 2, 3, 4, 5, 6] },
+    { id: 7, label: "Ca 3", time: "20:00 - 21:30", start: "20:00", end: "21:30", days: [0, 1, 2, 3, 4, 5] }, // Not Sunday
+];
+
+// Helper to get sessions available for a specific day
+const getSessionsForDay = (dayIndex: number) => {
+    return ALL_SESSIONS.filter(s => s.days.includes(dayIndex));
+};
+
+// Check if a session is available on a specific day
+const isSessionAvailable = (sessionStart: string, dayIndex: number) => {
+    const session = ALL_SESSIONS.find(s => s.start === sessionStart);
+    return session ? session.days.includes(dayIndex) : false;
+};
+
 // Legacy PERIODS for backward compatibility
 const PERIODS = WEEKDAY_SESSIONS;
 
@@ -435,23 +457,29 @@ export default function TimetablePage() {
                                 </thead>
                                 <tbody>
                                     {currentCampus?.rooms.map((room, roomIdx) => (
-                                        PERIODS.map((period, periodIdx) => (
-                                            <tr key={`${room}-${period.id}`} className="border-b hover:bg-gray-50">
-                                                {periodIdx === 0 && (
-                                                    <td rowSpan={PERIODS.length} className="p-2 border-r bg-gray-50 align-top">
+                                        ALL_SESSIONS.map((session, sessionIdx) => (
+                                            <tr key={`${room}-${session.id}`} className="border-b hover:bg-gray-50">
+                                                {sessionIdx === 0 && (
+                                                    <td rowSpan={ALL_SESSIONS.length} className="p-2 border-r bg-gray-50 align-top">
                                                         <div className="font-bold text-blue-700">{room}</div>
                                                         <div className="text-xs text-gray-500">Sức chứa: 25</div>
                                                     </td>
                                                 )}
                                                 <td className="p-1 border-r text-center bg-gray-50">
-                                                    <div className="text-xs font-medium text-gray-600">{period.label}</div>
-                                                    <div className="text-xs text-gray-400">({period.time})</div>
+                                                    <div className="text-xs font-medium text-gray-600">{session.label}</div>
+                                                    <div className="text-xs text-gray-400">({session.time})</div>
                                                 </td>
                                                 {DAYS.map((_, dayIndex) => {
-                                                    const slot = getSlotForRoomCell(room, dayIndex, period.start);
+                                                    const isAvailable = session.days.includes(dayIndex);
+                                                    const slot = isAvailable ? getSlotForRoomCell(room, dayIndex, session.start) : null;
+
                                                     return (
                                                         <td key={dayIndex} className="p-1 border-r">
-                                                            {slot ? (
+                                                            {!isAvailable ? (
+                                                                <div className="h-12 rounded bg-gray-100 flex items-center justify-center">
+                                                                    <span className="text-xs text-gray-400">—</span>
+                                                                </div>
+                                                            ) : slot ? (
                                                                 <div
                                                                     className="p-2 bg-blue-50 border border-blue-200 rounded text-xs cursor-pointer hover:bg-blue-100 relative group"
                                                                     onClick={() => openEditModal(slot)}
@@ -477,7 +505,7 @@ export default function TimetablePage() {
                                                             ) : (
                                                                 <div
                                                                     className="h-12 rounded border border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer flex items-center justify-center"
-                                                                    onClick={() => openCreateModal(dayIndex, period, room)}
+                                                                    onClick={() => openCreateModal(dayIndex, session, room)}
                                                                 >
                                                                     <Plus className="w-4 h-4 text-gray-300" />
                                                                 </div>
