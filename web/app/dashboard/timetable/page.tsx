@@ -161,6 +161,10 @@ export default function TimetablePage() {
 
     const isAdmin = profile?.role === "admin" || profile?.role === "staff";
     const currentCampus = CAMPUSES.find(c => c.id === selectedCampus);
+    const isTutoring = selectedCampus === "HK";
+
+    // Tutoring sub-view mode: 'teacher' grid or 'list'
+    const [tutoringViewMode, setTutoringViewMode] = useState<'teacher' | 'list'>('list');
 
     // Fetch all timetable slots
     const fetchAllSlots = async () => {
@@ -444,9 +448,35 @@ export default function TimetablePage() {
 
                 {/* Campus Title */}
                 {viewMode === 'room' && currentCampus && (
-                    <h2 className="text-center text-xl font-semibold text-blue-600 mb-4">
-                        CƠ SỞ {currentCampus.name.toUpperCase()}
-                    </h2>
+                    <div className="text-center mb-4">
+                        <h2 className="text-xl font-semibold text-blue-600">
+                            {isTutoring ? '📚 HỌC KÈM' : `CƠ SỞ ${currentCampus.name.toUpperCase()}`}
+                        </h2>
+
+                        {/* Tutoring sub-view toggle */}
+                        {isTutoring && (
+                            <div className="flex justify-center gap-2 mt-3">
+                                <button
+                                    onClick={() => setTutoringViewMode('list')}
+                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${tutoringViewMode === 'list'
+                                        ? 'bg-purple-100 text-purple-700 border-2 border-purple-400'
+                                        : 'bg-gray-50 text-gray-600 border border-gray-300 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    📋 Danh sách
+                                </button>
+                                <button
+                                    onClick={() => setTutoringViewMode('teacher')}
+                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${tutoringViewMode === 'teacher'
+                                        ? 'bg-purple-100 text-purple-700 border-2 border-purple-400'
+                                        : 'bg-gray-50 text-gray-600 border border-gray-300 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    👨‍🏫 Theo giáo viên
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {/* Timetable Grid */}
@@ -455,6 +485,183 @@ export default function TimetablePage() {
                         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
                         <p className="mt-4 text-gray-500">Đang tải...</p>
                     </div>
+                ) : viewMode === 'room' && isTutoring ? (
+                    /* Tutoring View */
+                    tutoringViewMode === 'list' ? (
+                        /* List View for Tutoring */
+                        <div className="bg-white rounded-lg shadow border">
+                            <div className="p-4 border-b bg-purple-50">
+                                <h3 className="font-semibold text-purple-800">📋 Danh sách học kèm tuần này</h3>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b">
+                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Thứ/Ngày</th>
+                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Ca</th>
+                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Giáo viên</th>
+                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Học sinh/Lớp</th>
+                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Môn</th>
+                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Ghi chú</th>
+                                            <th className="p-3 text-center text-sm font-medium text-gray-600 w-20"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {slots.filter(s => !s.room || s.room === 'Linh hoạt').length === 0 ? (
+                                            <tr>
+                                                <td colSpan={7} className="p-8 text-center text-gray-500">
+                                                    Chưa có lịch học kèm nào
+                                                    <br />
+                                                    <button
+                                                        onClick={() => openCreateModal(0, ALL_SESSIONS[4], 'Linh hoạt')}
+                                                        className="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700"
+                                                    >
+                                                        + Thêm lịch học kèm
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            slots.filter(s => !s.room || s.room === 'Linh hoạt').map(slot => (
+                                                <tr key={slot.id} className="hover:bg-gray-50">
+                                                    <td className="p-3 text-sm">
+                                                        <span className="font-medium">{DAYS[slot.day_of_week]}</span>
+                                                        <div className="text-xs text-gray-500">{weekDates[slot.day_of_week]?.toLocaleDateString('vi-VN')}</div>
+                                                    </td>
+                                                    <td className="p-3 text-sm">
+                                                        {ALL_SESSIONS.find(s => s.start === slot.start_time?.substring(0, 5))?.label || slot.start_time}
+                                                    </td>
+                                                    <td className="p-3 text-sm font-medium text-blue-700">
+                                                        {slot.teacher?.full_name || 'Chưa phân công'}
+                                                    </td>
+                                                    <td className="p-3 text-sm">
+                                                        {slot.class?.name || slot.subject?.name || 'N/A'}
+                                                    </td>
+                                                    <td className="p-3 text-sm text-gray-600">
+                                                        {slot.subject?.name}
+                                                    </td>
+                                                    <td className="p-3 text-sm text-gray-500 italic">
+                                                        {slot.notes || '-'}
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <div className="flex gap-1 justify-center">
+                                                            <button
+                                                                onClick={() => openEditModal(slot)}
+                                                                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                                            >
+                                                                <Edit3 className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => deleteSlot(slot.id)}
+                                                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
+                                <span className="text-sm text-gray-500">
+                                    Tổng: {slots.filter(s => !s.room || s.room === 'Linh hoạt').length} buổi học kèm
+                                </span>
+                                <button
+                                    onClick={() => openCreateModal(0, ALL_SESSIONS[4], 'Linh hoạt')}
+                                    className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 flex items-center gap-2"
+                                >
+                                    <Plus className="w-4 h-4" /> Thêm học kèm
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Teacher Grid View for Tutoring */
+                        <div className="bg-white rounded-lg overflow-hidden shadow border">
+                            <div className="p-4 border-b bg-purple-50">
+                                <h3 className="font-semibold text-purple-800">👨‍🏫 Lịch học kèm theo giáo viên</h3>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b">
+                                            <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-24">Ca</th>
+                                            <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-32">Giáo viên</th>
+                                            {DAYS.map((day, i) => (
+                                                <th key={day} className="p-2 border-r text-center min-w-[120px]">
+                                                    <div className="font-bold text-gray-800">{day}</div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                                                    </div>
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {ALL_SESSIONS.map((session) => (
+                                            teachers.length > 0 ? teachers.map((teacher, teacherIdx) => (
+                                                <tr key={`${session.id}-${teacher.id}`} className="border-b hover:bg-gray-50">
+                                                    {teacherIdx === 0 && (
+                                                        <td rowSpan={teachers.length} className="p-2 border-r bg-gradient-to-b from-purple-50 to-purple-100 align-middle text-center">
+                                                            <div className="font-bold text-purple-700">{session.label}</div>
+                                                            <div className="text-xs text-purple-600">{session.time}</div>
+                                                        </td>
+                                                    )}
+                                                    <td className="p-1 border-r bg-gray-50 text-center">
+                                                        <div className="text-xs font-medium text-gray-700 truncate max-w-[100px]">{teacher.full_name}</div>
+                                                    </td>
+                                                    {DAYS.map((_, dayIndex) => {
+                                                        const isAvailable = session.days.includes(dayIndex);
+                                                        const slot = isAvailable ? slots.find(s =>
+                                                            s.teacher?.id === teacher.id &&
+                                                            s.day_of_week === dayIndex &&
+                                                            s.start_time?.substring(0, 5) === session.start &&
+                                                            (!s.room || s.room === 'Linh hoạt')
+                                                        ) : null;
+
+                                                        return (
+                                                            <td key={dayIndex} className="p-1 border-r">
+                                                                {!isAvailable ? (
+                                                                    <div className="h-8 rounded bg-gray-100" />
+                                                                ) : slot ? (
+                                                                    <div
+                                                                        className="p-1.5 bg-purple-50 border border-purple-200 rounded text-xs cursor-pointer hover:bg-purple-100"
+                                                                        onClick={() => openEditModal(slot)}
+                                                                    >
+                                                                        <div className="font-medium text-purple-800 truncate">{slot.class?.name || slot.subject?.name}</div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div
+                                                                        className="h-8 rounded border border-dashed border-gray-200 hover:border-purple-300 hover:bg-purple-50 cursor-pointer flex items-center justify-center"
+                                                                        onClick={() => {
+                                                                            setFormData({ ...formData, teacher_id: teacher.id });
+                                                                            openCreateModal(dayIndex, session, 'Linh hoạt');
+                                                                        }}
+                                                                    >
+                                                                        <Plus className="w-3 h-3 text-gray-300" />
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            )) : (
+                                                <tr key={session.id}>
+                                                    <td className="p-2 border-r bg-purple-50 text-center">
+                                                        <div className="font-bold text-purple-700">{session.label}</div>
+                                                    </td>
+                                                    <td colSpan={8} className="p-4 text-center text-gray-500 text-sm">
+                                                        Chưa có giáo viên nào
+                                                    </td>
+                                                </tr>
+                                            )
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )
                 ) : viewMode === 'room' ? (
                     /* Room-based View */
                     <div className="bg-white rounded-lg overflow-hidden shadow border">
