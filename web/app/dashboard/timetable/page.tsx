@@ -876,19 +876,44 @@ export default function TimetablePage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tiết</label>
-                                    <select
-                                        value={formData.start_time}
-                                        onChange={(e) => {
-                                            const period = PERIODS.find(p => p.start === e.target.value);
-                                            setFormData({ ...formData, start_time: e.target.value, end_time: period?.end || formData.end_time });
-                                        }}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                    >
-                                        {PERIODS.map(p => <option key={p.id} value={p.start}>{p.label}</option>)}
-                                    </select>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {formData.room === 'Linh hoạt' ? 'Giờ bắt đầu' : 'Ca'}
+                                    </label>
+                                    {formData.room === 'Linh hoạt' ? (
+                                        <input
+                                            type="time"
+                                            value={formData.start_time}
+                                            onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                        />
+                                    ) : (
+                                        <select
+                                            value={formData.start_time}
+                                            onChange={(e) => {
+                                                const period = PERIODS.find(p => p.start === e.target.value);
+                                                setFormData({ ...formData, start_time: e.target.value, end_time: period?.end || formData.end_time });
+                                            }}
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                        >
+                                            {ALL_SESSIONS.map(p => <option key={p.id} value={p.start}>{p.label} ({p.time})</option>)}
+                                        </select>
+                                    )}
                                 </div>
                             </div>
+
+                            {/* End time for flexible tutoring */}
+                            {formData.room === 'Linh hoạt' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Giờ kết thúc</label>
+                                    <input
+                                        type="time"
+                                        value={formData.end_time}
+                                        onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    />
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
                                 <select
@@ -897,7 +922,8 @@ export default function TimetablePage() {
                                     className="w-full px-3 py-2 border rounded-lg"
                                 >
                                     <option value="">Chọn phòng</option>
-                                    {CAMPUSES.flatMap(c => c.rooms.map(room => `${c.name} - ${room}`)).map(room => (
+                                    <option value="Linh hoạt">🎓 Học kèm (Linh hoạt)</option>
+                                    {CAMPUSES.filter(c => c.id !== 'HK').flatMap(c => c.rooms.map(room => `${c.name} - ${room}`)).map(room => (
                                         <option key={room} value={room}>{room}</option>
                                     ))}
                                 </select>
