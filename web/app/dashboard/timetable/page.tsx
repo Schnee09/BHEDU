@@ -230,7 +230,14 @@ export default function TimetablePage() {
     };
 
     const saveSlot = async () => {
-        if (!formData.class_id || !formData.subject_id) return;
+        if (!formData.class_id) {
+            alert('Vui lòng chọn lớp học');
+            return;
+        }
+        if (!formData.subject_id) {
+            alert('Vui lòng chọn môn học');
+            return;
+        }
 
         setSaving(true);
         try {
