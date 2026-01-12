@@ -499,7 +499,7 @@ export default function TimetablePage() {
                                         <tr className="bg-gray-50 border-b">
                                             <th className="p-3 text-left text-sm font-medium text-gray-600">Thứ/Ngày</th>
                                             <th className="p-3 text-left text-sm font-medium text-gray-600">Ca</th>
-                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Giáo viên</th>
+                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Gia sư</th>
                                             <th className="p-3 text-left text-sm font-medium text-gray-600">Học sinh/Lớp</th>
                                             <th className="p-3 text-left text-sm font-medium text-gray-600">Môn</th>
                                             <th className="p-3 text-left text-sm font-medium text-gray-600">Ghi chú</th>
@@ -580,14 +580,14 @@ export default function TimetablePage() {
                         /* Teacher Grid View for Tutoring */
                         <div className="bg-white rounded-lg overflow-hidden shadow border">
                             <div className="p-4 border-b bg-purple-50">
-                                <h3 className="font-semibold text-purple-800">👨‍🏫 Lịch học kèm theo giáo viên</h3>
+                                <h3 className="font-semibold text-purple-800">🎓 Lịch học kèm theo gia sư</h3>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full border-collapse">
                                     <thead>
                                         <tr className="bg-gray-50 border-b">
                                             <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-24">Ca</th>
-                                            <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-32">Giáo viên</th>
+                                            <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-32">Gia sư</th>
                                             {DAYS.map((day, i) => (
                                                 <th key={day} className="p-2 border-r text-center min-w-[120px]">
                                                     <div className="font-bold text-gray-800">{day}</div>
@@ -652,7 +652,7 @@ export default function TimetablePage() {
                                                         <div className="font-bold text-purple-700">{session.label}</div>
                                                     </td>
                                                     <td colSpan={8} className="p-4 text-center text-gray-500 text-sm">
-                                                        Chưa có giáo viên nào
+                                                        Chưa có gia sư nào
                                                     </td>
                                                 </tr>
                                             )
@@ -854,13 +854,15 @@ export default function TimetablePage() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Giáo viên</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    {formData.room === 'Linh hoạt' ? 'Gia sư' : 'Giáo viên'}
+                                </label>
                                 <select
                                     value={formData.teacher_id}
                                     onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
                                     className="w-full px-3 py-2 border rounded-lg"
                                 >
-                                    <option value="">Chọn giáo viên</option>
+                                    <option value="">{formData.room === 'Linh hoạt' ? 'Chọn gia sư' : 'Chọn giáo viên'}</option>
                                     {teachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
                                 </select>
                             </div>
