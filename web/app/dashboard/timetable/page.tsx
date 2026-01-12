@@ -50,9 +50,28 @@ interface TeacherOption {
 
 // Campuses configuration (Cơ sở)
 const CAMPUSES = [
-    { id: "NQ", name: "Ngô Quyền", rooms: ["P.1", "P.2", "P.3"] },
-    { id: "DVB", name: "Đặng Văn Bi", rooms: ["P.1", "P.2", "P.3"] },
-    { id: "THD", name: "Trịnh Hoài Đức", rooms: ["P.1", "P.2"], upcoming: true },
+    {
+        id: "NQ",
+        name: "Ngô Quyền",
+        rooms: ["P.1", "P.2", "P.3", "P.4", "P.5", "P.6", "P.7", "P.8", "P.9", "P.10"]
+    },
+    {
+        id: "DVB",
+        name: "Đặng Văn Bi",
+        rooms: ["P.1", "P.2", "P.3", "P.4"]
+    },
+    {
+        id: "THD",
+        name: "Trịnh Hoài Đức",
+        rooms: ["P.1", "P.2"],
+        upcoming: true
+    },
+    {
+        id: "HK",
+        name: "Học kèm",
+        rooms: ["Linh hoạt"],
+        isFlexible: true // Special flag for tutoring - no fixed room
+    },
 ];
 
 const DAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
