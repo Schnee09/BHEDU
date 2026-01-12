@@ -443,8 +443,8 @@ export default function TimetablePage() {
                             <table className="w-full border-collapse">
                                 <thead>
                                     <tr className="bg-gray-50 border-b">
-                                        <th className="p-2 border-r text-left text-sm font-medium text-gray-600 w-24">Phòng / Thứ</th>
-                                        <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-20">Tiết</th>
+                                        <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-24">Ca</th>
+                                        <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-16">Phòng</th>
                                         {DAYS.map((day, i) => (
                                             <th key={day} className="p-2 border-r text-center min-w-[140px]">
                                                 <div className="font-bold text-gray-800">{day}</div>
@@ -456,18 +456,17 @@ export default function TimetablePage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {currentCampus?.rooms.map((room, roomIdx) => (
-                                        ALL_SESSIONS.map((session, sessionIdx) => (
-                                            <tr key={`${room}-${session.id}`} className="border-b hover:bg-gray-50">
-                                                {sessionIdx === 0 && (
-                                                    <td rowSpan={ALL_SESSIONS.length} className="p-2 border-r bg-gray-50 align-top">
-                                                        <div className="font-bold text-blue-700">{room}</div>
-                                                        <div className="text-xs text-gray-500">Sức chứa: 25</div>
+                                    {ALL_SESSIONS.map((session, sessionIdx) => (
+                                        currentCampus?.rooms.map((room, roomIdx) => (
+                                            <tr key={`${session.id}-${room}`} className="border-b hover:bg-gray-50">
+                                                {roomIdx === 0 && (
+                                                    <td rowSpan={currentCampus.rooms.length} className="p-2 border-r bg-gradient-to-b from-blue-50 to-blue-100 align-middle text-center">
+                                                        <div className="font-bold text-blue-700 text-lg">{session.label}</div>
+                                                        <div className="text-xs text-blue-600">{session.time}</div>
                                                     </td>
                                                 )}
-                                                <td className="p-1 border-r text-center bg-gray-50">
-                                                    <div className="text-xs font-medium text-gray-600">{session.label}</div>
-                                                    <div className="text-xs text-gray-400">({session.time})</div>
+                                                <td className="p-1 border-r text-center bg-gray-50 w-16">
+                                                    <div className="text-xs font-bold text-gray-700">{room}</div>
                                                 </td>
                                                 {DAYS.map((_, dayIndex) => {
                                                     const isAvailable = session.days.includes(dayIndex);
@@ -476,7 +475,7 @@ export default function TimetablePage() {
                                                     return (
                                                         <td key={dayIndex} className="p-1 border-r">
                                                             {!isAvailable ? (
-                                                                <div className="h-12 rounded bg-gray-100 flex items-center justify-center">
+                                                                <div className="h-10 rounded bg-gray-100 flex items-center justify-center">
                                                                     <span className="text-xs text-gray-400">—</span>
                                                                 </div>
                                                             ) : slot ? (
@@ -485,15 +484,10 @@ export default function TimetablePage() {
                                                                     onClick={() => openEditModal(slot)}
                                                                 >
                                                                     <div className="font-bold text-blue-800">{slot.class?.name || slot.subject?.name || "N/A"}</div>
-                                                                    <div className="text-blue-600">{slot.subject?.name}</div>
                                                                     {slot.teacher && (
-                                                                        <div className="text-gray-600 mt-1">
-                                                                            <Users className="w-3 h-3 inline mr-1" />
+                                                                        <div className="text-gray-600 truncate">
                                                                             {slot.teacher.full_name}
                                                                         </div>
-                                                                    )}
-                                                                    {slot.notes && (
-                                                                        <div className="text-gray-500 italic mt-1">{slot.notes}</div>
                                                                     )}
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); deleteSlot(slot.id); }}
@@ -504,7 +498,7 @@ export default function TimetablePage() {
                                                                 </div>
                                                             ) : (
                                                                 <div
-                                                                    className="h-12 rounded border border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer flex items-center justify-center"
+                                                                    className="h-10 rounded border border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer flex items-center justify-center"
                                                                     onClick={() => openCreateModal(dayIndex, session, room)}
                                                                 >
                                                                     <Plus className="w-4 h-4 text-gray-300" />
