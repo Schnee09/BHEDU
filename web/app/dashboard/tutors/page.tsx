@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useProfile } from "@/lib/hooks/useProfile";
+import { useProfile } from "@/hooks/useProfile";
 import { apiFetch } from "@/lib/api/client";
 import {
     Plus,
