@@ -48,26 +48,45 @@ interface TeacherOption {
     phone?: string;
 }
 
-// Buildings configuration
-const BUILDINGS = [
-    { id: "A", name: "Tòa nhà A", rooms: ["A101", "A102", "A103", "A201", "A202", "A203"] },
-    { id: "B", name: "Tòa nhà B", rooms: ["B101", "B102", "B201", "B202"] },
-    { id: "Lab", name: "Phòng Lab", rooms: ["Lab1", "Lab2", "Lab3"] },
-    { id: "Other", name: "Khác", rooms: ["Sân", "Hội trường"] },
+// Campuses configuration (Cơ sở)
+const CAMPUSES = [
+    { id: "NQ", name: "Ngô Quyền", rooms: ["P.1", "P.2", "P.3"] },
+    { id: "DVB", name: "Đặng Văn Bi", rooms: ["P.1", "P.2", "P.3"] },
+    { id: "THD", name: "Trịnh Hoài Đức", rooms: ["P.1", "P.2"], upcoming: true },
 ];
 
 const DAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
-const PERIODS = [
-    { id: 1, label: "Tiết 1", time: "7:30 - 8:15", start: "07:30", end: "08:15" },
-    { id: 2, label: "Tiết 2", time: "8:15 - 9:00", start: "08:15", end: "09:00" },
-    { id: 3, label: "Tiết 3", time: "9:00 - 9:45", start: "09:00", end: "09:45" },
-    { id: 4, label: "Tiết 4", time: "10:00 - 10:45", start: "10:00", end: "10:45" },
-    { id: 5, label: "Tiết 5", time: "10:45 - 11:30", start: "10:45", end: "11:30" },
-    { id: 6, label: "Tiết 6", time: "13:00 - 13:45", start: "13:00", end: "13:45" },
-    { id: 7, label: "Tiết 7", time: "13:45 - 14:30", start: "13:45", end: "14:30" },
-    { id: 8, label: "Tiết 8", time: "14:30 - 15:15", start: "14:30", end: "15:15" },
+// Weekday sessions (Thứ 2-6): 17h - 21h30 (3 sessions of 1h30' each)
+const WEEKDAY_SESSIONS = [
+    { id: 1, label: "Ca 1", time: "17:00 - 18:30", start: "17:00", end: "18:30" },
+    { id: 2, label: "Ca 2", time: "18:30 - 20:00", start: "18:30", end: "20:00" },
+    { id: 3, label: "Ca 3", time: "20:00 - 21:30", start: "20:00", end: "21:30" },
 ];
+
+// Saturday sessions: 8h-11h (2 sessions), 14h-21h30 (5 sessions)
+const SATURDAY_SESSIONS = [
+    { id: 1, label: "S1", time: "08:00 - 09:30", start: "08:00", end: "09:30" },
+    { id: 2, label: "S2", time: "09:30 - 11:00", start: "09:30", end: "11:00" },
+    { id: 3, label: "C1", time: "14:00 - 15:30", start: "14:00", end: "15:30" },
+    { id: 4, label: "C2", time: "15:30 - 17:00", start: "15:30", end: "17:00" },
+    { id: 5, label: "C3", time: "17:00 - 18:30", start: "17:00", end: "18:30" },
+    { id: 6, label: "C4", time: "18:30 - 20:00", start: "18:30", end: "20:00" },
+    { id: 7, label: "C5", time: "20:00 - 21:30", start: "20:00", end: "21:30" },
+];
+
+// Sunday sessions: 8h-11h (2 sessions), 14h-20h (4 sessions)
+const SUNDAY_SESSIONS = [
+    { id: 1, label: "S1", time: "08:00 - 09:30", start: "08:00", end: "09:30" },
+    { id: 2, label: "S2", time: "09:30 - 11:00", start: "09:30", end: "11:00" },
+    { id: 3, label: "C1", time: "14:00 - 15:30", start: "14:00", end: "15:30" },
+    { id: 4, label: "C2", time: "15:30 - 17:00", start: "15:30", end: "17:00" },
+    { id: 5, label: "C3", time: "17:00 - 18:30", start: "17:00", end: "18:30" },
+    { id: 6, label: "C4", time: "18:30 - 20:00", start: "18:30", end: "20:00" },
+];
+
+// Legacy PERIODS for backward compatibility
+const PERIODS = WEEKDAY_SESSIONS;
 
 export default function TimetablePage() {
     const { profile, loading: profileLoading } = useProfile();
@@ -80,7 +99,7 @@ export default function TimetablePage() {
 
     // View mode: 'class' or 'room'
     const [viewMode, setViewMode] = useState<'class' | 'room'>('room');
-    const [selectedBuilding, setSelectedBuilding] = useState(BUILDINGS[0].id);
+    const [selectedCampus, setSelectedCampus] = useState(CAMPUSES[0].id);
     const [selectedClass, setSelectedClass] = useState<string>("");
     const [selectedRoom, setSelectedRoom] = useState<string>("");
 
@@ -94,13 +113,13 @@ export default function TimetablePage() {
         subject_id: "",
         teacher_id: "",
         day_of_week: 0,
-        start_time: "07:30",
-        end_time: "08:15",
+        start_time: "17:00",
+        end_time: "18:30",
         room: ""
     });
 
     const isAdmin = profile?.role === "admin" || profile?.role === "staff";
-    const currentBuilding = BUILDINGS.find(b => b.id === selectedBuilding);
+    const currentCampus = CAMPUSES.find(c => c.id === selectedCampus);
 
     // Fetch all timetable slots
     const fetchAllSlots = async () => {
@@ -328,8 +347,8 @@ export default function TimetablePage() {
                     <button
                         onClick={() => setViewMode('room')}
                         className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'room'
-                                ? 'bg-white border-blue-500 text-blue-600'
-                                : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
+                            ? 'bg-white border-blue-500 text-blue-600'
+                            : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
                             }`}
                     >
                         <Building2 className="w-4 h-4 inline mr-2" />
@@ -338,8 +357,8 @@ export default function TimetablePage() {
                     <button
                         onClick={() => setViewMode('class')}
                         className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'class'
-                                ? 'bg-white border-blue-500 text-blue-600'
-                                : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
+                            ? 'bg-white border-blue-500 text-blue-600'
+                            : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
                             }`}
                     >
                         <Users className="w-4 h-4 inline mr-2" />
@@ -347,19 +366,20 @@ export default function TimetablePage() {
                     </button>
                 </div>
 
-                {/* Building Tabs (Room View) */}
+                {/* Campus Tabs (Room View) */}
                 {viewMode === 'room' && (
                     <div className="flex justify-center gap-1 mb-4">
-                        {BUILDINGS.map(building => (
+                        {CAMPUSES.map(campus => (
                             <button
-                                key={building.id}
-                                onClick={() => setSelectedBuilding(building.id)}
-                                className={`px-6 py-2 rounded-lg font-medium transition-colors ${selectedBuilding === building.id
-                                        ? 'bg-blue-100 text-blue-700 border-2 border-blue-400'
-                                        : 'bg-gray-50 text-gray-600 border border-gray-300 hover:bg-gray-100'
-                                    }`}
+                                key={campus.id}
+                                onClick={() => setSelectedCampus(campus.id)}
+                                className={`px-6 py-2 rounded-lg font-medium transition-colors ${selectedCampus === campus.id
+                                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-400'
+                                    : 'bg-gray-50 text-gray-600 border border-gray-300 hover:bg-gray-100'
+                                    } ${(campus as any).upcoming ? 'opacity-60' : ''}`}
                             >
-                                {building.name.toUpperCase()}
+                                {campus.name.toUpperCase()}
+                                {(campus as any).upcoming && <span className="ml-1 text-xs">(Sắp ra mắt)</span>}
                             </button>
                         ))}
                     </div>
@@ -381,10 +401,10 @@ export default function TimetablePage() {
                     </div>
                 )}
 
-                {/* Building Title */}
-                {viewMode === 'room' && currentBuilding && (
+                {/* Campus Title */}
+                {viewMode === 'room' && currentCampus && (
                     <h2 className="text-center text-xl font-semibold text-blue-600 mb-4">
-                        {currentBuilding.name.toUpperCase()}
+                        CƠ SỞ {currentCampus.name.toUpperCase()}
                     </h2>
                 )}
 
@@ -414,13 +434,13 @@ export default function TimetablePage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {currentBuilding?.rooms.map((room, roomIdx) => (
+                                    {currentCampus?.rooms.map((room, roomIdx) => (
                                         PERIODS.map((period, periodIdx) => (
                                             <tr key={`${room}-${period.id}`} className="border-b hover:bg-gray-50">
                                                 {periodIdx === 0 && (
                                                     <td rowSpan={PERIODS.length} className="p-2 border-r bg-gray-50 align-top">
                                                         <div className="font-bold text-blue-700">{room}</div>
-                                                        <div className="text-xs text-gray-500">Sức chứa: 30</div>
+                                                        <div className="text-xs text-gray-500">Sức chứa: 25</div>
                                                     </td>
                                                 )}
                                                 <td className="p-1 border-r text-center bg-gray-50">
@@ -629,7 +649,7 @@ export default function TimetablePage() {
                                     className="w-full px-3 py-2 border rounded-lg"
                                 >
                                     <option value="">Chọn phòng</option>
-                                    {BUILDINGS.flatMap(b => b.rooms).map(room => (
+                                    {CAMPUSES.flatMap(c => c.rooms.map(room => `${c.name} - ${room}`)).map(room => (
                                         <option key={room} value={room}>{room}</option>
                                     ))}
                                 </select>
