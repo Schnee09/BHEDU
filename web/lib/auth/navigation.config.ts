@@ -78,6 +78,7 @@ export const ALL_NAV_ITEMS: NavSection[] = [
     title: "Quản lý",
     links: [
       { href: "/dashboard/users", label: "Người dùng", icon: Shield, permissions: ['users.view'] },
+      { href: "/dashboard/tutors", label: "Gia sư", icon: GraduationCap, permissions: ['users.view'] },
       { href: "/dashboard/admin/permissions", label: "Phân quyền", icon: Shield, permissions: ['users.permissions'] },
       { href: "/dashboard/admin/students", label: "Hồ sơ học sinh", icon: Users, permissions: ['students.edit'] },
       { href: "/dashboard/admin/enrollments", label: "Ghi danh lớp", icon: Users, permissions: ['students.edit'] },
