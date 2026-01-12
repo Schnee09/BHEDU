@@ -135,6 +135,7 @@ export default function TimetablePage() {
     const [classes, setClasses] = useState<ClassOption[]>([]);
     const [subjects, setSubjects] = useState<SubjectOption[]>([]);
     const [teachers, setTeachers] = useState<TeacherOption[]>([]);
+    const [tutors, setTutors] = useState<TeacherOption[]>([]);  // Separate list for tutors
     const [loading, setLoading] = useState(true);
     const [currentWeek, setCurrentWeek] = useState(new Date());
 
@@ -212,14 +213,17 @@ export default function TimetablePage() {
 
     const fetchSubjectsAndTeachers = async () => {
         try {
-            const [subRes, teacherRes] = await Promise.all([
+            const [subRes, teacherRes, tutorRes] = await Promise.all([
                 apiFetch('/api/subjects'),
-                apiFetch('/api/admin/users?role=teacher')
+                apiFetch('/api/admin/users?role=teacher'),
+                apiFetch('/api/tutors')
             ]);
             const subData = await subRes.json();
             const teacherData = await teacherRes.json();
+            const tutorData = await tutorRes.json();
             setSubjects(subData.subjects || []);
             setTeachers(teacherData.users || []);
+            setTutors(tutorData.tutors || []);
         } catch (e) {
             console.error('Failed to fetch subjects/teachers:', e);
         }
@@ -600,21 +604,21 @@ export default function TimetablePage() {
                                     </thead>
                                     <tbody>
                                         {ALL_SESSIONS.map((session) => (
-                                            teachers.length > 0 ? teachers.map((teacher, teacherIdx) => (
-                                                <tr key={`${session.id}-${teacher.id}`} className="border-b hover:bg-gray-50">
-                                                    {teacherIdx === 0 && (
-                                                        <td rowSpan={teachers.length} className="p-2 border-r bg-gradient-to-b from-purple-50 to-purple-100 align-middle text-center">
+                                            tutors.length > 0 ? tutors.map((tutor, tutorIdx) => (
+                                                <tr key={`${session.id}-${tutor.id}`} className="border-b hover:bg-gray-50">
+                                                    {tutorIdx === 0 && (
+                                                        <td rowSpan={tutors.length} className="p-2 border-r bg-gradient-to-b from-purple-50 to-purple-100 align-middle text-center">
                                                             <div className="font-bold text-purple-700">{session.label}</div>
                                                             <div className="text-xs text-purple-600">{session.time}</div>
                                                         </td>
                                                     )}
                                                     <td className="p-1 border-r bg-gray-50 text-center">
-                                                        <div className="text-xs font-medium text-gray-700 truncate max-w-[100px]">{teacher.full_name}</div>
+                                                        <div className="text-xs font-medium text-gray-700 truncate max-w-[100px]">{tutor.full_name}</div>
                                                     </td>
                                                     {DAYS.map((_, dayIndex) => {
                                                         const isAvailable = session.days.includes(dayIndex);
                                                         const slot = isAvailable ? slots.find(s =>
-                                                            s.teacher?.id === teacher.id &&
+                                                            s.teacher?.id === tutor.id &&
                                                             s.day_of_week === dayIndex &&
                                                             s.start_time?.substring(0, 5) === session.start &&
                                                             (!s.room || s.room === 'Linh hoạt')
@@ -635,7 +639,7 @@ export default function TimetablePage() {
                                                                     <div
                                                                         className="h-8 rounded border border-dashed border-gray-200 hover:border-purple-300 hover:bg-purple-50 cursor-pointer flex items-center justify-center"
                                                                         onClick={() => {
-                                                                            setFormData({ ...formData, teacher_id: teacher.id });
+                                                                            setFormData({ ...formData, teacher_id: tutor.id });
                                                                             openCreateModal(dayIndex, session, 'Linh hoạt');
                                                                         }}
                                                                     >
@@ -863,7 +867,7 @@ export default function TimetablePage() {
                                     className="w-full px-3 py-2 border rounded-lg"
                                 >
                                     <option value="">{formData.room === 'Linh hoạt' ? 'Chọn gia sư' : 'Chọn giáo viên'}</option>
-                                    {teachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                                    {(formData.room === 'Linh hoạt' ? tutors : teachers).map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
                                 </select>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
