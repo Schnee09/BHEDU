@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useProfile } from "@/lib/hooks/useProfile";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/lib/api/client";
 import {
     Plus,
     Search,
@@ -436,8 +436,8 @@ export default function TutorsPage() {
                                                 type="button"
                                                 onClick={() => toggleSubject(subject.id)}
                                                 className={`px-3 py-1.5 rounded-full text-sm transition-colors ${formData.teaching_subjects.includes(subject.id)
-                                                        ? 'bg-purple-600 text-white'
-                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                    ? 'bg-purple-600 text-white'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                     }`}
                                             >
                                                 {subject.name}
