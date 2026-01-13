@@ -61,12 +61,6 @@ const CAMPUSES = [
         rooms: ["P.1", "P.2", "P.3", "P.4"]
     },
     {
-        id: "THD",
-        name: "Trịnh Hoài Đức",
-        rooms: ["P.1", "P.2"],
-        upcoming: true
-    },
-    {
         id: "HK",
         name: "Học kèm",
         rooms: ["Linh hoạt"],
@@ -722,7 +716,10 @@ export default function TimetablePage() {
                                                                     className="p-2 bg-blue-50 border border-blue-200 rounded text-xs cursor-pointer hover:bg-blue-100 relative group"
                                                                     onClick={() => openEditModal(slot)}
                                                                 >
-                                                                    <div className="font-bold text-blue-800">{slot.class?.name || slot.subject?.name || "N/A"}</div>
+                                                                    <div className="font-bold text-blue-800">{slot.class?.name || "N/A"}</div>
+                                                                    {slot.subject && (
+                                                                        <div className="text-blue-600 text-[10px]">{slot.subject.name}</div>
+                                                                    )}
                                                                     {slot.teacher && (
                                                                         <div className="text-gray-600 truncate">
                                                                             {slot.teacher.full_name}
