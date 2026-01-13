@@ -230,6 +230,8 @@ export default function TimetablePage() {
     };
 
     const saveSlot = async () => {
+        console.log('saveSlot called with formData:', formData);
+
         if (!formData.class_id) {
             alert('Vui lòng chọn lớp học');
             return;
@@ -245,6 +247,13 @@ export default function TimetablePage() {
             const url = isEditing ? `/api/timetable/${editingSlot.id}` : '/api/timetable';
             const method = isEditing ? 'PUT' : 'POST';
 
+            console.log('Sending request to:', url, 'method:', method);
+            console.log('Request body:', JSON.stringify({
+                ...formData,
+                subject_id: formData.subject_id || null,
+                teacher_id: formData.teacher_id || null
+            }));
+
             const response = await apiFetch(url, {
                 method,
                 body: JSON.stringify({
@@ -255,17 +264,25 @@ export default function TimetablePage() {
                 headers: { 'Content-Type': 'application/json' }
             });
 
+            console.log('Response status:', response.status);
             const result = await response.json();
+            console.log('Response result:', result);
+
             if (!result.success) {
                 throw new Error(result.error || 'Failed to save');
             }
 
+            console.log('Save successful, closing modal and refreshing');
             setShowModal(false);
             setEditingSlot(null);
             if (viewMode === 'room') {
-                fetchAllSlots();
+                console.log('Fetching all slots...');
+                await fetchAllSlots();
+                console.log('Fetch complete');
             } else {
-                fetchClassSlots();
+                console.log('Fetching class slots...');
+                await fetchClassSlots();
+                console.log('Fetch complete');
             }
         } catch (error: any) {
             console.error('Failed to save slot:', error);
@@ -832,8 +849,8 @@ export default function TimetablePage() {
 
             {/* Modal for Create/Edit */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg shadow-2xl">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4" style={{ zIndex: 9999 }}>
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg shadow-2xl" style={{ backgroundColor: 'white' }}>
                         <div className="p-6 border-b flex items-center justify-between">
                             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                                 {editingSlot ? <Edit3 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
@@ -844,14 +861,26 @@ export default function TimetablePage() {
                             </button>
                         </div>
                         <div className="p-6 space-y-4">
+                            {/* Context Info - show what was selected from grid */}
+                            {formData.room && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                                    <div className="text-sm font-medium text-blue-800 mb-1">📍 Thông tin đã chọn:</div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div><span className="text-gray-500">Phòng:</span> <strong>{formData.room}</strong></div>
+                                        <div><span className="text-gray-500">Ngày:</span> <strong>{DAYS[formData.day_of_week]}</strong></div>
+                                        <div><span className="text-gray-500">Ca:</span> <strong>{formData.start_time} - {formData.end_time}</strong></div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Lớp *</label>
                                 <select
                                     value={formData.class_id}
                                     onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg"
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option value="">Chọn lớp</option>
+                                    <option value="">-- Chọn lớp --</option>
                                     {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
@@ -860,89 +889,73 @@ export default function TimetablePage() {
                                 <select
                                     value={formData.subject_id}
                                     onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg"
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option value="">Chọn môn học</option>
+                                    <option value="">-- Chọn môn học --</option>
                                     {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    {formData.room === 'Linh hoạt' ? 'Gia sư' : 'Giáo viên'}
+                                    {formData.room === 'Linh hoạt' ? 'Gia sư' : 'Giáo viên'} (không bắt buộc)
                                 </label>
                                 <select
                                     value={formData.teacher_id}
                                     onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
                                     className="w-full px-3 py-2 border rounded-lg"
                                 >
-                                    <option value="">{formData.room === 'Linh hoạt' ? 'Chọn gia sư' : 'Chọn giáo viên'}</option>
+                                    <option value="">{formData.room === 'Linh hoạt' ? '-- Chọn gia sư --' : '-- Chọn giáo viên --'}</option>
                                     {(formData.room === 'Linh hoạt' ? tutors : teachers).map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
                                 </select>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Thứ</label>
-                                    <select
-                                        value={formData.day_of_week}
-                                        onChange={(e) => setFormData({ ...formData, day_of_week: parseInt(e.target.value) })}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                    >
-                                        {DAYS.map((day, i) => <option key={i} value={i}>{day}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        {formData.room === 'Linh hoạt' ? 'Giờ bắt đầu' : 'Ca'}
-                                    </label>
-                                    {formData.room === 'Linh hoạt' ? (
-                                        <input
-                                            type="time"
-                                            value={formData.start_time}
-                                            onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                                            className="w-full px-3 py-2 border rounded-lg"
-                                        />
-                                    ) : (
-                                        <select
-                                            value={formData.start_time}
-                                            onChange={(e) => {
-                                                const period = PERIODS.find(p => p.start === e.target.value);
-                                                setFormData({ ...formData, start_time: e.target.value, end_time: period?.end || formData.end_time });
-                                            }}
-                                            className="w-full px-3 py-2 border rounded-lg"
-                                        >
-                                            {ALL_SESSIONS.map(p => <option key={p.id} value={p.start}>{p.label} ({p.time})</option>)}
-                                        </select>
-                                    )}
-                                </div>
-                            </div>
 
-                            {/* End time for flexible tutoring */}
-                            {formData.room === 'Linh hoạt' && (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Giờ kết thúc</label>
-                                    <input
-                                        type="time"
-                                        value={formData.end_time}
-                                        onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                    />
-                                </div>
+                            {/* Only show advanced options when no context or editing */}
+                            {(!formData.room || editingSlot) && (
+                                <>
+                                    <div className="border-t pt-4 mt-4">
+                                        <div className="text-sm font-medium text-gray-500 mb-3">⚙️ Tùy chọn nâng cao</div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Thứ</label>
+                                                <select
+                                                    value={formData.day_of_week}
+                                                    onChange={(e) => setFormData({ ...formData, day_of_week: parseInt(e.target.value) })}
+                                                    className="w-full px-3 py-2 border rounded-lg"
+                                                >
+                                                    {DAYS.map((day, i) => <option key={i} value={i}>{day}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Ca</label>
+                                                <select
+                                                    value={formData.start_time}
+                                                    onChange={(e) => {
+                                                        const session = ALL_SESSIONS.find(s => s.start === e.target.value);
+                                                        setFormData({ ...formData, start_time: e.target.value, end_time: session?.end || formData.end_time });
+                                                    }}
+                                                    className="w-full px-3 py-2 border rounded-lg"
+                                                >
+                                                    {ALL_SESSIONS.map(p => <option key={p.id} value={p.start}>{p.label} ({p.time})</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
+                                            <select
+                                                value={formData.room}
+                                                onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                                                className="w-full px-3 py-2 border rounded-lg"
+                                            >
+                                                <option value="">-- Chọn phòng --</option>
+                                                <option value="Linh hoạt">🎓 Học kèm (Linh hoạt)</option>
+                                                {CAMPUSES.filter(c => c.id !== 'HK').flatMap(c => c.rooms.map(room => `${c.name} - ${room}`)).map(room => (
+                                                    <option key={room} value={room}>{room}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </>
                             )}
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
-                                <select
-                                    value={formData.room}
-                                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                >
-                                    <option value="">Chọn phòng</option>
-                                    <option value="Linh hoạt">🎓 Học kèm (Linh hoạt)</option>
-                                    {CAMPUSES.filter(c => c.id !== 'HK').flatMap(c => c.rooms.map(room => `${c.name} - ${room}`)).map(room => (
-                                        <option key={room} value={room}>{room}</option>
-                                    ))}
-                                </select>
-                            </div>
                         </div>
                         <div className="p-6 border-t flex justify-end gap-3">
                             <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
