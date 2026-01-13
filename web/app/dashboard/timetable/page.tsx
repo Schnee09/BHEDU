@@ -342,8 +342,10 @@ export default function TimetablePage() {
     }, [viewMode, selectedClass]);
 
     const getSlotForRoomCell = (room: string, dayIndex: number, startTime: string): TimetableSlot | undefined => {
+        // Build full room name with campus prefix
+        const fullRoomName = `${currentCampus?.name} - ${room}`;
         return slots.find(
-            (slot) => slot.room === room && slot.day_of_week === dayIndex && slot.start_time?.substring(0, 5) === startTime
+            (slot) => slot.room === fullRoomName && slot.day_of_week === dayIndex && slot.start_time?.substring(0, 5) === startTime
         );
     };
 
@@ -736,7 +738,7 @@ export default function TimetablePage() {
                                                             ) : (
                                                                 <div
                                                                     className="h-10 rounded border border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer flex items-center justify-center"
-                                                                    onClick={() => openCreateModal(dayIndex, session, room)}
+                                                                    onClick={() => openCreateModal(dayIndex, session, `${currentCampus.name} - ${room}`)}
                                                                 >
                                                                     <Plus className="w-4 h-4 text-gray-300" />
                                                                 </div>
