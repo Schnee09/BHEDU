@@ -895,7 +895,7 @@ export default function TimetablePage() {
                             </div>
                         </div>
                     )
-                )}
+                ) : null}
 
                 {/* Teacher View */}
                 {viewMode === 'teacher' && (
