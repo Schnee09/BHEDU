@@ -773,17 +773,22 @@ export default function TimetablePage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {PERIODS.map((period) => (
-                                            <tr key={period.id} className="border-b hover:bg-gray-50">
+                                        {ALL_SESSIONS.map((session) => (
+                                            <tr key={session.id} className="border-b hover:bg-gray-50">
                                                 <td className="p-2 border-r bg-gray-50 text-center">
-                                                    <div className="font-bold text-gray-700">{period.label}</div>
-                                                    <div className="text-xs text-gray-500">({period.time})</div>
+                                                    <div className="font-bold text-gray-700">{session.label}</div>
+                                                    <div className="text-xs text-gray-500">({session.time})</div>
                                                 </td>
                                                 {DAYS.map((_, dayIndex) => {
-                                                    const slot = getSlotForClassCell(dayIndex, period.start);
+                                                    const isAvailable = session.days.includes(dayIndex);
+                                                    const slot = isAvailable ? getSlotForClassCell(dayIndex, session.start) : null;
                                                     return (
                                                         <td key={dayIndex} className="p-1 border-r">
-                                                            {slot ? (
+                                                            {!isAvailable ? (
+                                                                <div className="h-16 rounded-lg bg-gray-100 flex items-center justify-center">
+                                                                    <span className="text-xs text-gray-400">—</span>
+                                                                </div>
+                                                            ) : slot ? (
                                                                 <div
                                                                     className="p-2 bg-indigo-50 border-2 border-indigo-200 rounded-lg text-sm cursor-pointer hover:shadow-md relative group"
                                                                     onClick={() => openEditModal(slot)}
@@ -809,7 +814,7 @@ export default function TimetablePage() {
                                                             ) : (
                                                                 <div
                                                                     className="h-16 rounded-lg border-2 border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer flex items-center justify-center"
-                                                                    onClick={() => openCreateModal(dayIndex, period)}
+                                                                    onClick={() => openCreateModal(dayIndex, session)}
                                                                 >
                                                                     <Plus className="w-4 h-4 text-gray-300" />
                                                                 </div>
