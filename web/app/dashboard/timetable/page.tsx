@@ -157,8 +157,18 @@ export default function TimetablePage() {
     });
 
     const isAdmin = profile?.role === "admin" || profile?.role === "staff";
+    const isTeacher = profile?.role === "teacher";
+    const isStudent = profile?.role === "student";
     const currentCampus = CAMPUSES.find(c => c.id === selectedCampus);
     const isTutoring = selectedCampus === "HK";
+
+    // Auto-select teacher's own schedule when logged in as teacher
+    useEffect(() => {
+        if (isTeacher && profile?.id && !selectedTeacher) {
+            setSelectedTeacher(profile.id);
+            setViewMode('teacher');
+        }
+    }, [isTeacher, profile?.id]);
 
     // Tutoring sub-view mode: 'teacher' grid or 'list'
     const [tutoringViewMode, setTutoringViewMode] = useState<'teacher' | 'list'>('list');
@@ -402,39 +412,61 @@ export default function TimetablePage() {
                     </div>
                 </div>
 
-                {/* View Mode Tabs */}
-                <div className="flex justify-center gap-2 mb-4">
-                    <button
-                        onClick={() => setViewMode('room')}
-                        className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'room'
-                            ? 'bg-white border-blue-500 text-blue-600'
-                            : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
-                            }`}
-                    >
-                        <Building2 className="w-4 h-4 inline mr-2" />
-                        Theo phòng
-                    </button>
-                    <button
-                        onClick={() => setViewMode('class')}
-                        className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'class'
-                            ? 'bg-white border-blue-500 text-blue-600'
-                            : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
-                            }`}
-                    >
-                        <Users className="w-4 h-4 inline mr-2" />
-                        Theo lớp
-                    </button>
-                    <button
-                        onClick={() => setViewMode('teacher')}
-                        className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'teacher'
-                            ? 'bg-white border-blue-500 text-blue-600'
-                            : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
-                            }`}
-                    >
-                        <GraduationCap className="w-4 h-4 inline mr-2" />
-                        Theo giáo viên
-                    </button>
-                </div>
+                {/* View Mode Tabs - Only for Admin/Staff */}
+                {isAdmin && (
+                    <>
+                        <div className="flex justify-center gap-2 mb-4">
+                            <button
+                                onClick={() => setViewMode('room')}
+                                className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'room'
+                                    ? 'bg-white border-blue-500 text-blue-600'
+                                    : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
+                                    }`}
+                            >
+                                <Building2 className="w-4 h-4 inline mr-2" />
+                                Theo phòng
+                            </button>
+                            <button
+                                onClick={() => setViewMode('class')}
+                                className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'class'
+                                    ? 'bg-white border-blue-500 text-blue-600'
+                                    : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
+                                    }`}
+                            >
+                                <Users className="w-4 h-4 inline mr-2" />
+                                Theo lớp
+                            </button>
+                            <button
+                                onClick={() => setViewMode('teacher')}
+                                className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'teacher'
+                                    ? 'bg-white border-blue-500 text-blue-600'
+                                    : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
+                                    }`}
+                            >
+                                <GraduationCap className="w-4 h-4 inline mr-2" />
+                                Theo giáo viên
+                            </button>
+                        </div>
+                    </>
+                )}
+
+                {/* Teacher View - for teachers, show without tabs */}
+                {isTeacher && !isAdmin && (
+                    <div className="text-center mb-4">
+                        <h2 className="text-xl font-semibold text-green-600">
+                            👨‍🏫 Lịch dạy của bạn
+                        </h2>
+                    </div>
+                )}
+
+                {/* Student View - for students, show without tabs */}
+                {isStudent && !isAdmin && (
+                    <div className="text-center mb-4">
+                        <h2 className="text-xl font-semibold text-indigo-600">
+                            📚 Thời khóa biểu của bạn
+                        </h2>
+                    </div>
+                )}
 
                 {/* Campus Tabs (Room View) */}
                 {viewMode === 'room' && (
@@ -949,131 +981,133 @@ export default function TimetablePage() {
             </div>
 
             {/* Modal for Create/Edit */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4" style={{ zIndex: 9999 }}>
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg shadow-2xl" style={{ backgroundColor: 'white' }}>
-                        <div className="p-6 border-b flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                {editingSlot ? <Edit3 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                                {editingSlot ? 'Chỉnh sửa' : 'Đặt phòng / Thêm tiết học'}
-                            </h2>
-                            <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="p-2 hover:bg-gray-100 rounded-lg">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-6 space-y-4">
-                            {/* Context Info - show what was selected from grid */}
-                            {formData.room && (
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                                    <div className="text-sm font-medium text-blue-800 mb-1">📍 Thông tin đã chọn:</div>
-                                    <div className="grid grid-cols-3 gap-2 text-sm">
-                                        <div><span className="text-gray-500">Phòng:</span> <strong>{formData.room}</strong></div>
-                                        <div><span className="text-gray-500">Ngày:</span> <strong>{DAYS[formData.day_of_week]}</strong></div>
-                                        <div><span className="text-gray-500">Ca:</span> <strong>{formData.start_time} - {formData.end_time}</strong></div>
+            {
+                showModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4" style={{ zIndex: 9999 }}>
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg shadow-2xl" style={{ backgroundColor: 'white' }}>
+                            <div className="p-6 border-b flex items-center justify-between">
+                                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                    {editingSlot ? <Edit3 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                                    {editingSlot ? 'Chỉnh sửa' : 'Đặt phòng / Thêm tiết học'}
+                                </h2>
+                                <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="p-2 hover:bg-gray-100 rounded-lg">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                                {/* Context Info - show what was selected from grid */}
+                                {formData.room && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                                        <div className="text-sm font-medium text-blue-800 mb-1">📍 Thông tin đã chọn:</div>
+                                        <div className="grid grid-cols-3 gap-2 text-sm">
+                                            <div><span className="text-gray-500">Phòng:</span> <strong>{formData.room}</strong></div>
+                                            <div><span className="text-gray-500">Ngày:</span> <strong>{DAYS[formData.day_of_week]}</strong></div>
+                                            <div><span className="text-gray-500">Ca:</span> <strong>{formData.start_time} - {formData.end_time}</strong></div>
+                                        </div>
                                     </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Lớp *</label>
+                                    <select
+                                        value={formData.class_id}
+                                        onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">-- Chọn lớp --</option>
+                                        {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
                                 </div>
-                            )}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Môn học *</label>
+                                    <select
+                                        value={formData.subject_id}
+                                        onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">-- Chọn môn học --</option>
+                                        {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {formData.room === 'Linh hoạt' ? 'Gia sư' : 'Giáo viên'} (không bắt buộc)
+                                    </label>
+                                    <select
+                                        value={formData.teacher_id}
+                                        onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    >
+                                        <option value="">{formData.room === 'Linh hoạt' ? '-- Chọn gia sư --' : '-- Chọn giáo viên --'}</option>
+                                        {(formData.room === 'Linh hoạt' ? tutors : teachers).map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                                    </select>
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Lớp *</label>
-                                <select
-                                    value={formData.class_id}
-                                    onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">-- Chọn lớp --</option>
-                                    {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Môn học *</label>
-                                <select
-                                    value={formData.subject_id}
-                                    onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">-- Chọn môn học --</option>
-                                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    {formData.room === 'Linh hoạt' ? 'Gia sư' : 'Giáo viên'} (không bắt buộc)
-                                </label>
-                                <select
-                                    value={formData.teacher_id}
-                                    onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                >
-                                    <option value="">{formData.room === 'Linh hoạt' ? '-- Chọn gia sư --' : '-- Chọn giáo viên --'}</option>
-                                    {(formData.room === 'Linh hoạt' ? tutors : teachers).map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
-                                </select>
-                            </div>
-
-                            {/* Only show advanced options when no context or editing */}
-                            {(!formData.room || editingSlot) && (
-                                <>
-                                    <div className="border-t pt-4 mt-4">
-                                        <div className="text-sm font-medium text-gray-500 mb-3">⚙️ Tùy chọn nâng cao</div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Thứ</label>
-                                                <select
-                                                    value={formData.day_of_week}
-                                                    onChange={(e) => setFormData({ ...formData, day_of_week: parseInt(e.target.value) })}
-                                                    className="w-full px-3 py-2 border rounded-lg"
-                                                >
-                                                    {DAYS.map((day, i) => <option key={i} value={i}>{day}</option>)}
-                                                </select>
+                                {/* Only show advanced options when no context or editing */}
+                                {(!formData.room || editingSlot) && (
+                                    <>
+                                        <div className="border-t pt-4 mt-4">
+                                            <div className="text-sm font-medium text-gray-500 mb-3">⚙️ Tùy chọn nâng cao</div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Thứ</label>
+                                                    <select
+                                                        value={formData.day_of_week}
+                                                        onChange={(e) => setFormData({ ...formData, day_of_week: parseInt(e.target.value) })}
+                                                        className="w-full px-3 py-2 border rounded-lg"
+                                                    >
+                                                        {DAYS.map((day, i) => <option key={i} value={i}>{day}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ca</label>
+                                                    <select
+                                                        value={formData.start_time}
+                                                        onChange={(e) => {
+                                                            const session = ALL_SESSIONS.find(s => s.start === e.target.value);
+                                                            setFormData({ ...formData, start_time: e.target.value, end_time: session?.end || formData.end_time });
+                                                        }}
+                                                        className="w-full px-3 py-2 border rounded-lg"
+                                                    >
+                                                        {ALL_SESSIONS.map(p => <option key={p.id} value={p.start}>{p.label} ({p.time})</option>)}
+                                                    </select>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Ca</label>
+                                            <div className="mt-3">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
                                                 <select
-                                                    value={formData.start_time}
-                                                    onChange={(e) => {
-                                                        const session = ALL_SESSIONS.find(s => s.start === e.target.value);
-                                                        setFormData({ ...formData, start_time: e.target.value, end_time: session?.end || formData.end_time });
-                                                    }}
+                                                    value={formData.room}
+                                                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
                                                     className="w-full px-3 py-2 border rounded-lg"
                                                 >
-                                                    {ALL_SESSIONS.map(p => <option key={p.id} value={p.start}>{p.label} ({p.time})</option>)}
+                                                    <option value="">-- Chọn phòng --</option>
+                                                    <option value="Linh hoạt">🎓 Học kèm (Linh hoạt)</option>
+                                                    {CAMPUSES.filter(c => c.id !== 'HK').flatMap(c => c.rooms.map(room => `${c.name} - ${room}`)).map(room => (
+                                                        <option key={room} value={room}>{room}</option>
+                                                    ))}
                                                 </select>
                                             </div>
                                         </div>
-                                        <div className="mt-3">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
-                                            <select
-                                                value={formData.room}
-                                                onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                                                className="w-full px-3 py-2 border rounded-lg"
-                                            >
-                                                <option value="">-- Chọn phòng --</option>
-                                                <option value="Linh hoạt">🎓 Học kèm (Linh hoạt)</option>
-                                                {CAMPUSES.filter(c => c.id !== 'HK').flatMap(c => c.rooms.map(room => `${c.name} - ${room}`)).map(room => (
-                                                    <option key={room} value={room}>{room}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                        <div className="p-6 border-t flex justify-end gap-3">
-                            <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                                Hủy
-                            </button>
-                            <button
-                                onClick={saveSlot}
-                                disabled={saving || !formData.class_id || !formData.subject_id}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                {saving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                                {saving ? 'Đang lưu...' : (editingSlot ? 'Cập nhật' : 'Tạo')}
-                            </button>
+                                    </>
+                                )}
+                            </div>
+                            <div className="p-6 border-t flex justify-end gap-3">
+                                <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
+                                    Hủy
+                                </button>
+                                <button
+                                    onClick={saveSlot}
+                                    disabled={saving || !formData.class_id || !formData.subject_id}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {saving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                                    {saving ? 'Đang lưu...' : (editingSlot ? 'Cập nhật' : 'Tạo')}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
