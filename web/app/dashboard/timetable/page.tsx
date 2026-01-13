@@ -16,6 +16,7 @@ import {
     Trash2,
     Edit3,
     Phone,
+    GraduationCap,
 } from "lucide-react";
 
 interface TimetableSlot {
@@ -133,11 +134,12 @@ export default function TimetablePage() {
     const [loading, setLoading] = useState(true);
     const [currentWeek, setCurrentWeek] = useState(new Date());
 
-    // View mode: 'class' or 'room'
-    const [viewMode, setViewMode] = useState<'class' | 'room'>('room');
+    // View mode: 'class', 'room', or 'teacher'
+    const [viewMode, setViewMode] = useState<'class' | 'room' | 'teacher'>('room');
     const [selectedCampus, setSelectedCampus] = useState(CAMPUSES[0].id);
     const [selectedClass, setSelectedClass] = useState<string>("");
     const [selectedRoom, setSelectedRoom] = useState<string>("");
+    const [selectedTeacher, setSelectedTeacher] = useState<string>("");
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
@@ -349,6 +351,12 @@ export default function TimetablePage() {
         );
     };
 
+    const getSlotForTeacherCell = (teacherId: string, dayIndex: number, startTime: string): TimetableSlot | undefined => {
+        return slots.find(
+            (slot) => slot.teacher?.id === teacherId && slot.day_of_week === dayIndex && slot.start_time?.substring(0, 5) === startTime
+        );
+    };
+
     const getWeekDates = () => {
         const start = new Date(currentWeek);
         start.setDate(start.getDate() - start.getDay() + 1);
@@ -416,6 +424,16 @@ export default function TimetablePage() {
                         <Users className="w-4 h-4 inline mr-2" />
                         Theo lớp
                     </button>
+                    <button
+                        onClick={() => setViewMode('teacher')}
+                        className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'teacher'
+                            ? 'bg-white border-blue-500 text-blue-600'
+                            : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
+                            }`}
+                    >
+                        <GraduationCap className="w-4 h-4 inline mr-2" />
+                        Theo giáo viên
+                    </button>
                 </div>
 
                 {/* Campus Tabs (Room View) */}
@@ -448,6 +466,22 @@ export default function TimetablePage() {
                             <option value="">Chọn lớp</option>
                             {classes.map((c) => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
+                {/* Teacher Selector (Teacher View) */}
+                {viewMode === 'teacher' && (
+                    <div className="flex justify-center mb-4">
+                        <select
+                            value={selectedTeacher}
+                            onChange={(e) => setSelectedTeacher(e.target.value)}
+                            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium min-w-[250px]"
+                        >
+                            <option value="">👨‍🏫 Chọn giáo viên</option>
+                            {teachers.map((t) => (
+                                <option key={t.id} value={t.id}>{t.full_name}</option>
                             ))}
                         </select>
                     </div>
@@ -817,6 +851,88 @@ export default function TimetablePage() {
                                                                     onClick={() => openCreateModal(dayIndex, session)}
                                                                 >
                                                                     <Plus className="w-4 h-4 text-gray-300" />
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )
+                )}
+
+                {/* Teacher View */}
+                {viewMode === 'teacher' && (
+                    !selectedTeacher ? (
+                        <div className="bg-white rounded-lg p-12 text-center">
+                            <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500">Chọn một giáo viên để xem lịch dạy</p>
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-lg overflow-hidden shadow border">
+                            <div className="p-4 border-b bg-green-50">
+                                <h3 className="font-semibold text-green-800">
+                                    👨‍🏫 Lịch dạy: {teachers.find(t => t.id === selectedTeacher)?.full_name}
+                                </h3>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr className="bg-gradient-to-r from-green-500 to-teal-600 text-white">
+                                            <th className="p-3 border-r border-green-400 text-left w-28">Ca</th>
+                                            {DAYS.map((day, i) => (
+                                                <th key={day} className="p-3 border-r border-green-400 text-center min-w-[120px]">
+                                                    <div className="font-bold">{day}</div>
+                                                    <div className="text-xs opacity-80">{weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</div>
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {ALL_SESSIONS.map((session) => (
+                                            <tr key={session.id} className="border-b hover:bg-gray-50">
+                                                <td className="p-2 border-r bg-gray-50 text-center">
+                                                    <div className="font-bold text-gray-700">{session.label}</div>
+                                                    <div className="text-xs text-gray-500">({session.time})</div>
+                                                </td>
+                                                {DAYS.map((_, dayIndex) => {
+                                                    const isAvailable = session.days.includes(dayIndex);
+                                                    const slot = isAvailable ? getSlotForTeacherCell(selectedTeacher, dayIndex, session.start) : null;
+                                                    return (
+                                                        <td key={dayIndex} className="p-1 border-r">
+                                                            {!isAvailable ? (
+                                                                <div className="h-16 rounded-lg bg-gray-100 flex items-center justify-center">
+                                                                    <span className="text-xs text-gray-400">—</span>
+                                                                </div>
+                                                            ) : slot ? (
+                                                                <div
+                                                                    className="p-2 bg-green-50 border-2 border-green-200 rounded-lg text-sm cursor-pointer hover:shadow-md relative group"
+                                                                    onClick={() => openEditModal(slot)}
+                                                                >
+                                                                    <div className="font-bold text-green-800">{slot.class?.name || "N/A"}</div>
+                                                                    {slot.subject && (
+                                                                        <div className="text-green-600 text-xs">{slot.subject.name}</div>
+                                                                    )}
+                                                                    {slot.room && (
+                                                                        <div className="text-gray-500 text-xs">
+                                                                            <MapPin className="w-3 h-3 inline mr-1" />
+                                                                            {slot.room}
+                                                                        </div>
+                                                                    )}
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); deleteSlot(slot.id); }}
+                                                                        className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" />
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="h-16 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
+                                                                    <span className="text-xs text-gray-300">Trống</span>
                                                                 </div>
                                                             )}
                                                         </td>
