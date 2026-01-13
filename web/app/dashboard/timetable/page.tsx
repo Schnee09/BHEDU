@@ -295,17 +295,19 @@ export default function TimetablePage() {
     };
 
     const openCreateModal = (dayIndex?: number, period?: typeof PERIODS[0], room?: string) => {
+        console.log('openCreateModal called:', { dayIndex, period, room, selectedClass });
         setEditingSlot(null);
         setFormData({
             class_id: selectedClass || "",
             subject_id: "",
             teacher_id: "",
             day_of_week: dayIndex ?? 0,
-            start_time: period?.start ?? "07:30",
-            end_time: period?.end ?? "08:15",
+            start_time: period?.start ?? "17:00",
+            end_time: period?.end ?? "18:30",
             room: room || ""
         });
         setShowModal(true);
+        console.log('Modal should be open now, showModal:', true);
     };
 
     const openEditModal = (slot: TimetableSlot) => {
