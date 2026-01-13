@@ -816,7 +816,7 @@ export default function TimetablePage() {
                             </table>
                         </div>
                     </div>
-                ) : (
+                ) : viewMode === 'class' ? (
                     /* Class-based View */
                     !selectedClass ? (
                         <div className="bg-white rounded-lg p-12 text-center">
