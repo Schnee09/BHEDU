@@ -230,8 +230,6 @@ export default function TimetablePage() {
     };
 
     const saveSlot = async () => {
-        console.log('saveSlot called with formData:', formData);
-
         if (!formData.class_id) {
             alert('Vui lòng chọn lớp học');
             return;
@@ -247,13 +245,6 @@ export default function TimetablePage() {
             const url = isEditing ? `/api/timetable/${editingSlot.id}` : '/api/timetable';
             const method = isEditing ? 'PUT' : 'POST';
 
-            console.log('Sending request to:', url, 'method:', method);
-            console.log('Request body:', JSON.stringify({
-                ...formData,
-                subject_id: formData.subject_id || null,
-                teacher_id: formData.teacher_id || null
-            }));
-
             const response = await apiFetch(url, {
                 method,
                 body: JSON.stringify({
@@ -264,25 +255,17 @@ export default function TimetablePage() {
                 headers: { 'Content-Type': 'application/json' }
             });
 
-            console.log('Response status:', response.status);
             const result = await response.json();
-            console.log('Response result:', result);
-
             if (!result.success) {
                 throw new Error(result.error || 'Failed to save');
             }
 
-            console.log('Save successful, closing modal and refreshing');
             setShowModal(false);
             setEditingSlot(null);
             if (viewMode === 'room') {
-                console.log('Fetching all slots...');
                 await fetchAllSlots();
-                console.log('Fetch complete');
             } else {
-                console.log('Fetching class slots...');
                 await fetchClassSlots();
-                console.log('Fetch complete');
             }
         } catch (error: any) {
             console.error('Failed to save slot:', error);
@@ -312,7 +295,6 @@ export default function TimetablePage() {
     };
 
     const openCreateModal = (dayIndex?: number, period?: typeof PERIODS[0], room?: string) => {
-        console.log('openCreateModal called:', { dayIndex, period, room, selectedClass });
         setEditingSlot(null);
         setFormData({
             class_id: selectedClass || "",
@@ -324,7 +306,6 @@ export default function TimetablePage() {
             room: room || ""
         });
         setShowModal(true);
-        console.log('Modal should be open now, showModal:', true);
     };
 
     const openEditModal = (slot: TimetableSlot) => {
