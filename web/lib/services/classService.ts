@@ -30,6 +30,12 @@ export interface ClassWithDetails extends Class {
     first_name: string;
     last_name: string;
     email: string;
+    subject_id?: string;
+    subjects?: {
+      id: string;
+      name: string;
+      code: string;
+    };
   };
   academic_years: {
     id: string;
@@ -64,7 +70,7 @@ export class ClassService {
       .select(`
         *,
         courses (id, name, code),
-        teacher:profiles!teacher_id (id, first_name, last_name, email),
+        teacher:profiles!teacher_id (id, first_name, last_name, email, subject_id, subjects (id, name, code)),
         academic_years (id, name, start_date, end_date)
       `, { count: 'exact' });
 
@@ -113,7 +119,7 @@ export class ClassService {
       .select(`
         *,
         courses (id, name, code),
-        teacher:profiles!teacher_id (id, first_name, last_name, email),
+        teacher:profiles!teacher_id (id, first_name, last_name, email, subject_id, subjects (id, name, code)),
         academic_years (id, name, start_date, end_date)
       `)
       .eq('id', id)

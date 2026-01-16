@@ -5,13 +5,14 @@
  * 
  * Visualizes a student's academic performance over time
  * with GPA trend charts, milestone markers, and event annotations.
+ * Uses lazy-loaded chart components for better performance.
  */
 
 import { useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import {
-    LineChart,
     Line,
     XAxis,
     YAxis,
@@ -20,8 +21,17 @@ import {
     ResponsiveContainer,
     ReferenceLine,
     Area,
-    AreaChart,
 } from 'recharts';
+
+// Lazy load AreaChart
+const LazyAreaChart = dynamic(() => import('recharts').then(mod => mod.AreaChart), {
+    ssr: false,
+    loading: () => (
+        <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-full flex items-center justify-center">
+            <span className="text-gray-400 dark:text-gray-500 text-sm">Đang tải biểu đồ...</span>
+        </div>
+    )
+});
 
 interface TimelineEvent {
     date: string;
@@ -171,7 +181,7 @@ export default function PerformanceTimeline({
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                            <LazyAreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="gpaGradient" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -239,7 +249,7 @@ export default function PerformanceTimeline({
                                     activeDot={{ r: 7, strokeWidth: 0 }}
                                     name="Điểm TB"
                                 />
-                            </AreaChart>
+                            </LazyAreaChart>
                         </ResponsiveContainer>
                     )}
                 </div>

@@ -287,40 +287,106 @@ export default function AttendanceMarkingPage() {
           <div className="text-gray-500">Chọn lớp và ngày để xem điểm danh</div>
         </div>
       ) : (
-        <div className="bg-white border border-gray-300 rounded-lg overflow-hidden mb-6">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+        <div className="bg-white dark:bg-stone-900 border border-gray-300 dark:border-stone-700 rounded-lg overflow-hidden mb-6">
+
+          {/* Mobile Card View */}
+          <div className="md:hidden p-4 space-y-3 mobile-card-list">
+            {students.map((student) => {
+              const statusInfo = getStatusFormatted(student.status)
+              return (
+                <div
+                  key={student.studentId}
+                  className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+                >
+                  {/* Student Info */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                        {student.studentName}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {student.studentCode || student.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status Selector - Large touch-friendly buttons */}
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <button
+                      onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.PRESENT)}
+                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${student.status === AttendanceStatus.PRESENT
+                          ? 'bg-green-600 text-white ring-2 ring-green-400'
+                          : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                        }`}
+                    >
+                      ✅ Có mặt
+                    </button>
+                    <button
+                      onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.ABSENT)}
+                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${student.status === AttendanceStatus.ABSENT
+                          ? 'bg-red-600 text-white ring-2 ring-red-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}
+                    >
+                      ❌ Vắng
+                    </button>
+                    <button
+                      onClick={() => updateStudentStatus(student.studentId, 'unmarked')}
+                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${student.status === 'unmarked'
+                          ? 'bg-gray-600 text-white ring-2 ring-gray-400'
+                          : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+                        }`}
+                    >
+                      — Chưa
+                    </button>
+                  </div>
+
+                  {/* Additional Info */}
+                  {(student.checkInTime || student.notes) && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-stone-700">
+                      {student.checkInTime && <span>Check-in: {student.checkInTime}</span>}
+                      {student.notes && <span className="ml-2">• {student.notes}</span>}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto table-scroll-container">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-stone-700">
+              <thead className="bg-gray-50 dark:bg-stone-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Học sinh
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Mã học sinh
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Trạng thái
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Giờ check-in
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Ghi chú
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
                 {students.map((student) => {
                   const statusInfo = getStatusFormatted(student.status)
                   return (
-                    <tr key={student.studentId} className="hover:bg-gray-50">
+                    <tr key={student.studentId} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">
                           {student.studentName}
                         </div>
-                        <div className="text-sm text-gray-500">{student.studentCode || student.email}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{student.studentCode || student.email}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {student.studentCode || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -334,10 +400,10 @@ export default function AttendanceMarkingPage() {
                           <option value={AttendanceStatus.ABSENT}>❌ Vắng</option>
                         </select>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {student.checkInTime || '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                         {student.notes || '-'}
                       </td>
                     </tr>

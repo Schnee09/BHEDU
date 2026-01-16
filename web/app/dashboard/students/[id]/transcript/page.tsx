@@ -3,25 +3,20 @@
 /**
  * Student Transcript (Học bạ) Page
  * Generates Vietnamese-format student transcripts with selectors
+ * Uses lazy-loaded PDF components for better performance
  */
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api/client';
-import dynamic from 'next/dynamic';
 
-// Dynamically import PDF viewer to avoid SSR issues
-const PDFDownloadLink = dynamic(
-  () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
-  { ssr: false }
-);
-
-const PDFViewer = dynamic(
-  () => import('@react-pdf/renderer').then((mod) => mod.PDFViewer),
-  { ssr: false }
-);
-
-import { HocBaDocument, TranscriptData } from '@/components/pdf/HocBaTemplate';
+// Lazy-loaded PDF components - @react-pdf only loads when needed
+import {
+  LazyPDFViewer as PDFViewer,
+  LazyPDFDownloadLink as PDFDownloadLink,
+  LazyHocBaDocument as HocBaDocument,
+  type TranscriptData
+} from '@/components/pdf/LazyPDF';
 
 interface AcademicYear {
   id: string;
@@ -246,57 +241,121 @@ export default function TranscriptPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Subjects Table */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Kết quả chi tiết</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+          <div className="bg-white dark:bg-stone-900 rounded-lg shadow-md p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Kết quả chi tiết</h2>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3 mobile-card-list">
+              {transcriptData.subjects.map((subject, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+                >
+                  {/* Subject Header */}
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                      {subject.subject_name}
+                    </h3>
+                    <div className="bg-blue-100 dark:bg-blue-900/50 px-3 py-1 rounded-full">
+                      <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                        {subject.final_grade.toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Grade Components Grid */}
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                      <p className="text-xs text-gray-500 mb-1">Miệng</p>
+                      <p className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                        {subject.component_grades?.oral?.toFixed(1) || '-'}
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                      <p className="text-xs text-gray-500 mb-1">15p</p>
+                      <p className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                        {subject.component_grades?.fifteen_min?.toFixed(1) || '-'}
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                      <p className="text-xs text-gray-500 mb-1">1 tiết</p>
+                      <p className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                        {subject.component_grades?.one_period?.toFixed(1) || '-'}
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                      <p className="text-xs text-gray-500 mb-1">Giữa kỳ</p>
+                      <p className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                        {subject.component_grades?.midterm?.toFixed(1) || '-'}
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                      <p className="text-xs text-gray-500 mb-1">Cuối kỳ</p>
+                      <p className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                        {subject.component_grades?.final?.toFixed(1) || '-'}
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-2">
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">TB</p>
+                      <p className="font-bold text-sm text-blue-600 dark:text-blue-400">
+                        {subject.final_grade.toFixed(1)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto table-scroll-container">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-stone-700">
+                <thead className="bg-gray-50 dark:bg-stone-800">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                       Môn học
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                       Miệng
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                       15 phút
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                       1 tiết
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                       Giữa kỳ
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                       Cuối kỳ
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                       TB môn
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
                   {transcriptData.subjects.map((subject, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                         {subject.subject_name}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-gray-600">
+                      <td className="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-300">
                         {subject.component_grades?.oral?.toFixed(1) || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-gray-600">
+                      <td className="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-300">
                         {subject.component_grades?.fifteen_min?.toFixed(1) || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-gray-600">
+                      <td className="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-300">
                         {subject.component_grades?.one_period?.toFixed(1) || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-gray-600">
+                      <td className="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-300">
                         {subject.component_grades?.midterm?.toFixed(1) || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-gray-600">
+                      <td className="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-300">
                         {subject.component_grades?.final?.toFixed(1) || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center font-bold text-gray-900">
+                      <td className="px-4 py-3 text-sm text-center font-bold text-blue-600 dark:text-blue-400">
                         {subject.final_grade.toFixed(1)}
                       </td>
                     </tr>

@@ -17,24 +17,43 @@ import {
     Edit3,
     Phone,
     GraduationCap,
+    ClipboardList,
+    Search,
+    ChevronDown,
+    Save,
 } from "lucide-react";
 
 interface TimetableSlot {
     id: string;
     class_id: string;
+    student_id?: string;
     subject: { id: string; name: string; code: string } | null;
     teacher: { id: string; full_name: string; phone?: string } | null;
+    student?: { id: string; full_name: string } | null;
     class?: { id: string; name: string } | null;
     day_of_week: number;
     start_time: string;
     end_time: string;
     room: string | null;
-    notes: string | null;
+    notes: string | null; // Default notes
+    weekly_note?: string | null; // Week-specific notes
+    has_weekly_note?: boolean; // Flag for visual indicator
 }
 
 interface ClassOption {
     id: string;
     name: string;
+    teacher_id?: string;
+    teacher?: {
+        id: string;
+        full_name: string;
+        subject_id?: string;
+        subjects?: {
+            id: string;
+            name: string;
+            code: string;
+        }
+    }
 }
 
 interface SubjectOption {
@@ -47,6 +66,11 @@ interface TeacherOption {
     id: string;
     full_name: string;
     phone?: string;
+}
+
+interface StudentOption {
+    id: string;
+    full_name: string;
 }
 
 // Campuses configuration (Cơ sở)
@@ -131,6 +155,7 @@ export default function TimetablePage() {
     const [subjects, setSubjects] = useState<SubjectOption[]>([]);
     const [teachers, setTeachers] = useState<TeacherOption[]>([]);
     const [tutors, setTutors] = useState<TeacherOption[]>([]);  // Separate list for tutors
+    const [students, setStudents] = useState<StudentOption[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentWeek, setCurrentWeek] = useState(new Date());
 
@@ -148,12 +173,15 @@ export default function TimetablePage() {
     const [deleting, setDeleting] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         class_id: "",
+        student_id: "",
         subject_id: "",
         teacher_id: "",
         day_of_week: 0,
         start_time: "17:00",
         end_time: "18:30",
-        room: ""
+        room: "",
+        notes: "",
+        weekly_note: "" // Weekly-specific note
     });
 
     const isAdmin = profile?.role === "admin" || profile?.role === "staff";
@@ -177,8 +205,13 @@ export default function TimetablePage() {
     const fetchAllSlots = async () => {
         setLoading(true);
         try {
+            // Calculate week start date (Monday)
+            const weekStart = new Date(currentWeek);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+            const weekStartStr = weekStart.toISOString().split('T')[0];
+
             // Fetch all slots (no class filter) for room view
-            const response = await apiFetch('/api/timetable/all');
+            const response = await apiFetch(`/api/timetable/all?week_start_date=${weekStartStr}`);
             const data = await response.json();
             setSlots(data.slots || []);
         } catch (error) {
@@ -196,7 +229,12 @@ export default function TimetablePage() {
         }
         setLoading(true);
         try {
-            const response = await apiFetch(`/api/timetable?class_id=${selectedClass}`);
+            // Calculate week start date (Monday)
+            const weekStart = new Date(currentWeek);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+            const weekStartStr = weekStart.toISOString().split('T')[0];
+
+            const response = await apiFetch(`/api/timetable?class_id=${selectedClass}&week_start_date=${weekStartStr}`);
             const data = await response.json();
             setSlots(data.slots || []);
         } catch (error) {
@@ -219,27 +257,38 @@ export default function TimetablePage() {
 
     const fetchSubjectsAndTeachers = async () => {
         try {
-            const [subRes, teacherRes, tutorRes] = await Promise.all([
+            const [subRes, teacherRes, tutorRes, studentRes] = await Promise.all([
                 apiFetch('/api/subjects'),
                 apiFetch('/api/admin/users?role=teacher'),
-                apiFetch('/api/tutors')
+                apiFetch('/api/tutors'),
+                apiFetch('/api/admin/users?role=student')
             ]);
             const subData = await subRes.json();
             const teacherData = await teacherRes.json();
             const tutorData = await tutorRes.json();
+            const studentData = await studentRes.json();
             setSubjects(subData.subjects || []);
             setTeachers(teacherData.users || []);
             setTutors(tutorData.tutors || []);
+            setStudents(studentData.users || []);
         } catch (e) {
             console.error('Failed to fetch subjects/teachers:', e);
         }
     };
 
     const saveSlot = async () => {
-        if (!formData.class_id) {
-            alert('Vui lòng chọn lớp học');
-            return;
+        if (formData.room === 'Linh hoạt') {
+            if (!formData.student_id) {
+                alert('Vui lòng chọn học sinh');
+                return;
+            }
+        } else {
+            if (!formData.class_id) {
+                alert('Vui lòng chọn lớp');
+                return;
+            }
         }
+
         if (!formData.subject_id) {
             alert('Vui lòng chọn môn học');
             return;
@@ -264,6 +313,34 @@ export default function TimetablePage() {
             const result = await response.json();
             if (!result.success) {
                 throw new Error(result.error || 'Failed to save');
+            }
+
+            // Save weekly note if provided
+            const slotId = isEditing ? editingSlot.id : result.slot?.id;
+            if (slotId && formData.weekly_note) {
+                // Calculate week start date (Monday)
+                const weekStart = new Date(currentWeek);
+                weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+                const weekStartStr = weekStart.toISOString().split('T')[0];
+
+                await apiFetch('/api/timetable/weekly-notes', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        slot_id: slotId,
+                        week_start_date: weekStartStr,
+                        notes: formData.weekly_note
+                    }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            } else if (slotId && !formData.weekly_note && editingSlot?.has_weekly_note) {
+                // Delete weekly note if it was cleared
+                const weekStart = new Date(currentWeek);
+                weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+                const weekStartStr = weekStart.toISOString().split('T')[0];
+
+                await apiFetch(`/api/timetable/weekly-notes?slot_id=${slotId}&week_start_date=${weekStartStr}`, {
+                    method: 'DELETE'
+                });
             }
 
             setShowModal(false);
@@ -303,13 +380,16 @@ export default function TimetablePage() {
     const openCreateModal = (dayIndex?: number, period?: typeof PERIODS[0], room?: string) => {
         setEditingSlot(null);
         setFormData({
-            class_id: selectedClass || "",
+            class_id: room === 'Linh hoạt' ? "" : (selectedClass || ""),
+            student_id: "",
             subject_id: "",
             teacher_id: "",
             day_of_week: dayIndex ?? 0,
             start_time: period?.start ?? "17:00",
             end_time: period?.end ?? "18:30",
-            room: room || ""
+            room: room || "",
+            notes: "",
+            weekly_note: ""
         });
         setShowModal(true);
     };
@@ -317,13 +397,16 @@ export default function TimetablePage() {
     const openEditModal = (slot: TimetableSlot) => {
         setEditingSlot(slot);
         setFormData({
-            class_id: slot.class_id,
+            class_id: slot.class_id || "",
+            student_id: slot.student_id || "",
             subject_id: slot.subject?.id || "",
             teacher_id: slot.teacher?.id || "",
             day_of_week: slot.day_of_week,
             start_time: slot.start_time,
             end_time: slot.end_time,
-            room: slot.room || ""
+            room: slot.room || "",
+            notes: slot.notes || "",
+            weekly_note: slot.weekly_note || ""
         });
         setShowModal(true);
     };
@@ -345,7 +428,7 @@ export default function TimetablePage() {
         } else if (viewMode === 'room') {
             fetchAllSlots();
         }
-    }, [viewMode, selectedClass]);
+    }, [viewMode, selectedClass, currentWeek]);
 
     const getSlotForRoomCell = (room: string, dayIndex: number, startTime: string): TimetableSlot | undefined => {
         // Build full room name with campus prefix
@@ -391,131 +474,135 @@ export default function TimetablePage() {
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 {/* Header */}
-                <div className="text-center mb-6">
-                    <h1 className="text-2xl font-bold text-red-700 dark:text-red-400">
-                        {viewMode === 'room' ? 'LỊCH SỬ DỤNG PHÒNG' : 'QUẢN LÝ THỜI KHÓA BIỂU'}
-                    </h1>
-                    <div className="flex items-center justify-center gap-4 mt-2 text-sm text-blue-600">
-                        <button onClick={() => {
-                            const prev = new Date(currentWeek);
-                            prev.setDate(prev.getDate() - 7);
-                            setCurrentWeek(prev);
-                        }}>&lt;&lt; Tuần trước đó</button>
-                        <span className="text-gray-400">|</span>
-                        <button onClick={() => setCurrentWeek(new Date())} className="font-medium">Tuần hiện tại</button>
-                        <span className="text-gray-400">|</span>
-                        <button onClick={() => {
-                            const next = new Date(currentWeek);
-                            next.setDate(next.getDate() + 7);
-                            setCurrentWeek(next);
-                        }}>Tuần kế tiếp &gt;&gt;</button>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                            <Calendar className="w-6 h-6 text-red-600 dark:text-red-400" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+                                {viewMode === 'room' ? 'Lịch Sử Dụng Phòng' : 'Quản Lý Thời Khóa Biểu'}
+                            </h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {weekDates[0].toLocaleDateString('vi-VN')} - {weekDates[6].toLocaleDateString('vi-VN')}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+                        <button
+                            onClick={() => {
+                                const prev = new Date(currentWeek);
+                                prev.setDate(prev.getDate() - 7);
+                                setCurrentWeek(prev);
+                            }}
+                            className="p-2 hover:bg-white dark:hover:bg-gray-600 rounded-lg transition-all hover:shadow-sm text-gray-600 dark:text-gray-300"
+                            title="Tuần trước"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => setCurrentWeek(new Date())}
+                            className="px-4 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-600 rounded-lg transition-all"
+                        >
+                            Tuần hiện tại
+                        </button>
+                        <button
+                            onClick={() => {
+                                const next = new Date(currentWeek);
+                                next.setDate(next.getDate() + 7);
+                                setCurrentWeek(next);
+                            }}
+                            className="p-2 hover:bg-white dark:hover:bg-gray-600 rounded-lg transition-all hover:shadow-sm text-gray-600 dark:text-gray-300"
+                            title="Tuần tiếp theo"
+                        >
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
 
                 {/* View Mode Tabs - Only for Admin/Staff */}
                 {isAdmin && (
-                    <>
-                        <div className="flex justify-center gap-2 mb-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 gap-4">
+                        <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl w-full sm:w-auto">
                             <button
                                 onClick={() => setViewMode('room')}
-                                className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'room'
-                                    ? 'bg-white border-blue-500 text-blue-600'
-                                    : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
+                                className={`flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${viewMode === 'room'
+                                    ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-600/50'
                                     }`}
                             >
-                                <Building2 className="w-4 h-4 inline mr-2" />
+                                <Building2 className="w-4 h-4" />
                                 Theo phòng
                             </button>
                             <button
                                 onClick={() => setViewMode('class')}
-                                className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'class'
-                                    ? 'bg-white border-blue-500 text-blue-600'
-                                    : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
+                                className={`flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${viewMode === 'class'
+                                    ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-600/50'
                                     }`}
                             >
-                                <Users className="w-4 h-4 inline mr-2" />
+                                <Users className="w-4 h-4" />
                                 Theo lớp
                             </button>
                             <button
                                 onClick={() => setViewMode('teacher')}
-                                className={`px-6 py-2 rounded-t-lg font-medium border-b-2 transition-colors ${viewMode === 'teacher'
-                                    ? 'bg-white border-blue-500 text-blue-600'
-                                    : 'bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200'
+                                className={`flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${viewMode === 'teacher'
+                                    ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-600/50'
                                     }`}
                             >
-                                <GraduationCap className="w-4 h-4 inline mr-2" />
+                                <GraduationCap className="w-4 h-4" />
                                 Theo giáo viên
                             </button>
                         </div>
-                    </>
-                )}
 
-                {/* Teacher View - for teachers, show without tabs */}
-                {isTeacher && !isAdmin && (
-                    <div className="text-center mb-4">
-                        <h2 className="text-xl font-semibold text-green-600">
-                            👨‍🏫 Lịch dạy của bạn
-                        </h2>
-                    </div>
-                )}
+                        {/* Condition-based selectors moved here for better layout */}
+                        <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
+                            {viewMode === 'room' && (
+                                <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl w-full">
+                                    {CAMPUSES.map(campus => (
+                                        <button
+                                            key={campus.id}
+                                            onClick={() => setSelectedCampus(campus.id)}
+                                            className={`flex-1 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${(campus as any).upcoming ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${selectedCampus === campus.id
+                                                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                                }`}
+                                            disabled={(campus as any).upcoming}
+                                        >
+                                            {campus.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
-                {/* Student View - for students, show without tabs */}
-                {isStudent && !isAdmin && (
-                    <div className="text-center mb-4">
-                        <h2 className="text-xl font-semibold text-indigo-600">
-                            📚 Thời khóa biểu của bạn
-                        </h2>
-                    </div>
-                )}
+                            {viewMode === 'class' && (
+                                <select
+                                    value={selectedClass}
+                                    onChange={(e) => setSelectedClass(e.target.value)}
+                                    className="w-full sm:w-64 px-4 py-2 bg-gray-100 dark:bg-gray-700 border-none rounded-xl text-gray-700 dark:text-gray-200 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                >
+                                    <option value="">-- Chọn lớp --</option>
+                                    {classes.map((c) => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            )}
 
-                {/* Campus Tabs (Room View) */}
-                {viewMode === 'room' && (
-                    <div className="flex justify-center gap-1 mb-4">
-                        {CAMPUSES.map(campus => (
-                            <button
-                                key={campus.id}
-                                onClick={() => setSelectedCampus(campus.id)}
-                                className={`px-6 py-2 rounded-lg font-medium transition-colors ${selectedCampus === campus.id
-                                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-400'
-                                    : 'bg-gray-50 text-gray-600 border border-gray-300 hover:bg-gray-100'
-                                    } ${(campus as any).upcoming ? 'opacity-60' : ''}`}
-                            >
-                                {campus.name.toUpperCase()}
-                                {(campus as any).upcoming && <span className="ml-1 text-xs">(Sắp ra mắt)</span>}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {/* Class Selector (Class View) */}
-                {viewMode === 'class' && (
-                    <div className="flex justify-center mb-4">
-                        <select
-                            value={selectedClass}
-                            onChange={(e) => setSelectedClass(e.target.value)}
-                            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium min-w-[200px]"
-                        >
-                            <option value="">Chọn lớp</option>
-                            {classes.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                )}
-
-                {/* Teacher Selector (Teacher View) */}
-                {viewMode === 'teacher' && (
-                    <div className="flex justify-center mb-4">
-                        <select
-                            value={selectedTeacher}
-                            onChange={(e) => setSelectedTeacher(e.target.value)}
-                            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium min-w-[250px]"
-                        >
-                            <option value="">👨‍🏫 Chọn giáo viên</option>
-                            {teachers.map((t) => (
-                                <option key={t.id} value={t.id}>{t.full_name}</option>
-                            ))}
-                        </select>
+                            {viewMode === 'teacher' && (
+                                <select
+                                    value={selectedTeacher}
+                                    onChange={(e) => setSelectedTeacher(e.target.value)}
+                                    className="w-full sm:w-64 px-4 py-2 bg-gray-100 dark:bg-gray-700 border-none rounded-xl text-gray-700 dark:text-gray-200 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                >
+                                    <option value="">👨‍🏫 Chọn giáo viên</option>
+                                    {teachers.map((t) => (
+                                        <option key={t.id} value={t.id}>{t.full_name}</option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -562,70 +649,88 @@ export default function TimetablePage() {
                     /* Tutoring View */
                     tutoringViewMode === 'list' ? (
                         /* List View for Tutoring */
-                        <div className="bg-white rounded-lg shadow border">
-                            <div className="p-4 border-b bg-purple-50">
-                                <h3 className="font-semibold text-purple-800">📋 Danh sách học kèm tuần này</h3>
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-purple-50/30 dark:bg-purple-900/10 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
+                                        <ClipboardList className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">Danh sách học kèm tuần này</h3>
+                                </div>
+                                <button
+                                    onClick={() => openCreateModal(0, ALL_SESSIONS[4], 'Linh hoạt')}
+                                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold transition-all flex items-center gap-2 shadow-sm shadow-purple-200 dark:shadow-none"
+                                >
+                                    <Plus className="w-4 h-4" /> Thêm lịch học kèm
+                                </button>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="bg-gray-50 border-b">
-                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Thứ/Ngày</th>
-                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Ca</th>
-                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Gia sư</th>
-                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Học sinh/Lớp</th>
-                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Môn</th>
-                                            <th className="p-3 text-left text-sm font-medium text-gray-600">Ghi chú</th>
-                                            <th className="p-3 text-center text-sm font-medium text-gray-600 w-20"></th>
+                                        <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+                                            <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Thứ/Ngày</th>
+                                            <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ca</th>
+                                            <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Gia sư</th>
+                                            <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Học sinh/Lớp</th>
+                                            <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Môn</th>
+                                            <th className="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ghi chú</th>
+                                            <th className="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Thao tác</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y">
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                         {slots.filter(s => !s.room || s.room === 'Linh hoạt').length === 0 ? (
                                             <tr>
-                                                <td colSpan={7} className="p-8 text-center text-gray-500">
-                                                    Chưa có lịch học kèm nào
-                                                    <br />
-                                                    <button
-                                                        onClick={() => openCreateModal(0, ALL_SESSIONS[4], 'Linh hoạt')}
-                                                        className="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700"
-                                                    >
-                                                        + Thêm lịch học kèm
-                                                    </button>
+                                                <td colSpan={7} className="p-20 text-center">
+                                                    <div className="bg-gray-50 dark:bg-gray-900/50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-gray-800">
+                                                        <Search className="w-8 h-8 text-gray-300" />
+                                                    </div>
+                                                    <p className="text-gray-500 dark:text-gray-400 font-medium">Chưa có lịch học kèm nào trong tuần này</p>
                                                 </td>
                                             </tr>
                                         ) : (
                                             slots.filter(s => !s.room || s.room === 'Linh hoạt').map(slot => (
-                                                <tr key={slot.id} className="hover:bg-gray-50">
-                                                    <td className="p-3 text-sm">
-                                                        <span className="font-medium">{DAYS[slot.day_of_week]}</span>
-                                                        <div className="text-xs text-gray-500">{weekDates[slot.day_of_week]?.toLocaleDateString('vi-VN')}</div>
+                                                <tr key={slot.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-colors group">
+                                                    <td className="p-4">
+                                                        <div className="font-bold text-gray-900 dark:text-white">{DAYS[slot.day_of_week]}</div>
+                                                        <div className="text-[10px] text-gray-400 font-medium uppercase">{weekDates[slot.day_of_week]?.toLocaleDateString('vi-VN')}</div>
                                                     </td>
-                                                    <td className="p-3 text-sm">
-                                                        {ALL_SESSIONS.find(s => s.start === slot.start_time?.substring(0, 5))?.label || slot.start_time}
+                                                    <td className="p-4">
+                                                        <div className="inline-flex px-2.5 py-1 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300">
+                                                            {ALL_SESSIONS.find(s => s.start === slot.start_time?.substring(0, 5))?.label || slot.start_time}
+                                                        </div>
                                                     </td>
-                                                    <td className="p-3 text-sm font-medium text-blue-700">
-                                                        {slot.teacher?.full_name || 'Chưa phân công'}
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs">
+                                                                {slot.teacher?.full_name?.charAt(0) || '?'}
+                                                            </div>
+                                                            <span className="font-bold text-blue-700 dark:text-blue-400 text-sm">{slot.teacher?.full_name || 'Chưa phân công'}</span>
+                                                        </div>
                                                     </td>
-                                                    <td className="p-3 text-sm">
-                                                        {slot.class?.name || slot.subject?.name || 'N/A'}
+                                                    <td className="p-4 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                                                        {slot.student?.full_name || slot.class?.name || slot.subject?.name || 'N/A'}
                                                     </td>
-                                                    <td className="p-3 text-sm text-gray-600">
-                                                        {slot.subject?.name}
+                                                    <td className="p-4">
+                                                        <span className="px-2 py-0.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded uppercase">
+                                                            {slot.subject?.name}
+                                                        </span>
                                                     </td>
-                                                    <td className="p-3 text-sm text-gray-500 italic">
-                                                        {slot.notes || '-'}
+                                                    <td className="p-4">
+                                                        <div className="text-sm text-gray-500 dark:text-gray-400 italic line-clamp-1 max-w-[200px]" title={slot.notes || ''}>
+                                                            {slot.notes || '-'}
+                                                        </div>
                                                     </td>
-                                                    <td className="p-3 text-center">
-                                                        <div className="flex gap-1 justify-center">
+                                                    <td className="p-4">
+                                                        <div className="flex gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button
                                                                 onClick={() => openEditModal(slot)}
-                                                                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
                                                             >
                                                                 <Edit3 className="w-4 h-4" />
                                                             </button>
                                                             <button
                                                                 onClick={() => deleteSlot(slot.id)}
-                                                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
@@ -637,118 +742,130 @@ export default function TimetablePage() {
                                     </tbody>
                                 </table>
                             </div>
-                            <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
-                                <span className="text-sm text-gray-500">
-                                    Tổng: {slots.filter(s => !s.room || s.room === 'Linh hoạt').length} buổi học kèm
+                            <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 flex justify-between items-center px-6">
+                                <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                                    Tổng: <span className="text-gray-900 dark:text-white">{slots.filter(s => !s.room || s.room === 'Linh hoạt').length}</span> buổi học kèm
                                 </span>
-                                <button
-                                    onClick={() => openCreateModal(0, ALL_SESSIONS[4], 'Linh hoạt')}
-                                    className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 flex items-center gap-2"
-                                >
-                                    <Plus className="w-4 h-4" /> Thêm học kèm
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        /* Teacher Grid View for Tutoring */
-                        <div className="bg-white rounded-lg overflow-hidden shadow border">
-                            <div className="p-4 border-b bg-purple-50">
-                                <h3 className="font-semibold text-purple-800">🎓 Lịch học kèm theo gia sư</h3>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full border-collapse">
-                                    <thead>
-                                        <tr className="bg-gray-50 border-b">
-                                            <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-24">Ca</th>
-                                            <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-32">Gia sư</th>
-                                            {DAYS.map((day, i) => (
-                                                <th key={day} className="p-2 border-r text-center min-w-[120px]">
-                                                    <div className="font-bold text-gray-800">{day}</div>
-                                                    <div className="text-xs text-gray-500">
-                                                        {weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                                                    </div>
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {ALL_SESSIONS.map((session) => (
-                                            tutors.length > 0 ? tutors.map((tutor, tutorIdx) => (
-                                                <tr key={`${session.id}-${tutor.id}`} className="border-b hover:bg-gray-50">
-                                                    {tutorIdx === 0 && (
-                                                        <td rowSpan={tutors.length} className="p-2 border-r bg-gradient-to-b from-purple-50 to-purple-100 align-middle text-center">
-                                                            <div className="font-bold text-purple-700">{session.label}</div>
-                                                            <div className="text-xs text-purple-600">{session.time}</div>
-                                                        </td>
-                                                    )}
-                                                    <td className="p-1 border-r bg-gray-50 text-center">
-                                                        <div className="text-xs font-medium text-gray-700 truncate max-w-[100px]">{tutor.full_name}</div>
-                                                    </td>
-                                                    {DAYS.map((_, dayIndex) => {
-                                                        const isAvailable = session.days.includes(dayIndex);
-                                                        const slot = isAvailable ? slots.find(s =>
-                                                            s.teacher?.id === tutor.id &&
-                                                            s.day_of_week === dayIndex &&
-                                                            s.start_time?.substring(0, 5) === session.start &&
-                                                            (!s.room || s.room === 'Linh hoạt')
-                                                        ) : null;
-
-                                                        return (
-                                                            <td key={dayIndex} className="p-1 border-r">
-                                                                {!isAvailable ? (
-                                                                    <div className="h-8 rounded bg-gray-100" />
-                                                                ) : slot ? (
-                                                                    <div
-                                                                        className="p-1.5 bg-purple-50 border border-purple-200 rounded text-xs cursor-pointer hover:bg-purple-100"
-                                                                        onClick={() => openEditModal(slot)}
-                                                                    >
-                                                                        <div className="font-medium text-purple-800 truncate">{slot.class?.name || slot.subject?.name}</div>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div
-                                                                        className="h-8 rounded border border-dashed border-gray-200 hover:border-purple-300 hover:bg-purple-50 cursor-pointer flex items-center justify-center"
-                                                                        onClick={() => {
-                                                                            setFormData({ ...formData, teacher_id: tutor.id });
-                                                                            openCreateModal(dayIndex, session, 'Linh hoạt');
-                                                                        }}
-                                                                    >
-                                                                        <Plus className="w-3 h-3 text-gray-300" />
-                                                                    </div>
-                                                                )}
-                                                            </td>
-                                                        );
-                                                    })}
-                                                </tr>
-                                            )) : (
-                                                <tr key={session.id}>
-                                                    <td className="p-2 border-r bg-purple-50 text-center">
-                                                        <div className="font-bold text-purple-700">{session.label}</div>
-                                                    </td>
-                                                    <td colSpan={8} className="p-4 text-center text-gray-500 text-sm">
-                                                        Chưa có gia sư nào
-                                                    </td>
-                                                </tr>
-                                            )
-                                        ))}
-                                    </tbody>
-                                </table>
                             </div>
                         </div>
                     )
+                        : (
+                            /* Teacher Grid View for Tutoring */
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700">
+                                <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-purple-50/30 dark:bg-purple-900/10 flex items-center gap-3">
+                                    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
+                                        <GraduationCap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900 dark:text-white">Lịch học kèm theo gia sư</h3>
+                                </div>
+                                <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-320px)] relative">
+                                    <table className="w-full border-separate border-spacing-0">
+                                        <thead className="sticky top-0 z-30">
+                                            <tr className="bg-purple-600 dark:bg-purple-900 shadow-sm">
+                                                <th className="p-3 border-b border-purple-500 dark:border-emerald-800 text-center text-xs font-semibold text-white uppercase tracking-wider w-24 sticky left-0 z-40 bg-purple-600 dark:bg-purple-900">Ca</th>
+                                                <th className="p-3 border-b border-purple-500 dark:border-emerald-800 text-center text-xs font-semibold text-white uppercase tracking-wider w-32 sticky left-24 z-40 bg-purple-600 dark:bg-purple-900">Gia sư</th>
+                                                {DAYS.map((day, i) => (
+                                                    <th key={day} className="p-3 border-b border-purple-500 dark:border-emerald-800 text-center min-w-[140px] bg-purple-600 dark:bg-purple-900">
+                                                        <div className="font-bold text-white">{day}</div>
+                                                        <div className="text-[10px] text-purple-200 font-medium">
+                                                            {weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                                                        </div>
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {ALL_SESSIONS.map((session) => (
+                                                tutors.length > 0 ? tutors.map((tutor, tutorIdx) => (
+                                                    <tr key={`${session.id}-${tutor.id}`} className="group hover:bg-purple-50/30 dark:hover:bg-purple-900/10 transition-colors">
+                                                        {tutorIdx === 0 && (
+                                                            <td rowSpan={tutors.length} className="p-3 border-b border-r border-gray-100 dark:border-gray-800 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 align-middle text-center sticky left-0 z-20">
+                                                                <div className="font-bold text-purple-600 dark:text-purple-400 text-base">{session.label}</div>
+                                                                <div className="text-[10px] text-gray-400 font-medium leading-tight mt-1">{session.time}</div>
+                                                            </td>
+                                                        )}
+                                                        <td className="p-2 border-b border-r border-gray-100 dark:border-gray-800 text-center bg-gray-50/50 dark:bg-gray-900/50 w-32 sticky left-24 z-20">
+                                                            <div className="text-xs font-bold text-gray-600 dark:text-gray-400 truncate px-1">{tutor.full_name}</div>
+                                                        </td>
+                                                        {DAYS.map((_, dayIndex) => {
+                                                            const isAvailable = session.days.includes(dayIndex);
+                                                            const slot = isAvailable ? slots.find(s =>
+                                                                s.teacher?.id === tutor.id &&
+                                                                s.day_of_week === dayIndex &&
+                                                                s.start_time?.substring(0, 5) === session.start &&
+                                                                (!s.room || s.room === 'Linh hoạt')
+                                                            ) : null;
+
+                                                            return (
+                                                                <td key={dayIndex} className={`p-2 border-b border-r border-gray-100 dark:border-gray-800 h-20 ${!isAvailable ? 'bg-gray-50/50 dark:bg-gray-900/40' : ''}`}>
+                                                                    {!isAvailable ? (
+                                                                        <div className="h-full w-full rounded-lg bg-gray-100/50 dark:bg-gray-800/50 flex items-center justify-center">
+                                                                            <span className="text-[10px] text-gray-300 font-bold tracking-widest">—</span>
+                                                                        </div>
+                                                                    ) : slot ? (
+                                                                        <div
+                                                                            className="h-full p-2 bg-white dark:bg-gray-800 border-l-4 border-purple-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer group/card relative overflow-hidden"
+                                                                            onClick={() => openEditModal(slot)}
+                                                                        >
+                                                                            <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover/card:opacity-100 transition-opacity" />
+                                                                            <div className="font-bold text-gray-900 dark:text-white text-[10px] line-clamp-2 leading-tight group-hover/card:text-purple-600 transition-colors">
+                                                                                {slot.class?.name || slot.subject?.name}
+                                                                            </div>
+                                                                            {(slot.weekly_note || slot.notes) && (
+                                                                                <div className="mt-1 text-gray-400 dark:text-gray-500 text-[9px] flex items-center gap-1 italic border-t border-gray-100 dark:border-gray-800 pt-1">
+                                                                                    <ClipboardList className="w-2.5 h-2.5 flex-shrink-0" />
+                                                                                    <span className="truncate">{slot.weekly_note ?? slot.notes}</span>
+                                                                                    {slot.has_weekly_note && (
+                                                                                        <span className="ml-auto text-blue-500" title="Ghi chú riêng tuần này">●</span>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div
+                                                                            className="h-full rounded-lg border border-dashed border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/10 cursor-pointer flex items-center justify-center transition-all group/empty"
+                                                                            onClick={() => {
+                                                                                setFormData({ ...formData, teacher_id: tutor.id });
+                                                                                openCreateModal(dayIndex, session, 'Linh hoạt');
+                                                                            }}
+                                                                        >
+                                                                            <Plus className="w-3 h-3 text-gray-300 group-hover/empty:text-purple-500 transition-colors" />
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                            );
+                                                        })}
+                                                    </tr>
+                                                )) : (
+                                                    <tr key={session.id}>
+                                                        <td className="p-4 border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-center sticky left-0 z-20">
+                                                            <div className="font-bold text-purple-600 dark:text-purple-400">{session.label}</div>
+                                                        </td>
+                                                        <td colSpan={DAYS.length + 1} className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm border-b">
+                                                            Chưa có gia sư nào được cấu hình
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )
                 ) : viewMode === 'room' ? (
                     /* Room-based View */
-                    <div className="bg-white rounded-lg overflow-hidden shadow border">
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse">
-                                <thead>
-                                    <tr className="bg-gray-50 border-b">
-                                        <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-24">Ca</th>
-                                        <th className="p-2 border-r text-center text-sm font-medium text-gray-600 w-16">Phòng</th>
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-320px)] relative">
+                            <table className="w-full border-separate border-spacing-0">
+                                <thead className="sticky top-0 z-30">
+                                    <tr className="bg-gray-50 dark:bg-gray-900 shadow-sm">
+                                        <th className="p-3 border-b border-r border-gray-100 dark:border-gray-800 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24 sticky left-0 z-40 bg-gray-50 dark:bg-gray-900">Ca</th>
+                                        <th className="p-3 border-b border-r border-gray-100 dark:border-gray-800 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-16 sticky left-24 z-40 bg-gray-50 dark:bg-gray-900">Phòng</th>
                                         {DAYS.map((day, i) => (
-                                            <th key={day} className="p-2 border-r text-center min-w-[140px]">
-                                                <div className="font-bold text-gray-800">{day}</div>
-                                                <div className="text-xs text-gray-500">
-                                                    ({weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })})
+                                            <th key={day} className="p-3 border-b border-r border-gray-100 dark:border-gray-800 text-center min-w-[160px] bg-gray-50 dark:bg-gray-900">
+                                                <div className="font-bold text-gray-900 dark:text-white">{day}</div>
+                                                <div className="text-[10px] text-gray-400 font-medium">
+                                                    {weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
                                                 </div>
                                             </th>
                                         ))}
@@ -757,53 +874,69 @@ export default function TimetablePage() {
                                 <tbody>
                                     {ALL_SESSIONS.map((session, sessionIdx) => (
                                         currentCampus?.rooms.map((room, roomIdx) => (
-                                            <tr key={`${session.id}-${room}`} className="border-b hover:bg-gray-50">
+                                            <tr key={`${session.id}-${room}`} className="group hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors">
                                                 {roomIdx === 0 && (
-                                                    <td rowSpan={currentCampus.rooms.length} className="p-2 border-r bg-gradient-to-b from-blue-50 to-blue-100 align-middle text-center">
-                                                        <div className="font-bold text-blue-700 text-lg">{session.label}</div>
-                                                        <div className="text-xs text-blue-600">{session.time}</div>
+                                                    <td rowSpan={currentCampus.rooms.length} className="p-3 border-b border-r border-gray-100 dark:border-gray-800 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 align-middle text-center sticky left-0 z-20">
+                                                        <div className="font-bold text-blue-600 dark:text-blue-400 text-base">{session.label}</div>
+                                                        <div className="text-[10px] text-gray-400 font-medium leading-tight mt-1">{session.time}</div>
                                                     </td>
                                                 )}
-                                                <td className="p-1 border-r text-center bg-gray-50 w-16">
-                                                    <div className="text-xs font-bold text-gray-700">{room}</div>
+                                                <td className="p-2 border-b border-r border-gray-100 dark:border-gray-800 text-center bg-gray-50/50 dark:bg-gray-900/50 w-16 sticky left-24 z-20">
+                                                    <div className="text-xs font-bold text-gray-600 dark:text-gray-400">{room}</div>
                                                 </td>
                                                 {DAYS.map((_, dayIndex) => {
                                                     const isAvailable = session.days.includes(dayIndex);
                                                     const slot = isAvailable ? getSlotForRoomCell(room, dayIndex, session.start) : null;
 
                                                     return (
-                                                        <td key={dayIndex} className="p-1 border-r">
+                                                        <td key={dayIndex} className={`p-2 border-b border-r border-gray-100 dark:border-gray-800 h-24 ${!isAvailable ? 'bg-gray-50/50 dark:bg-gray-900/40' : ''}`}>
                                                             {!isAvailable ? (
-                                                                <div className="h-10 rounded bg-gray-100 flex items-center justify-center">
-                                                                    <span className="text-xs text-gray-400">—</span>
+                                                                <div className="h-full w-full rounded-xl bg-gray-100/50 dark:bg-gray-800/50 flex items-center justify-center">
+                                                                    <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">—</span>
                                                                 </div>
                                                             ) : slot ? (
                                                                 <div
-                                                                    className="p-2 bg-blue-50 border border-blue-200 rounded text-xs cursor-pointer hover:bg-blue-100 relative group"
+                                                                    className="h-full p-2.5 bg-white dark:bg-gray-800 border-l-4 border-blue-500 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer group/card relative overflow-hidden"
                                                                     onClick={() => openEditModal(slot)}
                                                                 >
-                                                                    <div className="font-bold text-blue-800">{slot.class?.name || "N/A"}</div>
+                                                                    <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover/card:opacity-100 transition-opacity" />
+                                                                    <div className="font-bold text-gray-900 dark:text-white text-xs mb-1 line-clamp-1 group-hover/card:text-blue-600 transition-colors">
+                                                                        {slot.student?.full_name || slot.class?.name || "N/A"}
+                                                                    </div>
                                                                     {slot.subject && (
-                                                                        <div className="text-blue-600 text-[10px]">{slot.subject.name}</div>
+                                                                        <div className="text-blue-600 dark:text-blue-400 text-[10px] font-semibold mb-1 truncate uppercase">{slot.subject.name}</div>
                                                                     )}
                                                                     {slot.teacher && (
-                                                                        <div className="text-gray-600 truncate">
+                                                                        <div className="text-gray-500 dark:text-gray-400 text-[10px] flex items-center gap-1 truncate">
+                                                                            <Users className="w-3 h-3 flex-shrink-0" />
                                                                             {slot.teacher.full_name}
                                                                         </div>
                                                                     )}
+                                                                    {(slot.weekly_note || slot.notes) && (
+                                                                        <div className="mt-1.5 text-gray-400 dark:text-gray-500 text-[9px] flex items-center gap-1 italic border-t border-gray-100 dark:border-gray-800 pt-1">
+                                                                            <ClipboardList className="w-2.5 h-2.5 flex-shrink-0" />
+                                                                            <span className="truncate">{slot.weekly_note ?? slot.notes}</span>
+                                                                            {slot.has_weekly_note && (
+                                                                                <span className="ml-auto text-blue-500" title="Ghi chú riêng tuần này">●</span>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); deleteSlot(slot.id); }}
-                                                                        className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded text-xs"
+                                                                        className="absolute top-1 right-1 p-1.5 opacity-0 group-hover/card:opacity-100 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-all z-10"
                                                                     >
-                                                                        <Trash2 className="w-3 h-3" />
+                                                                        <Trash2 className="w-3.5 h-3.5" />
                                                                     </button>
                                                                 </div>
                                                             ) : (
                                                                 <div
-                                                                    className="h-10 rounded border border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer flex items-center justify-center"
+                                                                    className="h-full rounded-xl border-2 border-dashed border-gray-100 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/10 cursor-pointer flex items-center justify-center transition-all group/empty"
                                                                     onClick={() => openCreateModal(dayIndex, session, `${currentCampus.name} - ${room}`)}
                                                                 >
-                                                                    <Plus className="w-4 h-4 text-gray-300" />
+                                                                    <div className="p-2 rounded-full bg-gray-50 dark:bg-gray-800 group-hover/empty:scale-110 group-hover/empty:bg-blue-100 dark:group-hover/empty:bg-blue-900/30 transition-all">
+                                                                        <Plus className="w-4 h-4 text-gray-300 group-hover/empty:text-blue-500 transition-colors" />
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </td>
@@ -819,70 +952,88 @@ export default function TimetablePage() {
                 ) : viewMode === 'class' ? (
                     /* Class-based View */
                     !selectedClass ? (
-                        <div className="bg-white rounded-lg p-12 text-center">
-                            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-500">Chọn một lớp để xem thời khóa biểu</p>
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-16 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-100 dark:border-indigo-800">
+                                <Calendar className="w-8 h-8 text-indigo-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Chưa chọn lớp học</h3>
+                            <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto text-sm">Vui lòng chọn một lớp từ danh sách phía trên để xem thời khóa biểu chi tiết.</p>
                         </div>
                     ) : (
-                        <div className="bg-white rounded-lg overflow-hidden shadow border">
-                            <div className="overflow-x-auto">
-                                <table className="w-full border-collapse">
-                                    <thead>
-                                        <tr className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-                                            <th className="p-3 border-r border-indigo-400 text-left w-28">Tiết</th>
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-320px)] relative">
+                                <table className="w-full border-separate border-spacing-0">
+                                    <thead className="sticky top-0 z-30">
+                                        <tr className="bg-indigo-600 dark:bg-indigo-900 shadow-sm">
+                                            <th className="p-4 border-b border-indigo-500 dark:border-indigo-800 text-center text-xs font-semibold text-white uppercase tracking-wider w-28 sticky left-0 z-40 bg-indigo-600 dark:bg-indigo-900">Ca</th>
                                             {DAYS.map((day, i) => (
-                                                <th key={day} className="p-3 border-r border-indigo-400 text-center min-w-[120px]">
-                                                    <div className="font-bold">{day}</div>
-                                                    <div className="text-xs opacity-80">{weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</div>
+                                                <th key={day} className="p-4 border-b border-indigo-500 dark:border-indigo-800 text-center min-w-[160px] bg-indigo-600 dark:bg-indigo-900">
+                                                    <div className="font-bold text-white">{day}</div>
+                                                    <div className="text-[10px] text-indigo-200 font-medium uppercase tracking-tight">
+                                                        {weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                                                    </div>
                                                 </th>
                                             ))}
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {ALL_SESSIONS.map((session) => (
-                                            <tr key={session.id} className="border-b hover:bg-gray-50">
-                                                <td className="p-2 border-r bg-gray-50 text-center">
-                                                    <div className="font-bold text-gray-700">{session.label}</div>
-                                                    <div className="text-xs text-gray-500">({session.time})</div>
+                                            <tr key={session.id} className="group hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-colors">
+                                                <td className="p-4 border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/80 align-middle text-center sticky left-0 z-20">
+                                                    <div className="font-bold text-indigo-700 dark:text-indigo-400 text-base">{session.label}</div>
+                                                    <div className="text-[10px] text-gray-400 font-medium mt-1 leading-tight">{session.time}</div>
                                                 </td>
                                                 {DAYS.map((_, dayIndex) => {
                                                     const isAvailable = session.days.includes(dayIndex);
                                                     const slot = isAvailable ? getSlotForClassCell(dayIndex, session.start) : null;
                                                     return (
-                                                        <td key={dayIndex} className="p-1 border-r">
+                                                        <td key={dayIndex} className={`p-2 border-b border-r border-gray-100 dark:border-gray-800 h-28 ${!isAvailable ? 'bg-gray-50/50 dark:bg-gray-900/40' : ''}`}>
                                                             {!isAvailable ? (
-                                                                <div className="h-16 rounded-lg bg-gray-100 flex items-center justify-center">
-                                                                    <span className="text-xs text-gray-400">—</span>
+                                                                <div className="h-full w-full rounded-xl bg-gray-100/50 dark:bg-gray-800/50 flex items-center justify-center">
+                                                                    <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">—</span>
                                                                 </div>
                                                             ) : slot ? (
                                                                 <div
-                                                                    className="p-2 bg-indigo-50 border-2 border-indigo-200 rounded-lg text-sm cursor-pointer hover:shadow-md relative group"
+                                                                    className="h-full p-3 bg-white dark:bg-gray-800 border-l-4 border-indigo-500 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer group/card relative overflow-hidden"
                                                                     onClick={() => openEditModal(slot)}
                                                                 >
-                                                                    <div className="font-bold text-indigo-800">{slot.subject?.name || "N/A"}</div>
-                                                                    <div className="text-indigo-600 text-xs mt-1">
-                                                                        <Users className="w-3 h-3 inline mr-1" />
+                                                                    <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover/card:opacity-100 transition-opacity" />
+                                                                    <div className="font-bold text-gray-900 dark:text-white text-sm mb-1 line-clamp-1 group-hover/card:text-indigo-600 transition-colors">{slot.subject?.name || "N/A"}</div>
+                                                                    <div className="text-indigo-600 dark:text-indigo-400 text-[10px] flex items-center gap-1 font-semibold mb-1 truncate">
+                                                                        <Users className="w-3 h-3 flex-shrink-0" />
                                                                         {slot.teacher?.full_name || "Chưa phân công"}
                                                                     </div>
                                                                     {slot.room && (
-                                                                        <div className="text-gray-500 text-xs">
-                                                                            <MapPin className="w-3 h-3 inline mr-1" />
+                                                                        <div className="text-gray-400 dark:text-gray-500 text-[10px] flex items-center gap-1 truncate italic">
+                                                                            <MapPin className="w-3 h-3 flex-shrink-0" />
                                                                             {slot.room}
                                                                         </div>
                                                                     )}
+                                                                    {(slot.weekly_note || slot.notes) && (
+                                                                        <div className="mt-1.5 text-gray-400 dark:text-gray-500 text-[9px] flex items-center gap-1 italic border-t border-gray-100 dark:border-gray-800 pt-1">
+                                                                            <ClipboardList className="w-2.5 h-2.5 flex-shrink-0" />
+                                                                            <span className="truncate">{slot.weekly_note ?? slot.notes}</span>
+                                                                            {slot.has_weekly_note && (
+                                                                                <span className="ml-auto text-blue-500" title="Ghi chú riêng tuần này">●</span>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); deleteSlot(slot.id); }}
-                                                                        className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded"
+                                                                        className="absolute top-1 right-1 p-1.5 opacity-0 group-hover/card:opacity-100 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-all z-10"
                                                                     >
-                                                                        <Trash2 className="w-3 h-3" />
+                                                                        <Trash2 className="w-3.5 h-3.5" />
                                                                     </button>
                                                                 </div>
                                                             ) : (
                                                                 <div
-                                                                    className="h-16 rounded-lg border-2 border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer flex items-center justify-center"
+                                                                    className="h-full rounded-xl border-2 border-dashed border-gray-100 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 cursor-pointer flex items-center justify-center transition-all group/empty"
                                                                     onClick={() => openCreateModal(dayIndex, session)}
                                                                 >
-                                                                    <Plus className="w-4 h-4 text-gray-300" />
+                                                                    <div className="p-2 rounded-full bg-gray-50 dark:bg-gray-800 group-hover/empty:scale-110 group-hover/empty:bg-indigo-100 dark:group-hover/empty:bg-indigo-900/30 transition-all">
+                                                                        <Plus className="w-4 h-4 text-gray-300 group-hover/empty:text-indigo-500 transition-colors" />
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </td>
@@ -900,71 +1051,92 @@ export default function TimetablePage() {
                 {/* Teacher View */}
                 {viewMode === 'teacher' && (
                     !selectedTeacher ? (
-                        <div className="bg-white rounded-lg p-12 text-center">
-                            <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-500">Chọn một giáo viên để xem lịch dạy</p>
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-16 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div className="bg-green-50 dark:bg-green-900/20 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-green-100 dark:border-green-800">
+                                <GraduationCap className="w-8 h-8 text-green-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Chưa chọn giáo viên</h3>
+                            <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto text-sm">Vui lòng chọn một giáo viên từ danh sách để xem lịch dạy chi tiết.</p>
                         </div>
                     ) : (
-                        <div className="bg-white rounded-lg overflow-hidden shadow border">
-                            <div className="p-4 border-b bg-green-50">
-                                <h3 className="font-semibold text-green-800">
-                                    👨‍🏫 Lịch dạy: {teachers.find(t => t.id === selectedTeacher)?.full_name}
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-green-50/30 dark:bg-green-900/10 flex items-center gap-3">
+                                <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg">
+                                    <GraduationCap className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                </div>
+                                <h3 className="font-bold text-gray-900 dark:text-white">
+                                    Lịch dạy: <span className="text-green-600 dark:text-green-400">{teachers.find(t => t.id === selectedTeacher)?.full_name}</span>
                                 </h3>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full border-collapse">
-                                    <thead>
-                                        <tr className="bg-gradient-to-r from-green-500 to-teal-600 text-white">
-                                            <th className="p-3 border-r border-green-400 text-left w-28">Ca</th>
+                            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-320px)] relative">
+                                <table className="w-full border-separate border-spacing-0">
+                                    <thead className="sticky top-0 z-30">
+                                        <tr className="bg-emerald-600 dark:bg-emerald-900 shadow-sm">
+                                            <th className="p-4 border-b border-emerald-500 dark:border-emerald-800 text-center text-xs font-semibold text-white uppercase tracking-wider w-28 sticky left-0 z-40 bg-emerald-600 dark:bg-emerald-900">Ca</th>
                                             {DAYS.map((day, i) => (
-                                                <th key={day} className="p-3 border-r border-green-400 text-center min-w-[120px]">
-                                                    <div className="font-bold">{day}</div>
-                                                    <div className="text-xs opacity-80">{weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</div>
+                                                <th key={day} className="p-4 border-b border-emerald-500 dark:border-emerald-800 text-center min-w-[160px] bg-emerald-600 dark:bg-emerald-900">
+                                                    <div className="font-bold text-white">{day}</div>
+                                                    <div className="text-[10px] text-emerald-200 font-medium uppercase tracking-tight">
+                                                        {weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                                                    </div>
                                                 </th>
                                             ))}
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {ALL_SESSIONS.map((session) => (
-                                            <tr key={session.id} className="border-b hover:bg-gray-50">
-                                                <td className="p-2 border-r bg-gray-50 text-center">
-                                                    <div className="font-bold text-gray-700">{session.label}</div>
-                                                    <div className="text-xs text-gray-500">({session.time})</div>
+                                            <tr key={session.id} className="group hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-colors">
+                                                <td className="p-4 border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/80 align-middle text-center sticky left-0 z-20">
+                                                    <div className="font-bold text-emerald-700 dark:text-emerald-400 text-base">{session.label}</div>
+                                                    <div className="text-[10px] text-gray-400 font-medium mt-1 leading-tight">{session.time}</div>
                                                 </td>
                                                 {DAYS.map((_, dayIndex) => {
                                                     const isAvailable = session.days.includes(dayIndex);
                                                     const slot = isAvailable ? getSlotForTeacherCell(selectedTeacher, dayIndex, session.start) : null;
                                                     return (
-                                                        <td key={dayIndex} className="p-1 border-r">
+                                                        <td key={dayIndex} className={`p-2 border-b border-r border-gray-100 dark:border-gray-800 h-28 ${!isAvailable ? 'bg-gray-50/50 dark:bg-gray-900/40' : ''}`}>
                                                             {!isAvailable ? (
-                                                                <div className="h-16 rounded-lg bg-gray-100 flex items-center justify-center">
-                                                                    <span className="text-xs text-gray-400">—</span>
+                                                                <div className="h-full w-full rounded-xl bg-gray-100/50 dark:bg-gray-800/50 flex items-center justify-center">
+                                                                    <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">—</span>
                                                                 </div>
                                                             ) : slot ? (
                                                                 <div
-                                                                    className="p-2 bg-green-50 border-2 border-green-200 rounded-lg text-sm cursor-pointer hover:shadow-md relative group"
+                                                                    className="h-full p-3 bg-white dark:bg-gray-800 border-l-4 border-emerald-500 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer group/card relative overflow-hidden"
                                                                     onClick={() => openEditModal(slot)}
                                                                 >
-                                                                    <div className="font-bold text-green-800">{slot.class?.name || "N/A"}</div>
-                                                                    {slot.subject && (
-                                                                        <div className="text-green-600 text-xs">{slot.subject.name}</div>
-                                                                    )}
+                                                                    <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover/card:opacity-100 transition-opacity" />
+                                                                    <div className="font-bold text-gray-900 dark:text-white text-sm mb-1 line-clamp-1 group-hover/card:text-emerald-600 transition-colors">
+                                                                        {slot.student?.full_name || slot.class?.name || "N/A"}
+                                                                    </div>
+                                                                    <div className="text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold mb-1 truncate uppercase">
+                                                                        {slot.subject?.name || "Môn học"}
+                                                                    </div>
                                                                     {slot.room && (
-                                                                        <div className="text-gray-500 text-xs">
-                                                                            <MapPin className="w-3 h-3 inline mr-1" />
+                                                                        <div className="text-gray-400 dark:text-gray-500 text-[10px] flex items-center gap-1 truncate italic">
+                                                                            <MapPin className="w-3 h-3 flex-shrink-0" />
                                                                             {slot.room}
                                                                         </div>
                                                                     )}
+                                                                    {(slot.weekly_note || slot.notes) && (
+                                                                        <div className="mt-1.5 text-gray-400 dark:text-gray-500 text-[9px] flex items-center gap-1 italic border-t border-gray-100 dark:border-gray-800 pt-1">
+                                                                            <ClipboardList className="w-2.5 h-2.5 flex-shrink-0" />
+                                                                            <span className="truncate">{slot.weekly_note ?? slot.notes}</span>
+                                                                            {slot.has_weekly_note && (
+                                                                                <span className="ml-auto text-blue-500" title="Ghi chú riêng tuần này">●</span>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); deleteSlot(slot.id); }}
-                                                                        className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded"
+                                                                        className="absolute top-1 right-1 p-1.5 opacity-0 group-hover/card:opacity-100 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-all z-10"
                                                                     >
-                                                                        <Trash2 className="w-3 h-3" />
+                                                                        <Trash2 className="w-3.5 h-3.5" />
                                                                     </button>
                                                                 </div>
                                                             ) : (
-                                                                <div className="h-16 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
-                                                                    <span className="text-xs text-gray-300">Trống</span>
+                                                                <div className="h-full rounded-xl border-2 border-dashed border-gray-100 dark:border-gray-700 flex items-center justify-center">
+                                                                    <span className="text-xs text-gray-300 font-medium">Trống</span>
                                                                 </div>
                                                             )}
                                                         </td>
@@ -981,133 +1153,256 @@ export default function TimetablePage() {
             </div>
 
             {/* Modal for Create/Edit */}
-            {
-                showModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4" style={{ zIndex: 9999 }}>
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg shadow-2xl" style={{ backgroundColor: 'white' }}>
-                            <div className="p-6 border-b flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            {showModal && (
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 transition-all">
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-700 animate-in zoom-in-95 duration-200">
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50">
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2.5 rounded-xl ${editingSlot ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
                                     {editingSlot ? <Edit3 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                                    {editingSlot ? 'Chỉnh sửa' : 'Đặt phòng / Thêm tiết học'}
-                                </h2>
-                                <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="p-2 hover:bg-gray-100 rounded-lg">
-                                    <X className="w-5 h-5" />
-                                </button>
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">
+                                        {editingSlot ? 'Chỉnh sửa' : 'Thêm tiết học mới'}
+                                    </h2>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide">
+                                        {editingSlot ? 'Cập nhật thông tin tiết học' : 'Đặt phòng hoặc thêm lịch học kèm'}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="p-6 space-y-4">
-                                {/* Context Info - show what was selected from grid */}
-                                {formData.room && (
-                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                                        <div className="text-sm font-medium text-blue-800 mb-1">📍 Thông tin đã chọn:</div>
-                                        <div className="grid grid-cols-3 gap-2 text-sm">
-                                            <div><span className="text-gray-500">Phòng:</span> <strong>{formData.room}</strong></div>
-                                            <div><span className="text-gray-500">Ngày:</span> <strong>{DAYS[formData.day_of_week]}</strong></div>
-                                            <div><span className="text-gray-500">Ca:</span> <strong>{formData.start_time} - {formData.end_time}</strong></div>
-                                        </div>
+                            <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">
+                                <X className="w-5 h-5 text-gray-400" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+                            {/* Context Info - show what was selected from grid */}
+                            {formData.room && (
+                                <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4 flex gap-4">
+                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg h-fit">
+                                        <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                     </div>
-                                )}
+                                    <div className="grid grid-cols-3 gap-y-1 flex-1">
+                                        <div className="text-[10px] text-blue-500 dark:text-blue-400 font-bold uppercase tracking-widest">Phòng</div>
+                                        <div className="text-[10px] text-blue-500 dark:text-blue-400 font-bold uppercase tracking-widest">Ngày</div>
+                                        <div className="text-[10px] text-blue-500 dark:text-blue-400 font-bold uppercase tracking-widest">Ca học</div>
+                                        <div className="text-sm font-bold text-gray-900 dark:text-white">{formData.room}</div>
+                                        <div className="text-sm font-bold text-gray-900 dark:text-white">{DAYS[formData.day_of_week]}</div>
+                                        <div className="text-sm font-bold text-gray-900 dark:text-white tabular-nums px-2 py-0.5 bg-white dark:bg-gray-800 rounded-md border border-blue-100 dark:border-blue-800 w-fit">{formData.start_time}</div>
+                                    </div>
+                                </div>
+                            )}
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Lớp *</label>
-                                    <select
-                                        value={formData.class_id}
-                                        onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="">-- Chọn lớp --</option>
-                                        {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Môn học *</label>
-                                    <select
-                                        value={formData.subject_id}
-                                        onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="">-- Chọn môn học --</option>
-                                        {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        {formData.room === 'Linh hoạt' ? 'Gia sư' : 'Giáo viên'} (không bắt buộc)
-                                    </label>
-                                    <select
-                                        value={formData.teacher_id}
-                                        onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                    >
-                                        <option value="">{formData.room === 'Linh hoạt' ? '-- Chọn gia sư --' : '-- Chọn giáo viên --'}</option>
-                                        {(formData.room === 'Linh hoạt' ? tutors : teachers).map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
-                                    </select>
-                                </div>
-
-                                {/* Only show advanced options when no context or editing */}
-                                {(!formData.room || editingSlot) && (
+                            <div className="grid grid-cols-2 gap-5">
+                                {formData.room === 'Linh hoạt' ? (
+                                    /* Tutoring Mode: Student + Subject + Tutor */
                                     <>
-                                        <div className="border-t pt-4 mt-4">
-                                            <div className="text-sm font-medium text-gray-500 mb-3">⚙️ Tùy chọn nâng cao</div>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Thứ</label>
-                                                    <select
-                                                        value={formData.day_of_week}
-                                                        onChange={(e) => setFormData({ ...formData, day_of_week: parseInt(e.target.value) })}
-                                                        className="w-full px-3 py-2 border rounded-lg"
-                                                    >
-                                                        {DAYS.map((day, i) => <option key={i} value={i}>{day}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ca</label>
-                                                    <select
-                                                        value={formData.start_time}
-                                                        onChange={(e) => {
-                                                            const session = ALL_SESSIONS.find(s => s.start === e.target.value);
-                                                            setFormData({ ...formData, start_time: e.target.value, end_time: session?.end || formData.end_time });
-                                                        }}
-                                                        className="w-full px-3 py-2 border rounded-lg"
-                                                    >
-                                                        {ALL_SESSIONS.map(p => <option key={p.id} value={p.start}>{p.label} ({p.time})</option>)}
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div className="mt-3">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Phòng</label>
+                                        <div className="col-span-2">
+                                            <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Học sinh *</label>
+                                            <div className="relative group">
                                                 <select
-                                                    value={formData.room}
-                                                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                                                    className="w-full px-3 py-2 border rounded-lg"
+                                                    value={formData.student_id}
+                                                    onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
+                                                    className="w-full pl-3 pr-10 py-2.5 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none transition-all group-hover:border-gray-200 dark:group-hover:border-gray-700"
                                                 >
-                                                    <option value="">-- Chọn phòng --</option>
-                                                    <option value="Linh hoạt">🎓 Học kèm (Linh hoạt)</option>
-                                                    {CAMPUSES.filter(c => c.id !== 'HK').flatMap(c => c.rooms.map(room => `${c.name} - ${room}`)).map(room => (
-                                                        <option key={room} value={room}>{room}</option>
-                                                    ))}
+                                                    <option value="">-- Chọn học sinh --</option>
+                                                    {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
                                                 </select>
+                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Môn học *</label>
+                                            <div className="relative group">
+                                                <select
+                                                    value={formData.subject_id}
+                                                    onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
+                                                    className="w-full pl-3 pr-10 py-2.5 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none transition-all group-hover:border-gray-200 dark:group-hover:border-gray-700"
+                                                >
+                                                    <option value="">-- Chọn môn --</option>
+                                                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                                </select>
+                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Gia sư *</label>
+                                            <div className="relative group">
+                                                <select
+                                                    value={formData.teacher_id}
+                                                    onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
+                                                    className="w-full pl-3 pr-10 py-2.5 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none transition-all group-hover:border-gray-200 dark:group-hover:border-gray-700"
+                                                >
+                                                    <option value="">-- Chọn gia sư --</option>
+                                                    {tutors.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                                                </select>
+                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
                                             </div>
                                         </div>
                                     </>
+                                ) : (
+                                    /* Regular Class Mode: Only show Lớp */
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Lớp *</label>
+                                        <div className="relative group">
+                                            <select
+                                                value={formData.class_id}
+                                                onChange={(e) => {
+                                                    const classId = e.target.value;
+                                                    const selectedClassObj = classes.find(c => c.id === classId);
+
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        class_id: classId,
+                                                        teacher_id: selectedClassObj?.teacher_id || prev.teacher_id,
+                                                        subject_id: selectedClassObj?.teacher?.subject_id || prev.subject_id
+                                                    }));
+                                                }}
+                                                className="w-full pl-3 pr-10 py-2.5 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none transition-all group-hover:border-gray-200 dark:group-hover:border-gray-700"
+                                            >
+                                                <option value="">-- Chọn lớp --</option>
+                                                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                            </select>
+                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+                                        </div>
+                                        {formData.class_id && (
+                                            <div className="mt-3 p-3 bg-blue-50/30 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-900/30 rounded-xl flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-gray-400 uppercase tracking-tighter">Giáo viên:</span>
+                                                    <span className="text-sm font-bold text-blue-700 dark:text-blue-400">
+                                                        {teachers.find(t => t.id === formData.teacher_id)?.full_name || "Chưa có"}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col text-right">
+                                                    <span className="text-[10px] text-gray-400 uppercase tracking-tighter">Môn học:</span>
+                                                    <span className="text-sm font-bold text-blue-700 dark:text-blue-400">
+                                                        {subjects.find(s => s.id === formData.subject_id)?.name || "Chưa có"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </div>
-                            <div className="p-6 border-t flex justify-end gap-3">
-                                <button onClick={() => { setShowModal(false); setEditingSlot(null); }} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                                    Hủy
-                                </button>
-                                <button
-                                    onClick={saveSlot}
-                                    disabled={saving || !formData.class_id || !formData.subject_id}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-                                >
-                                    {saving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                                    {saving ? 'Đang lưu...' : (editingSlot ? 'Cập nhật' : 'Tạo')}
-                                </button>
+
+                            {/* Only show advanced options when no context or editing */}
+                            {(!formData.room || editingSlot) && (
+                                <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tùy chọn nâng cao</span>
+                                        <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-5">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Thứ</label>
+                                            <div className="relative group">
+                                                <select
+                                                    value={formData.day_of_week}
+                                                    onChange={(e) => setFormData({ ...formData, day_of_week: parseInt(e.target.value) })}
+                                                    className="w-full pl-3 pr-10 py-2.5 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none transition-all group-hover:border-gray-200 dark:group-hover:border-gray-700"
+                                                >
+                                                    {DAYS.map((day, i) => <option key={i} value={i}>{day}</option>)}
+                                                </select>
+                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Ca học</label>
+                                            <div className="relative group">
+                                                <select
+                                                    value={formData.start_time}
+                                                    onChange={(e) => {
+                                                        const session = ALL_SESSIONS.find(s => s.start === e.target.value);
+                                                        setFormData({ ...formData, start_time: e.target.value, end_time: session?.end || formData.end_time });
+                                                    }}
+                                                    className="w-full pl-3 pr-10 py-2.5 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none transition-all group-hover:border-gray-200 dark:group-hover:border-gray-700"
+                                                >
+                                                    {ALL_SESSIONS.map(p => <option key={p.id} value={p.start}>{p.label} ({p.time})</option>)}
+                                                </select>
+                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-5">
+                                        <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Vị trí / Phòng</label>
+                                        <div className="relative group">
+                                            <select
+                                                value={formData.room}
+                                                onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                                                className="w-full pl-3 pr-10 py-2.5 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none transition-all group-hover:border-gray-200 dark:group-hover:border-gray-700"
+                                            >
+                                                <option value="">-- Chọn phòng --</option>
+                                                <option value="Linh hoạt">🎓 Học kèm (Linh hoạt)</option>
+                                                {CAMPUSES.filter(c => c.id !== 'HK').flatMap(c => c.rooms.map(room => `${c.name} - ${room}`)).map(room => (
+                                                    <option key={room} value={room}>{room}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Ghi chú mặc định */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">
+                                    Ghi chú mặc định (áp dụng mọi tuần)
+                                </label>
+                                <textarea
+                                    value={formData.notes || ""}
+                                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                    className="w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none min-h-[60px] transition-all resize-none placeholder:text-gray-300"
+                                    placeholder="Ghi chú áp dụng cho tất cả các tuần..."
+                                />
+                            </div>
+
+                            {/* Ghi chú tuần này */}
+                            <div>
+                                <label className="block text-xs font-bold text-blue-500 dark:text-blue-400 uppercase tracking-widest mb-1.5 ml-1">
+                                    Ghi chú riêng tuần này (ưu tiên hiển thị)
+                                </label>
+                                <textarea
+                                    value={formData.weekly_note || ""}
+                                    onChange={(e) => setFormData({ ...formData, weekly_note: e.target.value })}
+                                    className="w-full px-4 py-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-2xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none min-h-[60px] transition-all resize-none placeholder:text-blue-300"
+                                    placeholder="Ghi chú chỉ áp dụng cho tuần hiện tại..."
+                                />
+                                {formData.weekly_note && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, weekly_note: "" })}
+                                        className="mt-2 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1"
+                                    >
+                                        ↩️ Xóa ghi chú tuần này
+                                    </button>
+                                )}
                             </div>
                         </div>
+
+                        <div className="p-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 flex justify-end gap-3">
+                            <button
+                                onClick={() => { setShowModal(false); setEditingSlot(null); }}
+                                className="px-5 py-2.5 text-sm font-bold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                onClick={saveSlot}
+                                disabled={saving || !formData.subject_id || (formData.room === 'Linh hoạt' ? !formData.student_id : !formData.class_id)}
+                                className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none flex items-center gap-2 group/btn"
+                            >
+                                {saving ? (
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <Save className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                                )}
+                                {saving ? 'Đang lưu...' : (editingSlot ? 'Cập nhật' : 'Lưu lại')}
+                            </button>
+                        </div>
                     </div>
-                )
-            }
+                </div>
+            )}
         </div >
     );
 }

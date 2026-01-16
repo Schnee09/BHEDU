@@ -5,19 +5,16 @@
  * 
  * A reusable chart widget for displaying various types of analytics data.
  * Supports line, bar, pie, area, and radar charts using Recharts.
+ * Uses lazy-loaded chart components for better performance.
  */
 
 import { ReactNode, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import {
-    LineChart,
     Line,
-    BarChart,
     Bar,
-    PieChart,
-    Pie,
-    AreaChart,
     Area,
-    RadarChart,
+    Pie,
     Radar,
     PolarGrid,
     PolarAngleAxis,
@@ -31,6 +28,38 @@ import {
     Cell,
 } from 'recharts';
 import { Card } from '@/components/ui/Card';
+
+// Loading skeleton for charts
+const ChartSkeleton = ({ height = 300 }: { height?: number }) => (
+    <div
+        className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center"
+        style={{ height }}
+    >
+        <span className="text-gray-400 dark:text-gray-500 text-sm">Đang tải biểu đồ...</span>
+    </div>
+);
+
+// Lazy load chart containers
+const LazyLineChart = dynamic(() => import('recharts').then(mod => mod.LineChart), {
+    ssr: false,
+    loading: () => <ChartSkeleton />
+});
+const LazyBarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), {
+    ssr: false,
+    loading: () => <ChartSkeleton />
+});
+const LazyPieChart = dynamic(() => import('recharts').then(mod => mod.PieChart), {
+    ssr: false,
+    loading: () => <ChartSkeleton />
+});
+const LazyAreaChart = dynamic(() => import('recharts').then(mod => mod.AreaChart), {
+    ssr: false,
+    loading: () => <ChartSkeleton />
+});
+const LazyRadarChart = dynamic(() => import('recharts').then(mod => mod.RadarChart), {
+    ssr: false,
+    loading: () => <ChartSkeleton />
+});
 
 // Chart color palette
 const COLORS = {
@@ -126,7 +155,7 @@ export default function AnalyticsWidget({
             case 'line':
                 return (
                     <ResponsiveContainer width="100%" height={height}>
-                        <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <LazyLineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />}
                             <XAxis
                                 dataKey={xAxisKey}
@@ -142,7 +171,7 @@ export default function AnalyticsWidget({
                             />
                             <Tooltip
                                 contentStyle={tooltipStyle}
-                                formatter={(value: number) => [valueFormatter(value), dataKey]}
+                                formatter={(value: any) => [valueFormatter(Number(value)), dataKey]}
                             />
                             {showLegend && <Legend />}
                             <Line
@@ -163,14 +192,14 @@ export default function AnalyticsWidget({
                                     dot={{ fill: secondColor, strokeWidth: 2, r: 3 }}
                                 />
                             )}
-                        </LineChart>
+                        </LazyLineChart>
                     </ResponsiveContainer>
                 );
 
             case 'bar':
                 return (
                     <ResponsiveContainer width="100%" height={height}>
-                        <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <LazyBarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />}
                             <XAxis
                                 dataKey={xAxisKey}
@@ -186,7 +215,7 @@ export default function AnalyticsWidget({
                             />
                             <Tooltip
                                 contentStyle={tooltipStyle}
-                                formatter={(value: number) => [valueFormatter(value), dataKey]}
+                                formatter={(value: any) => [valueFormatter(Number(value)), dataKey]}
                             />
                             {showLegend && <Legend />}
                             <Bar
@@ -203,14 +232,14 @@ export default function AnalyticsWidget({
                                     maxBarSize={50}
                                 />
                             )}
-                        </BarChart>
+                        </LazyBarChart>
                     </ResponsiveContainer>
                 );
 
             case 'pie':
                 return (
                     <ResponsiveContainer width="100%" height={height}>
-                        <PieChart>
+                        <LazyPieChart>
                             <Pie
                                 data={data}
                                 cx="50%"
@@ -232,17 +261,17 @@ export default function AnalyticsWidget({
                             </Pie>
                             <Tooltip
                                 contentStyle={tooltipStyle}
-                                formatter={(value: number) => [valueFormatter(value), '']}
+                                formatter={(value: any) => [valueFormatter(Number(value)), '']}
                             />
                             {showLegend && <Legend />}
-                        </PieChart>
+                        </LazyPieChart>
                     </ResponsiveContainer>
                 );
 
             case 'area':
                 return (
                     <ResponsiveContainer width="100%" height={height}>
-                        <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <LazyAreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />}
                             <XAxis
                                 dataKey={xAxisKey}
@@ -258,7 +287,7 @@ export default function AnalyticsWidget({
                             />
                             <Tooltip
                                 contentStyle={tooltipStyle}
-                                formatter={(value: number) => [valueFormatter(value), dataKey]}
+                                formatter={(value: any) => [valueFormatter(Number(value)), dataKey]}
                             />
                             {showLegend && <Legend />}
                             <defs>
@@ -274,14 +303,14 @@ export default function AnalyticsWidget({
                                 strokeWidth={2}
                                 fill="url(#colorPrimary)"
                             />
-                        </AreaChart>
+                        </LazyAreaChart>
                     </ResponsiveContainer>
                 );
 
             case 'radar':
                 return (
                     <ResponsiveContainer width="100%" height={height}>
-                        <RadarChart data={data} cx="50%" cy="50%" outerRadius="80%">
+                        <LazyRadarChart data={data} cx="50%" cy="50%" outerRadius="80%">
                             <PolarGrid stroke="var(--border-light)" />
                             <PolarAngleAxis
                                 dataKey={xAxisKey}
@@ -310,7 +339,7 @@ export default function AnalyticsWidget({
                             )}
                             <Tooltip contentStyle={tooltipStyle} />
                             {showLegend && <Legend />}
-                        </RadarChart>
+                        </LazyRadarChart>
                     </ResponsiveContainer>
                 );
 

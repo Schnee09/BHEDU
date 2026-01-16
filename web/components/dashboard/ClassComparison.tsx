@@ -223,7 +223,7 @@ export default function ClassComparison({ classes, loading = false }: ClassCompa
                                     border: '1px solid var(--border-light)',
                                     borderRadius: '8px',
                                 }}
-                                formatter={(value: number) => [value.toFixed(2), 'Điểm TB']}
+                                formatter={(value: any) => [Number(value).toFixed(2), 'Điểm TB']}
                             />
                             <Bar dataKey="averageGPA" radius={[0, 4, 4, 0]} maxBarSize={30}>
                                 {sortedClasses.slice(0, 10).map((entry, index) => (

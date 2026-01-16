@@ -45,7 +45,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles = `inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`;
-  
+
   const variants = {
     gold: 'bg-warning text-white hover:bg-warning/90 shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.4)] focus:ring-warning/50 dark:shadow-[0_0_20px_rgba(245,158,11,0.4)]',
     primary: 'bg-primary text-white hover:bg-primary/90 shadow-[0_4px_12px_rgba(22,163,74,0.3)] hover:shadow-[0_6px_20px_rgba(22,163,74,0.4)] focus:ring-primary/50 dark:shadow-[0_0_20px_rgba(6,182,212,0.4)]',
@@ -55,15 +55,15 @@ export const Button: React.FC<ButtonProps> = ({
     outline: 'border-2 border-primary text-primary hover:bg-primary/10 focus:ring-primary/50 dark:border-primary/50 dark:hover:bg-primary/20 dark:hover:border-primary',
     ghost: 'text-muted hover:text-foreground hover:bg-surface-secondary focus:ring-primary/30 dark:hover:bg-white/10',
   };
-  
+
   const sizes = {
     sm: 'px-4 py-2 text-sm gap-2',
     md: 'px-6 py-2.5 text-base gap-2',
     lg: 'px-8 py-3.5 text-lg gap-3',
   };
-  
+
   const widthClass = fullWidth ? 'w-full' : '';
-  
+
   return (
     <button
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${widthClass} ${className}`}
@@ -111,7 +111,7 @@ export const Card: React.FC<CardProps> = ({
     md: 'p-6',
     lg: 'p-8',
   };
-  
+
   const variants = {
     default: 'bg-surface border border-border shadow-neumorphic-sm rounded-2xl dark:bg-glass-bg dark:backdrop-blur-xl dark:border-white/10 dark:shadow-none',
     elevated: 'bg-surface border border-border shadow-neumorphic rounded-2xl dark:bg-glass-bg dark:backdrop-blur-xl dark:border-white/10 dark:shadow-glow-sm',
@@ -121,9 +121,9 @@ export const Card: React.FC<CardProps> = ({
     secondary: 'bg-success/5 border border-success/20 shadow-neumorphic-sm rounded-2xl dark:bg-success/10 dark:border-success/30 dark:shadow-[0_0_15px_rgba(34,197,94,0.2)]',
     accent: 'bg-accent/5 border border-accent/20 shadow-neumorphic-sm rounded-2xl dark:bg-accent/10 dark:border-accent/30 dark:shadow-[0_0_15px_rgba(139,92,246,0.2)]',
   };
-  
+
   const hoverClass = hover ? 'transition-all duration-200 hover:shadow-neumorphic dark:hover:shadow-glow hover:border-primary/30 dark:hover:border-primary/50 cursor-pointer' : '';
-  
+
   return (
     <div className={`${variants[variant]} ${paddings[padding]} ${hoverClass} ${className}`}>
       {children}
@@ -179,9 +179,9 @@ export const Badge: React.FC<BadgeProps> = ({
     danger: 'bg-error/10 text-error border-error/20 dark:bg-error/20 dark:border-error/30',
     info: 'bg-info/10 text-info border-info/20 dark:bg-info/20 dark:border-info/30',
   };
-  
+
   return (
-    <span 
+    <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${variants[variant]} ${className}`}
     >
       {children}
@@ -207,7 +207,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     md: 'h-8 w-8',
     lg: 'h-12 w-12',
   };
-  
+
   return (
     <svg
       className={`animate-spin text-primary dark:text-primary ${sizes[size]} ${className}`}
@@ -324,9 +324,9 @@ export const Alert: React.FC<AlertProps> = ({
       icon: '❌',
     },
   };
-  
+
   const style = variants[variant];
-  
+
   return (
     <div className={`${style.bg} ${style.border} border-3 rounded-xl p-4 ${style.shadow} ${className}`}>
       <div className="flex items-start">
@@ -371,7 +371,7 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const hasError = Boolean(error);
-  
+
   return (
     <div className="w-full">
       {label && (
@@ -380,14 +380,14 @@ export const Input: React.FC<InputProps> = ({
           {props.required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
-      
+
       <div className="relative">
         {leftIcon && (
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-600">
             {leftIcon}
           </div>
         )}
-        
+
         <input
           className={`
             w-full px-4 py-3 border-3 border-black rounded-xl font-medium
@@ -402,18 +402,18 @@ export const Input: React.FC<InputProps> = ({
           `}
           {...props}
         />
-        
+
         {rightIcon && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-600">
             {rightIcon}
           </div>
         )}
       </div>
-      
+
       {hint && !error && (
         <p className="mt-2 text-sm text-indigo-600 font-medium">{hint}</p>
       )}
-      
+
       {error && (
         <p className="mt-2 text-sm text-red-600 font-bold">{error}</p>
       )}
@@ -453,7 +453,7 @@ export function Table<T>({
   if (isLoading) {
     return <LoadingState message="Loading data..." />;
   }
-  
+
   if (data.length === 0) {
     return (
       <div className="text-center py-12 text-indigo-700 font-semibold bg-indigo-50 border-3 border-dashed border-indigo-300 rounded-2xl">
@@ -461,7 +461,7 @@ export function Table<T>({
       </div>
     );
   }
-  
+
   return (
     <div className="overflow-x-auto border-3 border-black rounded-2xl shadow-[6px_6px_0px_#000]">
       <table className="min-w-full">
@@ -504,7 +504,7 @@ export function Table<T>({
 }
 
 // ============================================================================
-// MODAL COMPONENTS - NEUBRUTALISM STYLE
+// MODAL COMPONENTS - PREMIUM DUAL THEME STYLE
 // ============================================================================
 
 interface ModalProps {
@@ -524,18 +524,28 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   size = 'md',
 }) => {
+  const [isClosing, setIsClosing] = React.useState(false);
+
+  const handleClose = React.useCallback(() => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 200);
+  }, [onClose]);
+
   // Handle escape key
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        handleClose();
       }
     };
-    
+
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
-  
+  }, [isOpen, handleClose]);
+
   // Prevent body scroll when modal is open
   React.useEffect(() => {
     if (isOpen) {
@@ -547,55 +557,96 @@ export const Modal: React.FC<ModalProps> = ({
       document.body.style.overflow = '';
     };
   }, [isOpen]);
-  
+
   if (!isOpen) return null;
-  
+
   const sizes = {
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
   };
-  
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto animate-fade-in">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      {/* Backdrop with blur */}
       <div
-        className="fixed inset-0 bg-black/70 transition-opacity"
-        onClick={onClose}
+        className={`
+          fixed inset-0 transition-all duration-200
+          bg-black/60 backdrop-blur-sm
+          dark:bg-black/70 dark:backdrop-blur-md
+          ${isClosing ? 'opacity-0' : 'animate-backdrop-enter'}
+        `}
+        onClick={handleClose}
         aria-hidden="true"
       />
-      
-      {/* Modal - Neubrutalism Style */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div 
-          className={`relative bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0px_#000] w-full ${sizes[size]} animate-scale-in`}
+
+      {/* Modal Container */}
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+        <div
+          className={`
+            relative w-full ${sizes[size]}
+            ${isClosing ? 'animate-modal-exit' : 'animate-modal-enter'}
+            
+            /* Light mode - Neumorphic style */
+            bg-white border border-gray-200 rounded-2xl
+            shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]
+            
+            /* Dark mode - Glassmorphism style */
+            dark:bg-gray-900/95 dark:backdrop-blur-xl
+            dark:border-gray-700/50
+            dark:shadow-[0_0_50px_rgba(0,0,0,0.5),0_0_100px_rgba(6,182,212,0.1)]
+          `}
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b-3 border-black bg-indigo-100 rounded-t-xl">
-            <h3 id="modal-title" className="text-xl font-bold text-indigo-900" style={{ fontFamily: 'Fredoka, sans-serif' }}>{title}</h3>
+          <div className="
+            flex items-center justify-between px-6 py-4
+            border-b border-gray-100 dark:border-gray-700/50
+            bg-gradient-to-r from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-900/50
+            rounded-t-2xl
+          ">
+            <h3
+              id="modal-title"
+              className="text-lg font-semibold text-gray-900 dark:text-white"
+              style={{ fontFamily: 'Fredoka, sans-serif' }}
+            >
+              {title}
+            </h3>
             <button
-              onClick={onClose}
-              className="text-indigo-900 hover:text-red-600 transition-colors p-2 bg-white border-2 border-black rounded-lg shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] focus:outline-none cursor-pointer"
-              aria-label="Close modal"
+              onClick={handleClose}
+              className="
+                p-2 rounded-xl transition-all duration-200 cursor-pointer
+                text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white
+                hover:bg-gray-100 dark:hover:bg-gray-700/50
+                hover:scale-110 active:scale-95
+                focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600
+              "
+              aria-label="Đóng"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          
+
           {/* Body */}
-          <div className="px-6 py-6 max-h-[70vh] overflow-y-auto">
+          <div className="px-6 py-5 max-h-[65vh] overflow-y-auto">
             {children}
           </div>
-          
+
           {/* Footer */}
           {footer && (
-            <div className="px-6 py-4 border-t-3 border-black bg-amber-50 rounded-b-xl flex gap-3 justify-end">
+            <div className="
+              px-6 py-4 
+              border-t border-gray-100 dark:border-gray-700/50
+              bg-gray-50 dark:bg-gray-800/30
+              rounded-b-2xl 
+              flex gap-3 justify-end
+            ">
               {footer}
             </div>
           )}

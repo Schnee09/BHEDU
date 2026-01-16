@@ -192,42 +192,76 @@ export default function ClassDetailPage() {
 
       {/* Students List */}
       {classData.students && classData.students.length > 0 && (
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Enrolled Students</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+        <Card className="p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Enrolled Students</h2>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3 mobile-card-list">
+            {classData.students.map((student) => (
+              <div
+                key={student.id}
+                className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      {student.full_name}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                      {student.email}
+                    </p>
+                    {student.student_code && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Mã: {student.student_code}
+                      </p>
+                    )}
+                  </div>
+                  <Link
+                    href={`/dashboard/students/${student.id}`}
+                    className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900 transition-colors flex-shrink-0 ml-3"
+                  >
+                    View
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto table-scroll-container">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-stone-700">
+              <thead className="bg-gray-50 dark:bg-stone-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Student
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Email
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Student Code
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
                 {classData.students.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
+                  <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{student.full_name}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{student.full_name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600">{student.email}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">{student.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600">{student.student_code || "—"}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">{student.student_code || "—"}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
                         href={`/dashboard/students/${student.id}`}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                       >
                         View Profile
                       </Link>

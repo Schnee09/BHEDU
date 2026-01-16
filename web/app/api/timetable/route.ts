@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const classId = searchParams.get('class_id')
+    const weekStartDate = searchParams.get('week_start_date')
 
     if (!classId) {
       return NextResponse.json({ 
@@ -28,13 +29,15 @@ export async function GET(req: NextRequest) {
       .select(`
         id,
         class_id,
+        student_id,
         day_of_week,
         start_time,
         end_time,
         room,
         notes,
         subjects (id, name, code),
-        profiles!timetable_slots_teacher_id_fkey (id, full_name)
+        teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name),
+        student:profiles!timetable_slots_student_id_fkey (id, full_name)
       `)
       .eq('class_id', classId)
       .order('day_of_week')
@@ -45,18 +48,42 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, slots: [] })
     }
 
+    // Fetch weekly notes if week_start_date is provided
+    let weeklyNotesMap: Record<string, string> = {}
+    if (weekStartDate && slots && slots.length > 0) {
+      const slotIds = slots.map((slot: any) => slot.id)
+      const { data: weeklyNotes } = await supabase
+        .from('weekly_notes')
+        .select('slot_id, notes')
+        .in('slot_id', slotIds)
+        .eq('week_start_date', weekStartDate)
+      
+      if (weeklyNotes) {
+        weeklyNotesMap = weeklyNotes.reduce((acc: Record<string, string>, wn: any) => {
+          acc[wn.slot_id] = wn.notes
+          return acc
+        }, {})
+      }
+    }
+
     // Transform data to match expected format
-    const transformedSlots = (slots || []).map((slot: any) => ({
-      id: slot.id,
-      class_id: slot.class_id,
-      day_of_week: slot.day_of_week,
-      start_time: slot.start_time,
-      end_time: slot.end_time,
-      room: slot.room,
-      notes: slot.notes,
-      subject: slot.subjects,
-      teacher: slot.profiles
-    }))
+    const transformedSlots = (slots || []).map((slot: any) => {
+      const weeklyNote = weeklyNotesMap[slot.id]
+      return {
+        id: slot.id,
+        class_id: slot.class_id,
+        day_of_week: slot.day_of_week,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        room: slot.room,
+        notes: slot.notes, // Default notes
+        weekly_note: weeklyNote || null, // Week-specific notes
+        has_weekly_note: !!weeklyNote,
+        subject: slot.subjects,
+        teacher: slot.teacher,
+        student: slot.student
+      }
+    })
 
     return NextResponse.json({ success: true, slots: transformedSlots })
   } catch (error) {
@@ -73,11 +100,11 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { class_id, subject_id, teacher_id, day_of_week, start_time, end_time, room, notes } = body
+    const { class_id, student_id, subject_id, teacher_id, day_of_week, start_time, end_time, room, notes } = body
 
-    if (!class_id || day_of_week === undefined || !start_time || !end_time) {
+    if ((!class_id && !student_id) || day_of_week === undefined || !start_time || !end_time) {
       return NextResponse.json(
-        { success: false, error: 'class_id, day_of_week, start_time, and end_time are required' },
+        { success: false, error: 'class_id or student_id, day_of_week, start_time, and end_time are required' },
         { status: 400 }
       )
     }
@@ -94,7 +121,8 @@ export async function POST(req: NextRequest) {
     const { data: slot, error } = await supabase
       .from('timetable_slots')
       .insert({
-        class_id,
+        class_id: class_id || null,
+        student_id: student_id || null,
         subject_id: subject_id || null,
         teacher_id: teacher_id || null,
         semester_id: activeSemester?.id || null,
@@ -107,13 +135,15 @@ export async function POST(req: NextRequest) {
       .select(`
         id,
         class_id,
+        student_id,
         day_of_week,
         start_time,
         end_time,
         room,
         notes,
         subjects (id, name, code),
-        profiles!timetable_slots_teacher_id_fkey (id, full_name)
+        teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name),
+        student:profiles!timetable_slots_student_id_fkey (id, full_name)
       `)
       .single()
 
@@ -126,7 +156,8 @@ export async function POST(req: NextRequest) {
     const transformedSlot = {
       ...slot,
       subject: (slot as any).subjects,
-      teacher: (slot as any).profiles
+      teacher: (slot as any).teacher,
+      student: (slot as any).student
     }
 
     return NextResponse.json({ success: true, slot: transformedSlot }, { status: 201 })

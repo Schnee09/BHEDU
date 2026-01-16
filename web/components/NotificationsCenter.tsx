@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Bell, Check, Trash2, X, ExternalLink } from "lucide-react";
+import { Bell, Check, CheckCheck, AlertTriangle, Info, AlertCircle, ExternalLink, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -16,13 +16,64 @@ interface Notification {
     created_at: string;
 }
 
+// Shimmer skeleton for loading state
+const NotificationSkeleton = () => (
+    <div className="p-4 border-b border-gray-100 dark:border-gray-700/50">
+        <div className="flex gap-3">
+            <div className="w-2 h-2 rounded-full mt-2 animate-notification-shimmer bg-gray-200 dark:bg-gray-700" />
+            <div className="flex-1 space-y-2">
+                <div className="h-4 w-3/4 rounded animate-notification-shimmer bg-gray-200 dark:bg-gray-700" />
+                <div className="h-3 w-full rounded animate-notification-shimmer bg-gray-200 dark:bg-gray-700" />
+                <div className="flex gap-2">
+                    <div className="h-5 w-16 rounded-full animate-notification-shimmer bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-5 w-20 rounded animate-notification-shimmer bg-gray-200 dark:bg-gray-700" />
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+// Empty state illustration
+const EmptyStateIllustration = () => (
+    <div className="p-8 text-center">
+        <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-2xl" />
+            <div className="absolute inset-0 flex items-center justify-center">
+                <Bell className="w-8 h-8 text-indigo-400 dark:text-indigo-500" />
+            </div>
+            <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-amber-400" />
+        </div>
+        <p className="text-gray-600 dark:text-gray-300 font-medium">Không có thông báo mới</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Bạn đã cập nhật mọi thứ!</p>
+    </div>
+);
+
+// Type icon component
+const TypeIcon = ({ type }: { type: Notification["type"] }) => {
+    const iconProps = { className: "w-4 h-4" };
+
+    switch (type) {
+        case "success":
+            return <CheckCheck {...iconProps} className="w-4 h-4 text-emerald-500" />;
+        case "warning":
+            return <AlertTriangle {...iconProps} className="w-4 h-4 text-amber-500" />;
+        case "error":
+            return <AlertCircle {...iconProps} className="w-4 h-4 text-red-500" />;
+        case "info":
+        default:
+            return <Info {...iconProps} className="w-4 h-4 text-blue-500" />;
+    }
+};
+
 export default function NotificationsCenter() {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const [hasNewNotification, setHasNewNotification] = useState(false);
 
     const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -68,6 +119,9 @@ export default function NotificationsCenter() {
                     const newNotification = payload.new as Notification;
                     setNotifications((prev) => [newNotification, ...prev]);
                     setUnreadCount((prev) => prev + 1);
+                    // Trigger bell animation
+                    setHasNewNotification(true);
+                    setTimeout(() => setHasNewNotification(false), 1000);
                 }
             )
             .subscribe();
@@ -81,13 +135,29 @@ export default function NotificationsCenter() {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
+                handleClose();
             }
         };
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsOpen(false);
+            setIsClosing(false);
+        }, 150);
+    };
+
+    const handleToggle = () => {
+        if (isOpen) {
+            handleClose();
+        } else {
+            setIsOpen(true);
+        }
+    };
 
     const markAsRead = async (id: string) => {
         await supabase.from("notifications").update({ is_read: true }).eq("id", id);
@@ -112,7 +182,7 @@ export default function NotificationsCenter() {
         }
         if (notification.link) {
             router.push(notification.link);
-            setIsOpen(false);
+            handleClose();
         }
     };
 
@@ -131,26 +201,54 @@ export default function NotificationsCenter() {
         return date.toLocaleDateString("vi-VN");
     };
 
-    const typeColors = {
-        info: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
-        success: "bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400",
-        warning: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
-        error: "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400",
+    const typeStyles = {
+        info: {
+            bg: "bg-blue-50 dark:bg-blue-900/30",
+            text: "text-blue-700 dark:text-blue-300",
+            border: "border-blue-100 dark:border-blue-800/50"
+        },
+        success: {
+            bg: "bg-emerald-50 dark:bg-emerald-900/30",
+            text: "text-emerald-700 dark:text-emerald-300",
+            border: "border-emerald-100 dark:border-emerald-800/50"
+        },
+        warning: {
+            bg: "bg-amber-50 dark:bg-amber-900/30",
+            text: "text-amber-700 dark:text-amber-300",
+            border: "border-amber-100 dark:border-amber-800/50"
+        },
+        error: {
+            bg: "bg-red-50 dark:bg-red-900/30",
+            text: "text-red-700 dark:text-red-300",
+            border: "border-red-100 dark:border-red-800/50"
+        },
+    };
+
+    const categoryLabels: Record<string, string> = {
+        grade: "Điểm",
+        attendance: "Điểm danh",
+        class: "Lớp học",
+        system: "Hệ thống"
     };
 
     return (
         <div className="relative" ref={dropdownRef}>
             {/* Bell Button */}
             <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2.5 rounded-xl transition-all cursor-pointer
-          bg-stone-100 text-stone-700 border border-stone-200 hover:bg-stone-200
-          dark:bg-stone-800 dark:text-stone-200 dark:border-stone-600 dark:hover:bg-stone-700"
-                aria-label="Notifications"
+                onClick={handleToggle}
+                className={`
+                    relative p-2.5 rounded-xl transition-all cursor-pointer
+                    bg-stone-100 text-stone-700 border border-stone-200 hover:bg-stone-200
+                    dark:bg-stone-800 dark:text-stone-200 dark:border-stone-600 dark:hover:bg-stone-700
+                    ${hasNewNotification ? 'animate-bell-pulse' : ''}
+                `}
+                aria-label="Thông báo"
+                aria-expanded={isOpen}
+                aria-haspopup="true"
             >
-                <Bell className="w-5 h-5" />
+                <Bell className={`w-5 h-5 transition-transform ${unreadCount > 0 ? 'animate-bell-continuous' : ''}`} />
                 {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-unread-pulse shadow-lg shadow-red-500/30">
                         {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                 )}
@@ -158,16 +256,36 @@ export default function NotificationsCenter() {
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+                <div
+                    className={`
+                        absolute right-0 mt-2 w-80 sm:w-96 
+                        bg-white dark:bg-gray-800 
+                        rounded-2xl shadow-2xl 
+                        border border-gray-200 dark:border-gray-700 
+                        overflow-hidden z-50
+                        ${isClosing ? 'animate-dropdown-exit' : 'animate-dropdown-enter'}
+                    `}
+                    role="menu"
+                    aria-orientation="vertical"
+                >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">Thông báo</h3>
+                    <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-750">
+                        <div className="flex items-center gap-2">
+                            <Bell className="w-5 h-5 text-indigo-500" />
+                            <h3 className="font-semibold text-gray-900 dark:text-white">Thông báo</h3>
+                            {unreadCount > 0 && (
+                                <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-full">
+                                    {unreadCount} mới
+                                </span>
+                            )}
+                        </div>
                         {unreadCount > 0 && (
                             <button
                                 onClick={markAllAsRead}
-                                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                                className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors cursor-pointer"
                             >
-                                Đánh dấu tất cả đã đọc
+                                <CheckCheck className="w-3.5 h-3.5" />
+                                Đọc tất cả
                             </button>
                         )}
                     </div>
@@ -175,48 +293,75 @@ export default function NotificationsCenter() {
                     {/* Notifications List */}
                     <div className="max-h-[400px] overflow-y-auto">
                         {loading ? (
-                            <div className="p-8 text-center">
-                                <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                            </div>
+                            <>
+                                <NotificationSkeleton />
+                                <NotificationSkeleton />
+                                <NotificationSkeleton />
+                            </>
                         ) : notifications.length === 0 ? (
-                            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                                <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                <p>Không có thông báo</p>
-                            </div>
+                            <EmptyStateIllustration />
                         ) : (
-                            notifications.map((notification) => (
+                            notifications.map((notification, index) => (
                                 <button
                                     key={notification.id}
                                     onClick={() => handleNotificationClick(notification)}
-                                    className={`w-full p-4 text-left border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${!notification.is_read ? "bg-indigo-50/50 dark:bg-indigo-900/10" : ""
-                                        }`}
+                                    className={`
+                                        w-full p-4 text-left border-b border-gray-50 dark:border-gray-700/50 
+                                        hover:bg-gray-50 dark:hover:bg-gray-700/50 
+                                        transition-all duration-200 cursor-pointer
+                                        ${!notification.is_read ? "bg-indigo-50/50 dark:bg-indigo-900/10" : ""}
+                                        animate-list-item-enter
+                                    `}
+                                    style={{ animationDelay: `${Math.min(index, 5) * 0.05}s`, opacity: 0 }}
+                                    role="menuitem"
                                 >
                                     <div className="flex gap-3">
-                                        <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${!notification.is_read ? "bg-indigo-500" : "bg-transparent"
-                                            }`} />
+                                        {/* Unread indicator */}
+                                        <div className={`
+                                            w-2 h-2 rounded-full mt-2 flex-shrink-0 transition-all
+                                            ${!notification.is_read
+                                                ? "bg-indigo-500 shadow-md shadow-indigo-500/50"
+                                                : "bg-transparent"
+                                            }
+                                        `} />
+
                                         <div className="flex-1 min-w-0">
-                                            <p className={`font-medium text-sm ${!notification.is_read ? "text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"
-                                                }`}>
+                                            <p className={`
+                                                font-medium text-sm leading-tight
+                                                ${!notification.is_read
+                                                    ? "text-gray-900 dark:text-white"
+                                                    : "text-gray-700 dark:text-gray-300"
+                                                }
+                                            `}>
                                                 {notification.title}
                                             </p>
+
                                             {notification.message && (
-                                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 leading-snug">
                                                     {notification.message}
                                                 </p>
                                             )}
+
                                             <div className="flex items-center gap-2 mt-2">
-                                                <span className={`text-xs px-2 py-0.5 rounded-full ${typeColors[notification.type]}`}>
-                                                    {notification.category === "grade" ? "Điểm" :
-                                                        notification.category === "attendance" ? "Điểm danh" :
-                                                            notification.category === "class" ? "Lớp học" : "Hệ thống"}
+                                                {/* Type badge with icon */}
+                                                <span className={`
+                                                    inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border
+                                                    ${typeStyles[notification.type].bg}
+                                                    ${typeStyles[notification.type].text}
+                                                    ${typeStyles[notification.type].border}
+                                                `}>
+                                                    <TypeIcon type={notification.type} />
+                                                    {categoryLabels[notification.category] || "Thông báo"}
                                                 </span>
-                                                <span className="text-xs text-gray-400">
+
+                                                <span className="text-xs text-gray-400 dark:text-gray-500">
                                                     {getTimeAgo(notification.created_at)}
                                                 </span>
                                             </div>
                                         </div>
+
                                         {notification.link && (
-                                            <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                            <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" />
                                         )}
                                     </div>
                                 </button>
@@ -226,13 +371,13 @@ export default function NotificationsCenter() {
 
                     {/* Footer */}
                     {notifications.length > 0 && (
-                        <div className="p-3 border-t border-gray-100 dark:border-gray-700">
+                        <div className="p-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                             <button
                                 onClick={() => {
                                     router.push("/dashboard/notifications");
-                                    setIsOpen(false);
+                                    handleClose();
                                 }}
-                                className="w-full text-center text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                                className="w-full text-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors cursor-pointer py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                             >
                                 Xem tất cả thông báo
                             </button>

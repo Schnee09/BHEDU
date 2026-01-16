@@ -432,7 +432,7 @@ export default function AttendanceReportsPage() {
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value: number) => [value, 'Số lượng']} />
+                          <Tooltip formatter={(value: any) => [value, 'Số lượng']} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -456,7 +456,7 @@ export default function AttendanceReportsPage() {
                           <YAxis domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 12 }} />
                           <Tooltip
                             contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                            formatter={(value: number) => [`${value.toFixed(1)}%`, 'Tỉ lệ']}
+                            formatter={(value: any) => [`${Number(value).toFixed(1)}%`, 'Tỉ lệ']}
                           />
                           <Bar dataKey="rate" fill="#6366f1" radius={[4, 4, 0, 0]} name="Tỉ lệ điểm danh" />
                         </BarChart>
@@ -485,7 +485,7 @@ export default function AttendanceReportsPage() {
                         <YAxis domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 12 }} />
                         <Tooltip
                           contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                          formatter={(value: number) => [`${value.toFixed(1)}%`, 'Tỉ lệ']}
+                          formatter={(value: any) => [`${Number(value).toFixed(1)}%`, 'Tỉ lệ']}
                         />
                         <Legend />
                         <Line type="monotone" dataKey="rate" stroke="#22c55e" strokeWidth={3} name="Tỉ lệ điểm danh" dot={{ r: 6, fill: '#22c55e' }} activeDot={{ r: 8 }} />
@@ -496,38 +496,65 @@ export default function AttendanceReportsPage() {
 
                 {/* Class Performance */}
                 {Object.keys(analytics.byClass).length > 0 && (
-                  <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Thống Kê Theo Lớp</h2>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                  <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Thống Kê Theo Lớp</h2>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-3 mobile-card-list">
+                      {Object.entries(analytics.byClass)
+                        .sort((a, b) => b[1].rate - a[1].rate)
+                        .map(([classId, stats]) => (
+                          <div
+                            key={classId}
+                            className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <p className="font-semibold text-gray-900 dark:text-gray-100">
+                                {stats.name}
+                              </p>
+                              <span className={`text-lg font-bold ${getRateColor(stats.rate)}`}>
+                                {stats.rate}%
+                              </span>
+                            </div>
+                            <div className="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
+                              <span>Tổng: {stats.count}</span>
+                              <span>Có mặt: {stats.present}</span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto table-scroll-container">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-stone-700">
+                        <thead className="bg-gray-50 dark:bg-stone-800">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Lớp
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Tổng số
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Có mặt
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Tỉ lệ
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
                           {Object.entries(analytics.byClass)
                             .sort((a, b) => b[1].rate - a[1].rate)
                             .map(([classId, stats]) => (
-                              <tr key={classId}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              <tr key={classId} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                                   {stats.name}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                   {stats.count}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                   {stats.present}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -590,64 +617,130 @@ export default function AttendanceReportsPage() {
             )}
 
             {viewMode === 'details' && (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900">
+              <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm overflow-hidden">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-stone-700">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     Chi Tiết Bản Ghi ({records.length})
                   </h2>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+
+                {/* Mobile Card View */}
+                <div className="md:hidden p-4 space-y-3 mobile-card-list">
+                  {records.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      Không tìm thấy bản ghi nào với bộ lọc đã chọn
+                    </div>
+                  ) : (
+                    records.map((record) => (
+                      <div
+                        key={record.id}
+                        className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+                      >
+                        {/* Header with status */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                              {record.student?.full_name || record.student?.email}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {record.student?.student_id}
+                            </p>
+                          </div>
+                          <span className={`px-2.5 py-1 text-xs font-semibold rounded-full flex-shrink-0 ml-2 ${getStatusColor(record.status)}`}>
+                            {record.status === 'present' ? 'Có mặt' :
+                              record.status === 'absent' ? 'Vắng' :
+                                record.status === 'late' ? 'Trễ' :
+                                  record.status === 'excused' ? 'Có phép' : record.status}
+                          </span>
+                        </div>
+
+                        {/* Details Grid */}
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500 dark:text-gray-400">Ngày</span>
+                            <span className="text-gray-900 dark:text-gray-100 font-medium">
+                              {new Date(record.date).toLocaleDateString('vi-VN')}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500 dark:text-gray-400">Lớp</span>
+                            <span className="text-gray-900 dark:text-gray-100">
+                              {record.class?.name || record.class?.title}
+                            </span>
+                          </div>
+                          {record.check_in_time && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-500 dark:text-gray-400">Giờ vào</span>
+                              <span className="text-gray-900 dark:text-gray-100">
+                                {new Date(record.check_in_time).toLocaleTimeString('vi-VN')}
+                              </span>
+                            </div>
+                          )}
+                          {record.notes && (
+                            <div className="pt-2 border-t border-gray-200 dark:border-stone-700">
+                              <p className="text-gray-500 dark:text-gray-400 text-xs">Ghi chú:</p>
+                              <p className="text-gray-800 dark:text-gray-200 text-sm mt-1">{record.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto table-scroll-container">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-stone-700">
+                    <thead className="bg-gray-50 dark:bg-stone-800">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Ngày
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Học sinh
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Lớp
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Trạng thái
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Giờ vào
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Ghi chú
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
                       {records.map((record) => (
-                        <tr key={record.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                             {new Date(record.date).toLocaleDateString('vi-VN')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                 {record.student?.full_name || record.student?.email}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
                                 {record.student?.student_id}
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {record.class?.name}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            {record.class?.name || record.class?.title}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>
                               {record.status.replace('_', ' ').toUpperCase()}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                             {record.check_in_time ? new Date(record.check_in_time).toLocaleTimeString() : '-'}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                          <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
                             {record.notes || '-'}
                           </td>
                         </tr>

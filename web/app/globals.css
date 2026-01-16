@@ -1992,3 +1992,540 @@ a:not(.inline-link),
 .dark .border-stone-300 {
   border-color: #57534E;
 }
+
+/* ============================================================================
+   NOTIFICATION & POPUP ANIMATIONS  
+   Premium animations for toast, modal, and dropdown components
+   ============================================================================ */
+
+/* Toast entrance with spring bounce effect */
+@keyframes toast-enter {
+  0% {
+    transform: translateX(120%) scale(0.9);
+    opacity: 0;
+  }
+
+  60% {
+    transform: translateX(-8px) scale(1.02);
+    opacity: 1;
+  }
+
+  80% {
+    transform: translateX(4px) scale(0.99);
+  }
+
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-exit {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(120%) scale(0.9);
+    opacity: 0;
+  }
+}
+
+/* Success checkmark draw animation */
+@keyframes check-draw {
+  0% {
+    stroke-dashoffset: 24;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes check-scale {
+  0% {
+    transform: scale(0);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Error shake animation */
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(-3px);
+  }
+
+  40%,
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+/* Warning pulse animation */
+@keyframes warning-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+/* Info bounce animation */
+@keyframes info-bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Bell pulse for unread notifications */
+@keyframes bell-pulse {
+
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  25% {
+    transform: scale(1.1) rotate(5deg);
+  }
+
+  75% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+}
+
+/* Dropdown scale from origin */
+@keyframes dropdown-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes dropdown-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+}
+
+/* Modal entrance with scale and blur */
+@keyframes modal-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modal-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+}
+
+/* Backdrop fade with blur */
+@keyframes backdrop-fade-in {
+  0% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+
+  100% {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* Progress bar smooth shrink with glow */
+@keyframes progress-shrink {
+  0% {
+    transform: scaleX(1);
+  }
+
+  100% {
+    transform: scaleX(0);
+  }
+}
+
+/* Staggered list item entrance */
+@keyframes list-item-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Shimmer loading effect */
+@keyframes notification-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Unread dot pulse */
+@keyframes unread-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Animation Utility Classes */
+.animate-toast-enter {
+  animation: toast-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-toast-exit {
+  animation: toast-exit 0.25s ease-in forwards;
+}
+
+.animate-check-draw {
+  stroke-dasharray: 24;
+  animation: check-draw 0.4s ease-out 0.1s forwards;
+}
+
+.animate-check-scale {
+  animation: check-scale 0.3s ease-out forwards;
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+.animate-warning-pulse {
+  animation: warning-pulse 1s ease-in-out infinite;
+}
+
+.animate-info-bounce {
+  animation: info-bounce 0.6s ease-in-out infinite;
+}
+
+.animate-bell-pulse {
+  animation: bell-pulse 0.6s ease-in-out;
+}
+
+.animate-bell-continuous {
+  animation: bell-pulse 2s ease-in-out infinite;
+}
+
+.animate-dropdown-enter {
+  animation: dropdown-enter 0.2s ease-out forwards;
+  transform-origin: top right;
+}
+
+.animate-dropdown-exit {
+  animation: dropdown-exit 0.15s ease-in forwards;
+  transform-origin: top right;
+}
+
+.animate-modal-enter {
+  animation: modal-enter 0.25s ease-out forwards;
+}
+
+.animate-modal-exit {
+  animation: modal-exit 0.2s ease-in forwards;
+}
+
+.animate-backdrop-enter {
+  animation: backdrop-fade-in 0.2s ease-out forwards;
+}
+
+.animate-progress-shrink {
+  animation: progress-shrink linear forwards;
+  transform-origin: left;
+}
+
+.animate-list-item-enter {
+  animation: list-item-enter 0.3s ease-out forwards;
+}
+
+.animate-notification-shimmer {
+  background: linear-gradient(90deg,
+      rgba(148, 163, 184, 0.1) 25%,
+      rgba(148, 163, 184, 0.2) 50%,
+      rgba(148, 163, 184, 0.1) 75%);
+  background-size: 200% 100%;
+  animation: notification-shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .animate-notification-shimmer {
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.05) 25%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+}
+
+.animate-unread-pulse {
+  animation: unread-pulse 2s ease-in-out infinite;
+}
+
+/* List item stagger delays */
+.notification-item-1 {
+  animation-delay: 0.05s;
+}
+
+.notification-item-2 {
+  animation-delay: 0.1s;
+}
+
+.notification-item-3 {
+  animation-delay: 0.15s;
+}
+
+.notification-item-4 {
+  animation-delay: 0.2s;
+}
+
+.notification-item-5 {
+  animation-delay: 0.25s;
+}
+
+/* Toast progress bar gradient styles */
+.toast-progress-success {
+  background: linear-gradient(90deg, #10B981, #34D399);
+}
+
+.toast-progress-error {
+  background: linear-gradient(90deg, #EF4444, #F87171);
+}
+
+.toast-progress-warning {
+  background: linear-gradient(90deg, #F59E0B, #FBBF24);
+}
+
+.toast-progress-info {
+  background: linear-gradient(90deg, #3B82F6, #60A5FA);
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-toast-enter,
+  .animate-toast-exit,
+  .animate-check-draw,
+  .animate-check-scale,
+  .animate-shake,
+  .animate-warning-pulse,
+  .animate-info-bounce,
+  .animate-bell-pulse,
+  .animate-bell-continuous,
+  .animate-dropdown-enter,
+  .animate-dropdown-exit,
+  .animate-modal-enter,
+  .animate-modal-exit,
+  .animate-backdrop-enter,
+  .animate-list-item-enter,
+  .animate-unread-pulse {
+    animation: none !important;
+    transition: opacity 0.15s ease !important;
+  }
+
+  .animate-progress-shrink {
+    animation: none !important;
+    transform: scaleX(0);
+    transition: transform linear !important;
+  }
+
+  .animate-notification-shimmer {
+    animation: none !important;
+    background: rgba(148, 163, 184, 0.15) !important;
+  }
+}
+
+/* ============================================
+   RESPONSIVE TABLE UTILITIES
+   Better mobile experience for data tables
+   ============================================ */
+
+/* Table container with horizontal scroll fade */
+.table-scroll-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  position: relative;
+}
+
+/* Fade indicator for horizontal scroll */
+.table-scroll-container::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.9));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.dark .table-scroll-container::after {
+  background: linear-gradient(to right, transparent, rgba(28, 25, 23, 0.9));
+}
+
+/* Show fade when scrollable */
+.table-scroll-container.has-scroll::after {
+  opacity: 1;
+}
+
+/* Mobile-first table cell sizing */
+@media (max-width: 640px) {
+
+  table th,
+  table td {
+    padding: 0.625rem 0.75rem !important;
+    font-size: 0.8125rem !important;
+  }
+
+  /* Make first column sticky on mobile */
+  .table-sticky-first th:first-child,
+  .table-sticky-first td:first-child {
+    position: sticky;
+    left: 0;
+    background: inherit;
+    z-index: 1;
+    box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .table-sticky-first th:first-child,
+  .dark .table-sticky-first td:first-child {
+    box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Compact table variant */
+.table-compact th,
+.table-compact td {
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.8125rem !important;
+}
+
+/* Mobile card animation for table row transitions */
+@keyframes mobileCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-card-enter {
+  animation: mobileCardEnter 0.2s ease-out forwards;
+}
+
+/* Staggered card animations */
+.mobile-card-list>* {
+  animation: mobileCardEnter 0.25s ease-out forwards;
+}
+
+.mobile-card-list>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.mobile-card-list>*:nth-child(2) {
+  animation-delay: 50ms;
+}
+
+.mobile-card-list>*:nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.mobile-card-list>*:nth-child(4) {
+  animation-delay: 150ms;
+}
+
+.mobile-card-list>*:nth-child(5) {
+  animation-delay: 200ms;
+}
+
+.mobile-card-list>*:nth-child(n+6) {
+  animation-delay: 250ms;
+}
+
+/* Touch-friendly action buttons in mobile cards */
+.mobile-card-action {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

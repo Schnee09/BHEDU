@@ -39,7 +39,13 @@ export async function GET(request: Request) {
           teacher:profiles!classes_teacher_id_fkey (
             id,
             full_name,
-            email
+            email,
+            subject_id,
+            subjects (
+              id,
+              name,
+              code
+            )
           )
         `)
         .order('name', { ascending: true })
@@ -62,7 +68,13 @@ export async function GET(request: Request) {
           teacher:profiles!classes_teacher_id_fkey (
             id,
             full_name,
-            email
+            email,
+            subject_id,
+            subjects (
+              id,
+              name,
+              code
+            )
           )
         `)
         .eq('teacher_id', profileId)
@@ -106,7 +118,13 @@ export async function GET(request: Request) {
           teacher:profiles!classes_teacher_id_fkey (
             id,
             full_name,
-            email
+            email,
+            subject_id,
+            subjects (
+              id,
+              name,
+              code
+            )
           )
         `)
         .in('id', classIds)

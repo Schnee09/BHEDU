@@ -243,54 +243,107 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* Subject-wise Performance */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Chi tiết Điểm theo Môn học</h2>
+      <div className="bg-white dark:bg-stone-900 rounded-lg shadow-md p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 sm:mb-6">Chi tiết Điểm theo Môn học</h2>
 
         {progress.semesters.map((semester, semIndex) => (
-          <div key={semIndex} className="mb-8 last:mb-0">
-            <h3 className="text-xl font-semibold text-blue-600 mb-4 pb-2 border-b-2 border-blue-200">
+          <div key={semIndex} className="mb-6 sm:mb-8 last:mb-0">
+            <h3 className="text-lg sm:text-xl font-semibold text-blue-600 dark:text-blue-400 mb-3 sm:mb-4 pb-2 border-b-2 border-blue-200 dark:border-blue-800">
               {semester.semester} - {semester.academic_year}
             </h3>
 
-            <div className="overflow-x-auto">
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3 mobile-card-list">
+              {semester.subjects.map((subject, subIndex) => {
+                const finalGrade = subject.final_grade || 0;
+                const classification = getGradeClassification(finalGrade);
+
+                return (
+                  <div
+                    key={subIndex}
+                    className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+                  >
+                    {/* Subject Name & Classification */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">
+                          {subject.subject_name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {subject.subject_code}
+                        </p>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ml-2 ${classification.color}`}>
+                        {classification.label}
+                      </span>
+                    </div>
+
+                    {/* Grades Grid */}
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">HK1</p>
+                        <p className="font-semibold text-gray-800 dark:text-gray-100">
+                          {subject.semester_1_grade !== null ? subject.semester_1_grade.toFixed(1) : '-'}
+                        </p>
+                      </div>
+                      <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">HK2</p>
+                        <p className="font-semibold text-gray-800 dark:text-gray-100">
+                          {subject.semester_2_grade !== null ? subject.semester_2_grade.toFixed(1) : '-'}
+                        </p>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-2">
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">Cả năm</p>
+                        <p className="font-bold text-lg text-blue-600 dark:text-blue-400">
+                          {subject.final_grade !== null ? subject.final_grade.toFixed(1) : '-'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto table-scroll-container">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-stone-800">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Môn học</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">HK1</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">HK2</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Cả năm</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Xếp loại</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Môn học</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">HK1</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">HK2</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Cả năm</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Xếp loại</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-stone-700">
                   {semester.subjects.map((subject, subIndex) => {
                     const finalGrade = subject.final_grade || 0;
                     const classification = getGradeClassification(finalGrade);
 
                     return (
-                      <tr key={subIndex} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-medium text-gray-800">
+                      <tr key={subIndex} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-800 dark:text-gray-200">
                           {subject.subject_name}
-                          <span className="ml-2 text-xs text-gray-500">({subject.subject_code})</span>
+                          <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({subject.subject_code})</span>
                         </td>
                         <td className="px-4 py-3 text-center text-sm">
                           {subject.semester_1_grade !== null ? (
-                            <span className="font-semibold">{subject.semester_1_grade.toFixed(1)}</span>
+                            <span className="font-semibold text-gray-800 dark:text-gray-200">{subject.semester_1_grade.toFixed(1)}</span>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-center text-sm">
                           {subject.semester_2_grade !== null ? (
-                            <span className="font-semibold">{subject.semester_2_grade.toFixed(1)}</span>
+                            <span className="font-semibold text-gray-800 dark:text-gray-200">{subject.semester_2_grade.toFixed(1)}</span>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-center">
                           {subject.final_grade !== null ? (
-                            <span className="text-lg font-bold text-blue-600">
+                            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
                               {subject.final_grade.toFixed(1)}
                             </span>
                           ) : (
@@ -506,7 +559,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                       borderRadius: '12px',
                       boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
                     }}
-                    formatter={(value: number) => [`${value.toFixed(1)} điểm`, 'Điểm số']}
+                    formatter={(value: any) => [`${Number(value).toFixed(1)} điểm`, 'Điểm số']}
                   />
                 </RadarChart>
               </ResponsiveContainer>
@@ -582,7 +635,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                       borderRadius: '12px',
                       boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
                     }}
-                    formatter={(value: number) => [`${value} môn`, '']}
+                    formatter={(value: any) => [`${value} môn`, '']}
                   />
                   <Legend
                     layout="horizontal"
@@ -629,8 +682,8 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                   borderRadius: '12px',
                   boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
                 }}
-                formatter={(value: number, name: string) => [
-                  name === 'GPA' ? `${(value / 10).toFixed(1)}` : `${value}%`,
+                formatter={(value: any, name: any) => [
+                  name === 'GPA' ? `${(Number(value) / 10).toFixed(1)}` : `${value}%`,
                   name === 'GPA' ? 'Điểm TB' : name
                 ]}
               />

@@ -369,7 +369,7 @@ export default function GradeAnalyticsPage() {
                           borderRadius: '12px',
                           boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
                         }}
-                        formatter={(value: number) => [`${value.toFixed(1)}%`, '']}
+                        formatter={(value: any) => [`${Number(value).toFixed(1)}%`, '']}
                       />
                       <Legend wrapperStyle={{ paddingTop: '20px' }} />
                       <Area
@@ -500,7 +500,7 @@ export default function GradeAnalyticsPage() {
                             boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
                           }}
                           cursor={{ fill: 'rgba(99, 102, 241, 0.1)' }}
-                          formatter={(value: number) => [`${value} học sinh`, 'Số lượng']}
+                          formatter={(value: any) => [`${value} học sinh`, 'Số lượng']}
                         />
                         <Bar
                           dataKey="count"
@@ -519,33 +519,68 @@ export default function GradeAnalyticsPage() {
 
               {/* Category Performance */}
               {categoryStats.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Thống Kê Theo Loại Điểm</h2>
-                  <div className="overflow-x-auto">
+                <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-gray-200 dark:border-stone-700 p-4 sm:p-6 mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Thống Kê Theo Loại Điểm</h2>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3 mobile-card-list">
+                    {categoryStats.map((cat, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="font-semibold text-gray-900 dark:text-gray-100">
+                            {cat.category_name}
+                          </p>
+                          <span className={`text-lg font-bold ${getLetterGradeColor(percentageToLetterGrade(cat.average))}`}>
+                            {cat.average.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                          <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Trung vị</p>
+                            <p className="font-medium text-gray-800 dark:text-gray-200">{cat.median.toFixed(1)}%</p>
+                          </div>
+                          <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-2">
+                            <p className="text-xs text-green-600 dark:text-green-400">Cao nhất</p>
+                            <p className="font-semibold text-green-600 dark:text-green-400">{cat.highest.toFixed(1)}%</p>
+                          </div>
+                          <div className="bg-red-50 dark:bg-red-900/30 rounded-lg p-2">
+                            <p className="text-xs text-red-600 dark:text-red-400">Thấp nhất</p>
+                            <p className="font-semibold text-red-600 dark:text-red-400">{cat.lowest.toFixed(1)}%</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto table-scroll-container">
                     <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
+                      <thead className="bg-gray-50 dark:bg-stone-800 border-b border-gray-200 dark:border-stone-700">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                             Loại điểm
                           </th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                             Trung bình
                           </th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                             Trung vị
                           </th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                             Cao nhất
                           </th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                             Thấp nhất
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y divide-gray-200 dark:divide-stone-700">
                         {categoryStats.map((cat, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-medium text-gray-900">
+                          <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
+                            <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                               {cat.category_name}
                             </td>
                             <td className="px-4 py-3 text-center">
@@ -553,13 +588,13 @@ export default function GradeAnalyticsPage() {
                                 {cat.average.toFixed(1)}%
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-center text-gray-600">
+                            <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">
                               {cat.median.toFixed(1)}%
                             </td>
-                            <td className="px-4 py-3 text-center text-green-600 font-semibold">
+                            <td className="px-4 py-3 text-center text-green-600 dark:text-green-400 font-semibold">
                               {cat.highest.toFixed(1)}%
                             </td>
-                            <td className="px-4 py-3 text-center text-red-600 font-semibold">
+                            <td className="px-4 py-3 text-center text-red-600 dark:text-red-400 font-semibold">
                               {cat.lowest.toFixed(1)}%
                             </td>
                           </tr>

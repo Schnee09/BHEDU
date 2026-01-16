@@ -77,11 +77,11 @@ export default function InvoicesPage() {
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
-  
+
   // Filters
   const [filters, setFilters] = useState({
     search: '',
@@ -105,7 +105,7 @@ export default function InvoicesPage() {
     }>
   })
 
-   
+
   useEffect(() => {
     fetchStudents()
     fetchFeeTypes()
@@ -155,17 +155,17 @@ export default function InvoicesPage() {
     setError(null)
     try {
       const params = new URLSearchParams()
-      
+
       if (filters.student_id) params.append('student_id', filters.student_id)
       if (filters.status) params.append('status', filters.status)
       if (filters.academic_year_id) params.append('academic_year_id', filters.academic_year_id)
 
       const res = await apiFetch(`/api/admin/finance/invoices?${params}`)
       const response = await res.json()
-      
+
       if (response.success) {
         let filteredInvoices = response.data || response.invoices || []
-        
+
         // Client-side search filter
         if (filters.search) {
           const searchLower = filters.search.toLowerCase()
@@ -175,7 +175,7 @@ export default function InvoicesPage() {
             inv.student.student_id.toLowerCase().includes(searchLower)
           )
         }
-        
+
         setInvoices(filteredInvoices)
       } else {
         setError(response.error || 'Failed to fetch invoices')
@@ -206,7 +206,7 @@ export default function InvoicesPage() {
   const handleItemChange = (index: number, field: string, value: any) => {
     const newItems = [...formData.items]
     newItems[index] = { ...newItems[index], [field]: value }
-    
+
     // Auto-fill price when fee type is selected
     if (field === 'fee_type_id') {
       const feeType = feeTypes.find(ft => ft.id === value)
@@ -215,7 +215,7 @@ export default function InvoicesPage() {
         newItems[index].description = feeType.name
       }
     }
-    
+
     setFormData({ ...formData, items: newItems })
   }
 
@@ -405,7 +405,7 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* Invoices Table */}
+      {/* Invoices List */}
       <Card>
         <CardBody className="p-0">
           {loading ? (
@@ -416,99 +416,167 @@ export default function InvoicesPage() {
               <p>No invoices found. Create your first invoice to get started.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Invoice #
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Student
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Issue Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Due Date
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Paid
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Balance
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {invoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-blue-600">
+            <>
+              {/* Mobile Card View */}
+              <div className="md:hidden p-4 space-y-3 mobile-card-list">
+                {invoices.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+                  >
+                    {/* Header with invoice # and status */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
                           {invoice.invoice_number}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {invoice.student.full_name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {invoice.student.student_id}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatDate(invoice.issue_date)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatDate(invoice.due_date)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatCurrency(invoice.total_amount)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="text-sm font-medium text-green-600">
-                          {formatCurrency(invoice.paid_amount)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className={`text-sm font-bold ${invoice.balance > 0 ? 'text-orange-600' : 'text-gray-500'}`}>
-                          {formatCurrency(invoice.balance)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                        </p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                          {invoice.student.full_name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {invoice.student.student_id}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0 ml-2">
                         {getStatusBadge(invoice.status)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link
-                          href={`/dashboard/admin/finance/invoices/${invoice.id}`}
-                          className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
-                        >
-                          <Icons.View className="w-4 h-4" />
-                          View
-                        </Link>
-                      </td>
+                      </div>
+                    </div>
+
+                    {/* Amounts Grid */}
+                    <div className="grid grid-cols-3 gap-2 text-center text-sm mb-3">
+                      <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Tổng</p>
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">
+                          {formatCurrency(invoice.total_amount)}
+                        </p>
+                      </div>
+                      <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-2">
+                        <p className="text-xs text-green-600 dark:text-green-400">Đã trả</p>
+                        <p className="font-semibold text-green-600 dark:text-green-400">
+                          {formatCurrency(invoice.paid_amount)}
+                        </p>
+                      </div>
+                      <div className={`rounded-lg p-2 ${invoice.balance > 0 ? 'bg-orange-50 dark:bg-orange-900/30' : 'bg-gray-100 dark:bg-stone-800'}`}>
+                        <p className={`text-xs ${invoice.balance > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500'}`}>Còn lại</p>
+                        <p className={`font-bold ${invoice.balance > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500'}`}>
+                          {formatCurrency(invoice.balance)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Dates and Action */}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-stone-700">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <span>Ngày: {formatDate(invoice.issue_date)}</span>
+                        <span className="mx-2">•</span>
+                        <span>Hạn: {formatDate(invoice.due_date)}</span>
+                      </div>
+                      <Link
+                        href={`/dashboard/admin/finance/invoices/${invoice.id}`}
+                        className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-medium"
+                      >
+                        View
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto table-scroll-container">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-stone-700">
+                  <thead className="bg-gray-50 dark:bg-stone-800">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Invoice #
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Student
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Issue Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Due Date
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Total
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Paid
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Balance
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
+                    {invoices.map((invoice) => (
+                      <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                            {invoice.invoice_number}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {invoice.student.full_name}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {invoice.student.student_id}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-gray-100">
+                            {formatDate(invoice.issue_date)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-gray-100">
+                            {formatDate(invoice.due_date)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {formatCurrency(invoice.total_amount)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="text-sm font-medium text-green-600 dark:text-green-400">
+                            {formatCurrency(invoice.paid_amount)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className={`text-sm font-bold ${invoice.balance > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                            {formatCurrency(invoice.balance)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getStatusBadge(invoice.status)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Link
+                            href={`/dashboard/admin/finance/invoices/${invoice.id}`}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1"
+                          >
+                            <Icons.View className="w-4 h-4" />
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardBody>
       </Card>

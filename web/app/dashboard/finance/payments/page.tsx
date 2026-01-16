@@ -146,7 +146,7 @@ export default function PaymentsPage() {
       setShowModal(false)
       resetForm()
       fetchPayments()
-      
+
       // Show success with receipt number
       if (result.data?.receipt_number) {
         alert(`Payment recorded successfully!\nReceipt #: ${result.data.receipt_number}`)
@@ -195,7 +195,7 @@ export default function PaymentsPage() {
   const stats = {
     total: payments.length,
     totalAmount: payments.reduce((sum, p) => sum + p.amount, 0),
-    today: payments.filter(p => 
+    today: payments.filter(p =>
       new Date(p.payment_date).toDateString() === new Date().toDateString()
     ).length,
     todayAmount: payments
@@ -264,89 +264,157 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      {/* Payments Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                Receipt #
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                Student
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                Payment Method
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                Payment Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                Reference
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-700 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {loading ? (
-              <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-slate-600">
-                  Loading payments...
-                </td>
-              </tr>
-            ) : filteredPayments.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-slate-600">
-                  No payments found.
-                </td>
-              </tr>
-            ) : (
-              filteredPayments.map((payment) => (
-                <tr key={payment.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {payment.receipt_number}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
+      {/* Payments List */}
+      <div className="bg-white dark:bg-stone-900 rounded-lg shadow overflow-hidden">
+
+        {/* Mobile Card View */}
+        <div className="md:hidden p-4 space-y-3 mobile-card-list">
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Loading payments...</div>
+          ) : filteredPayments.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No payments found.</div>
+          ) : (
+            filteredPayments.map((payment) => (
+              <div
+                key={payment.id}
+                className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+              >
+                {/* Header with receipt and amount */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {payment.receipt_number}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                       {payment.student_account?.student?.first_name}{' '}
                       {payment.student_account?.student?.last_name}
-                    </div>
-                    <div className="text-sm text-slate-600">
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
                       {payment.student_account?.student?.student_id}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                    {formatCurrency(payment.amount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                    </p>
+                  </div>
+                  <div className="bg-green-100 dark:bg-green-900/50 px-3 py-1.5 rounded-lg flex-shrink-0 ml-2">
+                    <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                      {formatCurrency(payment.amount)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Phương thức</p>
+                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400">
                       {payment.payment_method?.name || 'N/A'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {formatDate(payment.payment_date)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {payment.reference_number || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => window.print()}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Print Receipt
-                    </button>
+                  </div>
+                  <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Ngày</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-200">{formatDate(payment.payment_date)}</p>
+                  </div>
+                </div>
+
+                {/* Reference and Action */}
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-stone-700 flex justify-between items-center">
+                  <span className="text-xs text-gray-500">
+                    Ref: {payment.reference_number || '-'}
+                  </span>
+                  <button
+                    onClick={() => window.print()}
+                    className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-medium"
+                  >
+                    Print
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto table-scroll-container">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-stone-700">
+            <thead className="bg-gray-50 dark:bg-stone-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Receipt #
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Student
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Payment Method
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Payment Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Reference
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    Loading payments...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : filteredPayments.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    No payments found.
+                  </td>
+                </tr>
+              ) : (
+                filteredPayments.map((payment) => (
+                  <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {payment.receipt_number}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {payment.student_account?.student?.first_name}{' '}
+                        {payment.student_account?.student?.last_name}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {payment.student_account?.student?.student_id}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600 dark:text-green-400">
+                      {formatCurrency(payment.amount)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400">
+                        {payment.payment_method?.name || 'N/A'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {formatDate(payment.payment_date)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {payment.reference_number || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => window.print()}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        Print Receipt
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal */}
