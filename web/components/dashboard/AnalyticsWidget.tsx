@@ -350,7 +350,7 @@ export default function AnalyticsWidget({
 
     return (
         <Card className={`overflow-hidden ${className}`}>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                         {icon && (

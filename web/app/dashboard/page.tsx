@@ -145,12 +145,12 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{getRoleTitle()}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{getRoleTitle()}</h1>
               <p className="mt-2 text-gray-600">
                 Chào mừng trở lại, <span className="font-semibold text-gray-900">{profile?.full_name ?? "Người dùng"}</span> • {getRoleDescription()}
               </p>
@@ -167,7 +167,7 @@ export default function DashboardPage() {
         {/* Stats Grid */}
         <div className="mb-8">
           <h2 className="sr-only">Thống kê tổng quan</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-6">
             <StatCard
               label="Học sinh"
               value={stats.totalStudents}
@@ -225,7 +225,7 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {/* Grade Distribution Pie Chart */}
               <AnalyticsWidget
                 title="Phân bố điểm số"
@@ -323,7 +323,7 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-500 hidden sm:block">Truy cập nhanh các chức năng chính</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {profile?.role === "admin" && (
               <>
                 <QuickActionCard
@@ -491,8 +491,9 @@ function QuickActionCard({ href, icon, title, description, color }: QuickActionC
   return (
     <Link
       href={href}
-      className={`group block p-6 rounded-xl transition-all duration-300 ease-in-out
+      className={`group block p-4 sm:p-6 rounded-xl transition-all duration-300 ease-in-out
         bg-white border shadow-sm hover:shadow-lg hover:-translate-y-1
+        active:scale-[0.98] active:shadow-sm
         ${styles.bg} ${styles.border}`}
     >
       <div className="flex items-start gap-4">

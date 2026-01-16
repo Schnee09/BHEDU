@@ -27,7 +27,7 @@ export const Card = memo(function Card({
     rounded-2xl transition-all duration-300
     glass-card text-foreground
     ${hover || isClickable ? 'hover:shadow-lg hover:-translate-y-1' : ''}
-    ${isClickable ? 'cursor-pointer' : ''}
+    ${isClickable ? 'cursor-pointer active:scale-[0.98] active:shadow-sm' : ''}
     ${className}
   `, [hover, isClickable, className]);
 
@@ -48,7 +48,7 @@ interface CardHeaderProps {
 
 export const CardHeader = memo(function CardHeader({ children, className = '' }: CardHeaderProps) {
   return (
-    <div className={`px-6 py-4 border-b border-gray-100/10 dark:border-white/5 ${className}`}>
+    <div className={`px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100/10 dark:border-white/5 ${className}`}>
       {children}
     </div>
   );
@@ -61,7 +61,7 @@ interface CardBodyProps {
 
 export const CardBody = memo(function CardBody({ children, className = '' }: CardBodyProps) {
   return (
-    <div className={`px-6 py-5 ${className}`}>
+    <div className={`px-4 sm:px-6 py-4 sm:py-5 ${className}`}>
       {children}
     </div>
   );
@@ -74,7 +74,7 @@ interface CardContentProps {
 
 export const CardContent = memo(function CardContent({ children, className = '' }: CardContentProps) {
   return (
-    <div className={`px-6 py-5 ${className}`}>
+    <div className={`px-4 sm:px-6 py-4 sm:py-5 ${className}`}>
       {children}
     </div>
   );
@@ -113,7 +113,7 @@ interface CardFooterProps {
 
 export const CardFooter = memo(function CardFooter({ children, className = '' }: CardFooterProps) {
   return (
-    <div className={`px-6 py-4 border-t border-gray-100/10 dark:border-white/5 ${className}`}>
+    <div className={`px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100/10 dark:border-white/5 ${className}`}>
       {children}
     </div>
   );
@@ -170,7 +170,7 @@ export const StatCard = memo(function StatCard({
     group relative overflow-hidden rounded-xl transition-all duration-200
     bg-surface border border-border shadow-sm
     hover:shadow-md hover:border-primary/20
-    ${onClick ? 'cursor-pointer' : ''}
+    ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}
   `, [onClick]);
 
   return (
@@ -178,7 +178,7 @@ export const StatCard = memo(function StatCard({
       onClick={onClick}
       className={containerClassName}
     >
-      <div className="p-5 flex items-start justify-between relative">
+      <div className="p-4 sm:p-5 flex items-start justify-between relative">
         <div className="flex-1">
           <p className="text-sm font-medium text-muted uppercase tracking-wide mb-1">{label}</p>
           <p className="text-3xl font-bold text-foreground font-heading tabular-nums">{value}</p>
