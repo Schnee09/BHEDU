@@ -36,16 +36,16 @@ interface ClassInfo {
 const DAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
 const PERIODS = [
-    { id: 1, label: "Tiết 1", time: "7:30 - 8:15", start: "07:30" },
-    { id: 2, label: "Tiết 2", time: "8:15 - 9:00", start: "08:15" },
-    { id: 3, label: "Tiết 3", time: "9:00 - 9:45", start: "09:00" },
-    { id: 4, label: "Tiết 4", time: "10:00 - 10:45", start: "10:00" },
-    { id: 5, label: "Tiết 5", time: "10:45 - 11:30", start: "10:45" },
-    { id: 6, label: "Tiết 6", time: "13:00 - 13:45", start: "13:00" },
-    { id: 7, label: "Tiết 7", time: "13:45 - 14:30", start: "13:45" },
-    { id: 8, label: "Tiết 8", time: "14:30 - 15:15", start: "14:30" },
-    { id: 9, label: "Tiết 9", time: "15:30 - 16:15", start: "15:30" },
-    { id: 10, label: "Tiết 10", time: "16:15 - 17:00", start: "16:15" },
+    // Saturday/Sunday morning
+    { id: 1, label: "Sáng 1", time: "08:00 - 09:30", start: "08:00" },
+    { id: 2, label: "Sáng 2", time: "09:30 - 11:00", start: "09:30" },
+    // Afternoon (Sat/Sun)
+    { id: 3, label: "Chiều 1", time: "14:00 - 15:30", start: "14:00" },
+    { id: 4, label: "Chiều 2", time: "15:30 - 17:00", start: "15:30" },
+    // Evening (all days)
+    { id: 5, label: "Ca 1", time: "17:00 - 18:30", start: "17:00" },
+    { id: 6, label: "Ca 2", time: "18:30 - 20:00", start: "18:30" },
+    { id: 7, label: "Ca 3", time: "20:00 - 21:30", start: "20:00" },
 ];
 
 const SUBJECT_COLORS: Record<string, string> = {
