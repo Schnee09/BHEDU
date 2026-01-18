@@ -31,6 +31,7 @@ import { Select, Textarea, Checkbox } from '@/components/ui/form';
 import { Icons } from '@/components/ui/Icons';
 import PageGuard from '@/components/PageGuard';
 import type { UserRole } from '@/lib/database.types';
+import MobileUserList from "@/components/users/MobileUserList";
 
 interface User {
   id: string;
@@ -566,100 +567,111 @@ function UserManagementPageContent() {
             }
           />
         ) : (
-          <Card className="p-0">
-            <Table
-              data={users}
-              keyExtractor={(user) => user.id}
-              columns={[
-                {
-                  key: 'full_name',
-                  header: 'Họ tên',
-                  render: (user) => (
-                    <div>
-                      <p className="font-medium text-stone-900">{user.full_name}</p>
-                      <p className="text-sm text-stone-500">{user.email}</p>
-                    </div>
-                  )
-                },
-                {
-                  key: 'role',
-                  header: 'Vai trò',
-                  render: (user) => (
-                    <Badge variant={getRoleBadgeVariant(user.role)}>
-                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                    </Badge>
-                  )
-                },
-                {
-                  key: 'is_active',
-                  header: 'Trạng thái',
-                  render: (user) => (
-                    <Badge variant={user.is_active ? 'success' : 'default'}>
-                      {user.is_active ? 'Hoạt động' : 'Không hoạt động'}
-                    </Badge>
-                  )
-                },
-                {
-                  key: 'last_login_at',
-                  header: 'Đăng nhập cuối',
-                  render: (user) => (
-                    <span className="text-sm text-stone-600">
-                      {user.last_login_at
-                        ? new Date(user.last_login_at).toLocaleDateString('vi-VN')
-                        : 'Never'}
-                    </span>
-                  )
-                },
-                {
-                  key: 'actions',
-                  header: 'Thao tác',
-                  render: (user) => (
-                    <div className="flex justify-end pr-2">
-                      <DropdownMenu
-                        trigger={
-                          <button className="p-2 rounded-lg hover:bg-surface-hover text-muted transition-colors">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                            </svg>
-                          </button>
-                        }
-                      >
-                        <DropdownItem
-                          onClick={() => openEditModal(user)}
-                          icon={<Icons.Edit className="w-4 h-4" />}
-                        >
-                          Chỉnh sửa
-                        </DropdownItem>
-                        <DropdownItem
-                          onClick={() => openResetPasswordModal(user)}
-                          icon={<Icons.Lock className="w-4 h-4" />}
-                        >
-                          Đặt lại mật khẩu
-                        </DropdownItem>
-                        <DropdownItem
-                          onClick={() => handleToggleActive(user)}
-                          variant={user.is_active ? "danger" : "success"}
-                          icon={user.is_active ? <Icons.Error className="w-4 h-4" /> : <Icons.Success className="w-4 h-4" />}
-                        >
-                          {user.is_active ? 'Vô hiệu hóa' : 'Kích hoạt'}
-                        </DropdownItem>
-                        <DropdownItem
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowDeleteModal(true);
-                          }}
-                          variant="danger"
-                          icon={<Icons.Trash className="w-4 h-4" />}
-                        >
-                          Xóa người dùng
-                        </DropdownItem>
-                      </DropdownMenu>
-                    </div>
-                  )
-                }
-              ]}
+          <>
+            <MobileUserList
+              users={users}
+              onEdit={openEditModal}
+              onResetPassword={openResetPasswordModal}
+              onDelete={(user) => { setSelectedUser(user); setShowDeleteModal(true); }}
+              onToggleActive={handleToggleActive}
             />
-          </Card>
+            <div className="hidden md:block">
+              <Card className="p-0">
+                <Table
+                  data={users}
+                  keyExtractor={(user) => user.id}
+                  columns={[
+                    {
+                      key: 'full_name',
+                      header: 'Họ tên',
+                      render: (user) => (
+                        <div>
+                          <p className="font-medium text-stone-900">{user.full_name}</p>
+                          <p className="text-sm text-stone-500">{user.email}</p>
+                        </div>
+                      )
+                    },
+                    {
+                      key: 'role',
+                      header: 'Vai trò',
+                      render: (user) => (
+                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        </Badge>
+                      )
+                    },
+                    {
+                      key: 'is_active',
+                      header: 'Trạng thái',
+                      render: (user) => (
+                        <Badge variant={user.is_active ? 'success' : 'default'}>
+                          {user.is_active ? 'Hoạt động' : 'Không hoạt động'}
+                        </Badge>
+                      )
+                    },
+                    {
+                      key: 'last_login_at',
+                      header: 'Đăng nhập cuối',
+                      render: (user) => (
+                        <span className="text-sm text-stone-600">
+                          {user.last_login_at
+                            ? new Date(user.last_login_at).toLocaleDateString('vi-VN')
+                            : 'Never'}
+                        </span>
+                      )
+                    },
+                    {
+                      key: 'actions',
+                      header: 'Thao tác',
+                      render: (user) => (
+                        <div className="flex justify-end pr-2">
+                          <DropdownMenu
+                            trigger={
+                              <button className="p-2 rounded-lg hover:bg-surface-hover text-muted transition-colors">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                </svg>
+                              </button>
+                            }
+                          >
+                            <DropdownItem
+                              onClick={() => openEditModal(user)}
+                              icon={<Icons.Edit className="w-4 h-4" />}
+                            >
+                              Chỉnh sửa
+                            </DropdownItem>
+                            <DropdownItem
+                              onClick={() => openResetPasswordModal(user)}
+                              icon={<Icons.Lock className="w-4 h-4" />}
+                            >
+                              Đặt lại mật khẩu
+                            </DropdownItem>
+                            <DropdownItem
+                              onClick={() => handleToggleActive(user)}
+                              variant={user.is_active ? "danger" : "success"}
+                              icon={user.is_active ? <Icons.Error className="w-4 h-4" /> : <Icons.Success className="w-4 h-4" />}
+                            >
+                              {user.is_active ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                            </DropdownItem>
+                            <DropdownItem
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setShowDeleteModal(true);
+                              }}
+                              variant="danger"
+                              icon={<Icons.Trash className="w-4 h-4" />}
+                            >
+                              Xóa người dùng
+                            </DropdownItem>
+                          </DropdownMenu>
+                        </div>
+                      )
+                    }
+                  ]}
+                />
+              </Card>
+            </div>
+          </>
         )}
 
         {/* Pagination */}

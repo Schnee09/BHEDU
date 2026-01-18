@@ -53,3 +53,4 @@ __pycache__/
 # Test coverage
 coverage/
 .nyc_output/
+.agent

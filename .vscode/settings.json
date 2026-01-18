@@ -29,5 +29,7 @@
     "**/cache/": true
   },
   "idf.pythonInstallPath": "C:\\Users\\Admin\\.espressif\\tools\\idf-python\\3.8.7\\python.exe",
-  "css.lint.unknownAtRules": "ignore"
+  "css.lint.unknownAtRules": "ignore",
+  "npm.packageManager": "npm",
+  "deno.path": "C:\\Users\\Admin\\.deno\\bin\\deno.exe"
 }

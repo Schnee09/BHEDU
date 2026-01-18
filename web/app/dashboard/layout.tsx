@@ -8,6 +8,7 @@ import AuthGuard from "@/components/AuthGuard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SkipToMainContent } from "@/lib/a11y";
 import { ReactNode } from "react";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 function DashboardContent({ children }: { children: ReactNode }) {
   const { profile, loading } = useProfileContext();
@@ -33,7 +34,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
             {/* Content */}
             <main
               id="main-content"
-              className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8"
+              className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-8" // Added pb-20 for mobile nav
               role="main"
             >
               <div className="max-w-[1800px] mx-auto">
@@ -46,6 +47,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
               </div>
             </main>
           </div>
+          <MobileBottomNav />
         </div>
       </ErrorBoundary>
     </AuthGuard>

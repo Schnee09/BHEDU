@@ -145,41 +145,74 @@ export default function ImportHistoryPanel() {
             ) : errors.length === 0 ? (
               <div className="p-6 text-sm text-gray-600">No errors for this import.</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b">
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Row</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Field</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Message</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Severity</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {errors.slice(0, 50).map((e) => (
-                      <tr key={e.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2">{e.row_number ?? '—'}</td>
-                        <td className="px-4 py-2">{e.field_name ?? '—'}</td>
-                        <td className="px-4 py-2 text-gray-700">{e.error_message ?? '—'}</td>
-                        <td className="px-4 py-2">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${
-                              e.severity === 'warning'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
+              <>
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3 p-4">
+                  {errors.slice(0, 50).map((e) => (
+                    <div key={e.id} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600">Row {e.row_number ?? '?'}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${e.severity === 'warning'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                            }`}>
                             {e.severity || 'error'}
                           </span>
-                        </td>
+                        </div>
+                      </div>
+                      <div className="mb-1">
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Field:</span>
+                        <span className="ml-2 text-sm font-medium text-gray-900">{e.field_name ?? '—'}</span>
+                      </div>
+                      <div className="text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">
+                        {e.error_message ?? 'No error message'}
+                      </div>
+                    </div>
+                  ))}
+                  {errors.length > 50 && (
+                    <div className="text-center text-xs text-gray-500 py-2">
+                      Showing first 50 errors only
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b">
+                        <th className="text-left px-4 py-3 font-semibold text-gray-700">Row</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-700">Field</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-700">Message</th>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-700">Severity</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {errors.length > 50 && (
-                  <div className="p-3 text-xs text-gray-600 border-t">Showing first 50 errors.</div>
-                )}
-              </div>
+                    </thead>
+                    <tbody className="divide-y">
+                      {errors.slice(0, 50).map((e) => (
+                        <tr key={e.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-gray-600">{e.row_number ?? '—'}</td>
+                          <td className="px-4 py-2 font-medium text-gray-900">{e.field_name ?? '—'}</td>
+                          <td className="px-4 py-2 text-gray-700">{e.error_message ?? '—'}</td>
+                          <td className="px-4 py-2">
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-medium ${e.severity === 'warning'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                                }`}
+                            >
+                              {e.severity || 'error'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {errors.length > 50 && (
+                    <div className="p-3 text-xs text-gray-600 border-t">Showing first 50 errors.</div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>

@@ -22,7 +22,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const weekStartDate = searchParams.get('week_start_date')
 
-    const { data: slots, error } = await supabase
+    // Get active semester for filtering
+    const { data: activeSemester } = await supabase
+      .from('semesters')
+      .select('id')
+      .eq('is_active', true)
+      .single()
+
+    // Build query with semester filter
+    let query = supabase
       .from('timetable_slots')
       .select(`
         id,
@@ -33,11 +41,19 @@ export async function GET(req: NextRequest) {
         end_time,
         room,
         notes,
+        semester_id,
         subjects (id, name, code),
         teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name),
         student:profiles!timetable_slots_student_id_fkey (id, full_name),
         classes (id, name)
       `)
+    
+    // Filter by active semester if exists
+    if (activeSemester?.id) {
+      query = query.eq('semester_id', activeSemester.id)
+    }
+    
+    const { data: slots, error } = await query
       .order('room')
       .order('day_of_week')
       .order('start_time')

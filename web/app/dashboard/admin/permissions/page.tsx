@@ -8,7 +8,7 @@ import { PERMISSIONS, getPermissionsByCategory } from "@/lib/auth/permissions.co
 import type { PermissionCode } from "@/lib/auth/permissions.config";
 import {
     Shield, Search, Check, X, Clock,
-    User, ChevronDown, ChevronUp, AlertCircle, Filter
+    User, ChevronDown, ChevronUp, AlertCircle, Filter, UserCog
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/useToast";
@@ -41,6 +41,20 @@ interface PendingAction {
     permissionCode: string;
     permissionName: string;
 }
+
+interface PendingRoleChange {
+    userId: string;
+    userName: string;
+    currentRole: string;
+    newRole: string;
+}
+
+const ROLE_OPTIONS = [
+    { value: 'admin', label: 'Admin', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+    { value: 'staff', label: 'Staff', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+    { value: 'teacher', label: 'Teacher', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    { value: 'student', label: 'Student', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+];
 
 // Main Component
 export default function PermissionsPage() {
@@ -176,8 +190,11 @@ function PermissionsContent() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+    const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
+    const [savingRole, setSavingRole] = useState(false);
 
     const toast = useToast();
+    const { isAdmin } = usePermissions();
     const permissionsByCategory = getPermissionsByCategory();
 
     // Load users
@@ -277,6 +294,63 @@ function PermissionsContent() {
         }
     };
 
+    // Handle role change click - opens confirmation modal
+    const handleRoleChange = (newRole: string) => {
+        if (!userPermData || !selectedUser) return;
+        if (newRole === userPermData.user.role) return;
+
+        setPendingRoleChange({
+            userId: selectedUser.id,
+            userName: userPermData.user.full_name || userPermData.user.email,
+            currentRole: userPermData.user.role,
+            newRole
+        });
+    };
+
+    // Confirm and execute role change
+    const handleConfirmRoleChange = async () => {
+        if (!pendingRoleChange) return;
+        setSavingRole(true);
+
+        try {
+            const res = await apiFetch(`/api/admin/users/${pendingRoleChange.userId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ role: pendingRoleChange.newRole }),
+            });
+
+            if (res.ok) {
+                // Update local state
+                if (selectedUser) {
+                    const updatedUser = { ...selectedUser, role: pendingRoleChange.newRole };
+                    setSelectedUser(updatedUser);
+                    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+                }
+
+                // Refresh permissions data
+                const refreshRes = await apiFetch(`/api/admin/permissions/users/${pendingRoleChange.userId}`);
+                if (refreshRes.ok) {
+                    const data = await refreshRes.json();
+                    setUserPermData(data);
+                }
+
+                toast.success(
+                    "Thành công",
+                    `Đã thay đổi vai trò của ${pendingRoleChange.userName} thành ${pendingRoleChange.newRole}`
+                );
+            } else {
+                const errorData = await res.json();
+                toast.error("Lỗi", errorData.error || "Không thể thay đổi vai trò");
+            }
+        } catch (error) {
+            console.error("Failed to update role:", error);
+            toast.error("Lỗi", "Đã xảy ra lỗi khi thay đổi vai trò");
+        } finally {
+            setSavingRole(false);
+            setPendingRoleChange(null);
+        }
+    };
+
     // Filter users
     const filteredUsers = users.filter(
         (u) =>
@@ -368,19 +442,37 @@ function PermissionsContent() {
                             </div>
                         ) : (
                             <div className="space-y-6">
-                                {/* User Info */}
-                                <div className="flex items-center gap-4 pb-4 border-b border-border">
-                                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                                {/* User Info with Role Selector */}
+                                <div className="flex items-start gap-4 pb-4 border-b border-border">
+                                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                                         <User className="w-7 h-7 text-primary" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div className="flex-1 min-w-0">
                                         <h2 className="text-xl font-semibold">
                                             {userPermData.user.full_name}
                                         </h2>
-                                        <p className="text-muted-foreground">
-                                            {userPermData.user.email} • Vai trò: {userPermData.user.role}
+                                        <p className="text-muted-foreground text-sm">
+                                            {userPermData.user.email}
                                         </p>
                                     </div>
+                                    {/* Role Selector */}
+                                    {isAdmin && (
+                                        <div className="flex items-center gap-2">
+                                            <UserCog className="w-5 h-5 text-muted-foreground" />
+                                            <select
+                                                value={userPermData.user.role}
+                                                onChange={(e) => handleRoleChange(e.target.value)}
+                                                disabled={savingRole}
+                                                className="px-3 py-2 border border-border rounded-lg bg-background text-sm font-medium focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50"
+                                            >
+                                                {ROLE_OPTIONS.map((option) => (
+                                                    <option key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Admin Notice */}
@@ -447,6 +539,22 @@ function PermissionsContent() {
                 }
                 confirmText={pendingAction?.type === 'grant' ? 'Cấp quyền' : 'Thu hồi'}
                 confirmVariant={pendingAction?.type === 'revoke' ? 'danger' : 'primary'}
+            />
+
+            {/* Role Change Confirmation Modal */}
+            <ConfirmModal
+                isOpen={pendingRoleChange !== null}
+                onClose={() => setPendingRoleChange(null)}
+                onConfirm={handleConfirmRoleChange}
+                loading={savingRole}
+                title="Xác nhận thay đổi vai trò"
+                message={
+                    pendingRoleChange
+                        ? `Bạn có chắc muốn thay đổi vai trò của "${pendingRoleChange.userName}" từ ${pendingRoleChange.currentRole.toUpperCase()} sang ${pendingRoleChange.newRole.toUpperCase()}? Điều này sẽ thay đổi các quyền mặc định của người dùng.`
+                        : ''
+                }
+                confirmText="Thay đổi vai trò"
+                confirmVariant="primary"
             />
         </div>
     );

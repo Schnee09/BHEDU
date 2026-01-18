@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 import ClientProviders from "@/components/ClientProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
   title: "BH-EDU | Hệ thống quản lý giáo dục",
@@ -12,6 +13,9 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: "BH-EDU",
+  },
+  formatDetection: {
+    telephone: false,
   },
   icons: {
     icon: "/favicon.ico",
@@ -24,6 +28,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -33,6 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ErrorBoundary>
           <ClientProviders>
             {children}
+            <ServiceWorkerRegister />
           </ClientProviders>
         </ErrorBoundary>
       </body>

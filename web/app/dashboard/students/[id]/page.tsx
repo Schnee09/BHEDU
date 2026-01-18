@@ -381,32 +381,63 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       {attendance.length === 0 ? (
         <Empty title="Không có điểm danh" description="Không tìm thấy bản ghi điểm danh nào cho học sinh này." />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Lớp</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Trạng thái</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Ghi chú</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {attendance.map((a: any) => (
-                <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">{new Date(a.date).toLocaleDateString('vi-VN')}</td>
-                  <td className="px-4 py-3">{a.classes?.name ?? a.class_id}</td>
-                  <td className="px-4 py-3">
-                    <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'}>
-                      {a.status}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{a.notes ?? '-'}</td>
+        <>
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {attendance.map((a: any) => (
+              <div key={a.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="font-medium text-gray-900">
+                    {new Date(a.date).toLocaleDateString('vi-VN')}
+                  </div>
+                  <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'}>
+                    {a.status}
+                  </Badge>
+                </div>
+                <div className="space-y-1 text-sm text-gray-600">
+                  <div className="flex justify-between">
+                    <span>Lớp:</span>
+                    <span className="font-medium text-gray-900">{a.classes?.name ?? a.class_id}</span>
+                  </div>
+                  {a.notes && (
+                    <div className="pt-2 mt-2 border-t border-gray-100">
+                      <span className="block text-xs text-gray-500 mb-1">Ghi chú:</span>
+                      <span>{a.notes}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Lớp</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Trạng thái</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Ghi chú</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {attendance.map((a: any) => (
+                  <tr key={a.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">{new Date(a.date).toLocaleDateString('vi-VN')}</td>
+                    <td className="px-4 py-3">{a.classes?.name ?? a.class_id}</td>
+                    <td className="px-4 py-3">
+                      <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'}>
+                        {a.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{a.notes ?? '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </Card>
   );
@@ -417,40 +448,75 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       {grades.length === 0 ? (
         <Empty title="Không có điểm" description="Chưa có điểm nào gần đây." />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Môn học</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Loại điểm</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Điểm</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày chấm</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {grades.map((g: any) => {
-                const componentLabels: Record<string, string> = {
-                  oral: 'Miệng',
-                  fifteen_min: '15 phút',
-                  one_period: '1 tiết',
-                  midterm: 'Giữa kỳ',
-                  final: 'Cuối kỳ',
-                };
-                return (
-                  <tr key={g.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-900">{g.subjects?.name ?? 'N/A'}</td>
-                    <td className="px-4 py-3 text-gray-700">{componentLabels[g.component_type] ?? g.component_type}</td>
-                    <td className="px-4 py-3">
-                      <span className="font-semibold text-blue-600">{g.score ?? g.points_earned ?? '—'}</span>
-                      <span className="text-gray-500"> / 10</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString('vi-VN') : '-'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {grades.map((g: any) => {
+              const componentLabels: Record<string, string> = {
+                oral: 'Miệng',
+                fifteen_min: '15 phút',
+                one_period: '1 tiết',
+                midterm: 'Giữa kỳ',
+                final: 'Cuối kỳ',
+              };
+              return (
+                <div key={g.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-2 opacity-10">
+                    <Icons.Grades className="w-12 h-12" />
+                  </div>
+                  <div className="flex justify-between items-start mb-3 relative z-10">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 text-lg">{g.subjects?.name ?? 'N/A'}</h4>
+                      <div className="text-xs text-gray-500 mt-1">{g.graded_at ? new Date(g.graded_at).toLocaleString('vi-VN') : '-'}</div>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">
+                      {g.score ?? g.points_earned ?? '—'}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 relative z-10">
+                    <Badge color="gray">{componentLabels[g.component_type] ?? g.component_type}</Badge>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Môn học</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Loại điểm</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Điểm</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày chấm</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {grades.map((g: any) => {
+                  const componentLabels: Record<string, string> = {
+                    oral: 'Miệng',
+                    fifteen_min: '15 phút',
+                    one_period: '1 tiết',
+                    midterm: 'Giữa kỳ',
+                    final: 'Cuối kỳ',
+                  };
+                  return (
+                    <tr key={g.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-900">{g.subjects?.name ?? 'N/A'}</td>
+                      <td className="px-4 py-3 text-gray-700">{componentLabels[g.component_type] ?? g.component_type}</td>
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-blue-600">{g.score ?? g.points_earned ?? '—'}</span>
+                        <span className="text-gray-500"> / 10</span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString('vi-VN') : '-'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </Card>
   );
@@ -485,34 +551,64 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
           {invoiceRows.length === 0 ? (
             <Empty title="Không có hóa đơn" />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">#</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Total</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Số dư</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Hạn</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {invoiceRows.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900">{inv.invoice_number}</td>
-                      <td className="px-4 py-3">
-                        <Badge color={inv.status === 'paid' ? 'green' : inv.status === 'overdue' ? 'red' : 'yellow'}>
-                          {inv.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 font-medium">₫{inv.total_amount}</td>
-                      <td className="px-4 py-3 font-semibold text-red-600">₫{inv.balance}</td>
-                      <td className="px-4 py-3 text-gray-600">{inv.due_date ? new Date(inv.due_date).toLocaleDateString('vi-VN') : '—'}</td>
+            <>
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {invoiceRows.map((inv) => (
+                  <div key={inv.id} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium text-gray-900">{inv.invoice_number}</span>
+                      <Badge color={inv.status === 'paid' ? 'green' : inv.status === 'overdue' ? 'red' : 'yellow'}>
+                        {inv.status}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500">Tổng:</span>
+                      <span className="font-medium">₫{inv.total_amount}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm mt-1">
+                      <span className="text-gray-500">Còn nợ:</span>
+                      <span className="font-bold text-red-600">₫{inv.balance}</span>
+                    </div>
+                    {inv.due_date && (
+                      <div className="text-xs text-gray-400 mt-2 text-right">
+                        Hạn: {new Date(inv.due_date).toLocaleDateString('vi-VN')}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">#</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Total</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Số dư</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Hạn</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {invoiceRows.map((inv) => (
+                      <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 font-medium text-gray-900">{inv.invoice_number}</td>
+                        <td className="px-4 py-3">
+                          <Badge color={inv.status === 'paid' ? 'green' : inv.status === 'overdue' ? 'red' : 'yellow'}>
+                            {inv.status}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 font-medium">₫{inv.total_amount}</td>
+                        <td className="px-4 py-3 font-semibold text-red-600">₫{inv.balance}</td>
+                        <td className="px-4 py-3 text-gray-600">{inv.due_date ? new Date(inv.due_date).toLocaleDateString('vi-VN') : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
         <div>
@@ -520,28 +616,45 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
           {paymentRows.length === 0 ? (
             <Empty title="Không có thanh toán" />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Số tiền</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Phương thức</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Ref</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paymentRows.map((p) => (
-                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-gray-600">{p.payment_date ? new Date(p.payment_date).toLocaleDateString('vi-VN') : '—'}</td>
-                      <td className="px-4 py-3 font-semibold text-green-600">₫{p.amount}</td>
-                      <td className="px-4 py-3">{p.payment_methods?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">{p.transaction_reference ?? '—'}</td>
+            <>
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {paymentRows.map((p) => (
+                  <div key={p.id} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-bold text-green-600 text-lg">₫{p.amount}</span>
+                      <span className="text-xs text-gray-500">{p.payment_date ? new Date(p.payment_date).toLocaleDateString('vi-VN') : '-'}</span>
+                    </div>
+                    <div className="text-sm text-gray-700 mb-1">{p.payment_methods?.name ?? '—'}</div>
+                    <div className="text-xs text-gray-400 truncate">Ref: {p.transaction_reference ?? '—'}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Số tiền</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Phương thức</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Ref</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paymentRows.map((p) => (
+                      <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-gray-600">{p.payment_date ? new Date(p.payment_date).toLocaleDateString('vi-VN') : '—'}</td>
+                        <td className="px-4 py-3 font-semibold text-green-600">₫{p.amount}</td>
+                        <td className="px-4 py-3">{p.payment_methods?.name ?? '—'}</td>
+                        <td className="px-4 py-3 text-gray-600">{p.transaction_reference ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>

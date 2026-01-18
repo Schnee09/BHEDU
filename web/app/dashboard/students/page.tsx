@@ -37,6 +37,7 @@ import { logger } from "@/lib/logger";
 import { createAuditLog, AuditActions } from "@/lib/audit";
 import { routes } from "@/lib/routes";
 import { Copy, Check } from "lucide-react";
+import MobileStudentList from "@/components/students/MobileStudentList";
 
 interface Student {
   id: string;
@@ -600,125 +601,137 @@ export default function StudentsPage() {
 
             {/* Students Table */}
             {students.length > 0 && (
-              <Card padding="none">
-                <Table
-                  data={students}
-                  keyExtractor={(student) => student.id}
-                  columns={[
-                    {
-                      key: 'select',
-                      label: (
-                        <input
-                          type="checkbox"
-                          checked={students.length > 0 && selectedIds.size === students.length}
-                          onChange={handleSelectAll}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-                        />
-                      ) as any,
-                      width: '40px',
-                      render: (student) => (
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(student.id)}
-                          onChange={() => handleSelectOne(student.id)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-                        />
-                      ),
-                    },
-                    {
-                      key: 'full_name',
-                      label: 'Tên',
-                      render: (student) => (
-                        <Link
-                          href={`/dashboard/students/${student.id}`}
-                          className="text-blue-600 hover:underline font-medium"
-                        >
-                          {student.full_name}
-                        </Link>
-                      ),
-                    },
-                    {
-                      key: 'student_code',
-                      label: 'Mã học sinh',
-                      render: (student) => (
-                        <span className="text-gray-600 font-mono text-sm">
-                          {student.student_code || '-'}
-                        </span>
-                      ),
-                    },
-                    {
-                      key: 'email',
-                      label: 'Email',
-                      render: (student) => (
-                        <span className="text-gray-600">{student.email || '-'}</span>
-                      ),
-                    },
-                    {
-                      key: 'grade_level',
-                      label: 'Lớp',
-                      render: (student) => (
-                        student.grade_level ? (
-                          <Badge variant="info">{student.grade_level}</Badge>
-                        ) : (
-                          <span className="text-slate-600">-</span>
-                        )
-                      ),
-                    },
-                    {
-                      key: 'phone',
-                      label: 'Điện thoại',
-                      render: (student) => (
-                        <span className="text-slate-700">{student.phone || '-'}</span>
-                      ),
-                    },
-                    {
-                      key: 'status',
-                      label: 'Trạng thái',
-                      render: (student) => (
-                        <Badge variant={student.status === 'active' ? 'success' : 'default'}>
-                          {student.status || 'active'}
-                        </Badge>
-                      ),
-                    },
-                    {
-                      key: 'created_at',
-                      label: 'Ngày tham gia',
-                      render: (student) => (
-                        <span className="text-gray-600 text-sm">
-                          {new Date(student.created_at).toLocaleDateString('vi-VN')}
-                        </span>
-                      ),
-                    },
-                    {
-                      key: 'actions',
-                      label: 'Hành động',
-                      width: '160px',
-                      render: (student) => (
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingStudent(student)}
-                            leftIcon={<Icons.Edit className="w-4 h-4" />}
-                          >
-                            Chỉnh sửa
-                          </Button>
-                          {hasAdminAccess && (
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => handleArchiveOne(student)}
-                              leftIcon={<Icons.Archive className="w-4 h-4" />}
-                            >
-                              Lưu trữ
-                            </Button>
-                          )}
-                        </div>
-                      ),
-                    },
-                  ]}
+              <>
+                <MobileStudentList
+                  students={students}
+                  onEdit={setEditingStudent}
+                  onArchive={handleArchiveOne}
+                  selectedIds={selectedIds}
+                  onSelect={handleSelectOne}
+                  hasAdminAccess={hasAdminAccess}
                 />
-              </Card>
+                <div className="hidden md:block">
+                  <Card padding="none">
+                    <Table
+                      data={students}
+                      keyExtractor={(student) => student.id}
+                      columns={[
+                        {
+                          key: 'select',
+                          label: (
+                            <input
+                              type="checkbox"
+                              checked={students.length > 0 && selectedIds.size === students.length}
+                              onChange={handleSelectAll}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                            />
+                          ) as any,
+                          width: '40px',
+                          render: (student) => (
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(student.id)}
+                              onChange={() => handleSelectOne(student.id)}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                            />
+                          ),
+                        },
+                        {
+                          key: 'full_name',
+                          label: 'Tên',
+                          render: (student) => (
+                            <Link
+                              href={`/dashboard/students/${student.id}`}
+                              className="text-blue-600 hover:underline font-medium"
+                            >
+                              {student.full_name}
+                            </Link>
+                          ),
+                        },
+                        {
+                          key: 'student_code',
+                          label: 'Mã học sinh',
+                          render: (student) => (
+                            <span className="text-gray-600 font-mono text-sm">
+                              {student.student_code || '-'}
+                            </span>
+                          ),
+                        },
+                        {
+                          key: 'email',
+                          label: 'Email',
+                          render: (student) => (
+                            <span className="text-gray-600">{student.email || '-'}</span>
+                          ),
+                        },
+                        {
+                          key: 'grade_level',
+                          label: 'Lớp',
+                          render: (student) => (
+                            student.grade_level ? (
+                              <Badge variant="info">{student.grade_level}</Badge>
+                            ) : (
+                              <span className="text-slate-600">-</span>
+                            )
+                          ),
+                        },
+                        {
+                          key: 'phone',
+                          label: 'Điện thoại',
+                          render: (student) => (
+                            <span className="text-slate-700">{student.phone || '-'}</span>
+                          ),
+                        },
+                        {
+                          key: 'status',
+                          label: 'Trạng thái',
+                          render: (student) => (
+                            <Badge variant={student.status === 'active' ? 'success' : 'default'}>
+                              {student.status || 'active'}
+                            </Badge>
+                          ),
+                        },
+                        {
+                          key: 'created_at',
+                          label: 'Ngày tham gia',
+                          render: (student) => (
+                            <span className="text-gray-600 text-sm">
+                              {new Date(student.created_at).toLocaleDateString('vi-VN')}
+                            </span>
+                          ),
+                        },
+                        {
+                          key: 'actions',
+                          label: 'Hành động',
+                          width: '160px',
+                          render: (student) => (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditingStudent(student)}
+                                leftIcon={<Icons.Edit className="w-4 h-4" />}
+                              >
+                                Chỉnh sửa
+                              </Button>
+                              {hasAdminAccess && (
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  onClick={() => handleArchiveOne(student)}
+                                  leftIcon={<Icons.Archive className="w-4 h-4" />}
+                                >
+                                  Lưu trữ
+                                </Button>
+                              )}
+                            </div>
+                          ),
+                        },
+                      ]}
+                    />
+                  </Card>
+                </div>
+              </>
             )}
 
             {/* Pagination */}

@@ -4,13 +4,24 @@
  */
 
 import {
-  Home, BookOpen, Users, CheckCircle, BarChart2, 
-  FileText, TrendingUp, Settings, CreditCard, 
-  Download, GraduationCap, Shield, Calendar, Clock
+  BarChart2,
+  BookOpen,
+  Calendar,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  Download,
+  FileText,
+  GraduationCap,
+  Home,
+  Settings,
+  Shield,
+  TrendingUp,
+  Users,
 } from "lucide-react";
-import type { LucideIcon } from 'lucide-react';
-import type { PermissionCode, UserRole } from './permissions.config';
-import { routes } from '@/lib/routes';
+import type { LucideIcon } from "lucide-react";
+import type { PermissionCode, UserRole } from "./permissions.config";
+import { routes } from "@/lib/routes";
 
 // ============================================
 // TYPES
@@ -42,63 +53,164 @@ export const ALL_NAV_ITEMS: NavSection[] = [
     title: "Tổng quan",
     links: [
       { href: "/dashboard", label: "Bảng điều khiển", icon: Home },
-    ]
+    ],
   },
   {
     title: "Học vụ",
     links: [
-      { href: "/dashboard/classes", label: "Lớp học", icon: BookOpen, permissions: ['classes.view'] },
-      { href: "/dashboard/students", label: "Học sinh", icon: Users, permissions: ['students.view'] },
-    ]
+      {
+        href: "/dashboard/classes",
+        label: "Lớp học",
+        icon: BookOpen,
+        permissions: ["classes.view"],
+      },
+      {
+        href: "/dashboard/students",
+        label: "Học sinh",
+        icon: Users,
+        permissions: ["students.view"],
+      },
+    ],
   },
   {
     title: "Học tập",
     links: [
-      { href: "/dashboard/timetable", label: "Thời khóa biểu", icon: Clock },
+      {
+        href: "/dashboard/timetable",
+        label: "Quản lý TKB",
+        icon: Clock,
+        permissions: ["system.settings"],
+      }, // Admin only
+      { href: "/dashboard/my-schedule", label: "Thời khóa biểu", icon: Clock }, // All users
       { href: "/dashboard/calendar", label: "Lịch học tập", icon: Calendar },
-    ]
+    ],
   },
   {
     title: "Điểm danh",
     links: [
-      { href: "/dashboard/attendance/mark", label: "Điểm danh", icon: CheckCircle, permissions: ['attendance.mark'] },
-      { href: "/dashboard/attendance/history", label: "Lịch sử", icon: FileText, permissions: ['attendance.view'] },
-      { href: "/dashboard/attendance/reports", label: "Báo cáo", icon: BarChart2, permissions: ['attendance.reports'] },
-    ]
+      {
+        href: "/dashboard/attendance/mark",
+        label: "Điểm danh",
+        icon: CheckCircle,
+        permissions: ["attendance.mark"],
+      },
+      {
+        href: "/dashboard/attendance/history",
+        label: "Lịch sử",
+        icon: FileText,
+        permissions: ["attendance.view"],
+      },
+      {
+        href: "/dashboard/attendance/reports",
+        label: "Báo cáo",
+        icon: BarChart2,
+        permissions: ["attendance.reports"],
+      },
+    ],
   },
   {
     title: "Điểm số",
     links: [
-      { href: routes.grades.entry(), label: "Nhập điểm", icon: BarChart2, permissions: ['grades.entry'] },
-      { href: "/dashboard/grades/transcripts", label: "Bảng điểm", icon: FileText, permissions: ['grades.view'] },
-      { href: routes.grades.analytics(), label: "Phân tích", icon: TrendingUp, permissions: ['grades.analytics'] },
-    ]
+      {
+        href: routes.grades.entry(),
+        label: "Nhập điểm",
+        icon: BarChart2,
+        permissions: ["grades.entry"],
+      },
+      {
+        href: "/dashboard/grades/transcripts",
+        label: "Bảng điểm",
+        icon: FileText,
+        permissions: ["grades.view"],
+      },
+      {
+        href: routes.grades.analytics(),
+        label: "Phân tích",
+        icon: TrendingUp,
+        permissions: ["grades.analytics"],
+      },
+    ],
   },
   {
     title: "Quản lý",
     links: [
-      { href: "/dashboard/users", label: "Người dùng", icon: Shield, permissions: ['users.view'] },
-      { href: "/dashboard/tutors", label: "Gia sư", icon: GraduationCap, permissions: ['users.view'] },
-      { href: "/dashboard/admin/permissions", label: "Phân quyền", icon: Shield, permissions: ['users.permissions'] },
-      { href: "/dashboard/admin/students", label: "Hồ sơ học sinh", icon: Users, permissions: ['students.edit'] },
-      { href: "/dashboard/admin/enrollments", label: "Ghi danh lớp", icon: Users, permissions: ['students.edit'] },
-      { href: "/dashboard/admin/semesters", label: "Học kỳ", icon: Calendar, permissions: ['system.settings'] },
-      { href: "/dashboard/admin/subjects", label: "Môn học", icon: BookOpen, permissions: ['system.settings'] },
-      { href: "/dashboard/admin/data", label: "Xuất dữ liệu", icon: Download, permissions: ['reports.export'] },
-    ]
+      {
+        href: "/dashboard/users",
+        label: "Người dùng",
+        icon: Shield,
+        permissions: ["users.view"],
+      },
+      {
+        href: "/dashboard/tutors",
+        label: "Gia sư",
+        icon: GraduationCap,
+        permissions: ["users.view"],
+      },
+      {
+        href: "/dashboard/admin/permissions",
+        label: "Phân quyền",
+        icon: Shield,
+        permissions: ["users.permissions"],
+      },
+      {
+        href: "/dashboard/admin/students",
+        label: "Hồ sơ học sinh",
+        icon: Users,
+        permissions: ["students.edit"],
+      },
+      {
+        href: "/dashboard/admin/enrollments",
+        label: "Ghi danh lớp",
+        icon: Users,
+        permissions: ["students.edit"],
+      },
+      {
+        href: "/dashboard/admin/semesters",
+        label: "Học kỳ",
+        icon: Calendar,
+        permissions: ["system.settings"],
+      },
+      {
+        href: "/dashboard/admin/subjects",
+        label: "Môn học",
+        icon: BookOpen,
+        permissions: ["system.settings"],
+      },
+      {
+        href: "/dashboard/admin/data",
+        label: "Xuất dữ liệu",
+        icon: Download,
+        permissions: ["reports.export"],
+      },
+    ],
   },
   {
     title: "Tài chính",
     links: [
-      { href: "/dashboard/admin/finance/invoices", label: "Hóa đơn", icon: FileText, permissions: ['finance.invoices'] },
-      { href: "/dashboard/admin/finance/payments", label: "Thanh toán", icon: CreditCard, permissions: ['finance.payments'] },
-    ]
+      {
+        href: "/dashboard/admin/finance/invoices",
+        label: "Hóa đơn",
+        icon: FileText,
+        permissions: ["finance.invoices"],
+      },
+      {
+        href: "/dashboard/admin/finance/payments",
+        label: "Thanh toán",
+        icon: CreditCard,
+        permissions: ["finance.payments"],
+      },
+    ],
   },
   {
     title: "Hệ thống",
     links: [
-      { href: "/dashboard/settings", label: "Cài đặt", icon: Settings, permissions: ['system.settings'] },
-    ]
+      {
+        href: "/dashboard/settings",
+        label: "Cài đặt",
+        icon: Settings,
+        permissions: ["system.settings"],
+      },
+    ],
   },
 ];
 
@@ -110,21 +222,21 @@ export const ALL_NAV_ITEMS: NavSection[] = [
  * Filter navigation items based on user's permissions
  */
 export function getNavigationForPermissions(
-  userPermissions: Set<PermissionCode>
+  userPermissions: Set<PermissionCode>,
 ): NavSection[] {
   return ALL_NAV_ITEMS
-    .map(section => ({
+    .map((section) => ({
       ...section,
-      links: section.links.filter(link => {
+      links: section.links.filter((link) => {
         // No permission required = always visible
         if (!link.permissions || link.permissions.length === 0) {
           return true;
         }
         // Check if user has ANY of the required permissions
-        return link.permissions.some(p => userPermissions.has(p));
+        return link.permissions.some((p) => userPermissions.has(p));
       }),
     }))
-    .filter(section => section.links.length > 0); // Remove empty sections
+    .filter((section) => section.links.length > 0); // Remove empty sections
 }
 
 /**
@@ -133,7 +245,7 @@ export function getNavigationForPermissions(
  */
 export function getNavigationForRole(role: UserRole): NavSection[] {
   // Import here to avoid circular dependency
-  const { ROLE_PERMISSIONS } = require('./permissions.config');
+  const { ROLE_PERMISSIONS } = require("./permissions.config");
   const permissions = new Set<PermissionCode>(ROLE_PERMISSIONS[role] || []);
   return getNavigationForPermissions(permissions);
 }
@@ -143,23 +255,25 @@ export function getNavigationForRole(role: UserRole): NavSection[] {
  */
 export function isLinkVisible(
   link: NavLink,
-  userPermissions: Set<PermissionCode>
+  userPermissions: Set<PermissionCode>,
 ): boolean {
   if (!link.permissions || link.permissions.length === 0) return true;
-  return link.permissions.some(p => userPermissions.has(p));
+  return link.permissions.some((p) => userPermissions.has(p));
 }
 
 // ============================================
 // ROLE-SPECIFIC LABELS (for teacher/student)
 // ============================================
 
-export const ROLE_SPECIFIC_LABELS: Partial<Record<UserRole, Record<string, string>>> = {
+export const ROLE_SPECIFIC_LABELS: Partial<
+  Record<UserRole, Record<string, string>>
+> = {
   teacher: {
-    '/dashboard/classes': 'Lớp học của tôi',
+    "/dashboard/classes": "Lớp học của tôi",
   },
   student: {
-    '/dashboard/classes': 'Lớp học của tôi',
-    '/dashboard/grades/analytics': 'Điểm số của tôi',
+    "/dashboard/classes": "Lớp học của tôi",
+    "/dashboard/grades/analytics": "Điểm số của tôi",
   },
 };
 

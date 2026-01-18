@@ -29,6 +29,26 @@ export async function GET(request: NextRequest) {
 
     // Use service client to bypass RLS
     const supabase = createServiceClient()
+    const userRole = authResult.userRole
+    const profileId = authResult.userId
+
+    // ========== TEACHER SCOPE FILTER ==========
+    // If user is a teacher, only show grades from their classes
+    let teacherClassIds: string[] | null = null
+    if (userRole === 'teacher' && profileId) {
+      const { data: teacherClasses } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('teacher_id', profileId)
+      
+      if (teacherClasses && teacherClasses.length > 0) {
+        teacherClassIds = teacherClasses.map(c => c.id)
+      } else {
+        // Teacher has no classes - return empty
+        return NextResponse.json({ success: true, grades: [] })
+      }
+    }
+    // =========================================
 
     // Build simple query without complex joins that may fail
     let query = supabase
@@ -41,6 +61,23 @@ export async function GET(request: NextRequest) {
 
     if (queryParams.student_id) {
       query = query.eq('student_id', queryParams.student_id)
+    }
+
+    // For teachers, filter by assignments from their classes
+    if (teacherClassIds) {
+      // Get assignment IDs from teacher's classes
+      const { data: teacherAssignments } = await supabase
+        .from('assignments')
+        .select('id')
+        .in('class_id', teacherClassIds)
+      
+      if (teacherAssignments && teacherAssignments.length > 0) {
+        const assignmentIds = teacherAssignments.map(a => a.id)
+        query = query.in('assignment_id', assignmentIds)
+      } else {
+        // No assignments in teacher's classes
+        return NextResponse.json({ success: true, grades: [] })
+      }
     }
 
     const { data: grades, error } = await query

@@ -116,10 +116,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
   admin: Object.keys(PERMISSIONS) as PermissionCode[], // All permissions
   
   staff: [
-    'users.view', 'users.create', 'users.edit',
-    'students.view', 'students.create', 'students.edit',
-    'classes.view', 'classes.create', 'classes.edit', 'classes.enroll',
-    'grades.view', 'grades.analytics',
+    'users.view', 'users.create', 'users.edit', 'users.delete',
+    'students.view', 'students.create', 'students.edit', 'students.delete',
+    'classes.view', 'classes.create', 'classes.edit', 'classes.delete', 'classes.enroll',
+    'grades.view', 'grades.entry', 'grades.analytics',
     'attendance.view', 'attendance.mark', 'attendance.reports',
     'finance.view', 'finance.invoices', 'finance.payments',
     'reports.view', 'reports.export',

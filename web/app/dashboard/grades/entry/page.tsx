@@ -26,6 +26,7 @@ import {
 import { GradeService } from "@/lib/grades/services/GradeService";
 import { validateGrade } from "@/lib/grades/validation";
 import PageGuard from "@/components/PageGuard";
+import BulkGradeImport from "@/components/grades/BulkGradeImport";
 
 // Types
 interface Student {
@@ -75,6 +76,7 @@ function GradeEntryPageContent() {
   const [saving, setSaving] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showExcelImport, setShowExcelImport] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importPreview, setImportPreview] = useState<{ name: string, midterm: number | null, final: number | null }[]>([]);
 
@@ -410,6 +412,12 @@ function GradeEntryPageContent() {
                     className="hidden"
                   />
                 </label>
+                <button
+                  onClick={() => setShowExcelImport(true)}
+                  className="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+                >
+                  📊 Import Excel
+                </button>
               </div>
             </div>
 
@@ -502,6 +510,23 @@ function GradeEntryPageContent() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Excel Import Modal */}
+        {showExcelImport && selectedClassId && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="max-w-2xl w-full max-h-[90vh] overflow-auto">
+              <BulkGradeImport
+                classId={selectedClassId}
+                onSuccess={() => {
+                  // Reload students to refresh grades
+                  setShowExcelImport(false);
+                  toast.success('Import thành công!');
+                }}
+                onClose={() => setShowExcelImport(false)}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

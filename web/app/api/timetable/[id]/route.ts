@@ -25,6 +25,47 @@ export async function PUT(
 
     const supabase = createServiceClient()
 
+    // ========== CONFLICT DETECTION ==========
+    // Check for room conflicts (excluding current slot)
+    if (room && room !== 'Linh hoạt') {
+      const { data: roomConflicts } = await supabase
+        .from('timetable_slots')
+        .select('id, start_time, end_time')
+        .eq('room', room)
+        .eq('day_of_week', day_of_week)
+        .neq('id', id)
+        .gte('end_time', start_time)
+        .lte('start_time', end_time)
+
+      if (roomConflicts && roomConflicts.length > 0) {
+        return NextResponse.json({
+          success: false,
+          error: `Phòng "${room}" đã có lịch vào khung giờ này. Vui lòng chọn phòng khác hoặc thời gian khác.`
+        }, { status: 409 })
+      }
+    }
+
+    // Check for teacher conflicts (excluding current slot)
+    if (teacher_id) {
+      const { data: teacherConflicts } = await supabase
+        .from('timetable_slots')
+        .select('id, room, start_time, end_time')
+        .eq('teacher_id', teacher_id)
+        .eq('day_of_week', day_of_week)
+        .neq('id', id)
+        .gte('end_time', start_time)
+        .lte('start_time', end_time)
+
+      if (teacherConflicts && teacherConflicts.length > 0) {
+        return NextResponse.json({
+          success: false,
+          error: `Giáo viên đã có lịch dạy vào khung giờ này tại "${teacherConflicts[0].room}". Vui lòng chọn thời gian khác.`
+        }, { status: 409 })
+      }
+    }
+    // ========== END CONFLICT DETECTION ==========
+
+
     const { data: slot, error } = await supabase
       .from('timetable_slots')
       .update({
