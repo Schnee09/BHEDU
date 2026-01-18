@@ -196,7 +196,6 @@ async function main() {
             const gradeLevel = parseInt(name.match(/\d+/)?.[0] || "10");
             const { data, error } = await supabase.from("classes").insert({
                 name,
-                code: name.toLowerCase().replace(/\s/g, ""),
                 grade_level: `Khối ${gradeLevel}`,
                 teacher_id: teacherId,
             }).select("id").single();
@@ -222,8 +221,9 @@ async function main() {
 
         for (let i = 0; i < studentsPerClass; i++) {
             const gradeNum = className.match(/\d+/)?.[0] || "10";
-            const code = `hs${2026}${String(studentNum).padStart(4, "0")}`;
-            const email = `${code}@student.bhedu.vn`;
+            // Student code format: HS + 4-digit year + 4-digit sequence (e.g., HS20260001)
+            const code = `HS${2026}${String(studentNum).padStart(4, "0")}`;
+            const email = `${code.toLowerCase()}@student.bhedu.vn`;
 
             // Check if student already exists
             const { data: existingStudent } = await supabase

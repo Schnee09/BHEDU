@@ -1,8 +1,8 @@
 /**
- * scripts/check-schema.ts
- * Check current Supabase schema and data counts
- * 
- * Run with: npx tsx scripts/check-schema.ts
+ * Check Database Schema Script
+ * Shows all tables, columns, and constraints
+ *
+ * Run: npx tsx scripts/check-schema.ts
  */
 
 import * as dotenv from "dotenv";
@@ -15,59 +15,118 @@ dotenv.config({ path: path.join(__dirname, "..", ".env") });
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
+  { auth: { autoRefreshToken: false, persistSession: false } },
 );
 
 async function main() {
-  console.log("📊 Supabase Schema & Data Check\n");
+  console.log("🔍 Database Schema Check\n");
+  console.log("=".repeat(60));
 
-  // Tables to check
-  const tables = ['profiles', 'classes', 'subjects', 'enrollments', 'grades', 'attendance'];
+  // Check key tables
+  const tables = [
+    "profiles",
+    "classes",
+    "subjects",
+    "enrollments",
+    "timetable_slots",
+    "timetable_weekly_notes",
+    "grades",
+    "attendance",
+    "rooms",
+    "semesters",
+  ];
 
   for (const table of tables) {
-    const { count, error } = await supabase.from(table).select('*', { count: 'exact', head: true });
+    console.log(`\n📋 Table: ${table}`);
+    console.log("-".repeat(40));
+
+    // Try to select 1 row to see columns
+    const { data, error } = await supabase
+      .from(table)
+      .select("*")
+      .limit(1);
+
     if (error) {
-      console.log(`❌ ${table}: ${error.message}`);
+      console.log(`  ❌ Error: ${error.message}`);
+      continue;
+    }
+
+    if (data && data.length > 0) {
+      const columns = Object.keys(data[0]);
+      console.log(`  Columns (${columns.length}):`);
+      columns.forEach((col) => console.log(`    - ${col}`));
     } else {
-      console.log(`✅ ${table}: ${count} rows`);
+      console.log(`  (No data, cannot infer columns)`);
+
+      // Try insert with empty to see schema
+      const { error: insertError } = await supabase
+        .from(table)
+        .insert({});
+
+      if (insertError) {
+        // Parse error to get column info
+        const msg = insertError.message;
+        console.log(`  Schema hint from error: ${msg.slice(0, 100)}`);
+      }
     }
   }
 
-  // Check classes structure
-  console.log("\n=== CLASSES ===");
-  const { data: classes } = await supabase.from('classes').select('id, name, subject_id, teacher_id').limit(5);
+  // Count data in each table
+  console.log("\n\n📊 DATA COUNTS:");
+  console.log("-".repeat(40));
+
+  for (const table of tables) {
+    const { count, error } = await supabase
+      .from(table)
+      .select("*", { count: "exact", head: true });
+
+    if (error) {
+      console.log(`  ${table}: ERROR`);
+    } else {
+      console.log(`  ${table}: ${count || 0} rows`);
+    }
+  }
+
+  // Check profiles columns specifically
+  console.log("\n\n👤 PROFILES SAMPLE:");
+  console.log("-".repeat(40));
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("*")
+    .limit(3);
+
+  if (profiles && profiles.length > 0) {
+    console.log("Columns:", Object.keys(profiles[0]).join(", "));
+    profiles.forEach((p) =>
+      console.log(`  ${p.role}: ${p.full_name || p.email}`)
+    );
+  }
+
+  // Check classes columns
+  console.log("\n🏫 CLASSES SAMPLE:");
+  console.log("-".repeat(40));
+  const { data: classes } = await supabase
+    .from("classes")
+    .select("*")
+    .limit(3);
+
   if (classes && classes.length > 0) {
-    console.log("Columns: id, name, subject_id, teacher_id");
-    console.log("Samples:");
-    classes.forEach(c => console.log(`  • ${c.name} (subject_id: ${c.subject_id ? 'yes' : 'no'})`));
+    console.log("Columns:", Object.keys(classes[0]).join(", "));
+    classes.forEach((c) => console.log(`  ${c.name}`));
   }
 
-  // Check grades structure
-  console.log("\n=== GRADES ===");
-  const { data: grades } = await supabase.from('grades').select('id, student_id, class_id, subject_id, score, component_type, semester').limit(3);
-  if (grades && grades.length > 0) {
-    console.log("Columns: id, student_id, class_id, subject_id, score, component_type, semester");
-    console.log("Sample:", JSON.stringify(grades[0], null, 2));
-  } else {
-    console.log("No grades found");
-  }
+  // Check enrollments
+  console.log("\n📝 ENROLLMENTS SAMPLE:");
+  console.log("-".repeat(40));
+  const { data: enrollments } = await supabase
+    .from("enrollments")
+    .select("*")
+    .limit(3);
 
-  // Check enrollments structure
-  console.log("\n=== ENROLLMENTS ===");
-  const { data: enrollments } = await supabase.from('enrollments').select('id, student_id, class_id, status').limit(3);
   if (enrollments && enrollments.length > 0) {
-    console.log("Columns: id, student_id, class_id, status");
-    console.log("Sample:", JSON.stringify(enrollments[0], null, 2));
+    console.log("Columns:", Object.keys(enrollments[0]).join(", "));
   } else {
-    console.log("No enrollments found");
-  }
-
-  // Check subjects
-  console.log("\n=== SUBJECTS ===");
-  const { data: subjects } = await supabase.from('subjects').select('*');
-  if (subjects) {
-    console.log(`${subjects.length} subjects:`);
-    subjects.forEach(s => console.log(`  • ${s.code}: ${s.name}`));
+    console.log("  No enrollments found");
   }
 
   console.log("\n✨ Done!");
