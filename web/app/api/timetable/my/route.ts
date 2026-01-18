@@ -65,14 +65,8 @@ export async function GET(req: NextRequest) {
           classCount: classes.length,
         });
 
-        // Get active semester
-        const { data: activeSemester } = await serviceClient
-          .from("semesters")
-          .select("id")
-          .eq("is_active", true)
-          .single();
-
-        let query = serviceClient
+        // Query timetable slots for enrolled classes
+        const query = serviceClient
           .from("timetable_slots")
           .select(`
             id, class_id, day_of_week, start_time, end_time, room, notes,
@@ -82,19 +76,17 @@ export async function GET(req: NextRequest) {
           `)
           .in("class_id", classIds);
 
-        // Filter by active semester if exists
-        if (activeSemester) {
-          query = query.eq("semester_id", activeSemester.id);
-        }
+        // Note: Removed semester filter for student - they should see all current slots
+        // TKB slots for student's classes are already relevant
 
         const { data: timetableSlots, error: slotsError } = await query
           .order("day_of_week")
           .order("start_time");
 
-        logger.info("Timetable slots fetched", {
+        logger.info("Timetable slots fetched for student", {
           count: timetableSlots?.length || 0,
           error: slotsError,
-          semester_id: activeSemester?.id,
+          classIds,
         });
 
         slots = (timetableSlots || []).map((slot: any) => ({
