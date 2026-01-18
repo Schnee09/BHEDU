@@ -59,10 +59,33 @@ interface UserStats {
 }
 
 const roleOptions = [
-  { value: 'student', label: 'Student' },
-  { value: 'teacher', label: 'Teacher' },
-  { value: 'admin', label: 'Administrator' },
+  { value: 'student', label: 'Học sinh' },
+  { value: 'teacher', label: 'Giáo viên' },
+  { value: 'staff', label: 'Nhân viên' },
+  { value: 'admin', label: 'Quản trị viên' },
 ];
+
+const genderOptions = [
+  { value: 'male', label: 'Nam' },
+  { value: 'female', label: 'Nữ' },
+];
+
+const gradeLevelOptions = [
+  { value: 'Lớp 6', label: 'Lớp 6' },
+  { value: 'Lớp 7', label: 'Lớp 7' },
+  { value: 'Lớp 8', label: 'Lớp 8' },
+  { value: 'Lớp 9', label: 'Lớp 9' },
+  { value: 'Lớp 10', label: 'Lớp 10' },
+  { value: 'Lớp 11', label: 'Lớp 11' },
+  { value: 'Lớp 12', label: 'Lớp 12' },
+];
+
+// Generate student code in format HS{YEAR}{4-DIGIT-SEQ}
+function generateStudentCode(): string {
+  const year = new Date().getFullYear();
+  const seq = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
+  return `HS${year}${seq}`;
+}
 
 export default function UserManagementPage() {
   return (
@@ -103,10 +126,25 @@ function UserManagementPageContent() {
     phone: '',
     department: '',
     student_id: '',
+    student_code: '',
     grade_level: '',
+    gender: 'male',
     notes: '',
     is_active: true
   });
+
+  // Auto-generate student code when role changes to student
+  const handleRoleChange = (newRole: string) => {
+    const updates: any = { role: newRole };
+    if (newRole === 'student' && !formData.student_code) {
+      const code = generateStudentCode();
+      updates.student_code = code;
+      updates.email = `${code.toLowerCase()}@student.bhedu.vn`;
+    } else if (newRole === 'teacher' && !formData.email.includes('@')) {
+      updates.email = '';
+    }
+    setFormData({ ...formData, ...updates });
+  };
 
   const [passwordData, setPasswordData] = useState({
     new_password: '',
@@ -373,7 +411,9 @@ function UserManagementPageContent() {
       phone: '',
       department: '',
       student_id: '',
+      student_code: '',
       grade_level: '',
+      gender: 'male',
       notes: '',
       is_active: true
     });
@@ -740,7 +780,7 @@ function UserManagementPageContent() {
               <Select
                 label="Vai trò"
                 value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                onChange={(e) => handleRoleChange(e.target.value)}
                 options={roleOptions}
                 required
               />
@@ -765,19 +805,27 @@ function UserManagementPageContent() {
 
               {formData.role === 'student' && (
                 <>
-                  <Input
-                    label="Mã học sinh"
-                    type="text"
-                    placeholder="HS-12345"
-                    value={formData.student_id}
-                    onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
-                  />
-                  <Input
-                    label="Khối lớp"
-                    type="text"
-                    placeholder="10, 11, 12"
-                    value={formData.grade_level}
-                    onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Mã học sinh"
+                      type="text"
+                      placeholder="HS20260001"
+                      value={formData.student_code}
+                      onChange={(e) => setFormData({ ...formData, student_code: e.target.value.toUpperCase() })}
+                      hint="Tự động sinh, có thể sửa"
+                    />
+                    <Select
+                      label="Khối lớp"
+                      value={formData.grade_level}
+                      onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
+                      options={[{ value: '', label: 'Chọn khối...' }, ...gradeLevelOptions]}
+                    />
+                  </div>
+                  <Select
+                    label="Giới tính"
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                    options={genderOptions}
                   />
                 </>
               )}
