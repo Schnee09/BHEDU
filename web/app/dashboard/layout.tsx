@@ -45,7 +45,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
               className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-8 pb-safe" // Added pb-20 and pb-safe for mobile nav
               role="main"
             >
-              <div className="max-w-[1800px] mx-auto">
+              <div className="w-full mx-auto max-w-[1600px] px-0 sm:px-2 md:px-0">
                 <ErrorBoundary
                   showDetails={process.env.NODE_ENV === 'development'}
                   pageName="page content"
