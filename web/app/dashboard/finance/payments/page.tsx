@@ -277,53 +277,57 @@ export default function PaymentsPage() {
             filteredPayments.map((payment) => (
               <div
                 key={payment.id}
-                className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+                className="bg-white dark:bg-[#1A1410] rounded-2xl p-5 shadow-sm border border-stone-100 dark:border-[#2C2420] active:scale-[0.98] transition-all relative overflow-hidden"
               >
+                {/* Top Shine */}
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/10 to-transparent" />
+
                 {/* Header with receipt and amount */}
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="flex-1 min-w-0">
-                    <p className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <p className="font-mono text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-wider mb-1">
                       {payment.receipt_number}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    <h3 className="font-bold text-stone-900 dark:text-stone-100 text-base leading-tight truncate">
                       {payment.student_account?.student?.first_name}{' '}
                       {payment.student_account?.student?.last_name}
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      {payment.student_account?.student?.student_id}
+                    </h3>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                      ID: {payment.student_account?.student?.student_id}
                     </p>
                   </div>
-                  <div className="bg-green-100 dark:bg-green-900/50 px-3 py-1.5 rounded-lg flex-shrink-0 ml-2">
-                    <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                  <div className="bg-emerald-50 dark:bg-emerald-900/30 px-3 py-2 rounded-xl flex-shrink-0 ml-2 border border-emerald-100 dark:border-emerald-800/50">
+                    <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(payment.amount)}
                     </span>
                   </div>
                 </div>
 
                 {/* Details Grid */}
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Phương thức</p>
-                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400">
+                <div className="grid grid-cols-2 gap-3 mb-4 bg-stone-50/50 dark:bg-white/5 rounded-xl p-3">
+                  <div className="rounded-lg">
+                    <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase font-bold tracking-widest mb-1">Phương thức</p>
+                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-800/50">
                       {payment.payment_method?.name || 'N/A'}
                     </span>
                   </div>
-                  <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Ngày</p>
-                    <p className="font-medium text-gray-800 dark:text-gray-200">{formatDate(payment.payment_date)}</p>
+                  <div className="rounded-lg">
+                    <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase font-bold tracking-widest mb-1">Ngày thu</p>
+                    <p className="font-bold text-stone-800 dark:text-stone-200 text-sm">{formatDate(payment.payment_date)}</p>
                   </div>
                 </div>
 
                 {/* Reference and Action */}
-                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-stone-700 flex justify-between items-center">
-                  <span className="text-xs text-gray-500">
-                    Ref: {payment.reference_number || '-'}
-                  </span>
+                <div className="pt-4 border-t border-stone-100 dark:border-[#2C2420] flex justify-between items-center">
+                  <div className="flex items-center gap-1.5 text-stone-500 dark:text-stone-400">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+                    <span className="text-xs font-medium">Ref: {payment.reference_number || '-'}</span>
+                  </div>
                   <button
                     onClick={() => window.print()}
-                    className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-medium"
+                    className="px-4 py-2 bg-white dark:bg-[#2C2420] text-blue-600 dark:text-blue-400 border border-stone-200 dark:border-[#3D342C] rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm hover:bg-stone-50 dark:hover:bg-[#3D342C] transition-all active:scale-95"
                   >
-                    Print
+                    In biên lai
                   </button>
                 </div>
               </div>
@@ -419,8 +423,8 @@ export default function PaymentsPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-0 sm:p-4 z-50 overflow-y-auto">
+          <div className="bg-white dark:bg-stone-900 rounded-none sm:rounded-2xl max-w-3xl w-full min-h-[100dvh] sm:min-h-0 sm:max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
             <div className="p-6">
               <h2 className="text-xl font-bold mb-4">Record Payment</h2>
 

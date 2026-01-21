@@ -323,54 +323,57 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between mt-6 px-2">
-      <div className="text-sm text-stone-600 dark:text-stone-400">
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-6 px-2 gap-4">
+      <div className="text-sm text-stone-600 dark:text-stone-400 order-2 sm:order-1 text-center sm:text-left">
         {totalItems && itemsPerPage && (
           <span>
-            Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{' '}
-            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} results
+            {currentPage === 1 ? '1' : (currentPage - 1) * itemsPerPage + 1} -{' '}
+            {Math.min(currentPage * itemsPerPage, totalItems)} / {totalItems}
           </span>
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 order-1 sm:order-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-stone-400 dark:hover:border-stone-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
-        {showPages().map((page, index) => (
-          <React.Fragment key={index}>
-            {page === '...' ? (
-              <span className="px-3 py-2 text-stone-700 dark:text-stone-300">...</span>
-            ) : (
-              <button
-                onClick={() => onPageChange(page as number)}
-                className={`
-                  px-4 py-2 rounded-lg font-medium transition-all
-                  ${page === currentPage
-                    ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 shadow-md'
-                    : 'border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-stone-400 dark:hover:border-stone-500'
-                  }
-                `}
-              >
-                {page}
-              </button>
-            )}
-          </React.Fragment>
-        ))}
+        <div className="flex items-center gap-1">
+          {showPages().map((page, index) => (
+            <React.Fragment key={index}>
+              {page === '...' ? (
+                <span className="w-8 text-center text-stone-700 dark:text-stone-300 hidden sm:inline">...</span>
+              ) : (
+                <button
+                  onClick={() => onPageChange(page as number)}
+                  className={`
+                    min-w-[32px] sm:min-w-[40px] h-8 sm:h-10 rounded-lg font-medium transition-all text-sm
+                    ${page === currentPage
+                      ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 shadow-md'
+                      : 'border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700'
+                    }
+                    ${typeof page === 'number' && Math.abs(page - currentPage) > 1 && page !== 1 && page !== totalPages ? 'hidden sm:flex items-center justify-center' : 'flex items-center justify-center'}
+                  `}
+                >
+                  {page}
+                </button>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
 
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-stone-400 dark:hover:border-stone-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>

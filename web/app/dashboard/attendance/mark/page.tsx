@@ -26,9 +26,7 @@ interface StudentAttendanceView {
   studentCode?: string;
   email?: string;
   status: AttendanceStatus | 'unmarked';
-  checkInTime?: string;
-  notes?: string;
-  // Metadata for matching with DB record
+  remarks?: string;
   recordId?: string;
 }
 
@@ -36,8 +34,6 @@ interface AttendanceSummary {
   totalStudents: number
   presentCount: number
   absentCount: number
-  lateCount: number
-  excusedCount: number
   unmarkedCount: number
   attendanceRate: number
 }
@@ -66,6 +62,20 @@ export default function AttendanceMarkingPage() {
   // UI State
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+
+  // Warn about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // Load teacher's classes on mount
   useEffect(() => {
@@ -132,19 +142,18 @@ export default function AttendanceMarkingPage() {
           : student
       )
     )
+    setHasUnsavedChanges(true)
   }
 
   const markAll = (status: AttendanceStatus) => {
-    const confirmed = confirm(`Đánh dấu tất cả học sinh là ${status === 'present' ? 'Có mặt' : 'Vắng'}?`)
-    if (!confirmed) return
-
     setStudents(prev =>
       prev.map(student => ({ ...student, status }))
     )
+    setHasUnsavedChanges(true)
   }
 
   const saveAttendance = async () => {
-    setSaving(true)
+    setSaving(true);
     try {
       // Convert UI view model to Domain types
       const recordsToSave: Partial<AttendanceRecord>[] = students.map(student => ({
@@ -152,13 +161,15 @@ export default function AttendanceMarkingPage() {
         class_id: selectedClass,
         date: date,
         status: student.status === 'unmarked' ? AttendanceStatus.ABSENT : student.status as AttendanceStatus,
-        remarks: student.notes
+        remarks: student.remarks
       }))
 
       const success = await AttendanceService.markAttendance(recordsToSave);
 
       if (success) {
-        alert(`Đã lưu điểm danh thành công!`)
+        setShowSuccess(true)
+        setHasUnsavedChanges(false)
+        setTimeout(() => setShowSuccess(false), 3000)
         loadAttendance() // Reload to refresh summary
       } else {
         alert('Không thể lưu điểm danh')
@@ -222,57 +233,79 @@ export default function AttendanceMarkingPage() {
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Summary with Progress */}
       {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">{summary.totalStudents}</div>
-            <div className="text-sm text-gray-600">Tổng</div>
+        <div className="space-y-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{summary.totalStudents}</div>
+              <div className="text-xs font-medium text-blue-800 dark:text-blue-300 uppercase tracking-wider">Tổng số</div>
+            </div>
+            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-900/30">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{summary.presentCount}</div>
+              <div className="text-xs font-medium text-green-800 dark:text-green-300 uppercase tracking-wider">Có mặt</div>
+            </div>
+            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{summary.absentCount}</div>
+              <div className="text-xs font-medium text-red-800 dark:text-red-300 uppercase tracking-wider">Vắng</div>
+            </div>
+            <div className="bg-gray-50 dark:bg-stone-800 p-4 rounded-xl border border-gray-100 dark:border-stone-700">
+              <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{summary.unmarkedCount}</div>
+              <div className="text-xs font-medium text-gray-800 dark:text-gray-300 uppercase tracking-wider">Chưa điểm danh</div>
+            </div>
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
+              <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{summary.attendanceRate}%</div>
+              <div className="text-xs font-medium text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">Tỷ lệ</div>
+            </div>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{summary.presentCount}</div>
-            <div className="text-sm text-gray-600">Có mặt</div>
+          
+          {/* Progress Bar */}
+          <div className="bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+            <div 
+              className="bg-green-500 h-full transition-all duration-500" 
+              style={{ width: `${((summary.totalStudents - summary.unmarkedCount) / summary.totalStudents) * 100}%` }}
+            />
           </div>
-          <div className="bg-red-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">{summary.absentCount}</div>
-            <div className="text-sm text-gray-600">Vắng</div>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-yellow-600">{summary.lateCount}</div>
-            <div className="text-sm text-gray-600">Đến muộn</div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-purple-600">{summary.excusedCount}</div>
-            <div className="text-sm text-gray-600">Có phép</div>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-gray-600">{summary.unmarkedCount}</div>
-            <div className="text-sm text-gray-600">Chưa điểm danh</div>
-          </div>
-          <div className="bg-indigo-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-indigo-600">{summary.attendanceRate}%</div>
-            <div className="text-sm text-gray-600">Tỷ lệ</div>
+        </div>
+      )}
+
+      {/* Success Notification */}
+      {showSuccess && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl mb-6 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span className="font-medium">Đã lưu điểm danh thành công!</span>
           </div>
         </div>
       )}
 
       {/* Quick Actions */}
       {students.length > 0 && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm font-medium self-center mr-2">Đánh dấu nhanh:</span>
+        <div className="bg-white dark:bg-stone-900 border border-gray-200 dark:border-stone-700 rounded-xl p-4 mb-6 shadow-sm">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 italic">Đánh dấu nhanh:</span>
             <button
               onClick={() => markAll(AttendanceStatus.PRESENT)}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm transition"
+              className="inline-flex items-center px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-600 hover:text-white transition-all text-sm font-medium border border-green-200 dark:border-green-800/50"
             >
-              Tất cả có mặt
+              ✅ Tất cả có mặt
             </button>
             <button
               onClick={() => markAll(AttendanceStatus.ABSENT)}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm transition"
+              className="inline-flex items-center px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all text-sm font-medium border border-red-200 dark:border-red-800/50"
             >
-              Tất cả vắng
+              ❌ Tất cả vắng
             </button>
+            {hasUnsavedChanges && (
+              <span className="ml-auto text-xs font-medium text-amber-600 flex items-center bg-amber-50 px-2 py-1 rounded">
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Có thay đổi chưa lưu
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -341,13 +374,20 @@ export default function AttendanceMarkingPage() {
                     </button>
                   </div>
 
-                  {/* Additional Info */}
-                  {(student.checkInTime || student.notes) && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-stone-700">
-                      {student.checkInTime && <span>Check-in: {student.checkInTime}</span>}
-                      {student.notes && <span className="ml-2">• {student.notes}</span>}
-                    </div>
-                  )}
+                  {/* Remarks - Now editable on mobile */}
+                  <div className="mt-2">
+                    <input 
+                       type="text"
+                       value={student.remarks || ''}
+                       placeholder="Thêm ghi chú..."
+                       onChange={(e) => {
+                         const newVal = e.target.value;
+                         setStudents(prev => prev.map(s => s.studentId === student.studentId ? {...s, remarks: newVal} : s))
+                         setHasUnsavedChanges(true)
+                       }}
+                       className="w-full text-xs bg-white dark:bg-stone-900 border border-gray-200 dark:border-stone-700 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
                 </div>
               )
             })}
@@ -368,21 +408,19 @@ export default function AttendanceMarkingPage() {
                     Trạng thái
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Giờ check-in
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Ghi chú
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
-                {students.map((student) => {
+                {students.map((student, idx) => {
                   const statusInfo = getStatusFormatted(student.status)
                   return (
-                    <tr key={student.studentId} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
+                    <tr key={student.studentId || idx} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-medium text-gray-900 dark:text-gray-100">
                           {student.studentName}
+                          <span className="text-[8px] text-gray-300 ml-1">#{idx+1}</span>
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">{student.studentCode || student.email}</div>
                       </td>
@@ -393,18 +431,24 @@ export default function AttendanceMarkingPage() {
                         <select
                           value={student.status}
                           onChange={(e) => updateStudentStatus(student.studentId, e.target.value)}
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} ${statusInfo.bgColor} border-0`}
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} ${statusInfo.bgColor} border-0 focus:ring-2 focus:ring-blue-500`}
                         >
                           <option value="unmarked">Chưa điểm danh</option>
                           <option value={AttendanceStatus.PRESENT}>✅ Có mặt</option>
                           <option value={AttendanceStatus.ABSENT}>❌ Vắng</option>
                         </select>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {student.checkInTime || '-'}
-                      </td>
                       <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        {student.notes || '-'}
+                        <input 
+                           type="text"
+                           value={student.remarks || ''}
+                           placeholder="Ghi chú..."
+                           onChange={(e) => {
+                             const newVal = e.target.value;
+                             setStudents(prev => prev.map(s => s.studentId === student.studentId ? {...s, remarks: newVal} : s))
+                           }}
+                           className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none"
+                        />
                       </td>
                     </tr>
                   )
@@ -415,22 +459,27 @@ export default function AttendanceMarkingPage() {
         </div>
       )}
 
-      {/* Save Button */}
+      {/* Sticky Mobile Save Button / Desktop Save Section */}
       {students.length > 0 && (
-        <div className="flex justify-end gap-4">
-          <button
-            onClick={() => router.push('/admin')}
-            className="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-300 font-medium transition"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={saveAttendance}
-            disabled={saving}
-            className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-medium transition"
-          >
-            {saving ? 'Đang lưu...' : 'Save Attendance'}
-          </button>
+        <div className="fixed md:relative bottom-0 left-0 right-0 md:bottom-auto md:left-auto md:right-auto 
+          bg-white/80 dark:bg-stone-900/80 backdrop-blur-lg md:bg-transparent p-4 md:p-0 
+          border-t border-gray-200 dark:border-stone-800 md:border-none z-40 md:z-0
+          pb-safe md:pb-0">
+          <div className="max-w-7xl mx-auto flex justify-end gap-3 md:gap-4">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="flex-1 md:flex-none bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-6 py-3 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 font-bold transition-all active:scale-[0.98]"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={saveAttendance}
+              disabled={saving}
+              className="flex-[2] md:flex-none bg-green-600 text-white px-10 py-3 rounded-xl hover:bg-green-700 active:bg-green-800 disabled:bg-stone-400 font-bold shadow-lg shadow-green-600/20 dark:shadow-none transition-all active:scale-[0.98]"
+            >
+              {saving ? 'Đang lưu...' : 'Lưu điểm danh'}
+            </button>
+          </div>
         </div>
       )}
     </div>

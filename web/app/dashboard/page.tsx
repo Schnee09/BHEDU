@@ -164,10 +164,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="mb-8">
           <h2 className="sr-only">Thống kê tổng quan</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6">
             <StatCard
               label="Học sinh"
               value={stats.totalStudents}
@@ -491,26 +490,29 @@ function QuickActionCard({ href, icon, title, description, color }: QuickActionC
   return (
     <Link
       href={href}
-      className={`group block p-4 sm:p-6 rounded-xl transition-all duration-300 ease-in-out
+      className={`group block p-4 sm:p-6 rounded-2xl transition-all duration-300 ease-in-out
         bg-white border shadow-sm hover:shadow-lg hover:-translate-y-1
-        active:scale-[0.98] active:shadow-sm
+        active:scale-[0.98] active:shadow-sm relative overflow-hidden
         ${styles.bg} ${styles.border}`}
     >
+      {/* Top Shine */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
       <div className="flex items-start gap-4">
-        <div className={`p-3 rounded-xl transition-all duration-300 ${styles.icon} group-hover:scale-110`}>
+        <div className={`p-3 rounded-xl transition-all duration-300 ${styles.icon} group-hover:scale-110 group-hover:shadow-md`}>
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className={`font-semibold text-lg mb-2 transition-colors duration-200 ${styles.title}`}>
+          <h3 className={`font-bold text-lg mb-1.5 transition-colors duration-200 ${styles.title}`}>
             {title}
           </h3>
           <p className={`text-sm leading-relaxed transition-colors duration-200 ${styles.desc}`}>
             {description}
           </p>
-          <div className="mt-3 flex items-center text-sm font-medium opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-            <span className={`${styles.title} mr-2`}>Xem chi tiết</span>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          <div className="mt-3 flex items-center text-sm font-bold opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+            <span className={`${styles.title} mr-1.5 tracking-tight`}>Xem chi tiết</span>
+            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </div>

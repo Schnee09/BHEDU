@@ -15,7 +15,7 @@ const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
         className="fixed inset-0 bg-black/50"
         onClick={() => onOpenChange?.(false)}
       />
-      <div className="relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg">
+      <div className="relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg animate-in fade-in zoom-in-95 sm:max-h-[90vh] max-h-[100dvh] overflow-y-auto">
         {children}
       </div>
     </div>

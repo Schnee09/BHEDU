@@ -2529,3 +2529,47 @@ a:not(.inline-link),
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* ============================================
+   MOBILE OPTIMIZATIONS
+   ============================================ */
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1.5rem);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 1.5rem);
+}
+
+@media (max-width: 640px) {
+  .container-mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Increase tap targets for buttons and links - ensure at least 44x44px where possible */
+  .tap-target-lg {
+    min-height: 48px;
+    min-width: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Compact spacing for mobile */
+  .section-spacing {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Responsive font adjustments */
+  .mobile-title {
+    font-size: 1.125rem !important; /* 18px */
+    line-height: 1.25 !important;
+  }
+  
+  .mobile-subtitle {
+    font-size: 0.75rem !important; /* 12px */
+  }
+}

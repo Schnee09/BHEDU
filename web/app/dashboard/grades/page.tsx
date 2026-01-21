@@ -216,7 +216,7 @@ export default function GradesPageModern() {
 
         {/* Quick Stats Cards for Teachers/Admins */}
         {isTeacherOrAdmin && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -279,7 +279,7 @@ export default function GradesPageModern() {
         {availableCards.length > 0 ? (
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Chức năng</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {availableCards.map((card) => {
                 const colors = colorClasses[card.color];
                 return (

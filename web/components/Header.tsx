@@ -27,9 +27,11 @@ interface HeaderProps {
     email?: string | null;
     role?: string;
   } | null;
+  onMenuToggle?: () => void;
+  isMenuOpen?: boolean;
 }
 
-export default function Header({ profile }: HeaderProps) {
+export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProps) {
   const router = useRouter();
   const supabase = createClient();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -64,38 +66,37 @@ export default function Header({ profile }: HeaderProps) {
 
   // Fetch notifications from database
   const fetchNotifications = useCallback(async () => {
+    // Use profile.id since notifications.user_id references profiles(id)
+    if (!profile?.id) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        // Show fallback when not logged in
-        setNotifications([]);
-        setUnreadCount(0);
-        return;
-      }
-
-      // TODO: Enable when notifications table is created in database
-      // For now, use fallback to avoid 400 errors
-      const fallbackNotifications: Notification[] = [{
-        id: 'welcome',
-        user_id: user.id,
-        title: 'Welcome!',
-        message: 'Welcome to BH-EDU Management System',
-        type: 'info',
-        is_read: false,
-        created_at: new Date().toISOString()
-      }];
-      setNotifications(fallbackNotifications);
-      setUnreadCount(1);
-
-      /* Uncomment when notifications table is ready:
+      // Fetch notifications from database using profile ID
       const { data, error } = await supabase
         .from('notifications')
         .select('id, title, message, is_read, created_at')
-        .eq('user_id', user.id)
+        .eq('user_id', profile.id)
         .order('created_at', { ascending: false })
         .limit(5);
       
-      if (error) throw error;
+      if (error) {
+        // Table might not exist yet - use welcome fallback
+        const fallbackNotifications: Notification[] = [{
+          id: 'welcome',
+          user_id: profile.id,
+          title: 'Chào mừng!',
+          message: 'Chào mừng đến với Hệ thống Quản lý BH-EDU',
+          type: 'info',
+          is_read: false,
+          created_at: new Date().toISOString()
+        }];
+        setNotifications(fallbackNotifications);
+        setUnreadCount(1);
+        return;
+      }
 
       interface NotificationRecord {
         id: string;
@@ -107,8 +108,8 @@ export default function Header({ profile }: HeaderProps) {
 
       const mappedNotifications: Notification[] = (data || []).map((n: NotificationRecord) => ({
         id: n.id,
-        user_id: user.id,
-        title: n.title || 'Notification',
+        user_id: profile.id,
+        title: n.title || 'Thông báo',
         message: n.message || '',
         type: 'info' as const,
         is_read: n.is_read ?? false,
@@ -117,13 +118,12 @@ export default function Header({ profile }: HeaderProps) {
 
       setNotifications(mappedNotifications);
       setUnreadCount(mappedNotifications.filter(n => !n.is_read).length);
-      */
     } catch (_error) {
       // Auth error or other top-level error - fail silently
       setNotifications([]);
       setUnreadCount(0);
     }
-  }, [supabase]);
+  }, [supabase, profile?.id]);
 
   useEffect(() => {
     fetchNotifications();
@@ -166,7 +166,7 @@ export default function Header({ profile }: HeaderProps) {
     { label: 'Điểm danh', icon: CheckIcon, href: routes.attendance.list(), show: true },
     { label: 'Điểm của tôi', icon: ChartBarIcon, href: '/dashboard/scores', show: profile?.role === 'student' },
     { label: 'Thêm học sinh', icon: UserPlusIcon, href: `${routes.students.list()}?action=add`, show: profile?.role === 'admin' || profile?.role === 'staff' },
-    { label: 'Tạo bài tập', icon: ClipboardDocumentListIcon, href: '/dashboard/assignments?action=add', show: profile?.role === 'teacher' || profile?.role === 'admin' },
+    { label: 'Tạo bài tập', icon: ClipboardDocumentListIcon, href: '/dashboard/assignments?action=add', show: profile?.role === 'teacher' || profile?.role === 'admin' || profile?.role === 'staff' },
     { label: 'Xem báo cáo', icon: ChartBarIcon, href: '/dashboard/reports', show: profile?.role === 'admin' || profile?.role === 'staff' },
     { label: 'Nhập học sinh', icon: ArrowDownTrayIcon, href: routes.students.import(), show: profile?.role === 'admin' || profile?.role === 'staff' },
   ].filter((action) => action.show);
@@ -180,25 +180,39 @@ export default function Header({ profile }: HeaderProps) {
       <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-gray-300/50 dark:via-white/10 to-transparent" />
       {/* Left Section - Title */}
       <div className="flex items-center gap-4 relative z-10">
-        {/* Mobile menu trigger spacing */}
-        <div className="w-8 lg:hidden" />
+        {/* Mobile menu trigger */}
+        <button
+          onClick={onMenuToggle}
+          className="lg:hidden p-2 -ml-2 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+          aria-label={isMenuOpen ? "Đóng menu" : "Mở menu"}
+        >
+          {isMenuOpen ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:block">
-            <h1 className="font-bold text-xl leading-tight tracking-tight">
-              <span className="text-foreground">
-                {profile?.role === 'admin' ? 'Cổng ' :
-                  profile?.role === 'teacher' ? 'Cổng ' :
-                    'Cổng '}
-              </span>
-              <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">
-                {profile?.role === 'admin' ? 'Quản Trị' :
-                  profile?.role === 'teacher' ? 'Giáo Viên' :
-                    'Học Sinh'}
-              </span>
-            </h1>
-            <p className="text-sm text-muted-foreground font-medium">Bui Hoang Education</p>
-          </div>
+        <div className="flex flex-col">
+          <h1 className="font-bold text-lg sm:text-xl leading-tight tracking-tight">
+            <span className="text-foreground">
+              {profile?.role === 'admin' ? 'Cổng ' :
+                profile?.role === 'teacher' ? 'Cổng ' :
+                  'Cổng '}
+            </span>
+            <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">
+              {profile?.role === 'admin' ? 'Quản Trị' :
+                profile?.role === 'teacher' ? 'Giáo Viên' :
+                  'Học Sinh'}
+            </span>
+          </h1>
+          <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider opacity-80">BH-EDU System</p>
+        </div>
         </div>
       </div>
 
