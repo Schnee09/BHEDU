@@ -44,6 +44,7 @@ import {
   MagnifyingGlassIcon,
   ArrowLeftIcon,
   ArrowUpTrayIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 
 import {
@@ -96,6 +97,7 @@ export const Icons = {
   Mail: EnvelopeIcon,
   Location: MapPinIcon,
   Back: ArrowLeftIcon,
+  History: ClockIcon,
 
   // Status
   Success: CheckCircleIcon,

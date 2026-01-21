@@ -405,6 +405,7 @@ export default function FeeManagementPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Modal */}

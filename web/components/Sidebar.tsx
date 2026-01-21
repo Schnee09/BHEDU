@@ -13,12 +13,17 @@ import type { PermissionCode, UserRole } from "@/lib/auth/permissions.config";
 import { LogOut, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function Sidebar() {
+export default function Sidebar({
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
+}: {
+  isMobileMenuOpen?: boolean;
+  setIsMobileMenuOpen?: (open: boolean) => void;
+}) {
   const { profile } = useProfile();
   const { permissions, loading: permissionsLoading } = usePermissions();
   const pathname = usePathname();
   const router = useRouter();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Get navigation items based on user's actual permissions
@@ -39,31 +44,25 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Toggle */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-primary text-white rounded-xl shadow-lg hover:bg-primary-hover transition-colors"
-        aria-label={isMobileMenuOpen ? "Đóng menu" : "Mở menu"}
-      >
-        {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
 
       {/* Backdrop */}
       {isMobileMenuOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity"
-          onClick={() => setIsMobileMenuOpen(false)}
+          onClick={() => setIsMobileMenuOpen?.(false)}
         />
       )}
 
       {/* Sidebar Container */}
       <aside className={cn(
-        "fixed h-[96vh] my-[2vh] left-4 rounded-3xl z-40 transition-all duration-300 ease-out flex flex-col group/sidebar",
-        "bg-[#1A1410] border border-[#2C2420] shadow-2xl shadow-amber-900/10", // Premium Dark Brown-Black
+        "fixed transition-all duration-300 ease-out flex flex-col group/sidebar z-40",
+        // Mobile styles: Full height, no margins, slides from left
+        "inset-y-0 left-0 w-[280px] lg:w-72 lg:h-[96vh] lg:my-[2vh] lg:left-4 lg:rounded-3xl",
+        "bg-[#1A1410] border-r lg:border border-[#2C2420] shadow-2xl",
         // Decorative Top Shine
         "before:absolute before:inset-x-0 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-500/30 before:to-transparent before:w-3/4 before:mx-auto",
-        isCollapsed ? "w-20" : "w-72",
-        isMobileMenuOpen ? "translate-x-0" : "-translate-x-[120%] lg:translate-x-0"
+        isCollapsed ? "lg:w-20" : "lg:w-72",
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         {/* Header */}
         <div className="relative p-4 pl-6 flex items-center justify-between mx-2 mb-2">
@@ -140,7 +139,7 @@ export default function Sidebar() {
                       <Link
                         key={link.href}
                         href={link.href}
-                        onClick={() => setIsMobileMenuOpen(false)}
+                         onClick={() => setIsMobileMenuOpen?.(false)}
                         className={cn(
                           "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
                           isActive

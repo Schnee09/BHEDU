@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api/client'
+import { ResponsiveTable, MobileCard } from '@/components/ui/ResponsiveTable'
 
 interface Invoice {
   id: string
@@ -331,72 +332,129 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      {/* Invoices Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      {/* Invoices List */}
+      <ResponsiveTable
+        mobileView={
+          <div className="space-y-4 pb-20">
+            {filteredInvoices.map((invoice) => (
+              <MobileCard
+                key={invoice.id}
+                title={invoice.invoice_number}
+                subtitle={`${invoice.student_account?.student?.first_name} ${invoice.student_account?.student?.last_name}`}
+                status={{
+                  label: invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1),
+                  color: invoice.status === 'paid' ? 'green' : (invoice.status === 'overdue' ? 'red' : 'yellow')
+                }}
+                fields={[
+                  { label: "ID Học sinh", value: invoice.student_account?.student?.student_id || '---' },
+                  { label: "Ngày hết hạn", value: formatDate(invoice.due_date) },
+                  { label: "Tổng tiền", value: formatCurrency(invoice.total_amount) },
+                  { 
+                    label: "Còn lại", 
+                    value: (
+                      <span className={invoice.balance > 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
+                        {formatCurrency(invoice.balance)}
+                      </span>
+                    ) 
+                  },
+                ]}
+                actions={
+                  <>
+                    <Link
+                      href={`/dashboard/finance/invoices/${invoice.id}`}
+                      className="flex-1 py-2.5 bg-white dark:bg-[#2C2420] border border-stone-200 dark:border-[#3D342C] rounded-xl text-xs font-bold uppercase tracking-wider text-center"
+                    >
+                      Chi tiết
+                    </Link>
+                    {invoice.balance > 0 && (
+                      <Link
+                        href={`/dashboard/finance/payments?invoice=${invoice.id}`}
+                        className="flex-1 py-2.5 bg-blue-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider text-center"
+                      >
+                        Thanh toán
+                      </Link>
+                    )}
+                  </>
+                }
+              />
+            ))}
+            {filteredInvoices.length === 0 && !loading && (
+              <div className="text-center py-12 text-stone-500 bg-white dark:bg-[#1A1410] rounded-2xl border border-dashed border-stone-200 dark:border-stone-800">
+                Không tìm thấy hóa đơn nào.
+              </div>
+            )}
+            {loading && (
+              <div className="text-center py-12 text-stone-500">
+                Đang tải hóa đơn...
+              </div>
+            )}
+          </div>
+        }
+      >
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-stone-700">
+          <thead className="bg-gray-50 dark:bg-stone-800">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Invoice #
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Hóa đơn #
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Student
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Học sinh
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Issue Date
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Ngày phát hành
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Due Date
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Ngày đến hạn
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total Amount
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Tổng cộng
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Balance
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Số dư
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Trạng thái
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Thao tác
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-transparent divide-y divide-gray-200 dark:divide-stone-700">
             {loading ? (
               <tr>
                 <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
-                  Loading invoices...
+                  Đang tải...
                 </td>
               </tr>
             ) : filteredInvoices.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
-                  No invoices found.
+                  Không tìm thấy hóa đơn nào.
                 </td>
               </tr>
             ) : (
               filteredInvoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                     {invoice.invoice_number}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {invoice.student_account?.student?.first_name}{' '}
                       {invoice.student_account?.student?.last_name}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       {invoice.student_account?.student?.student_id}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {formatDate(invoice.issue_date)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {formatDate(invoice.due_date)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 font-semibold">
                     {formatCurrency(invoice.total_amount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">
@@ -414,14 +472,14 @@ export default function InvoicesPage() {
                       href={`/dashboard/finance/invoices/${invoice.id}`}
                       className="text-blue-600 hover:text-blue-900 mr-4"
                     >
-                      View
+                      Xem
                     </Link>
                     {invoice.balance > 0 && (
                       <Link
                         href={`/dashboard/finance/payments?invoice=${invoice.id}`}
                         className="text-green-600 hover:text-green-900"
                       >
-                        Pay
+                        Thu
                       </Link>
                     )}
                   </td>
@@ -430,7 +488,7 @@ export default function InvoicesPage() {
             )}
           </tbody>
         </table>
-      </div>
+      </ResponsiveTable>
 
       {/* Modal */}
       {showModal && (

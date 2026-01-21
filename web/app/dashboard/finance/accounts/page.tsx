@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api/client'
+import { ResponsiveTable, MobileCard } from '@/components/ui/ResponsiveTable'
 
 interface StudentAccount {
   id: string
@@ -222,62 +223,117 @@ export default function StudentAccountsPage() {
         </div>
       </div>
 
-      {/* Accounts Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      {/* Accounts List */}
+      <ResponsiveTable
+        mobileView={
+          <div className="space-y-4 pb-20">
+            {filteredAccounts.map((account) => (
+              <MobileCard
+                key={account.id}
+                title={`${account.student?.first_name} ${account.student?.last_name}`}
+                subtitle={`ID: ${account.student?.student_id}`}
+                status={{
+                  label: account.status.charAt(0).toUpperCase() + account.status.slice(1),
+                  color: account.status === 'paid' ? 'green' : (account.status === 'overdue' ? 'red' : 'yellow')
+                }}
+                fields={[
+                  { label: "Năm học", value: account.academic_year?.name || 'N/A' },
+                  { label: "Đã xuất HD", value: formatCurrency(account.total_invoiced) },
+                  { label: "Đã thu", value: formatCurrency(account.total_paid) },
+                  { 
+                    label: "Còn nợ", 
+                    value: (
+                      <span className={account.balance > 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
+                        {formatCurrency(account.balance)}
+                      </span>
+                    ) 
+                  },
+                ]}
+                actions={
+                  <>
+                    <Link
+                      href={`/dashboard/finance/accounts/${account.id}`}
+                      className="flex-1 py-2.5 bg-white dark:bg-[#2C2420] border border-stone-200 dark:border-[#3D342C] rounded-xl text-xs font-bold uppercase tracking-wider text-center"
+                    >
+                      Chi tiết
+                    </Link>
+                    <Link
+                      href={`/dashboard/finance/payments?student=${account.student_id}`}
+                      className="flex-1 py-2.5 bg-green-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider text-center"
+                    >
+                      Thu học phí
+                    </Link>
+                  </>
+                }
+              />
+            ))}
+            {filteredAccounts.length === 0 && !loading && (
+              <div className="text-center py-12 text-stone-500 bg-white dark:bg-[#1A1410] rounded-2xl border border-dashed border-stone-200 dark:border-stone-800">
+                Không tìm thấy tài khoản học sinh nào.
+              </div>
+            )}
+            {loading && (
+              <div className="text-center py-12 text-stone-500">
+                Đang tải...
+              </div>
+            )}
+          </div>
+        }
+      >
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-stone-700">
+          <thead className="bg-gray-50 dark:bg-stone-800">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Student
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Học sinh
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Academic Year
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Năm học
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Invoiced
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Đã xuất HD
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Paid
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Đã thu
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Balance
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Còn nợ
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Trạng thái
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Thao tác
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-transparent divide-y divide-gray-200 dark:divide-stone-700">
             {loading ? (
               <tr>
                 <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                  Loading accounts...
+                  Đang tải...
                 </td>
               </tr>
             ) : filteredAccounts.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                  No student accounts found.
+                  Không tìm thấy tài khoản nào.
                 </td>
               </tr>
             ) : (
               filteredAccounts.map((account) => (
-                <tr key={account.id} className="hover:bg-gray-50">
+                <tr key={account.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {account.student?.first_name} {account.student?.last_name}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       ID: {account.student?.student_id}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {account.academic_year?.name || 'N/A'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {formatCurrency(account.total_invoiced)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
@@ -298,13 +354,13 @@ export default function StudentAccountsPage() {
                       href={`/dashboard/finance/accounts/${account.id}`}
                       className="text-blue-600 hover:text-blue-900 mr-4"
                     >
-                      View Details
+                      Xem
                     </Link>
                     <Link
                       href={`/dashboard/finance/payments?student=${account.student_id}`}
                       className="text-green-600 hover:text-green-900"
                     >
-                      Add Payment
+                      Thu phí
                     </Link>
                   </td>
                 </tr>
@@ -312,7 +368,7 @@ export default function StudentAccountsPage() {
             )}
           </tbody>
         </table>
-      </div>
+      </ResponsiveTable>
     </div>
   )
 }

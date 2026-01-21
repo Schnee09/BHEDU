@@ -47,7 +47,7 @@ export default function MobileStudentList({
     }
 
     return (
-        <div className="space-y-3 pb-20 md:hidden">
+        <div className="space-y-4 pb-20 md:hidden">
             {students.map((student) => {
                 const isSelected = selectedIds.has(student.id);
                 const isActive = student.status === 'active';
@@ -56,71 +56,80 @@ export default function MobileStudentList({
                     <div
                         key={student.id}
                         className={`
-              bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border transition-all
+              bg-white dark:bg-[#1A1410] rounded-2xl p-5 shadow-sm border transition-all active:scale-[0.98]
+              relative overflow-hidden
               ${isSelected
-                                ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/10'
-                                : 'border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700'}
+                                ? 'border-amber-500 ring-1 ring-amber-500 bg-amber-50/5 dark:bg-amber-900/5'
+                                : 'border-stone-100 dark:border-[#2C2420]'}
             `}
                         onClick={() => onSelect(student.id)}
                     >
-                        <div className="flex justify-between items-start gap-3 mb-3">
+                        {/* Status Accent */}
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${isActive ? 'bg-green-500' : 'bg-stone-300'}`} />
+
+                        <div className="flex justify-between items-start gap-3 mb-4">
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <h3 className="font-bold text-gray-900 dark:text-white truncate text-base">
+                                    <h3 className="font-bold text-stone-900 dark:text-stone-100 truncate text-lg leading-tight">
                                         {student.full_name}
                                     </h3>
                                     {student.grade_level && (
-                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 whitespace-nowrap">
+                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 whitespace-nowrap uppercase tracking-wider">
                                             {student.grade_level}
                                         </span>
                                     )}
                                 </div>
-                                <div className="text-xs text-gray-500 font-mono flex items-center gap-2">
-                                    <span>{student.student_code || '---'}</span>
-                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${isActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-stone-500 dark:text-stone-400 font-mono tracking-tight">
+                                        {student.student_code || 'HS-XXXX'}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${isActive ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400' : 'bg-stone-100 text-stone-600 border-stone-200 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-400'}`}>
                                         {isActive ? 'Active' : 'Archived'}
                                     </span>
                                 </div>
                             </div>
-                            <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => { }} // Handled by div onClick
-                                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
-                            />
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'border-stone-300 dark:border-stone-600'}`}>
+                                {isSelected && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                            </div>
                         </div>
 
-                        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 bg-stone-50/50 dark:bg-white/5 rounded-xl p-3">
                             {student.phone && (
-                                <div className="flex items-center gap-2">
-                                    <Phone className="w-3.5 h-3.5 text-gray-400" />
-                                    <span className="font-medium">{student.phone}</span>
+                                <div className="flex items-center gap-2.5 text-sm text-stone-600 dark:text-stone-300">
+                                    <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                                        <Phone className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <span className="font-semibold">{student.phone}</span>
                                 </div>
                             )}
                             {student.email && (
-                                <div className="flex items-center gap-2">
-                                    <Mail className="w-3.5 h-3.5 text-gray-400" />
+                                <div className="flex items-center gap-2.5 text-sm text-stone-600 dark:text-stone-300">
+                                    <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
+                                        <Mail className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                                    </div>
                                     <span className="truncate">{student.email}</span>
                                 </div>
                             )}
                             {student.date_of_birth && (
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                <div className="flex items-center gap-2.5 text-sm text-stone-600 dark:text-stone-300">
+                                    <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+                                        <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                                    </div>
                                     <span>{format(new Date(student.date_of_birth), 'dd/MM/yyyy')}</span>
                                 </div>
                             )}
                         </div>
 
-                        <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                        <div className="flex gap-3">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onEdit(student);
                                 }}
-                                className="flex-1 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-white border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center justify-center gap-2 transition-colors"
+                                className="flex-1 py-3 bg-white dark:bg-[#2C2420] hover:bg-stone-50 dark:hover:bg-[#3D342C] border border-stone-200 dark:border-[#3D342C] rounded-xl text-sm font-bold text-stone-700 dark:text-stone-200 flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
                             >
-                                <Edit className="w-4 h-4" />
-                                Sửa
+                                <Edit className="w-4 h-4 text-blue-500" />
+                                Chỉnh sửa
                             </button>
                             {hasAdminAccess && (
                                 <button
@@ -128,10 +137,10 @@ export default function MobileStudentList({
                                         e.stopPropagation();
                                         onArchive(student);
                                     }}
-                                    className="flex-1 py-2 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 border border-red-200 dark:border-red-800/30 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 flex items-center justify-center gap-2 transition-colors"
+                                    className="px-4 py-3 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-xl text-sm font-bold text-red-600 dark:text-red-400 flex items-center justify-center transition-all shadow-sm active:scale-95"
+                                    aria-label="Lưu trữ"
                                 >
                                     <Archive className="w-4 h-4" />
-                                    Lưu trữ
                                 </button>
                             )}
                         </div>
