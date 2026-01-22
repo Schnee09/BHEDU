@@ -173,18 +173,19 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
   ].filter((action) => action.show);
 
   return (
-    <header className="relative h-[72px] flex items-center justify-between px-6 sticky top-0 z-30
-     bg-white/70 dark:bg-[#1A1410]/80 backdrop-blur-xl shadow-sm dark:shadow-none transition-all duration-300">
+    <header className="relative h-16 md:h-[72px] flex items-center justify-between px-4 md:px-6 sticky top-0 z-30
+     bg-white/90 dark:bg-[#1A1410]/95 backdrop-blur-xl shadow-sm dark:shadow-none transition-all duration-300">
       {/* Top Golden Shine */}
       <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
       {/* Bottom Gradient Divider */}
       <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-gray-300/50 dark:via-white/10 to-transparent" />
-      {/* Left Section - Title */}
-      <div className="flex items-center gap-4 relative z-10">
+      
+      {/* Left Section - Menu Toggle + Logo */}
+      <div className="flex items-center gap-3 relative z-10">
         {/* Mobile menu trigger */}
         <button
           onClick={onMenuToggle}
-          className="lg:hidden p-2 -ml-2 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+          className="lg:hidden p-2.5 -ml-1 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors active:scale-95"
           aria-label={isMenuOpen ? "Đóng menu" : "Mở menu"}
         >
           {isMenuOpen ? (
@@ -198,34 +199,29 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
           )}
         </button>
 
-        <div className="flex items-center gap-3">
+        {/* Title - Simplified for mobile */}
         <div className="flex flex-col">
-          <h1 className="font-bold text-lg sm:text-xl leading-tight tracking-tight">
-            <span className="text-foreground">
-              {profile?.role === 'admin' ? 'Cổng ' :
-                profile?.role === 'teacher' ? 'Cổng ' :
-                  'Cổng '}
-            </span>
+          <h1 className="font-bold text-base md:text-lg leading-tight tracking-tight">
+            <span className="text-foreground">Cổng </span>
             <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">
               {profile?.role === 'admin' ? 'Quản Trị' :
                 profile?.role === 'teacher' ? 'Giáo Viên' :
                   'Học Sinh'}
             </span>
           </h1>
-          <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider opacity-80">BH-EDU System</p>
-        </div>
+          <p className="hidden md:block text-[10px] text-muted-foreground font-medium uppercase tracking-wider opacity-80">BH-EDU System</p>
         </div>
       </div>
 
-      {/* Right Section - Actions & User */}
-      <div className="flex items-center gap-3">
-        {/* Theme Toggle */}
+      {/* Right Section - Minimal on Mobile */}
+      <div className="flex items-center gap-2 md:gap-3">
+        {/* Theme Toggle - Always visible */}
         <ThemeToggle />
 
-        {/* Search Button with Keyboard Shortcut */}
+        {/* Search Button - Hidden on mobile, use bottom nav or swipe instead */}
         <button
           onClick={() => setShowSearch(!showSearch)}
-          className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl transition-all cursor-pointer
+          className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl transition-all cursor-pointer
            bg-surface-secondary/50 hover:bg-surface-secondary border border-border/50
            text-muted hover:text-foreground"
           title="Search (Ctrl+K)"
@@ -239,21 +235,8 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
           </kbd>
         </button>
 
-        {/* Mobile Search Button */}
-        <button
-          onClick={() => setShowSearch(!showSearch)}
-          className="sm:hidden p-2.5 rounded-xl transition-all cursor-pointer
-           bg-surface-secondary text-primary shadow-neumorphic-xs hover:shadow-neumorphic-sm
-           dark:bg-white/5 dark:text-primary dark:border dark:border-white/10 dark:hover:bg-white/10 dark:shadow-none"
-          title="Search"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </button>
-
-        {/* Quick Actions */}
-        <div className="relative">
+        {/* Quick Actions - Hidden on mobile */}
+        <div className="relative hidden md:block">
           <button
             onClick={() => setShowQuickActions(!showQuickActions)}
             className="p-2.5 rounded-xl transition-all cursor-pointer
