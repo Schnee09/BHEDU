@@ -1,6 +1,5 @@
 "use client";
 
-
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useState, useMemo } from "react";
 import { getNavigationForPermissions, getNavLabel } from "@/lib/auth/navigation.config";
 import type { PermissionCode, UserRole } from "@/lib/auth/permissions.config";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Sidebar({
@@ -42,53 +41,30 @@ export default function Sidebar({
     router.push("/login");
   };
 
-  // Calculate indicator position
-  const activeIndex = useMemo(() => {
-    let index = 0;
-    for (const section of navSections) {
-      for (const link of section.links) {
-        if (pathname === link.href || pathname?.startsWith(link.href + '/')) {
-          return index;
-        }
-        index++;
-      }
-    }
-    return -1;
-  }, [navSections, pathname]);
-
   return (
     <>
       {/* Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-md z-40 transition-opacity animate-fade-in"
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[60] transition-opacity animate-fade-in"
           onClick={() => setIsMobileMenuOpen?.(false)}
         />
       )}
 
-      {/* Sidebar Container - Glass Float Pro Max */}
+      {/* Sidebar Container - Fixed for better contrast and z-index */}
       <aside className={cn(
-        "fixed transition-all duration-500 ease-out flex flex-col group/sidebar z-40",
+        "fixed transition-all duration-500 ease-out flex flex-col group/sidebar z-[70]",
         // Position & Shape
         "inset-y-0 left-0 w-[280px] lg:w-72 lg:h-[calc(100vh-32px)] lg:my-4 lg:left-4 lg:rounded-[32px]",
         // Glassmorphism - Premium Styling
-        "glass-premium backdrop-blur-3xl lg:border border-white/10 shadow-2xl overflow-hidden",
-        "dark:bg-[#1A1410]/80 bg-white/80",
+        "glass-premium backdrop-blur-3xl lg:border border-white/20 shadow-2xl overflow-hidden",
+        "dark:bg-[#1A1410]/95 bg-white/95", // More opaque for readability
         // Collapsible State (PC)
         isCollapsed ? "lg:w-20" : "lg:w-72",
         // Mobile State
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        {/* Dynamic Nav Indicator (Desktop Only) */}
-        {!isCollapsed && activeIndex !== -1 && (
-           <div 
-             className="hidden lg:block sidebar-indicator z-0"
-             style={{ 
-               top: `${80 + (activeIndex * 52) + (activeIndex >= 1 ? 40 : 0)}px` 
-             }}
-           />
-        )}
-
+        
         {/* Header - BH-EDU Brand */}
         <div className="relative h-20 flex items-center px-6 mb-2">
           {!isCollapsed && (
@@ -96,7 +72,7 @@ export default function Sidebar({
               <div className="w-10 h-10 relative bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
                 <Image
                   src="/logo.png"
-                  alt="Bùi Hoàng Logo"
+                  alt="L"
                   fill
                   sizes="40px"
                   className="object-contain p-1.5 brightness-0 invert"
@@ -118,7 +94,7 @@ export default function Sidebar({
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-6 custom-scrollbar relative z-10">
+        <div className="flex-1 overflow-y-auto px-1.5 py-2 space-y-6 custom-scrollbar relative z-10">
           {navSections.map((section) => (
             <div key={section.title} className="space-y-1">
               {!isCollapsed && (
@@ -137,19 +113,24 @@ export default function Sidebar({
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen?.(false)}
                       className={cn(
-                        "group flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 relative",
+                        "group flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 relative mx-2",
                         isActive
-                          ? "bg-amber-500 text-white lg:bg-transparent lg:text-amber-500 lg:font-black"
+                          ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20 font-black"
                           : "text-stone-500 dark:text-stone-400 hover:bg-stone-500/5 dark:hover:bg-white/5 hover:text-stone-900 dark:hover:text-stone-100",
-                        isCollapsed && "justify-center px-0"
+                        isCollapsed && "justify-center px-0 mx-1"
                       )}
                     >
-                      <link.icon size={22} className={cn(
+                      <link.icon size={20} className={cn(
                         "transition-all duration-300",
                         !isActive && "group-hover:scale-110",
                         isActive && "scale-110"
                       )} />
                       {!isCollapsed && <span className="text-sm tracking-tight">{label}</span>}
+                      
+                      {/* Sub-indicator for active state (PC only) */}
+                      {isActive && !isCollapsed && (
+                        <div className="hidden lg:block absolute left-0 w-1 h-6 bg-white rounded-r-full" />
+                      )}
                     </Link>
                   );
                 })}
@@ -175,7 +156,7 @@ export default function Sidebar({
         {/* Collapsible Trigger (Desktop Only) */}
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden lg:flex absolute bottom-24 -right-3 w-6 h-6 bg-white dark:bg-[#2C2420] border border-white/10 rounded-full items-center justify-center shadow-md hover:scale-110 transition-transform cursor-pointer z-50"
+          className="hidden lg:flex absolute bottom-24 -right-3 w-6 h-6 bg-white dark:bg-[#2C2420] border border-stone-200 dark:border-white/10 rounded-full items-center justify-center shadow-md hover:scale-110 transition-transform cursor-pointer z-[80]"
         >
            <Menu size={12} className="text-stone-500" />
         </button>

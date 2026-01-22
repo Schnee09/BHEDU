@@ -202,17 +202,17 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
 
         {/* Title & Role */}
         <div className="flex flex-col ml-1">
-          <h1 className="font-black text-base md:text-xl leading-tight tracking-tight flex items-center gap-1.5">
+          <h1 className="font-black text-lg md:text-2xl leading-tight tracking-tighter flex items-center gap-1.5">
             <span className="text-stone-900 dark:text-stone-100 hidden sm:inline">Cổng</span>
-            <span className="bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent px-1 rounded-sm">
+            <span className="text-amber-500">
               {profile?.role === 'admin' ? 'Quản Trị' :
                 profile?.role === 'teacher' ? 'Giáo Viên' :
                   'Học Sinh'}
             </span>
           </h1>
           <div className="flex items-center gap-1.5 opacity-60">
-             <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
-             <p className="text-[9px] md:text-[10px] text-stone-500 dark:text-stone-400 font-bold uppercase tracking-[0.15em]">BH-EDU SYSTEM</p>
+             <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+             <p className="text-[10px] md:text-[11px] text-stone-500 dark:text-stone-400 font-black uppercase tracking-[0.2em]">BH-EDU SYSTEM</p>
           </div>
         </div>
       </div>
