@@ -1,14 +1,14 @@
 /**
  * useUser Hook - Current user state management
- * 
+ *
  * Provides access to current logged-in user across components
  * Eliminates duplicate user fetching code
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { logger } from '@/lib/logger';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { logger } from "@/lib/logger";
 
-type UserRole = 'admin' | 'teacher' | 'student' | 'staff';
+type UserRole = "admin" | "teacher" | "student" | "staff";
 
 export interface User {
   id: string;
@@ -33,19 +33,21 @@ interface UseUserResult {
   isStudent: boolean;
   /** Returns true if user is admin or staff (has admin-level access) */
   hasAdminAccess: boolean;
+  /** Returns true if user can perform teacher functions (admin, staff, or teacher) */
+  hasTeacherCapabilities: boolean;
   refetch: () => Promise<void>;
 }
 
 /**
  * Custom hook to get current user information
- * 
+ *
  * @example
  * const { user, isAdmin, loading } = useUser();
- * 
+ *
  * if (loading) return <LoadingSpinner />;
  * if (!user) return <Login />;
  * if (!isAdmin) return <Unauthorized />;
- * 
+ *
  * return <AdminDashboard user={user} />;
  */
 export function useUser(): UseUserResult {
@@ -61,19 +63,21 @@ export function useUser(): UseUserResult {
 
       // This would need to be adapted for client-side
       // For now, we'll use a client-side approach
-      const response = await fetch('/api/auth/me');
+      const response = await fetch("/api/auth/me");
       const data = await response.json();
 
       if (data.success && data.user) {
         setUser(data.user);
-        logger.info('User fetched', { userId: data.user.id });
+        logger.info("User fetched", { userId: data.user.id });
       } else {
-        throw new Error(data.error || 'Failed to fetch user');
+        throw new Error(data.error || "Failed to fetch user");
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch user';
+      const errorMsg = err instanceof Error
+        ? err.message
+        : "Failed to fetch user";
       setError(errorMsg);
-      logger.error('Error fetching user', new Error(errorMsg));
+      logger.error("Error fetching user", new Error(errorMsg));
       setUser(null);
     } finally {
       setLoading(false);
@@ -88,11 +92,13 @@ export function useUser(): UseUserResult {
     }
   }, [fetchUser]);
 
-  const isAdmin = user?.role === 'admin';
-  const isStaff = user?.role === 'staff';
-  const isTeacher = user?.role === 'teacher';
-  const isStudent = user?.role === 'student';
+  const isAdmin = user?.role === "admin";
+  const isStaff = user?.role === "staff";
+  const isTeacher = user?.role === "teacher";
+  const isStudent = user?.role === "student";
   const hasAdminAccess = isAdmin || isStaff;
+  /** Returns true if user can perform teacher functions (admin, staff, or teacher) */
+  const hasTeacherCapabilities = isAdmin || isStaff || isTeacher;
 
   return {
     user,
@@ -103,6 +109,7 @@ export function useUser(): UseUserResult {
     isTeacher,
     isStudent,
     hasAdminAccess,
+    hasTeacherCapabilities,
     refetch: fetchUser,
   };
 }

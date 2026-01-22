@@ -5,9 +5,13 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getDataClient } from '@/lib/auth/dataClient'
+import { getDataClient } from "@/lib/auth/dataClient";
 import { adminAuth } from "@/lib/auth/adminAuth";
-import { handleApiError, AuthenticationError, ValidationError } from "@/lib/api/errors";
+import {
+  AuthenticationError,
+  handleApiError,
+  ValidationError,
+} from "@/lib/api/errors";
 import { logger } from "@/lib/logger";
 
 /**
@@ -21,15 +25,21 @@ export async function GET(request: NextRequest) {
       throw new AuthenticationError(authResult.reason || "Unauthorized");
     }
 
-  const { supabase } = await getDataClient(request);
+    const { supabase } = await getDataClient(request);
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search");
+    const includeStaff = searchParams.get("include_staff") !== "false"; // Default: include staff
 
-    // Build query
+    // Build query - include both teachers AND staff (who can also teach)
+    const roles = includeStaff ? ["teacher", "staff"] : ["teacher"];
+
     let query = supabase
       .from("profiles")
-      .select("id, full_name, email, role, date_of_birth, phone, address, created_at")
-      .eq("role", "teacher")
+      .select(
+        "id, full_name, email, role, date_of_birth, phone, address, created_at",
+      )
+      .in("role", roles)
+      .order("role", { ascending: true }) // Staff first, then teachers
       .order("full_name", { ascending: true });
 
     // Apply search filter
@@ -56,7 +66,7 @@ export async function GET(request: NextRequest) {
           ...teacher,
           class_count: classCount || 0,
         };
-      })
+      }),
     );
 
     return NextResponse.json({
@@ -68,8 +78,8 @@ export async function GET(request: NextRequest) {
         page: 1,
         limit: teachersWithStats.length,
         total: teachersWithStats.length,
-        total_pages: 1
-      }
+        total_pages: 1,
+      },
     });
   } catch (error) {
     return handleApiError(error);
@@ -87,7 +97,7 @@ export async function POST(request: NextRequest) {
       throw new AuthenticationError(authResult.reason || "Unauthorized");
     }
 
-  const { supabase } = await getDataClient(request);
+    const { supabase } = await getDataClient(request);
     const body = await request.json();
     const { email, full_name, date_of_birth, phone } = body;
 
@@ -97,11 +107,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Create auth user first
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password: Math.random().toString(36).slice(-8), // Temporary password
-      email_confirm: true,
-    });
+    const { data: authData, error: authError } = await supabase.auth.admin
+      .createUser({
+        email,
+        password: Math.random().toString(36).slice(-8), // Temporary password
+        email_confirm: true,
+      });
 
     if (authError) {
       logger.error("Create teacher auth error:", { error: authError });

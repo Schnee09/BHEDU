@@ -8,6 +8,7 @@
  */
 
 import React, { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 interface ResponsiveTableProps {
     children: ReactNode;
@@ -61,6 +62,7 @@ interface MobileCardProps {
         label: string;
         color: 'green' | 'red' | 'yellow' | 'blue' | 'gray';
     };
+    className?: string;
 }
 
 const statusColors = {
@@ -78,44 +80,48 @@ export function MobileCard({
     actions,
     onClick,
     status,
+    className = '',
 }: MobileCardProps) {
     return (
         <div
             onClick={onClick}
-            className={`
-        bg-white dark:bg-stone-800 
-        border border-stone-200 dark:border-stone-700 
-        rounded-xl p-4 
-        shadow-sm hover:shadow-md 
-        transition-shadow
-        ${onClick ? 'cursor-pointer' : ''}
-      `}
+            className={cn(`
+        bg-white dark:bg-[#1A1410] 
+        border border-stone-200 dark:border-[#2C2420]
+        rounded-2xl p-5
+        shadow-sm active:scale-[0.98] transition-all
+        ${onClick ? 'cursor-pointer hover:shadow-md' : ''}
+        relative overflow-hidden
+      `, className)}
         >
+            {/* Top Shine (Subtle) */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/10 to-transparent" />
+
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-stone-900 dark:text-stone-100 truncate">
+                    <div className="font-bold text-stone-900 dark:text-stone-100 text-lg leading-tight truncate">
                         {title}
                     </div>
                     {subtitle && (
-                        <div className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
+                        <div className="text-sm text-stone-500 dark:text-gray-400 mt-1 flex items-center gap-1.5 transition-colors">
                             {subtitle}
                         </div>
                     )}
                 </div>
                 {status && (
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 ${statusColors[status.color]}`}>
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${statusColors[status.color]}`}>
                         {status.label}
                     </span>
                 )}
             </div>
 
             {/* Fields */}
-            <div className="space-y-2">
+            <div className="space-y-3 bg-stone-50/50 dark:bg-white/5 rounded-xl p-3">
                 {fields.map((field, index) => (
                     <div key={index} className="flex justify-between items-center text-sm">
-                        <span className="text-stone-500 dark:text-stone-400">{field.label}</span>
-                        <span className="text-stone-800 dark:text-stone-200 font-medium text-right">
+                        <span className="text-stone-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">{field.label}</span>
+                        <span className="text-stone-800 dark:text-stone-200 font-semibold text-right">
                             {field.value}
                         </span>
                     </div>
@@ -124,7 +130,7 @@ export function MobileCard({
 
             {/* Actions */}
             {actions && (
-                <div className="flex gap-2 mt-4 pt-3 border-t border-stone-200 dark:border-stone-700">
+                <div className="flex gap-2 mt-5 pt-4 border-t border-stone-200 dark:border-[#2C2420]">
                     {actions}
                 </div>
             )}

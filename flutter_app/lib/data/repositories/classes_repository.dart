@@ -11,8 +11,7 @@ class ClassesRepository {
   Future<List<ClassModel>> getClasses() async {
     final response = await supabase
         .from('classes')
-        .select('*, teachers:teacher_id(full_name), subjects(name), rooms(name)')
-        .eq('is_active', true)
+        .select('*, teachers:profiles!teacher_id(full_name), subjects(name), rooms(name)')
         .order('name');
 
     return (response as List).map((json) => ClassModel.fromJson(json as Map<String, dynamic>)).toList();
@@ -24,7 +23,6 @@ class ClassesRepository {
         .from('classes')
         .select('*, subjects(name), rooms(name)')
         .eq('teacher_id', teacherId)
-        .eq('is_active', true)
         .order('name');
 
     return (response as List).map((json) => ClassModel.fromJson(json as Map<String, dynamic>)).toList();
@@ -34,7 +32,7 @@ class ClassesRepository {
   Future<ClassModel?> getClass(String classId) async {
     final response = await supabase
         .from('classes')
-        .select('*, teachers:teacher_id(full_name), subjects(name), rooms(name)')
+        .select('*, teachers:profiles!teacher_id(full_name), subjects(name), rooms(name)')
         .eq('id', classId)
         .maybeSingle();
 
@@ -48,7 +46,7 @@ class ClassesRepository {
         .from('enrollments')
         .select('id')
         .eq('class_id', classId)
-        .eq('status', 'active');
+        .eq('class_id', classId);
 
     return (response as List).length;
   }

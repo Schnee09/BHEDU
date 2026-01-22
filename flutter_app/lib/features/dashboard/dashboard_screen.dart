@@ -8,8 +8,17 @@ import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/ui/ui_components.dart';
-import '../../data/models/user_model.dart';
+import '../../data/models/profile_model.dart';
+import '../../data/repositories/dashboard_repository.dart';
 import '../../shared/providers/auth_provider.dart';
+import 'widgets/activity_feed.dart';
+
+/// Dashboard stats provider
+final dashboardRepoProvider = Provider((ref) => DashboardRepository());
+final dashboardStatsProvider = FutureProvider((ref) async {
+  final repo = ref.watch(dashboardRepoProvider);
+  return repo.getStats();
+});
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -78,6 +87,18 @@ class DashboardScreen extends ConsumerWidget {
                       title: 'Tổng quan',
                     ).animate().fadeIn(delay: 200.ms),
                     _SummaryCards(role: profile?.role ?? UserRole.student),
+                    
+                    const SizedBox(height: 24),
+
+                    // Activity Feed Section
+                    SectionHeader(
+                      title: 'Hoạt động gần đây',
+                    ).animate().fadeIn(delay: 300.ms),
+                    const SizedBox(height: 8),
+                    const ActivityFeed()
+                        .animate(delay: 350.ms)
+                        .fadeIn()
+                        .slideY(begin: 0.1, end: 0),
                   ],
                 ),
               ),
@@ -120,7 +141,7 @@ class _DashboardSkeleton extends StatelessWidget {
 
 /// Welcome card with user info
 class _WelcomeCard extends StatelessWidget {
-  final UserModel? profile;
+  final ProfileModel? profile;
   
   const _WelcomeCard({this.profile});
 
@@ -141,7 +162,7 @@ class _WelcomeCard extends StatelessWidget {
               radius: 32,
               backgroundColor: Colors.white24,
               child: Text(
-                profile?.initial ?? '?',
+                (profile != null && profile!.fullName.isNotEmpty ? profile!.fullName[0].toUpperCase() : '?'),
                 style: const TextStyle(
                   fontSize: 28,
                   color: Colors.white,
@@ -166,7 +187,7 @@ class _WelcomeCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  profile?.displayName ?? 'Người dùng',
+                  profile?.fullName.isNotEmpty == true ? profile!.fullName : 'Người dùng',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -319,68 +340,74 @@ class _QuickAction {
   _QuickAction(this.icon, this.label, this.color, this.onTap);
 }
 
-/// Summary cards based on role
-class _SummaryCards extends StatelessWidget {
+/// Summary cards based on role - uses real Supabase data
+class _SummaryCards extends ConsumerWidget {
   final UserRole role;
   
   const _SummaryCards({required this.role});
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                title: 'Hôm nay',
-                value: '5',
-                subtitle: 'Tiết học',
-                icon: Icons.school,
-                color: AppColors.info,
-                delay: 200,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(dashboardStatsProvider);
+    
+    return statsAsync.when(
+      data: (stats) => Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  title: 'Hôm nay',
+                  value: '${stats.todayLessons}',
+                  subtitle: 'Tiết học',
+                  icon: Icons.school,
+                  color: AppColors.info,
+                  delay: 200,
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _StatCard(
-                title: 'Chuyên cần',
-                value: '98%',
-                subtitle: 'Tháng này',
-                icon: Icons.check_circle,
-                color: AppColors.success,
-                delay: 300,
+              const SizedBox(width: 16),
+              Expanded(
+                child: _StatCard(
+                  title: 'Chuyên cần',
+                  value: '${stats.attendanceRate.toStringAsFixed(0)}%',
+                  subtitle: 'Tháng này',
+                  icon: Icons.check_circle,
+                  color: AppColors.success,
+                  delay: 300,
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                title: 'Điểm TB',
-                value: '8.5',
-                subtitle: 'Học kỳ 1',
-                icon: Icons.grade,
-                color: AppColors.primary,
-                delay: 400,
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  title: 'Điểm TB',
+                  value: stats.averageGrade.toStringAsFixed(1),
+                  subtitle: 'Học kỳ này',
+                  icon: Icons.grade,
+                  color: AppColors.primary,
+                  delay: 400,
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _StatCard(
-                title: 'Thông báo',
-                value: '2',
-                subtitle: 'Mới',
-                icon: Icons.notifications_active,
-                color: AppColors.warning,
-                delay: 500,
+              const SizedBox(width: 16),
+              Expanded(
+                child: _StatCard(
+                  title: 'Học sinh',
+                  value: '${stats.totalStudents}',
+                  subtitle: 'Đang học',
+                  icon: Icons.people,
+                  color: AppColors.warning,
+                  delay: 500,
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Text('Lỗi: $error', style: const TextStyle(color: Colors.red)),
     );
   }
 }

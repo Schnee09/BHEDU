@@ -155,10 +155,30 @@ export default function ReportGenerator() {
 
         setGenerating(true);
         try {
+            // Fetch school settings
+            let schoolName = 'TRUNG TÂM GIÁO DỤC BÙI HOÀNG';
+            let academicYear = '2024-2025';
+            
+            try {
+                const settingsRes = await apiFetch('/api/settings?category=school');
+                if (settingsRes.ok) {
+                    const { settings } = await settingsRes.json();
+                    if (settings.school_name) schoolName = settings.school_name;
+                }
+                
+                const academicRes = await apiFetch('/api/settings?key=academic_year');
+                if (academicRes.ok) {
+                    const { settings } = await academicRes.json();
+                    if (settings.academic_year) academicYear = settings.academic_year;
+                }
+            } catch {
+                // Use defaults if settings fetch fails
+            }
+
             const config: ReportConfig = {
                 title: REPORT_OPTIONS.find(r => r.id === selectedReport)?.titleVi || '',
-                schoolName: 'TRUNG TÂM GIÁO DỤC BÙI HOÀNG', // TODO: Get from settings
-                academicYear: '2024-2025',
+                schoolName,
+                academicYear,
                 generatedAt: new Date(),
             };
 

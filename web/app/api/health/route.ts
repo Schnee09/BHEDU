@@ -1,42 +1,46 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { logger } from '@/lib/logger'
+import { NextResponse } from "next/server";
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-
-// Simple health check for uptime monitoring
 export async function GET() {
-  const start = Date.now()
-  
   try {
-    // Check Supabase connectivity
-    const url = process.env.SUPABASE_URL
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-    
-    if (!url || !key) {
-      logger.error('Health check failed: missing Supabase env vars')
-      return NextResponse.json({ status: 'unhealthy', reason: 'missing env vars' }, { status: 503 })
+    const start = Date.now();
+    const res = await fetch("https://www.google.com", { method: "HEAD" });
+    const duration = Date.now() - start;
+
+    let supabaseRes = null;
+    try {
+      const sStart = Date.now();
+      const sURL = (process.env.NEXT_PUBLIC_SUPABASE_URL || "missing") +
+        "/rest/v1/";
+      const sRes = await fetch(sURL, {
+        method: "GET",
+        headers: { "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "" },
+      });
+      supabaseRes = {
+        status: sRes.status,
+        durationMs: Date.now() - sStart,
+        url: sURL,
+      };
+    } catch (sErr: any) {
+      supabaseRes = {
+        error: sErr.message,
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      };
     }
-    
-    const sb = createClient(url, key)
-    const { error } = await sb.from('profiles').select('id').limit(1).single()
-    
-    // Allow no rows (table might be empty) but not connection errors
-    if (error && error.code !== 'PGRST116') {
-      logger.error('Health check failed: Supabase query error', error)
-      return NextResponse.json({ status: 'unhealthy', reason: 'database error', error: error.message }, { status: 503 })
-    }
-    
-    const duration = Date.now() - start
-    return NextResponse.json({ 
-      status: 'healthy', 
-      timestamp: new Date().toISOString(),
-      duration_ms: duration,
-      service: 'bh-edu-web'
-    })
-  } catch (err) {
-    logger.error('Health check exception', err)
-    return NextResponse.json({ status: 'unhealthy', reason: 'exception' }, { status: 503 })
+
+    return NextResponse.json({
+      status: "ok",
+      googleStatus: res.status,
+      googleDurationMs: duration,
+      supabase: supabaseRes,
+      nodeVersion: process.version,
+      env: process.env.NODE_ENV,
+    });
+  } catch (err: any) {
+    return NextResponse.json({
+      status: "error",
+      message: err.message,
+      stack: err.stack,
+      nodeVersion: process.version,
+    }, { status: 500 });
   }
 }

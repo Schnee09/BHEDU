@@ -268,12 +268,22 @@ export function isLinkVisible(
 export const ROLE_SPECIFIC_LABELS: Partial<
   Record<UserRole, Record<string, string>>
 > = {
+  staff: {
+    "/dashboard/classes": "Quản lý lớp học",
+    "/dashboard/students": "Quản lý học sinh",
+    "/dashboard/users": "Quản lý người dùng",
+    "/dashboard/attendance/mark": "Điểm danh học sinh",
+    "/dashboard/grades/entry": "Quản lý điểm số",
+  },
   teacher: {
     "/dashboard/classes": "Lớp học của tôi",
+    "/dashboard/grades/entry": "Nhập điểm",
+    "/dashboard/attendance/mark": "Điểm danh lớp",
   },
   student: {
     "/dashboard/classes": "Lớp học của tôi",
     "/dashboard/grades/analytics": "Điểm số của tôi",
+    "/dashboard/attendance/history": "Lịch sử điểm danh",
   },
 };
 

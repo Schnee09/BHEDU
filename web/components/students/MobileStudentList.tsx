@@ -3,6 +3,7 @@
 import { Edit, Archive, Phone, Mail, Calendar, MapPin, UserCheck, UserX } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Student {
     id: string;
@@ -47,7 +48,7 @@ export default function MobileStudentList({
     }
 
     return (
-        <div className="space-y-4 pb-20 md:hidden">
+        <div className="space-y-4 pb-20 md:hidden animate-fade-in">
             {students.map((student) => {
                 const isSelected = selectedIds.has(student.id);
                 const isActive = student.status === 'active';
@@ -55,17 +56,19 @@ export default function MobileStudentList({
                 return (
                     <div
                         key={student.id}
-                        className={`
-              bg-white dark:bg-[#1A1410] rounded-2xl p-5 shadow-sm border transition-all active:scale-[0.98]
-              relative overflow-hidden
-              ${isSelected
+                        className={cn(
+                            "bg-white dark:bg-[#1A1410] rounded-2xl p-5 shadow-sm border transition-all active:scale-[0.98] relative overflow-hidden press-effect",
+                            isSelected
                                 ? 'border-amber-500 ring-1 ring-amber-500 bg-amber-50/5 dark:bg-amber-900/5'
-                                : 'border-stone-100 dark:border-[#2C2420]'}
-            `}
+                                : 'border-stone-100 dark:border-[#2C2420]'
+                        )}
                         onClick={() => onSelect(student.id)}
                     >
                         {/* Status Accent */}
-                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${isActive ? 'bg-green-500' : 'bg-stone-300'}`} />
+                        <div className={cn(
+                            "absolute left-0 top-0 bottom-0 w-1",
+                            isActive ? 'bg-green-500' : 'bg-stone-300'
+                        )} />
 
                         <div className="flex justify-between items-start gap-3 mb-4">
                             <div className="flex-1 min-w-0">
@@ -83,12 +86,20 @@ export default function MobileStudentList({
                                     <span className="text-xs text-stone-500 dark:text-stone-400 font-mono tracking-tight">
                                         {student.student_code || 'HS-XXXX'}
                                     </span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${isActive ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400' : 'bg-stone-100 text-stone-600 border-stone-200 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-400'}`}>
+                                    <span className={cn(
+                                        "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                                        isActive 
+                                            ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400' 
+                                            : 'bg-stone-100 text-stone-600 border-stone-200 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-400'
+                                    )}>
                                         {isActive ? 'Active' : 'Archived'}
                                     </span>
                                 </div>
                             </div>
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'border-stone-300 dark:border-stone-600'}`}>
+                            <div className={cn(
+                                "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                                isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'border-stone-300 dark:border-stone-600'
+                            )}>
                                 {isSelected && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                             </div>
                         </div>
@@ -126,7 +137,7 @@ export default function MobileStudentList({
                                     e.stopPropagation();
                                     onEdit(student);
                                 }}
-                                className="flex-1 py-3 bg-white dark:bg-[#2C2420] hover:bg-stone-50 dark:hover:bg-[#3D342C] border border-stone-200 dark:border-[#3D342C] rounded-xl text-sm font-bold text-stone-700 dark:text-stone-200 flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
+                                className="flex-1 h-12 bg-white dark:bg-[#2C2420] hover:bg-stone-50 dark:hover:bg-[#3D342C] border border-stone-200 dark:border-[#3D342C] rounded-xl text-sm font-bold text-stone-700 dark:text-stone-200 flex items-center justify-center gap-2 transition-all shadow-sm press-effect tap-target"
                             >
                                 <Edit className="w-4 h-4 text-blue-500" />
                                 Chỉnh sửa
@@ -137,7 +148,7 @@ export default function MobileStudentList({
                                         e.stopPropagation();
                                         onArchive(student);
                                     }}
-                                    className="px-4 py-3 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-xl text-sm font-bold text-red-600 dark:text-red-400 flex items-center justify-center transition-all shadow-sm active:scale-95"
+                                    className="w-12 h-12 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-xl text-sm font-bold text-red-600 dark:text-red-400 flex items-center justify-center transition-all shadow-sm press-effect tap-target"
                                     aria-label="Lưu trữ"
                                 >
                                     <Archive className="w-4 h-4" />

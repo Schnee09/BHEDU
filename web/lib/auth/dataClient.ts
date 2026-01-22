@@ -1,4 +1,8 @@
-import { createClient, createServiceClient, createClientFromRequest } from '@/lib/supabase/server';
+import {
+  createClient,
+  createClientFromRequest,
+  createServiceClient,
+} from "@/lib/supabase/server";
 
 /**
  * Returns a Supabase client suitable for the current request/viewer.
@@ -12,33 +16,44 @@ import { createClient, createServiceClient, createClientFromRequest } from '@/li
  * callers can adapt UI/permissions accordingly.
  */
 export async function getDataClient(request?: Request) {
-  // Use a request-bound client when available (API routes). Otherwise use
-  // the cookie-aware server client for server components.
-  const authClient = request ? createClientFromRequest(request) : await createClient();
-  const { data: auth } = await authClient.auth.getUser();
-  const user = auth?.user ?? null;
+  try {
+    const authClient = request
+      ? createClientFromRequest(request)
+      : await createClient();
+    const { data: auth, error: authError } = await authClient.auth.getUser();
 
-  let viewerRole: string | null = null;
-  if (user) {
-    try {
-      const { data: viewer } = await authClient
-        .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      viewerRole = (viewer as { role?: string } | null)?.role ?? null;
-    } catch (_e) {
-      // If reading the profile fails for any reason, default to null
-      viewerRole = null;
+    if (authError) {
+      console.warn("[getDataClient] auth.getUser() error:", authError);
     }
+
+    const user = auth?.user ?? null;
+
+    let viewerRole: string | null = null;
+    if (user) {
+      try {
+        const { data: viewer } = await authClient
+          .from("profiles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        viewerRole = (viewer as { role?: string } | null)?.role ?? null;
+      } catch (profileCatchError) {
+        console.warn(
+          "[getDataClient] profile query caught error:",
+          profileCatchError,
+        );
+        viewerRole = null;
+      }
+    }
+
+    const usingServiceClient = viewerRole === "admin";
+    const supabase = usingServiceClient ? createServiceClient() : authClient;
+
+    return { supabase, viewerRole, user, usingServiceClient } as const;
+  } catch (outerError) {
+    console.error("[getDataClient] FATAL ERROR:", outerError);
+    throw outerError; // Re-throw to be caught by the caller (e.g. teacherAuth)
   }
-
-  const usingServiceClient = viewerRole === 'admin';
-  // If viewer is admin, prefer the service-role client (bypasses RLS). Otherwise
-  // continue to use the request/cookie-aware client.
-  const supabase = usingServiceClient ? createServiceClient() : authClient;
-
-  return { supabase, viewerRole, user, usingServiceClient } as const;
 }
 
 export type DataClientResult = Awaited<ReturnType<typeof getDataClient>>;

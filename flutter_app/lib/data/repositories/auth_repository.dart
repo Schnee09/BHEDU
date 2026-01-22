@@ -1,79 +1,62 @@
-/// Authentication Repository - handles Supabase auth operations
+/// Auth Repository
+/// Handles authentication and user profile loading
 library;
 
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../config/supabase_config.dart';
-import '../models/user_model.dart';
+import '../models/profile_model.dart';
+import 'base_repository.dart';
 
-class AuthRepository {
+class AuthRepository extends BaseRepository {
   AuthRepository();
 
-  /// Get current auth user
-  User? get currentAuthUser => supabase.auth.currentUser;
-
-  /// Get current session
-  Session? get currentSession => supabase.auth.currentSession;
-
-  /// Check if user is authenticated
-  bool get isAuthenticated => currentSession != null;
-
-  /// Sign in with email and password
-  Future<AuthResponse> signInWithEmail({
-    required String email,
-    required String password,
-  }) async {
-    return await supabase.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
+  /// Login with email and password
+  Future<AuthResponse> login(String email, String password) async {
+    return handleAsyncErrors(() async {
+      return await supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+    });
   }
 
-  /// Sign out
-  Future<void> signOut() async {
-    await supabase.auth.signOut();
+  /// Logout
+  Future<void> logout() async {
+    return handleAsyncErrors(() async {
+      await supabase.auth.signOut();
+    });
   }
 
-  /// Get user profile from profiles table
-  Future<UserModel?> getUserProfile(String userId) async {
-    final response = await supabase
-        .from('profiles')
-        .select()
-        .eq('user_id', userId)
-        .maybeSingle();
-    
-    if (response == null) return null;
-    return UserModel.fromJson(response);
+  /// Get current user profile
+  Future<ProfileModel?> getCurrentProfile() async {
+    return handleAsyncErrors(() async {
+      final user = currentUser;
+      if (user == null) return null;
+
+      print('[AuthRepository] Fetching profile for user: ${user.id}');
+
+      final response = await supabase
+          .from('profiles')
+          .select()
+          .eq('user_id', user.id) // Or 'id' depending on if PK is uuid or user_id
+          // Web schema usually links profiles.id to auth.users.id
+          // or profiles.user_id to auth.users.id
+          // Let's rely on standard Supabase pattern: profiles.id matches auth.uid
+          .maybeSingle();
+
+      if (response == null) {
+        // Fallback: try querying by id directly if user_id column doesn't exist/work
+        final responseById = await supabase
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+        
+         if (responseById != null) {
+            return ProfileModel.fromJson(responseById);
+         }
+         return null;
+      }
+      
+      return ProfileModel.fromJson(response);
+    });
   }
-
-  /// Update user profile
-  Future<UserModel?> updateProfile({
-    required String profileId,
-    String? fullName,
-    String? phone,
-    String? avatarUrl,
-  }) async {
-    final updates = <String, dynamic>{
-      'updated_at': DateTime.now().toIso8601String(),
-    };
-    if (fullName != null) updates['full_name'] = fullName;
-    if (phone != null) updates['phone'] = phone;
-    if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
-
-    final response = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', profileId)
-        .select()
-        .single();
-
-    return UserModel.fromJson(response);
-  }
-
-  /// Reset password
-  Future<void> resetPassword(String email) async {
-    await supabase.auth.resetPasswordForEmail(email);
-  }
-
-  /// Listen to auth state changes
-  Stream<AuthState> get authStateChanges => supabase.auth.onAuthStateChange;
 }

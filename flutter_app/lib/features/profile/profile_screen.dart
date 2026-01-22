@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
-import '../../data/models/user_model.dart';
+import '../../data/models/profile_model.dart';
 import '../../shared/providers/auth_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -72,7 +72,7 @@ class ProfileScreen extends ConsumerWidget {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  final UserModel? profile;
+  final ProfileModel? profile;
 
   const _ProfileHeader({this.profile});
 
@@ -111,7 +111,7 @@ class _ProfileHeader extends StatelessWidget {
         const SizedBox(height: 16),
         // Name
         Text(
-          profile?.displayName ?? 'User',
+          profile?.fullName ?? 'User',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -314,7 +314,7 @@ class _ProfileActionsCard extends StatelessWidget {
                 ),
               );
               if (confirmed == true) {
-                await ref.read(authNotifierProvider.notifier).signOut();
+                await ref.read(authNotifierProvider.notifier).logout();
               }
             },
           ),

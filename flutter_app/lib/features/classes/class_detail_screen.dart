@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../data/models/class_model.dart';
-import '../../data/models/student_model.dart';
+import '../../data/models/profile_model.dart';
 import '../../data/repositories/classes_repository.dart';
 import '../../data/repositories/students_repository.dart';
 
@@ -17,7 +17,7 @@ final selectedClassProvider = FutureProvider.family<ClassModel?, String>((ref, c
 });
 
 /// Class students provider
-final classStudentsProvider = FutureProvider.family<List<StudentModel>, String>((ref, classId) async {
+final classStudentsProvider = FutureProvider.family<List<ProfileModel>, String>((ref, classId) async {
   final repo = ref.watch(Provider((ref) => StudentsRepository()));
   return repo.getStudentsInClass(classId);
 });
@@ -85,7 +85,7 @@ class ClassDetailScreen extends ConsumerWidget {
 
 class _ClassDetailView extends StatelessWidget {
   final ClassModel classModel;
-  final AsyncValue<List<StudentModel>> studentsAsync;
+  final AsyncValue<List<ProfileModel>> studentsAsync;
 
   const _ClassDetailView({
     required this.classModel,
@@ -361,7 +361,7 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _StudentTile extends StatelessWidget {
-  final StudentModel student;
+  final ProfileModel student;
 
   const _StudentTile({required this.student});
 

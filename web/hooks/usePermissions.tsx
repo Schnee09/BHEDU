@@ -128,6 +128,7 @@ export function usePermissions() {
   const isStaff = profile?.role === 'staff' || isAdmin;
   const isTeacher = profile?.role === 'teacher';
   const isStudent = profile?.role === 'student';
+  const hasTeacherCapabilities = isAdmin || profile?.role === 'staff' || isTeacher;
 
   return {
     // State
@@ -147,6 +148,7 @@ export function usePermissions() {
     isStaff,
     isTeacher,
     isStudent,
+    hasTeacherCapabilities,
 
     // Utilities
     getPermissionInfo: (code: PermissionCode) => PERMISSIONS[code],

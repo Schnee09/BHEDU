@@ -33,9 +33,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    await ref.read(authNotifierProvider.notifier).signIn(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
+    await ref.read(authNotifierProvider.notifier).login(
+      _emailController.text.trim(),
+      _passwordController.text,
     );
 
     if (mounted) {
@@ -56,8 +56,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
+      body: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          // Golden ambient gradient matching web
+          gradient: RadialGradient(
+            center: Alignment.topRight,
+            radius: 1.5,
+            colors: [
+              Color(0x26F5A623), // Golden amber with 15% opacity
+              Colors.transparent,
+            ],
+          ),
+        ),
+        child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -181,7 +193,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
-      ),
-    );
+        ),  // Close SafeArea
+      ),  // Close Container
+    );  // Close Scaffold
   }
 }

@@ -1,74 +1,91 @@
 /**
  * Attendance Reports API
  * GET /api/attendance/reports
- * 
+ *
  * Get attendance reports with analytics and filtering
  */
 
-import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
-import { teacherAuth } from '@/lib/auth/adminAuth'
-import { logger } from '@/lib/logger'
+import { NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { teacherAuth } from "@/lib/auth/adminAuth";
+import { logger } from "@/lib/logger";
+import fs from "fs";
+import path from "path";
+
+function debugLog(message: string, data?: any) {
+  const logMsg = `[${new Date().toISOString()}] [REPORTS] ${message} ${
+    data ? JSON.stringify(data, null, 2) : ""
+  }\n`;
+  try {
+    fs.appendFileSync(path.join(process.cwd(), "api_debug.log"), logMsg);
+  } catch (e) {
+    console.error("Failed to write to debug log", e);
+  }
+}
 
 export async function GET(request: Request) {
   try {
+    debugLog("🔍 Reports API called");
     // Teacher or admin authentication
-    const authResult = await teacherAuth(request)
+    const authResult = await teacherAuth(request);
     if (!authResult.authorized) {
-      logger.warn('Unauthorized attendance reports request', { reason: authResult.reason })
+      debugLog("❌ Unauthorized", authResult.reason);
+      logger.warn("Unauthorized attendance reports request", {
+        reason: authResult.reason,
+      });
       return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      )
+        { error: authResult.reason || "Unauthorized" },
+        { status: 401 },
+      );
     }
 
-    const supabase = createServiceClient()
-    const { searchParams } = new URL(request.url)
-    
+    const supabase = createServiceClient();
+    const { searchParams } = new URL(request.url);
+
     // Get query parameters
-    const classId = searchParams.get('classId')
-    const studentId = searchParams.get('studentId')
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-    const status = searchParams.get('status')
+    const classId = searchParams.get("classId");
+    const studentId = searchParams.get("studentId");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const status = searchParams.get("status");
 
     // Build the query - avoid embedded joins, fetch separately
     let query = supabase
-      .from('attendance')
-      .select('*')
-      .order('date', { ascending: false })
+      .from("attendance")
+      .select("*")
+      .order("date", { ascending: false });
 
     // Apply filters
     if (classId) {
-      query = query.eq('class_id', classId)
+      query = query.eq("class_id", classId);
     }
 
     if (studentId) {
-      query = query.eq('student_id', studentId)
+      query = query.eq("student_id", studentId);
     }
 
     if (startDate) {
-      query = query.gte('date', startDate)
+      query = query.gte("date", startDate);
     }
 
     if (endDate) {
-      query = query.lte('date', endDate)
+      query = query.lte("date", endDate);
     }
 
     if (status) {
-      query = query.eq('status', status)
+      query = query.eq("status", status);
     }
 
     // If not admin, filter by teacher's classes
-    if (authResult.userRole !== 'admin') {
+    if (authResult.userRole !== "admin") {
       const { data: teacherClasses } = await supabase
-        .from('classes')
-        .select('id')
-        .eq('teacher_id', authResult.userId)
+        .from("classes")
+        .select("id")
+        .eq("teacher_id", authResult.userId);
 
-      const classIds = teacherClasses?.map(c => c.id) || []
+      const classIds = teacherClasses?.map((c) => c.id) || [];
       if (classIds.length > 0) {
-        query = query.in('class_id', classIds)
+        query = query.in("class_id", classIds);
       } else {
         // Teacher has no classes
         return NextResponse.json({
@@ -78,127 +95,153 @@ export async function GET(request: Request) {
             totalRecords: 0,
             totalPresent: 0,
             totalAbsent: 0,
-            totalLate: 0,
-            totalExcused: 0,
-            totalHalfDay: 0,
             attendanceRate: 0,
             byStatus: {},
             byClass: {},
-            byStudent: {}
-          }
-        })
+            byStudent: {},
+          },
+        });
       }
     }
 
-    const { data: records, error } = await query
+    const { data: records, error } = await query;
 
     if (error) {
-      logger.error('Failed to fetch attendance reports:', new Error(error.message))
+      logger.error(
+        "Failed to fetch attendance reports:",
+        new Error(error.message),
+      );
       return NextResponse.json(
-        { error: 'Failed to fetch reports', details: error.message },
-        { status: 500 }
-      )
+        { error: "Failed to fetch reports", details: error.message },
+        { status: 500 },
+      );
     }
 
     // Batch fetch student and class data
-    const studentIds = Array.from(new Set((records || []).map(r => r.student_id).filter(Boolean)))
-    const classIds = Array.from(new Set((records || []).map(r => r.class_id).filter(Boolean)))
+    const studentIds = Array.from(
+      new Set((records || []).map((r) => r.student_id).filter(Boolean)),
+    );
+    const classIds = Array.from(
+      new Set((records || []).map((r) => r.class_id).filter(Boolean)),
+    );
 
-    const studentsMap: Record<string, any> = {}
+    const studentsMap: Record<string, any> = {};
     if (studentIds.length > 0) {
       const { data: students } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, student_id, grade_level')
-        .in('id', studentIds as string[])
-      
-      students?.forEach(s => { studentsMap[s.id] = s })
+        .from("profiles")
+        .select("id, email, full_name, student_id, grade_level")
+        .in("id", studentIds as string[]);
+
+      students?.forEach((s) => {
+        studentsMap[s.id] = s;
+      });
     }
 
-    const classesMap: Record<string, any> = {}
+    const classesMap: Record<string, any> = {};
     if (classIds.length > 0) {
       const { data: classes } = await supabase
-        .from('classes')
-        .select('id, name')
-        .in('id', classIds as string[])
-      
-      classes?.forEach(c => { classesMap[c.id] = c })
+        .from("classes")
+        .select("id, name")
+        .in("id", classIds as string[]);
+
+      classes?.forEach((c) => {
+        classesMap[c.id] = c;
+      });
     }
 
     // Attach student and class data to records
-    const enrichedRecords = records?.map(record => ({
+    const enrichedRecords = records?.map((record) => ({
       ...record,
       student: studentsMap[record.student_id] || null,
-      class: classesMap[record.class_id] || null
-    })) || []
+      class: classesMap[record.class_id] || null,
+    })) || [];
+
+    debugLog(`Enriched records count: ${enrichedRecords.length}`);
+    if (enrichedRecords.length > 0) {
+      debugLog("Sample enriched record:", enrichedRecords[0]);
+    }
 
     // Calculate analytics using enriched records
-    const totalRecords = enrichedRecords?.length || 0
-    const totalPresent = enrichedRecords?.filter(r => r.status === 'present').length || 0
-    const totalAbsent = enrichedRecords?.filter(r => r.status === 'absent').length || 0
-    const totalLate = enrichedRecords?.filter(r => r.status === 'late').length || 0
-    const totalExcused = enrichedRecords?.filter(r => r.status === 'excused').length || 0
-    const totalHalfDay = enrichedRecords?.filter(r => r.status === 'half_day').length || 0
-    
+    const totalRecords = enrichedRecords?.length || 0;
+    const totalPresent = enrichedRecords?.filter((r) =>
+      r.status === "present"
+    ).length || 0;
+    const totalAbsent = enrichedRecords?.filter((r) =>
+      r.status === "absent"
+    ).length || 0;
+
     const attendanceRate = totalRecords > 0
-      ? Math.round(((totalPresent + totalLate + totalHalfDay * 0.5) / totalRecords) * 100)
-      : 0
+      ? Math.round((totalPresent / totalRecords) * 100)
+      : 0;
 
     // Group by status
-    const byStatus: Record<string, number> = {}
-    enrichedRecords?.forEach(record => {
-      byStatus[record.status] = (byStatus[record.status] || 0) + 1
-    })
+    const byStatus: Record<string, number> = {};
+    enrichedRecords?.forEach((record) => {
+      byStatus[record.status] = (byStatus[record.status] || 0) + 1;
+    });
 
     // Group by class
-    const byClass: Record<string, { name: string; count: number; present: number; rate: number }> = {}
-    enrichedRecords?.forEach(record => {
-      const classKey = record.class_id
+    const byClass: Record<
+      string,
+      { name: string; count: number; present: number; rate: number }
+    > = {};
+    enrichedRecords?.forEach((record) => {
+      const classKey = record.class_id;
       if (!byClass[classKey]) {
         byClass[classKey] = {
-          name: record.class?.name || 'Unknown',
+          name: record.class?.name || "Unknown",
           count: 0,
           present: 0,
-          rate: 0
-        }
+          rate: 0,
+        };
       }
-      byClass[classKey].count++
-      if (record.status === 'present' || record.status === 'late' || record.status === 'half_day') {
-        byClass[classKey].present += record.status === 'half_day' ? 0.5 : 1
+      byClass[classKey].count++;
+      if (record.status === "present") {
+        byClass[classKey].present++;
       }
-    })
+    });
 
     // Calculate rates for each class
-    Object.keys(byClass).forEach(key => {
+    Object.keys(byClass).forEach((key) => {
       byClass[key].rate = byClass[key].count > 0
         ? Math.round((byClass[key].present / byClass[key].count) * 100)
-        : 0
-    })
+        : 0;
+    });
 
     // Group by student
-    const byStudent: Record<string, { name: string; studentId: string; count: number; present: number; rate: number }> = {}
-    enrichedRecords?.forEach(record => {
-      const studentKey = record.student_id
+    const byStudent: Record<
+      string,
+      {
+        name: string;
+        studentId: string;
+        count: number;
+        present: number;
+        rate: number;
+      }
+    > = {};
+    enrichedRecords?.forEach((record) => {
+      const studentKey = record.student_id;
       if (!byStudent[studentKey]) {
         byStudent[studentKey] = {
-          name: record.student?.full_name || 'Unknown',
-          studentId: record.student?.student_id || '',
+          name: record.student?.full_name || "Unknown",
+          studentId: record.student?.student_id || "",
           count: 0,
           present: 0,
-          rate: 0
-        }
+          rate: 0,
+        };
       }
-      byStudent[studentKey].count++
-      if (record.status === 'present' || record.status === 'late' || record.status === 'half_day') {
-        byStudent[studentKey].present += record.status === 'half_day' ? 0.5 : 1
+      byStudent[studentKey].count++;
+      if (record.status === "present") {
+        byStudent[studentKey].present++;
       }
-    })
+    });
 
     // Calculate rates for each student
-    Object.keys(byStudent).forEach(key => {
+    Object.keys(byStudent).forEach((key) => {
       byStudent[key].rate = byStudent[key].count > 0
         ? Math.round((byStudent[key].present / byStudent[key].count) * 100)
-        : 0
-    })
+        : 0;
+    });
 
     return NextResponse.json({
       success: true,
@@ -207,20 +250,17 @@ export async function GET(request: Request) {
         totalRecords,
         totalPresent,
         totalAbsent,
-        totalLate,
-        totalExcused,
-        totalHalfDay,
         attendanceRate,
         byStatus,
         byClass,
-        byStudent
-      }
-    })
+        byStudent,
+      },
+    });
   } catch (error) {
-    logger.error('Attendance reports error:', error)
+    logger.error("Attendance reports error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
-import '../../data/models/student_model.dart';
+import '../../data/models/profile_model.dart';
 import '../../data/repositories/students_repository.dart';
 import '../../data/repositories/grades_repository.dart';
 
@@ -26,7 +26,7 @@ class GradeEntryScreen extends ConsumerStatefulWidget {
 }
 
 class _GradeEntryScreenState extends ConsumerState<GradeEntryScreen> {
-  List<StudentModel> _students = [];
+  List<ProfileModel> _students = [];
   bool _isLoading = true;
   GradeCategory _selectedCategory = GradeCategory.oral;
   final Map<String, TextEditingController> _scoreControllers = {};
@@ -189,7 +189,7 @@ class _GradeEntryScreenState extends ConsumerState<GradeEntryScreen> {
 }
 
 class _StudentGradeCard extends StatelessWidget {
-  final StudentModel student;
+  final ProfileModel student;
   final TextEditingController controller;
 
   const _StudentGradeCard({

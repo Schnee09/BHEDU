@@ -13,7 +13,7 @@ class GradesRepository {
   }) async {
     final response = await supabase
         .from('grades')
-        .select('*, students(full_name), subjects(name), classes(name)')
+        .select('*, profiles(full_name), subjects(name), classes(name)')
         .eq('student_id', studentId)
         .order('created_at', ascending: false)
         .limit(100);
@@ -83,7 +83,7 @@ class GradesRepository {
           'semester': semester,
           'academic_year': academicYear,
         })
-        .select('*, students(full_name), subjects(name)')
+        .select('*, profiles(full_name), subjects(name)')
         .single();
 
     return GradeModel.fromJson(response);

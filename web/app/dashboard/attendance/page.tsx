@@ -13,15 +13,17 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui";
 import { routes } from "@/lib/routes";
+import { ResponsiveTable, MobileCard } from "@/components/ui/ResponsiveTable";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 
 interface AttendanceRecord {
   id: string;
   date: string;
-  status: 'present' | 'absent' | 'late' | 'excused';
-  checkInTime: string | null;
-  notes: string | null;
+  status: 'present' | 'absent';
+  remarks: string | null;
   className: string;
-  subjectName: string;
+  subjectName?: string;
 }
 
 interface AttendanceStats {
@@ -45,6 +47,7 @@ export default function AttendancePage() {
     endDate: '',
     status: 'all'
   });
+  const [recentClasses, setRecentClasses] = useState<any[]>([]);
 
   const fetchAttendance = useCallback(async () => {
     try {
@@ -135,14 +138,28 @@ export default function AttendancePage() {
     return () => clearInterval(timer);
   }, [retryCountdown]);
 
-  // Fetch attendance for students
+  // Fetch attendance for students or classes for teachers
   useEffect(() => {
     if (profile?.role === 'student') {
       fetchAttendance();
-    } else if (profile) {
-      setLoading(false);
+    } else if (profile?.role === 'teacher' || profile?.role === 'admin') {
+      loadTeacherContext();
     }
   }, [profile, fetchAttendance]);
+
+  const loadTeacherContext = async () => {
+    try {
+      const res = await apiFetch('/api/classes/my-classes');
+      if (res.ok) {
+        const data = await res.json();
+        setRecentClasses((data.data || data.classes || []).slice(0, 5));
+      }
+    } catch (err) {
+      console.error('Failed to load teacher context:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (isProfileLoading || (profile?.role === 'student' && loading)) {
     return (
@@ -242,183 +259,175 @@ export default function AttendancePage() {
           </div>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="bg-white">
-              <CardBody className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-stone-500">Tổng số ngày</p>
-                  <p className="text-2xl font-bold text-stone-900">{stats.totalDays}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group press-effect">
+                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
+                    <Icons.Calendar className="w-12 h-12 text-blue-600" />
                 </div>
-                <div className="p-2 bg-blue-50 rounded-full">
-                  <Icons.Calendar className="w-5 h-5 text-blue-600" />
+                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Tổng số ngày</p>
+                <p className="text-3xl font-black text-stone-900 dark:text-stone-100">{stats.totalDays}</p>
+                <div className="h-1 w-8 bg-blue-500 rounded-full" />
+            </div>
+            
+            <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group press-effect">
+                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
+                    <Icons.Success className="w-12 h-12 text-green-600" />
                 </div>
-              </CardBody>
-            </Card>
-            <Card className="bg-white">
-              <CardBody className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-stone-500">Có mặt</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.presentDays}</p>
+                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Có mặt</p>
+                <p className="text-3xl font-black text-green-600">{stats.presentDays}</p>
+                <div className="h-1 w-8 bg-green-500 rounded-full" />
+            </div>
+
+            <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group press-effect">
+                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
+                    <Icons.Error className="w-12 h-12 text-red-600" />
                 </div>
-                <div className="p-2 bg-green-50 rounded-full">
-                  <Icons.Success className="w-5 h-5 text-green-600" />
+                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Vắng mặt</p>
+                <p className="text-3xl font-black text-red-600">{stats.absentDays}</p>
+                <div className="h-1 w-8 bg-red-500 rounded-full" />
+            </div>
+
+            <div className="bg-white dark:bg-[#1C1814] rounded-2xl p-4 border border-amber-500/20 shadow-lg shadow-amber-500/5 flex flex-col justify-between h-32 relative overflow-hidden group press-effect">
+                <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:scale-110 transition-transform">
+                    <Icons.Chart className="w-12 h-12 text-amber-500" />
                 </div>
-              </CardBody>
-            </Card>
-            <Card className="bg-white">
-              <CardBody className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-stone-500">Vắng mặt</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.absentDays}</p>
-                </div>
-                <div className="p-2 bg-red-50 rounded-full">
-                  <Icons.Error className="w-5 h-5 text-red-600" />
-                </div>
-              </CardBody>
-            </Card>
-            <Card className="bg-white">
-              <CardBody className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-stone-500">Tỷ lệ có mặt</p>
-                  <p className="text-2xl font-bold text-purple-600">{stats.attendanceRate}%</p>
-                </div>
-                <div className="p-2 bg-purple-50 rounded-full">
-                  <Icons.Chart className="w-5 h-5 text-purple-600" />
-                </div>
-              </CardBody>
-            </Card>
+                <p className="text-xs font-bold text-amber-500/80 uppercase tracking-widest">Tỷ lệ</p>
+                <p className="text-3xl font-black text-amber-500">{stats.attendanceRate}%</p>
+                <div className="h-1 w-12 bg-amber-500 rounded-full" />
+            </div>
           </div>
 
-          {/* Attendance Records Table */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-stone-900">Lịch sử điểm danh</h2>
-                  <p className="text-stone-600 text-sm">Chi tiết các buổi học đã điểm danh</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
+          {/* Attendance Records */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+                <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">Lịch sử điểm danh</h2>
+                <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowFilters(!showFilters)}
-                    className="flex items-center gap-2"
-                  >
-                    <Icons.Filter className="w-4 h-4" />
-                    Bộ lọc
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardBody>
-              {showFilters && (
-                <div className="mb-6 p-4 bg-stone-50 rounded-lg border">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1">
-                        Từ ngày
-                      </label>
-                      <Input
-                        type="date"
-                        value={filters.startDate}
-                        onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1">
-                        Đến ngày
-                      </label>
-                      <Input
-                        type="date"
-                        value={filters.endDate}
-                        onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1">
-                        Trạng thái
-                      </label>
-                      <Select
-                        value={filters.status}
-                        onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                      >
-                        <option value="all">Tất cả</option>
-                        <option value="present">Có mặt</option>
-                        <option value="absent">Vắng mặt</option>
-                        <option value="late">Đến muộn</option>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
+                    className="tap-target px-4 rounded-xl border-stone-200 dark:border-stone-800"
+                >
+                    <Icons.Filter className="w-4 h-4 mr-2" />
+                    Lọc
+                </Button>
+            </div>
 
-              {loading ? (
+            {showFilters && (
+                <Card className="animate-slide-down">
+                    <CardBody>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Từ ngày</label>
+                                <Input
+                                    type="date"
+                                    value={filters.startDate}
+                                    className="rounded-xl border-stone-100"
+                                    onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Đến ngày</label>
+                                <Input
+                                    type="date"
+                                    value={filters.endDate}
+                                    className="rounded-xl border-stone-100"
+                                    onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Trạng thái</label>
+                                <Select
+                                    value={filters.status}
+                                    className="rounded-xl border-stone-100"
+                                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                                >
+                                    <option value="all">Tất cả</option>
+                                    <option value="present">Có mặt</option>
+                                    <option value="absent">Vắng mặt</option>
+                                </Select>
+                            </div>
+                        </div>
+                    </CardBody>
+                </Card>
+            )}
+
+            {loading ? (
                 <div className="space-y-4">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="animate-pulse">
-                      <div className="h-4 bg-stone-200 rounded w-full mb-2"></div>
-                      <div className="h-4 bg-stone-200 rounded w-3/4"></div>
-                    </div>
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-32 bg-stone-100 dark:bg-stone-800 rounded-2xl skeleton-shimmer" />
                   ))}
                 </div>
-              ) : attendanceRecords.length === 0 ? (
+            ) : attendanceRecords.length === 0 ? (
                 <EmptyState
-                  icon={<Icons.Calendar className="w-12 h-12" />}
-                  title="Chưa có dữ liệu điểm danh"
+                  icon={<Icons.Calendar className="w-12 h-12 text-stone-300" />}
+                  title="Chưa có dữ liệu"
                   description="Bạn chưa có lịch sử điểm danh nào được ghi nhận."
                 />
-              ) : (
-                <Table
-                  data={attendanceRecords}
-                  keyExtractor={(record) => record.id}
-                  columns={[
-                    {
-                      key: 'date',
-                      header: 'Ngày',
-                      render: (record: AttendanceRecord) => new Date(record.date).toLocaleDateString('vi-VN')
-                    },
-                    {
-                      key: 'className',
-                      header: 'Lớp',
-                      render: (record: AttendanceRecord) => record.className
-                    },
-                    {
-                      key: 'subjectName',
-                      header: 'Môn học',
-                      render: (record: AttendanceRecord) => record.subjectName
-                    },
-                    {
-                      key: 'status',
-                      header: 'Trạng thái',
-                      render: (record: AttendanceRecord) => (
-                        <Badge
-                          variant={
-                            record.status === 'present' ? 'success' :
-                              record.status === 'absent' ? 'danger' :
-                                record.status === 'late' ? 'warning' : 'default'
-                          }
-                        >
-                          {record.status === 'present' ? 'Có mặt' :
-                            record.status === 'absent' ? 'Vắng mặt' :
-                              record.status === 'late' ? 'Đến muộn' : 'Chưa rõ'}
-                        </Badge>
-                      )
-                    },
-                    {
-                      key: 'checkInTime',
-                      header: 'Giờ điểm danh',
-                      render: (record: AttendanceRecord) => record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString('vi-VN') : '-'
-                    },
-                    {
-                      key: 'notes',
-                      header: 'Ghi chú',
-                      render: (record: AttendanceRecord) => record.notes || '-'
+            ) : (
+                <ResponsiveTable
+                    mobileView={
+                        <div className="space-y-3 pb-24 animate-fade-in">
+                            {attendanceRecords.map((record) => (
+                                <MobileCard
+                                    key={record.id}
+                                    title={record.subjectName || record.className}
+                                    subtitle={format(new Date(record.date), 'EEEE, dd/MM/yyyy', { locale: vi })}
+                                    status={{
+                                        label: record.status === 'present' ? 'Có mặt' : 'Vắng mặt',
+                                        color: record.status === 'present' ? 'green' : 'red'
+                                    }}
+                                    fields={[
+                                        { label: "Lớp", value: record.className },
+                                        { label: "Ghi chú", value: record.remarks || '---' }
+                                    ]}
+                                    className="press-effect"
+                                />
+                            ))}
+                        </div>
                     }
-                  ]}
-                />
-              )}
-            </CardBody>
-          </Card>
+                >
+                    <div className="bg-white dark:bg-[#1A1410] rounded-2xl border border-stone-100 dark:border-[#2C2420] overflow-hidden shadow-sm">
+                        <Table
+                            data={attendanceRecords}
+                            keyExtractor={(record) => record.id}
+                            columns={[
+                                {
+                                    key: 'date',
+                                    header: 'Ngày',
+                                    render: (record: AttendanceRecord) => format(new Date(record.date), 'dd/MM/yyyy')
+                                },
+                                {
+                                    key: 'className',
+                                    header: 'Lớp',
+                                    render: (record: AttendanceRecord) => record.className
+                                },
+                                {
+                                    key: 'subjectName',
+                                    header: 'Môn học',
+                                    render: (record: AttendanceRecord) => record.subjectName || '-'
+                                },
+                                {
+                                    key: 'status',
+                                    header: 'Trạng thái',
+                                    render: (record: AttendanceRecord) => (
+                                        <Badge variant={record.status === 'present' ? 'success' : 'danger'}>
+                                            {record.status === 'present' ? 'Có mặt' : 'Vắng mặt'}
+                                        </Badge>
+                                    )
+                                },
+                                {
+                                    key: 'remarks',
+                                    header: 'Ghi chú',
+                                    render: (record: AttendanceRecord) => (
+                                        <span className="text-stone-500 italic text-sm">{record.remarks || '-'}</span>
+                                    )
+                                }
+                            ]}
+                        />
+                    </div>
+                </ResponsiveTable>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -457,15 +466,16 @@ export default function AttendancePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {sections.map((section) => (
             <Link key={section.href} href={section.href}>
-              <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
-                <CardBody className="flex flex-col items-center text-center p-8">
-                  <div className={`p-4 rounded-full mb-4 transition-colors group-hover:bg-stone-200 ${section.color}`}>
-                    <section.icon className="w-8 h-8" />
+              <Card className="h-full hover:shadow-lg transition-all border-none shadow-sm ring-1 ring-stone-200 group overflow-hidden">
+                <CardBody className="flex flex-col items-center text-center p-8 relative">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-stone-100 group-hover:bg-stone-500 transition-colors" />
+                  <div className={`p-4 rounded-2xl mb-4 transition-all group-hover:scale-110 ${section.color}`}>
+                    <section.icon className="w-10 h-10" />
                   </div>
-                  <h3 className="text-xl font-semibold text-stone-900 mb-2">
+                  <h3 className="text-xl font-bold text-stone-900 mb-2">
                     {section.title}
                   </h3>
-                  <p className="text-stone-600">
+                  <p className="text-stone-600 text-sm leading-relaxed">
                     {section.description}
                   </p>
                 </CardBody>
@@ -474,21 +484,50 @@ export default function AttendancePage() {
           ))}
         </div>
 
-        <Card className="bg-stone-50 border-stone-200">
-          <CardBody className="flex items-start gap-4">
-            <div className="p-2 bg-stone-200 rounded-lg text-stone-600">
-              <Icons.Info className="w-6 h-6" />
+        {/* Teacher Recent Activity */}
+        {(profile?.role === 'teacher' || profile?.role === 'admin') && recentClasses.length > 0 && (
+          <div className="space-y-4">
+             <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
+                <Icons.History className="w-5 h-5 text-stone-500" />
+                Lớp học của bạn
+             </h2>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recentClasses.map(cls => (
+                   <div key={cls.id} className="bg-white p-4 rounded-xl border border-stone-200 flex items-center justify-between hover:border-stone-400 transition-colors group">
+                      <div>
+                         <p className="font-bold text-stone-900">{cls.name}</p>
+                         <p className="text-xs text-stone-500">{cls.subject_name || 'Học Phần'}</p>
+                      </div>
+                      <Link 
+                        href={`/dashboard/attendance/mark?classId=${cls.id}`}
+                        className="p-2 bg-stone-50 text-stone-600 rounded-lg group-hover:bg-stone-900 group-hover:text-white transition-all"
+                      >
+                         <Icons.Edit className="w-4 h-4" />
+                      </Link>
+                   </div>
+                ))}
+             </div>
+          </div>
+        )}
+
+        <Card className="bg-stone-900 border-none shadow-xl overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-8 opacity-10">
+            <Icons.Attendance className="w-32 h-32 text-white" />
+          </div>
+          <CardBody className="flex items-start gap-6 p-8 relative z-10 text-white">
+            <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
+              <Icons.Info className="w-8 h-8 text-stone-100" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-stone-900 mb-2">Mẹo nhanh</h3>
-              <ul className="space-y-2 text-stone-700">
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-stone-500 rounded-full" />
-                  <span>Sử dụng <strong>Điểm danh thủ công</strong> cho việc điểm danh truyền thống</span>
+              <h3 className="text-xl font-bold mb-3">Mẹo quản lý hiệu quả</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-3 text-stone-200">
+                  <div className="w-2 h-2 bg-stone-400 rounded-full" />
+                  <span>Sử dụng <strong>Điểm danh thủ công</strong> mỗi buổi học để duy trì dữ liệu chính xác.</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-stone-500 rounded-full" />
-                  <span>Kiểm tra <strong>Báo cáo điểm danh</strong> để xem tóm tắt hàng tuần và hàng tháng</span>
+                <li className="flex items-center gap-3 text-stone-200">
+                  <div className="w-2 h-2 bg-stone-400 rounded-full" />
+                  <span>Kiểm tra <strong>Báo cáo</strong> hàng tuần để phát hiện sớm các trường hợp học sinh nghỉ học nhiều.</span>
                 </li>
               </ul>
             </div>

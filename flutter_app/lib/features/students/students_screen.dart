@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
-import '../../data/models/student_model.dart';
+import '../../data/models/profile_model.dart';
 import '../../data/repositories/students_repository.dart';
 
 /// Students repository provider
@@ -14,7 +14,7 @@ final studentsRepositoryProvider = Provider<StudentsRepository>((ref) {
 });
 
 /// Students list provider
-final studentsListProvider = FutureProvider<List<StudentModel>>((ref) async {
+final studentsListProvider = FutureProvider<List<ProfileModel>>((ref) async {
   final repo = ref.watch(studentsRepositoryProvider);
   return repo.getStudents();
 });
@@ -23,7 +23,7 @@ final studentsListProvider = FutureProvider<List<StudentModel>>((ref) async {
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
 /// Filtered students provider
-final filteredStudentsProvider = FutureProvider<List<StudentModel>>((ref) async {
+final filteredStudentsProvider = FutureProvider<List<ProfileModel>>((ref) async {
   final query = ref.watch(searchQueryProvider);
   final repo = ref.watch(studentsRepositoryProvider);
   
@@ -126,7 +126,7 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
 }
 
 class _StudentCard extends StatelessWidget {
-  final StudentModel student;
+  final ProfileModel student;
 
   const _StudentCard({required this.student});
 
@@ -193,6 +193,10 @@ class _StudentCard extends StatelessWidget {
         return AppColors.info;
       case StudentStatus.suspended:
         return AppColors.error;
+      case StudentStatus.transferred:
+        return AppColors.textMuted;
+      default:
+        return AppColors.textMuted;
     }
   }
 }

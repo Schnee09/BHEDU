@@ -323,59 +323,71 @@ export default function AttendanceMarkingPage() {
         <div className="bg-white dark:bg-stone-900 border border-gray-300 dark:border-stone-700 rounded-lg overflow-hidden mb-6">
 
           {/* Mobile Card View */}
-          <div className="md:hidden p-4 space-y-3 mobile-card-list">
+          <div className="md:hidden p-4 space-y-3 mobile-card-list animate-fade-in pb-24">
             {students.map((student) => {
               const statusInfo = getStatusFormatted(student.status)
               return (
                 <div
                   key={student.studentId}
-                  className="bg-gray-50 dark:bg-stone-800 rounded-xl p-4 border border-gray-200 dark:border-stone-700"
+                  className="bg-white dark:bg-[#1A1410] rounded-2xl p-5 border border-stone-100 dark:border-[#2C2420] shadow-sm press-effect overflow-hidden relative"
                 >
+                  {/* Status Indicator Bar */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+                    student.status === AttendanceStatus.PRESENT ? 'bg-green-500' : 
+                    student.status === AttendanceStatus.ABSENT ? 'bg-red-500' : 'bg-stone-200'
+                  }`} />
+
                   {/* Student Info */}
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      <p className="font-bold text-stone-900 dark:text-stone-100 text-lg leading-tight truncate">
                         {student.studentName}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {student.studentCode || student.email}
+                      <p className="text-xs text-stone-500 dark:text-stone-400 font-mono mt-1">
+                        {student.studentCode || student.email || 'HS-XXXX'}
                       </p>
                     </div>
                   </div>
 
                   {/* Status Selector - Large touch-friendly buttons */}
-                  <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="grid grid-cols-3 gap-3 mb-4">
                     <button
                       onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.PRESENT)}
-                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${student.status === AttendanceStatus.PRESENT
-                          ? 'bg-green-600 text-white ring-2 ring-green-400'
-                          : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                      className={`h-12 rounded-xl text-xs font-bold uppercase tracking-widest transition-all press-effect tap-target flex items-center justify-center gap-2 ${
+                        student.status === AttendanceStatus.PRESENT
+                          ? 'bg-green-600 text-white shadow-lg shadow-green-600/20'
+                          : 'bg-green-50 text-green-700 dark:bg-green-900/10 dark:text-green-400 border border-green-100/50 dark:border-green-800/30'
                         }`}
                     >
-                      ✅ Có mặt
+                      <span className="text-base">✅</span> Có mặt
                     </button>
                     <button
                       onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.ABSENT)}
-                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${student.status === AttendanceStatus.ABSENT
-                          ? 'bg-red-600 text-white ring-2 ring-red-400'
-                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      className={`h-12 rounded-xl text-xs font-bold uppercase tracking-widest transition-all press-effect tap-target flex items-center justify-center gap-2 ${
+                        student.status === AttendanceStatus.ABSENT
+                          ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                          : 'bg-red-50 text-red-700 dark:bg-red-900/10 dark:text-red-400 border border-red-100/50 dark:border-red-800/30'
                         }`}
                     >
-                      ❌ Vắng
+                      <span className="text-base">❌</span> Vắng
                     </button>
                     <button
                       onClick={() => updateStudentStatus(student.studentId, 'unmarked')}
-                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${student.status === 'unmarked'
-                          ? 'bg-gray-600 text-white ring-2 ring-gray-400'
-                          : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+                      className={`h-12 rounded-xl text-xs font-bold uppercase tracking-widest transition-all press-effect tap-target flex items-center justify-center ${
+                         student.status === 'unmarked'
+                          ? 'bg-stone-600 text-white shadow-lg shadow-stone-600/20'
+                          : 'bg-stone-50 text-stone-500 dark:bg-stone-800/50 dark:text-stone-400 border border-stone-100 dark:border-stone-700'
                         }`}
                     >
-                      — Chưa
+                      Chưa
                     </button>
                   </div>
 
-                  {/* Remarks - Now editable on mobile */}
-                  <div className="mt-2">
+                  {/* Remarks - Now editable on mobile with better styling */}
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                       <svg className="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    </div>
                     <input 
                        type="text"
                        value={student.remarks || ''}
@@ -385,7 +397,7 @@ export default function AttendanceMarkingPage() {
                          setStudents(prev => prev.map(s => s.studentId === student.studentId ? {...s, remarks: newVal} : s))
                          setHasUnsavedChanges(true)
                        }}
-                       className="w-full text-xs bg-white dark:bg-stone-900 border border-gray-200 dark:border-stone-700 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"
+                       className="w-full text-sm bg-stone-50/50 dark:bg-white/5 border border-stone-100 dark:border-[#2C2420] rounded-xl pl-9 pr-4 py-3 focus:border-amber-500 dark:focus:border-amber-500/50 focus:outline-none transition-all placeholder:text-stone-400 dark:placeholder:text-stone-600"
                     />
                   </div>
                 </div>

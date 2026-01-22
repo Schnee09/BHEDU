@@ -54,7 +54,7 @@ class AttendanceModel extends Equatable {
           ? DateTime.parse(json['created_at'] as String) 
           : null,
       // Joined data
-      studentName: json['students']?['full_name'] as String?,
+      studentName: json['profiles']?['full_name'] as String?,
       className: json['classes']?['name'] as String?,
     );
   }

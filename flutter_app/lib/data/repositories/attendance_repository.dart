@@ -13,7 +13,7 @@ class AttendanceRepository {
   }) async {
     final response = await supabase
         .from('attendance')
-        .select('*, students(full_name), classes(name)')
+        .select('*, profiles(full_name), classes(name)')
         .eq('student_id', studentId)
         .order('date', ascending: false)
         .limit(100);
@@ -28,7 +28,7 @@ class AttendanceRepository {
   }) async {
     final response = await supabase
         .from('attendance')
-        .select('*, students(full_name)')
+        .select('*, profiles(full_name)')
         .eq('class_id', classId)
         .eq('date', date)
         .order('created_at');
@@ -58,7 +58,7 @@ class AttendanceRepository {
           'is_qr_check_in': isQrCheckIn,
           'check_in_time': DateTime.now().toIso8601String(),
         }, onConflict: 'student_id,class_id,date')
-        .select('*, students(full_name), classes(name)')
+        .select('*, profiles(full_name), classes(name)')
         .single();
 
     return AttendanceModel.fromJson(response);

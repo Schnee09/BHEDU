@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { Card, CardHeader, CardBody, CardFooter } from "@/components/ui/Card";
 import { Icons } from "@/components/ui/Icons";
+import { getRoleBadgeClass, getRoleLabel } from "@/lib/role-utils";
 
 export default function ProfilePage() {
   const { profile: userProfile, loading: profileLoading } = useProfile();
@@ -89,8 +90,15 @@ export default function ProfilePage() {
 
       <form onSubmit={handleSubmit}>
         <Card>
-          <CardHeader>
-            <h2 className="text-lg font-semibold text-stone-900">Thông tin cá nhân</h2>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <h2 className="text-lg font-semibold text-stone-900 flex items-center gap-3">
+              Thông tin cá nhân
+              {userProfile?.role && (
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${getRoleBadgeClass(userProfile.role)}`}>
+                  {getRoleLabel(userProfile.role)}
+                </span>
+              )}
+            </h2>
           </CardHeader>
           <CardBody className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -228,4 +236,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

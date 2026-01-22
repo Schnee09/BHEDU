@@ -64,6 +64,7 @@ enum StudentStatus {
   active('active', 'Đang học'),
   inactive('inactive', 'Nghỉ học'),
   graduated('graduated', 'Đã tốt nghiệp'),
+  transferred('transferred', 'Đã chuyển trường'),
   suspended('suspended', 'Đình chỉ');
   
   const StudentStatus(this.value, this.labelVi);

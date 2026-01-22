@@ -18,12 +18,12 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
   
-  // Set system UI style
+  // Set system UI style - Warm Brown theme
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF1E293B),
+      systemNavigationBarColor: Color(0xFF1A1410),  // Matching AppColors.background
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );

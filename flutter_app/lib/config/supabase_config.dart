@@ -4,7 +4,6 @@ library;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Supabase credentials
-/// TODO: For production, use environment variables or secure storage
 const String _supabaseUrl = 'https://mwncwhkdimnjovxzhtjm.supabase.co';
 const String _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bmN3aGtkaW1uam92eHpodGptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0Mzg1MzAsImV4cCI6MjA3NjAxNDUzMH0.ICXEl60X70V8T7vwieDGXskvH5LPxkL29jPwC77TBAM';
 
@@ -22,6 +21,9 @@ Future<void> initSupabase() async {
 /// Get Supabase client instance
 SupabaseClient get supabase => Supabase.instance.client;
 
+/// For admin queries - use the same client (RLS will be fixed via policies)
+SupabaseClient get adminSupabase => supabase;
+
 /// Get current auth user
 User? get currentUser => supabase.auth.currentUser;
 
@@ -30,3 +32,5 @@ Session? get currentSession => supabase.auth.currentSession;
 
 /// Check if user is authenticated
 bool get isAuthenticated => currentSession != null;
+
+

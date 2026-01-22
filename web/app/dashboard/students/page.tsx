@@ -297,15 +297,14 @@ export default function StudentsPage() {
     logger.info('Students exported', { count: studentsToExport.length });
   };
 
-  // Render statistics
+// Render statistics
   const renderStatistics = () => {
     if (loading && !statistics) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <SkeletonStatCard />
-          <SkeletonStatCard />
-          <SkeletonStatCard />
-          <SkeletonStatCard />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-28 bg-stone-100 dark:bg-stone-800 rounded-2xl skeleton-shimmer" />
+          ))}
         </div>
       );
     }
@@ -313,31 +312,42 @@ export default function StudentsPage() {
     if (!statistics) return null;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          label="Tổng số học sinh"
-          value={statistics.total_students}
-          color="blue"
-          icon={<Icons.Students className="w-6 h-6" />}
-        />
-        <StatCard
-          label="Đang học"
-          value={statistics.active_students}
-          color="green"
-          icon={<Icons.Success className="w-6 h-6" />}
-        />
-        <StatCard
-          label="Nghỉ học"
-          value={statistics.inactive_students}
-          color="slate"
-          icon={<Icons.Error className="w-6 h-6" />}
-        />
-        <StatCard
-          label="Khối lớp"
-          value={Object.keys(statistics.by_grade || {}).length}
-          color="purple"
-          icon={<Icons.Classes className="w-6 h-6" />}
-        />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-fade-in">
+        <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
+            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
+                <Icons.Students className="w-10 h-10 text-blue-600" />
+            </div>
+            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Học sinh</p>
+            <p className="text-2xl font-black text-stone-900 dark:text-stone-100">{statistics.total_students}</p>
+            <div className="h-1 w-6 bg-blue-500 rounded-full" />
+        </div>
+
+        <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
+            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
+                <Icons.Success className="w-10 h-10 text-green-600" />
+            </div>
+            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Đang học</p>
+            <p className="text-2xl font-black text-green-600">{statistics.active_students}</p>
+            <div className="h-1 w-6 bg-green-500 rounded-full" />
+        </div>
+
+        <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
+            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
+                <Icons.Error className="w-10 h-10 text-stone-400" />
+            </div>
+            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Nghỉ học</p>
+            <p className="text-2xl font-black text-stone-400">{statistics.inactive_students}</p>
+            <div className="h-1 w-6 bg-stone-300 rounded-full" />
+        </div>
+
+        <div className="bg-white dark:bg-[#1C1814] rounded-2xl p-4 border border-amber-500/20 shadow-lg shadow-amber-500/5 flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
+            <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:scale-110 transition-transform">
+                <Icons.Classes className="w-10 h-10 text-amber-500" />
+            </div>
+            <p className="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest">Khối lớp</p>
+            <p className="text-2xl font-black text-amber-500">{Object.keys(statistics.by_grade || {}).length}</p>
+            <div className="h-1 w-10 bg-amber-500 rounded-full" />
+        </div>
       </div>
     );
   };

@@ -809,67 +809,69 @@ export default function TimetablePage() {
                                             </thead>
                                             <tbody>
                                                 {ALL_SESSIONS.map((session) => (
-                                                    tutors.length > 0 ? tutors.map((tutor, tutorIdx) => (
-                                                        <tr key={`${session.id}-${tutor.id}`} className="group hover:bg-purple-50/30 dark:hover:bg-purple-900/10 transition-colors">
-                                                            {tutorIdx === 0 && (
-                                                                <td rowSpan={tutors.length} className="p-3 border-b border-r border-gray-100 dark:border-gray-800 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 align-middle text-center sticky left-0 z-20">
-                                                                    <div className="font-bold text-purple-600 dark:text-purple-400 text-base">{session.label}</div>
-                                                                    <div className="text-[10px] text-gray-400 font-medium leading-tight mt-1">{session.time}</div>
-                                                                </td>
-                                                            )}
-                                                            <td className="p-2 border-b border-r border-gray-100 dark:border-gray-800 text-center bg-gray-50/50 dark:bg-gray-900/50 w-32 sticky left-24 z-20">
-                                                                <div className="text-xs font-bold text-gray-600 dark:text-gray-400 truncate px-1">{tutor.full_name}</div>
-                                                            </td>
-                                                            {DAYS.map((_, dayIndex) => {
-                                                                const isAvailable = session.days.includes(dayIndex);
-                                                                const slot = isAvailable ? slots.find(s =>
-                                                                    s.teacher?.id === tutor.id &&
-                                                                    s.day_of_week === dayIndex &&
-                                                                    s.start_time?.substring(0, 5) === session.start &&
-                                                                    (!s.room || s.room === 'Linh hoạt')
-                                                                ) : null;
-
-                                                                return (
-                                                                    <td key={dayIndex} className={`p-2 border-b border-r border-gray-100 dark:border-gray-800 h-20 ${!isAvailable ? 'bg-gray-50/50 dark:bg-gray-900/40' : ''}`}>
-                                                                        {!isAvailable ? (
-                                                                            <div className="h-full w-full rounded-lg bg-gray-100/50 dark:bg-gray-800/50 flex items-center justify-center">
-                                                                                <span className="text-[10px] text-gray-300 font-bold tracking-widest">—</span>
-                                                                            </div>
-                                                                        ) : slot ? (
-                                                                            <div
-                                                                                className="h-full p-2 bg-white dark:bg-gray-800 border-l-4 border-purple-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer group/card relative overflow-hidden"
-                                                                                onClick={() => openEditModal(slot)}
-                                                                            >
-                                                                                <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover/card:opacity-100 transition-opacity" />
-                                                                                <div className="font-bold text-gray-900 dark:text-white text-[10px] line-clamp-2 leading-tight group-hover/card:text-purple-600 transition-colors">
-                                                                                    {slot.class?.name || slot.subject?.name}
-                                                                                </div>
-                                                                                {(slot.weekly_note || slot.notes) && (
-                                                                                    <div className="mt-1 text-gray-400 dark:text-gray-500 text-[9px] flex items-center gap-1 italic border-t border-gray-100 dark:border-gray-800 pt-1">
-                                                                                        <ClipboardList className="w-2.5 h-2.5 flex-shrink-0" />
-                                                                                        <span className="truncate">{slot.weekly_note ?? slot.notes}</span>
-                                                                                        {slot.has_weekly_note && (
-                                                                                            <span className="ml-auto text-blue-500" title="Ghi chú riêng tuần này">●</span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div
-                                                                                className="h-full rounded-lg border border-dashed border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/10 cursor-pointer flex items-center justify-center transition-all group/empty"
-                                                                                onClick={() => {
-                                                                                    setFormData({ ...formData, teacher_id: tutor.id });
-                                                                                    openCreateModal(dayIndex, session, 'Linh hoạt');
-                                                                                }}
-                                                                            >
-                                                                                <Plus className="w-3 h-3 text-gray-300 group-hover/empty:text-purple-500 transition-colors" />
-                                                                            </div>
-                                                                        )}
+                                                    tutors.length > 0 ? (
+                                                        tutors.map((tutor, tutorIdx) => (
+                                                            <tr key={`${session.id}-${tutor.id}`} className="group hover:bg-purple-50/30 dark:hover:bg-purple-900/10 transition-colors">
+                                                                {tutorIdx === 0 && (
+                                                                    <td rowSpan={tutors.length} className="p-3 border-b border-r border-gray-100 dark:border-gray-800 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 align-middle text-center sticky left-0 z-20">
+                                                                        <div className="font-bold text-purple-600 dark:text-purple-400 text-base">{session.label}</div>
+                                                                        <div className="text-[10px] text-gray-400 font-medium leading-tight mt-1">{session.time}</div>
                                                                     </td>
-                                                                );
-                                                            })}
-                                                        </tr>
-                                                    )) : (
+                                                                )}
+                                                                <td className="p-2 border-b border-r border-gray-100 dark:border-gray-800 text-center bg-gray-50/50 dark:bg-gray-900/50 w-32 sticky left-24 z-20">
+                                                                    <div className="text-xs font-bold text-gray-600 dark:text-gray-400 truncate px-1">{tutor.full_name}</div>
+                                                                </td>
+                                                                {DAYS.map((_, dayIndex) => {
+                                                                    const isAvailable = session.days.includes(dayIndex);
+                                                                    const slot = isAvailable ? slots.find(s =>
+                                                                        s.teacher?.id === tutor.id &&
+                                                                        s.day_of_week === dayIndex &&
+                                                                        s.start_time?.substring(0, 5) === session.start &&
+                                                                        (!s.room || s.room === 'Linh hoạt')
+                                                                    ) : null;
+
+                                                                    return (
+                                                                        <td key={dayIndex} className={`p-2 border-b border-r border-gray-100 dark:border-gray-800 h-20 ${!isAvailable ? 'bg-gray-50/50 dark:bg-gray-900/40' : ''}`}>
+                                                                            {!isAvailable ? (
+                                                                                <div className="h-full w-full rounded-lg bg-gray-100/50 dark:bg-gray-800/50 flex items-center justify-center">
+                                                                                    <span className="text-[10px] text-gray-300 font-bold tracking-widest">—</span>
+                                                                                </div>
+                                                                            ) : slot ? (
+                                                                                <div
+                                                                                    className="h-full p-2 bg-white dark:bg-gray-800 border-l-4 border-purple-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer group/card relative overflow-hidden"
+                                                                                    onClick={() => openEditModal(slot)}
+                                                                                >
+                                                                                    <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover/card:opacity-100 transition-opacity" />
+                                                                                    <div className="font-bold text-gray-900 dark:text-white text-[10px] line-clamp-2 leading-tight group-hover/card:text-purple-600 transition-colors">
+                                                                                        {slot.class?.name || slot.subject?.name}
+                                                                                    </div>
+                                                                                    {(slot.weekly_note || slot.notes) && (
+                                                                                        <div className="mt-1 text-gray-400 dark:text-gray-500 text-[9px] flex items-center gap-1 italic border-t border-gray-100 dark:border-gray-800 pt-1">
+                                                                                            <ClipboardList className="w-2.5 h-2.5 flex-shrink-0" />
+                                                                                            <span className="truncate">{slot.weekly_note ?? slot.notes}</span>
+                                                                                            {slot.has_weekly_note && (
+                                                                                                <span className="ml-auto text-blue-500" title="Ghi chú riêng tuần này">●</span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div
+                                                                                    className="h-full rounded-lg border border-dashed border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/10 cursor-pointer flex items-center justify-center transition-all group/empty"
+                                                                                    onClick={() => {
+                                                                                        setFormData({ ...formData, teacher_id: tutor.id });
+                                                                                        openCreateModal(dayIndex, session, 'Linh hoạt');
+                                                                                    }}
+                                                                                >
+                                                                                    <Plus className="w-3 h-3 text-gray-300 group-hover/empty:text-purple-500 transition-colors" />
+                                                                                </div>
+                                                                            )}
+                                                                        </td>
+                                                                    );
+                                                                })}
+                                                            </tr>
+                                                        ))
+                                                    ) : (
                                                         <tr key={session.id}>
                                                             <td className="p-4 border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-center sticky left-0 z-20">
                                                                 <div className="font-bold text-purple-600 dark:text-purple-400">{session.label}</div>

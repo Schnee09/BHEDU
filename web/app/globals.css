@@ -2633,6 +2633,38 @@ a:not(.inline-link),
   animation: pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+/* Slide Left - New Content Enters from Right */
+@keyframes slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-left {
+  animation: slide-left 0.25s cubic-bezier(0.2, 0.0, 0.2, 1) forwards;
+}
+
+/* Slide Right - New Content Enters from Left */
+@keyframes slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-right {
+  animation: slide-right 0.25s cubic-bezier(0.2, 0.0, 0.2, 1) forwards;
+}
+
 /* Press Effect - Native-like button feedback */
 .press-effect {
   transition: transform 0.1s ease-out, opacity 0.1s ease-out;

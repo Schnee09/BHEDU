@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
-import '../../data/models/student_model.dart';
+import '../../data/models/profile_model.dart';
 import '../../data/repositories/students_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
 
 /// Attendance state for each student
 class AttendanceEntry {
-  final StudentModel student;
+  final ProfileModel student;
   AttendanceStatus status;
 
   AttendanceEntry({required this.student, this.status = AttendanceStatus.present});
