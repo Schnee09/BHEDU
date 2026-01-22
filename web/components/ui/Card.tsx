@@ -24,10 +24,10 @@ export const Card = memo(function Card({
   const isClickable = !!onClick;
 
   const cardClassName = useMemo(() => `
-    rounded-2xl transition-all duration-300
+    rounded-2xl transition-all duration-200
     glass-card text-foreground
-    ${hover || isClickable ? 'hover:shadow-lg hover:-translate-y-1' : ''}
-    ${isClickable ? 'cursor-pointer active:scale-[0.98] active:shadow-sm' : ''}
+    ${hover || isClickable ? 'hover:shadow-lg hover:-translate-y-0.5' : ''}
+    ${isClickable ? 'cursor-pointer press-effect' : ''}
     ${className}
   `, [hover, isClickable, className]);
 
@@ -35,6 +35,8 @@ export const Card = memo(function Card({
     <Component
       onClick={onClick}
       className={cardClassName}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
     >
       {children}
     </Component>
