@@ -11,6 +11,7 @@ import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { AnalyticsWidget } from "@/components/dashboard/AnalyticsWidget";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
+import { cn } from "@/lib/utils";
 
 interface DashboardStats {
   totalStudents: number;
@@ -67,7 +68,6 @@ export default function DashboardPage() {
         }
       } catch (error) {
         logger.error('Error loading dashboard stats', error as Error);
-        // Set default empty stats to prevent loading state
         if (mounted) {
           setStats({
             totalStudents: 0,
@@ -93,24 +93,17 @@ export default function DashboardPage() {
     return (
       <main className="min-h-screen py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          {/* Header skeleton */}
           <div className="space-y-2">
             <div className="h-10 w-64 bg-stone-200 rounded animate-pulse" />
             <div className="h-6 w-96 bg-stone-200 rounded animate-pulse" />
           </div>
-
-          {/* Stats skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <SkeletonStatCard />
             <SkeletonStatCard />
             <SkeletonStatCard />
             <SkeletonStatCard />
           </div>
-
-          {/* Quick actions skeleton */}
           <SkeletonCard />
-
-          {/* Recent activity skeleton */}
           <SkeletonCard />
         </div>
       </main>
@@ -119,403 +112,180 @@ export default function DashboardPage() {
 
   const getRoleTitle = () => {
     switch (profile?.role) {
-      case "admin":
-        return "Bảng điều khiển Quản trị viên";
-      case "teacher":
-        return "Bảng điều khiển Giáo viên";
-      case "student":
-        return "Cổng thông tin Học sinh";
-      default:
-        return "Bảng điều khiển";
-    }
-  };
-
-  const getRoleDescription = () => {
-    switch (profile?.role) {
-      case "admin":
-        return "Tổng quan và quản lý hệ thống";
-      case "teacher":
-        return "Quản lý lớp học và học sinh";
-      case "student":
-        return "Theo dõi tiến độ và bài tập";
-      default:
-        return "Chào mừng đến bảng điều khiển";
+      case "admin": return "Bảng điều khiển Quản trị viên";
+      case "teacher": return "Bảng điều khiển Giáo viên";
+      case "student": return "Cổng thông tin Học sinh";
+      default: return "Bảng điều khiển";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-transparent">
-      <div className="max-w-7xl mx-auto px-4 py-4 md:py-8 space-y-6">
-        {/* Page Header - Mobile-first compact design */}
+    <div className="min-h-screen bg-transparent">
+      <div className="max-w-[1600px] mx-auto px-4 py-4 md:py-8 space-y-8">
+        {/* Page Header */}
         <div className="flex flex-col gap-2">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl md:text-3xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tighter">
             {getRoleTitle()}
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Xin chào, <span className="font-semibold text-gray-900 dark:text-white">{profile?.full_name ?? "Người dùng"}</span>
-          </p>
-          {/* Date - Hidden on mobile, shown on desktop */}
-          <p className="hidden md:flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-500">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            {new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
+            Xin chào, <span className="font-bold text-amber-600 dark:text-amber-500">{profile?.full_name ?? "Người dùng"}</span>
           </p>
         </div>
 
-        <div className="mb-8">
-          <h2 className="sr-only">Thống kê tổng quan</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6">
-            <StatCard
-              label="Học sinh"
-              value={stats.totalStudents}
-              color="orange"
-              icon={<Icons.Students className="w-6 h-6" />}
-            />
-
-            <StatCard
-              label="Giáo viên"
-              value={stats.totalTeachers}
-              color="purple"
-              icon={<Icons.Teachers className="w-6 h-6" />}
-            />
-
-            <StatCard
-              label="Lớp học"
-              value={stats.totalClasses}
-              color="green"
-              icon={<Icons.Classes className="w-6 h-6" />}
-            />
-
-            <StatCard
-              label="Bài tập"
-              value={stats.totalAssignments}
-              color="orange"
-              icon={<Icons.Assignments className="w-6 h-6" />}
-            />
-
-            <StatCard
-              label="Điểm danh hôm nay"
-              value={stats.attendanceToday}
-              color="slate"
-              icon={<Icons.Attendance className="w-6 h-6" />}
-            />
-          </div>
+        {/* Top Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-6">
+          <StatCard label="Học sinh" value={stats.totalStudents} color="orange" icon={<Icons.Students />} />
+          <StatCard label="Giáo viên" value={stats.totalTeachers} color="purple" icon={<Icons.Teachers />} />
+          <StatCard label="Lớp học" value={stats.totalClasses} color="green" icon={<Icons.Classes />} />
+          <StatCard label="Bài tập" value={stats.totalAssignments} color="blue" icon={<Icons.Assignments />} />
+          <StatCard label="Hôm nay" value={stats.attendanceToday} color="slate" icon={<Icons.Attendance />} />
         </div>
 
-        {/* Charts Section - Admin/Teacher only */}
-        {(profile?.role === "admin" || profile?.role === "teacher") && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
+        {/* Main Content Grid - Responsive PC Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 pb-20 md:pb-8">
+          {/* Left Column - Analytics & Primary Stats */}
+          <div className="xl:col-span-8 space-y-8">
+             {/* Charts Section - Admin/Teacher only */}
+            {(profile?.role === "admin" || profile?.role === "teacher") && (
+              <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-black text-stone-900 dark:text-stone-100 uppercase tracking-widest pl-2 border-l-4 border-amber-500">Thống kê chi tiết</h2>
+                  <Link href="/dashboard/grades/analytics" className="text-xs font-bold text-amber-600 hover:text-amber-700 uppercase tracking-tighter">Xem báo cáo →</Link>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">Thống kê chi tiết</h2>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                   <AnalyticsWidget
+                    title="Phân bố điểm số"
+                    subtitle="Theo thang điểm học kỳ"
+                    chartType="pie"
+                    data={[
+                      { name: 'Giỏi', value: 35 },
+                      { name: 'Khá', value: 40 },
+                      { name: 'TB', value: 18 },
+                      { name: 'Yếu', value: 7 },
+                    ]}
+                    dataKey="value"
+                    height={300}
+                  />
+
+                  <AnalyticsWidget
+                    title="Xu hướng điểm danh"
+                    subtitle="7 ngày làm việc gần nhất"
+                    chartType="area"
+                    data={[
+                      { name: 'T2', present: 92 }, { name: 'T3', present: 95 },
+                      { name: 'T4', present: 88 }, { name: 'T5', present: 94 },
+                      { name: 'T6', present: 91 }, { name: 'T7', present: 45 },
+                    ]}
+                    dataKey="present"
+                    height={300}
+                  />
+                </div>
+              </section>
+            )}
+
+            {/* Quick Actions - Cross Platform Refined */}
+            <section className="space-y-6">
+              <h2 className="text-lg font-black text-stone-900 dark:text-stone-100 uppercase tracking-widest pl-2 border-l-4 border-amber-500">Hành động nhanh</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {profile?.role === "admin" && (
+                  <>
+                    <QuickActionSmall href={routes.students.list()} icon={<Icons.Students />} title="Học sinh" color="orange" />
+                    <QuickActionSmall href="/dashboard/users" icon={<Icons.Teachers />} title="Giáo viên" color="purple" />
+                    <QuickActionSmall href={routes.classes.list()} icon={<Icons.Classes />} title="Lớp học" color="green" />
+                  </>
+                )}
+                {profile?.role === "teacher" && (
+                  <>
+                    <QuickActionSmall href={routes.classes.list()} icon={<Icons.Classes />} title="Lớp của tôi" color="blue" />
+                    <QuickActionSmall href="/dashboard/grades" icon={<Icons.Grades />} title="Ghi điểm" color="purple" />
+                    <QuickActionSmall href={routes.attendance.mark()} icon={<Icons.Attendance />} title="Điểm danh" color="orange" />
+                  </>
+                )}
+                {profile?.role === "student" && (
+                   <>
+                    <QuickActionSmall href="/dashboard/assignments" icon={<Icons.Assignments />} title="Bài tập" color="green" />
+                    <QuickActionSmall href="/dashboard/scores" icon={<Icons.Grades />} title="Kết quả" color="purple" />
+                    <QuickActionSmall href="/dashboard/profile" icon={<Icons.Users />} title="Hồ sơ" color="slate" />
+                  </>
+                )}
               </div>
-              <Link
-                href="/dashboard/grades/analytics"
-                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-              >
-                Xem tất cả →
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-              {/* Grade Distribution Pie Chart */}
-              <AnalyticsWidget
-                title="Phân bố điểm số"
-                subtitle="Theo thang điểm"
-                chartType="pie"
-                data={[
-                  { name: 'Giỏi (≥8)', value: 35 },
-                  { name: 'Khá (6-8)', value: 40 },
-                  { name: 'TB (5-6)', value: 18 },
-                  { name: 'Yếu (<5)', value: 7 },
-                ]}
-                dataKey="value"
-                height={280}
-                color="gradient"
-                icon={<Icons.Grades className="w-5 h-5" />}
-              />
-
-              {/* Attendance Trends Line Chart */}
-              <AnalyticsWidget
-                title="Xu hướng điểm danh"
-                subtitle="7 ngày gần nhất"
-                chartType="area"
-                data={[
-                  { name: 'T2', present: 92, absent: 8 },
-                  { name: 'T3', present: 95, absent: 5 },
-                  { name: 'T4', present: 88, absent: 12 },
-                  { name: 'T5', present: 94, absent: 6 },
-                  { name: 'T6', present: 91, absent: 9 },
-                  { name: 'T7', present: 45, absent: 5 },
-                  { name: 'CN', present: 0, absent: 0 },
-                ]}
-                dataKey="present"
-                secondaryDataKey="absent"
-                height={280}
-                color="primary"
-                secondaryColor="#ef4444"
-                icon={<Icons.Attendance className="w-5 h-5" />}
-                valueFormatter={(v) => `${v}%`}
-              />
-
-              {/* Class Performance Bar Chart */}
-              <AnalyticsWidget
-                title="Điểm trung bình theo lớp"
-                subtitle="Học kỳ này"
-                chartType="bar"
-                data={[
-                  { name: '10A', score: 7.8 },
-                  { name: '10B', score: 7.2 },
-                  { name: '11A', score: 8.1 },
-                  { name: '11B', score: 7.5 },
-                  { name: '12A', score: 8.3 },
-                  { name: '12B', score: 7.9 },
-                ]}
-                dataKey="score"
-                height={280}
-                color="success"
-                icon={<Icons.Classes className="w-5 h-5" />}
-                valueFormatter={(v) => `${v.toFixed(1)}`}
-              />
-
-              {/* Subject Performance Radar */}
-              <AnalyticsWidget
-                title="Điểm theo môn học"
-                subtitle="Trung bình toàn trường"
-                chartType="radar"
-                data={[
-                  { subject: 'Toán', score: 7.5 },
-                  { subject: 'Văn', score: 7.2 },
-                  { subject: 'Anh', score: 7.8 },
-                  { subject: 'Lý', score: 7.0 },
-                  { subject: 'Hóa', score: 7.3 },
-                  { subject: 'Sinh', score: 7.6 },
-                ]}
-                dataKey="score"
-                xAxisKey="subject"
-                height={280}
-                color="info"
-                icon={<Icons.Grades className="w-5 h-5" />}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-indigo-100 rounded-lg">
-                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">Hành động nhanh</h2>
-            </div>
-            <p className="text-sm text-gray-500 hidden sm:block">Truy cập nhanh các chức năng chính</p>
+            </section>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {profile?.role === "admin" && (
-              <>
-                <QuickActionCard
-                  href={routes.students.list()}
-                  icon={<Icons.Students className="w-6 h-6" />}
-                  title="Quản lý Học sinh"
-                  description="Xem và chỉnh sửa hồ sơ học sinh"
-                  color="orange"
-                />
-                <QuickActionCard
-                  href="/dashboard/users"
-                  icon={<Icons.Teachers className="w-6 h-6" />}
-                  title="Quản lý Giáo viên"
-                  description="Xem và chỉnh sửa hồ sơ giáo viên"
-                  color="purple"
-                />
-                <QuickActionCard
-                  href={routes.classes.list()}
-                  icon={<Icons.Classes className="w-6 h-6" />}
-                  title="Quản lý Lớp học"
-                  description="Xem và tổ chức lớp học"
-                  color="green"
-                />
-                <QuickActionCard
-                  href={routes.attendance.list()}
-                  icon={<Icons.Attendance className="w-6 h-6" />}
-                  title="Điểm danh"
-                  description="Theo dõi điểm danh hàng ngày"
-                  color="slate"
-                />
-              </>
-            )}
+          {/* Right Column - Activity & Secondary Info (PC Only side-by-side) */}
+          <div className="xl:col-span-4 space-y-8">
+             {profile?.role === "admin" && (
+               <div className="glass-premium rounded-[32px] p-2 border border-white/10 overflow-hidden shadow-xl">
+                 <div className="px-4 py-3 border-b border-white/5 bg-white/5">
+                    <h3 className="text-sm font-black text-stone-500 uppercase tracking-widest">Hoạt động hệ thống</h3>
+                 </div>
+                 <ActivityFeed limit={12} />
+               </div>
+             )}
 
-            {profile?.role === "teacher" && (
-              <>
-                <QuickActionCard
-                  href={routes.classes.list()}
-                  icon={<Icons.Classes className="w-6 h-6" />}
-                  title="Lớp học của tôi"
-                  description="Xem lớp học của bạn"
-                  color="blue"
-                />
-                <QuickActionCard
-                  href="/dashboard/grades/assignments"
-                  icon={<Icons.Assignments className="w-6 h-6" />}
-                  title="Bài tập"
-                  description="Quản lý bài tập"
-                  color="green"
-                />
-                <QuickActionCard
-                  href="/dashboard/grades"
-                  icon={<Icons.Grades className="w-6 h-6" />}
-                  title="Điểm số"
-                  description="Ghi và xem điểm"
-                  color="purple"
-                />
-                <QuickActionCard
-                  href={routes.attendance.mark()}
-                  icon={<Icons.Attendance className="w-6 h-6" />}
-                  title="Đánh dấu Điểm danh"
-                  description="Điểm danh lớp học"
-                  color="orange"
-                />
-              </>
-            )}
-
-            {profile?.role === "student" && (
-              <>
-                <QuickActionCard
-                  href={routes.classes.list()}
-                  icon={<Icons.Classes className="w-6 h-6" />}
-                  title="Lớp học của tôi"
-                  description="Xem lớp học đã đăng ký"
-                  color="blue"
-                />
-                <QuickActionCard
-                  href="/dashboard/assignments"
-                  icon={<Icons.Assignments className="w-6 h-6" />}
-                  title="Bài tập"
-                  description="Xem và nộp bài"
-                  color="green"
-                />
-                <QuickActionCard
-                  href="/dashboard/scores"
-                  icon={<Icons.Grades className="w-6 h-6" />}
-                  title="Điểm của tôi"
-                  description="Xem điểm của bạn"
-                  color="purple"
-                />
-                <QuickActionCard
-                  href="/dashboard/profile"
-                  icon={<Icons.Users className="w-6 h-6" />}
-                  title="Hồ sơ"
-                  description="Xem và chỉnh sửa hồ sơ"
-                  color="slate"
-                />
-              </>
-            )}
+             {/* System Status Card (PC Add-on) */}
+             <div className="hidden xl:block glass-premium p-6 rounded-[32px] border border-white/10 shadow-lg">
+                <h4 className="text-xs font-black text-stone-500 uppercase tracking-widest mb-6">Trạng thái hạ tầng</h4>
+                <div className="space-y-5">
+                   <StatusItem label="Database Cluster" status="online" />
+                   <StatusItem label="Auth Engine" status="online" />
+                   <StatusItem label="Cloud Assets" status="online" />
+                   <StatusItem label="Real-time Sync" status="online" />
+                </div>
+                <div className="mt-8 pt-6 border-t border-white/5">
+                   <p className="text-[10px] text-stone-500 font-bold uppercase tracking-widest text-center">Tất cả hệ thống bình thường</p>
+                </div>
+             </div>
           </div>
         </div>
-
-        {/* Activity Feed - Admin only */}
-        {profile?.role === "admin" && (
-          <div className="mb-8">
-            <ActivityFeed limit={10} />
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
 /**
- * Quick Action Card Component
+ * Small PC-optimized Quick Action
  */
-interface QuickActionCardProps {
-  href: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  color: 'blue' | 'purple' | 'green' | 'orange' | 'slate';
+function QuickActionSmall({ href, icon, title, color }: any) {
+  return (
+    <Link href={href} className="flex items-center gap-4 p-4 rounded-2xl glass-premium border border-white/10 hover:border-amber-500/50 hover:shadow-lg transition-all active:scale-95 group">
+       <div className={cn("p-2.5 rounded-xl transition-all group-hover:scale-110", 
+         color === 'orange' ? 'bg-orange-500/10 text-orange-500' :
+         color === 'purple' ? 'bg-purple-500/10 text-purple-500' :
+         color === 'green' ? 'bg-green-500/10 text-green-500' :
+         color === 'blue' ? 'bg-blue-500/10 text-blue-500' : 'bg-stone-500/10 text-stone-500'
+       )}>
+         {icon}
+       </div>
+       <span className="font-bold text-sm text-stone-900 dark:text-white">{title}</span>
+    </Link>
+  );
 }
 
-function QuickActionCard({ href, icon, title, description, color }: QuickActionCardProps) {
-  const colorClasses = {
-    blue: {
-      bg: 'bg-blue-50 hover:bg-blue-100',
-      icon: 'bg-blue-100 text-blue-600',
-      border: 'border-blue-200 hover:border-blue-300',
-      title: 'text-blue-900 group-hover:text-blue-800',
-      desc: 'text-blue-700 group-hover:text-blue-600',
-    },
-    purple: {
-      bg: 'bg-purple-50 hover:bg-purple-100',
-      icon: 'bg-purple-100 text-purple-600',
-      border: 'border-purple-200 hover:border-purple-300',
-      title: 'text-purple-900 group-hover:text-purple-800',
-      desc: 'text-purple-700 group-hover:text-purple-600',
-    },
-    green: {
-      bg: 'bg-green-50 hover:bg-green-100',
-      icon: 'bg-green-100 text-green-600',
-      border: 'border-green-200 hover:border-green-300',
-      title: 'text-green-900 group-hover:text-green-800',
-      desc: 'text-green-700 group-hover:text-green-600',
-    },
-    orange: {
-      bg: 'bg-orange-50 hover:bg-orange-100',
-      icon: 'bg-orange-100 text-orange-600',
-      border: 'border-orange-200 hover:border-orange-300',
-      title: 'text-orange-900 group-hover:text-orange-800',
-      desc: 'text-orange-700 group-hover:text-orange-600',
-    },
-    slate: {
-      bg: 'bg-gray-50 hover:bg-gray-100',
-      icon: 'bg-gray-100 text-gray-600',
-      border: 'border-gray-200 hover:border-gray-300',
-      title: 'text-gray-900 group-hover:text-gray-800',
-      desc: 'text-gray-700 group-hover:text-gray-600',
-    },
-  };
-
-  const styles = colorClasses[color];
-
+function StatusItem({ label, status }: { label: string, status: 'online' | 'offline' }) {
   return (
-    <Link
-      href={href}
-      className={`group block p-4 sm:p-6 rounded-2xl transition-all duration-300 ease-in-out
-        bg-white border shadow-sm hover:shadow-lg hover:-translate-y-1
-        active:scale-[0.98] active:shadow-sm relative overflow-hidden
-        ${styles.bg} ${styles.border}`}
-    >
-      {/* Top Shine */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="flex items-center justify-between">
+       <span className="text-sm font-bold text-stone-600 dark:text-stone-400">{label}</span>
+       <div className="flex items-center gap-3">
+          <span className="text-[10px] font-black uppercase text-stone-500 opacity-60">{status}</span>
+          <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+       </div>
+    </div>
+  );
+}
 
-      <div className="flex items-start gap-4">
-        <div className={`p-3 rounded-xl transition-all duration-300 ${styles.icon} group-hover:scale-110 group-hover:shadow-md`}>
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className={`font-bold text-lg mb-1.5 transition-colors duration-200 ${styles.title}`}>
-            {title}
-          </h3>
-          <p className={`text-sm leading-relaxed transition-colors duration-200 ${styles.desc}`}>
-            {description}
-          </p>
-          <div className="mt-3 flex items-center text-sm font-bold opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-            <span className={`${styles.title} mr-1.5 tracking-tight`}>Xem chi tiết</span>
-            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </div>
-      </div>
+function QuickActionCard({ href, icon, title, description, color }: any) {
+  return (
+    <Link href={href} className="flex flex-col gap-2 p-6 rounded-2xl glass-premium border border-white/10 hover:border-amber-500/50 transition-all">
+       <div className={cn("p-3 rounded-xl w-fit", 
+         color === 'orange' ? 'bg-orange-500/10 text-orange-500' :
+         color === 'purple' ? 'bg-purple-500/10 text-purple-500' : 'bg-stone-500/10 text-stone-500'
+       )}>
+         {icon}
+       </div>
+       <h3 className="font-bold text-lg text-stone-900 dark:text-white">{title}</h3>
+       <p className="text-sm text-stone-500">{description}</p>
     </Link>
   );
 }

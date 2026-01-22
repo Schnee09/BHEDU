@@ -307,6 +307,30 @@
     background: rgba(245, 166, 35, 0.15);
 }
 
+/* Sidebar Specific (Pro Max PC) */
+.sidebar-indicator {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--color-primary-100);
+    z-index: -1;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dark .sidebar-indicator {
+    background: rgba(245, 166, 35, 0.15);
+}
+
+/* PC Hover Glows */
+@media (min-width: 1024px) {
+    .hover-glow-gold:hover {
+        box-shadow: 0 0 20px rgba(245, 166, 35, 0.2);
+        border-color: rgba(245, 166, 35, 0.3);
+    }
+}
+
 /* Animations */
 @keyframes fadeInUp {
   from {
