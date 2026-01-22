@@ -31,7 +31,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
           />
 
           {/* Main Content Area */}
-          <div className="flex-1 ml-0 lg:ml-72 flex flex-col">
+          <div className="flex-1 ml-0 lg:ml-80 flex flex-col transition-all duration-300">
             {/* Header */}
             <Header 
               profile={profile} 
@@ -42,7 +42,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
             {/* Content */}
             <main
               id="main-content"
-              className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-8 pb-safe" // Added pb-20 and pb-safe for mobile nav
+              className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 pb-safe" // Increased pb for bottom nav visibility
               role="main"
             >
               <div className="w-full mx-auto max-w-[1600px] px-0 sm:px-2 md:px-0">

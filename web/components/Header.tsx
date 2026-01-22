@@ -183,10 +183,22 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
         {/* User Initials on the left for Mobile - Apps style */}
         <div 
            onClick={() => setShowUserMenu(!showUserMenu)}
-           className="md:hidden w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-amber-500/20 active:scale-90 transition-transform press-effect"
+           className="hidden sm:flex md:hidden w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 items-center justify-center text-white font-black text-sm shadow-lg shadow-amber-500/20 active:scale-90 transition-transform press-effect cursor-pointer"
         >
           {getInitials()}
         </div>
+
+        {/* Hamburger Menu - Visible until lg (1024px) */}
+        <button
+          onClick={onMenuToggle}
+          className="lg:hidden p-2.5 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-stone-500/5 dark:hover:bg-white/5 transition-all active:scale-90"
+        >
+          {isMenuOpen ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+          )}
+        </button>
 
         {/* Title & Role */}
         <div className="flex flex-col ml-1">

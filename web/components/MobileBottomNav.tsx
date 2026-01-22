@@ -65,14 +65,14 @@ export default function MobileBottomNav() {
             {/* More Menu Overlay */}
             {showMoreMenu && (
                 <div 
-                    className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm animate-fade-in"
+                    className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm animate-fade-in"
                     onClick={() => setShowMoreMenu(false)}
                 />
             )}
 
             {/* Swipeable More Menu */}
             <div className={cn(
-                "md:hidden fixed bottom-1 left-0 right-0 z-50 transition-transform duration-500 ease-out px-4 pb-20",
+                "lg:hidden fixed bottom-1 left-0 right-0 z-50 transition-transform duration-500 ease-out px-4 pb-20",
                 showMoreMenu ? "translate-y-0" : "translate-y-full"
             )}>
                 <div className="glass-premium rounded-[32px] shadow-2xl pb-safe overflow-hidden border border-white/20 dark:border-white/5">
@@ -117,7 +117,7 @@ export default function MobileBottomNav() {
             </div>
 
             {/* Main Bottom Navigation - Floating Pill */}
-            <div className="md:hidden nav-pill glass-premium shadow-lg shadow-black/10 transition-all duration-300">
+            <div className="lg:hidden nav-pill glass-premium shadow-lg shadow-black/10 transition-all duration-300">
                 <div className="flex items-center justify-around w-full h-full relative">
                     {/* Sliding Indicator Background */}
                     <div 
