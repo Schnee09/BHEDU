@@ -72,10 +72,10 @@ export default function MobileBottomNav() {
 
             {/* Swipeable More Menu */}
             <div className={cn(
-                "md:hidden fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-out",
+                "md:hidden fixed bottom-1 left-0 right-0 z-50 transition-transform duration-500 ease-out px-4 pb-20",
                 showMoreMenu ? "translate-y-0" : "translate-y-full"
             )}>
-                <div className="bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl border-t border-gray-200 dark:border-gray-800 pb-safe">
+                <div className="glass-premium rounded-[32px] shadow-2xl pb-safe overflow-hidden border border-white/20 dark:border-white/5">
                     {/* Handle bar for swipe indication */}
                     <div className="flex justify-center pt-3 pb-2">
                         <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />
@@ -116,9 +116,20 @@ export default function MobileBottomNav() {
                 </div>
             </div>
 
-            {/* Main Bottom Navigation */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 pb-safe">
-                <div className="flex items-stretch justify-around h-[70px]">
+            {/* Main Bottom Navigation - Floating Pill */}
+            <div className="md:hidden nav-pill glass-premium shadow-lg shadow-black/10 transition-all duration-300">
+                <div className="flex items-center justify-around w-full h-full relative">
+                    {/* Sliding Indicator Background */}
+                    <div 
+                        className="nav-indicator"
+                        style={{ 
+                            width: `${100 / (mainNavItems.length + 1)}%`,
+                            left: showMoreMenu 
+                                ? `${(mainNavItems.length / (mainNavItems.length + 1)) * 100}%` 
+                                : `${(mainNavItems.findIndex(item => isActive(item.href)) / (mainNavItems.length + 1)) * 100}%`
+                        }}
+                    />
+
                     {mainNavItems.map((item) => {
                         const active = isActive(item.href);
                         return (
@@ -126,24 +137,24 @@ export default function MobileBottomNav() {
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "flex flex-col items-center justify-center flex-1 py-2 transition-all active:scale-95",
+                                    "flex flex-col items-center justify-center flex-1 h-full py-1 transition-all active:scale-90 z-10",
                                     active
-                                        ? "text-amber-600 dark:text-amber-400"
-                                        : "text-gray-500 dark:text-gray-400"
+                                        ? "text-amber-600 dark:text-amber-500"
+                                        : "text-stone-500 dark:text-stone-400 group-hover:text-stone-700"
                                 )}
                             >
-                                <div className={cn(
-                                    "p-2 rounded-xl transition-colors mb-0.5",
-                                    active && "bg-amber-100 dark:bg-amber-900/30"
-                                )}>
+                                <div className="mb-0.5">
                                     <item.icon 
-                                        className="w-6 h-6" 
+                                        className={cn(
+                                            "w-6 h-6 transition-all duration-300",
+                                            active ? "scale-110" : "scale-100 opacity-80"
+                                        )} 
                                         strokeWidth={active ? 2.5 : 2}
                                     />
                                 </div>
                                 <span className={cn(
-                                    "text-[10px] font-medium",
-                                    active && "font-semibold"
+                                    "text-[9px] font-bold uppercase tracking-wider transition-all duration-300",
+                                    active ? "opacity-100" : "opacity-0 scale-75 h-0"
                                 )}>
                                     {item.name}
                                 </span>
@@ -155,19 +166,24 @@ export default function MobileBottomNav() {
                     <button
                         onClick={() => setShowMoreMenu(true)}
                         className={cn(
-                            "flex flex-col items-center justify-center flex-1 py-2 transition-all active:scale-95",
+                            "flex flex-col items-center justify-center flex-1 h-full py-1 transition-all active:scale-90 z-10",
                             showMoreMenu
-                                ? "text-amber-600 dark:text-amber-400"
-                                : "text-gray-500 dark:text-gray-400"
+                                ? "text-amber-600 dark:text-amber-500"
+                                : "text-stone-500 dark:text-stone-400"
                         )}
                     >
-                        <div className={cn(
-                            "p-2 rounded-xl transition-colors mb-0.5",
-                            showMoreMenu && "bg-amber-100 dark:bg-amber-900/30"
-                        )}>
-                            <MoreHorizontal className="w-6 h-6" strokeWidth={2} />
+                        <div className="mb-0.5">
+                            <MoreHorizontal className={cn(
+                                "w-6 h-6 transition-all duration-300",
+                                showMoreMenu ? "scale-110" : "scale-100 opacity-80"
+                            )} strokeWidth={2.5} />
                         </div>
-                        <span className="text-[10px] font-medium">Thêm</span>
+                        <span className={cn(
+                            "text-[9px] font-bold uppercase tracking-wider transition-all duration-300",
+                            showMoreMenu ? "opacity-100" : "opacity-0 scale-75 h-0"
+                        )}>
+                            Thêm
+                        </span>
                     </button>
                 </div>
             </div>
