@@ -4,8 +4,8 @@
  * Encapsulates business logic and database queries
  */
 
-import { SupabaseClient } from '@supabase/supabase-js';
-import type { Student, StudentQueryParams, StudentListResult } from '../types';
+import { SupabaseClient } from "@supabase/supabase-js";
+import type { Student, StudentListResult, StudentQueryParams } from "../types";
 
 const STUDENT_SELECT_FIELDS = `
   id, user_id, email, full_name, role, phone, address, 
@@ -19,28 +19,31 @@ export class StudentService {
   /**
    * Get all students (for admin/staff)
    */
-  async getAllStudents(params: StudentQueryParams = {}): Promise<StudentListResult> {
-    const { search = '', page = 1, limit = 50, status } = params;
+  async getAllStudents(
+    params: StudentQueryParams = {},
+  ): Promise<StudentListResult> {
+    const { search = "", page = 1, limit = 50, status } = params;
     const offset = (page - 1) * limit;
 
     let countQuery = this.supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .eq('role', 'student');
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "student");
 
     let dataQuery = this.supabase
-      .from('profiles')
+      .from("profiles")
       .select(STUDENT_SELECT_FIELDS)
-      .eq('role', 'student')
-      .order('full_name', { ascending: true });
+      .eq("role", "student")
+      .order("full_name", { ascending: true });
 
-    if (status) {
-      countQuery = countQuery.eq('status', status);
-      dataQuery = dataQuery.eq('status', status);
+    if (status && status !== "all") {
+      countQuery = countQuery.eq("status", status);
+      dataQuery = dataQuery.eq("status", status);
     }
 
     if (search) {
-      const searchFilter = `full_name.ilike.%${search}%,email.ilike.%${search}%`;
+      const searchFilter =
+        `full_name.ilike.%${search}%,email.ilike.%${search}%`;
       countQuery = countQuery.or(searchFilter);
       dataQuery = dataQuery.or(searchFilter);
     }
@@ -48,7 +51,10 @@ export class StudentService {
     const { count, error: countError } = await countQuery;
     if (countError) throw countError;
 
-    const { data, error: dataError } = await dataQuery.range(offset, offset + limit - 1);
+    const { data, error: dataError } = await dataQuery.range(
+      offset,
+      offset + limit - 1,
+    );
     if (dataError) throw dataError;
 
     return {
@@ -64,18 +70,18 @@ export class StudentService {
    */
   async getStudentsForTeacher(
     teacherProfileId: string,
-    params: StudentQueryParams = {}
+    params: StudentQueryParams = {},
   ): Promise<StudentListResult> {
-    const { search = '', page = 1, limit = 50 } = params;
+    const { search = "", page = 1, limit = 50 } = params;
     const offset = (page - 1) * limit;
 
     // teacherProfileId is already profile.id from teacherAuth, no need to lookup
 
     // Get teacher's classes directly using profile.id
     const { data: classRows, error: classErr } = await this.supabase
-      .from('classes')
-      .select('id')
-      .eq('teacher_id', teacherProfileId);
+      .from("classes")
+      .select("id")
+      .eq("teacher_id", teacherProfileId);
 
     if (classErr || !classRows || classRows.length === 0) {
       return { students: [], total: 0, statistics: null };
@@ -85,48 +91,51 @@ export class StudentService {
 
     // Get active enrollments
     const { data: enrollments, error: enrollErr } = await this.supabase
-      .from('enrollments')
-      .select('student_id')
-      .in('class_id', classIds)
-      .eq('status', 'active');
+      .from("enrollments")
+      .select("student_id")
+      .in("class_id", classIds)
+      .eq("status", "active");
 
     if (enrollErr || !enrollments || enrollments.length === 0) {
       return { students: [], total: 0, statistics: null };
     }
 
-    const studentIds = Array.from(new Set(enrollments.map((e) => e.student_id)));
+    const studentIds = Array.from(
+      new Set(enrollments.map((e) => e.student_id)),
+    );
 
     let countQuery = this.supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .eq('role', 'student')
-      .in('id', studentIds);
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "student")
+      .in("id", studentIds);
 
     let dataQuery = this.supabase
-      .from('profiles')
+      .from("profiles")
       .select(STUDENT_SELECT_FIELDS)
-      .eq('role', 'student')
-      .in('id', studentIds)
-      .order('full_name', { ascending: true });
+      .eq("role", "student")
+      .in("id", studentIds)
+      .order("full_name", { ascending: true });
 
     // Apply filters
-    if (params.status) {
-      countQuery = countQuery.eq('status', params.status);
-      dataQuery = dataQuery.eq('status', params.status);
+    if (params.status && params.status !== "all") {
+      countQuery = countQuery.eq("status", params.status);
+      dataQuery = dataQuery.eq("status", params.status);
     }
 
     if (params.grade_level) {
-      countQuery = countQuery.eq('grade_level', params.grade_level);
-      dataQuery = dataQuery.eq('grade_level', params.grade_level);
+      countQuery = countQuery.eq("grade_level", params.grade_level);
+      dataQuery = dataQuery.eq("grade_level", params.grade_level);
     }
 
     if (params.gender) {
-      countQuery = countQuery.eq('gender', params.gender);
-      dataQuery = dataQuery.eq('gender', params.gender);
+      countQuery = countQuery.eq("gender", params.gender);
+      dataQuery = dataQuery.eq("gender", params.gender);
     }
 
     if (search) {
-      const searchFilter = `full_name.ilike.%${search}%,email.ilike.%${search}%`;
+      const searchFilter =
+        `full_name.ilike.%${search}%,email.ilike.%${search}%`;
       countQuery = countQuery.or(searchFilter);
       dataQuery = dataQuery.or(searchFilter);
     }
@@ -134,7 +143,10 @@ export class StudentService {
     const { count, error: countError } = await countQuery;
     if (countError) throw countError;
 
-    const { data, error: dataError } = await dataQuery.range(offset, offset + limit - 1);
+    const { data, error: dataError } = await dataQuery.range(
+      offset,
+      offset + limit - 1,
+    );
     if (dataError) throw dataError;
 
     return {
@@ -149,10 +161,10 @@ export class StudentService {
    */
   async getStudentById(studentId: string): Promise<Student | null> {
     const { data, error } = await this.supabase
-      .from('profiles')
+      .from("profiles")
       .select(STUDENT_SELECT_FIELDS)
-      .eq('id', studentId)
-      .eq('role', 'student')
+      .eq("id", studentId)
+      .eq("role", "student")
       .maybeSingle();
 
     if (error) throw error;

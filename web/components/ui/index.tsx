@@ -95,7 +95,7 @@ interface CardProps {
   className?: string;
   padding?: 'none' | 'sm' | 'md' | 'lg';
   hover?: boolean;
-  variant?: 'default' | 'elevated' | 'outlined' | 'glass' | 'primary' | 'secondary' | 'accent';
+  variant?: 'default' | 'elevated' | 'outlined' | 'glass' | 'primary' | 'secondary' | 'accent' | 'premium';
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -120,6 +120,7 @@ export const Card: React.FC<CardProps> = ({
     primary: 'bg-primary/5 border border-primary/20 shadow-neumorphic-sm rounded-2xl dark:bg-primary/10 dark:border-primary/30 dark:shadow-[0_0_15px_rgba(6,182,212,0.2)]',
     secondary: 'bg-success/5 border border-success/20 shadow-neumorphic-sm rounded-2xl dark:bg-success/10 dark:border-success/30 dark:shadow-[0_0_15px_rgba(34,197,94,0.2)]',
     accent: 'bg-accent/5 border border-accent/20 shadow-neumorphic-sm rounded-2xl dark:bg-accent/10 dark:border-accent/30 dark:shadow-[0_0_15px_rgba(139,92,246,0.2)]',
+    premium: 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-100 dark:border-white/5 shadow-premium rounded-[32px]',
   };
 
   const hoverClass = hover ? 'transition-all duration-200 hover:shadow-neumorphic dark:hover:shadow-glow hover:border-primary/30 dark:hover:border-primary/50 cursor-pointer' : '';
@@ -286,12 +287,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 // ALERT/NOTIFICATION COMPONENTS - NEUBRUTALISM STYLE
 // ============================================================================
 
-type AlertVariant = 'info' | 'success' | 'warning' | 'error';
+type AlertVariant = 'info' | 'success' | 'warning' | 'error' | 'danger';
 
 interface AlertProps {
   variant?: AlertVariant;
   title?: string;
-  message: string;
+  message?: string;
+  children?: ReactNode;
   onClose?: () => void;
   className?: string;
 }
@@ -300,6 +302,7 @@ export const Alert: React.FC<AlertProps> = ({
   variant = 'info',
   title,
   message,
+  children,
   onClose,
   className = '',
 }) => {
@@ -309,7 +312,7 @@ export const Alert: React.FC<AlertProps> = ({
       border: 'border-black',
       shadow: 'shadow-[4px_4px_0px_#0891B2]',
       text: 'text-cyan-900',
-      icon: '�',
+      icon: 'ℹ',
     },
     success: {
       bg: 'bg-emerald-100',
@@ -332,9 +335,17 @@ export const Alert: React.FC<AlertProps> = ({
       text: 'text-red-900',
       icon: '❌',
     },
+    danger: {
+      bg: 'bg-red-100',
+      border: 'border-black',
+      shadow: 'shadow-[4px_4px_0px_#DC2626]',
+      text: 'text-red-900',
+      icon: '❌',
+    },
   };
 
   const style = variants[variant];
+  const content = message || children;
 
   return (
     <div className={`${style.bg} ${style.border} border-3 rounded-xl p-4 ${style.shadow} ${className}`}>
@@ -342,7 +353,7 @@ export const Alert: React.FC<AlertProps> = ({
         <span className="text-2xl mr-3">{style.icon}</span>
         <div className="flex-1">
           {title && <h4 className={`font-bold ${style.text} mb-1`} style={{ fontFamily: 'Fredoka, sans-serif' }}>{title}</h4>}
-          <p className={`${style.text} text-sm font-medium`}>{message}</p>
+          <div className={`${style.text} text-sm font-medium`}>{content}</div>
         </div>
         {onClose && (
           <button
@@ -355,6 +366,7 @@ export const Alert: React.FC<AlertProps> = ({
         )}
       </div>
     </div>
+
   );
 };
 

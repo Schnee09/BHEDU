@@ -8,14 +8,14 @@ export interface Student {
   user_id: string;
   email: string;
   full_name: string;
-  role: 'student';
+  role: "student";
   phone?: string;
   address?: string;
   date_of_birth?: string;
   student_code?: string;
   grade_level?: number;
-  gender?: 'male' | 'female' | 'other';
-  status?: 'active' | 'inactive' | 'graduated' | 'transferred';
+  gender?: "male" | "female" | "other";
+  status?: "active" | "inactive" | "graduated" | "transferred" | "suspended";
   is_active: boolean;
   photo_url?: string;
   enrollment_date?: string;
@@ -29,7 +29,7 @@ export interface StudentQueryParams {
   page?: number;
   limit?: number;
   classId?: string;
-  status?: Student['status'];
+  status?: Student["status"] | "all";
   grade_level?: string;
   gender?: string;
 }
@@ -54,5 +54,5 @@ export interface CreateStudentPayload {
   date_of_birth?: string;
   student_code?: string;
   grade_level?: number;
-  gender?: 'male' | 'female' | 'other';
+  gender?: "male" | "female" | "other";
 }

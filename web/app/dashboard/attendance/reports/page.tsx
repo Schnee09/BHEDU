@@ -23,6 +23,7 @@ interface AttendanceRecord {
   class: {
     id: string
     title: string
+    name?: string
     code: string
   }
 }
