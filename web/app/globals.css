@@ -275,9 +275,28 @@
 }
 
 .dark .glass-premium {
-  background: rgba(26, 20, 16, 0.85);
+  background: rgba(26, 20, 16, 0.9); /* More opaque */
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Golden Shell Accents */
+.shell-glow {
+  box-shadow: 0 0 30px rgba(245, 166, 35, 0.15);
+}
+
+.dark .shell-glow {
+  box-shadow: 0 0 40px rgba(245, 166, 35, 0.25);
+}
+
+.shell-border-gold {
+  border-color: rgba(245, 166, 35, 0.3);
+}
+
+.dark .shell-border-gold {
+  border-color: rgba(245, 166, 35, 0.2);
 }
 
 /* Floating Navigation Pill */

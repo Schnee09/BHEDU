@@ -13,7 +13,19 @@ import {
     BookOpen,
     Building,
     AlertCircle,
+    GraduationCap,
+    Timer,
+    Layout
 } from "lucide-react";
+import { 
+    Button, 
+    Card, 
+    Badge, 
+    LoadingState, 
+    Alert,
+    EmptyState,
+} from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 interface TimetableSlot {
     id: string;
@@ -36,26 +48,22 @@ interface ClassInfo {
 const DAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
 const PERIODS = [
-    // Saturday/Sunday morning
     { id: 1, label: "Sáng 1", time: "08:00 - 09:30", start: "08:00" },
     { id: 2, label: "Sáng 2", time: "09:30 - 11:00", start: "09:30" },
-    // Afternoon (Sat/Sun)
     { id: 3, label: "Chiều 1", time: "14:00 - 15:30", start: "14:00" },
     { id: 4, label: "Chiều 2", time: "15:30 - 17:00", start: "15:30" },
-    // Evening (all days)
     { id: 5, label: "Ca 1", time: "17:00 - 18:30", start: "17:00" },
     { id: 6, label: "Ca 2", time: "18:30 - 20:00", start: "18:30" },
     { id: 7, label: "Ca 3", time: "20:00 - 21:30", start: "20:00" },
 ];
 
-const SUBJECT_COLORS: Record<string, string> = {
-    MATH: "bg-blue-100 border-blue-300 text-blue-800",
-    LIT: "bg-purple-100 border-purple-300 text-purple-800",
-    ENG: "bg-emerald-100 border-emerald-300 text-emerald-800",
-    PHY: "bg-orange-100 border-orange-300 text-orange-800",
-    CHEM: "bg-pink-100 border-pink-300 text-pink-800",
-    OTHER: "bg-gray-100 border-gray-300 text-gray-800",
-    default: "bg-indigo-100 border-indigo-300 text-indigo-800",
+const SUBJECT_THEMES: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+    MATH: { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-600", dot: "bg-blue-500" },
+    LIT: { bg: "bg-purple-500/10", border: "border-purple-500/20", text: "text-purple-600", dot: "bg-purple-500" },
+    ENG: { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-600", dot: "bg-emerald-500" },
+    PHY: { bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-600", dot: "bg-orange-500" },
+    CHEM: { bg: "bg-pink-500/10", border: "border-pink-500/20", text: "text-pink-600", dot: "bg-pink-500" },
+    default: { bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-600", dot: "bg-indigo-500" },
 };
 
 export default function MySchedulePage() {
@@ -85,7 +93,7 @@ export default function MySchedulePage() {
             setClasses(data.classes || []);
         } catch (err) {
             console.error("Failed to fetch schedule:", err);
-            setError('Không thể tải lịch học');
+            setError('Không thể kết nối đến máy chủ');
         } finally {
             setLoading(false);
         }
@@ -94,7 +102,6 @@ export default function MySchedulePage() {
     useEffect(() => {
         if (profileLoading) return;
         if (profile?.role === "admin" || profile?.role === "staff") {
-            // Redirect admin to management page
             window.location.href = '/dashboard/timetable';
             return;
         }
@@ -107,13 +114,13 @@ export default function MySchedulePage() {
         );
     };
 
-    const getSubjectColor = (code?: string) => {
-        return SUBJECT_COLORS[code || ""] || SUBJECT_COLORS.default;
+    const getTheme = (code?: string) => {
+        return SUBJECT_THEMES[code || ""] || SUBJECT_THEMES.default;
     };
 
     const getWeekDates = () => {
         const start = new Date(currentWeek);
-        start.setDate(start.getDate() - start.getDay() + 1);
+        start.setDate(start.getDate() - (start.getDay() === 0 ? 6 : start.getDay() - 1));
         return DAYS.map((_, i) => {
             const date = new Date(start);
             date.setDate(start.getDate() + i);
@@ -128,207 +135,229 @@ export default function MySchedulePage() {
 
     const weekDates = getWeekDates();
 
-    if (profileLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
-            </div>
-        );
-    }
+    if (profileLoading) return <LoadingState message="Xác thực quyền truy cập..." />;
 
-    const title = isStudent ? "Lịch học của tôi" : isTeacher ? "Lịch giảng dạy" : "Lịch học";
+    const title = isStudent ? "Lịch học của tôi" : isTeacher ? "Lịch giảng dạy" : "Lịch trình";
     const totalSlots = slots.length;
     const uniqueSubjects = new Set(slots.map(s => s.subject?.name)).size;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                        <span className="p-2 bg-indigo-100 dark:bg-indigo-900 rounded-xl">
-                            <Calendar className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                        </span>
-                        {title}
-                    </h1>
-                    <p className="mt-2 text-gray-600 dark:text-gray-400">
-                        {isStudent && "Xem lịch học các môn bạn đã đăng ký trong tuần"}
-                        {isTeacher && "Xem lịch các tiết bạn đang giảng dạy trong tuần"}
-                    </p>
-                </div>
-
-                {/* Stats cards */}
-                {!loading && slots.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                            <div className="text-2xl font-bold text-indigo-600">{totalSlots}</div>
-                            <div className="text-sm text-gray-500">Tiết/tuần</div>
+        <div className="min-h-screen bg-gray-50/30 dark:bg-gray-900/30 p-4 sm:p-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white dark:bg-gray-800/80 p-8 rounded-[32px] border border-gray-100 dark:border-white/5 shadow-premium backdrop-blur-md">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-indigo-500/10 rounded-lg">
+                                <Layout className="w-5 h-5 text-indigo-500" />
+                            </div>
+                            <Badge variant="indigo" className="font-black">CÁ NHÂN</Badge>
                         </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                            <div className="text-2xl font-bold text-emerald-600">{uniqueSubjects}</div>
-                            <div className="text-sm text-gray-500">Môn học</div>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                            <div className="text-2xl font-bold text-purple-600">{classes.length}</div>
-                            <div className="text-sm text-gray-500">{isStudent ? "Lớp" : "Lớp dạy"}</div>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                            <div className="text-2xl font-bold text-amber-600">{Math.round(totalSlots * 45 / 60)}h</div>
-                            <div className="text-sm text-gray-500">Thời lượng</div>
-                        </div>
+                        <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white uppercase">
+                            {title}
+                        </h1>
+                        <p className="text-muted mt-2 max-w-lg font-medium">
+                            {isStudent ? "Xem và quản lý lịch học các môn bạn đã đăng ký." : "Theo dõi các tiết dạy và kế hoạch giảng dạy trong tuần."}
+                        </p>
                     </div>
-                )}
 
-                {/* Week navigation */}
-                <div className="flex items-center justify-between mb-6 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                    <button
-                        onClick={() => {
-                            const prev = new Date(currentWeek);
-                            prev.setDate(prev.getDate() - 7);
-                            setCurrentWeek(prev);
-                        }}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <div className="text-center">
-                        <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {weekDates[0].toLocaleDateString("vi-VN", { day: "2-digit", month: "long" })} - {weekDates[6].toLocaleDateString("vi-VN", { day: "2-digit", month: "long", year: "numeric" })}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
+                    <div className="flex items-center gap-3 bg-gray-100 dark:bg-white/5 p-1.5 rounded-2xl">
+                        <Button 
+                            variant="primary" 
+                            size="sm" 
+                            className="rounded-xl px-5"
                             onClick={() => setCurrentWeek(new Date())}
-                            className="px-3 py-1.5 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 rounded-lg font-medium hover:bg-indigo-200 transition-colors"
                         >
-                            Tuần này
-                        </button>
-                        <button
-                            onClick={() => {
+                            Hôm nay
+                        </Button>
+                        <div className="flex items-center">
+                            <Button variant="ghost" size="sm" onClick={() => {
+                                const prev = new Date(currentWeek);
+                                prev.setDate(prev.getDate() - 7);
+                                setCurrentWeek(prev);
+                            }}>
+                                <ChevronLeft className="w-5 h-5" />
+                            </Button>
+                            <span className="text-sm font-black px-4 min-w-[120px] text-center">
+                                T.{currentWeek.getMonth() + 1} / {currentWeek.getFullYear()}
+                            </span>
+                            <Button variant="ghost" size="sm" onClick={() => {
                                 const next = new Date(currentWeek);
                                 next.setDate(next.getDate() + 7);
                                 setCurrentWeek(next);
-                            }}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        >
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
+                            }}>
+                                <ChevronRight className="w-5 h-5" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Schedule Grid */}
-                {loading ? (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center shadow-lg">
-                        <div className="animate-spin h-10 w-10 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto" />
-                        <p className="mt-4 text-gray-500">Đang tải lịch học...</p>
-                    </div>
-                ) : error ? (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center shadow-lg">
-                        <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                        <p className="text-red-500">{error}</p>
-                    </div>
-                ) : slots.length === 0 ? (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center shadow-lg">
-                        <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500 text-lg font-medium">
-                            {isStudent ? "Bạn chưa được xếp lịch học" : "Bạn chưa được phân công giảng dạy"}
-                        </p>
-                        <p className="text-gray-400 text-sm mt-2">
-                            Liên hệ phòng đào tạo nếu có thắc mắc
-                        </p>
-                    </div>
-                ) : (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-700">
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[900px]">
-                                <thead>
-                                    <tr className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-                                        <th className="w-28 p-4 text-left text-sm font-semibold">
-                                            <Clock className="w-4 h-4 inline mr-2" />Tiết
-                                        </th>
-                                        {DAYS.map((day, i) => (
-                                            <th
-                                                key={day}
-                                                className={`p-4 text-center min-w-[120px] ${isToday(weekDates[i]) ? 'bg-white/20' : ''}`}
-                                            >
-                                                <div className="font-bold">{day}</div>
-                                                <div className={`text-xs ${isToday(weekDates[i]) ? 'bg-white text-indigo-600 rounded-full px-2 py-0.5 inline-block mt-1' : 'opacity-80'}`}>
-                                                    {weekDates[i].toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                                                </div>
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                    {PERIODS.map((period) => (
-                                        <tr key={period.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20">
-                                            <td className="p-3 text-center border-r border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                                                <div className="text-sm font-bold text-gray-700 dark:text-gray-300">{period.label}</div>
-                                                <div className="text-xs text-gray-500">{period.time}</div>
-                                            </td>
-                                            {DAYS.map((_, dayIndex) => {
-                                                const slot = getSlotForCell(dayIndex, period.start);
-
-                                                return (
-                                                    <td key={dayIndex} className={`p-1.5 ${isToday(weekDates[dayIndex]) ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}`}>
-                                                        {slot ? (
-                                                            <div className={`p-3 rounded-xl border-2 ${getSubjectColor(slot.subject?.code)} shadow-sm`}>
-                                                                <div className="font-bold text-sm">
-                                                                    {slot.subject?.name || "N/A"}
-                                                                </div>
-                                                                {slot.class && (
-                                                                    <div className="flex items-center gap-1 text-xs mt-1.5 opacity-80">
-                                                                        <Building className="w-3 h-3" />
-                                                                        {slot.class.name}
-                                                                    </div>
-                                                                )}
-                                                                <div className="flex items-center gap-1 text-xs mt-1 opacity-75">
-                                                                    <Users className="w-3 h-3" />
-                                                                    <span className="truncate">{slot.teacher?.full_name || "TBA"}</span>
-                                                                </div>
-                                                                {slot.room && (
-                                                                    <div className="flex items-center gap-1 text-xs mt-1 opacity-60">
-                                                                        <MapPin className="w-3 h-3" />
-                                                                        <span className="font-semibold">{slot.room}</span>
-                                                                    </div>
-                                                                )}
-                                                                {slot.notes && (
-                                                                    <div className="mt-2 text-xs bg-white/50 dark:bg-gray-900/30 rounded p-1 italic">
-                                                                        📝 {slot.notes}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="h-20 rounded-xl" />
-                                                        )}
-                                                    </td>
-                                                );
-                                            })}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                {/* Stats Section */}
+                {!loading && slots.length > 0 && (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[
+                            { label: "Tiết/tuần", value: totalSlots, icon: Clock, color: "text-blue-500", bg: "bg-blue-500/10" },
+                            { label: "Môn học", value: uniqueSubjects, icon: BookOpen, color: "text-purple-500", bg: "bg-purple-500/10" },
+                            { label: isStudent ? "Lớp đang học" : "Lớp đang dạy", value: classes.length, icon: GraduationCap, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                            { label: "Thời lượng", value: `${Math.round(totalSlots * 1.5)}h`, icon: Timer, color: "text-amber-500", bg: "bg-amber-500/10" },
+                        ].map((stat, i) => (
+                            <Card key={i} variant="premium" className="relative group overflow-hidden">
+                                <div className={cn("absolute top-0 right-0 p-3 rounded-bl-3xl transition-transform group-hover:scale-110", stat.bg)}>
+                                    <stat.icon className={cn("w-5 h-5", stat.color)} />
+                                </div>
+                                <div className="p-1 text-sm font-black text-muted uppercase tracking-[0.2em] mb-1">{stat.label}</div>
+                                <div className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{stat.value}</div>
+                            </Card>
+                        ))}
                     </div>
                 )}
 
-                {/* Classes list */}
+                {/* Main Schedule Grid */}
+                <div className="relative">
+                    {loading ? (
+                        <div className="h-[500px] flex items-center justify-center bg-white/50 dark:bg-gray-800/50 rounded-[40px] border-4 border-dashed border-gray-100 dark:border-white/5">
+                            <LoadingState message="Đang đồng bộ lịch trình..." />
+                        </div>
+                    ) : error ? (
+                        <Alert variant="danger" title="Lỗi hệ thống" className="rounded-3xl">
+                            {error}
+                        </Alert>
+                    ) : slots.length === 0 ? (
+                        <EmptyState 
+                            title="Lịch trình trống" 
+                            description={isStudent ? "Bạn chưa có tiết học nào được xếp trong tuần này." : "Chưa có tiết chuẩn bị giảng dạy nào."}
+                            icon={<Calendar className="w-12 h-12" />}
+                            className="bg-white/50 dark:bg-gray-800/50"
+                        />
+                    ) : (
+                        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-[40px] shadow-premium-lg border border-gray-100 dark:border-white/5 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[1000px] border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-500/5 dark:bg-white/2">
+                                            <th className="w-32 p-6 text-left">
+                                                <div className="text-[10px] font-black text-muted uppercase tracking-[0.2em]">Khung giờ</div>
+                                            </th>
+                                            {DAYS.map((day, i) => (
+                                                <th 
+                                                    key={day} 
+                                                    className={cn(
+                                                        "p-6 text-center border-l border-gray-100 dark:border-white/5",
+                                                        isToday(weekDates[i]) ? "bg-primary/5" : ""
+                                                    )}
+                                                >
+                                                    <div className={cn(
+                                                        "text-xs font-black uppercase tracking-[0.1em] mb-1.5",
+                                                        isToday(weekDates[i]) ? "text-primary" : "text-muted"
+                                                    )}>{day}</div>
+                                                    <div className={cn(
+                                                        "text-base font-black px-3 py-1 rounded-xl inline-block transition-all",
+                                                        isToday(weekDates[i]) ? "bg-primary text-white shadow-lg shadow-primary/30" : "text-gray-900 dark:text-white"
+                                                    )}>
+                                                        {weekDates[i].getDate()}
+                                                    </div>
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                                        {PERIODS.map((period) => (
+                                            <tr key={period.id} className="group hover:bg-gray-50/50 dark:hover:bg-white/2 transition-colors">
+                                                <td className="p-6 border-r border-gray-100 dark:border-white/5">
+                                                    <div className="text-xs font-black text-gray-900 dark:text-gray-100 mb-1">{period.label}</div>
+                                                    <div className="text-[10px] font-bold text-muted whitespace-nowrap">{period.time}</div>
+                                                </td>
+                                                {DAYS.map((_, dayIndex) => {
+                                                    const slot = getSlotForCell(dayIndex, period.start);
+                                                    const theme = getTheme(slot?.subject?.code);
+
+                                                    return (
+                                                        <td 
+                                                            key={dayIndex} 
+                                                            className={cn(
+                                                                "p-3 border-l border-gray-100 dark:border-white/5 align-top",
+                                                                isToday(weekDates[dayIndex]) ? "bg-primary/[0.02]" : ""
+                                                            )}
+                                                        >
+                                                            {slot ? (
+                                                                <div className={cn(
+                                                                    "p-4 rounded-3xl border-2 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-lg",
+                                                                    theme.bg, theme.border
+                                                                )}>
+                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                        <div className={cn("w-1.5 h-1.5 rounded-full", theme.dot)} />
+                                                                        <span className={cn("text-[10px] font-black uppercase tracking-widest", theme.text)}>
+                                                                            {slot.subject?.code || "SUB"}
+                                                                        </span>
+                                                                    </div>
+                                                                    
+                                                                    <div className="font-black text-sm text-gray-900 dark:text-white mb-3 line-clamp-2 leading-tight">
+                                                                        {slot.subject?.name}
+                                                                    </div>
+
+                                                                    <div className="space-y-1.5">
+                                                                        {slot.class && (
+                                                                            <div className="flex items-center gap-2 text-[10px] font-bold text-muted">
+                                                                                <Building className="w-3 h-3 text-primary" />
+                                                                                <span>{slot.class.name}</span>
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="flex items-center gap-2 text-[10px] font-bold text-muted">
+                                                                            <Users className="w-3 h-3 text-primary" />
+                                                                            <span className="truncate">{slot.teacher?.full_name || "Chưa xác định"}</span>
+                                                                        </div>
+                                                                        {slot.room && (
+                                                                            <div className="flex items-center gap-2 text-[10px] font-bold text-muted">
+                                                                                <MapPin className="w-3 h-3 text-red-500" />
+                                                                                <span className="font-black">{slot.room}</span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {slot.notes && (
+                                                                        <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/5 italic text-[9px] text-muted font-medium line-clamp-2">
+                                                                            " {slot.notes} "
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="min-h-[100px] rounded-3xl group-hover:bg-primary/[0.01] transition-colors" />
+                                                            )}
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Class List Summary */}
                 {!loading && classes.length > 0 && (
-                    <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-                            {isStudent ? "📚 Lớp đang học" : "📚 Lớp đang dạy"}
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
+                    <Card variant="glass" className="p-8">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="p-3 bg-primary/10 rounded-2xl">
+                                <BookOpen className="w-6 h-6 text-primary" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Danh sách lớp phụ trách</h3>
+                                <p className="text-xs text-muted font-bold uppercase tracking-widest mt-1">Thông tin chi tiết các đơn vị học tập</p>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
                             {classes.map(c => (
-                                <span
-                                    key={c.id}
-                                    className="px-3 py-1.5 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 dark:from-indigo-900 dark:to-purple-900 dark:text-indigo-300 rounded-full text-sm font-medium"
+                                <Badge 
+                                    key={c.id} 
+                                    className="px-6 py-3 rounded-2xl bg-white dark:bg-white/5 border-2 border-gray-100 dark:border-white/10 text-sm font-black text-gray-700 dark:text-gray-300 shadow-sm hover:scale-105 transition-transform cursor-default"
                                 >
                                     {c.name}
-                                </span>
+                                </Badge>
                             ))}
                         </div>
-                    </div>
+                    </Card>
                 )}
             </div>
         </div>

@@ -173,46 +173,38 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
   ].filter((action) => action.show);
 
   return (
-    <header className="relative h-16 md:h-[72px] flex items-center justify-between px-4 md:px-6 sticky top-0 z-40
-     glass-premium backdrop-blur-2xl shadow-sm dark:shadow-none transition-all duration-500">
-      {/* Top Golden Shine */}
-      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+    <header className="relative h-16 md:h-20 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40
+     glass-premium backdrop-blur-3xl shadow-sm dark:shadow-none transition-all duration-500 border-b border-white/20 dark:border-white/5">
+      {/* Top Golden Shine - Micro-detail for prestige */}
+      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
       
-      {/* Left Section: Nav Trigger (Mobile) or Profile (Mobile Premium) */}
-      <div className="flex items-center gap-3 relative z-10 lg:pl-2">
-        {/* User Initials on the left for Mobile - Apps style */}
-        <div 
-           onClick={() => setShowUserMenu(!showUserMenu)}
-           className="hidden sm:flex md:hidden w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 items-center justify-center text-white font-black text-sm shadow-lg shadow-amber-500/20 active:scale-90 transition-transform press-effect cursor-pointer"
-        >
-          {getInitials()}
-        </div>
-
-        {/* Hamburger Menu - Visible until lg (1024px) */}
+      {/* Left Section: Nav Trigger (Mobile) */}
+      <div className="flex items-center gap-4 relative z-10">
+        {/* Hamburger Menu - Refined for premium feel */}
         <button
           onClick={onMenuToggle}
-          className="lg:hidden p-2.5 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-stone-500/5 dark:hover:bg-white/5 transition-all active:scale-90"
+          className="lg:hidden p-3 rounded-2xl text-stone-600 dark:text-stone-400 hover:bg-amber-500/10 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-500 transition-all active:scale-95 shadow-sm bg-white/50 dark:bg-white/5"
         >
           {isMenuOpen ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M6 18L18 6M6 6l12 12" /></svg>
           ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M4 6h16M4 12h16M4 18h16" /></svg>
           )}
         </button>
 
-        {/* Title & Role */}
-        <div className="flex flex-col ml-1">
-          <h1 className="font-black text-lg md:text-2xl leading-tight tracking-tighter flex items-center gap-1.5">
-            <span className="text-stone-900 dark:text-stone-100 hidden sm:inline">Cổng</span>
-            <span className="text-amber-500">
+        {/* Title & Role - Modernized Typography */}
+        <div className="flex flex-col">
+          <h1 className="font-black text-xl md:text-2xl leading-tight tracking-tighter flex items-center gap-2">
+            <span className="text-stone-900 dark:text-stone-100 hidden sm:inline opacity-30">Cổng</span>
+            <span className="bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 bg-clip-text text-transparent filter drop-shadow-[0_2px_4px_rgba(245,166,35,0.2)]">
               {profile?.role === 'admin' ? 'Quản Trị' :
                 profile?.role === 'teacher' ? 'Giáo Viên' :
                   'Học Sinh'}
             </span>
           </h1>
-          <div className="flex items-center gap-1.5 opacity-60">
-             <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-             <p className="text-[10px] md:text-[11px] text-stone-500 dark:text-stone-400 font-black uppercase tracking-[0.2em]">BH-EDU SYSTEM</p>
+          <div className="flex items-center gap-2 mt-1">
+             <div className="w-2 h-[2px] bg-amber-500 rounded-full" />
+             <p className="text-[9px] md:text-[10px] text-stone-500 dark:text-stone-400 font-black uppercase tracking-[0.4em] opacity-40 italic">BH-EDU PREMIUM</p>
           </div>
         </div>
       </div>

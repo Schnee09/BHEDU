@@ -79,8 +79,8 @@ export const ALL_NAV_ITEMS: NavSection[] = [
         href: "/dashboard/timetable",
         label: "Quản lý TKB",
         icon: Clock,
-        permissions: ["system.settings"],
-      }, // Admin only
+        permissions: ["classes.view"],
+      }, // Admin and Staff
       { href: "/dashboard/my-schedule", label: "Thời khóa biểu", icon: Clock }, // All users
       { href: "/dashboard/calendar", label: "Lịch học tập", icon: Calendar },
     ],
@@ -168,13 +168,13 @@ export const ALL_NAV_ITEMS: NavSection[] = [
         href: "/dashboard/admin/semesters",
         label: "Học kỳ",
         icon: Calendar,
-        permissions: ["system.settings"],
+        permissions: ["classes.view"],
       },
       {
         href: "/dashboard/admin/subjects",
         label: "Môn học",
         icon: BookOpen,
-        permissions: ["system.settings"],
+        permissions: ["classes.view"],
       },
       {
         href: "/dashboard/admin/data",

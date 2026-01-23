@@ -3,19 +3,17 @@
 import { useRef, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Edit3, Trash2, MapPin, Users, GraduationCap, BookOpen, Clock, CalendarDays, Plus } from "lucide-react";
+import { Edit3, MapPin, Users, BookOpen, Clock, CalendarDays, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Define simplified types based on what we see in page.tsx
-// In a real scenario, we should import shared types
 interface MobileTimetableListProps {
-    slots: any[]; // Using any[] for flexibility since exact types are in page.tsx
+    slots: any[];
     days: string[];
     weekDates: Date[];
     currentDay: number;
     onDayChange: (dayIndex: number) => void;
     onEditSlot: (slot: any) => void;
-    onDeleteSlot: (slotId: string) => void;
+    onDeleteSlot: (slotId: string) => void; // Keep for interface compatibility
     onCreateSlot: (dayIndex: number, session: any) => void;
     viewMode: 'room' | 'class' | 'teacher' | 'tutoring';
     sessions: any[];
@@ -29,7 +27,6 @@ export default function MobileTimetableList({
     currentDay,
     onDayChange,
     onEditSlot,
-    onDeleteSlot,
     onCreateSlot,
     viewMode,
     sessions,
@@ -40,22 +37,17 @@ export default function MobileTimetableList({
     const touchStart = useRef<number | null>(null);
     const touchEnd = useRef<number | null>(null);
 
-    // Auto-scroll to selected day on mount/change
+    // Auto-scroll to selected day
     useEffect(() => {
         if (scrollRef.current) {
             const selectedBtn = scrollRef.current.children[currentDay] as HTMLElement;
             if (selectedBtn) {
-                // Center the selected day
                 const scrollLeft = selectedBtn.offsetLeft - scrollRef.current.offsetWidth / 2 + selectedBtn.offsetWidth / 2;
-                scrollRef.current.scrollTo({
-                    left: scrollLeft,
-                    behavior: 'smooth'
-                });
+                scrollRef.current.scrollTo({ left: scrollLeft, behavior: 'smooth' });
             }
         }
     }, [currentDay]);
 
-    // Handle day change with animation
     const handleDayChange = (newIndex: number) => {
         if (newIndex < 0 || newIndex >= days.length) return;
         setAnimationDirection(newIndex > currentDay ? 'right' : 'left');
@@ -67,96 +59,95 @@ export default function MobileTimetableList({
         touchEnd.current = null;
         touchStart.current = e.targetTouches[0].clientX;
     };
-
     const onTouchMove = (e: React.TouchEvent) => {
         touchEnd.current = e.targetTouches[0].clientX;
     };
-
     const onTouchEnd = () => {
         if (!touchStart.current || !touchEnd.current) return;
         const distance = touchStart.current - touchEnd.current;
-        const isLeftSwipe = distance > 50;
-        const isRightSwipe = distance < -50;
-
-        if (isLeftSwipe && currentDay < days.length - 1) {
-            handleDayChange(currentDay + 1);
-        }
-        if (isRightSwipe && currentDay > 0) {
-            handleDayChange(currentDay - 1);
-        }
+        if (distance > 50 && currentDay < days.length - 1) handleDayChange(currentDay + 1);
+        if (distance < -50 && currentDay > 0) handleDayChange(currentDay - 1);
     };
 
-    // Filter slots for the current day
     const dailySlots = sessions.map(session => {
         const sessionSlots = slots.filter(s =>
             s.day_of_week === currentDay &&
-            s.start_time === session.start
+            s.start_time?.startsWith(session.start)
         );
         return { session, slots: sessionSlots };
     });
 
-    const getSlotColor = (slot: any) => {
-        if (viewMode === 'tutoring') return 'border-l-purple-500 bg-purple-50/50 dark:bg-purple-900/10';
-        if (viewMode === 'teacher') return 'border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/10';
-        if (viewMode === 'class') return 'border-l-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/10';
-        return 'border-l-blue-500 bg-white dark:bg-gray-800 border dark:border-gray-700'; // Default clean look
+    const getSlotStyles = (slot: any) => {
+        if (viewMode === 'tutoring') return 'border-l-purple-500 bg-purple-500/5 dark:bg-purple-500/10';
+        if (viewMode === 'teacher') return 'border-l-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10';
+        if (viewMode === 'class') return 'border-l-indigo-500 bg-indigo-500/5 dark:bg-indigo-500/10';
+        return 'border-l-amber-500 bg-amber-500/5 dark:bg-amber-500/10';
     };
 
     const currentDate = weekDates[currentDay];
 
     return (
-        <div className="flex flex-col h-[calc(100vh-140px)] md:hidden bg-gray-50 dark:bg-gray-950 -mx-4 sm:-mx-6">
-            {/* Day Selector - Sticky Header */}
-            <div className="sticky top-0 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 shadow-sm">
-                <div
-                    ref={scrollRef}
-                    className="flex overflow-x-auto py-3 px-4 gap-3 no-scrollbar scroll-smooth"
-                >
-                    {days.map((day, index) => {
-                        const date = weekDates[index];
-                        const isToday = new Date().toDateString() === date.toDateString();
-                        const isSelected = currentDay === index;
+        <div className="flex flex-col h-[calc(100vh-140px)] md:hidden bg-transparent -mx-4 sm:-mx-6">
+            {/* Day Selector - Premium Sticky */}
+            <div className="sticky top-0 z-30 space-y-0.5">
+                <div className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-xl border-b border-stone-200/50 dark:border-white/5 py-3">
+                    <div
+                        ref={scrollRef}
+                        className="flex overflow-x-auto px-4 gap-3 no-scrollbar scroll-smooth"
+                    >
+                        {days.map((day, index) => {
+                            const date = weekDates[index];
+                            const isToday = new Date().toDateString() === date.toDateString();
+                            const isSelected = currentDay === index;
 
-                        return (
-                            <button
-                                key={day}
-                                onClick={() => handleDayChange(index)}
-                                className={cn(
-                                    "flex flex-col items-center justify-center min-w-[64px] h-[72px] rounded-2xl transition-all duration-200 press-effect tap-target",
-                                    isSelected
-                                        ? "bg-amber-500 text-white shadow-lg shadow-amber-500/25 scale-105 font-bold"
-                                        : "bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-transparent hover:border-gray-200 dark:hover:border-gray-700",
-                                    isToday && !isSelected && "ring-1 ring-amber-500/50 bg-amber-50 dark:bg-amber-900/10 text-amber-600 dark:text-amber-400"
-                                )}
-                            >
-                                <span className={cn(
-                                    "text-[11px] font-medium uppercase tracking-wider mb-0.5",
-                                    isSelected ? "text-amber-50" : "text-gray-400"
-                                )}>{day}</span>
-                                <span className="text-xl leading-none">{format(date, 'dd')}</span>
-                            </button>
-                        );
-                    })}
+                            return (
+                                <button
+                                    key={day}
+                                    onClick={() => handleDayChange(index)}
+                                    className={cn(
+                                        "flex flex-col items-center justify-center min-w-[64px] h-[76px] rounded-[24px] transition-all duration-300 relative press-effect tap-target",
+                                        isSelected
+                                            ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30 scale-105"
+                                            : "bg-stone-500/5 dark:bg-white/5 text-stone-500 dark:text-stone-400 border border-stone-200/50 dark:border-white/5",
+                                        isToday && !isSelected && "ring-2 ring-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-500"
+                                    )}
+                                >
+                                    <span className={cn(
+                                        "text-[10px] font-black uppercase tracking-[0.15em] mb-1 opacity-70",
+                                        isSelected ? "text-amber-50" : ""
+                                    )}>{day}</span>
+                                    <span className="text-xl font-black">{format(date, 'dd')}</span>
+                                    
+                                    {/* Active Glow */}
+                                    {isSelected && (
+                                        <div className="absolute -bottom-1 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_10px_white]" />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
                 
-                {/* Info Bar */}
-                <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/80 flex items-center justify-between text-xs">
-                    <span className="font-medium text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
-                        <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
-                        {format(currentDate, "EEEE, dd/MM", { locale: vi })}
-                    </span>
-                    <span className="text-[10px] font-bold tracking-wider text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2.5 py-1 rounded-full uppercase">
-                        {viewMode === 'room' && 'Phòng'}
-                        {viewMode === 'class' && 'Lớp'}
+                {/* Status Bar */}
+                <div className="px-6 py-2.5 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border-b border-stone-200/50 dark:border-white/5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                         <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,166,35,0.5)] animate-pulse" />
+                         <span className="text-xs font-black text-stone-900 dark:text-stone-100 uppercase tracking-widest leading-none">
+                            {format(currentDate, "EEEE, dd/MM", { locale: vi })}
+                         </span>
+                    </div>
+                    <span className="text-[10px] font-black tracking-widest text-amber-600 dark:text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full uppercase border border-amber-500/20">
+                        {viewMode === 'room' && 'Hành lang'}
+                        {viewMode === 'class' && 'Theo Lớp'}
                         {viewMode === 'teacher' && 'Giáo viên'}
                         {viewMode === 'tutoring' && 'Học kèm'}
                     </span>
                 </div>
             </div>
 
-            {/* Slots List Area with Swipe */}
+            {/* Slots List */}
             <div 
-                className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-5 pb-safe"
+                className="flex-1 overflow-y-auto overflow-x-hidden p-5 space-y-6 pb-24"
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
@@ -164,40 +155,42 @@ export default function MobileTimetableList({
                 {isLoading ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (
-                            <div key={i} className="h-32 bg-gray-200 dark:bg-gray-800 rounded-2xl skeleton-shimmer" />
+                            <div key={i} className="h-40 bg-stone-200/50 dark:bg-white/5 rounded-[32px] animate-pulse" />
                         ))}
                     </div>
                 ) : (
                     <div 
-                        key={currentDay} // Force re-render for animation
+                        key={currentDay}
                         className={cn(
-                            "animate-fade-in",
+                            "space-y-6",
                             animationDirection === 'right' ? "animate-slide-left" : 
-                            animationDirection === 'left' ? "animate-slide-right" : ""
+                            animationDirection === 'left' ? "animate-slide-right" : "animate-fade-in"
                         )}
                     >
                         {dailySlots.map(({ session, slots: currentSlots }, idx) => (
-                            <div key={session.id} className="relative pl-4 pb-6 last:pb-0">
-                                {/* Timeline Line */}
+                            <div key={session.id} className="relative pl-6">
+                                {/* Timeline Path */}
                                 {idx !== dailySlots.length - 1 && (
-                                    <div className="absolute left-[7px] top-8 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-800" />
+                                    <div className="absolute left-[8px] top-10 bottom-[-24px] w-[1px] bg-gradient-to-b from-stone-300 dark:from-stone-700 to-transparent" />
                                 )}
 
-                                {/* Timeline Dot */}
+                                {/* Timeline Node */}
                                 <div className={cn(
-                                    "absolute left-0 top-3 w-4 h-4 rounded-full border-[3px] shadow-sm z-10 transition-colors",
+                                    "absolute left-0 top-3 w-4 h-4 rounded-full border-2 z-10 transition-all duration-500",
                                     currentSlots.length > 0 
-                                        ? "border-white dark:border-gray-900 bg-amber-500" 
-                                        : "border-gray-50 dark:border-gray-900 bg-gray-300 dark:bg-gray-700"
+                                        ? "border-white dark:border-stone-900 bg-amber-500 shadow-[0_0_12px_rgba(245,166,35,0.4)]" 
+                                        : "border-stone-100 dark:border-stone-800 bg-stone-300 dark:bg-stone-700"
                                 )} />
 
-                                <div className="ml-5">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <h3 className="font-bold text-gray-900 dark:text-white text-base">{session.label}</h3>
-                                        <span className="text-xs font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                            <Clock className="w-3 h-3" />
-                                            {session.time}
-                                        </span>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex flex-col">
+                                            <h3 className="font-black text-stone-900 dark:text-stone-100 text-lg tracking-tight leading-none mb-1">{session.label}</h3>
+                                            <div className="flex items-center gap-1.5 opacity-50">
+                                                <Clock className="w-3 h-3" />
+                                                <span className="text-[10px] font-bold uppercase tracking-wider">{session.time}</span>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {currentSlots.length > 0 ? (
@@ -207,59 +200,56 @@ export default function MobileTimetableList({
                                                     key={slot.id}
                                                     onClick={() => onEditSlot(slot)}
                                                     className={cn(
-                                                        "relative overflow-hidden rounded-2xl p-4 border-l-4 shadow-sm transition-all card-pressable",
-                                                        getSlotColor(slot)
+                                                        "relative overflow-hidden rounded-[28px] p-5 border-l-[6px] shadow-sm glass-premium transition-all active:scale-[0.97]",
+                                                        getSlotStyles(slot)
                                                     )}
                                                 >
-                                                    <div className="flex justify-between items-start gap-3 mb-2">
+                                                    <div className="flex justify-between items-start gap-4">
                                                         <div className="flex-1 min-w-0">
-                                                            {/* Room Badge */}
+                                                            {/* Context Badge */}
                                                             {viewMode === 'room' && slot.room && (
-                                                                <div className="mb-1.5">
-                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                                                                        <MapPin className="w-3 h-3 mr-1" />
-                                                                        {slot.room}
+                                                                <div className="mb-2">
+                                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 uppercase tracking-widest">
+                                                                        <MapPin className="w-2.5 h-2.5 mr-1" />
+                                                                        {slot.room.split('-').pop()?.trim()}
                                                                     </span>
                                                                 </div>
                                                             )}
-                                                            <div className="font-bold text-gray-900 dark:text-white text-base line-clamp-2">
+                                                            <div className="font-black text-stone-900 dark:text-stone-100 text-lg leading-tight tracking-tight line-clamp-2">
                                                                 {slot.class?.name || slot.student?.full_name || "N/A"}
                                                             </div>
                                                         </div>
-                                                        <div className="flex gap-1 shrink-0">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); onEditSlot(slot); }}
-                                                                className="tap-target w-8 h-8 bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-xl shadow-sm border border-gray-100 dark:border-gray-600 press-effect"
-                                                            >
-                                                                <Edit3 className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); onEditSlot(slot); }}
+                                                            className="w-10 h-10 rounded-2xl bg-white dark:bg-white/5 flex items-center justify-center text-stone-400 shadow-sm border border-stone-200/50 dark:border-white/5 active:bg-amber-500 active:text-white transition-all"
+                                                        >
+                                                            <Edit3 size={18} />
+                                                        </button>
                                                     </div>
 
-                                                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm mt-3">
+                                                    <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-stone-200/50 dark:border-white/5">
                                                         {slot.subject && (
-                                                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                                                                <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                                                                    <BookOpen className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-7 h-7 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                                                                    <BookOpen className="w-3.5 h-3.5 text-amber-500" />
                                                                 </div>
-                                                                <span className="truncate font-medium text-xs">{slot.subject.name}</span>
+                                                                <span className="truncate font-black text-[10px] uppercase text-stone-500 dark:text-stone-400">{slot.subject.name}</span>
                                                             </div>
                                                         )}
                                                         {slot.teacher && (
-                                                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                                                                <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-                                                                    <Users className="w-3 h-3 text-green-600 dark:text-green-400" />
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-7 h-7 rounded-xl bg-stone-500/10 dark:bg-white/10 flex items-center justify-center shrink-0">
+                                                                    <Users className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
                                                                 </div>
-                                                                <span className="truncate text-xs">{slot.teacher.full_name}</span>
+                                                                <span className="truncate font-bold text-[11px] text-stone-600 dark:text-stone-300">{slot.teacher.full_name.split(' ').pop()}</span>
                                                             </div>
                                                         )}
                                                     </div>
 
-                                                    {/* Notes Preview */}
                                                     {(slot.notes || slot.weekly_note) && (
-                                                        <div className="mt-3 pt-2.5 border-t border-gray-200/50 dark:border-gray-700/50 flex items-start gap-1.5">
-                                                            <div className="mt-0.5 w-1 h-1 rounded-full bg-amber-500 shrink-0" />
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400 italic line-clamp-1">
+                                                        <div className="mt-4 p-3 rounded-2xl bg-stone-500/5 dark:bg-white/5 border border-stone-200/30 dark:border-white/5 flex items-start gap-2">
+                                                            <div className="mt-1 w-1 h-1 rounded-full bg-amber-500 shrink-0 shadow-[0_0_4px_rgba(245,166,35,0.8)]" />
+                                                            <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium italic line-clamp-1">
                                                                 {slot.weekly_note || slot.notes}
                                                             </p>
                                                         </div>
@@ -267,25 +257,23 @@ export default function MobileTimetableList({
                                                 </div>
                                             ))}
 
-                                            {/* Secondary Add Button */}
                                             <button
                                                 onClick={() => onCreateSlot(currentDay, session)}
-                                                className="w-full h-12 border border-dashed border-gray-300 dark:border-gray-700 rounded-xl flex items-center justify-center text-gray-400 hover:text-amber-500 hover:border-amber-300 transition-colors gap-2 text-sm font-medium tap-target press-effect"
+                                                className="w-full h-12 border border-dashed border-stone-200 dark:border-white/5 rounded-[24px] flex items-center justify-center text-stone-400 transition-all active:scale-95 bg-transparent gap-2 text-[10px] font-black uppercase tracking-widest"
                                             >
-                                                <Plus className="w-4 h-4" />
-                                                Thêm tiết khác
+                                                <Plus size={14} className="text-amber-500" />
+                                                Thêm tiết học
                                             </button>
                                         </div>
                                     ) : (
-                                        // Empty State for Session
                                         <button
                                             onClick={() => onCreateSlot(currentDay, session)}
-                                            className="w-full h-24 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl flex flex-col items-center justify-center text-gray-400 hover:text-amber-500 hover:border-amber-300 hover:bg-amber-50/10 transition-all gap-2 group tap-target press-effect bg-white/50 dark:bg-gray-800/20"
+                                            className="w-full h-24 border border-dashed border-stone-200 dark:border-white/5 rounded-[32px] flex flex-col items-center justify-center text-stone-400 hover:bg-amber-500 transition-all active:scale-95 gap-2 group bg-stone-500/3 dark:bg-white/3"
                                         >
-                                            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 transition-colors">
-                                                <Plus className="w-5 h-5 group-hover:text-amber-600" />
+                                            <div className="w-8 h-8 rounded-full bg-stone-200 dark:bg-stone-800 flex items-center justify-center group-hover:bg-white/20">
+                                                <Plus size={16} className="group-hover:text-white" />
                                             </div>
-                                            <span className="text-xs font-medium">Trống - Chạm để thêm</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest group-hover:text-white">Trống - Chạm để thêm</span>
                                         </button>
                                     )}
                                 </div>
@@ -293,9 +281,6 @@ export default function MobileTimetableList({
                         ))}
                     </div>
                 )}
-                
-                {/* Spacer for bottom nav */}
-                <div className="h-20" /> 
             </div>
         </div>
     );

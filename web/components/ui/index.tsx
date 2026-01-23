@@ -233,13 +233,15 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
 interface LoadingStateProps {
   message?: string;
+  className?: string;
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
   message = 'Loading...',
+  className = '',
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-12">
+    <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
       <LoadingSpinner size="lg" />
       <p className="mt-4 text-indigo-700 font-semibold" style={{ fontFamily: 'Fredoka, sans-serif' }}>{message}</p>
     </div>
@@ -255,6 +257,7 @@ interface EmptyStateProps {
   title: string;
   description?: string;
   action?: ReactNode;
+  className?: string;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
@@ -262,9 +265,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   title,
   description,
   action,
+  className = '',
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 bg-indigo-50 border-3 border-dashed border-indigo-300 rounded-2xl">
+    <div className={`flex flex-col items-center justify-center py-12 px-4 bg-indigo-50 border-3 border-dashed border-indigo-300 rounded-2xl ${className}`}>
       {icon && <div className="mb-4 text-indigo-500 p-4 bg-white border-3 border-black rounded-xl shadow-[4px_4px_0px_#000]">{icon}</div>}
       <h3 className="text-xl font-bold text-indigo-900 mb-2" style={{ fontFamily: 'Fredoka, sans-serif' }}>{title}</h3>
       {description && <p className="text-indigo-700 text-center max-w-md mb-4 font-medium">{description}</p>}
@@ -514,6 +518,7 @@ interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -523,6 +528,7 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   footer,
   size = 'md',
+  className = '',
 }) => {
   const [isClosing, setIsClosing] = React.useState(false);
 
@@ -596,6 +602,7 @@ export const Modal: React.FC<ModalProps> = ({
             dark:bg-gray-900/95 dark:backdrop-blur-xl
             dark:border-gray-700/50
             dark:shadow-[0_0_50px_rgba(0,0,0,0.5),0_0_100px_rgba(6,182,212,0.1)]
+            ${className}
           `}
           role="dialog"
           aria-modal="true"

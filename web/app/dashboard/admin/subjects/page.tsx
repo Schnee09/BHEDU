@@ -11,7 +11,9 @@ import {
     AlertTriangle,
     RefreshCw,
     Search,
+    ShieldAlert,
 } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface Subject {
     id: string;
@@ -27,6 +29,7 @@ export default function SubjectManagementPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [showAddModal, setShowAddModal] = useState(false);
+    const { isStaff } = usePermissions();
 
     const fetchSubjects = async () => {
         setLoading(true);
@@ -92,13 +95,13 @@ export default function SubjectManagementPage() {
         );
     }
 
-    if (profile?.role !== "admin") {
+    if (!isStaff) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                    <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto mb-4" />
                     <h1 className="text-xl font-bold text-gray-900 dark:text-white">Không có quyền truy cập</h1>
-                    <p className="text-gray-500">Chỉ admin mới có thể quản lý môn học</p>
+                    <p className="text-gray-500">Bạn không có quyền quản lý môn học. Vui lòng liên hệ quản trị viên.</p>
                 </div>
             </div>
         );

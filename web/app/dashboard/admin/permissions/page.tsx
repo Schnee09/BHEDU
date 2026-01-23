@@ -186,8 +186,12 @@ function PermissionsContent() {
     const [selectedUser, setSelectedUser] = useState<UserForPermissions | null>(null);
     const [userPermData, setUserPermData] = useState<UserPermissionData | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [permissionSearch, setPermissionSearch] = useState("");
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
     const [saving, setSaving] = useState(false);
     const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
     const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
@@ -197,24 +201,51 @@ function PermissionsContent() {
     const { isAdmin } = usePermissions();
     const permissionsByCategory = getPermissionsByCategory();
 
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setPage(1); // Reset to first page on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     // Load users
     useEffect(() => {
         async function loadUsers() {
+            if (page === 1) setLoading(true);
+            else setLoadingMore(true);
+
             try {
-                const res = await apiFetch("/api/admin/users?limit=100");
+                const params = new URLSearchParams({
+                    limit: "50",
+                    page: page.toString(),
+                });
+                if (debouncedSearch) params.append("search", debouncedSearch);
+
+                const res = await apiFetch(`/api/admin/users?${params.toString()}`);
                 if (res.ok) {
                     const data = await res.json();
-                    setUsers(data.users || []);
+                    const newUsers = data.users || [];
+                    
+                    if (page === 1) {
+                        setUsers(newUsers);
+                    } else {
+                        setUsers(prev => [...prev, ...newUsers]);
+                    }
+                    
+                    setHasMore(newUsers.length === 50);
                 }
             } catch (error) {
                 console.error("Failed to load users:", error);
                 toast.error("Error", "Không thể tải danh sách người dùng");
             } finally {
                 setLoading(false);
+                setLoadingMore(false);
             }
         }
         loadUsers();
-    }, []);
+    }, [debouncedSearch, page]);
 
     // Load selected user's permissions
     useEffect(() => {
@@ -351,12 +382,6 @@ function PermissionsContent() {
         }
     };
 
-    // Filter users
-    const filteredUsers = users.filter(
-        (u) =>
-            u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            u.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
     return (
         <div className="min-h-screen bg-background">
@@ -388,43 +413,65 @@ function PermissionsContent() {
                             </div>
                         </div>
 
-                        <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                            {loading ? (
+                        <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+                            {loading && page === 1 ? (
                                 <div className="text-center py-8 text-muted-foreground">
                                     Đang tải...
                                 </div>
                             ) : (
-                                filteredUsers.map((user) => (
-                                    <button
-                                        key={user.id}
-                                        onClick={() => setSelectedUser(user)}
-                                        className={cn(
-                                            "w-full text-left p-3 rounded-lg transition-colors",
-                                            selectedUser?.id === user.id
-                                                ? "bg-primary text-white"
-                                                : "hover:bg-muted"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                                                <User className="w-5 h-5" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-medium truncate">
-                                                    {user.full_name || "Chưa có tên"}
-                                                </p>
-                                                <p className={cn(
-                                                    "text-sm truncate",
-                                                    selectedUser?.id === user.id
-                                                        ? "text-white/70"
-                                                        : "text-muted-foreground"
-                                                )}>
-                                                    {user.role}
-                                                </p>
-                                            </div>
+                                <>
+                                    {users.length === 0 ? (
+                                        <div className="text-center py-8 text-muted-foreground italic">
+                                            Không tìm thấy người dùng
                                         </div>
-                                    </button>
-                                ))
+                                    ) : (
+                                        <>
+                                            {users.map((user) => (
+                                                <button
+                                                    key={user.id}
+                                                    onClick={() => setSelectedUser(user)}
+                                                    className={cn(
+                                                        "w-full text-left p-3 rounded-lg transition-colors",
+                                                        selectedUser?.id === user.id
+                                                            ? "bg-primary text-white"
+                                                            : "hover:bg-muted"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                                                            <User className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-medium truncate">
+                                                                {user.full_name || "Chưa có tên"}
+                                                            </p>
+                                                            <p className={cn(
+                                                                "text-sm truncate",
+                                                                selectedUser?.id === user.id
+                                                                    ? "text-white/70"
+                                                                    : "text-muted-foreground"
+                                                            )}>
+                                                                {user.role}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                            
+                                            {hasMore && (
+                                                <div className="pt-2">
+                                                    <button
+                                                        onClick={() => setPage(p => p + 1)}
+                                                        disabled={loadingMore}
+                                                        className="w-full py-2 text-sm text-primary hover:bg-primary/5 rounded-lg border border-dashed border-primary/30 transition-colors disabled:opacity-50"
+                                                    >
+                                                        {loadingMore ? "Đang tải thêm..." : "Tải thêm người dùng"}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>

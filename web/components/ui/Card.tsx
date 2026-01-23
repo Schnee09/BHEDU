@@ -5,6 +5,7 @@
  */
 
 import { ReactNode, memo, useMemo } from 'react';
+import { cn } from "@/lib/utils";
 
 interface CardProps {
   children: ReactNode;
@@ -169,9 +170,10 @@ export const StatCard = memo(function StatCard({
   const styles = useMemo(() => COLOR_CLASSES[color], [color]);
 
   const containerClassName = useMemo(() => `
-    group relative overflow-hidden rounded-xl transition-all duration-200
-    bg-surface border border-border shadow-sm
-    hover:shadow-md hover:border-primary/20
+    group relative overflow-hidden rounded-[24px] transition-all duration-500
+    bg-white/80 dark:bg-stone-900/60 backdrop-blur-xl
+    border border-stone-200 dark:border-white/10 shadow-sm
+    hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] hover:border-amber-500/30
     ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}
   `, [onClick]);
 
@@ -180,24 +182,43 @@ export const StatCard = memo(function StatCard({
       onClick={onClick}
       className={containerClassName}
     >
-      <div className="p-4 sm:p-5 flex items-start justify-between relative">
+      {/* Subtle Color Glow */}
+      <div className={cn(
+        "absolute -right-4 -top-4 w-24 h-24 blur-[40px] opacity-20 transition-opacity group-hover:opacity-40 rounded-full",
+        color === 'blue' ? 'bg-blue-500' :
+        color === 'green' ? 'bg-green-500' :
+        color === 'orange' ? 'bg-orange-500' :
+        color === 'purple' ? 'bg-purple-500' : 'bg-stone-500'
+      )} />
+
+      <div className="p-5 sm:p-6 flex items-start justify-between relative z-10">
         <div className="flex-1">
-          <p className="text-sm font-medium text-muted uppercase tracking-wide mb-1">{label}</p>
-          <p className="text-3xl font-bold text-foreground font-heading tabular-nums">{value}</p>
+          <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] mb-2">{label}</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-3xl md:text-4xl font-black text-stone-900 dark:text-white font-heading tabular-nums tracking-tighter italic">{value}</p>
+          </div>
           {subtitle && (
-            <p className="text-xs text-muted mt-1">{subtitle}</p>
+            <p className="text-xs font-bold text-stone-500 dark:text-stone-400 mt-2 italic opacity-80">{subtitle}</p>
           )}
           {trend && (
             <div className="flex items-center gap-1 mt-2">
-              <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${trend.isPositive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
+              <span className={cn(
+                "text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest",
+                trend.isPositive 
+                  ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20' 
+                  : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+              )}>
                 {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
               </span>
             </div>
           )}
         </div>
         {icon && (
-          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${styles.icon}`}>
-            {icon}
+          <div className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg",
+            styles.icon
+          )}>
+            <div className="scale-125">{icon}</div>
           </div>
         )}
       </div>
