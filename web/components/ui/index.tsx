@@ -165,12 +165,14 @@ interface BadgeProps {
   children: ReactNode;
   variant?: BadgeVariant;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export const Badge: React.FC<BadgeProps> = ({
   children,
   variant = 'default',
   className = '',
+  style,
 }) => {
   const variants = {
     default: 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30',
@@ -183,6 +185,7 @@ export const Badge: React.FC<BadgeProps> = ({
   return (
     <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${variants[variant]} ${className}`}
+      style={style}
     >
       {children}
     </span>

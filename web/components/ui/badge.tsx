@@ -3,13 +3,14 @@
  * Clean status indicators with proper color contrast
  */
 
-import { ReactNode } from 'react';
+import { ReactNode, CSSProperties } from 'react';
 
 interface BadgeProps {
   children: ReactNode;
   variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  style?: CSSProperties;
   // Legacy color prop for backward compatibility
   color?: 'gray' | 'blue' | 'green' | 'red' | 'purple' | 'yellow';
 }
@@ -19,7 +20,8 @@ export default function Badge({
   variant,
   color,
   size = 'md',
-  className = ''
+  className = '',
+  style
 }: BadgeProps) {
   // Map legacy color prop to new variant system
   const effectiveVariant = variant || (() => {
@@ -47,7 +49,10 @@ export default function Badge({
   };
 
   return (
-    <span className={`${baseClasses} ${variantClasses[effectiveVariant]} ${sizeClasses[size]} ${className}`}>
+    <span 
+      className={`${baseClasses} ${variantClasses[effectiveVariant]} ${sizeClasses[size]} ${className}`}
+      style={style}
+    >
       {children}
     </span>
   );
