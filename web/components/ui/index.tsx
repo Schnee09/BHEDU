@@ -159,7 +159,7 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
 // BADGE COMPONENTS - DUAL THEME STYLE
 // ============================================================================
 
-type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info';
+type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'indigo' | 'blue';
 
 interface BadgeProps {
   children: ReactNode;
@@ -180,6 +180,8 @@ export const Badge: React.FC<BadgeProps> = ({
     warning: 'bg-warning/10 text-warning border-warning/20 dark:bg-warning/20 dark:border-warning/30',
     danger: 'bg-error/10 text-error border-error/20 dark:bg-error/20 dark:border-error/30',
     info: 'bg-info/10 text-info border-info/20 dark:bg-info/20 dark:border-info/30',
+    indigo: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30',
+    blue: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
   };
 
   return (
