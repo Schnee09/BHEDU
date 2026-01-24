@@ -247,27 +247,30 @@ export default function AcademicCalendarPage() {
     return (
         <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/50 p-4 sm:p-8">
             <div className="max-w-7xl mx-auto space-y-8">
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white dark:bg-gray-800/80 p-8 rounded-3xl border border-gray-100 dark:border-white/5 shadow-premium backdrop-blur-md">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <CalendarDays className="w-6 h-6 text-primary" />
+                {/* Header Section - Refined for Pro Max */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 glass-premium p-6 md:p-10 rounded-[40px] border border-white/20 dark:border-white/5 shadow-2xl relative overflow-hidden animate-fade-in">
+                    {/* Background Glow */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
+                    
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2.5 bg-amber-500/10 rounded-2xl">
+                                <CalendarDays className="w-6 h-6 text-amber-600 dark:text-amber-500" />
                             </div>
-                            <Badge variant="success">Học tập</Badge>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20 shadow-sm">Học tập & Sự kiện</span>
                         </div>
-                        <h1 className="text-3xl font-bold tracking-tight">Lịch học tập</h1>
-                        <p className="text-muted mt-2 max-w-lg">Theo dõi các sự kiện, kỳ thi và thông báo quan trọng trong năm học.</p>
+                        <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-stone-900 dark:text-stone-100">Lịch Học Tập</h1>
+                        <p className="text-sm font-medium text-stone-500 dark:text-stone-400 mt-3 max-w-lg leading-relaxed">Luôn cập nhật các kỳ thi, ngày nghỉ và sự kiện quan trọng trong hệ thống.</p>
                     </div>
                     {isAdmin && (
                         <Button 
                             variant="primary" 
                             size="lg"
-                            leftIcon={<Plus className="w-5 h-5" />}
+                            className="rounded-2xl h-14 px-8 font-black uppercase tracking-widest text-xs shadow-xl shadow-amber-500/20 press-effect"
                             onClick={handleOpenAdd}
-                            className="rounded-2xl"
                         >
-                            Thêm sự kiện
+                            <Plus className="w-5 h-5 mr-3" />
+                            Tạo sự kiện
                         </Button>
                     )}
                 </div>

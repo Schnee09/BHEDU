@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { apiFetch } from '@/lib/api/client'
 import { Card, StatCard } from '@/components/ui/Card'
 import { Icons } from "@/components/ui/Icons";
+import { cn } from "@/lib/utils";
 
 interface DashboardData {
   total_outstanding: number
@@ -86,53 +87,61 @@ export default function FinanceDashboard() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Bảng điều khiển tài chính</h1>
-        <div className="flex gap-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 glass-premium p-6 md:p-8 rounded-[40px] border border-white/20 dark:border-white/5 shadow-2xl relative overflow-hidden animate-fade-in">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10">
+          <h1 className="text-3xl font-black tracking-tighter text-stone-900 dark:text-stone-100 mb-2">Quản lý Tài chính</h1>
+          <p className="text-sm font-medium text-stone-500 dark:text-stone-400">Theo dõi dư nợ, hóa đơn và tỷ lệ thu học phí toàn hệ thống.</p>
+        </div>
+        <div className="flex w-full md:w-auto gap-3 relative z-10">
           <Link
             href="/dashboard/finance/fees"
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="flex-1 md:flex-none h-12 flex items-center justify-center px-6 bg-amber-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-amber-500/20 press-effect transition-all"
           >
             Quản lý học phí
           </Link>
           <Link
             href="/dashboard/finance/payments"
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            className="flex-1 md:flex-none h-12 flex items-center justify-center px-6 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-500/20 press-effect transition-all"
           >
-            Ghi nhận thanh toán
+            Thanh toán
           </Link>
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Key Metrics - Optimized for Mobile Density */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
         <StatCard
-          label="Tổng nợ"
+          label="Tổng dư nợ"
           value={formatCurrency(data.total_outstanding)}
-          subtitle={`${data.accounts_with_balance} tài khoản có dư nợ`}
-          icon={<Icons.Warning className="w-6 h-6" />}
+          subtitle={`${data.accounts_with_balance} tài khoản`}
+          icon={<Icons.Warning className="w-5 h-5 md:w-6 md:h-6" />}
           color="slate"
+          className="glass-premium rounded-[28px] border-white/10"
         />
         <StatCard
           label="Tổng đã thu"
           value={formatCurrency(data.total_collected)}
-          subtitle={`${data.payment_count} thanh toán đã nhận`}
-          icon={<Icons.Finance className="w-6 h-6" />}
+          subtitle={`${data.payment_count} lượt`}
+          icon={<Icons.Finance className="w-5 h-5 md:w-6 md:h-6" />}
           color="green"
+          className="glass-premium rounded-[28px] border-white/10"
         />
         <StatCard
           label="Tổng hóa đơn"
           value={formatCurrency(data.total_invoiced)}
-          subtitle={`${data.paid_invoices} hóa đơn đã thanh toán`}
-          icon={<Icons.Grades className="w-6 h-6" />}
-          color="blue"
+          subtitle={`${data.paid_invoices} đã xong`}
+          icon={<Icons.Grades className="w-5 h-5 md:w-6 md:h-6" />}
+          color="orange"
+          className="glass-premium rounded-[28px] border-white/10"
         />
         <StatCard
           label="Tỷ lệ thu"
           value={`${collectionRate.toFixed(1)}%`}
-          subtitle={`${data.overdue_invoices} hóa đơn quá hạn`}
-          icon={<Icons.Chart className="w-6 h-6" />}
+          subtitle={`${data.overdue_invoices} quá hạn`}
+          icon={<Icons.Chart className="w-5 h-5 md:w-6 md:h-6" />}
           color="purple"
+          className="glass-premium rounded-[28px] border-white/10"
         />
       </div>
 

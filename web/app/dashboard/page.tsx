@@ -142,58 +142,59 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Top Stats Cards - Using Upgraded StatCard */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+        {/* Top Stats Cards - Optimized for Mobile Density */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-6">
           <StatCard 
             label="Tổng Học sinh" 
             value={stats.totalStudents} 
             color="orange" 
-            icon={<Icons.Students className="w-6 h-6" />} 
-            subtitle="Học sinh đang theo học"
+            icon={<Icons.Students className="w-5 h-5 md:w-6 md:h-6" />} 
+            subtitle="Học sinh"
           />
           <StatCard 
             label="Giáo viên" 
             value={stats.totalTeachers} 
             color="purple" 
-            icon={<Icons.Teachers className="w-6 h-6" />} 
-            subtitle="Đội ngũ giảng dạy"
+            icon={<Icons.Teachers className="w-5 h-5 md:w-6 md:h-6" />} 
+            subtitle="Đội ngũ"
           />
           <StatCard 
             label="Lớp học" 
             value={stats.totalClasses} 
             color="green" 
-            icon={<Icons.Classes className="w-6 h-6" />} 
-            subtitle="Các lớp đang hoạt động"
+            icon={<Icons.Classes className="w-5 h-5 md:w-6 md:h-6" />} 
+            subtitle="Lớp"
           />
           <StatCard 
             label="Bài tập" 
             value={stats.totalAssignments} 
             color="blue" 
-            icon={<Icons.Assignments className="w-6 h-6" />} 
-            subtitle="Tổng số bài giao"
+            icon={<Icons.Assignments className="w-5 h-5 md:w-6 md:h-6" />} 
+            subtitle="Bài giao"
           />
           <StatCard 
             label="Điểm danh" 
             value={stats.attendanceToday} 
             color="slate" 
-            icon={<Icons.Attendance className="w-6 h-6" />} 
-            subtitle="Học sinh có mặt hôm nay"
+            icon={<Icons.Attendance className="w-5 h-5 md:w-6 md:h-6" />} 
+            subtitle="Hôm nay"
+            className="col-span-2 lg:col-span-1"
           />
         </div>
 
-        {/* Main Content Grid - Responsive PC Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 pb-20 md:pb-8">
+        {/* Main Content Grid - Responsive Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8 pb-32 md:pb-8">
           {/* Left Column - Analytics & Primary Stats */}
           <div className="xl:col-span-8 space-y-8">
-             {/* Charts Section - Admin/Teacher only */}
+             {/* Charts Section - Admin/Teacher only - Optimized for mobile */}
             {(profile?.role === "admin" || profile?.role === "teacher") && (
               <section className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-black text-stone-900 dark:text-stone-100 uppercase tracking-widest pl-2 border-l-4 border-amber-500">Thống kê chi tiết</h2>
-                  <Link href="/dashboard/grades/analytics" className="text-xs font-bold text-amber-600 hover:text-amber-700 uppercase tracking-tighter">Xem báo cáo →</Link>
+                <div className="flex items-center justify-between px-2">
+                  <h2 className="text-base md:text-lg font-black text-stone-900 dark:text-stone-100 uppercase tracking-widest pl-2 border-l-4 border-amber-500">Thống kê chi tiết</h2>
+                  <Link href="/dashboard/grades/analytics" className="text-[10px] md:text-xs font-bold text-amber-600 hover:text-amber-700 uppercase tracking-tighter">Xem báo cáo →</Link>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                    <AnalyticsWidget
                     title="Phân bố điểm số"
                     subtitle="Theo thang điểm học kỳ"
@@ -205,7 +206,8 @@ export default function DashboardPage() {
                       { name: 'Yếu', value: 7 },
                     ]}
                     dataKey="value"
-                    height={300}
+                    height={250}
+                    className="rounded-[32px]"
                   />
 
                   <AnalyticsWidget
@@ -218,16 +220,17 @@ export default function DashboardPage() {
                       { name: 'T6', present: 91 }, { name: 'T7', present: 45 },
                     ]}
                     dataKey="present"
-                    height={300}
+                    height={250}
+                    className="rounded-[32px]"
                   />
                 </div>
               </section>
             )}
 
-            {/* Quick Actions - Cross Platform Refined */}
+            {/* Quick Actions - Pro Max Mobile Refined */}
             <section className="space-y-6">
-              <h2 className="text-lg font-black text-stone-900 dark:text-stone-100 uppercase tracking-widest pl-2 border-l-4 border-amber-500">Hành động nhanh</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <h2 className="text-base md:text-lg font-black text-stone-900 dark:text-stone-100 uppercase tracking-widest pl-2 border-l-4 border-amber-500 mx-2">Hành động nhanh</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 px-2">
                 {profile?.role === "admin" && (
                   <>
                     <QuickActionSmall href={routes.students.list()} icon={<Icons.Students />} title="Học sinh" color="orange" />
@@ -252,6 +255,7 @@ export default function DashboardPage() {
               </div>
             </section>
           </div>
+
 
           {/* Right Column - Activity & Secondary Info (PC Only side-by-side) */}
           <div className="xl:col-span-4 space-y-8">

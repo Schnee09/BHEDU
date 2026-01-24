@@ -24,19 +24,19 @@ export default function MobileBottomNav() {
     const [showMoreMenu, setShowMoreMenu] = useState(false);
 
     const mainNavItems = [
-        { name: "Trang chủ", href: "/dashboard", icon: Home },
-        { name: "Lớp", href: "/dashboard/classes", icon: BookOpen },
-        { name: "Học sinh", href: "/dashboard/students", icon: Users },
-        { name: "Điểm danh", href: "/dashboard/attendance", icon: CalendarCheck },
+        { name: "Trang chủ", href: "/dashboard", icon: Home, color: "orange" },
+        { name: "Lớp", href: "/dashboard/classes", icon: BookOpen, color: "blue" },
+        { name: "Học sinh", href: "/dashboard/students", icon: Users, color: "purple" },
+        { name: "Điểm danh", href: "/dashboard/attendance", icon: CalendarCheck, color: "green" },
     ];
 
     const moreMenuItems = [
-        { name: "Tài chính", href: "/dashboard/finance", icon: DollarSign },
-        { name: "Điểm số", href: "/dashboard/grades", icon: GraduationCap },
-        { name: "Thời khóa biểu", href: "/dashboard/timetable", icon: ClipboardList },
-        { name: "Thông báo", href: "/dashboard/notifications", icon: Bell },
-        { name: "Tìm kiếm", href: "/dashboard/search", icon: Search },
-        { name: "Cài đặt", href: "/dashboard/settings", icon: Settings },
+        { name: "Tài chính", href: "/dashboard/finance", icon: DollarSign, color: "green" },
+        { name: "Điểm số", href: "/dashboard/grades", icon: GraduationCap, color: "purple" },
+        { name: "Thời khóa biểu", href: "/dashboard/timetable", icon: ClipboardList, color: "blue" },
+        { name: "Thông báo", href: "/dashboard/notifications", icon: Bell, color: "orange" },
+        { name: "Tìm kiếm", href: "/dashboard/search", icon: Search, color: "slate" },
+        { name: "Cài đặt", href: "/dashboard/settings", icon: Settings, color: "slate" },
     ];
 
     const isActive = (href: string) => {
@@ -45,58 +45,78 @@ export default function MobileBottomNav() {
     };
 
     return (
-        <div className="lg:hidden"> {/* Wrapper ensuring everything hides on desktop */}
+        <div className="lg:hidden">
             {/* More Menu Overlay */}
             {showMoreMenu && (
                 <div 
-                    className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md animate-fade-in"
+                    className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md animate-fade-in"
                     onClick={() => setShowMoreMenu(false)}
                 />
             )}
 
-            {/* Swipeable More Menu */}
+            {/* swipeable More Menu - Pro Max Refined */}
             <div className={cn(
-                "fixed bottom-1 left-0 right-0 z-[110] transition-transform duration-500 ease-out px-4 pb-20",
+                "fixed bottom-2 left-0 right-0 z-[110] transition-transform duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] px-4 pb-20",
                 showMoreMenu ? "translate-y-0" : "translate-y-full"
             )}>
-                <div className="glass-premium rounded-[32px] shadow-2xl pb-safe overflow-hidden border border-white/20 dark:border-white/5">
-                    <div className="flex justify-center pt-3 pb-2">
-                        <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />
+                <div className="glass-premium rounded-[40px] shadow-2xl pb-safe overflow-hidden border border-white/20 dark:border-white/5 relative">
+                    {/* Background Decorative Bloom */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
+                    
+                    <div className="flex justify-center pt-4 pb-2">
+                        <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-700/50 rounded-full" />
                     </div>
 
                     <button 
                         onClick={() => setShowMoreMenu(false)}
-                        className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500"
+                        className="absolute top-6 right-6 p-2 rounded-full bg-stone-100 dark:bg-white/5 text-stone-500 press-effect tap-target"
                     >
                         <X className="w-5 h-5" />
                     </button>
 
-                    <h3 className="text-lg font-bold text-center text-gray-900 dark:text-white mb-4">Thêm</h3>
+                    <h3 className="text-sm font-black text-center text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em] mb-8 mt-2">Dịch vụ bổ sung</h3>
 
-                    <div className="grid grid-cols-3 gap-4 px-6 pb-6">
+                    <div className="grid grid-cols-3 gap-3 px-6 pb-8">
                         {moreMenuItems.map((item) => (
                             <Link
                                 key={item.href}
                                 href={item.href}
                                 onClick={() => setShowMoreMenu(false)}
                                 className={cn(
-                                    "flex flex-col items-center justify-center p-4 rounded-2xl transition-all active:scale-95",
+                                    "group relative flex flex-col items-center justify-center p-5 rounded-[28px] transition-all press-effect overflow-hidden",
                                     isActive(item.href)
-                                        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-                                        : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 shadow-inner"
+                                        : "bg-stone-50/50 dark:bg-white/5 text-stone-600 dark:text-stone-400 border border-stone-100 dark:border-white/5"
                                 )}
                             >
-                                <item.icon className="w-7 h-7 mb-2" strokeWidth={1.5} />
-                                <span className="text-xs font-medium text-center">{item.name}</span>
+                                {/* Item Glow */}
+                                <div className={cn(
+                                    "absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity blur-xl rounded-full",
+                                    item.color === 'orange' ? 'bg-orange-500' :
+                                    item.color === 'blue' ? 'bg-blue-500' :
+                                    item.color === 'purple' ? 'bg-purple-500' :
+                                    item.color === 'green' ? 'bg-green-500' : 'bg-stone-500'
+                                )} />
+                                
+                                <div className={cn(
+                                    "p-3 rounded-2xl mb-2 transition-all group-hover:scale-110",
+                                    item.color === 'orange' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                                    item.color === 'blue' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                                    item.color === 'purple' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' :
+                                    item.color === 'green' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-stone-500/10 text-stone-500'
+                                )}>
+                                    <item.icon className="w-6 h-6" strokeWidth={2} />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-tighter text-center">{item.name}</span>
                             </Link>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Main Bottom Navigation - Floating Pill */}
-            <div className="nav-pill glass-premium shadow-lg shadow-black/10 transition-all duration-300 z-[100]">
-                <div className="flex items-center justify-around w-full h-full relative">
+            {/* Main Bottom Navigation - Pro Max Floating Pill */}
+            <div className="fixed bottom-6 left-6 right-6 h-20 z-[100] animate-fade-in-up">
+                <nav className="glass-premium h-full w-full rounded-[28px] shadow-2xl shadow-black/10 flex items-center justify-around px-2 border-t border-white/20 dark:border-white/5">
                     {mainNavItems.map((item) => {
                         const active = isActive(item.href);
                         return (
@@ -104,42 +124,56 @@ export default function MobileBottomNav() {
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "flex flex-col items-center justify-center flex-1 h-full py-1 transition-all active:scale-90 z-10",
-                                    active ? "text-amber-600 dark:text-amber-500" : "text-stone-500 dark:text-stone-400"
+                                    "relative flex flex-col items-center justify-center flex-1 h-full py-1 transition-all press-effect z-10",
+                                    active ? "text-amber-600 dark:text-amber-500" : "text-stone-400 dark:text-stone-600"
                                 )}
                             >
-                                <item.icon 
-                                    className={cn("w-6 h-6 mb-0.5", active ? "scale-110" : "opacity-80")} 
-                                    strokeWidth={active ? 2.5 : 2}
-                                />
+                                <div className={cn(
+                                    "p-2.5 rounded-[18px] transition-all duration-500",
+                                    active ? "bg-amber-500/10 scale-110 mb-1" : "bg-transparent mb-0.5"
+                                )}>
+                                    <item.icon 
+                                        className={cn("w-6 h-6", active ? "stroke-[2.5px]" : "stroke-[1.5px]")} 
+                                    />
+                                </div>
                                 <span className={cn(
-                                    "text-[10px] font-bold transition-all",
-                                    active ? "opacity-100 translate-y-0" : "opacity-0 scale-75 -translate-y-1 h-0"
+                                    "text-[9px] font-black uppercase tracking-widest transition-all duration-300",
+                                    active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 h-0"
                                 )}>
                                     {item.name}
                                 </span>
+                                
+                                {active && (
+                                    <div className="absolute top-2 w-1 h-1 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,166,35,0.8)]" />
+                                )}
                             </Link>
                         );
                     })}
 
-                    {/* More Button */}
+                    {/* Pro Max More Button */}
                     <button
                         onClick={() => setShowMoreMenu(true)}
                         className={cn(
-                            "flex flex-col items-center justify-center flex-1 h-full py-1 transition-all active:scale-90 z-10",
-                            showMoreMenu ? "text-amber-600 dark:text-amber-500" : "text-stone-500 dark:text-stone-400"
+                            "flex flex-col items-center justify-center flex-1 h-full py-1 transition-all press-effect z-10",
+                            showMoreMenu ? "text-amber-600 dark:text-amber-500" : "text-stone-400 dark:text-stone-600"
                         )}
                     >
-                        <MoreHorizontal className={cn("w-6 h-6 mb-0.5", showMoreMenu ? "scale-110" : "opacity-80")} strokeWidth={2.5} />
+                        <div className={cn(
+                            "p-2.5 rounded-[18px] transition-all duration-500",
+                            showMoreMenu ? "bg-amber-500/10 scale-110 mb-1" : "bg-transparent mb-0.5"
+                        )}>
+                            <MoreHorizontal className="w-6 h-6" strokeWidth={2.5} />
+                        </div>
                         <span className={cn(
-                            "text-[10px] font-bold transition-all",
+                            "text-[9px] font-black uppercase tracking-widest transition-all duration-300",
                             showMoreMenu ? "opacity-100" : "opacity-0 h-0"
                         )}>
                             Thêm
                         </span>
                     </button>
-                </div>
+                </nav>
             </div>
         </div>
     );
 }
+

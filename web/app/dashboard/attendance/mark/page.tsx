@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api/client'
+import { cn } from '@/lib/utils'
 import {
   AttendanceStatus,
   AttendanceRecord
@@ -329,75 +330,84 @@ export default function AttendanceMarkingPage() {
               return (
                 <div
                   key={student.studentId}
-                  className="bg-white dark:bg-[#1A1410] rounded-2xl p-5 border border-stone-100 dark:border-[#2C2420] shadow-sm press-effect overflow-hidden relative"
+                  className={cn(
+                    "glass-premium rounded-[32px] p-6 mb-4 border transition-all animate-fade-in-up press-effect relative overflow-hidden",
+                    student.status !== 'unmarked' ? 'border-amber-500/20' : 'border-stone-100 dark:border-white/5'
+                  )}
                 >
-                  {/* Status Indicator Bar */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${
-                    student.status === AttendanceStatus.PRESENT ? 'bg-green-500' : 
-                    student.status === AttendanceStatus.ABSENT ? 'bg-red-500' : 'bg-stone-200'
-                  }`} />
+                  {/* Status Bloom */}
+                  <div className={cn(
+                    "absolute -top-10 -right-10 w-24 h-24 blur-3xl opacity-10 rounded-full",
+                    student.status === AttendanceStatus.PRESENT ? "bg-green-500" : 
+                    student.status === AttendanceStatus.ABSENT ? "bg-red-500" : "bg-stone-500"
+                  )} />
 
-                  {/* Student Info */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-stone-900 dark:text-stone-100 text-lg leading-tight truncate">
+                  <div className="flex justify-between items-start mb-4 relative z-10">
+                    <div className="flex-1">
+                      <h3 className="font-black text-stone-900 dark:text-stone-100 text-lg leading-tight mb-1">
                         {student.studentName}
-                      </p>
-                      <p className="text-xs text-stone-500 dark:text-stone-400 font-mono mt-1">
-                        {student.studentCode || student.email || 'HS-XXXX'}
+                      </h3>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500 italic">
+                        {student.studentCode || 'Chưa có mã'}
                       </p>
                     </div>
                   </div>
 
-                  {/* Status Selector - Large touch-friendly buttons */}
-                  <div className="grid grid-cols-3 gap-3 mb-4">
+                  {/* Status Selector - Pro Max Touch Buttons */}
+                  <div className="grid grid-cols-3 gap-3 mb-5 relative z-10">
                     <button
                       onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.PRESENT)}
-                      className={`h-12 rounded-xl text-xs font-bold uppercase tracking-widest transition-all press-effect tap-target flex items-center justify-center gap-2 ${
+                      className={cn(
+                        "h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all press-effect flex flex-col items-center justify-center gap-1 shadow-sm",
                         student.status === AttendanceStatus.PRESENT
-                          ? 'bg-green-600 text-white shadow-lg shadow-green-600/20'
-                          : 'bg-green-50 text-green-700 dark:bg-green-900/10 dark:text-green-400 border border-green-100/50 dark:border-green-800/30'
-                        }`}
+                          ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 border-none'
+                          : 'bg-green-500/5 text-green-600 dark:text-green-400 border border-green-500/10'
+                      )}
                     >
-                      <span className="text-base">✅</span> Có mặt
+                      <span className="text-xl">✅</span>
+                      Có mặt
                     </button>
                     <button
                       onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.ABSENT)}
-                      className={`h-12 rounded-xl text-xs font-bold uppercase tracking-widest transition-all press-effect tap-target flex items-center justify-center gap-2 ${
+                      className={cn(
+                        "h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all press-effect flex flex-col items-center justify-center gap-1 shadow-sm",
                         student.status === AttendanceStatus.ABSENT
-                          ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
-                          : 'bg-red-50 text-red-700 dark:bg-red-900/10 dark:text-red-400 border border-red-100/50 dark:border-red-800/30'
-                        }`}
+                          ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 border-none'
+                          : 'bg-red-500/5 text-red-600 dark:text-red-400 border border-red-500/10'
+                      )}
                     >
-                      <span className="text-base">❌</span> Vắng
+                      <span className="text-xl">❌</span>
+                      Vắng mặt
                     </button>
                     <button
                       onClick={() => updateStudentStatus(student.studentId, 'unmarked')}
-                      className={`h-12 rounded-xl text-xs font-bold uppercase tracking-widest transition-all press-effect tap-target flex items-center justify-center ${
-                         student.status === 'unmarked'
-                          ? 'bg-stone-600 text-white shadow-lg shadow-stone-600/20'
-                          : 'bg-stone-50 text-stone-500 dark:bg-stone-800/50 dark:text-stone-400 border border-stone-100 dark:border-stone-700'
-                        }`}
+                      className={cn(
+                        "h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all press-effect flex flex-col items-center justify-center gap-1 shadow-sm",
+                        student.status === 'unmarked'
+                          ? 'bg-stone-600 text-white shadow-lg shadow-stone-600/30 border-none'
+                          : 'bg-stone-500/5 text-stone-500 dark:text-stone-400 border border-stone-500/10'
+                      )}
                     >
+                      <span className="text-xl opacity-40">➖</span>
                       Chưa
                     </button>
                   </div>
 
-                  {/* Remarks - Now editable on mobile with better styling */}
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                       <svg className="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  {/* Remarks - Premium Input Styling */}
+                  <div className="relative group z-10">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                       <svg className="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     </div>
                     <input 
                        type="text"
                        value={student.remarks || ''}
-                       placeholder="Thêm ghi chú..."
+                       placeholder="Thêm ghi chú riêng..."
                        onChange={(e) => {
                          const newVal = e.target.value;
                          setStudents(prev => prev.map(s => s.studentId === student.studentId ? {...s, remarks: newVal} : s))
                          setHasUnsavedChanges(true)
                        }}
-                       className="w-full text-sm bg-stone-50/50 dark:bg-white/5 border border-stone-100 dark:border-[#2C2420] rounded-xl pl-9 pr-4 py-3 focus:border-amber-500 dark:focus:border-amber-500/50 focus:outline-none transition-all placeholder:text-stone-400 dark:placeholder:text-stone-600"
+                       className="w-full text-[13px] bg-stone-500/5 dark:bg-white/5 border border-stone-100 dark:border-white/5 rounded-2xl pl-11 pr-4 py-4 focus:bg-stone-500/10 focus:border-amber-500/40 focus:outline-none transition-all placeholder:text-stone-400 font-bold"
                     />
                   </div>
                 </div>
@@ -471,25 +481,30 @@ export default function AttendanceMarkingPage() {
         </div>
       )}
 
-      {/* Sticky Mobile Save Button / Desktop Save Section */}
+      {/* Sticky Mobile Save Button / Desktop Save Section - Pro Max Floating Control */}
       {students.length > 0 && (
-        <div className="fixed md:relative bottom-0 left-0 right-0 md:bottom-auto md:left-auto md:right-auto 
-          bg-white/80 dark:bg-stone-900/80 backdrop-blur-lg md:bg-transparent p-4 md:p-0 
-          border-t border-gray-200 dark:border-stone-800 md:border-none z-40 md:z-0
-          pb-safe md:pb-0">
-          <div className="max-w-7xl mx-auto flex justify-end gap-3 md:gap-4">
+        <div className="fixed md:relative bottom-6 md:bottom-auto left-6 right-6 md:left-auto md:right-auto z-[100] md:z-0">
+          <div className="max-w-xl mx-auto glass-premium rounded-[28px] p-2 md:p-0 shadow-2xl md:shadow-none border border-white/20 dark:border-white/5 flex gap-2">
             <button
               onClick={() => router.push('/dashboard')}
-              className="flex-1 md:flex-none bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-6 py-3 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 font-bold transition-all active:scale-[0.98]"
+              className="flex-1 md:hidden h-14 bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-400 px-6 rounded-2xl font-black uppercase tracking-widest text-[10px] press-effect transition-all"
             >
               Hủy
             </button>
             <button
               onClick={saveAttendance}
               disabled={saving}
-              className="flex-[2] md:flex-none bg-green-600 text-white px-10 py-3 rounded-xl hover:bg-green-700 active:bg-green-800 disabled:bg-stone-400 font-bold shadow-lg shadow-green-600/20 dark:shadow-none transition-all active:scale-[0.98]"
+              className="flex-[2] md:flex-none h-14 md:h-12 bg-amber-500 text-white px-10 rounded-2xl hover:bg-amber-600 disabled:bg-stone-300 font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-amber-500/20 transition-all press-effect"
             >
-              {saving ? 'Đang lưu...' : 'Lưu điểm danh'}
+              {saving ? 'Đang lưu...' : 'Xác nhận điểm danh'}
+            </button>
+            
+            {/* Desktop Cancel Button (Hidden on Mobile inside the pill) */}
+            <button
+               onClick={() => router.push('/dashboard')}
+               className="hidden md:block h-12 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-8 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 font-bold transition-all active:scale-[0.98]"
+            >
+               Quay lại
             </button>
           </div>
         </div>

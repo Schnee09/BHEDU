@@ -138,6 +138,7 @@ interface StatCardProps {
   };
   color?: 'blue' | 'green' | 'orange' | 'purple' | 'slate';
   onClick?: () => void;
+  className?: string;
 }
 
 const COLOR_CLASSES = {
@@ -165,7 +166,8 @@ export const StatCard = memo(function StatCard({
   icon,
   trend,
   color = 'blue',
-  onClick
+  onClick,
+  className = ""
 }: StatCardProps) {
   const styles = useMemo(() => COLOR_CLASSES[color], [color]);
 
@@ -175,7 +177,8 @@ export const StatCard = memo(function StatCard({
     border border-stone-200 dark:border-white/10 shadow-sm
     hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] hover:border-amber-500/30
     ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}
-  `, [onClick]);
+    ${className}
+  `, [onClick, className]);
 
   return (
     <div
