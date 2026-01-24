@@ -14,6 +14,7 @@ export type Profile = {
   phone?: string | null;
   address?: string | null;
   date_of_birth?: string | null;
+  created_at?: string;
 };
 
 interface ProfileContextType {

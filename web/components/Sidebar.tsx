@@ -53,11 +53,11 @@ export default function Sidebar({
 
       {/* Sidebar Container - Fixed for better contrast and z-index */}
       <aside className={cn(
-        "fixed transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col group/sidebar z-[70]",
+        "fixed transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col group/sidebar z-[150]",
         // Position & Shape
         "inset-y-0 left-0 w-[280px] lg:w-72 lg:h-[calc(100vh-32px)] lg:my-3 lg:left-4 lg:rounded-[40px]",
         // Glassmorphism - Premium Styling
-        "glass-premium backdrop-blur-3xl lg:border-2 border-white/20 shadow-2xl overflow-hidden",
+        "glass-premium backdrop-blur-3xl lg:border-2 border-white/20 shadow-2xl overflow-hidden pb-32 lg:pb-0",
         "dark:bg-[#1A1410]/95 bg-white/95", // More opaque for readability
         "shell-glow shell-border-gold",
         // Collapsible State (PC)

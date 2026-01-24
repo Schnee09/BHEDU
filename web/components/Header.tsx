@@ -7,6 +7,8 @@ import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
 import { CheckIcon, UserPlusIcon, ClipboardDocumentListIcon, ChartBarIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import { routes } from "@/lib/routes";
+import { cn } from "@/lib/utils";
+import { Icons } from "./ui/Icons";
 
 interface Notification {
   id: string;
@@ -196,15 +198,21 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
         <div className="flex flex-col">
           <h1 className="font-black text-xl md:text-2xl leading-tight tracking-tighter flex items-center gap-2">
             <span className="text-stone-900 dark:text-stone-100 hidden sm:inline opacity-30">Cổng</span>
-            <span className="bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 bg-clip-text text-transparent filter drop-shadow-[0_2px_4px_rgba(245,166,35,0.2)]">
-              {profile?.role === 'admin' ? 'Quản Trị' :
-                profile?.role === 'teacher' ? 'Giáo Viên' :
-                  'Học Sinh'}
+            <span className="bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 bg-clip-text text-transparent filter drop-shadow-[0_2px_4px_rgba(245,166,35,0.2)] animate-pulse-slow">
+              {profile?.role === 'admin' ? 'Hệ Thống' :
+                profile?.role === 'teacher' ? 'Học Thuật' :
+                  'Sinh Viên'}
             </span>
           </h1>
           <div className="flex items-center gap-2 mt-1">
-             <div className="w-2 h-[2px] bg-amber-500 rounded-full" />
-             <p className="text-[9px] md:text-[10px] text-stone-500 dark:text-stone-400 font-black uppercase tracking-[0.4em] opacity-40 italic">BH-EDU PREMIUM</p>
+             <div className="flex gap-1">
+                <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                <div className="w-1.5 h-1.5 bg-amber-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div className="w-1.5 h-1.5 bg-amber-700 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+             </div>
+             <p className="text-[9px] md:text-[10px] text-stone-500 dark:text-stone-400 font-black uppercase tracking-[0.4em] opacity-60 italic">
+                PRO MAX PREMIUM
+             </p>
           </div>
         </div>
       </div>
@@ -254,30 +262,73 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
 
           {showNotifications && (
             <>
-              <div className="fixed inset-0" onClick={() => setShowNotifications(false)} />
-              <div className="absolute right-0 mt-3 w-80 z-50 overflow-hidden rounded-2xl animate-scale-in origin-top-right
-               bg-white dark:bg-[#241E18] border border-stone-200 dark:border-white/10 shadow-2xl">
-                <div className="px-4 py-3 border-b border-stone-100 dark:border-white/5 bg-stone-50 dark:bg-white/5 flex items-center justify-between">
-                  <p className="font-bold text-stone-900 dark:text-stone-100 uppercase tracking-widest text-[10px]">Thông báo ({unreadCount})</p>
-                  <button onClick={markAllAsRead} className="text-[10px] font-bold text-amber-600 hover:text-amber-700 uppercase tracking-wider transition-all cursor-pointer">Đánh dấu tất cả</button>
+              {/* Overlay Backdrop */}
+              <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md animate-fade-in" onClick={() => setShowNotifications(false)} />
+              
+              {/* Notification Drawer (Mobile) / Dropdown (Desktop) */}
+              <div className={cn(
+                "fixed inset-x-0 bottom-0 z-[110] md:absolute md:inset-auto md:right-0 md:top-full md:mt-3 md:w-96 md:max-h-[500px]",
+                "bg-white dark:bg-[#241E18] border-t md:border border-stone-200 dark:border-white/10 shadow-2xl",
+                "rounded-t-[32px] md:rounded-2xl transition-all duration-500 ease-out animate-fade-in-up flex flex-col overflow-hidden",
+                "pb-safe md:pb-0"
+              )}>
+                {/* Drawer Header for Mobile */}
+                <div className="md:hidden flex justify-center pt-3 pb-1">
+                   <div className="w-12 h-1 bg-stone-200 dark:bg-stone-800 rounded-full" />
                 </div>
-                <div className="max-h-96 overflow-y-auto">
+
+                <div className="px-6 py-5 border-b border-stone-100 dark:border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 bg-amber-500/10 rounded-lg">
+                       <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                    </span>
+                    <p className="font-black text-stone-900 dark:text-stone-100 uppercase tracking-[0.2em] text-[11px]">Thông báo ({unreadCount})</p>
+                  </div>
+                  <button onClick={markAllAsRead} className="text-[10px] font-black text-amber-600 hover:text-amber-700 uppercase tracking-widest transition-all">Đánh dấu đã đọc</button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto max-h-[60vh] md:max-h-[400px]">
                   {notifications.length === 0 ? (
-                    <div className="px-4 py-12 text-center text-stone-400">
-                      <p className="text-sm">Không có thông báo mới</p>
+                    <div className="px-6 py-16 text-center">
+                      <div className="w-16 h-16 bg-stone-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                         <svg className="w-8 h-8 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                      </div>
+                      <p className="text-sm font-bold text-stone-400">Không có thông báo mới</p>
                     </div>
                   ) : (
-                    notifications.map((notif, idx) => (
-                      <div
-                        key={notif.id}
-                        className={`px-4 py-3 border-b border-stone-50 dark:border-white/5 transition-all
-                         ${!notif.is_read ? 'bg-amber-500/5 dark:bg-amber-500/10' : 'hover:bg-stone-50 dark:hover:bg-white/5'}`}
-                      >
-                        <p className="font-bold text-sm text-stone-900 dark:text-stone-100">{notif.title}</p>
-                        <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 line-clamp-2">{notif.message}</p>
-                      </div>
-                    ))
+                    <div className="divide-y divide-stone-50 dark:divide-white/5">
+                      {notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className={cn(
+                            "px-6 py-5 transition-all cursor-pointer relative group",
+                            !notif.is_read ? 'bg-amber-500/[0.03] dark:bg-amber-500/5' : 'hover:bg-stone-50 dark:hover:bg-white/5'
+                          )}
+                        >
+                          {!notif.is_read && (
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500" />
+                          )}
+                          <div className="flex items-start gap-4">
+                            <div className="flex-1 min-w-0">
+                                <p className="font-bold text-[14px] text-stone-900 dark:text-stone-100 group-hover:text-amber-600 transition-colors">{notif.title}</p>
+                                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1 line-clamp-3 leading-relaxed">{notif.message}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
+                </div>
+                
+                {/* Footer Link for notifications page if any */}
+                <div className="p-4 border-t border-stone-100 dark:border-white/5 bg-stone-50/50 dark:bg-white/2">
+                   <Link 
+                     href="/dashboard/notifications" 
+                     className="block w-full text-center py-3 rounded-xl bg-stone-900 dark:bg-amber-600 text-white text-xs font-black uppercase tracking-widest press-effect"
+                     onClick={() => setShowNotifications(false)}
+                   >
+                     Xem tất cả thông báo
+                   </Link>
                 </div>
               </div>
             </>
@@ -353,25 +404,55 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
         </>
       )}
 
-      {/* Search Overlay */}
+      {/* Search Overlay - Full Screen Pro Max for Mobile */}
       {showSearch && (
         <>
-            <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowSearch(false)} />
-            <div className="absolute top-16 md:top-[76px] left-0 right-0 p-4 md:p-6 glass-premium z-[70] animate-fade-in-up border-y border-stone-200 dark:border-white/10 shadow-2xl">
-              <form onSubmit={handleSearch} className="max-w-3xl mx-auto relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm kiếm học sinh, lớp học..."
-                  className="w-full h-14 pl-12 pr-4 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all text-lg"
-                  autoFocus
-                />
-                <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <svg className="w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-3xl animate-fade-in" onClick={() => setShowSearch(false)} />
+            <div className="fixed inset-0 md:inset-auto md:top-20 md:left-auto md:right-8 md:w-[500px] md:max-h-[80vh] bg-white/95 dark:bg-[#1A1410]/95 md:rounded-[32px] z-[110] animate-fade-in-up flex flex-col overflow-hidden">
+              {/* Mobile Header for Search */}
+              <div className="md:hidden flex items-center justify-between p-6 border-b border-stone-100 dark:border-white/5">
+                 <h2 className="text-xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tighter">Tìm kiếm</h2>
+                 <button onClick={() => setShowSearch(false)} className="p-2 rounded-xl bg-stone-100 dark:bg-white/5">
+                    <svg className="w-6 h-6 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                 </button>
+              </div>
+
+              <div className="p-6">
+                <form onSubmit={handleSearch} className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Tìm kiếm học sinh, lớp học..."
+                    className="w-full h-16 pl-14 pr-4 rounded-[24px] bg-stone-100 dark:bg-stone-900/50 border border-stone-200 dark:border-white/10 focus:border-amber-500 transition-all text-lg font-bold"
+                    autoFocus
+                  />
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2">
+                      <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  </div>
+                </form>
+
+                {/* Quick Shortcuts / Recent */}
+                <div className="mt-8">
+                   <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-4">Gợi ý tìm kiếm</p>
+                   <div className="flex flex-wrap gap-2">
+                      {['Học sinh mới', 'Thời khóa biểu', 'Điểm danh', 'Tài chính'].map(tag => (
+                        <button 
+                          key={tag}
+                          onClick={() => {setSearchQuery(tag);}}
+                          className="px-4 py-2 rounded-full bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/10 text-xs font-bold text-amber-600 dark:text-amber-500 transition-all"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                   </div>
                 </div>
-                <button type="submit" className="hidden">Search</button>
-              </form>
+              </div>
+              
+              <div className="flex-1" />
+              
+              {/* Bottom Decoration for Mobile */}
+              <div className="md:hidden h-20 bg-gradient-to-t from-stone-100/50 dark:from-stone-900/20 to-transparent" />
             </div>
         </>
       )}

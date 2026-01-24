@@ -45,6 +45,10 @@ import {
   ArrowLeftIcon,
   ArrowUpTrayIcon,
   ClockIcon,
+  SwatchIcon,
+  ViewColumnsIcon,
+  ShieldCheckIcon,
+  CameraIcon,
 } from '@heroicons/react/24/outline';
 
 import {
@@ -109,6 +113,10 @@ export const Icons = {
 
   // Analytics
   Chart: ChartBarIcon,
+  Layout: SwatchIcon,
+  Columns: ViewColumnsIcon,
+  Security: ShieldCheckIcon,
+  Camera: CameraIcon,
 } as const;
 
 // Export solid icons for special cases

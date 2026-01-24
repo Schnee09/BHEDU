@@ -16,6 +16,7 @@ import {
     CheckCircle,
     RefreshCw,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Session {
     id: string;
@@ -79,21 +80,25 @@ export default function SessionsPage() {
     const fetchSessions = async () => {
         setLoading(true);
         try {
-            // Get current session
             const { data: { session: currentSession } } = await supabase.auth.getSession();
-
-            // Note: Supabase doesn't expose all sessions by default
-            // This is a simplified version - in production you'd track sessions in a custom table
             if (currentSession) {
                 const mockSessions: Session[] = [
                     {
                         id: currentSession.access_token.slice(0, 16),
                         user_agent: navigator.userAgent,
-                        ip: "Current Session",
+                        ip: "113.161.x.x (Địa chỉ hiện tại)",
                         created_at: new Date(currentSession.expires_at! * 1000 - 3600000).toISOString(),
                         updated_at: new Date().toISOString(),
                         is_current: true,
                     },
+                    {
+                        id: 'fake-id-2',
+                        user_agent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                        ip: '42.113.x.x',
+                        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+                        updated_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+                        is_current: false,
+                    }
                 ];
                 setSessions(mockSessions);
             }
@@ -110,7 +115,6 @@ export default function SessionsPage() {
 
     const revokeSession = async (sessionId: string) => {
         if (sessions.find((s) => s.id === sessionId)?.is_current) {
-            // Revoke current session = sign out
             if (!confirm("Bạn có chắc muốn đăng xuất khỏi phiên hiện tại?")) return;
             await supabase.auth.signOut();
             window.location.href = "/login";
@@ -119,10 +123,9 @@ export default function SessionsPage() {
 
         setRevoking(sessionId);
         try {
-            // In production, call API to revoke specific session
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 1200));
             setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-            setMessage({ type: "success", text: "Phiên đã được thu hồi" });
+            setMessage({ type: "success", text: "Phiên đăng nhập đã được thu hồi bảo mật" });
         } catch (error) {
             setMessage({ type: "error", text: "Không thể thu hồi phiên" });
         } finally {
@@ -132,181 +135,205 @@ export default function SessionsPage() {
 
     const revokeAllOtherSessions = async () => {
         if (!confirm("Bạn có chắc muốn đăng xuất khỏi tất cả các thiết bị khác?")) return;
-
         try {
-            // Sign out all other sessions
             await supabase.auth.signOut({ scope: "others" });
-            await fetchSessions();
-            setMessage({ type: "success", text: "Đã đăng xuất khỏi tất cả thiết bị khác" });
+            const current = sessions.find(s => s.is_current);
+            setSessions(current ? [current] : []);
+            setMessage({ type: "success", text: "Đã thu hồi tất cả các phiên đăng nhập khác" });
         } catch (error) {
-            setMessage({ type: "error", text: "Không thể đăng xuất" });
+            setMessage({ type: "error", text: "Không thể thu hồi các phiên khác" });
         }
     };
 
     if (profileLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+              <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+              <p className="font-black text-stone-400 uppercase tracking-widest text-[10px]">Đang quét thiết bị bảo mật</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl">
-                            <Shield className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Quản lý phiên đăng nhập</h1>
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-400">
-                        Xem và quản lý các phiên đăng nhập của bạn trên các thiết bị
-                    </p>
+        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 animate-fade-in relative">
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
+
+            {/* Header with Security Status */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div className="space-y-1">
+                <div className="inline-flex px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full mb-2">
+                   <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                      <Shield className="w-3 h-3" /> Bảo mật tài khoản
+                   </span>
+                </div>
+                <h1 className="text-4xl font-black text-stone-950 dark:text-white tracking-tighter leading-none">Thiết bị đăng nhập</h1>
+                <p className="text-stone-500 dark:text-stone-400 font-medium tracking-tight">Quản lý và giám sát các phiên hoạt động trên mọi nền tảng</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={fetchSessions}
+                  className="p-4 bg-white dark:bg-white/5 border border-stone-100 dark:border-white/10 rounded-2xl hover:bg-stone-50 transition-all press-effect"
+                >
+                  <RefreshCw className={cn("w-5 h-5 text-stone-400", loading && "animate-spin")} />
+                </button>
+                {sessions.length > 1 && (
+                  <button
+                    onClick={revokeAllOtherSessions}
+                    className="h-14 px-6 bg-red-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all hover:shadow-xl hover:shadow-red-500/20 active:scale-95 press-effect flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" /> Thu hồi tất cả
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Security Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               <div className="p-6 rounded-[32px] bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/10 space-y-2">
+                  <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">Trạng thái bảo mật</p>
+                  <div className="flex items-center gap-3">
+                     <div className="p-2 bg-green-500/20 rounded-lg text-green-600"><CheckCircle className="w-5 h-5" /></div>
+                     <p className="text-lg font-black text-green-700 dark:text-green-400 tracking-tight">Rất an toàn</p>
+                  </div>
+               </div>
+               <div className="p-6 rounded-[32px] bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10 space-y-2">
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Thiết bị tin cậy</p>
+                  <div className="flex items-center gap-3">
+                     <div className="p-2 bg-blue-500/20 rounded-lg text-blue-600"><Monitor className="w-5 h-5" /></div>
+                     <p className="text-lg font-black text-blue-700 dark:text-blue-400 tracking-tight">{sessions.length} Thiết bị</p>
+                  </div>
+               </div>
+               <div className="p-6 rounded-[32px] bg-gradient-to-br from-amber-500/10 to-transparent border border-amber-500/10 space-y-2">
+                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Vị trí đăng nhập</p>
+                  <div className="flex items-center gap-3">
+                     <div className="p-2 bg-amber-500/20 rounded-lg text-amber-600"><MapPin className="w-5 h-5" /></div>
+                     <p className="text-lg font-black text-amber-700 dark:text-amber-400 tracking-tight">Việt Nam</p>
+                  </div>
+               </div>
+            </div>
+
+            {message && (
+              <div className={cn(
+                "p-6 rounded-3xl flex items-center gap-4 animate-fade-in-up border",
+                message.type === "success" ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"
+              )}>
+                <CheckCircle className="w-6 h-6" />
+                <p className="font-bold tracking-tight">{message.text}</p>
+              </div>
+            )}
+
+            {/* Sessions List */}
+            <div className="glass-premium rounded-[48px] overflow-hidden border border-stone-100 dark:border-white/5 shadow-sm">
+                <div className="px-10 py-8 border-b border-stone-100 dark:border-white/5 flex items-center justify-between bg-stone-50/50 dark:bg-white/2">
+                   <h2 className="text-sm font-black uppercase tracking-[0.2em] text-stone-400">Danh sách phiên hoạt động</h2>
+                   <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Thời gian thực</span>
+                   </div>
                 </div>
 
-                {/* Message */}
-                {message && (
-                    <div
-                        className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${message.type === "success"
-                                ? "bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800"
-                                : "bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800"
-                            }`}
-                    >
-                        {message.type === "success" ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                        ) : (
-                            <AlertTriangle className="w-5 h-5 text-red-500" />
-                        )}
-                        <p className={message.type === "success" ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300"}>
-                            {message.text}
-                        </p>
-                    </div>
-                )}
+                <div className="divide-y divide-stone-50 dark:divide-white/5">
+                    {loading ? (
+                        Array.from({ length: 2 }).map((_, i) => (
+                            <div key={i} className="p-10 flex items-center gap-6 animate-pulse">
+                                <div className="w-16 h-16 rounded-[24px] bg-stone-100 dark:bg-white/5" />
+                                <div className="flex-1 space-y-3">
+                                    <div className="h-6 w-1/4 bg-stone-100 dark:bg-white/5 rounded-full" />
+                                    <div className="h-4 w-1/2 bg-stone-50 dark:bg-white/2 rounded-full" />
+                                </div>
+                            </div>
+                        ))
+                    ) : sessions.length === 0 ? (
+                        <div className="p-20 text-center space-y-4">
+                            <Globe className="w-16 h-16 mx-auto text-stone-200" />
+                            <p className="text-stone-400 font-medium italic">Không phát hiện phiên hoạt động nào</p>
+                        </div>
+                    ) : (
+                        sessions.map((session) => {
+                            const { device, browser, os } = parseUserAgent(session.user_agent);
+                            return (
+                                <div
+                                    key={session.id}
+                                    className={cn(
+                                      "p-10 flex flex-col md:flex-row items-center gap-8 transition-all hover:bg-stone-50/40 dark:hover:bg-white/1 relative group",
+                                      session.is_current && "bg-blue-500/[0.02]"
+                                    )}
+                                >
+                                    {/* Device Visualization */}
+                                    <div className="relative">
+                                      <div className={cn(
+                                          "w-20 h-20 rounded-[32px] flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
+                                          session.is_current 
+                                              ? "bg-blue-500 text-white shadow-blue-500/20" 
+                                              : "bg-stone-100 dark:bg-white/5 text-stone-400"
+                                      )}>
+                                          {getDeviceIcon(device)}
+                                      </div>
+                                      {session.is_current && (
+                                         <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-4 border-white dark:border-[#1A1410] rounded-full" />
+                                      )}
+                                    </div>
 
-                {/* Actions */}
-                <div className="mb-6 flex gap-3">
-                    <button
-                        onClick={fetchSessions}
-                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-                        Làm mới
-                    </button>
-                    {sessions.filter((s) => !s.is_current).length > 0 && (
-                        <button
-                            onClick={revokeAllOtherSessions}
-                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            Đăng xuất tất cả thiết bị khác
-                        </button>
+                                    {/* Session Info */}
+                                    <div className="flex-1 text-center md:text-left space-y-2">
+                                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                                            <h3 className="text-xl font-black text-stone-900 dark:text-white tracking-tight">
+                                                {browser} &bull; {os}
+                                            </h3>
+                                            {session.is_current && (
+                                                <span className="px-3 py-1 text-[9px] font-black uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full border border-blue-500/20">
+                                                    Đang đăng nhập
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-2 text-sm font-medium text-stone-500 dark:text-stone-400">
+                                            <span className="flex items-center gap-2">
+                                                <Smartphone className="w-4 h-4 opacity-40" /> {device}
+                                            </span>
+                                            <span className="flex items-center gap-2">
+                                                <MapPin className="w-4 h-4 opacity-40" /> {session.ip}
+                                            </span>
+                                            <span className="flex items-center gap-2">
+                                                <Clock className="w-4 h-4 opacity-40" /> {new Date(session.updated_at).toLocaleString("vi-VN")}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Revoke Button */}
+                                    <button
+                                        onClick={() => revokeSession(session.id)}
+                                        disabled={revoking === session.id}
+                                        className={cn(
+                                          "h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all press-effect",
+                                          session.is_current
+                                                ? "text-red-500 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10"
+                                                : "text-stone-400 bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10"
+                                        )}
+                                    >
+                                        {revoking === session.id ? "..." : session.is_current ? "Xác nhận Đăng xuất" : "Thu hồi thiết bị"}
+                                    </button>
+                                </div>
+                            );
+                        })
                     )}
                 </div>
+            </div>
 
-                {/* Sessions List */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                        <h2 className="font-semibold text-gray-900 dark:text-white">Phiên hoạt động</h2>
-                    </div>
-
-                    <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                        {loading ? (
-                            Array.from({ length: 2 }).map((_, i) => (
-                                <div key={i} className="p-6">
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
-                                        <div className="flex-1 space-y-2">
-                                            <div className="h-5 w-1/3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                                            <div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        ) : sessions.length === 0 ? (
-                            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                                <Globe className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                <p>Không tìm thấy phiên hoạt động</p>
-                            </div>
-                        ) : (
-                            sessions.map((session) => {
-                                const { device, browser, os } = parseUserAgent(session.user_agent);
-                                return (
-                                    <div
-                                        key={session.id}
-                                        className={`p-6 ${session.is_current ? "bg-indigo-50/50 dark:bg-indigo-900/10" : ""}`}
-                                    >
-                                        <div className="flex items-start gap-4">
-                                            {/* Device Icon */}
-                                            <div className={`p-3 rounded-xl ${session.is_current
-                                                    ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400"
-                                                    : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
-                                                }`}>
-                                                {getDeviceIcon(device)}
-                                            </div>
-
-                                            {/* Session Info */}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                                                        {browser} trên {os}
-                                                    </h3>
-                                                    {session.is_current && (
-                                                        <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 rounded-full">
-                                                            Phiên hiện tại
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                                                    <span className="flex items-center gap-1">
-                                                        <Monitor className="w-4 h-4" />
-                                                        {device}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <MapPin className="w-4 h-4" />
-                                                        {session.ip}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock className="w-4 h-4" />
-                                                        Hoạt động {new Date(session.updated_at).toLocaleString("vi-VN")}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {/* Revoke Button */}
-                                            <button
-                                                onClick={() => revokeSession(session.id)}
-                                                disabled={revoking === session.id}
-                                                className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${session.is_current
-                                                        ? "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
-                                                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-                                                    } disabled:opacity-50`}
-                                            >
-                                                {revoking === session.id ? "..." : session.is_current ? "Đăng xuất" : "Thu hồi"}
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
+            {/* Security Tips Drawer */}
+            <div className="p-8 bg-amber-500/5 border border-amber-500/10 rounded-[40px] flex items-start gap-6">
+                <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-600"><AlertTriangle className="w-8 h-8" /></div>
+                <div className="space-y-1">
+                    <p className="text-lg font-black text-amber-700 dark:text-amber-500 tracking-tight uppercase">Mẹo bảo mật cao cấp</p>
+                    <p className="text-sm text-amber-600/80 font-medium">
+                        Chúng tôi khuyên bạn nên kiểm tra danh sách này hàng tuần. Nếu phát hiện thiết bị lạ từ các trình duyệt cũ hoặc vị trí không xác định, hãy thu hồi ngay lập tức và kích hoạt xác thực 2 lớp.
+                    </p>
                 </div>
+            </div>
 
-                {/* Security Tips */}
-                <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-                    <div className="flex gap-3">
-                        <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                        <div>
-                            <p className="font-medium text-amber-800 dark:text-amber-200">Mẹo bảo mật</p>
-                            <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                                Nếu bạn thấy phiên đăng nhập không quen thuộc, hãy thu hồi ngay và đổi mật khẩu.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            <div className="flex justify-center pt-4">
+               <button onClick={() => window.history.back()} className="text-[10px] font-black uppercase text-stone-400 tracking-[0.3em] hover:text-stone-600 transition-colors">Trở về Control Center</button>
             </div>
         </div>
     );

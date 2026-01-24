@@ -147,28 +147,28 @@ describe("Role Utilities", () => {
 describe("Role Permission Helpers", () => {
     describe("hasTeacherCapabilities concept", () => {
         it("admin should have teacher capabilities", () => {
-            const role = "admin";
+            const role: string = "admin";
             const hasTeacherCaps = role === "admin" || role === "staff" ||
                 role === "teacher";
             expect(hasTeacherCaps).toBe(true);
         });
 
         it("staff should have teacher capabilities", () => {
-            const role = "staff";
+            const role: string = "staff";
             const hasTeacherCaps = role === "admin" || role === "staff" ||
                 role === "teacher";
             expect(hasTeacherCaps).toBe(true);
         });
 
         it("teacher should have teacher capabilities", () => {
-            const role = "teacher";
+            const role: string = "teacher";
             const hasTeacherCaps = role === "admin" || role === "staff" ||
                 role === "teacher";
             expect(hasTeacherCaps).toBe(true);
         });
 
         it("student should NOT have teacher capabilities", () => {
-            const role = "student";
+            const role: string = "student";
             const hasTeacherCaps = role === "admin" || role === "staff" ||
                 role === "teacher";
             expect(hasTeacherCaps).toBe(false);
@@ -177,25 +177,25 @@ describe("Role Permission Helpers", () => {
 
     describe("hasAdminAccess concept", () => {
         it("admin should have admin access", () => {
-            const role = "admin";
+            const role: string = "admin";
             const hasAdminAccess = role === "admin" || role === "staff";
             expect(hasAdminAccess).toBe(true);
         });
 
         it("staff should have admin access", () => {
-            const role = "staff";
+            const role: string = "staff";
             const hasAdminAccess = role === "admin" || role === "staff";
             expect(hasAdminAccess).toBe(true);
         });
 
         it("teacher should NOT have admin access", () => {
-            const role = "teacher";
+            const role: string = "teacher";
             const hasAdminAccess = role === "admin" || role === "staff";
             expect(hasAdminAccess).toBe(false);
         });
 
         it("student should NOT have admin access", () => {
-            const role = "student";
+            const role: string = "student";
             const hasAdminAccess = role === "admin" || role === "staff";
             expect(hasAdminAccess).toBe(false);
         });

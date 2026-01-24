@@ -56,37 +56,37 @@ export default function MobileBottomNav() {
 
             {/* swipeable More Menu - Pro Max Refined */}
             <div className={cn(
-                "fixed bottom-2 left-0 right-0 z-[110] transition-transform duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] px-4 pb-20",
+                "fixed bottom-0 left-0 right-0 z-[110] transition-transform duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] px-4 pb-12",
                 showMoreMenu ? "translate-y-0" : "translate-y-full"
             )}>
-                <div className="glass-premium rounded-[40px] shadow-2xl pb-safe overflow-hidden border border-white/20 dark:border-white/5 relative">
+                <div className="glass-premium rounded-t-[40px] rounded-b-[20px] shadow-2xl pb-safe overflow-hidden border border-white/20 dark:border-white/5 relative">
                     {/* Background Decorative Bloom */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[80px] rounded-full -translate-y-1/2 translate-x-1/2" />
                     
                     <div className="flex justify-center pt-4 pb-2">
-                        <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-700/50 rounded-full" />
+                        <div className="w-16 h-2 bg-stone-200 dark:bg-stone-800 rounded-full" />
                     </div>
 
                     <button 
                         onClick={() => setShowMoreMenu(false)}
-                        className="absolute top-6 right-6 p-2 rounded-full bg-stone-100 dark:bg-white/5 text-stone-500 press-effect tap-target"
+                        className="absolute top-6 right-6 p-2.5 rounded-2xl bg-stone-100 dark:bg-white/10 text-stone-500 press-effect shadow-sm"
                     >
                         <X className="w-5 h-5" />
                     </button>
 
-                    <h3 className="text-sm font-black text-center text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em] mb-8 mt-2">Dịch vụ bổ sung</h3>
+                    <h3 className="text-[11px] font-black text-center text-stone-400 dark:text-stone-500 uppercase tracking-[0.4em] mb-10 mt-4 leading-none">Trung tâm dịch vụ</h3>
 
-                    <div className="grid grid-cols-3 gap-3 px-6 pb-8">
+                    <div className="grid grid-cols-3 gap-4 px-8 pb-12">
                         {moreMenuItems.map((item) => (
                             <Link
                                 key={item.href}
                                 href={item.href}
                                 onClick={() => setShowMoreMenu(false)}
                                 className={cn(
-                                    "group relative flex flex-col items-center justify-center p-5 rounded-[28px] transition-all press-effect overflow-hidden",
+                                    "group relative flex flex-col items-center justify-center p-6 rounded-[32px] transition-all press-effect overflow-hidden border",
                                     isActive(item.href)
-                                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 shadow-inner"
-                                        : "bg-stone-50/50 dark:bg-white/5 text-stone-600 dark:text-stone-400 border border-stone-100 dark:border-white/5"
+                                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-500/20 shadow-lg"
+                                        : "bg-stone-50/50 dark:bg-white/5 text-stone-600 dark:text-stone-400 border-stone-100 dark:border-white/5"
                                 )}
                             >
                                 {/* Item Glow */}
