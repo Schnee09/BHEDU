@@ -130,7 +130,7 @@ class _NotificationCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      notification.body,
+                      notification.body ?? '',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 13,

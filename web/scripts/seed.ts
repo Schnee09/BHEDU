@@ -1,335 +1,669 @@
 /**
- * scripts/seed.ts
- * Complete database seeding with test users and sample data
- * 
- * Run with: npx tsx scripts/seed.ts
- * Or: pnpm tsx scripts/seed.ts
+ * Master Seed Script for BH-EDU (Improved V2)
  *
- * ✅ Automatically replaces duplicate users
- * ✅ Uses service role to bypass RLS
- * ✅ Creates users, profiles, classes, enrollments, assignments, scores, and attendance
- * ✅ Loads from .env or .env.local
+ * Improvements:
+ * - Robust Profile handling (Update vs Upsert to avoid duplicates from triggers)
+ * - Academic Years, Extended Profiles, Attendance History
+ * - Batch inserts for performance
+ * - Pre-fetching users for reliable lookups
+ *
+ * Run with: npm run seed
  */
 
 import * as dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import * as path from "path";
 
-// Load from .env or .env.local (prioritize .env.local for production safety)
-dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
-dotenv.config({ path: path.join(__dirname, "..", ".env") });
+dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env" });
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const service = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-if (!url || !service) {
-  console.error("❌ Missing Supabase credentials in .env or .env.local");
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error("❌ Missing Supabase URL or Service Role Key in .env");
   process.exit(1);
 }
 
-console.log("🌍 Using Supabase URL:", url);
-console.log("🔑 Using Service Key Prefix:", service.substring(0, 16));
-console.log("♻️  Mode: Replace existing users\n");
-
-const supabase = createClient(url, service, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-  db: {
-    schema: 'public',
-  },
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
 });
 
-// ------------------------------------------------------------------
-// 🧩 Base test data
-// ------------------------------------------------------------------
-const users = [
-  { email: "admin@bhedu.com", password: "test123", role: "admin", full_name: "Admin User" },
-  { email: "teacher@bhedu.com", password: "teacher123", role: "teacher", full_name: "Shin Ookami" },
-  { email: "sara@student.com", password: "student123", role: "student", full_name: "Sara Suigetsu" },
-  { email: "charlie@student.com", password: "student123", role: "student", full_name: "Charlie Student" },
-  { email: "dana@student.com", password: "student123", role: "student", full_name: "Dana Student" },
-  { email: "alex@student.com", password: "student123", role: "student", full_name: "Alex Student" },
+// -- Constants --
+const ACADEMIC_YEAR = {
+  name: "2025-2026",
+  start_date: "2025-09-05",
+  end_date: "2026-05-31",
+  is_current: true,
+};
+
+const SUBJECTS = [
+  { code: "TOAN", name: "Toán học" },
+  { code: "VAN", name: "Ngữ văn" },
+  { code: "ANH", name: "Tiếng Anh" },
+  { code: "LY", name: "Vật lý" },
+  { code: "HOA", name: "Hóa học" },
 ];
 
-// ------------------------------------------------------------------
-// 🧰 Helpers
-// ------------------------------------------------------------------
-async function forceDeleteUser(email: string) {
-  try {
-    const { data, error } = await supabase.auth.admin.listUsers();
-    if (error) {
-      throw new Error(`Failed to list users for deletion check: ${error.message}`);
-    }
-    const existing = data.users.find((u) => u.email === email);
-    if (existing) {
-      // Delete auth user (profile will be cascade deleted if FK is set up)
-      const { error: delError } = await supabase.auth.admin.deleteUser(existing.id);
-      if (delError) {
-        throw new Error(`Failed to delete existing user ${email}: ${delError.message}`);
-      }
-      console.log(`🗑️  Removed old user: ${email} (ID: ${existing.id})`);
-      
-      // Also try to delete profile directly (if cascade didn't work)
-      await supabase.from("profiles").delete().eq("id", existing.id);
-      
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error(`⚠️  Error in forceDeleteUser for ${email}:`, error);
-    throw error;
-  }
+const CLASSES = ["10A1", "10A2", "11A1", "11A2", "12A1", "12A2"];
+
+const CORE_USERS = [
+  {
+    email: "superadmin@bhedu.vn",
+    password: "admin123",
+    role: "super_admin",
+    name: "Siêu Quản Trị",
+  },
+  {
+    email: "owner@bhedu.vn",
+    password: "owner123",
+    role: "owner",
+    name: "Chủ Trung Tâm",
+  },
+  {
+    email: "admin@bhedu.vn",
+    password: "admin123",
+    role: "admin",
+    name: "Quản Trị Viên",
+  },
+  {
+    email: "staff@bhedu.vn",
+    password: "staff123",
+    role: "staff",
+    name: "Nhân Viên Vận Hành",
+  },
+  {
+    email: "teacher@bhedu.vn",
+    password: "teacher123",
+    role: "teacher",
+    name: "Giáo Viên Mẫu",
+  },
+  {
+    email: "parent@bhedu.vn",
+    password: "parent123",
+    role: "parent",
+    name: "Phụ Huynh Mẫu",
+  },
+  {
+    email: "student@bhedu.vn",
+    password: "student123",
+    role: "student",
+    name: "Học Sinh Mẫu",
+  },
+  {
+    email: "tutor@bhedu.vn",
+    password: "tutor123",
+    role: "tutor",
+    name: "Gia Sư Mẫu",
+  },
+];
+
+// -- Helpers --
+const FIRST_NAMES = [
+  "Minh",
+  "Hải",
+  "Dũng",
+  "Anh",
+  "Tuấn",
+  "Nam",
+  "Đức",
+  "Phong",
+  "Lan",
+  "Hương",
+  "Mai",
+  "Linh",
+];
+const LAST_NAMES = [
+  "Nguyễn",
+  "Trần",
+  "Lê",
+  "Phạm",
+  "Hoàng",
+  "Huỳnh",
+  "Phan",
+  "Vũ",
+  "Đặng",
+  "Bùi",
+];
+
+const GENDERS = ["male", "female"];
+
+function randomName() {
+  return `${LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]} ${
+    FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]
+  } ${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]}`;
 }
 
-async function getOrCreateUser(u: { email: string; password: string; role: string; full_name: string }) {
-  try {
-    // Always delete existing user first (force replace)
-    const wasDeleted = await forceDeleteUser(u.email);
-    if (wasDeleted) {
-      // Wait a bit to ensure deletion is complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    // Create new user
-    const { data, error } = await supabase.auth.admin.createUser({
-      email: u.email,
-      password: u.password,
-      email_confirm: true,
-      user_metadata: { full_name: u.full_name, role: u.role },
-    });
-
-    if (error || !data?.user) {
-      console.error(`❌ Failed to create ${u.email}:`, error?.message || 'No user data returned');
-      console.dir(error, { depth: null });
-      throw error || new Error('User creation failed');
-    }
-
-    console.log(`✅ Created user: ${u.email} (ID: ${data.user.id})`);
-    return data.user.id;
-  } catch (error) {
-    console.error(`❌ Error in getOrCreateUser for ${u.email}:`, error);
-    throw error;
-  }
+function randomGender() {
+  return GENDERS[Math.floor(Math.random() * GENDERS.length)];
 }
 
-async function upsertProfile(id: string, u: { full_name: string; role: string; email: string }) {
-  try {
-    // Use insert instead of upsert to avoid RLS issues
-    // First try to delete any existing profile with this ID
-    await supabase.from("profiles").delete().eq("id", id);
-    
-    // Then insert fresh
-    const { error } = await supabase.from("profiles").insert({
-      id,
-      full_name: u.full_name,
-      role: u.role,
-      email: u.email,
-    });
-
-    if (error) {
-      throw new Error(`Profile insert failed for ${u.email}: ${error.message}`);
-    }
-    console.log(`✅ Profile created for ${u.email}`);
-  } catch (error) {
-    console.error(`⚠️  Profile error (${u.email}):`, error);
-    throw error;
-  }
+function randomScore() {
+  return Math.round((Math.random() * 4 + 6) * 10) / 10; // Scores 6.0 to 10.0
 }
 
-// ------------------------------------------------------------------
-// 🚀 Main seeding logic
-// ------------------------------------------------------------------
 async function main() {
-  console.log("🌱 Starting Supabase seed (force replace mode)...\n");
+  console.log("🚀 BH-EDU Improved Seed Starting...\n");
 
-  const userIds: Record<string, string> = {};
-  console.log("👥 Processing users (deleting old, creating new)...");
-  for (const u of users) {
-    try {
-      const id = await getOrCreateUser(u);
-      userIds[u.email] = id;
-      await upsertProfile(id, u);
-    } catch (error) {
-      console.error(`❌ Failed to process ${u.email}`);
-      throw error; // Stop on any user failure
+  // 1. Academic Year
+  console.log("📅 Seeding Academic Year...");
+  let academicYearId: string;
+  const { data: existingYear } = await supabase.from("academic_years").select(
+    "id",
+  ).eq("name", ACADEMIC_YEAR.name).maybeSingle();
+
+  if (existingYear) {
+    academicYearId = existingYear.id;
+    console.log("  ⏭️  Using existing academic year");
+    await supabase.from("academic_years").update({ is_current: true }).eq(
+      "id",
+      academicYearId,
+    );
+  } else {
+    const { data: newYear, error } = await supabase.from("academic_years")
+      .insert(ACADEMIC_YEAR).select("id").single();
+    if (error) {
+      console.error("Error creating academic year:", error);
+      process.exit(1);
     }
+    academicYearId = newYear.id;
+    console.log("  ✅ Created academic year: 2025-2026");
   }
 
-  console.log("\n✅ All users created and profiles linked!\n");
-
-  // Validate user IDs
-  for (const email of users.map((u) => u.email)) {
-    if (!userIds[email]) {
-      throw new Error(`No user ID for ${email}. Aborting.`);
-    }
-  }
-
-  // Classes
-  console.log("→ Ensuring sample classes...");
-  let classIds: string[] = [];
-  try {
-    const { data: classes, error: clsErr } = await supabase.from("classes").select("id");
-    if (clsErr) {
-      throw new Error(`Class fetch error: ${clsErr.message}`);
-    }
-
-    if (!classes || classes.length === 0) {
-      const { data, error } = await supabase
-        .from("classes")
-        .insert([
-          { name: "Math 101", teacher_id: userIds["teacher@bhedu.com"] },
-          { name: "Science 102", teacher_id: userIds["teacher@bhedu.com"] },
-        ])
-        .select("id");
-      if (error) {
-        throw new Error(`Class creation error: ${error.message}`);
-      }
-      classIds = data.map((c) => c.id);
-      console.log("✅ Classes created");
+  // 2. Subjects
+  console.log("\n📚 Seeding Subjects...");
+  const subjectMap: Record<string, string> = {};
+  for (const s of SUBJECTS) {
+    const { data: ext } = await supabase.from("subjects").select("id").eq(
+      "code",
+      s.code,
+    ).maybeSingle();
+    if (ext) {
+      subjectMap[s.code] = ext.id;
     } else {
-      classIds = classes.map((c) => c.id);
-      console.log("✅ Classes already exist");
+      const { data } = await supabase.from("subjects").insert(s).select("id")
+        .single();
+      if (data) subjectMap[s.code] = data.id;
     }
-  } catch (error) {
-    console.error("❌ Class setup failed:", error);
-    throw error;
+  }
+  console.log(`  ✅ Synced ${Object.keys(subjectMap).length} subjects`);
+
+  // 2.1 Courses
+  console.log("\n📘 Seeding Courses...");
+  const courseMap: Record<string, string> = {};
+  for (const [code, id] of Object.entries(subjectMap)) {
+    const s = SUBJECTS.find((subj) => subj.code === code);
+    const { data: ext } = await supabase.from("courses").select("id").eq(
+      "code",
+      `C-${code}`,
+    ).maybeSingle();
+
+    if (ext) {
+      courseMap[code] = ext.id;
+    } else {
+      const { data, error } = await supabase.from("courses").insert({
+        name: s?.name || "Khóa học",
+        code: `C-${code}`,
+        subject_id: id,
+        description: `Khóa học ${s?.name || ""}`,
+        credits: 1,
+      }).select("id").single();
+
+      if (error) {
+        console.error(
+          `  ❌ Failed to create course for ${code}: ${error.message}`,
+        );
+      } else if (data) {
+        courseMap[code] = data.id;
+      }
+    }
+  }
+  console.log(`  ✅ Synced ${Object.keys(courseMap).length} courses`);
+
+  // 3. Core Users & Profiles (Defensive)
+  console.log("\n🔐 Seeding Core Users...");
+
+  // Pre-fetch all users to avoid pagination issues and fragile error checks
+  console.log("  ⚡ Prefetching Auth Users...");
+  let allUsers: any[] = [];
+  let page = 1;
+  const PER_PAGE = 50;
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: PER_PAGE,
+    });
+    if (error) {
+      console.error("Failed to list users:", error);
+      process.exit(1);
+    }
+    const users = data.users;
+    if (!users || users.length === 0) break;
+
+    allUsers = [...allUsers, ...users];
+    console.log(`    Fetched page ${page} (${users.length} users)...`);
+    page++;
   }
 
-  // Enrollments
-  console.log("→ Creating enrollments...");
-  for (const studentEmail of ["sara@student.com", "charlie@student.com", "dana@student.com", "alex@student.com"]) {
-    if (!userIds[studentEmail]) {
-      console.error(`⚠️ Skipping enrollment for ${studentEmail}: User ID not found`);
+  const emailToIdMap = new Map<string, string>();
+  allUsers.forEach((u) => u.email && emailToIdMap.set(u.email, u.id));
+  console.log(`  Found ${emailToIdMap.size} existing users.`);
+
+  const profileIds: Record<string, string> = {};
+
+  for (const u of CORE_USERS) {
+    let userId = emailToIdMap.get(u.email);
+
+    if (!userId) {
+      // Create if not exists
+      const { data: authData, error: authErr } = await supabase.auth.admin
+        .createUser({
+          email: u.email,
+          password: u.password,
+          email_confirm: true,
+          user_metadata: { full_name: u.name, role: u.role },
+        });
+
+      if (authErr) {
+        console.error(`  ❌ Auth Error (${u.email}): ${authErr.message}`);
+        continue;
+      }
+
+      if (authData.user) {
+        userId = authData.user.id;
+        emailToIdMap.set(u.email, userId);
+      }
+    } else {
+      console.log(`  Header: User ${u.email} already exists (ID: ${userId})`);
+      // Update metadata to ensure role is correct
+      await supabase.auth.admin.updateUserById(userId, {
+        user_metadata: { full_name: u.name, role: u.role },
+      });
+    }
+
+    if (!userId) continue;
+
+    // Check by user_id
+    const { data: existingProfile } = await supabase.from("profiles").select(
+      "id",
+    ).eq("user_id", userId).maybeSingle();
+    let profileId: string;
+
+    if (existingProfile) {
+      await supabase.from("profiles").update({
+        full_name: u.name,
+        role: u.role,
+        status: "active",
+        is_active: true,
+      }).eq("id", existingProfile.id);
+      profileId = existingProfile.id;
+    } else {
+      const fixedId = u.email === "student@bhedu.vn"
+        ? "00000000-0000-0000-0000-000000000007"
+        : u.email === "parent@bhedu.vn"
+        ? "00000000-0000-0000-0000-000000000006"
+        : undefined;
+
+      const { data: newProfile, error } = await supabase.from("profiles")
+        .insert({
+          id: fixedId,
+          user_id: userId,
+          email: u.email,
+          full_name: u.name,
+          role: u.role,
+          status: "active",
+          is_active: true,
+        }).select("id").single();
+
+      if (error) {
+        console.error("Profile Insert Error:", error);
+        continue;
+      }
+      profileId = newProfile.id;
+    }
+    profileIds[u.email] = profileId;
+
+    if (u.role === "teacher" || u.role === "tutor") {
+      await supabase.from("teacher_profiles").upsert({
+        profile_id: profileId,
+        teacher_type: u.role === "tutor" ? "tutor" : "full_time",
+        department: "Khoa học tự nhiên",
+        specialization: "Toán, Lý, Hóa",
+        teaching_subjects: [subjectMap["TOAN"], subjectMap["LY"]],
+        hourly_rate: u.role === "tutor" ? 200000 : null,
+      }, { onConflict: "profile_id" });
+    }
+
+    // Create student_profiles for core student
+    if (u.role === "student") {
+      await supabase.from("student_profiles").upsert({
+        profile_id: profileId,
+        student_code: "HS202500001",
+        grade_level: "Lớp 10",
+        enrollment_date: "2025-09-01",
+      }, { onConflict: "profile_id" });
+    }
+  }
+  console.log("  ✅ Core profiles synced");
+
+  // 4. Classes
+  console.log("\n🏫 Seeding Classes...");
+  const classMap: Record<string, string> = {};
+  const teacherId = profileIds["teacher@bhedu.vn"];
+
+  if (!teacherId) {
+    console.error(
+      "  ❌ Teacher teacher@bhedu.vn not found, skipping classes assignment",
+    );
+  }
+
+  for (const name of CLASSES) {
+    const { data: ext } = await supabase.from("classes").select("id").eq(
+      "name",
+      name,
+    ).maybeSingle();
+
+    let classId = ext?.id;
+
+    if (!classId && teacherId) {
+      // Use detected schema: id, name, teacher_id, class_type, max_capacity, sessions_per_week
+      const { data, error } = await supabase.from("classes").insert({
+        name,
+        teacher_id: teacherId,
+        class_type: "group",
+        max_capacity: 40,
+        sessions_per_week: 3,
+      }).select("id").single();
+
+      if (error) {
+        console.error(
+          `  ❌ Failed to create class ${name}: ${error.message} (Detail: ${error.details})`,
+        );
+      } else {
+        classId = data?.id;
+      }
+    }
+    if (classId) classMap[name] = classId;
+    else {console.error(
+        `  ❌ Final Result: Failed to get/create class: ${name}`,
+      );}
+  }
+  console.log(`  ✅ Synced ${Object.keys(classMap).length} classes`);
+
+  // 5. Parent Link
+  console.log("\n🔗 Linking Parent-Student...");
+  if (profileIds["parent@bhedu.vn"] && profileIds["student@bhedu.vn"]) {
+    await supabase.from("parent_student_links").upsert({
+      parent_id: profileIds["parent@bhedu.vn"],
+      student_id: profileIds["student@bhedu.vn"],
+      relationship: "father",
+      status: "approved",
+      can_view_grades: true,
+      can_view_attendance: true,
+    }, { onConflict: "parent_id,student_id" });
+  }
+
+  // 6. Bulk Data Generation
+  console.log("\n👨‍🎓 Generating Bulk Demo Data...");
+
+  // USERS are already pre-fetched in emailToIdMap
+
+  const STUDENTS_PER_CLASS = 5;
+  const ATTENDANCE_DAYS = 20;
+
+  const gradesToInsert: any[] = [];
+  const attendanceToInsert: any[] = [];
+  const enrollmentsToInsert: any[] = [];
+  const studentProfilesToInsert: any[] = [];
+
+  const today = new Date();
+  let totalStudents = 0;
+
+  for (const cls of CLASSES) {
+    const classId = classMap[cls];
+    if (!classId) {
+      console.warn(
+        `  ⚠️ Skip class ${cls} (ID missing from map: ${
+          JSON.stringify(classMap)
+        })`,
+      );
       continue;
     }
-    for (const classId of classIds) {
-      try {
-        const { data: existing } = await supabase
-          .from("enrollments")
-          .select("id")
-          .eq("student_id", userIds[studentEmail])
-          .eq("class_id", classId)
-          .maybeSingle();
 
-        if (!existing) {
-          const { error } = await supabase.from("enrollments").insert({
-            student_id: userIds[studentEmail],
-            class_id: classId,
+    for (let i = 0; i < STUDENTS_PER_CLASS; i++) {
+      totalStudents++;
+      const sName = randomName();
+      const sEmail = `s${cls.toLowerCase().replace("lớp ", "")}_${
+        i + 1
+      }@demo.bhedu.vn`;
+      const sCode = `HS2025${
+        (1000 + totalStudents).toString().padStart(4, "0")
+      }`;
+
+      let sUserId = emailToIdMap.get(sEmail);
+
+      if (!sUserId) {
+        const { data: authUser, error: authErr } = await supabase.auth.admin
+          .createUser({
+            email: sEmail,
+            password: "password123",
+            email_confirm: true,
+            user_metadata: { full_name: sName, role: "student" },
           });
-          if (error) {
-            throw new Error(`Enrollment error (${studentEmail} → Class ${classId}): ${error.message}`);
+
+        if (authUser.user) {
+          sUserId = authUser.user.id;
+          emailToIdMap.set(sEmail, sUserId); // Cache it
+        } else {
+          // Double check if weird race
+          if (
+            authErr &&
+            authErr.message.toLowerCase().includes("already registered")
+          ) {
+            // Should have been in map but maybe List limit or race?
+            // If so, fetch freshly.
+            const { data: uList } = await supabase.auth.admin.listUsers();
+            const found = uList.users.find((x) => x.email === sEmail);
+            if (found) {
+              sUserId = found.id;
+              emailToIdMap.set(sEmail, sUserId);
+            }
+          } else {
+            console.error(
+              `Failed to create user ${sEmail}: ${authErr?.message}`,
+            );
+            continue;
           }
-          console.log(`✅ Enrolled ${studentEmail} → Class ${classId}`);
         }
-      } catch (error) {
-        console.error(`❌ Enrollment failed for ${studentEmail}:`, error);
-        throw error;
       }
-    }
-  }
 
-  // Assignments
-  console.log("→ Creating assignments...");
-  try {
-    const { data: existingAssignments } = await supabase.from("assignments").select("id");
-    if (!existingAssignments || existingAssignments.length === 0) {
-      const { error } = await supabase.from("assignments").insert([
-        { class_id: classIds[0], title: "Homework 1", description: "Basic Algebra" },
-        { class_id: classIds[1], title: "Experiment 1", description: "Lab Safety" },
-      ]);
-      if (error) {
-        throw new Error(`Assignment creation error: ${error.message}`);
+      if (!sUserId) continue;
+
+      // Get/Create Profile Logic (Simplified)
+      // Check local profile existence? No, just upsert check.
+      // But trigger? Trigger inserts.
+      // We can check profile existence by user_id
+
+      let sProfileId: string | null = null;
+      const { data: existingProf, error: findError } = await supabase.from(
+        "profiles",
+      ).select(
+        "id, full_name",
+      ).eq("user_id", sUserId).maybeSingle();
+
+      if (findError) {
+        console.error(
+          `  ❌ Error fetching profile for ${sEmail}: ${findError.message}`,
+        );
       }
-      console.log("✅ Assignments created");
-    } else {
-      console.log("✅ Assignments already exist");
-    }
-  } catch (error) {
-    console.error("❌ Assignment setup failed:", error);
-    throw error;
-  }
 
-  // Scores
-  // Grades
-  console.log("→ Inserting grades...");
-  try {
-    // First, get assignment IDs that were created
-    const { data: assignments } = await supabase.from("assignments").select("id").limit(2);
-    
-    if (!assignments || assignments.length < 2) {
-      console.log("⚠️  Skipping grades - not enough assignments");
-    } else {
-      const { data: existingGrades } = await supabase.from("grades").select("id");
-      if (!existingGrades || existingGrades.length === 0) {
-        const { error } = await supabase.from("grades").insert([
-          { 
-            student_id: userIds["sara@student.com"], 
-            assignment_id: assignments[0].id, 
-            score: 95, 
-            feedback: "Excellent work!" 
-          },
-          { 
-            student_id: userIds["charlie@student.com"], 
-            assignment_id: assignments[0].id, 
-            score: 88, 
-            feedback: "Good job!" 
-          },
-        ]);
-        if (error) {
-          throw new Error(`Grade insertion error: ${error.message}`);
-        }
-        console.log("✅ Grades inserted");
+      if (existingProf) {
+        sProfileId = existingProf.id;
+        // Update it to ensure it has student_code and other fields
+        await supabase.from("profiles").update({
+          student_code: sCode,
+          role: "student",
+          status: "active",
+          is_active: true,
+        }).eq("id", sProfileId);
       } else {
-        console.log("✅ Grades already exist");
+        // Try insert
+        const { data: newP, error: insError } = await supabase.from("profiles")
+          .insert({
+            user_id: sUserId,
+            email: sEmail,
+            full_name: sName,
+            role: "student",
+            status: "active",
+            student_code: sCode,
+            student_id: sCode, // Link for legacy code
+            is_active: true,
+            gender: randomGender(),
+          }).select("id").maybeSingle();
+
+        if (insError) {
+          console.error(
+            `  ❌ Profile Insert Error for ${sEmail}: ${insError.message} (Detail: ${insError.details})`,
+          );
+          // One more try: maybe it was created by trigger in between?
+          const { data: retryProf } = await supabase.from("profiles").select(
+            "id",
+          ).eq("user_id", sUserId).maybeSingle();
+          sProfileId = retryProf?.id || null;
+        } else {
+          sProfileId = newP?.id || null;
+        }
+      }
+
+      if (!sProfileId) {
+        console.warn(`Failed to resolve Profile ID for ${sEmail}`);
+        continue;
+      }
+
+      // Populate Arrays
+      studentProfilesToInsert.push({
+        profile_id: sProfileId,
+        student_code: sCode,
+        grade_level: cls,
+        enrollment_date: "2025-09-01",
+      });
+      enrollmentsToInsert.push({
+        student_id: sProfileId,
+        class_id: classId,
+        status: "active",
+        enrollment_date: "2025-09-01",
+      });
+
+      // Attendance
+      for (let d = 0; d < ATTENDANCE_DAYS; d++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - d);
+        if (date.getDay() === 0 || date.getDay() === 6) continue;
+        const statusRoll = Math.random();
+        const status = statusRoll > 0.9
+          ? "absent"
+          : statusRoll > 0.85
+          ? "late"
+          : "present";
+        attendanceToInsert.push({
+          student_id: sProfileId,
+          class_id: classId,
+          date: date.toISOString().split("T")[0],
+          status: status,
+          remarks: status === "absent" ? "Sick" : "",
+        });
+      }
+
+      // Grades
+      const subToan = subjectMap["TOAN"];
+      const subVan = subjectMap["VAN"];
+
+      if (subToan) {
+        const sc = randomScore();
+        gradesToInsert.push({
+          student_id: sProfileId,
+          class_id: classId,
+          subject_id: subToan,
+          component_type: "final",
+          semester: "1",
+          score: sc,
+          points_earned: sc,
+        });
+        const sc2 = randomScore();
+        gradesToInsert.push({
+          student_id: sProfileId,
+          class_id: classId,
+          subject_id: subToan,
+          component_type: "midterm",
+          semester: "1",
+          score: sc2,
+          points_earned: sc2,
+        });
+      }
+      if (subVan) {
+        const sc = randomScore();
+        gradesToInsert.push({
+          student_id: sProfileId,
+          class_id: classId,
+          subject_id: subVan,
+          component_type: "final",
+          semester: "1",
+          score: sc,
+          points_earned: sc,
+        });
+        const sc2 = randomScore();
+        gradesToInsert.push({
+          student_id: sProfileId,
+          class_id: classId,
+          subject_id: subVan,
+          component_type: "midterm",
+          semester: "1",
+          score: sc2,
+          points_earned: sc2,
+        });
       }
     }
-  } catch (error) {
-    console.error("❌ Grade setup failed:", error);
-    throw error;
   }
 
-  // Attendance
-  console.log("→ Recording attendance...");
-  try {
-    const { data: existingAttendance } = await supabase.from("attendance").select("id");
-    if (!existingAttendance || existingAttendance.length === 0) {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      const { error } = await supabase.from("attendance").insert([
-        { 
-          student_id: userIds["sara@student.com"], 
-          class_id: classIds[0], 
-          date: today,
-          status: "present" 
-        },
-        { 
-          student_id: userIds["charlie@student.com"], 
-          class_id: classIds[0], 
-          date: today,
-          status: "absent" 
-        },
-      ]);
-      if (error) {
-        throw new Error(`Attendance insertion error: ${error.message}`);
-      }
-      console.log("✅ Attendance recorded");
-    } else {
-      console.log("✅ Attendance already exist");
+  console.log(
+    `\nBefore Insert: Students: ${totalStudents}, Profiles: ${studentProfilesToInsert.length}, Attendance: ${attendanceToInsert.length}, Grades: ${gradesToInsert.length}`,
+  );
+
+  console.log("\n💾 Bulk Inserting Data...");
+  if (studentProfilesToInsert.length) {
+    await supabase.from("student_profiles").upsert(studentProfilesToInsert, {
+      onConflict: "profile_id",
+    });
+  }
+  if (enrollmentsToInsert.length) {
+    await supabase.from("enrollments").upsert(enrollmentsToInsert, {
+      ignoreDuplicates: true,
+    });
+  }
+
+  if (attendanceToInsert.length) {
+    console.log(
+      `  Inserting ${attendanceToInsert.length} attendance records...`,
+    );
+    const chunkSize = 1000;
+    for (let i = 0; i < attendanceToInsert.length; i += chunkSize) {
+      const chunk = attendanceToInsert.slice(i, i + chunkSize);
+      const { error } = await supabase.from("attendance").upsert(chunk, {
+        ignoreDuplicates: true,
+      });
+      if (error) console.error("Error inserting attendance chunk:", error);
     }
-  } catch (error) {
-    console.error("❌ Attendance setup failed:", error);
-    throw error;
   }
 
-  console.log("🌟 Seeding complete!");
-  console.log("\n📝 Test credentials:");
-  console.log("   Admin: admin@bhedu.com / admin123");
-  console.log("   Teacher: teacher@bhedu.com / teacher123");
-  console.log("   Students: sara@student.com, charlie@student.com, dana@student.com, alex@student.com / student123");
+  if (gradesToInsert.length) {
+    console.log(`  Inserting ${gradesToInsert.length} grades...`);
+    const { error } = await supabase.from("grades").upsert(gradesToInsert, {
+      onConflict: "student_id, class_id, subject_id, component_type, semester",
+    });
+    if (error) console.error("Error inserting grades:", error);
+  }
+
+  console.log(`\n✨ Seed Complete!`);
 }
 
-main().catch((err) => {
-  console.error("❌ Fatal error:", err);
-  process.exit(1);
-});
+main().catch(console.error);

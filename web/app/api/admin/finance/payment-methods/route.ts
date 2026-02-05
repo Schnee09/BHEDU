@@ -1,80 +1,57 @@
-﻿/**
- * Payment Methods API
- * Manages available payment methods
- */
+﻿import { NextResponse } from "next/server";
+import {
+  apiSuccess,
+  createApiHandler,
+  createGetHandler,
+} from "@/lib/api";
+import { FinanceRepository } from "@/lib/repositories/FinanceRepository";
+import { createServiceClient } from "@/lib/supabase/server";
+import { createAbility } from "@/lib/auth/permissions";
+import { createPaymentMethodSchema } from "@/lib/schemas/finance";
 
-import { NextResponse } from 'next/server'
-import { adminAuth } from '@/lib/auth/adminAuth'
-import { rateLimitConfigs } from '@/lib/auth/rateLimit'
-import { getDataClient } from '@/lib/auth/dataClient'
+export const GET = createGetHandler(
+  { requireAuth: true },
+  async ({ request, user }) => {
+    const ability = createAbility({
+      userId: user.id,
+      role: user.role,
+    });
 
-export async function GET(request: Request) {
-  try {
-    // Use bulk rate limit for finance data operations
-    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
+    if (ability.cannot("read", "Payment")) { // Assuming generic finance read implies methods
+       return NextResponse.json(
+        { success: false, error: "Bạn không có quyền xem phương thức thanh toán" },
+        { status: 403 }
+      );
     }
 
-  const { supabase } = await getDataClient(request)
+    const supabase = createServiceClient();
+    const repository = new FinanceRepository(supabase);
+    const methods = await repository.getPaymentMethods();
 
-    const { data, error } = await supabase
-      .from('payment_methods')
-      .select('*')
-      .order('name', { ascending: true })
-
-    if (error) {
-      console.error('Error fetching payment methods:', error)
-      return NextResponse.json({ error: 'Failed to fetch payment methods' }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true, data })
-  } catch (error) {
-    console.error('Error in GET /api/admin/finance/payment-methods:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiSuccess(methods);
   }
-}
+);
 
-export async function POST(request: Request) {
-  try {
-    // Use bulk rate limit for finance data operations
-    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
-    }
+export const POST = createApiHandler(
+  {
+      requireAuth: true,
+      bodySchema: createPaymentMethodSchema
+  },
+  async ({ body, user }) => {
+      // Not strictly implementing repo method yet as it's simple insert
+      // But keeping Auth V2 pattern
+      const ability = createAbility({ userId: user.id, role: user.role });
+      if (ability.cannot("create", "Payment")) {
+          return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+      }
 
-    const body = await request.json()
-    const { name, type, requires_reference, description, is_active } = body
+      const supabase = createServiceClient();
+      const { data, error } = await supabase.from("payment_methods").insert({
+          ...body,
+          is_active: true
+      }).select().single();
 
-    if (!name || !type) {
-      return NextResponse.json(
-        { error: 'Name and type are required' },
-        { status: 400 }
-      )
-    }
-
-  const { supabase } = await getDataClient(request)
-
-    const { data, error } = await supabase
-      .from('payment_methods')
-      .insert({
-        name,
-        type,
-        requires_reference: requires_reference || false,
-        description,
-        is_active: is_active !== undefined ? is_active : true
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating payment method:', error)
-      return NextResponse.json({ error: 'Failed to create payment method' }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true, data }, { status: 201 })
-  } catch (error) {
-    console.error('Error in POST /api/admin/finance/payment-methods:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      return apiSuccess(data);
   }
-}
+)

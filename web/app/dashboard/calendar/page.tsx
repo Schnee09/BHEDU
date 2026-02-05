@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
 import { apiFetch } from "@/lib/api/client";
 import {
     Calendar as CalendarIcon,
@@ -21,12 +22,12 @@ import {
     Info,
     CheckCircle2
 } from "lucide-react";
-import { 
-    Button, 
-    Card, 
-    Badge, 
-    Modal, 
-    Input, 
+import {
+    Button,
+    Card,
+    Badge,
+    Modal,
+    Input,
     LoadingState,
     Alert,
     EmptyState
@@ -57,6 +58,7 @@ const EVENT_TYPES = {
 
 export default function AcademicCalendarPage() {
     const { profile, loading: profileLoading } = useProfile();
+    const { isAdmin, isStaff } = usePermissions();
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -66,6 +68,9 @@ export default function AcademicCalendarPage() {
     const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
     const [saving, setSaving] = useState(false);
     const toast = useToast();
+
+    // Permissions check
+    const canManageEvents = isAdmin || isStaff;
 
     const [formData, setFormData] = useState({
         title: "",
@@ -89,16 +94,7 @@ export default function AcademicCalendarPage() {
             setEvents(data.events || []);
         } catch (error) {
             console.error("Failed to fetch calendar events:", error);
-            // Mock data for demo if API fails
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            setEvents([
-                { id: "1", title: "Khai giảng năm học mới", description: "Lễ khai giảng", event_type: "general", start_date: `${year}-09-05`, end_date: null, start_time: "07:30", end_time: "09:00", is_all_day: false, color: "#6366f1" },
-                { id: "2", title: "Nghỉ lễ Quốc khánh", description: "Nghỉ lễ 2/9", event_type: "holiday", start_date: `${year}-09-02`, end_date: null, start_time: null, end_time: null, is_all_day: true, color: "#22c55e" },
-                { id: "3", title: "Kiểm tra giữa kỳ", description: "Kiểm tra các môn", event_type: "exam", start_date: `${year}-${String(month + 1).padStart(2, "0")}-15`, end_date: `${year}-${String(month + 1).padStart(2, "0")}-20`, start_time: null, end_time: null, is_all_day: true, color: "#ef4444" },
-                { id: "4", title: "Họp phụ huynh", description: "Họp phụ huynh học kỳ 1", event_type: "meeting", start_date: `${year}-${String(month + 1).padStart(2, "0")}-25`, end_date: null, start_time: "14:00", end_time: "16:00", is_all_day: false, color: "#f59e0b" },
-                { id: "5", title: "Nộp báo cáo", description: "Deadline nộp báo cáo", event_type: "deadline", start_date: `${year}-${String(month + 1).padStart(2, "0")}-28`, end_date: null, start_time: "17:00", end_time: null, is_all_day: false, color: "#ec4899" },
-            ]);
+            // Fallback UI or silent fail is handled by empty array
         } finally {
             setLoading(false);
         }
@@ -242,16 +238,13 @@ export default function AcademicCalendarPage() {
 
     if (profileLoading) return <LoadingState message="Đang tải dữ liệu..." />;
 
-    const isAdmin = profile?.role === "admin" || profile?.role === "staff";
-
     return (
         <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/50 p-4 sm:p-8">
             <div className="max-w-7xl mx-auto space-y-8">
-                {/* Header Section - Refined for Pro Max */}
+                {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 glass-premium p-6 md:p-10 rounded-[40px] border border-white/20 dark:border-white/5 shadow-2xl relative overflow-hidden animate-fade-in">
-                    {/* Background Glow */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
-                    
+
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-3">
                             <div className="p-2.5 bg-amber-500/10 rounded-2xl">
@@ -262,9 +255,9 @@ export default function AcademicCalendarPage() {
                         <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-stone-900 dark:text-stone-100">Lịch Học Tập</h1>
                         <p className="text-sm font-medium text-stone-500 dark:text-stone-400 mt-3 max-w-lg leading-relaxed">Luôn cập nhật các kỳ thi, ngày nghỉ và sự kiện quan trọng trong hệ thống.</p>
                     </div>
-                    {isAdmin && (
-                        <Button 
-                            variant="primary" 
+                    {canManageEvents && (
+                        <Button
+                            variant="primary"
                             size="lg"
                             className="rounded-2xl h-14 px-8 font-black uppercase tracking-widest text-xs shadow-xl shadow-amber-500/20 press-effect"
                             onClick={handleOpenAdd}
@@ -280,9 +273,9 @@ export default function AcademicCalendarPage() {
                     <div className="flex flex-wrap items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <div className="flex items-center bg-gray-100 dark:bg-white/5 p-1 rounded-xl">
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
                                     className="px-2"
                                     onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
                                 >
@@ -291,18 +284,18 @@ export default function AcademicCalendarPage() {
                                 <span className="text-base font-bold dark:text-white min-w-[140px] text-center">
                                     {currentDate.toLocaleDateString("vi-VN", { month: "long", year: "numeric" })}
                                 </span>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
                                     className="px-2"
                                     onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
                                 >
                                     <ChevronRight className="w-5 h-5" />
                                 </Button>
                             </div>
-                            <Button 
-                                variant="secondary" 
-                                size="sm" 
+                            <Button
+                                variant="secondary"
+                                size="sm"
                                 onClick={() => setCurrentDate(new Date())}
                                 className="rounded-xl"
                             >
@@ -311,9 +304,8 @@ export default function AcademicCalendarPage() {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            {/* View Toggle */}
                             <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl">
-                                <Button 
+                                <Button
                                     variant={viewMode === "month" ? "primary" : "ghost"}
                                     size="sm"
                                     className="rounded-lg text-xs"
@@ -321,7 +313,7 @@ export default function AcademicCalendarPage() {
                                 >
                                     Tháng
                                 </Button>
-                                <Button 
+                                <Button
                                     variant={viewMode === "list" ? "primary" : "ghost"}
                                     size="sm"
                                     className="rounded-lg text-xs"
@@ -331,7 +323,6 @@ export default function AcademicCalendarPage() {
                                 </Button>
                             </div>
 
-                            {/* Filter */}
                             <div className="relative flex items-center bg-white dark:bg-gray-700 p-2 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm">
                                 <Filter className="w-4 h-4 text-muted mr-2" />
                                 <select
@@ -356,7 +347,6 @@ export default function AcademicCalendarPage() {
                     </div>
                 ) : viewMode === "month" ? (
                     <div className="bg-white dark:bg-gray-800 rounded-[32px] shadow-premium-lg border border-gray-100 dark:border-white/5 overflow-hidden">
-                        {/* Day Headers */}
                         <div className="grid grid-cols-7 bg-gray-50/50 dark:bg-white/2 border-b border-gray-100 dark:border-white/5">
                             {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((day) => (
                                 <div key={day} className="p-4 text-center text-xs font-black text-muted uppercase tracking-widest">
@@ -365,7 +355,6 @@ export default function AcademicCalendarPage() {
                             ))}
                         </div>
 
-                        {/* Calendar Grid */}
                         <div className="grid grid-cols-7 min-h-[600px]">
                             {getDaysInMonth().map((date, index) => (
                                 <div
@@ -379,8 +368,8 @@ export default function AcademicCalendarPage() {
                                         <>
                                             <div className={cn(
                                                 "text-sm font-bold w-8 h-8 flex items-center justify-center rounded-xl mb-2 transition-all",
-                                                isToday(date) 
-                                                    ? "bg-primary text-white shadow-lg shadow-primary/30" 
+                                                isToday(date)
+                                                    ? "bg-primary text-white shadow-lg shadow-primary/30"
                                                     : "text-gray-400 dark:text-gray-500 group-hover:text-primary"
                                             )}>
                                                 {date.getDate()}
@@ -422,8 +411,8 @@ export default function AcademicCalendarPage() {
                 ) : (
                     <Card variant="default" className="divide-y divide-gray-100 dark:divide-white/5 p-0 overflow-hidden">
                         {filteredEvents.length === 0 ? (
-                            <EmptyState 
-                                title="Không có sự kiện" 
+                            <EmptyState
+                                title="Không có sự kiện"
                                 description="Không tìm thấy sự kiện nào trong khoảng thời gian này."
                                 icon={<CalendarIcon className="w-10 h-10" />}
                             />
@@ -432,10 +421,9 @@ export default function AcademicCalendarPage() {
                                 .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
                                 .map((event) => {
                                     const type = EVENT_TYPES[event.event_type as keyof typeof EVENT_TYPES] || EVENT_TYPES.general;
-                                    const Icon = type.icon;
                                     return (
-                                        <div 
-                                            key={event.id} 
+                                        <div
+                                            key={event.id}
                                             className="group p-6 hover:bg-gray-50 dark:hover:bg-white/5 transition-all cursor-pointer flex items-center gap-6"
                                             onClick={() => handleOpenEdit(event)}
                                         >
@@ -473,9 +461,9 @@ export default function AcademicCalendarPage() {
                                             </div>
 
                                             <div className="flex gap-2">
-                                                <Button 
-                                                    variant="secondary" 
-                                                    size="sm" 
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
                                                     className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -484,10 +472,10 @@ export default function AcademicCalendarPage() {
                                                 >
                                                     <Edit className="w-4 h-4" />
                                                 </Button>
-                                                {isAdmin && (
-                                                    <Button 
-                                                        variant="danger" 
-                                                        size="sm" 
+                                                {canManageEvents && (
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
                                                         className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -505,7 +493,6 @@ export default function AcademicCalendarPage() {
                     </Card>
                 )}
 
-                {/* Footer Legend */}
                 <Card variant="glass" className="py-4 px-6">
                     <div className="flex flex-wrap items-center justify-center gap-6">
                         {Object.entries(EVENT_TYPES).map(([key, { label, color }]) => (
@@ -518,7 +505,6 @@ export default function AcademicCalendarPage() {
                 </Card>
             </div>
 
-            {/* Event Modal */}
             <Modal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
@@ -526,13 +512,13 @@ export default function AcademicCalendarPage() {
                 size="md"
                 footer={(
                     <>
-                        {editingEvent && isAdmin && (
-                             <Button variant="danger" className="mr-auto" onClick={() => deleteEvent(editingEvent.id)}>Xóa sự kiện</Button>
+                        {editingEvent && canManageEvents && (
+                            <Button variant="danger" className="mr-auto" onClick={() => deleteEvent(editingEvent.id)}>Xóa sự kiện</Button>
                         )}
                         <Button variant="ghost" onClick={() => setShowModal(false)}>Hủy</Button>
-                        <Button 
-                            variant="primary" 
-                            isLoading={saving} 
+                        <Button
+                            variant="primary"
+                            isLoading={saving}
                             onClick={saveEvent}
                             leftIcon={<CheckCircle2 className="w-4 h-4" />}
                         >
@@ -550,7 +536,7 @@ export default function AcademicCalendarPage() {
                         required
                         leftIcon={<Flag className="w-5 h-5" />}
                     />
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-indigo-900 dark:text-indigo-200">Loại sự kiện</label>

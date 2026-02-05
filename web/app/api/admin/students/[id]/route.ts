@@ -1,205 +1,166 @@
 /**
- * Student Management API
+ * Student Management API (REFACTORED)
  * GET /api/admin/students/[id] - Get student details
  * PUT /api/admin/students/[id] - Update student profile
  * DELETE /api/admin/students/[id] - Archive student (soft delete)
- * Updated: 2025-12-05
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth'
-import { logger } from '@/lib/logger'
-import { handleApiError, NotFoundError } from '@/lib/api/errors'
-import { updateStudentSchema } from '@/lib/schemas/students'
+import { NextResponse } from "next/server";
+import { getDataClient } from "@/lib/auth/dataClient";
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { logger } from "@/lib/logger";
+import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import { updateStudentSchema } from "@/lib/schemas";
 
-interface RouteParams {
-  params: Promise<{ id: string }>
-}
-
-export async function GET(req: NextRequest, { params }: RouteParams) {
-  try {
-    const authResult = await adminAuth(req)
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const { id } = await params
-  const { supabase } = await getDataClient(req)
+// GET /api/admin/students/[id]
+export const GET = createGetHandler(
+  { allowedRoles: ["admin", "staff"] },
+  async ({ params, request }) => {
+    const { supabase } = await getDataClient(request);
 
     const { data: student, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', id)
-      .eq('role', 'student')
-      .single()
+      .from("profiles")
+      .select("*")
+      .eq("id", params.id)
+      .eq("role", "student")
+      .single();
 
     if (error || !student) {
-      throw new NotFoundError('Student not found')
+      throw new NotFoundError("Student not found");
     }
 
-    return NextResponse.json({ success: true, data: student })
-  } catch (error) {
-    return handleApiError(error)
-  }
-}
+    return apiSuccess(student);
+  },
+);
 
-export async function PUT(req: NextRequest, { params }: RouteParams) {
-  try {
-    const authResult = await adminAuth(req)
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const { id } = await params
-  const { supabase } = await getDataClient(req)
-    const body = await req.json()
-    
-    // Validate request body
-    const validatedData = updateStudentSchema.parse({ id, ...body })
+// PUT /api/admin/students/[id]
+export const PUT = createApiHandler(
+  {
+    allowedRoles: ["admin", "staff"],
+    bodySchema: updateStudentSchema,
+  },
+  async ({ params, body, request, user }) => {
+    const { supabase } = await getDataClient(request);
+    const id = params.id;
 
     // Validate student exists and is a student
     const { data: existingStudent } = await supabase
-      .from('profiles')
-      .select('id, role, full_name, first_name, last_name')
-      .eq('id', id)
-      .single()
+      .from("profiles")
+      .select("id, role")
+      .eq("id", id)
+      .single();
 
-    if (!existingStudent || existingStudent.role !== 'student') {
-      throw new NotFoundError('Student not found')
+    if (!existingStudent || existingStudent.role !== "student") {
+      throw new NotFoundError("Student not found");
     }
 
-    // Validate student_code uniqueness if provided
-    if (validatedData.student_code) {
+    // Business Logic: Check uniqueness if needed
+    if (body.student_code) {
       const { data: duplicateCheck } = await supabase
-        .from('profiles')
-        .select('id, student_code')
-        .eq('student_code', validatedData.student_code)
-        .neq('id', id)
-        .maybeSingle()
+        .from("profiles")
+        .select("id")
+        .eq("student_code", body.student_code)
+        .neq("id", id)
+        .maybeSingle();
 
       if (duplicateCheck) {
-        return NextResponse.json(
-          { error: `Student code ${validatedData.student_code} is already in use` },
-          { status: 400 }
-        )
+        throw new ValidationError(
+          `Student code ${body.student_code} is already in use`,
+        );
       }
     }
 
-    // Validate email uniqueness if changed
-    if (validatedData.email) {
+    if (body.email) {
       const { data: emailCheck } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .eq('email', validatedData.email.toLowerCase())
-        .neq('id', id)
-        .maybeSingle()
+        .from("profiles")
+        .select("id")
+        .eq("email", body.email.toLowerCase())
+        .neq("id", id)
+        .maybeSingle();
 
       if (emailCheck) {
-        return NextResponse.json(
-          { error: 'Email is already in use' },
-          { status: 400 }
-        )
+        throw new ValidationError("Email is already in use");
       }
     }
 
-    // Build update object from validated data (exclude id)
-    const { id: _id, ...updateData } = validatedData
-    
     // Perform update
     const { data: updatedStudent, error: updateError } = await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', id)
+      .from("profiles")
+      .update(body)
+      .eq("id", id)
       .select()
-      .single()
+      .single();
 
     if (updateError) {
-      logger.error('Failed to update student:', updateError)
-      throw new Error(`Failed to update student: ${updateError.message}`)
+      logger.error("Failed to update student:", updateError);
+      throw new Error(`Failed to update student: ${updateError.message}`);
     }
 
-    // Log audit trail
-    await supabase.from('audit_logs').insert({
-      actor_id: authResult.userId,
-      action: 'update',
-      resource_type: 'student',
+    // Audit log
+    await supabase.from("audit_logs").insert({
+      actor_id: user.id,
+      action: "update",
+      resource_type: "student",
       resource_id: id,
-      details: { updated_fields: Object.keys(updateData) }
-    })
+      details: { updated_fields: Object.keys(body) },
+    });
 
-    logger.info('Student updated successfully', { studentId: id, userId: authResult.userId })
+    logger.info("Student updated successfully", {
+      studentId: id,
+      userId: user.id,
+    });
 
-    return NextResponse.json({
-      success: true,
-      data: updatedStudent,
-      message: 'Student updated successfully'
-    })
-  } catch (error) {
-    return handleApiError(error)
-  }
-}
+    return apiSuccess(updatedStudent, {
+      message: "Student updated successfully",
+    });
+  },
+);
 
-export async function DELETE(req: NextRequest, { params }: RouteParams) {
-  try {
-    const authResult = await adminAuth(req)
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+// DELETE /api/admin/students/[id]
+export const DELETE = createGetHandler(
+  { allowedRoles: ["admin", "staff"] },
+  async ({ params, request, user }) => {
+    const { supabase } = await getDataClient(request);
+    const id = params.id;
 
-    const { id } = await params
-  const { supabase } = await getDataClient(req)
-
-    // Validate student exists
     const { data: existingStudent } = await supabase
-      .from('profiles')
-      .select('id, role, status, full_name')
-      .eq('id', id)
-      .single()
+      .from("profiles")
+      .select("id, role, full_name")
+      .eq("id", id)
+      .single();
 
-    if (!existingStudent || existingStudent.role !== 'student') {
-      throw new NotFoundError('Student not found')
+    if (!existingStudent || existingStudent.role !== "student") {
+      throw new NotFoundError("Student not found");
     }
 
-    // Soft delete: set status to inactive
+    // Soft delete
     const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ status: 'inactive' })
-      .eq('id', id)
+      .from("profiles")
+      .update({ status: "inactive" })
+      .eq("id", id);
 
     if (updateError) {
-      logger.error('Failed to archive student:', updateError)
-      throw new Error(`Failed to archive student: ${updateError.message}`)
+      logger.error("Failed to archive student:", updateError);
+      throw new Error(`Failed to archive student: ${updateError.message}`);
     }
 
-    // Log audit trail
-    await supabase.from('audit_logs').insert({
-      actor_id: authResult.userId,
-      action: 'delete',
-      resource_type: 'student',
+    // Audit log
+    await supabase.from("audit_logs").insert({
+      actor_id: user.id,
+      action: "delete",
+      resource_type: "student",
       resource_id: id,
-      details: { 
-        action: 'archived',
-        student_name: existingStudent.full_name
-      }
-    })
+      details: {
+        action: "archived",
+        student_name: existingStudent.full_name,
+      },
+    });
 
-    logger.info('Student archived successfully', { studentId: id, userId: authResult.userId })
+    logger.info("Student archived successfully", {
+      studentId: id,
+      userId: user.id,
+    });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Student archived successfully'
-    })
-  } catch (error) {
-    return handleApiError(error)
-  }
-}
+    return apiSuccess(null, { message: "Student archived successfully" });
+  },
+);

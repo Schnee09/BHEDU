@@ -5,7 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../config/theme.dart';
+// import '../../config/theme.dart'; // Removed
 
 /// App stylized card with optional glass effect
 class AppCard extends StatelessWidget {
@@ -51,7 +51,9 @@ class AppCard extends StatelessWidget {
           ),
         ],
         border: Border.all(
-          color: Theme.of(context).dividerColor.withAlpha(20), // 0.08 * 255 ~= 20
+          color: Theme.of(
+            context,
+          ).dividerColor.withAlpha(20), // 0.08 * 255 ~= 20
         ),
       ),
       child: Material(
@@ -60,10 +62,7 @@ class AppCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: padding,
-            child: child,
-          ),
+          child: Padding(padding: padding, child: child),
         ),
       ),
     );
@@ -78,7 +77,9 @@ class AppCard extends StatelessWidget {
           width: width,
           height: height,
           decoration: BoxDecoration(
-            color: (color ?? Theme.of(context).cardColor).withAlpha(150), // 0.6 * 255 ~= 153
+            color: (color ?? Theme.of(context).cardColor).withAlpha(
+              150,
+            ), // 0.6 * 255 ~= 153
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: Colors.white.withAlpha(25), // 0.1 * 255 ~= 25
@@ -88,10 +89,7 @@ class AppCard extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: onTap,
-              child: Padding(
-                padding: padding,
-                child: child,
-              ),
+              child: Padding(padding: padding, child: child),
             ),
           ),
         ),
@@ -115,31 +113,31 @@ class AppShimmer extends StatelessWidget {
     this.shape,
   });
 
-  const AppShimmer.circle({
-    super.key,
-    required double size,
-  })  : width = size,
-        height = size,
-        radius = size / 2,
-        shape = const CircleBorder();
+  const AppShimmer.circle({super.key, required double size})
+    : width = size,
+      height = size,
+      radius = size / 2,
+      shape = const CircleBorder();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Shimmer.fromColors(
       // Updated to match warm brown theme
       baseColor: isDark ? const Color(0xFF241E18) : const Color(0xFFE2E8F0),
-      highlightColor: isDark ? const Color(0xFF3D3228) : const Color(0xFFF1F5F9),
+      highlightColor: isDark
+          ? const Color(0xFF3D3228)
+          : const Color(0xFFF1F5F9),
       child: Container(
         width: width,
         height: height,
-        decoration: shape != null 
-          ? ShapeDecoration(color: Colors.white, shape: shape!)
-          : BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(radius),
-            ),
+        decoration: shape != null
+            ? ShapeDecoration(color: Colors.white, shape: shape!)
+            : BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(radius),
+              ),
       ),
     );
   }
@@ -166,7 +164,12 @@ class AnimatedListWrapper extends StatelessWidget {
           .toList()
           .animate(interval: interval.ms)
           .fadeIn(duration: duration)
-          .slideY(begin: 0.1, end: 0, duration: duration, curve: Curves.easeOutQuad),
+          .slideY(
+            begin: 0.1,
+            end: 0,
+            duration: duration,
+            curve: Curves.easeOutQuad,
+          ),
     );
   }
 }
@@ -176,11 +179,7 @@ class SectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onMore;
 
-  const SectionHeader({
-    super.key,
-    required this.title,
-    this.onMore,
-  });
+  const SectionHeader({super.key, required this.title, this.onMore});
 
   @override
   Widget build(BuildContext context) {
@@ -197,10 +196,7 @@ class SectionHeader extends StatelessWidget {
             ),
           ),
           if (onMore != null)
-            TextButton(
-              onPressed: onMore,
-              child: const Text('See all'),
-            ),
+            TextButton(onPressed: onMore, child: const Text('See all')),
         ],
       ),
     );
@@ -248,10 +244,7 @@ class GradientContainer extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: padding,
-            child: child,
-          ),
+          child: Padding(padding: padding, child: child),
         ),
       ),
     );

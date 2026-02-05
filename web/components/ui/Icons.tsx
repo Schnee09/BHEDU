@@ -49,6 +49,14 @@ import {
   ViewColumnsIcon,
   ShieldCheckIcon,
   CameraIcon,
+  ArrowLeftOnRectangleIcon as LogoutIcon,
+  UserIcon,
+  ArrowPathIcon,
+  EllipsisHorizontalIcon,
+  DocumentDuplicateIcon,
+  EyeSlashIcon,
+  CheckIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 
 import {
@@ -68,6 +76,10 @@ export const Icons = {
   Notifications: BellIcon,
   Menu: Bars3Icon,
   Close: XMarkIcon,
+  User: UserIcon,
+  Logout: LogoutIcon,
+  Clipboard: ClipboardDocumentListIcon,
+  Payment: CreditCardIcon,
 
   // Education specific
   Students: UserGroupIcon,
@@ -102,6 +114,11 @@ export const Icons = {
   Location: MapPinIcon,
   Back: ArrowLeftIcon,
   History: ClockIcon,
+  Refresh: ArrowPathIcon,
+  More: EllipsisHorizontalIcon,
+  Copy: DocumentDuplicateIcon,
+  EyeOff: EyeSlashIcon,
+  Check: CheckIcon,
 
   // Status
   Success: CheckCircleIcon,
@@ -117,6 +134,7 @@ export const Icons = {
   Columns: ViewColumnsIcon,
   Security: ShieldCheckIcon,
   Camera: CameraIcon,
+  Magic: SparklesIcon,
 } as const;
 
 // Export solid icons for special cases

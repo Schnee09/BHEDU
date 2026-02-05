@@ -1,144 +1,175 @@
-// @ts-nocheck
 /**
- * Students API V2 - Refactored with Middleware Pattern
+ * Students API V2 (Phase 3 Migration)
  * GET/POST /api/v2/students
  *
- * Demonstrates the new composable middleware approach.
+ * ✅ Uses consolidated schemas from lib/schemas
+ * ✅ Uses AbilityService for contextual permissions
+ * ✅ Type-safe responses with ApiResponse<T>
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { rateLimitConfigs, checkRateLimit, getRateLimitIdentifier } from '@/lib/auth/rateLimit'
-import { teacherAuth, staffAuth } from '@/lib/auth/adminAuth'
-import { StudentRepository } from '@/lib/repositories/StudentRepository'
-import { createServiceClient } from '@/lib/supabase/server'
-import { z } from 'zod'
+import { NextRequest, NextResponse } from "next/server";
+import {
+  apiPaginated,
+  apiSuccess,
+  createApiHandler,
+  createGetHandler,
+} from "@/lib/api";
+import {
+  checkRateLimit,
+  getRateLimitIdentifier,
+  rateLimitConfigs,
+} from "@/lib/auth/rateLimit";
+import { StudentRepository } from "@/lib/repositories/StudentRepository";
+import { createServiceClient } from "@/lib/supabase/server";
+import { createAbility } from "@/lib/auth/permissions";
 
-export const dynamic = 'force-dynamic'
+// Import consolidated schemas
+import {
+  type CreateStudentInput,
+  createStudentSchema,
+  type StudentQuery,
+  studentQuerySchema,
+} from "@/lib/schemas";
 
-// Validation Schemas
-const querySchema = z.object({
-  search: z.string().optional(),
-  page: z.coerce.number().int().positive().default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
-  status: z.enum(['active', 'inactive', 'graduated', 'transferred']).optional(),
-  grade_level: z.string().optional(),
-  gender: z.enum(['male', 'female', 'other']).optional()
-})
+// TODO: Phase 3 - Use consolidated createStudentSchema after repository migration
+// For now, use old schema for backward compatibility
+// import { createStudentSchema } from "@/lib/schemas/students";
+// import type { CreateStudentInput } from "@/lib/schemas/requests/student";
 
-const createSchema = z.object({
-  first_name: z.string().min(1).max(100),
-  last_name: z.string().min(1).max(100),
-  email: z.string().email(),
-  phone: z.string().max(20).optional().nullable(),
-  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
-  gender: z.enum(['male', 'female', 'other']).optional().nullable(),
-  address: z.string().max(500).optional().nullable(),
-  emergency_contact: z.string().max(100).optional().nullable(),
-  grade_level: z.string().max(20).optional().nullable(),
-  status: z.enum(['active', 'inactive']).default('active')
-})
-
-export async function GET(request: NextRequest) {
-  try {
-    // Rate limit
-    const identifier = getRateLimitIdentifier(request)
-    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api)
+// GET /api/v2/students
+export const GET = createGetHandler(
+  { requireAuth: true },
+  async ({ request, user, searchParams }) => {
+    // 1. Rate limit
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
-      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
     }
 
-    // Auth
-    const auth = await teacherAuth(request)
-    if (!auth.authorized) {
-      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 })
+    // 3. Clean and Validate Query
+    const params: Record<string, any> = {};
+    searchParams.forEach((value, key) => {
+      if (key === "search" && value.trim() === "") return; // Skip empty search
+      params[key] = value;
+    });
+
+    const validatedQuery = studentQuerySchema.parse(params);
+
+    // Map limit to pageSize for repository
+    const queryOpts = {
+      ...validatedQuery,
+      pageSize: validatedQuery.limit,
+    };
+
+    const supabase = createServiceClient();
+    const repository = new StudentRepository(supabase);
+
+    // 3. Create ability instance for permission checks
+    const ability = createAbility({
+      userId: user.id,
+      role: user.role,
+      // TODO: Get classIds from user profile for teachers
+      classIds: [],
+    });
+
+    // 4. Permission-based data access
+    // Check if user can read students
+    if (ability.can("read", "Student")) {
+      // Admin/Staff can see all students
+      if (
+        user.role === "admin" || user.role === "staff" ||
+        user.role === "super_admin" || user.role === "owner"
+      ) {
+        const { data, ...pagination } = await repository.findAll(
+          queryOpts,
+        );
+        return apiPaginated(data, pagination);
+      }
+
+      // Teachers can see students in their classes
+      if (user.role === "teacher" || user.role === "tutor") {
+        const { data, ...pagination } = await repository.findByTeacher(
+          user.id,
+          queryOpts,
+        );
+        return apiPaginated(data, pagination);
+      }
+
+      // Students can only see themselves
+      if (user.role === "student") {
+        const student = await repository.findById(user.id);
+        return apiPaginated(student ? [student] : [], {
+          page: 1,
+          pageSize: 1,
+          total: student ? 1 : 0,
+        });
+      }
+
+      // Parents can see their linked children
+      if (user.role === "parent") {
+        // TODO: Implement findByParent in StudentRepository
+        return apiPaginated([], {
+          page: 1,
+          pageSize: 0,
+          total: 0,
+        });
+      }
     }
 
-    // Parse query
-    const params: Record<string, string> = {}
-    for (const [key, value] of new URL(request.url).searchParams.entries()) {
-      params[key] = value
-    }
-    
-    const parsed = querySchema.safeParse(params)
-    if (!parsed.success) {
-      return NextResponse.json({ 
-        error: 'Validation Error', 
-        details: parsed.error.issues 
-      }, { status: 400 })
-    }
+    return NextResponse.json(
+      {
+        success: false,
+        error: ability.reasonFor("read", "Student") || "Forbidden",
+      },
+      { status: 403 },
+    );
+  },
+);
 
-    const filters = parsed.data
-    const supabase = createServiceClient()
-    const repository = new StudentRepository(supabase)
-
-    // Role-based access
-    if (auth.userRole === 'admin' || auth.userRole === 'staff') {
-      const result = await repository.findAll(filters)
-      return NextResponse.json({ success: true, ...result })
-    }
-    
-    if (auth.userRole === 'teacher') {
-      const result = await repository.findByTeacher(auth.userId!, filters)
-      return NextResponse.json({ success: true, ...result })
-    }
-
-    if (auth.userRole === 'student') {
-      const student = await repository.findById(auth.userId!)
-      return NextResponse.json({
-        success: true,
-        data: student ? [student] : [],
-        total: student ? 1 : 0,
-        page: 1,
-        pageSize: 1,
-        totalPages: 1
-      })
-    }
-
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  } catch (error) {
-    console.error('[API] GET /api/v2/students error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    // Rate limit
-    const identifier = getRateLimitIdentifier(request)
-    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api)
+// POST /api/v2/students
+export const POST = createApiHandler(
+  {
+    allowedRoles: ["admin", "staff", "super_admin", "owner"],
+    bodySchema: createStudentSchema,
+  },
+  async ({ request, body, user }) => {
+    // 1. Rate limit
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
-      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
     }
 
-    // Auth - staff/admin only
-    const auth = await staffAuth(request)
-    if (!auth.authorized) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // 2. Permission check using AbilityService
+    const ability = createAbility({
+      userId: user.id,
+      role: user.role,
+    });
+
+    if (ability.cannot("create", "Student")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: ability.reasonFor("create", "Student") ||
+            "You do not have permission to create students",
+        },
+        { status: 403 },
+      );
     }
 
-    // Parse body
-    let body: unknown
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
-    }
+    // 3. Create student
+    const supabase = createServiceClient();
+    const repository = new StudentRepository(supabase);
+    // TODO: Phase 3 - Update repository types to match consolidated schema
+    const student = await repository.create(body as any);
 
-    const parsed = createSchema.safeParse(body)
-    if (!parsed.success) {
-      return NextResponse.json({ 
-        error: 'Validation Error', 
-        details: parsed.error.issues 
-      }, { status: 400 })
-    }
-
-    const supabase = createServiceClient()
-    const repository = new StudentRepository(supabase)
-    const student = await repository.create(parsed.data)
-
-    return NextResponse.json({ success: true, student }, { status: 201 })
-  } catch (error) {
-    console.error('[API] POST /api/v2/students error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  }
-}
+    return apiSuccess(student, { _status: 201 });
+  },
+);

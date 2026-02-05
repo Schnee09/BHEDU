@@ -1,9 +1,27 @@
 /**
  * Role Utilities
  * Consistent role configuration, colors, and labels across the application
+ *
+ * Role Hierarchy (highest to lowest):
+ * - super_admin: Developer/Technical - Full system access, database, deployments
+ * - owner: Business owner - Financial oversight, high-level reports
+ * - admin: Operations manager - User management, soft deletes
+ * - staff: Office staff - Data entry, payments, refunds, parent linking
+ * - teacher: Classroom teacher - Own classes, grade entry
+ * - tutor: Private tutor - Tutoring sessions, grade entry for assigned students
+ * - parent: Guardian - View linked children's data
+ * - student: Learner - View own data only
  */
 
-export type UserRole = "admin" | "staff" | "teacher" | "student";
+export type UserRole =
+    | "super_admin"
+    | "owner"
+    | "admin"
+    | "staff"
+    | "teacher"
+    | "tutor"
+    | "parent"
+    | "student";
 
 export interface RoleConfig {
     label: string;
@@ -15,6 +33,12 @@ export interface RoleConfig {
     textClass: string;
     borderClass: string;
     icon: string;
+    /** Whether this role can log in via phone number */
+    phoneAuthAllowed: boolean;
+    /** Whether this role requires email for login */
+    emailRequired: boolean;
+    /** How this role is provisioned */
+    provisionMethod: "seed" | "invite" | "public_signup" | "bulk_import";
 }
 
 /**
@@ -22,27 +46,61 @@ export interface RoleConfig {
  * Use these for consistent styling and labeling throughout the app
  */
 export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
+    super_admin: {
+        label: "Super Admin",
+        labelEn: "Super Administrator",
+        description: "Toàn quyền hệ thống, quản lý kỹ thuật",
+        color: "black",
+        bgClass: "bg-gray-900 text-white",
+        bgClassDark: "dark:bg-gray-100 dark:text-gray-900",
+        textClass: "text-gray-900 dark:text-gray-100",
+        borderClass: "border-gray-900 dark:border-gray-100",
+        icon: "⚙️",
+        phoneAuthAllowed: false,
+        emailRequired: true,
+        provisionMethod: "seed",
+    },
+    owner: {
+        label: "Chủ sở hữu",
+        labelEn: "Owner",
+        description: "Giám sát kinh doanh và tài chính",
+        color: "amber",
+        bgClass: "bg-amber-100 text-amber-900",
+        bgClassDark: "dark:bg-amber-900/30 dark:text-amber-300",
+        textClass: "text-amber-700 dark:text-amber-400",
+        borderClass: "border-amber-300 dark:border-amber-700",
+        icon: "👔",
+        phoneAuthAllowed: false,
+        emailRequired: true,
+        provisionMethod: "invite",
+    },
     admin: {
         label: "Quản trị viên",
         labelEn: "Administrator",
-        description: "Toàn quyền quản lý hệ thống",
+        description: "Quản lý vận hành trung tâm",
         color: "red",
         bgClass: "bg-red-100 text-red-800",
         bgClassDark: "dark:bg-red-900/30 dark:text-red-300",
         textClass: "text-red-600 dark:text-red-400",
         borderClass: "border-red-200 dark:border-red-800",
         icon: "👑",
+        phoneAuthAllowed: false,
+        emailRequired: true,
+        provisionMethod: "invite",
     },
     staff: {
         label: "Nhân viên",
         labelEn: "Staff",
-        description: "Quản lý học vụ và tài chính",
+        description: "Nhập liệu, thu học phí, hỗ trợ phụ huynh",
         color: "purple",
         bgClass: "bg-purple-100 text-purple-800",
         bgClassDark: "dark:bg-purple-900/30 dark:text-purple-300",
         textClass: "text-purple-600 dark:text-purple-400",
         borderClass: "border-purple-200 dark:border-purple-800",
         icon: "💼",
+        phoneAuthAllowed: false,
+        emailRequired: true,
+        provisionMethod: "invite",
     },
     teacher: {
         label: "Giáo viên",
@@ -54,6 +112,37 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         textClass: "text-blue-600 dark:text-blue-400",
         borderClass: "border-blue-200 dark:border-blue-800",
         icon: "👨‍🏫",
+        phoneAuthAllowed: true, // Optional phone auth
+        emailRequired: false,
+        provisionMethod: "invite",
+    },
+    tutor: {
+        label: "Gia sư",
+        labelEn: "Tutor",
+        description: "Dạy học kèm 1-1 hoặc nhóm nhỏ",
+        color: "teal",
+        bgClass: "bg-teal-100 text-teal-800",
+        bgClassDark: "dark:bg-teal-900/30 dark:text-teal-300",
+        textClass: "text-teal-600 dark:text-teal-400",
+        borderClass: "border-teal-200 dark:border-teal-800",
+        icon: "📚",
+        phoneAuthAllowed: true, // Optional phone auth
+        emailRequired: false,
+        provisionMethod: "invite",
+    },
+    parent: {
+        label: "Phụ huynh",
+        labelEn: "Parent/Guardian",
+        description: "Theo dõi học tập của con",
+        color: "orange",
+        bgClass: "bg-orange-100 text-orange-800",
+        bgClassDark: "dark:bg-orange-900/30 dark:text-orange-300",
+        textClass: "text-orange-600 dark:text-orange-400",
+        borderClass: "border-orange-200 dark:border-orange-800",
+        icon: "👨‍👩‍👧",
+        phoneAuthAllowed: true, // Primary auth method
+        emailRequired: false,
+        provisionMethod: "public_signup",
     },
     student: {
         label: "Học sinh",
@@ -65,6 +154,9 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         textClass: "text-green-600 dark:text-green-400",
         borderClass: "border-green-200 dark:border-green-800",
         icon: "🎓",
+        phoneAuthAllowed: true, // Primary auth method
+        emailRequired: false,
+        provisionMethod: "bulk_import",
     },
 };
 
@@ -86,6 +178,9 @@ export function getRoleConfig(role: string | null | undefined): RoleConfig {
         textClass: "text-gray-600 dark:text-gray-400",
         borderClass: "border-gray-200 dark:border-gray-800",
         icon: "👤",
+        phoneAuthAllowed: false,
+        emailRequired: true,
+        provisionMethod: "invite",
     };
 }
 
@@ -108,7 +203,30 @@ export function getRoleBadgeClass(role: string | null | undefined): string {
  * Get all valid roles as array
  */
 export function getAllRoles(): UserRole[] {
-    return ["admin", "staff", "teacher", "student"];
+    return [
+        "super_admin",
+        "owner",
+        "admin",
+        "staff",
+        "teacher",
+        "tutor",
+        "parent",
+        "student",
+    ];
+}
+
+/**
+ * Get roles that can be assigned via invite system
+ */
+export function getInvitableRoles(): UserRole[] {
+    return ["owner", "admin", "staff", "teacher", "tutor"];
+}
+
+/**
+ * Get roles that can self-register
+ */
+export function getPublicSignupRoles(): UserRole[] {
+    return ["parent"];
 }
 
 /**
@@ -123,10 +241,14 @@ export function isValidRole(role: string | null | undefined): role is UserRole {
  * Higher number = more privileges
  */
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
-    admin: 100,
-    staff: 75,
-    teacher: 50,
-    student: 25,
+    super_admin: 1000,
+    owner: 900,
+    admin: 800,
+    staff: 600,
+    teacher: 400,
+    tutor: 350,
+    parent: 200,
+    student: 100,
 };
 
 /**
@@ -140,10 +262,29 @@ export function hasHigherOrEqualRole(
 }
 
 /**
+ * Define which roles can create/manage other roles
+ */
+export const ROLE_MANAGEMENT_MATRIX: Record<UserRole, UserRole[]> = {
+    super_admin: [
+        "owner",
+        "admin",
+        "staff",
+        "teacher",
+        "tutor",
+        "parent",
+        "student",
+    ],
+    owner: [], // Owner cannot create users
+    admin: ["staff", "teacher", "tutor", "parent", "student"],
+    staff: ["parent", "student"], // Staff can approve parent signups and bulk import students
+    teacher: [],
+    tutor: [],
+    parent: [],
+    student: [],
+};
+
+/**
  * Check if actor can modify target's role
- * - Only admin can modify admin/staff roles
- * - Staff can modify teacher/student roles
- * - Teachers and students cannot modify roles
  */
 export function canModifyUserRole(
     actorRole: string,
@@ -153,24 +294,96 @@ export function canModifyUserRole(
     if (!isValidRole(actorRole)) return false;
     if (!isValidRole(targetRole)) return false;
 
-    // Only admin can modify admin or staff
-    if (targetRole === "admin" || targetRole === "staff") {
-        return actorRole === "admin";
+    // Super admin can modify anyone except themselves
+    if (actorRole === "super_admin") {
+        return targetRole !== "super_admin";
     }
 
-    // If changing TO admin/staff, only admin can do it
-    if (newRole && (newRole === "admin" || newRole === "staff")) {
-        return actorRole === "admin";
+    // Check management matrix
+    const allowedTargets = ROLE_MANAGEMENT_MATRIX[actorRole];
+    if (!allowedTargets.includes(targetRole as UserRole)) {
+        return false;
     }
 
-    // Staff can modify teacher/student
-    if (
-        actorRole === "staff" &&
-        (targetRole === "teacher" || targetRole === "student")
-    ) {
-        return true;
+    // If changing role, check if new role is also allowed
+    if (newRole && isValidRole(newRole)) {
+        return allowedTargets.includes(newRole as UserRole);
     }
 
-    // Admin can modify anyone
-    return actorRole === "admin";
+    return true;
+}
+
+/**
+ * Check if a role can delete users (hard delete)
+ */
+export function canHardDeleteUser(role: string): boolean {
+    return role === "super_admin";
+}
+
+/**
+ * Check if a role can soft-delete/deactivate users
+ */
+export function canDeactivateUser(
+    actorRole: string,
+    targetRole: string,
+): boolean {
+    if (!isValidRole(actorRole) || !isValidRole(targetRole)) return false;
+
+    // Super admin can deactivate anyone
+    if (actorRole === "super_admin") return true;
+
+    // Admin can deactivate staff and below
+    if (actorRole === "admin") {
+        const targetLevel = ROLE_HIERARCHY[targetRole as UserRole];
+        return targetLevel < ROLE_HIERARCHY.admin;
+    }
+
+    return false;
+}
+
+/**
+ * Check if role can impersonate other users
+ */
+export function canImpersonateUser(role: string): boolean {
+    return role === "super_admin";
+}
+
+/**
+ * Check if role can access system configuration
+ */
+export function canAccessSystemConfig(role: string): boolean {
+    return role === "super_admin";
+}
+
+/**
+ * Check if role can view all financial data
+ */
+export function canViewAllFinance(role: string): boolean {
+    return role === "super_admin" || role === "owner" || role === "admin" ||
+        role === "staff";
+}
+
+/**
+ * Check if role can process refunds
+ */
+export function canProcessRefund(role: string): boolean {
+    return role === "super_admin" || role === "owner" || role === "admin" ||
+        role === "staff";
+}
+
+/**
+ * Account status types
+ */
+export type AccountStatus =
+    | "pending"
+    | "active"
+    | "suspended"
+    | "deactivated"
+    | "deleted";
+
+/**
+ * Get roles that require staff approval after signup
+ */
+export function requiresApprovalAfterSignup(role: string): boolean {
+    return role === "parent"; // Parents need approval to link with students
 }

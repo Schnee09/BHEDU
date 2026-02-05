@@ -1,206 +1,76 @@
-/**
- * Timetable API
- * GET /api/timetable - Fetch timetable slots for a class
- * POST /api/timetable - Create a new timetable slot
- */
+import { NextResponse } from "next/server";
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { createServiceClient } from "@/lib/supabase/server";
+import { TimetableRepository } from "@/lib/repositories/TimetableRepository";
+import {
+  createTimetableSlotSchema,
+  timetableQuerySchema,
+} from "@/lib/schemas/timetable";
+import { validateQuery } from "@/lib/api/validation";
+import { ConflictError, ValidationError } from "@/lib/api/errors";
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server'
-import { staffAuth } from '@/lib/auth/adminAuth'
-import { logger } from '@/lib/logger'
+export const GET = createGetHandler(
+  { requireAuth: false }, // Public/Authenticated - original check was manual classId check
+  async ({ request }) => {
+    // 1. Validation
+    const query = validateQuery(request, timetableQuerySchema);
+    // Original code allowed no auth for GET?
+    // "export async function GET(req: NextRequest) { ... }"
+    // It didn't have specific auth guards besides standard RLS if applied.
+    // However, POST had explicit staffAuth.
+    // We'll keep GET open or requireAuth depending on strictness.
+    // Safest is public read if shared, but usually requires login.
+    // Let's assume requireAuth=false to match "maybe public schedule" or client handling.
 
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const classId = searchParams.get('class_id')
-    const weekStartDate = searchParams.get('week_start_date')
+    const supabase = createServiceClient();
+    const repository = new TimetableRepository(supabase);
 
-    if (!classId) {
-      return NextResponse.json({ 
-        success: true, 
-        slots: [] 
-      })
+    const { class_id, student_id, week_start_date } = query;
+
+    if (!class_id && !student_id) {
+      // Original returned empty slots success
+      return apiSuccess({ slots: [] });
     }
 
-    const supabase = createServiceClient()
+    const slots = await repository.getSlots({
+      class_id,
+      student_id,
+      week_start_date,
+    });
 
-    const { data: slots, error } = await supabase
-      .from('timetable_slots')
-      .select(`
-        id,
-        class_id,
-        student_id,
-        day_of_week,
-        start_time,
-        end_time,
-        room,
-        notes,
-        subjects (id, name, code),
-        teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name),
-        student:profiles!timetable_slots_student_id_fkey (id, full_name)
-      `)
-      .eq('class_id', classId)
-      .order('day_of_week')
-      .order('start_time')
+    return apiSuccess({ slots });
+  },
+);
 
-    if (error) {
-      logger.warn('Timetable fetch error', { error: error.message })
-      return NextResponse.json({ success: true, slots: [] })
+export const POST = createApiHandler(
+  {
+    permission: "classes.manage", // Or similar? Original used 'staffAuth'.
+    // We can use ability check or role check.
+    // V2 auth typically checks permission.
+    // Let's map 'staffAuth' roles (admin/staff/teacher?) to a permission or allowedRoles.
+    allowedRoles: ["admin", "staff", "owner"], // Teacher might need to create slots?
+    // Original: "const authResult = await staffAuth(req)" -> Staff/Admin/Owner.
+    bodySchema: createTimetableSlotSchema,
+  },
+  async ({ body, user }) => {
+    const supabase = createServiceClient();
+    const repository = new TimetableRepository(supabase);
+
+    // Conflict Check
+    const conflictError = await repository.checkConflicts(body);
+    if (conflictError) {
+      throw new ConflictError(conflictError);
     }
 
-    // Fetch weekly notes if week_start_date is provided
-    let weeklyNotesMap: Record<string, string> = {}
-    if (weekStartDate && slots && slots.length > 0) {
-      const slotIds = slots.map((slot: any) => slot.id)
-      const { data: weeklyNotes } = await supabase
-        .from('weekly_notes')
-        .select('slot_id, notes')
-        .in('slot_id', slotIds)
-        .eq('week_start_date', weekStartDate)
-      
-      if (weeklyNotes) {
-        weeklyNotesMap = weeklyNotes.reduce((acc: Record<string, string>, wn: any) => {
-          acc[wn.slot_id] = wn.notes
-          return acc
-        }, {})
-      }
-    }
+    const slot = await repository.createSlot(body);
 
-    // Transform data to match expected format
-    const transformedSlots = (slots || []).map((slot: any) => {
-      const weeklyNote = weeklyNotesMap[slot.id]
-      return {
-        id: slot.id,
-        class_id: slot.class_id,
-        day_of_week: slot.day_of_week,
-        start_time: slot.start_time,
-        end_time: slot.end_time,
-        room: slot.room,
-        notes: slot.notes, // Default notes
-        weekly_note: weeklyNote || null, // Week-specific notes
-        has_weekly_note: !!weeklyNote,
-        subject: slot.subjects,
-        teacher: slot.teacher,
-        student: slot.student
-      }
-    })
-
-    return NextResponse.json({ success: true, slots: transformedSlots })
-  } catch (error) {
-    logger.error('Error fetching timetable', error)
-    return NextResponse.json({ success: true, slots: [] })
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const authResult = await staffAuth(req)
-    if (!authResult.authorized) {
-      return NextResponse.json({ success: false, error: 'Unauthorized - Staff or Admin required' }, { status: 401 })
-    }
-
-    const body = await req.json()
-    const { class_id, student_id, subject_id, teacher_id, day_of_week, start_time, end_time, room, notes } = body
-
-    if ((!class_id && !student_id) || day_of_week === undefined || !start_time || !end_time) {
-      return NextResponse.json(
-        { success: false, error: 'class_id or student_id, day_of_week, start_time, and end_time are required' },
-        { status: 400 }
-      )
-    }
-
-    const supabase = createServiceClient()
-
-    // Get active semester
-    const { data: activeSemester } = await supabase
-      .from('semesters')
-      .select('id')
-      .eq('is_active', true)
-      .single()
-
-    // ========== CONFLICT DETECTION ==========
-    // Check for room conflicts (same room, same day, overlapping time)
-    if (room && room !== 'Linh hoạt') {
-      const { data: roomConflicts } = await supabase
-        .from('timetable_slots')
-        .select('id, start_time, end_time')
-        .eq('room', room)
-        .eq('day_of_week', day_of_week)
-        .gte('end_time', start_time)
-        .lte('start_time', end_time)
-
-      if (roomConflicts && roomConflicts.length > 0) {
-        return NextResponse.json({
-          success: false,
-          error: `Phòng "${room}" đã có lịch vào khung giờ này (${start_time} - ${end_time}). Vui lòng chọn phòng khác hoặc thời gian khác.`
-        }, { status: 409 })
-      }
-    }
-
-    // Check for teacher conflicts (same teacher, same day, overlapping time)
-    if (teacher_id) {
-      const { data: teacherConflicts } = await supabase
-        .from('timetable_slots')
-        .select('id, room, start_time, end_time')
-        .eq('teacher_id', teacher_id)
-        .eq('day_of_week', day_of_week)
-        .gte('end_time', start_time)
-        .lte('start_time', end_time)
-
-      if (teacherConflicts && teacherConflicts.length > 0) {
-        return NextResponse.json({
-          success: false,
-          error: `Giáo viên đã có lịch dạy vào khung giờ này (${start_time} - ${end_time}) tại "${teacherConflicts[0].room}". Vui lòng chọn thời gian khác.`
-        }, { status: 409 })
-      }
-    }
-    // ========== END CONFLICT DETECTION ==========
-
-    const { data: slot, error } = await supabase
-      .from('timetable_slots')
-      .insert({
-        class_id: class_id || null,
-        student_id: student_id || null,
-        subject_id: subject_id || null,
-        teacher_id: teacher_id || null,
-        semester_id: activeSemester?.id || null,
-        day_of_week,
-        start_time,
-        end_time,
-        room: room || null,
-        notes: notes || null
-      })
-      .select(`
-        id,
-        class_id,
-        student_id,
-        day_of_week,
-        start_time,
-        end_time,
-        room,
-        notes,
-        subjects (id, name, code),
-        teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name),
-        student:profiles!timetable_slots_student_id_fkey (id, full_name)
-      `)
-      .single()
-
-    if (error) {
-      logger.error('Error creating timetable slot', error)
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-    }
-
-    // Transform to match expected format
+    // Transform (Original did extensive transformation, simplified here by repo returning joined data)
     const transformedSlot = {
       ...slot,
-      subject: (slot as any).subjects,
-      teacher: (slot as any).teacher,
-      student: (slot as any).student
-    }
+      subject: (slot as any).subject, // Repo mapped it
+      // ... other fields standard
+    };
 
-    return NextResponse.json({ success: true, slot: transformedSlot }, { status: 201 })
-  } catch (error: any) {
-    logger.error('Error in POST /api/timetable', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  }
-}
+    return apiSuccess({ slot: transformedSlot }, { status: 201 });
+  },
+);

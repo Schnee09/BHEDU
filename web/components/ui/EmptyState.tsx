@@ -1,143 +1,54 @@
-"use client";
+'use client';
 
-import { ReactNode } from "react";
-import {
-    Users,
-    FileText,
-    Calendar,
-    BookOpen,
-    ClipboardList,
-    Search,
-    FolderOpen,
-    Inbox,
-    AlertCircle,
-    Plus
-} from "lucide-react";
+import { ReactNode } from 'react';
+import { Button } from '@/components/ui';
+import { Icons } from '@/components/ui/Icons';
+import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
-    /** Type of empty state - determines icon and default message */
-    type?: "students" | "grades" | "attendance" | "classes" | "reports" | "search" | "folder" | "default" | "error";
-    /** Custom title */
-    title?: string;
-    /** Custom description */
-    description?: string;
-    /** Custom icon to override the default */
     icon?: ReactNode;
-    /** Action button */
-    action?: {
-        label: string;
-        onClick: () => void;
-        variant?: "primary" | "secondary";
-    };
-    /** Additional class names */
+    title: string;
+    description?: string;
+    actionLabel?: string;
+    onAction?: () => void;
     className?: string;
 }
 
-const defaultContent = {
-    students: {
-        icon: Users,
-        title: "Chưa có học sinh",
-        description: "Thêm học sinh mới để bắt đầu quản lý",
-    },
-    grades: {
-        icon: BookOpen,
-        title: "Chưa có điểm số",
-        description: "Điểm số sẽ hiển thị khi được nhập",
-    },
-    attendance: {
-        icon: Calendar,
-        title: "Chưa có dữ liệu điểm danh",
-        description: "Bắt đầu điểm danh để theo dõi học sinh",
-    },
-    classes: {
-        icon: ClipboardList,
-        title: "Chưa có lớp học",
-        description: "Tạo lớp học mới để bắt đầu",
-    },
-    reports: {
-        icon: FileText,
-        title: "Chưa có báo cáo",
-        description: "Báo cáo sẽ xuất hiện khi có dữ liệu",
-    },
-    search: {
-        icon: Search,
-        title: "Không tìm thấy kết quả",
-        description: "Thử tìm kiếm với từ khóa khác",
-    },
-    folder: {
-        icon: FolderOpen,
-        title: "Thư mục trống",
-        description: "Không có dữ liệu trong thư mục này",
-    },
-    default: {
-        icon: Inbox,
-        title: "Không có dữ liệu",
-        description: "Dữ liệu sẽ xuất hiện khi có thông tin",
-    },
-    error: {
-        icon: AlertCircle,
-        title: "Đã xảy ra lỗi",
-        description: "Không thể tải dữ liệu. Vui lòng thử lại.",
-    },
-};
-
-export default function EmptyState({
-    type = "default",
+export function EmptyState({
+    icon,
     title,
     description,
-    icon,
-    action,
-    className = "",
+    actionLabel,
+    onAction,
+    className,
 }: EmptyStateProps) {
-    const content = defaultContent[type];
-    const Icon = content.icon;
-
     return (
-        <div className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}>
-            {/* Icon */}
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-                {icon || <Icon className="w-8 h-8 text-gray-400 dark:text-gray-500" />}
+        <div className={cn(
+            "flex flex-col items-center justify-center p-12 text-center rounded-[40px] border-2 border-dashed border-stone-200 dark:border-white/5 bg-stone-50/50 dark:bg-white/5",
+            className
+        )}>
+            <div className="mb-6 p-6 rounded-[32px] bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500">
+                {icon || <Icons.Search className="w-12 h-12" />}
             </div>
 
-            {/* Title */}
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {title || content.title}
+            <h3 className="text-xl font-bold text-stone-900 dark:text-white uppercase tracking-tight mb-2">
+                {title}
             </h3>
 
-            {/* Description */}
-            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-6">
-                {description || content.description}
-            </p>
-
-            {/* Action Button */}
-            {action && (
-                <button
-                    onClick={action.onClick}
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${action.variant === "secondary"
-                            ? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
-                            : "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40"
-                        }`}
-                >
-                    <Plus className="w-4 h-4" />
-                    {action.label}
-                </button>
+            {description && (
+                <p className="max-w-xs text-stone-500 dark:text-stone-400 font-medium leading-relaxed mb-8">
+                    {description}
+                </p>
             )}
-        </div>
-    );
-}
 
-// Compact variant for inline use
-export function EmptyStateCompact({
-    message = "Không có dữ liệu",
-    className = "",
-}: {
-    message?: string;
-    className?: string;
-}) {
-    return (
-        <div className={`flex items-center justify-center gap-2 py-8 text-gray-400 dark:text-gray-500 ${className}`}>
-            <Inbox className="w-5 h-5" />
-            <span className="text-sm">{message}</span>
+            {actionLabel && onAction && (
+                <Button
+                    onClick={onAction}
+                    className="px-8 py-6 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all active:scale-95"
+                >
+                    {actionLabel}
+                </Button>
+            )}
         </div>
     );
 }

@@ -16,6 +16,8 @@ import {
     Download
 } from "lucide-react";
 import { exportToCSV } from "@/lib/export/exportUtils";
+import { usePermissions } from "@/hooks/usePermissions";
+import PageGuard from "@/components/PageGuard";
 
 interface AuditLog {
     id: string;
@@ -59,7 +61,16 @@ const actionColors: Record<string, string> = {
 };
 
 export default function AuditLogsPage() {
+    return (
+        <PageGuard permissions="system.audit">
+            <AuditLogsContent />
+        </PageGuard>
+    );
+}
+
+function AuditLogsContent() {
     const { profile, loading: profileLoading } = useProfile();
+    const { isAdmin } = usePermissions();
     const router = useRouter();
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
@@ -69,13 +80,6 @@ export default function AuditLogsPage() {
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const pageSize = 20;
-
-    // Check admin access
-    useEffect(() => {
-        if (!profileLoading && profile?.role !== "admin") {
-            router.replace("/unauthorized");
-        }
-    }, [profile, profileLoading, router]);
 
     // Fetch logs
     const fetchLogs = async () => {
@@ -103,10 +107,10 @@ export default function AuditLogsPage() {
     };
 
     useEffect(() => {
-        if (profile?.role === "admin") {
+        if (isAdmin) {
             fetchLogs();
         }
-    }, [profile, page, actionFilter, resourceFilter]);
+    }, [isAdmin, page, actionFilter, resourceFilter]);
 
     const handleExport = () => {
         const exportData = logs.map((log) => ({
@@ -138,10 +142,6 @@ export default function AuditLogsPage() {
                 <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
             </div>
         );
-    }
-
-    if (profile?.role !== "admin") {
-        return null;
     }
 
     return (

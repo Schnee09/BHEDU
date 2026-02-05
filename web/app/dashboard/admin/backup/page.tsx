@@ -15,6 +15,8 @@ import {
     RefreshCw,
 } from "lucide-react";
 import { exportToJSON } from "@/lib/export/exportUtils";
+import { usePermissions } from "@/hooks/usePermissions";
+import PageGuard from "@/components/PageGuard";
 
 interface BackupInfo {
     id: string;
@@ -25,7 +27,16 @@ interface BackupInfo {
 }
 
 export default function BackupPage() {
+    return (
+        <PageGuard permissions="system.database">
+            <BackupContent />
+        </PageGuard>
+    );
+}
+
+function BackupContent() {
     const { profile, loading: profileLoading } = useProfile();
+    const { isAdmin } = usePermissions();
     const router = useRouter();
 
     const [creating, setCreating] = useState(false);
@@ -48,12 +59,6 @@ export default function BackupPage() {
             tables: ["students", "classes", "grades", "attendance"],
         },
     ]);
-
-    // Check admin access
-    if (!profileLoading && profile?.role !== "admin") {
-        router.replace("/unauthorized");
-        return null;
-    }
 
     const handleExportData = async () => {
         setCreating(true);
@@ -124,8 +129,8 @@ export default function BackupPage() {
                 {message && (
                     <div
                         className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${message.type === "success"
-                                ? "bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800"
-                                : "bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800"
+                            ? "bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800"
+                            : "bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800"
                             }`}
                     >
                         {message.type === "success" ? (

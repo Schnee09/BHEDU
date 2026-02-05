@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { apiFetch } from '@/lib/api/client'
+import { apiFetch, getFinanceReports } from '@/lib/api/client'
 import { Card, StatCard } from '@/components/ui/Card'
 import { Icons } from "@/components/ui/Icons";
 import { cn } from "@/lib/utils";
@@ -35,14 +35,9 @@ export default function FinanceDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      const response = await apiFetch('/api/admin/finance/reports?type=dashboard')
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Không thể tải dữ liệu bảng điều khiển')
-      }
-
-      setData(result.data)
+      // Use V2 Client
+      const result = await getFinanceReports('dashboard')
+      setData(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {

@@ -1,6 +1,7 @@
 /// Authentication Providers using Riverpod
 library;
 
+import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/profile_model.dart';
@@ -45,10 +46,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
       state = AsyncValue.data(profile);
     } catch (e, st) {
       // Don't clear state on error, just log or show toast
-      print('[Auth] Failed to refresh profile: $e');
+      developer.log('[Auth] Failed to refresh profile', error: e);
       // Only set error if we really want to block UI
       if (state.value == null) {
-         state = AsyncValue.error(e, st);
+        state = AsyncValue.error(e, st);
       }
     }
   }
@@ -62,7 +63,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
       await refreshProfile();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      rethrow; 
+      rethrow;
     }
   }
 
@@ -76,11 +77,12 @@ class AuthNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
       state = const AsyncValue.data(null);
     }
   }
-  
+
   ProfileModel? get currentProfile => state.value;
 }
 
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AsyncValue<ProfileModel?>>((ref) {
-  final authRepo = ref.watch(authRepositoryProvider);
-  return AuthNotifier(authRepo);
-});
+final authNotifierProvider =
+    StateNotifierProvider<AuthNotifier, AsyncValue<ProfileModel?>>((ref) {
+      final authRepo = ref.watch(authRepositoryProvider);
+      return AuthNotifier(authRepo);
+    });

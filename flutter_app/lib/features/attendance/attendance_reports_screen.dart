@@ -6,11 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../config/theme.dart';
-import '../../core/constants/app_constants.dart';
-import '../../data/models/attendance_model.dart';
-import '../../data/repositories/attendance_repository.dart';
-
-
 
 class AttendanceReportsScreen extends ConsumerWidget {
   const AttendanceReportsScreen({super.key});
@@ -18,10 +13,7 @@ class AttendanceReportsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Báo cáo điểm danh'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Báo cáo điểm danh'), elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -166,10 +158,7 @@ class _StatCard extends StatelessWidget {
               ),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: color.withAlpha(180),
-                ),
+                style: TextStyle(fontSize: 12, color: color.withAlpha(180)),
               ),
             ],
           ),
@@ -203,7 +192,11 @@ class _WeeklyChartSection extends StatelessWidget {
                   color: AppColors.primary.withAlpha(20),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.bar_chart, size: 18, color: AppColors.primary),
+                child: const Icon(
+                  Icons.bar_chart,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -263,17 +256,19 @@ class _WeeklyChartSection extends StatelessWidget {
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: AppColors.borderSubtle,
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: AppColors.borderSubtle, strokeWidth: 1),
                 ),
                 barGroups: [
                   _makeBarGroup(0, 95),
@@ -298,7 +293,9 @@ class _WeeklyChartSection extends StatelessWidget {
       barRods: [
         BarChartRodData(
           toY: y,
-          color: y >= 90 ? AppColors.success : (y >= 80 ? AppColors.warning : AppColors.error),
+          color: y >= 90
+              ? AppColors.success
+              : (y >= 80 ? AppColors.warning : AppColors.error),
           width: 20,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
         ),
@@ -331,7 +328,11 @@ class _StatusBreakdownSection extends StatelessWidget {
                   color: AppColors.info.withAlpha(20),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.pie_chart, size: 18, color: AppColors.info),
+                child: const Icon(
+                  Icons.pie_chart,
+                  size: 18,
+                  color: AppColors.info,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -411,10 +412,7 @@ class _StatusRow extends StatelessWidget {
             style: const TextStyle(color: AppColors.textSecondary),
           ),
         ),
-        Text(
-          '$count',
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        Text('$count', style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(width: 12),
         Container(
           width: 60,

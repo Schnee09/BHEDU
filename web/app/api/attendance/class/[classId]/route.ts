@@ -32,7 +32,12 @@ export async function GET(
       new Date().toISOString().split("T")[0];
 
     // Verify teacher has access to this class
-    if (authResult.userRole !== "admin") {
+    // Admins, Staff and higher see everything
+    const isAdminLike = ["admin", "staff", "super_admin", "owner"].includes(
+      authResult.userRole || "",
+    );
+
+    if (!isAdminLike) {
       const { data: classData } = await supabase
         .from("classes")
         .select("id")

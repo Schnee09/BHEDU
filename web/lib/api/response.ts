@@ -1,10 +1,9 @@
-// @ts-nocheck
 /**
  * API Response Utilities
  * Consistent response formatting with caching headers and compression support
  */
 
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 interface SuccessResponseOptions {
   data: unknown;
@@ -28,14 +27,15 @@ export function successResponse({
   cacheSeconds = 0,
   staleSeconds = 60,
 }: SuccessResponseOptions): NextResponse {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
   };
 
   if (cacheSeconds > 0) {
-    headers['Cache-Control'] = `public, max-age=${cacheSeconds}, stale-while-revalidate=${staleSeconds}`;
+    headers["Cache-Control"] =
+      `public, max-age=${cacheSeconds}, stale-while-revalidate=${staleSeconds}`;
   } else {
-    headers['Cache-Control'] = 'no-store, no-cache, must-revalidate';
+    headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
   }
 
   return new NextResponse(JSON.stringify(data), {
@@ -56,15 +56,15 @@ export function errorResponse({
     JSON.stringify({
       success: false,
       error,
-      ...(details && { details }),
+      details,
     }),
     {
       status,
       headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-store',
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
       },
-    }
+    },
   );
 }
 
@@ -82,11 +82,11 @@ export const CACHE = {
 /**
  * Add CORS headers for public APIs
  */
-export function corsHeaders(): HeadersInit {
+export function corsHeaders(): Record<string, string> {
   return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
 }
 
@@ -102,7 +102,7 @@ export interface PaginationParams {
 export function createPaginationMeta(params: PaginationParams) {
   const { page, limit, total } = params;
   const totalPages = Math.ceil(total / limit);
-  
+
   return {
     page,
     limit,

@@ -1,15 +1,3 @@
-// @ts-nocheck
-/**
- * Modern User Management Page - Refactored with new UI components
- * 
- * Features:
- * - Clean, consistent UI using component library
- * - Better loading states and error handling
- * - Improved accessibility
- * - Audit trail integration
- * - Better UX with proper feedback
- */
-
 "use client"
 
 import { useState, useEffect, useCallback } from 'react';
@@ -17,21 +5,27 @@ import { apiFetch } from '@/lib/api/client';
 import { logger } from '@/lib/logger';
 import {
   Button,
-  EmptyState,
-  Alert,
   Input,
-  Modal
+  Modal,
+  Card,
+  Table,
+  Badge,
+  Alert
 } from '@/components/ui';
 import { DropdownMenu, DropdownItem } from '@/components/ui/dropdown-menu';
-import { Card, StatCard } from '@/components/ui/Card';
+import { StatCard } from '@/components/ui/Card';
 import { SkeletonTable, SkeletonStatCard } from '@/components/ui/skeleton';
-import { Table } from '@/components/ui/table';
-import Badge from '@/components/ui/badge';
-import { Select, Textarea, Checkbox } from '@/components/ui/form';
+import { Select } from '@/components/ui/form';
 import { Icons } from '@/components/ui/Icons';
 import PageGuard from '@/components/PageGuard';
 import type { UserRole } from '@/lib/database.types';
 import MobileUserList from "@/components/users/MobileUserList";
+import UserFormModal from "@/components/users/UserFormModal";
+import ResetPasswordModal from "@/components/users/ResetPasswordModal";
+import DeleteUserModal from "@/components/users/DeleteUserModal";
+import { useToast } from '@/hooks/useToast';
+import { cn } from '@/lib/utils';
+import { getRoleLabel } from '@/lib/role-utils';
 
 interface User {
   id: string;
@@ -42,10 +36,13 @@ interface User {
   last_login_at: string | null;
   created_at: string;
   phone?: string;
+  is_managed?: boolean;
+  student_code?: string;
   department?: string;
   student_id?: string;
   grade_level?: string;
   notes?: string;
+  personal_email?: string;
 }
 
 interface UserStats {
@@ -61,31 +58,13 @@ interface UserStats {
 const roleOptions = [
   { value: 'student', label: 'Học sinh' },
   { value: 'teacher', label: 'Giáo viên' },
+  { value: 'tutor', label: 'Gia sư' },
+  { value: 'parent', label: 'Phụ huynh' },
   { value: 'staff', label: 'Nhân viên' },
   { value: 'admin', label: 'Quản trị viên' },
+  { value: 'owner', label: 'Chủ trung tâm' },
+  { value: 'super_admin', label: 'Siêu quản trị' },
 ];
-
-const genderOptions = [
-  { value: 'male', label: 'Nam' },
-  { value: 'female', label: 'Nữ' },
-];
-
-const gradeLevelOptions = [
-  { value: 'Lớp 6', label: 'Lớp 6' },
-  { value: 'Lớp 7', label: 'Lớp 7' },
-  { value: 'Lớp 8', label: 'Lớp 8' },
-  { value: 'Lớp 9', label: 'Lớp 9' },
-  { value: 'Lớp 10', label: 'Lớp 10' },
-  { value: 'Lớp 11', label: 'Lớp 11' },
-  { value: 'Lớp 12', label: 'Lớp 12' },
-];
-
-// Generate student code in format HS{YEAR}{4-DIGIT-SEQ}
-function generateStudentCode(): string {
-  const year = new Date().getFullYear();
-  const seq = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
-  return `HS${year}${seq}`;
-}
 
 export default function UserManagementPage() {
   return (
@@ -96,12 +75,12 @@ export default function UserManagementPage() {
 }
 
 function UserManagementPageContent() {
+  const toast = useToast();
   // State management
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -116,40 +95,6 @@ function UserManagementPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
-  // Form states
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    full_name: '',
-    role: 'student' as UserRole,
-    phone: '',
-    department: '',
-    student_id: '',
-    student_code: '',
-    grade_level: '',
-    gender: 'male',
-    notes: '',
-    is_active: true
-  });
-
-  // Auto-generate student code when role changes to student
-  const handleRoleChange = (newRole: string) => {
-    const updates: any = { role: newRole };
-    if (newRole === 'student' && !formData.student_code) {
-      const code = generateStudentCode();
-      updates.student_code = code;
-      updates.email = `${code.toLowerCase()}@student.bhedu.vn`;
-    } else if (newRole === 'teacher' && !formData.email.includes('@')) {
-      updates.email = '';
-    }
-    setFormData({ ...formData, ...updates });
-  };
-
-  const [passwordData, setPasswordData] = useState({
-    new_password: '',
-    confirm_password: ''
-  });
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -192,140 +137,6 @@ function UserManagementPageContent() {
     fetchUsers();
   }, [roleFilter, activeFilter, searchQuery, page, fetchUsers]);
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Validate form
-      if (!formData.email || !formData.password || !formData.full_name) {
-        throw new Error('Vui lòng điền đầy đủ các trường bắt buộc');
-      }
-
-      if (formData.password.length < 6) {
-        throw new Error('Mật khẩu phải có ít nhất 6 ký tự');
-      }
-
-      logger.info('Creating user', { email: formData.email, role: formData.role });
-
-      const response = await apiFetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess('Tạo người dùng thành công!');
-        setShowCreateModal(false);
-        resetForm();
-        fetchUsers();
-
-        // Log to audit trail (in production, get current admin user from session)
-        logger.audit('User created', {}, {
-          newUserId: data.user?.id,
-          email: formData.email,
-          role: formData.role
-        });
-      } else {
-        throw new Error(data.error || 'Không thể tạo người dùng');
-      }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Không thể tạo người dùng';
-      setError(errorMsg);
-      logger.error('Error creating user', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      logger.info('Updating user', { userId: selectedUser.id, email: formData.email });
-
-      const response = await apiFetch(`/api/admin/users/${selectedUser.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess('Cập nhật người dùng thành công!');
-        setShowEditModal(false);
-        setSelectedUser(null);
-        resetForm();
-        fetchUsers();
-
-        logger.audit('User updated', {}, {
-          userId: selectedUser.id,
-          changes: formData
-        });
-      } else {
-        throw new Error(data.error || 'Không thể cập nhật người dùng');
-      }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Không thể cập nhật người dùng';
-      setError(errorMsg);
-      logger.error('Error updating user', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser) return;
-
-    if (passwordData.new_password !== passwordData.confirm_password) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (passwordData.new_password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiFetch(`/api/admin/users/${selectedUser.id}/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ new_password: passwordData.new_password })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess('Đặt lại mật khẩu thành công!');
-        setShowResetPasswordModal(false);
-        setSelectedUser(null);
-        setPasswordData({ new_password: '', confirm_password: '' });
-
-        logger.audit('Password reset', {}, { userId: selectedUser.id });
-      } else {
-        throw new Error(data.error || 'Không thể đặt lại mật khẩu');
-      }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Không thể đặt lại mật khẩu';
-      setError(errorMsg);
-      logger.error('Error resetting password', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleToggleActive = async (user: User) => {
     setLoading(true);
@@ -346,7 +157,7 @@ function UserManagementPageContent() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess(`Người dùng đã được ${user.is_active ? 'vô hiệu hóa' : 'kích hoạt'} thành công!`);
+        toast.success('Thành công', `Người dùng đã được ${user.is_active ? 'vô hiệu hóa' : 'kích hoạt'} thành công!`);
         fetchUsers();
 
         logger.audit('User status changed', {}, {
@@ -356,99 +167,40 @@ function UserManagementPageContent() {
       } else {
         throw new Error(data.error || 'Failed to toggle user status');
       }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to toggle user status';
-      setError(errorMsg);
-      logger.error('Error toggling user status', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
+    } catch (err: any) {
+      toast.error('Lỗi', err.message || 'Không thể thay đổi trạng thái');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteUser = async () => {
-    if (!selectedUser) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      logger.info('Deleting user', { userId: selectedUser.id, email: selectedUser.email });
-
-      const response = await apiFetch(`/api/admin/users/${selectedUser.id}?permanent=true`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess(`Người dùng "${selectedUser.full_name}" đã được xóa thành công!`);
-        setShowDeleteModal(false);
-        setSelectedUser(null);
-        fetchUsers();
-
-        logger.audit('User deleted', {}, {
-          userId: selectedUser.id,
-          email: selectedUser.email
-        });
-      } else {
-        throw new Error(data.error || 'Không thể xóa người dùng');
-      }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Không thể xóa người dùng';
-      setError(errorMsg);
-      logger.error('Error deleting user', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      email: '',
-      password: '',
-      full_name: '',
-      role: 'student',
-      phone: '',
-      department: '',
-      student_id: '',
-      student_code: '',
-      grade_level: '',
-      gender: 'male',
-      notes: '',
-      is_active: true
-    });
-  };
 
   const openEditModal = (user: User) => {
     setSelectedUser(user);
-    setFormData({
-      email: user.email,
-      password: '',
-      full_name: user.full_name,
-      role: user.role,
-      phone: user.phone || '',
-      department: user.department || '',
-      student_id: user.student_id || '',
-      grade_level: user.grade_level || '',
-      notes: user.notes || '',
-      is_active: user.is_active
-    });
     setShowEditModal(true);
   };
 
   const openResetPasswordModal = (user: User) => {
     setSelectedUser(user);
-    setPasswordData({ new_password: '', confirm_password: '' });
     setShowResetPasswordModal(true);
   };
 
-  // Role badge color
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'admin': return 'danger';
-      case 'teacher': return 'info';
-      case 'student': return 'success';
-      default: return 'default';
+      case 'admin':
+      case 'super_admin':
+        return 'danger';
+      case 'owner':
+        return 'warning';
+      case 'teacher':
+      case 'tutor':
+        return 'info';
+      case 'student':
+        return 'success';
+      case 'parent':
+        return 'indigo';
+      default:
+        return 'default';
     }
   };
 
@@ -457,30 +209,34 @@ function UserManagementPageContent() {
     if (!stats) return null;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatCard
-          label="Tổng số người dùng"
+          label="Tổng người dùng"
           value={stats.total_users}
           icon={<Icons.Users className="w-6 h-6" />}
           color="blue"
+          className="glass-card hover:translate-y-[-4px] transition-transform"
         />
         <StatCard
           label="Đang hoạt động"
           value={stats.active_users}
           icon={<Icons.Success className="w-6 h-6" />}
           color="green"
+          className="glass-card hover:translate-y-[-4px] transition-transform"
         />
         <StatCard
           label="Giáo viên"
           value={stats.teacher_count}
           icon={<Icons.Teachers className="w-6 h-6" />}
           color="orange"
+          className="glass-card hover:translate-y-[-4px] transition-transform"
         />
         <StatCard
           label="Học sinh"
           value={stats.student_count}
           icon={<Icons.Students className="w-6 h-6" />}
           color="purple"
+          className="glass-card hover:translate-y-[-4px] transition-transform"
         />
       </div>
     );
@@ -510,179 +266,202 @@ function UserManagementPageContent() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Icons.Users className="w-8 h-8 text-primary" />
-              Quản lý người dùng
+    <div className="bg-[#f8f9fa] dark:bg-stone-950 min-h-screen">
+      <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-8 animate-fade-in relative">
+        {/* Background Blobs */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/5 blur-[100px] rounded-full pointer-events-none -z-10" />
+
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black text-stone-900 dark:text-white tracking-tight flex items-center gap-4">
+              <div className="p-3 bg-amber-500/10 rounded-[24px]">
+                <Icons.Users className="w-10 h-10 text-amber-600" />
+              </div>
+              Quản lý tài khoản
             </h1>
-            <p className="text-muted mt-1">Quản lý người dùng, vai trò và quyền hạn</p>
+            <p className="text-stone-500 font-bold ml-1 flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-bubble" />
+              Hệ thống quản trị người dùng thông minh V2 Pro Max
+            </p>
           </div>
-        </div>
 
-        {/* Alerts */}
-        {error && (
-          <Alert
-            variant="error"
-            title="Error"
-            message={error}
-            onClose={() => setError(null)}
-          />
-        )}
-
-        {success && (
-          <Alert
-            variant="success"
-            title="Success"
-            message={success}
-            onClose={() => setSuccess(null)}
-          />
-        )}
-
-        {/* Statistics */}
-        {renderStats()}
-
-        {/* Filters and Search */}
-        <div className="bg-surface border border-border rounded-xl p-4 shadow-sm mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Input
-              type="text"
-              placeholder="Tìm kiếm người dùng..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-border focus:border-primary focus:ring-primary/20"
-              leftIcon={<Icons.Search className="w-5 h-5 text-muted" />}
-            />
-
-            <Select
-              placeholder="Tất cả vai trò"
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'Tất cả vai trò' },
-                ...roleOptions
-              ]}
-            />
-
-            <Select
-              placeholder="Tất cả trạng thái"
-              value={activeFilter}
-              onChange={(e) => setActiveFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'Tất cả trạng thái' },
-                { value: 'true', label: 'Chỉ hoạt động' },
-                { value: 'false', label: 'Chỉ không hoạt động' },
-              ]}
-            />
-
+          <div className="flex items-center gap-3">
             <Button
-              variant="primary"
+              variant="gold"
               onClick={() => setShowCreateModal(true)}
-              className="shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
-              leftIcon={<Icons.Add className="w-4 h-4" />}
-              fullWidth
+              className="h-14 px-8 rounded-[24px] shadow-xl shadow-amber-500/20"
+              leftIcon={<Icons.Add className="w-5 h-5" />}
             >
-              Thêm người dùng
+              Thêm người dùng mới
             </Button>
           </div>
         </div>
 
-        {/* User Table */}
-        {users.length === 0 ? (
-          <EmptyState
-            icon={<Icons.Users className="w-12 h-12 text-stone-400" />}
-            title="Không tìm thấy người dùng"
-            description="Thử điều chỉnh tìm kiếm hoặc bộ lọc"
-            action={
-              <Button onClick={() => {
-                setSearchQuery('');
-                setRoleFilter('all');
-                setActiveFilter('all');
-              }}>
-                Xóa bộ lọc
+        {/* Statistics Tiles */}
+        {renderStats()}
+
+        {/* Filters and Table Section */}
+        <div className="space-y-6">
+          {/* Controls Bar */}
+          <div className="glass-premium p-6 rounded-[40px] border border-stone-200/50 dark:border-white/5 flex flex-col lg:flex-row gap-4 items-center shadow-xl shadow-stone-200/50 dark:shadow-none">
+            <div className="flex-1 w-full relative">
+              <Input
+                type="text"
+                placeholder="Tìm tên, email, số điện thoại..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-14 rounded-2xl bg-white/50 border-stone-100 hover:border-amber-500/30 transition-all font-bold group"
+                leftIcon={<Icons.Search className="w-5 h-5 text-stone-300 group-focus-within:text-amber-500 transition-colors" />}
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              <div className="w-full sm:w-48">
+                <Select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest"
+                  options={[
+                    { value: 'all', label: 'TẤT CẢ VAI TRÒ' },
+                    ...roleOptions.map(o => ({ value: o.value, label: o.label.toUpperCase() }))
+                  ]}
+                />
+              </div>
+
+              <div className="w-full sm:w-48">
+                <Select
+                  value={activeFilter}
+                  onChange={(e) => setActiveFilter(e.target.value)}
+                  className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest"
+                  options={[
+                    { value: 'all', label: 'TRẠNG THÁI: TẤT CẢ' },
+                    { value: 'true', label: 'HOẠT ĐỘNG' },
+                    { value: 'false', label: 'VÔ HIỆU HÓA' },
+                  ]}
+                />
+              </div>
+
+              <Button
+                variant="outline"
+                className="h-14 w-14 p-0 rounded-2xl shrink-0 border-stone-200"
+                onClick={() => {
+                  setSearchQuery('');
+                  setRoleFilter('all');
+                  setActiveFilter('all');
+                }}
+              >
+                <Icons.Refresh className="w-5 h-5" />
               </Button>
-            }
-          />
-        ) : (
-          <>
-            <MobileUserList
-              users={users}
-              onEdit={openEditModal}
-              onResetPassword={openResetPasswordModal}
-              onDelete={(user) => { setSelectedUser(user); setShowDeleteModal(true); }}
-              onToggleActive={handleToggleActive}
-            />
-            <div className="hidden md:block">
-              <Card className="p-0">
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <Card className="rounded-[40px] overflow-hidden border-stone-100 dark:border-white/5 shadow-2xl shadow-stone-200/30 dark:shadow-none glass-premium p-0">
+            {users.length === 0 ? (
+              <div className="py-24 text-center">
+                <div className="w-20 h-20 bg-stone-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Icons.Users className="w-10 h-10 text-stone-300" />
+                </div>
+                <h3 className="text-xl font-black text-stone-900 dark:text-white mb-2">Không tìm thấy ai cả!</h3>
+                <p className="text-stone-400 font-medium">Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
+                <Button
+                  variant="outline"
+                  className="mt-8 rounded-xl"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setRoleFilter('all');
+                    setActiveFilter('all');
+                  }}
+                >
+                  Xóa tất cả bộ lọc
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
                 <Table
                   data={users}
                   keyExtractor={(user) => user.id}
+                  className="border-none"
                   columns={[
                     {
                       key: 'full_name',
-                      header: 'Họ tên',
+                      label: 'NGƯỜI DÙNG',
                       render: (user) => (
-                        <div>
-                          <p className="font-medium text-stone-900">{user.full_name}</p>
-                          <p className="text-sm text-stone-500">{user.email}</p>
+                        <div className="flex items-center gap-4 py-2">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-stone-100 to-stone-50 dark:from-white/5 dark:to-white/2 flex items-center justify-center font-black text-stone-400 border border-stone-100 dark:border-white/5 group-hover:scale-105 transition-transform">
+                            {user.full_name?.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-black text-stone-900 dark:text-white tracking-tight">{user.full_name}</p>
+                              {user.is_managed && (
+                                <Badge variant="info" className="text-[8px] px-1.5 py-0 rounded-md font-black uppercase">Managed</Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-stone-400 font-bold">{user.email}</p>
+                          </div>
                         </div>
                       )
                     },
                     {
                       key: 'role',
-                      header: 'Vai trò',
+                      label: 'VAI TRÒ',
                       render: (user) => (
-                        <Badge variant={getRoleBadgeVariant(user.role)}>
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        <Badge variant={getRoleBadgeVariant(user.role) as any} className="px-4 py-1.5 rounded-full border-none shadow-sm font-black uppercase tracking-widest text-[10px]">
+                          {getRoleLabel(user.role)}
                         </Badge>
                       )
                     },
                     {
                       key: 'is_active',
-                      header: 'Trạng thái',
+                      label: 'TRẠNG THÁI',
                       render: (user) => (
-                        <Badge variant={user.is_active ? 'success' : 'default'}>
-                          {user.is_active ? 'Hoạt động' : 'Không hoạt động'}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            user.is_active ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-stone-300"
+                          )} />
+                          <span className={cn(
+                            "text-[10px] font-black uppercase tracking-widest",
+                            user.is_active ? "text-green-600 dark:text-green-500" : "text-stone-400"
+                          )}>
+                            {user.is_active ? 'Hoạt động' : 'Tạm khóa'}
+                          </span>
+                        </div>
                       )
                     },
                     {
-                      key: 'last_login_at',
-                      header: 'Đăng nhập cuối',
+                      key: 'created_at',
+                      label: 'NGÀY GIA NHẬP',
                       render: (user) => (
-                        <span className="text-sm text-stone-600">
-                          {user.last_login_at
-                            ? new Date(user.last_login_at).toLocaleDateString('vi-VN')
-                            : 'Never'}
-                        </span>
+                        <span className="text-stone-400 text-xs font-bold">{new Date(user.created_at).toLocaleDateString('vi-VN')}</span>
                       )
                     },
                     {
                       key: 'actions',
-                      header: 'Thao tác',
+                      label: '',
                       render: (user) => (
                         <div className="flex justify-end pr-2">
                           <DropdownMenu
                             trigger={
-                              <button className="p-2 rounded-lg hover:bg-surface-hover text-muted transition-colors">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                </svg>
+                              <button className="w-10 h-10 rounded-2xl hover:bg-stone-100 dark:hover:bg-white/5 text-stone-400 flex items-center justify-center transition-all">
+                                <Icons.More className="w-5 h-5" />
                               </button>
                             }
                           >
                             <DropdownItem
                               onClick={() => openEditModal(user)}
                               icon={<Icons.Edit className="w-4 h-4" />}
+                              className="font-bold py-3"
                             >
-                              Chỉnh sửa
+                              Chỉnh sửa hồ sơ
                             </DropdownItem>
                             <DropdownItem
                               onClick={() => openResetPasswordModal(user)}
                               icon={<Icons.Lock className="w-4 h-4" />}
+                              className="font-bold py-3"
                             >
                               Đặt lại mật khẩu
                             </DropdownItem>
@@ -690,9 +469,11 @@ function UserManagementPageContent() {
                               onClick={() => handleToggleActive(user)}
                               variant={user.is_active ? "danger" : "success"}
                               icon={user.is_active ? <Icons.Error className="w-4 h-4" /> : <Icons.Success className="w-4 h-4" />}
+                              className="font-bold py-3"
                             >
-                              {user.is_active ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                              {user.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                             </DropdownItem>
+                            <div className="h-px bg-stone-100 dark:bg-white/5 my-1" />
                             <DropdownItem
                               onClick={() => {
                                 setSelectedUser(user);
@@ -700,8 +481,9 @@ function UserManagementPageContent() {
                               }}
                               variant="danger"
                               icon={<Icons.Trash className="w-4 h-4" />}
+                              className="font-bold py-3"
                             >
-                              Xóa người dùng
+                              Xóa vĩnh viễn
                             </DropdownItem>
                           </DropdownMenu>
                         </div>
@@ -709,395 +491,78 @@ function UserManagementPageContent() {
                     }
                   ]}
                 />
-              </Card>
-            </div>
-          </>
-        )}
+              </div>
+            )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center space-x-2 mt-6">
-            <Button
-              variant="outline"
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-            >
-              Trước
-            </Button>
-            <span className="text-sm text-stone-600">
-              Trang {page} của {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
-            >
-              Tiếp theo
-            </Button>
-          </div>
-        )}
-
-        {/* Create User Modal */}
-        <Modal
-          isOpen={showCreateModal}
-          onClose={() => {
-            setShowCreateModal(false);
-            resetForm();
-          }}
-          title="Tạo người dùng mới"
-          size="lg"
-        >
-          <form onSubmit={handleCreateUser}>
-            <div className="space-y-4">
-              <Input
-                label="Email Address"
-                type="email"
-                placeholder="user@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-
-              <Input
-                label="Mật khẩu"
-                type="password"
-                placeholder="Ít nhất 6 ký tự"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                hint="Tối thiểu 6 ký tự"
-              />
-
-              <Input
-                label="Họ và tên"
-                type="text"
-                placeholder="Nguyễn Văn A"
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                required
-              />
-
-              <Select
-                label="Vai trò"
-                value={formData.role}
-                onChange={(e) => handleRoleChange(e.target.value)}
-                options={roleOptions}
-                required
-              />
-
-              <Input
-                label="Số điện thoại"
-                type="tel"
-                placeholder="0123 456 789"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-
-              {formData.role === 'teacher' && (
-                <Input
-                  label="Bộ môn"
-                  type="text"
-                  placeholder="Toán học, Ngữ văn, v.v."
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                />
-              )}
-
-              {formData.role === 'student' && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label="Mã học sinh"
-                      type="text"
-                      placeholder="HS20260001"
-                      value={formData.student_code}
-                      onChange={(e) => setFormData({ ...formData, student_code: e.target.value.toUpperCase() })}
-                      hint="Tự động sinh, có thể sửa"
-                    />
-                    <Select
-                      label="Khối lớp"
-                      value={formData.grade_level}
-                      onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
-                      options={[{ value: '', label: 'Chọn khối...' }, ...gradeLevelOptions]}
-                    />
-                  </div>
-                  <Select
-                    label="Giới tính"
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                    options={genderOptions}
-                  />
-                </>
-              )}
-
-              <Textarea
-                label="Ghi chú"
-                placeholder="Thông tin bổ sung..."
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              />
-
-              <Checkbox
-                label="Hoạt động"
-                description="Người dùng có thể đăng nhập và truy cập hệ thống"
-                checked={formData.is_active}
-                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  resetForm();
-                }}
-              >
-                Hủy
-              </Button>
-              <Button type="submit" variant="primary" isLoading={loading}>
-                Tạo người dùng
-              </Button>
-            </div>
-          </form>
-        </Modal>
-
-        {/* Edit User Modal */}
-        <Modal
-          isOpen={showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedUser(null);
-            resetForm();
-          }}
-          title="Chỉnh sửa người dùng"
-          size="lg"
-        >
-          <form onSubmit={handleUpdateUser}>
-            <div className="space-y-4">
-              <Input
-                label="Email Address"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-
-              <Input
-                label="Full Name"
-                type="text"
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                required
-              />
-
-              <Select
-                label="Role"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-                options={roleOptions}
-                required
-              />
-
-              <Input
-                label="Phone Number"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-
-              {formData.role === 'teacher' && (
-                <Input
-                  label="Department"
-                  type="text"
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                />
-              )}
-
-              {formData.role === 'student' && (
-                <>
-                  <Input
-                    label="Student ID"
-                    type="text"
-                    value={formData.student_id}
-                    onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
-                  />
-                  <Input
-                    label="Grade Level"
-                    type="text"
-                    value={formData.grade_level}
-                    onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
-                  />
-                </>
-              )}
-
-              <Textarea
-                label="Notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              />
-
-              <Checkbox
-                label="Active"
-                description="Người dùng có thể đăng nhập và truy cập hệ thống"
-                checked={formData.is_active}
-                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowEditModal(false);
-                  setSelectedUser(null);
-                  resetForm();
-                }}
-              >
-                Hủy
-              </Button>
-              <Button type="submit" variant="primary" isLoading={loading}>
-                Lưu thay đổi
-              </Button>
-            </div>
-          </form>
-        </Modal>
-
-        {/* Reset Password Modal */}
-        <Modal
-          isOpen={showResetPasswordModal}
-          onClose={() => {
-            setShowResetPasswordModal(false);
-            setSelectedUser(null);
-            setPasswordData({ new_password: '', confirm_password: '' });
-          }}
-          title="Đặt lại mật khẩu"
-          size="md"
-        >
-          <form onSubmit={handleResetPassword}>
-            <div className="space-y-4">
-              <Alert
-                variant="info"
-                title="Đặt lại mật khẩu"
-                message={`Bạn đang đặt lại mật khẩu cho ${selectedUser?.full_name}`}
-              />
-
-              <Input
-                label="Mật khẩu mới"
-                type="password"
-                placeholder="Ít nhất 6 ký tự"
-                value={passwordData.new_password}
-                onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                required
-                hint="Tối thiểu 6 ký tự"
-              />
-
-              <Input
-                label="Xác nhận mật khẩu"
-                type="password"
-                placeholder="Nhập lại mật khẩu"
-                value={passwordData.confirm_password}
-                onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-                required
-                error={
-                  passwordData.confirm_password &&
-                    passwordData.new_password !== passwordData.confirm_password
-                    ? 'Mật khẩu không khớp'
-                    : undefined
-                }
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowResetPasswordModal(false);
-                  setSelectedUser(null);
-                  setPasswordData({ new_password: '', confirm_password: '' });
-                }}
-              >
-                Hủy
-              </Button>
-              <Button type="submit" variant="danger" isLoading={loading}>
-                Đặt lại mật khẩu
-              </Button>
-            </div>
-          </form>
-        </Modal>
-
-        {/* Delete User Confirmation Modal */}
-        <Modal
-          isOpen={showDeleteModal}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setSelectedUser(null);
-          }}
-          title="Xác nhận xóa người dùng"
-          size="md"
-        >
-          <div className="space-y-4">
-            <Alert
-              variant="error"
-              title="Cảnh báo: Thao tác không thể hoàn tác!"
-              message="Người dùng và tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn."
-            />
-
-            <div className="bg-stone-100 dark:bg-stone-800 rounded-lg p-4">
-              <p className="text-sm text-stone-600 dark:text-stone-400 mb-2">Bạn sắp xóa người dùng:</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <Icons.Users className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-stone-900 dark:text-stone-100">{selectedUser?.full_name}</p>
-                  <p className="text-sm text-stone-500">{selectedUser?.email}</p>
+            {/* Pagination Footer */}
+            {totalPages > 1 && (
+              <div className="p-8 border-t border-stone-100 dark:border-white/5 flex items-center justify-between bg-stone-50/30 dark:bg-transparent">
+                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                  Trang {page} / {totalPages}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={page === 1}
+                    className="rounded-xl h-11 px-6 font-black uppercase tracking-widest text-[10px]"
+                    onClick={() => setPage(page - 1)}
+                  >
+                    Trước
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={page === totalPages}
+                    className="rounded-xl h-11 px-6 font-black uppercase tracking-widest text-[10px]"
+                    onClick={() => setPage(page + 1)}
+                  >
+                    Tiếp
+                  </Button>
                 </div>
               </div>
-            </div>
-
-            <p className="text-sm text-stone-600 dark:text-stone-400">
-              Nhập <strong>&quot;{selectedUser?.email}&quot;</strong> để xác nhận xóa.
-            </p>
-            <Input
-              type="text"
-              placeholder="Nhập email để xác nhận"
-              id="delete-confirm-input"
-            />
-          </div>
-
-          <div className="flex justify-end space-x-3 mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowDeleteModal(false);
-                setSelectedUser(null);
-              }}
-            >
-              Hủy
-            </Button>
-            <Button
-              variant="danger"
-              isLoading={loading}
-              onClick={() => {
-                const input = document.getElementById('delete-confirm-input') as HTMLInputElement;
-                if (input?.value === selectedUser?.email) {
-                  handleDeleteUser();
-                } else {
-                  setError('Email xác nhận không khớp');
-                }
-              }}
-            >
-              Xóa vĩnh viễn
-            </Button>
-          </div>
-        </Modal>
+            )}
+          </Card>
+        </div>
       </div>
+
+      {/* Unified User Modals */}
+      <UserFormModal
+        isOpen={showCreateModal || showEditModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setShowEditModal(false);
+          setSelectedUser(null);
+        }}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          setShowEditModal(false);
+          setSelectedUser(null);
+          fetchUsers();
+        }}
+        user={showEditModal ? selectedUser : undefined}
+      />
+
+      <ResetPasswordModal
+        isOpen={showResetPasswordModal}
+        onClose={() => {
+          setShowResetPasswordModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
+
+      <DeleteUserModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+        }}
+        onSuccess={() => {
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+          fetchUsers();
+        }}
+        user={selectedUser}
+      />
     </div>
   );
 }

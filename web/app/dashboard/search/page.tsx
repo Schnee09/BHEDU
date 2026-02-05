@@ -35,59 +35,61 @@ function SearchContent() {
 
             try {
                 const searchResults: SearchResult[] = [];
+                const q = query.toLowerCase();
 
-                // Search students
-                const studentsRes = await apiFetch(`/api/students?search=${encodeURIComponent(query)}&limit=10`);
+                // 1. Search application features (static mapping)
+                const features = [
+                    { name: "Thời khóa biểu", href: "/dashboard/timetable", keywords: ["schedule", "lich hoc", "thoi khoa bieu"] },
+                    { name: "Điểm danh", href: "/dashboard/attendance", keywords: ["attendance", "diem danh"] },
+                    { name: "Học phí & Tài chính", href: "/dashboard/finance", keywords: ["finance", "hoc phi", "tien hoc"] },
+                    { name: "Học sinh", href: "/dashboard/students", keywords: ["students", "hoc sinh"] },
+                    { name: "Lớp học", href: "/dashboard/classes", keywords: ["classes", "lop hoc"] },
+                    { name: "Hồ sơ của tôi", href: "/dashboard/profile", keywords: ["profile", "ca nhan", "ho so"] },
+                    { name: "Cài đặt & Bảo mật", href: "/dashboard/settings", keywords: ["settings", "cai dat"] },
+                ];
+
+                features.forEach(f => {
+                    if (f.name.toLowerCase().includes(q) || f.keywords.some(k => k.includes(q))) {
+                        searchResults.push({
+                            type: 'user', // Borrowing 'user' badge for UI
+                            id: `feature-${f.href}`,
+                            title: f.name,
+                            subtitle: "Trang ứng dụng",
+                            href: f.href
+                        });
+                    }
+                });
+
+                // 2. Search students (V2)
+                const studentsRes = await apiFetch(`/api/v2/students?search=${encodeURIComponent(query)}&limit=10`);
                 if (studentsRes.ok) {
-                    const studentsData = await studentsRes.json();
-                    const students = studentsData.students || studentsData.data || [];
+                    const res = await studentsRes.json();
+                    // Handle V2 paginated structure { success, data: { data: [], ... } }
+                    const students = Array.isArray(res.data) ? res.data : (res.data?.data || []);
                     students.forEach((s: any) => {
                         searchResults.push({
                             type: 'student',
                             id: s.id,
-                            title: s.full_name,
+                            title: s.full_name || `${s.first_name} ${s.last_name}`,
                             subtitle: s.email || s.student_code,
                             href: `/dashboard/students/${s.id}`
                         });
                     });
                 }
 
-                // Search classes
-                const classesRes = await apiFetch('/api/classes');
+                // 3. Search classes (V2)
+                const classesRes = await apiFetch(`/api/v2/classes?search=${encodeURIComponent(query)}&limit=10`);
                 if (classesRes.ok) {
-                    const classesData = await classesRes.json();
-                    const classes = classesData.classes || classesData.data || [];
-                    const matchingClasses = classes.filter((c: any) =>
-                        c.name?.toLowerCase().includes(query.toLowerCase()) ||
-                        c.code?.toLowerCase().includes(query.toLowerCase())
-                    ).slice(0, 10);
-
-                    matchingClasses.forEach((c: any) => {
+                    const res = await classesRes.json();
+                    const classes = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                    classes.forEach((c: any) => {
                         searchResults.push({
                             type: 'class',
                             id: c.id,
                             title: c.name,
-                            subtitle: c.code || `${c.teacher?.full_name || 'Chưa có giáo viên'}`,
+                            subtitle: c.code || "Lớp học hoạt động",
                             href: `/dashboard/classes/${c.id}`
                         });
-                    });
-                }
-
-                // Search users (teachers/staff)
-                const usersRes = await apiFetch(`/api/users?search=${encodeURIComponent(query)}&limit=10`);
-                if (usersRes.ok) {
-                    const usersData = await usersRes.json();
-                    const users = usersData.users || usersData.data || [];
-                    users.forEach((u: any) => {
-                        if (u.role !== 'student') {
-                            searchResults.push({
-                                type: 'user',
-                                id: u.id,
-                                title: u.full_name,
-                                subtitle: `${u.role} • ${u.email}`,
-                                href: `/dashboard/users`
-                            });
-                        }
                     });
                 }
 

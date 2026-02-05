@@ -37,6 +37,9 @@ export async function getDataClient(request?: Request) {
           .eq("user_id", user.id)
           .maybeSingle();
         viewerRole = (viewer as { role?: string } | null)?.role ?? null;
+        console.log(
+          `[getDataClient] User: ${user.id}, Detected Role: ${viewerRole}`,
+        );
       } catch (profileCatchError) {
         console.warn(
           "[getDataClient] profile query caught error:",
@@ -46,8 +49,13 @@ export async function getDataClient(request?: Request) {
       }
     }
 
-    const usingServiceClient = viewerRole === "admin";
+    const usingServiceClient = viewerRole === "admin" ||
+      viewerRole === "super_admin" || viewerRole === "owner";
     const supabase = usingServiceClient ? createServiceClient() : authClient;
+
+    console.log(
+      `[getDataClient] Using Service Client: ${usingServiceClient} for role: ${viewerRole}`,
+    );
 
     return { supabase, viewerRole, user, usingServiceClient } as const;
   } catch (outerError) {

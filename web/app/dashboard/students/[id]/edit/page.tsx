@@ -53,13 +53,13 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
       setStudentId(p.id)
       loadStudent(p.id)
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params])
 
   const loadStudent = async (id: string) => {
     try {
       setLoading(true)
-      const response = await apiFetch(`/api/students/${id}`)
+      const response = await apiFetch(`/api/v2/students/${id}`)
       if (response.ok) {
         const result = await response.json()
         const student = result.data
@@ -120,7 +120,7 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       showToast.error('Please fix the errors in the form')
       return
@@ -130,7 +130,7 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
     const loadingToast = showToast.loading('Updating student...')
 
     try {
-      const response = await apiFetch(`/api/students/${studentId}`, {
+      const response = await apiFetch(`/api/v2/students/${studentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -210,9 +210,8 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
                   type="text"
                   value={formData.first_name}
                   onChange={(e) => handleChange('first_name', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    getFieldError('first_name') ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${getFieldError('first_name') ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   required
                 />
                 {getFieldError('first_name') && (
@@ -229,9 +228,8 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
                   type="text"
                   value={formData.last_name}
                   onChange={(e) => handleChange('last_name', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    getFieldError('last_name') ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${getFieldError('last_name') ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   required
                 />
                 {getFieldError('last_name') && (
@@ -248,9 +246,8 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    getFieldError('email') ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${getFieldError('email') ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   required
                 />
                 {getFieldError('email') && (
@@ -267,9 +264,8 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    getFieldError('phone') ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${getFieldError('phone') ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="+1 (555) 123-4567"
                 />
                 {getFieldError('phone') && (
@@ -337,9 +333,8 @@ export default function EditStudentPage({ params }: { params: Promise<{ id: stri
                   type="text"
                   value={formData.student_id}
                   onChange={(e) => handleChange('student_id', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    getFieldError('student_id') ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${getFieldError('student_id') ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="2024-001"
                 />
                 {getFieldError('student_id') && (

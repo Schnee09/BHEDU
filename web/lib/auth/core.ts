@@ -1,0 +1,228 @@
+/**
+ * Unified Permission System Core
+ * This is the single source of truth for both client and server-side authorization.
+ */
+
+// ============================================
+// TYPES
+// ============================================
+
+export type UserRole =
+    | "super_admin"
+    | "owner"
+    | "admin"
+    | "staff"
+    | "teacher"
+    | "tutor"
+    | "parent"
+    | "student";
+
+export type PermissionCode =
+    // System - Super Admin only
+    | "system.settings"
+    | "system.audit"
+    | "system.database"
+    | "system.impersonate"
+    | "system.deploy"
+    // Roles & Permissions
+    | "roles.view"
+    | "roles.manage"
+    | "permissions.manage"
+    // Users
+    | "users.view"
+    | "users.create"
+    | "users.edit"
+    | "users.delete.soft"
+    | "users.delete.hard"
+    | "users.delete"
+    | "users.invite"
+    | "users.bulk_import"
+    // Parent-Student Links
+    | "parent_links.view"
+    | "parent_links.approve"
+    // Students
+    | "students.view"
+    | "students.create"
+    | "students.edit"
+    | "students.delete"
+    // Classes
+    | "classes.manage"
+    | "classes.view"
+    | "classes.create"
+    | "classes.edit"
+    | "classes.delete"
+    | "classes.enroll"
+    // Timetable
+    | "timetable.view"
+    | "timetable.edit"
+    // Grades
+    | "grades.view"
+    | "grades.entry"
+    | "grades.delete"
+    | "grades.analytics"
+    // Curriculum
+    | "curriculum.view"
+    | "curriculum.manage"
+    // Parent
+    | "parent.view_students"
+    | "parent.link_student"
+    // Attendance
+    | "attendance.view"
+    | "attendance.mark"
+    | "attendance.reports"
+    // Finance
+    | "finance.view.all"
+    | "finance.view.own"
+    | "finance.invoices"
+    | "finance.payments"
+    | "finance.refund"
+    // Reports
+    | "reports.view"
+    | "reports.export"
+    | "*"; // Wildcard
+
+export interface Permission {
+    code: PermissionCode;
+    name: string;
+    category: string;
+}
+
+// ============================================
+// ROLE HIERARCHY (Inheritance)
+// ============================================
+
+/**
+ * Defines which roles inherit from which other roles.
+ * A role inherits everything from its parent.
+ */
+export const ROLE_HIERARCHY: Record<UserRole, UserRole[]> = {
+    super_admin: ["owner", "admin"],
+    owner: ["staff"],
+    admin: ["staff"],
+    staff: ["teacher"],
+    teacher: ["tutor"],
+    tutor: ["student"],
+    parent: ["student"],
+    student: [],
+};
+
+// ============================================
+// BASE PERMISSIONS
+// ============================================
+
+/**
+ * Permissions explicitly granted to each role.
+ * Does not include inherited permissions.
+ */
+export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
+    super_admin: ["*"], // God mode
+    owner: [
+        "finance.view.all",
+        "reports.view",
+        "reports.export",
+        "grades.analytics",
+    ],
+    admin: [
+        "system.audit",
+        "roles.view",
+        "roles.manage",
+        "permissions.manage",
+        "users.delete.soft",
+        "users.invite",
+        "users.bulk_import",
+        "parent_links.approve",
+        "curriculum.manage",
+    ],
+    staff: [
+        "users.view",
+        "users.create",
+        "users.edit",
+        "parent_links.view",
+        "students.create",
+        "students.edit",
+        "students.delete",
+        "classes.manage",
+        "classes.create",
+        "classes.edit",
+        "classes.delete",
+        "classes.enroll",
+        "finance.invoices",
+        "finance.payments",
+        "finance.refund",
+        "curriculum.manage",
+    ],
+    teacher: [
+        "grades.entry",
+        "grades.delete",
+        "attendance.mark",
+        "attendance.reports",
+        "curriculum.manage",
+        "timetable.edit",
+    ],
+    tutor: [
+        // Tutors might have specific limited access to tutoring sessions
+        // but in this system they mostly act like junior teachers
+    ],
+    parent: [
+        "parent.view_students",
+        "parent.link_student",
+        "finance.view.own",
+    ],
+    student: [
+        "students.view",
+        "classes.view",
+        "timetable.view",
+        "grades.view",
+        "attendance.view",
+        "reports.view",
+        "curriculum.view",
+    ],
+};
+
+// ============================================
+// RESOLUTION LOGIC
+// ============================================
+
+/**
+ * Gets all permissions for a role, including all inherited ones.
+ */
+export function getFlattenedPermissions(role: UserRole): Set<PermissionCode> {
+    const permissions = new Set<PermissionCode>(
+        BASE_ROLE_PERMISSIONS[role] || [],
+    );
+    const parents = ROLE_HIERARCHY[role] || [];
+
+    for (const parent of parents) {
+        const parentPerms = getFlattenedPermissions(parent);
+        parentPerms.forEach((p) => permissions.add(p));
+    }
+
+    return permissions;
+}
+
+/**
+ * Core check function.
+ */
+export function hasPermission(
+    role: UserRole,
+    permission: PermissionCode,
+): boolean {
+    if (role === "super_admin") return true; // Safety override
+
+    const flattened = getFlattenedPermissions(role);
+    if (flattened.has("*")) return true;
+    return flattened.has(permission);
+}
+
+/**
+ * Check if a role is at or above a certain "clearance level".
+ * e.g., isAdmin(role) -> includes admin and super_admin via inheritance.
+ */
+export function isAtLeast(
+    currentRole: UserRole,
+    requiredRole: UserRole,
+): boolean {
+    if (currentRole === requiredRole) return true;
+    const parents = ROLE_HIERARCHY[currentRole] || [];
+    return parents.some((parent) => isAtLeast(parent, requiredRole));
+}

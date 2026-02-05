@@ -1,95 +1,64 @@
 /**
- * Admin Classes API
+ * Admin Classes API (REFACTORED)
  * GET/POST /api/admin/classes
- * Updated: 2025-12-08 - Standardized error handling
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/auth/adminAuth";
-import { getDataClient } from '@/lib/auth/dataClient'
-import { handleApiError, AuthenticationError, ValidationError } from "@/lib/api/errors";
-import { logger } from "@/lib/logger";
+import { NextResponse } from "next/server";
+import {
+  apiPaginated,
+  apiSuccess,
+  createApiHandler,
+  createGetHandler,
+} from "@/lib/api";
+import { createClassSchema } from "@/lib/schemas";
+import { ClassService } from "@/lib/services/classService";
 
-export async function GET(request: NextRequest) {
-  try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || "Unauthorized");
-    }
+// GET /api/admin/classes
+export const GET = createGetHandler(
+  { allowedRoles: ["admin", "staff"] },
+  async ({ searchParams }) => {
+    const search = searchParams.get("search") || undefined;
+    const teacherId = searchParams.get("teacher_id") || undefined;
+    const academicYearId = searchParams.get("academic_year_id") || undefined;
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
 
-  const { supabase } = await getDataClient(request)
-    const searchParams = request.nextUrl.searchParams;
-    const search = searchParams.get("search");
-    const teacherId = searchParams.get("teacher_id");
+    const result = await ClassService.getClasses({
+      search,
+      teacherId,
+      academicYearId,
+      page,
+      pageSize: limit,
+    });
 
-    let query = supabase
-      .from("classes")
-      .select("id, name, teacher_id, created_at")
-      .order("name", { ascending: true });
-
-    if (search) query = query.ilike("name", `%${search}%`);
-    if (teacherId) query = query.eq("teacher_id", teacherId);
-
-    const { data, error } = await query;
-    if (error) {
-      logger.error("Classes fetch error:", { error });
-      throw new Error(`Database error: ${error.message}`);
-    }
-
+    // Enrichment: Add enrollment count for each class (preserving legacy requirement)
+    // Note: This could be optimized further in ClassService, but for now we follow the existing pattern
     const classesWithStats = await Promise.all(
-      (data || []).map(async (cls) => {
-        const [enrollments, teacher] = await Promise.all([
-          supabase.from("enrollments").select("id", { count: "exact", head: true }).eq("class_id", cls.id),
-          supabase.from("profiles").select("id, full_name, email").eq("id", cls.teacher_id).single()
-        ]);
-
+      result.classes.map(async (cls: any) => {
+        const { _count } = await ClassService.getClassById(cls.id);
         return {
           ...cls,
-          enrollment_count: enrollments.count || 0,
-          teacher: teacher.data,
+          enrollment_count: _count?.enrollments || 0,
         };
-      })
+      }),
     );
 
-    return NextResponse.json({
-      success: true,
-      data: classesWithStats,
-      classes: classesWithStats,
-      total: classesWithStats.length,
+    return apiPaginated(classesWithStats, {
+      page: result.page,
+      pageSize: result.pageSize,
+      total: result.total,
     });
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
+  },
+);
 
-export async function POST(request: NextRequest) {
-  try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || "Unauthorized");
-    }
-
-  const { supabase } = await getDataClient(request)
-    const body = await request.json();
-    const { name, teacher_id } = body;
-
-    if (!name) {
-      throw new ValidationError("Class name is required");
-    }
-
-    const { data, error } = await supabase
-      .from("classes")
-      .insert({ name, teacher_id })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("Create class error:", { error });
-      throw new Error(`Database error: ${error.message}`);
-    }
-
-    return NextResponse.json({ success: true, data });
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
+// POST /api/admin/classes
+export const POST = createApiHandler(
+  {
+    allowedRoles: ["admin", "staff"],
+    bodySchema: createClassSchema,
+  },
+  async ({ body }) => {
+    const newClass = await ClassService.createClass(body);
+    return apiSuccess(newClass, { _status: 201 });
+  },
+);

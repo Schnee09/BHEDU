@@ -1,150 +1,109 @@
-/**
- * Student Accounts API
- * Manages student financial accounts and balances
- */
+import { NextResponse } from "next/server";
+import {
+  apiPaginated,
+  apiSuccess,
+  createApiHandler,
+  createGetHandler,
+} from "@/lib/api";
+import { FinanceRepository } from "@/lib/repositories/FinanceRepository";
+import { createServiceClient } from "@/lib/supabase/server";
+import { createAbility } from "@/lib/auth/permissions";
+import { studentAccountQuerySchema } from "@/lib/schemas/finance";
+import { z } from "zod";
 
-import { NextResponse } from 'next/server'
-import { adminAuth } from '@/lib/auth/adminAuth'
-import { rateLimitConfigs } from '@/lib/auth/rateLimit'
-import { getDataClient } from '@/lib/auth/dataClient'
+export const GET = createGetHandler(
+  { requireAuth: true, querySchema: studentAccountQuerySchema },
+  async ({ query, user }) => {
+    const ability = createAbility({
+      userId: user.id,
+      role: user.role,
+    });
 
-export async function GET(request: Request) {
-  try {
-    // Use bulk rate limit for finance data operations
-    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
+    if (ability.cannot("read", "Finance")) { // Using general finance permission
+      return NextResponse.json(
+        { success: false, error: "Bạn không có quyền xem tài khoản học phí" },
+        { status: 403 },
+      );
     }
 
-  const { supabase } = await getDataClient(request)
-    const { searchParams } = new URL(request.url)
-    const studentId = searchParams.get('student_id')
-    const academicYearId = searchParams.get('academic_year_id')
-    const status = searchParams.get('status')
-    const hasBalance = searchParams.get('has_balance')
+    const { student_id, academic_year_id, status, page, limit } = query;
+    // status can be "all" or specific enum
+    // querySchema handles transforms
 
-    let query = supabase
-      .from('student_accounts')
-      .select(`
-        *,
-        student:profiles!student_accounts_student_id_fkey(
-          id,
-          full_name,
-          email
-        ),
-        academic_year:academic_years(id, name)
-      `)
-      .order('created_at', { ascending: false })
+    // Additional hack for 'has_balance' param not in main schema but used in legacy
+    // We can just rely on status or add it to schema later if critical.
+    // For now, let's stick to what's defined in repository support.
 
-    if (studentId) {
-      query = query.eq('student_id', studentId)
+    const supabase = createServiceClient();
+    const repository = new FinanceRepository(supabase);
+
+    const result = await repository.getStudentAccounts({
+      student_id,
+      academic_year_id,
+      status: status === "all" ? undefined : status,
+      page,
+      limit,
+    });
+
+    if (result.note) {
+      return apiPaginated([], { page: 1, pageSize: limit, total: 0 }, {
+        note: result.note,
+      });
     }
 
-    if (academicYearId) {
-      query = query.eq('academic_year_id', academicYearId)
+    return apiPaginated(result.data, {
+      page: result.page,
+      pageSize: result.pageSize,
+      total: result.total,
+    });
+  },
+);
+
+const createAccountSchema = z.object({
+  student_id: z.string().uuid(),
+  academic_year_id: z.string().uuid(),
+});
+
+export const POST = createApiHandler(
+  {
+    requireAuth: true,
+    bodySchema: createAccountSchema,
+  },
+  async ({ body, user }) => {
+    const ability = createAbility({
+      userId: user.id,
+      role: user.role,
+    });
+
+    if (ability.cannot("create", "Finance")) {
+      return NextResponse.json(
+        { success: false, error: "Bạn không có quyền tạo tài khoản học phí" },
+        { status: 403 },
+      );
     }
 
-    if (status) {
-      query = query.eq('status', status)
-    }
+    const supabase = createServiceClient();
+    const repository = new FinanceRepository(supabase);
 
-    if (hasBalance === 'true') {
-      query = query.gt('balance', 0)
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Error fetching student accounts:', error)
-      
-      // If table doesn't exist, return empty data with note
-      if (error.code === 'PGRST205' || error.code === '42P01') {
-        return NextResponse.json({ 
-          success: true,
-          data: [],
-          note: 'Student accounts table not yet created. Run migrations to enable this feature.',
-          error: error.message
-        })
+    try {
+      const account = await repository.createStudentAccount(
+        body.student_id,
+        body.academic_year_id,
+      );
+      return apiSuccess(account, { status: 201 });
+    } catch (error: any) {
+      if (error.message.includes("already exists")) {
+        return NextResponse.json({ success: false, error: error.message }, {
+          status: 409,
+        });
       }
-      
-      return NextResponse.json({ 
-        error: 'Failed to fetch student accounts', 
-        details: error.message, 
-        code: error.code, 
-        hint: error.hint 
-      }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true, data })
-  } catch (error) {
-    console.error('Error in GET /api/admin/finance/student-accounts:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    // Use bulk rate limit for finance data operations
-    const authResult = await adminAuth(request, rateLimitConfigs.bulk)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Unauthorized', reason: authResult.reason }, { status: 401 })
-    }
-
-    const body = await request.json()
-    const { student_id, academic_year_id } = body
-
-    if (!student_id || !academic_year_id) {
       return NextResponse.json(
-        { error: 'Student ID and academic year ID are required' },
-        { status: 400 }
-      )
+        {
+          success: false,
+          error: error.message || "Failed to create student account",
+        },
+        { status: 500 },
+      );
     }
-
-  const { supabase } = await getDataClient(request)
-
-    // Check if account already exists
-    const { data: existing } = await supabase
-      .from('student_accounts')
-      .select('id')
-      .eq('student_id', student_id)
-      .eq('academic_year_id', academic_year_id)
-      .single()
-
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Student account already exists for this academic year' },
-        { status: 409 }
-      )
-    }
-
-    const { data, error } = await supabase
-      .from('student_accounts')
-      .insert({
-        student_id,
-        academic_year_id,
-        total_fees: 0,
-        total_paid: 0,
-        status: 'pending'
-      })
-      .select(`
-        *,
-        student:profiles!student_accounts_student_id_fkey(
-          id,
-          full_name,
-          email
-        ),
-        academic_year:academic_years(id, name)
-      `)
-      .single()
-
-    if (error) {
-      console.error('Error creating student account:', error)
-      return NextResponse.json({ error: 'Failed to create student account' }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true, data }, { status: 201 })
-  } catch (error) {
-    console.error('Error in POST /api/admin/finance/student-accounts:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+  },
+);

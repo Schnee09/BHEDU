@@ -20,7 +20,7 @@
 import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePermissions } from '@/hooks/usePermissions';
-import type { PermissionCode } from '@/lib/auth/permissions.config';
+import type { PermissionCode } from '@/lib/auth/core';
 import { Icons } from '@/components/ui/Icons';
 import { Button } from '@/components/ui';
 

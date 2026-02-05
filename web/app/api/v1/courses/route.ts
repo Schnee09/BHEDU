@@ -1,24 +1,27 @@
 /**
- * Courses API endpoint with full CRUD operations
- * Demonstrates best practices for Next.js Route Handlers
+ * Courses API endpoint (v1) - REFACTORED
  */
 
-import { NextRequest } from 'next/server';
-import { withAuth, withAdmin, getPaginationParams, getQueryParam } from '@/lib/api/middleware';
-import { success, created } from '@/lib/api/responses';
-import { createCourseSchema } from '@/lib/api/schemas';
-import { CourseService } from '@/lib/services/courseService';
-import { handleApiError } from '@/lib/api/errors';
+import {
+  apiPaginated,
+  apiSuccess,
+  createApiHandler,
+  createGetHandler,
+} from "@/lib/api";
+import { createCourseSchema } from "@/lib/schemas";
+import { CourseService } from "@/lib/services/courseService";
 
 /**
- * GET /api/courses
+ * GET /api/v1/courses
  * List all courses with optional filtering and pagination
  */
-export const GET = withAuth(async (request: NextRequest) => {
-  try {
-    const { page, pageSize } = getPaginationParams(request);
-    const search = getQueryParam(request, 'search');
-    const subjectId = getQueryParam(request, 'subjectId');
+export const GET = createGetHandler(
+  { requireAuth: true },
+  async ({ searchParams }) => {
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const pageSize = parseInt(searchParams.get("pageSize") || "20", 10);
+    const search = searchParams.get("search") || undefined;
+    const subjectId = searchParams.get("subjectId") || undefined;
 
     const result = await CourseService.getCourses({
       page,
@@ -27,33 +30,25 @@ export const GET = withAuth(async (request: NextRequest) => {
       subjectId,
     });
 
-    return success({
-      courses: result.courses,
-      pagination: {
-        page: result.page,
-        pageSize: result.pageSize,
-        totalItems: result.total,
-        totalPages: Math.ceil(result.total / result.pageSize),
-      },
+    return apiPaginated(result.courses, {
+      page: result.page,
+      pageSize: result.pageSize,
+      total: result.total,
     });
-  } catch (error) {
-    return handleApiError(error);
-  }
-});
+  },
+);
 
 /**
- * POST /api/courses
+ * POST /api/v1/courses
  * Create a new course (admin only)
  */
-export const POST = withAdmin(async (request: NextRequest) => {
-  try {
-    const body = await request.json();
-    const validatedData = createCourseSchema.parse(body);
-
-    const course = await CourseService.createCourse(validatedData);
-
-    return created(course, 'Course created successfully');
-  } catch (error) {
-    return handleApiError(error);
-  }
-});
+export const POST = createApiHandler(
+  {
+    allowedRoles: ["admin"],
+    bodySchema: createCourseSchema,
+  },
+  async ({ body }) => {
+    const course = await CourseService.createCourse(body);
+    return apiSuccess(course, { _status: 201 });
+  },
+);

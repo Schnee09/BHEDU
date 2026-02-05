@@ -14,7 +14,12 @@ import {
   rateLimitConfigs,
 } from "./rateLimit";
 import { logAuthAttempt, logRateLimitEvent } from "./auditLog";
-import { type Action, hasPermission, type Resource } from "./permissions";
+import {
+  hasPermission,
+  isAtLeast,
+  type PermissionCode,
+  UserRole,
+} from "./core";
 
 export interface AuthResult {
   authorized: boolean;
@@ -23,9 +28,8 @@ export interface AuthResult {
   userRole?: string;
   reason?: string;
   rateLimited?: boolean;
+  supabase?: any; // The authorized Supabase client (service role if admin)
 }
-
-export type { Action, Resource } from "./permissions";
 
 /**
  * Check if the current user is authenticated and has admin role
@@ -106,7 +110,7 @@ export async function adminAuth(
 
     // Try to get profile from cache
     const cacheKey = `profile:${user.id}`;
-    let profile = getCached<{ id: string; full_name?: string; role: string }>(
+    let profile = getCached<{ id: string; full_name?: string; role: UserRole }>(
       cacheKey,
       "auth",
     );
@@ -152,12 +156,10 @@ export async function adminAuth(
       }
 
       profile = fetchedProfile;
-
-      // Cache the profile
       setCached(cacheKey, profile, "auth", cacheConfigs.profile);
     }
 
-    if (profile.role !== "admin") {
+    if (!isAtLeast(profile.role, "admin")) {
       logAuthAttempt({
         success: false,
         userId: profile.id,
@@ -190,6 +192,7 @@ export async function adminAuth(
       userId: profile.id,
       userEmail: user.email,
       userRole: profile.role,
+      supabase,
     };
   } catch (error) {
     logAuthAttempt({
@@ -315,10 +318,7 @@ export async function teacherAuth(
       setCached(cacheKey, profile, "auth", cacheConfigs.profile);
     }
 
-    if (
-      profile.role !== "teacher" && profile.role !== "admin" &&
-      profile.role !== "staff" && profile.role !== "student"
-    ) {
+    if (!isAtLeast(profile.role as UserRole, "student")) {
       logAuthAttempt({
         success: false,
         userId: profile.id,
@@ -351,6 +351,7 @@ export async function teacherAuth(
       userId: profile.id,
       userEmail: user.email,
       userRole: profile.role,
+      supabase,
     };
   } catch (error) {
     logAuthAttempt({
@@ -468,8 +469,8 @@ export async function staffAuth(
       setCached(cacheKey, profile, "auth", cacheConfigs.profile);
     }
 
-    // Staff auth: requires 'staff' or 'admin' role
-    if (profile.role !== "staff" && profile.role !== "admin") {
+    // Staff auth: requires at least staff role
+    if (!isAtLeast(profile.role as UserRole, "staff")) {
       logAuthAttempt({
         success: false,
         userId: profile.id,
@@ -501,6 +502,7 @@ export async function staffAuth(
       userId: profile.id,
       userEmail: user.email,
       userRole: profile.role,
+      supabase,
     };
   } catch (error) {
     logAuthAttempt({
@@ -522,8 +524,7 @@ export async function staffAuth(
  */
 export function checkPermission(
   userRole: string,
-  resource: Resource,
-  action: Action,
+  permission: PermissionCode,
 ): boolean {
-  return hasPermission(userRole, resource, action);
+  return hasPermission(userRole as UserRole, permission);
 }

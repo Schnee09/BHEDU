@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { apiFetch } from '@/lib/api/client'
+import { getInvoices, createInvoice, apiFetch } from '@/lib/api/client'
 import { ResponsiveTable, MobileCard } from '@/components/ui/ResponsiveTable'
 
 interface Invoice {
@@ -22,9 +22,9 @@ interface Invoice {
   student_account?: {
     id: string
     student?: {
-      first_name: string
-      last_name: string
-      student_id: string
+      id: string
+      full_name: string
+      student_code: string
     }
     academic_year?: {
       name: string
@@ -74,13 +74,11 @@ export default function InvoicesPage() {
   const fetchInvoices = async () => {
     try {
       setLoading(true)
-      const params = new URLSearchParams()
-      if (filterStatus !== 'all') params.set('status', filterStatus)
-
-      const response = await apiFetch(`/api/admin/finance/invoices?${params}`)
-      const result = await response.json()
-
-      if (!response.ok) throw new Error(result.error || 'Failed to fetch invoices')
+      // Use V2 Client
+      const result = await getInvoices({
+        status: filterStatus !== 'all' ? filterStatus : undefined,
+        limit: 1000 // Fetch all for now, can add pagination later
+      })
       setInvoices(result.data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
@@ -163,22 +161,20 @@ export default function InvoicesPage() {
     }
 
     try {
-      const response = await apiFetch('/api/admin/finance/invoices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          student_account_id: formData.student_account_id,
-          due_date: formData.due_date,
-          discount_amount: parseFloat(formData.discount_amount) || 0,
-          tax_amount: parseFloat(formData.tax_amount) || 0,
-          notes: formData.notes || null,
-          items: formData.items
-        })
+      // Use V2 Client
+      await createInvoice({
+        student_account_id: formData.student_account_id,
+        due_date: formData.due_date,
+        discount_amount: parseFloat(formData.discount_amount) || 0,
+        tax_amount: parseFloat(formData.tax_amount) || 0,
+        notes: formData.notes || null,
+        items: formData.items.map(item => ({
+          fee_type_id: item.fee_type_id,
+          description: item.description,
+          amount: item.unit_price,
+          quantity: item.quantity
+        }))
       })
-
-      const result = await response.json()
-
-      if (!response.ok) throw new Error(result.error || 'Failed to create invoice')
 
       setShowModal(false)
       resetForm()
@@ -234,8 +230,8 @@ export default function InvoicesPage() {
   const filteredInvoices = invoices.filter(invoice => {
     if (!searchTerm) return true
     const search = searchTerm.toLowerCase()
-    const studentName = `${invoice.student_account?.student?.first_name} ${invoice.student_account?.student?.last_name}`.toLowerCase()
-    const studentId = invoice.student_account?.student?.student_id.toLowerCase() || ''
+    const studentName = invoice.student_account?.student?.full_name?.toLowerCase() || ''
+    const studentId = invoice.student_account?.student?.student_code?.toLowerCase() || ''
     const invoiceNumber = invoice.invoice_number.toLowerCase()
     return studentName.includes(search) || studentId.includes(search) || invoiceNumber.includes(search)
   })
@@ -340,22 +336,22 @@ export default function InvoicesPage() {
               <MobileCard
                 key={invoice.id}
                 title={invoice.invoice_number}
-                subtitle={`${invoice.student_account?.student?.first_name} ${invoice.student_account?.student?.last_name}`}
+                subtitle={invoice.student_account?.student?.full_name || 'N/A'}
                 status={{
                   label: invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1),
                   color: invoice.status === 'paid' ? 'green' : (invoice.status === 'overdue' ? 'red' : 'yellow')
                 }}
                 fields={[
-                  { label: "ID Học sinh", value: invoice.student_account?.student?.student_id || '---' },
+                  { label: "ID Học sinh", value: invoice.student_account?.student?.student_code || '---' },
                   { label: "Ngày hết hạn", value: formatDate(invoice.due_date) },
                   { label: "Tổng tiền", value: formatCurrency(invoice.total_amount) },
-                  { 
-                    label: "Còn lại", 
+                  {
+                    label: "Còn lại",
                     value: (
                       <span className={invoice.balance > 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
                         {formatCurrency(invoice.balance)}
                       </span>
-                    ) 
+                    )
                   },
                 ]}
                 actions={
@@ -441,11 +437,10 @@ export default function InvoicesPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {invoice.student_account?.student?.first_name}{' '}
-                      {invoice.student_account?.student?.last_name}
+                      {invoice.student_account?.student?.full_name}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {invoice.student_account?.student?.student_id}
+                      {invoice.student_account?.student?.student_code}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

@@ -1,25 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { adminAuth } from "@/lib/auth/adminAuth";
 
 export async function POST(request: Request) {
   try {
+    // Use the centralized adminAuth helper which supports super_admin via inheritance
+    const auth = await adminAuth(request);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || "Forbidden" }, {
+        status: auth.userId ? 403 : 401,
+      });
+    }
+
+    const { userId, userEmail } = auth;
     const supabase = await createClient();
-
-    // Check if user is admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profile?.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
 
     // Parse form data
     const formData = await request.formData();
@@ -27,13 +21,17 @@ export async function POST(request: Request) {
     const type = formData.get("type") as string;
 
     if (!file || !type) {
-      return NextResponse.json({ error: "File and type are required" }, { status: 400 });
+      return NextResponse.json({ error: "File and type are required" }, {
+        status: 400,
+      });
     }
 
     // Read file content
     const text = await file.text();
     const lines = text.split("\n").filter((line) => line.trim());
-    const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+    const headers = lines[0].split(",").map((h) =>
+      h.trim().replace(/^"|"$/g, "")
+    );
     const rows = lines.slice(1).map((line) =>
       line.split(",").map((cell) => cell.trim().replace(/^"|"$/g, ""))
     );
@@ -68,7 +66,11 @@ export async function POST(request: Request) {
           }
         } catch (err) {
           failed++;
-          errors.push(`Row ${i + 2}: ${err instanceof Error ? err.message : "Unknown error"}`);
+          errors.push(
+            `Row ${i + 2}: ${
+              err instanceof Error ? err.message : "Unknown error"
+            }`,
+          );
         }
       }
     } else if (type === "grades") {
@@ -96,7 +98,11 @@ export async function POST(request: Request) {
           }
         } catch (err) {
           failed++;
-          errors.push(`Row ${i + 2}: ${err instanceof Error ? err.message : "Unknown error"}`);
+          errors.push(
+            `Row ${i + 2}: ${
+              err instanceof Error ? err.message : "Unknown error"
+            }`,
+          );
         }
       }
     } else if (type === "attendance") {
@@ -123,17 +129,23 @@ export async function POST(request: Request) {
           }
         } catch (err) {
           failed++;
-          errors.push(`Row ${i + 2}: ${err instanceof Error ? err.message : "Unknown error"}`);
+          errors.push(
+            `Row ${i + 2}: ${
+              err instanceof Error ? err.message : "Unknown error"
+            }`,
+          );
         }
       }
     } else {
-      return NextResponse.json({ error: "Invalid import type" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid import type" }, {
+        status: 400,
+      });
     }
 
     // Log audit entry
     await supabase.from("audit_logs").insert({
-      user_id: user.id,
-      user_email: user.email,
+      user_id: userId,
+      user_email: userEmail,
       action: "import",
       resource_type: type,
       new_data: { success, failed, total: rows.length },
@@ -144,7 +156,7 @@ export async function POST(request: Request) {
     console.error("Bulk import error:", error);
     return NextResponse.json(
       { error: "Failed to process import" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

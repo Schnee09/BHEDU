@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { logger } from "@/lib/logger";
 
-type UserRole = "admin" | "teacher" | "student" | "staff";
+import { UserRole } from "@/lib/role-utils";
 
 export interface User {
   id: string;
@@ -27,13 +27,15 @@ interface UseUserResult {
   user: User | null;
   loading: boolean;
   error: string | null;
+  isSuperAdmin: boolean;
+  isOwner: boolean;
   isAdmin: boolean;
   isStaff: boolean;
   isTeacher: boolean;
   isStudent: boolean;
   /** Returns true if user is admin or staff (has admin-level access) */
   hasAdminAccess: boolean;
-  /** Returns true if user can perform teacher functions (admin, staff, or teacher) */
+  /** Returns true if user can perform teacher functions (admin, staff, teacher, or higher) */
   hasTeacherCapabilities: boolean;
   refetch: () => Promise<void>;
 }
@@ -92,18 +94,22 @@ export function useUser(): UseUserResult {
     }
   }, [fetchUser]);
 
+  const isSuperAdmin = user?.role === "super_admin";
+  const isOwner = user?.role === "owner";
   const isAdmin = user?.role === "admin";
   const isStaff = user?.role === "staff";
   const isTeacher = user?.role === "teacher";
   const isStudent = user?.role === "student";
-  const hasAdminAccess = isAdmin || isStaff;
-  /** Returns true if user can perform teacher functions (admin, staff, or teacher) */
-  const hasTeacherCapabilities = isAdmin || isStaff || isTeacher;
+  const hasAdminAccess = isSuperAdmin || isOwner || isAdmin || isStaff;
+  /** Returns true if user can perform teacher functions (admin, staff, teacher, or higher) */
+  const hasTeacherCapabilities = hasAdminAccess || isTeacher;
 
   return {
     user,
     loading,
     error,
+    isSuperAdmin,
+    isOwner,
     isAdmin,
     isStaff,
     isTeacher,

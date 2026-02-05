@@ -1,115 +1,87 @@
 /**
  * Permissions Check API
  * POST /api/admin/monitoring/check-permission
- * 
+ *
  * Check if a role has permission for a resource/action
  */
 
-import { NextResponse } from 'next/server'
-import { adminAuth } from '@/lib/auth/adminAuth'
+import { NextResponse } from "next/server";
+import { getAuthContext } from "@/lib/auth/guard";
 import {
+  getFlattenedPermissions,
   hasPermission,
-  checkPermissionWithConditions,
-  getRolePermissions,
-  describePermission,
-  type Resource,
-  type Action
-} from '@/lib/auth/permissions'
+  UserRole,
+} from "@/lib/auth/core";
 
 export async function POST(request: Request) {
   try {
-    const authResult = await adminAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    const { authorized } = await getAuthContext(request, "system.audit");
+    if (!authorized) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = await request.json()
-    const { role, resource, action, context } = body as {
-      role: string
-      resource: Resource
-      action: Action
-      context?: {
-        userId?: string
-        resourceOwnerId?: string
-        userClassIds?: string[]
-        resourceClassId?: string
-      }
-    }
+    const body = await request.json();
+    const { role, permission } = body as {
+      role: string;
+      permission: string;
+    };
 
-    if (!role || !resource || !action) {
+    if (!role || !permission) {
       return NextResponse.json(
-        { error: 'role, resource, and action are required' },
-        { status: 400 }
-      )
+        { error: "role and permission are required" },
+        { status: 400 },
+      );
     }
 
-    // Check basic permission
-    const hasBasicPermission = hasPermission(role, resource, action)
-
-    // Check with conditions if context provided
-    const hasFullPermission = context
-      ? checkPermissionWithConditions(role, resource, action, context)
-      : hasBasicPermission
-
-    // Get all permissions for role
-    const allPermissions = getRolePermissions(role)
-    const relevantPermission = allPermissions.find(
-      p => p.resource === resource && p.action === action
-    )
+    const hasPerm = hasPermission(
+      role as UserRole,
+      permission as import("@/lib/auth/core").PermissionCode,
+    );
 
     return NextResponse.json({
       success: true,
       result: {
-        hasBasicPermission,
-        hasFullPermission,
-        permission: relevantPermission
-          ? {
-              ...relevantPermission,
-              description: describePermission(relevantPermission)
-            }
-          : null
+        hasPermission: hasPerm,
       },
       role,
-      resource,
-      action,
-      context
-    })
+      permission,
+    });
   } catch (error) {
-    console.error('Permission check error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("Permission check error:", error);
+    return NextResponse.json({ error: "Internal server error" }, {
+      status: 500,
+    });
   }
 }
 
 export async function GET(request: Request) {
   try {
-    const authResult = await adminAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    const { authorized } = await getAuthContext(request, "system.audit");
+    if (!authorized) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const role = searchParams.get('role')
+    const { searchParams } = new URL(request.url);
+    const role = searchParams.get("role");
 
     if (!role) {
       return NextResponse.json(
-        { error: 'role parameter is required' },
-        { status: 400 }
-      )
+        { error: "role parameter is required" },
+        { status: 400 },
+      );
     }
 
-    const permissions = getRolePermissions(role)
-    const described = permissions.map(p => ({
-      ...p,
-      description: describePermission(p)
-    }))
+    const permissions = getFlattenedPermissions(role as UserRole);
 
     return NextResponse.json({
       success: true,
       role,
-      permissions: described
-    })
+      permissions: Array.from(permissions),
+    });
   } catch (error) {
-    console.error('Get permissions error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("Get permissions error:", error);
+    return NextResponse.json({ error: "Internal server error" }, {
+      status: 500,
+    });
   }
 }

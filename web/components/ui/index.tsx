@@ -10,11 +10,26 @@ import React, { ReactNode } from 'react';
 // Export skeleton components
 export * from './skeleton';
 
+// Export card components
+export * from './Card';
+
+// Export badge components
+export * from './badge';
+
 // Export table components
 export * from './table';
 
 // Export form field components
 export { FormInput, FormTextarea, FormSelect, FormGroup, FormRow, FormActions } from './FormField';
+
+// Export mobile-first components (Cross-Platform)
+export { MobileCard, MobileCardList, MobileCardField, MobileCardHeader, MobileCardActions } from './MobileCard';
+export { SwipeContainer, SwipeView } from './SwipeContainer';
+
+// Export UI/UX upgrade components
+export { PageHeader, PageSection, SimpleBreadcrumb } from './PageHeader';
+export { GlowCard, GradientCard, LiveIndicatorCard, MetricCard } from './EnhancedCards';
+export { IllustratedEmptyState, NoDataCard } from './IllustratedEmptyState';
 
 // ============================================================================
 // BUTTON COMPONENTS - DUAL THEME STYLE
@@ -87,113 +102,8 @@ export const Button: React.FC<ButtonProps> = ({
 };
 
 // ============================================================================
-// CARD COMPONENTS - NEUBRUTALISM STYLE
+// LOADING STATES
 // ============================================================================
-
-interface CardProps {
-  children: ReactNode;
-  className?: string;
-  padding?: 'none' | 'sm' | 'md' | 'lg';
-  hover?: boolean;
-  variant?: 'default' | 'elevated' | 'outlined' | 'glass' | 'primary' | 'secondary' | 'accent' | 'premium';
-}
-
-export const Card: React.FC<CardProps> = ({
-  children,
-  className = '',
-  padding = 'md',
-  hover = false,
-  variant = 'default',
-}) => {
-  const paddings = {
-    none: 'p-0',
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
-  };
-
-  const variants = {
-    default: 'bg-surface border border-border shadow-neumorphic-sm rounded-2xl dark:bg-glass-bg dark:backdrop-blur-xl dark:border-white/10 dark:shadow-none',
-    elevated: 'bg-surface border border-border shadow-neumorphic rounded-2xl dark:bg-glass-bg dark:backdrop-blur-xl dark:border-white/10 dark:shadow-glow-sm',
-    outlined: 'bg-surface border-2 border-primary shadow-[0_4px_12px_rgba(22,163,74,0.2)] rounded-2xl dark:bg-glass-bg dark:border-primary/50 dark:shadow-glow-sm',
-    glass: 'bg-surface/80 backdrop-blur-sm border border-border shadow-neumorphic-sm rounded-2xl dark:bg-glass-bg dark:backdrop-blur-2xl dark:border-white/10 dark:shadow-glow',
-    primary: 'bg-primary/5 border border-primary/20 shadow-neumorphic-sm rounded-2xl dark:bg-primary/10 dark:border-primary/30 dark:shadow-[0_0_15px_rgba(6,182,212,0.2)]',
-    secondary: 'bg-success/5 border border-success/20 shadow-neumorphic-sm rounded-2xl dark:bg-success/10 dark:border-success/30 dark:shadow-[0_0_15px_rgba(34,197,94,0.2)]',
-    accent: 'bg-accent/5 border border-accent/20 shadow-neumorphic-sm rounded-2xl dark:bg-accent/10 dark:border-accent/30 dark:shadow-[0_0_15px_rgba(139,92,246,0.2)]',
-    premium: 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-100 dark:border-white/5 shadow-premium rounded-[32px]',
-  };
-
-  const hoverClass = hover ? 'transition-all duration-200 hover:shadow-neumorphic dark:hover:shadow-glow hover:border-primary/30 dark:hover:border-primary/50 cursor-pointer' : '';
-
-  return (
-    <div className={`${variants[variant]} ${paddings[padding]} ${hoverClass} ${className}`}>
-      {children}
-    </div>
-  );
-};
-
-interface CardHeaderProps {
-  title: string;
-  subtitle?: string;
-  action?: ReactNode;
-  className?: string;
-}
-
-export const CardHeader: React.FC<CardHeaderProps> = ({
-  title,
-  subtitle,
-  action,
-  className = '',
-}) => {
-  return (
-    <div className={`flex items-start justify-between mb-4 ${className}`}>
-      <div>
-        <h3 className="text-xl font-bold text-foreground font-heading">{title}</h3>
-        {subtitle && <p className="text-sm text-muted mt-1">{subtitle}</p>}
-      </div>
-      {action && <div>{action}</div>}
-    </div>
-  );
-};
-
-// ============================================================================
-// BADGE COMPONENTS - DUAL THEME STYLE
-// ============================================================================
-
-type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'indigo' | 'blue';
-
-interface BadgeProps {
-  children: ReactNode;
-  variant?: BadgeVariant;
-  className?: string;
-  style?: React.CSSProperties;
-}
-
-export const Badge: React.FC<BadgeProps> = ({
-  children,
-  variant = 'default',
-  className = '',
-  style,
-}) => {
-  const variants = {
-    default: 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30',
-    success: 'bg-success/10 text-success border-success/20 dark:bg-success/20 dark:border-success/30',
-    warning: 'bg-warning/10 text-warning border-warning/20 dark:bg-warning/20 dark:border-warning/30',
-    danger: 'bg-error/10 text-error border-error/20 dark:bg-error/20 dark:border-error/30',
-    info: 'bg-info/10 text-info border-info/20 dark:bg-info/20 dark:border-info/30',
-    indigo: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30',
-    blue: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${variants[variant]} ${className}`}
-      style={style}
-    >
-      {children}
-    </span>
-  );
-};
 
 // ============================================================================
 // LOADING STATES
@@ -430,6 +340,55 @@ export const Input: React.FC<InputProps> = ({
           </div>
         )}
       </div>
+
+      {hint && !error && (
+        <p className="mt-2 text-sm text-indigo-600 font-medium">{hint}</p>
+      )}
+
+      {error && (
+        <p className="mt-2 text-sm text-red-600 font-bold">{error}</p>
+      )}
+    </div>
+  );
+};
+
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string;
+  error?: string;
+  hint?: string;
+}
+
+export const Textarea: React.FC<TextareaProps> = ({
+  label,
+  error,
+  hint,
+  className = '',
+  ...props
+}) => {
+  const hasError = Boolean(error);
+
+  return (
+    <div className="w-full">
+      {label && (
+        <label className="block text-sm font-bold text-indigo-900 mb-2" style={{ fontFamily: 'Fredoka, sans-serif' }}>
+          {label}
+          {props.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+
+      <textarea
+        className={`
+          w-full px-4 py-3 border-3 border-black rounded-xl font-medium
+          ${hasError ? 'border-red-500 shadow-[4px_4px_0px_#DC2626] focus:shadow-[6px_6px_0px_#DC2626]' : 'shadow-[4px_4px_0px_#000] focus:shadow-[6px_6px_0px_#000]'}
+          focus:outline-none focus:translate-x-[-2px] focus:translate-y-[-2px]
+          disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60
+          placeholder:text-indigo-400 text-indigo-900
+          transition-all duration-150
+          min-h-[120px] resize-y
+          ${className}
+        `}
+        {...props}
+      />
 
       {hint && !error && (
         <p className="mt-2 text-sm text-indigo-600 font-medium">{hint}</p>

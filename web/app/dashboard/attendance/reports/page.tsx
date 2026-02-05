@@ -1,30 +1,32 @@
-// @ts-nocheck
 'use client'
 
-import { useState, useEffect } from 'react'
-import { apiFetch } from '@/lib/api/client'
-import { ChartBarIcon, ArrowTrendingUpIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect, useMemo } from 'react'
+import { apiFetch, getClasses, getAttendance } from '@/lib/api/client'
+import { ChartBarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts'
+import { parseISO, format, subDays, startOfWeek, endOfWeek, subMonths } from 'date-fns'
+import { vi } from 'date-fns/locale'
 
+// Types matching V2 API response with joined relations
 interface AttendanceRecord {
   id: string
   student_id: string
   class_id: string
   date: string
-  status: 'present' | 'absent'
+  status: 'present' | 'absent' | 'late' | 'excused'
   remarks: string | null
-  student: {
+  student?: {
     id: string
-    email: string
-    full_name: string
-    student_id: string
-    grade_level: string
+    email?: string
+    full_name?: string
+    first_name?: string
+    last_name?: string
+    student_code?: string
   }
-  class: {
+  class?: {
     id: string
-    title: string
-    name?: string
-    code: string
+    name: string
+    code?: string
   }
 }
 
@@ -61,8 +63,6 @@ export default function AttendanceReportsPage() {
 
   useEffect(() => {
     loadClasses()
-    loadReports()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -72,11 +72,9 @@ export default function AttendanceReportsPage() {
 
   const loadClasses = async () => {
     try {
-      const response = await apiFetch('/api/classes/my-classes')
-      if (response.ok) {
-        const data = await response.json()
-        setClasses(data.data || data.classes || [])
-      }
+      const res = await getClasses({ limit: 100 });
+      const classList = (res.data || []) as any[];
+      setClasses(classList.map(c => ({ id: c.id, name: c.name })));
     } catch (error) {
       console.error('Failed to load classes:', error)
     }
@@ -84,6 +82,9 @@ export default function AttendanceReportsPage() {
 
   const setQuickRange = (range: string) => {
     setDateRange(range)
+    // Actual dates will be calculated in loadReports or verify here?
+    // Better to let loadReports handle logic or set explicit dates here.
+    // For now, loadReports logic is preserved.
   }
 
   const loadReports = async () => {
@@ -98,42 +99,110 @@ export default function AttendanceReportsPage() {
       if (dateRange === 'today') {
         start = end
       } else if (dateRange === 'week') {
-        const weekAgo = new Date(today)
-        weekAgo.setDate(weekAgo.getDate() - 7)
+        const weekAgo = subDays(today, 7)
         start = weekAgo.toISOString().split('T')[0]
       } else if (dateRange === 'month') {
-        const monthAgo = new Date(today)
-        monthAgo.setMonth(monthAgo.getMonth() - 1)
+        const monthAgo = subMonths(today, 1)
         start = monthAgo.toISOString().split('T')[0]
       } else if (dateRange === 'term') {
-        const termStart = new Date(today)
-        termStart.setMonth(termStart.getMonth() - 3)
+        const termStart = subMonths(today, 3)
         start = termStart.toISOString().split('T')[0]
       } else if (dateRange === 'custom') {
         start = startDate
         end = endDate
       }
 
-      const params = new URLSearchParams()
-      if (selectedClass) params.append('classId', selectedClass)
-      if (start) params.append('startDate', start)
-      if (end) params.append('endDate', end)
-      if (statusFilter) params.append('status', statusFilter)
-
-      const response = await apiFetch(`/api/attendance/reports?${params}`)
-      if (response.ok) {
-        const result = await response.json()
-        setRecords(result.data || [])
-        setAnalytics(result.analytics || null)
-      } else {
-        alert('Không thể tải báo cáo')
+      // Prepare V2 Params
+      const params: any = {
+        limit: 1000, // Fetch large batch for reports
+        startDate: start,
+        endDate: end
       }
+      if (selectedClass) params.class_id = selectedClass
+      if (statusFilter && statusFilter !== 'all') params.status = statusFilter
+
+      const res = await getAttendance(params)
+      const data = (res.data || []) as AttendanceRecord[]
+      setRecords(data)
+
+      // Calculate Analytics on Client
+      computeAnalytics(data)
+
     } catch (error) {
       console.error('Failed to load reports:', error)
-      alert('Không thể tải báo cáo')
+      //   alert('Không thể tải báo cáo') // Silently fail or show toast
     } finally {
       setLoading(false)
     }
+  }
+
+  const computeAnalytics = (data: AttendanceRecord[]) => {
+    const totalRecords = data.length;
+    if (totalRecords === 0) {
+      setAnalytics(null);
+      return;
+    }
+
+    const totalPresent = data.filter(r => r.status === 'present').length;
+    const totalAbsent = data.filter(r => r.status === 'absent').length;
+
+    // Attendance Rate: Present / Total * 100
+    const attendanceRate = Math.round((totalPresent / totalRecords) * 100);
+
+    const byStatus: Record<string, number> = {};
+    data.forEach(r => {
+      byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+    });
+
+    const byClass: Record<string, any> = {};
+    const byStudent: Record<string, any> = {};
+
+    data.forEach(r => {
+      // By Class
+      const clsId = r.class_id;
+      if (!byClass[clsId]) {
+        byClass[clsId] = {
+          name: r.class?.name || 'Unknown Class',
+          count: 0,
+          present: 0,
+          rate: 0
+        };
+      }
+      byClass[clsId].count++;
+      if (r.status === 'present') byClass[clsId].present++;
+
+      // By Student
+      const stuId = r.student_id;
+      if (!byStudent[stuId]) {
+        byStudent[stuId] = {
+          name: r.student?.full_name || r.student?.email || 'Unknown',
+          studentId: r.student?.student_code || r.student?.id || stuId,
+          count: 0,
+          present: 0,
+          rate: 0
+        };
+      }
+      byStudent[stuId].count++;
+      if (r.status === 'present') byStudent[stuId].present++;
+    });
+
+    // Calculate Rates
+    Object.values(byClass).forEach((c: any) => {
+      c.rate = Math.round((c.present / c.count) * 100);
+    });
+    Object.values(byStudent).forEach((s: any) => {
+      s.rate = Math.round((s.present / s.count) * 100);
+    });
+
+    setAnalytics({
+      totalRecords,
+      totalPresent,
+      totalAbsent,
+      attendanceRate,
+      byStatus,
+      byClass,
+      byStudent
+    });
   }
 
   const handleExport = () => {
@@ -149,8 +218,8 @@ export default function AttendanceReportsPage() {
       const rows = records.map(record => [
         new Date(record.date).toLocaleDateString('vi-VN'),
         record.student?.full_name || record.student?.email || '',
-        record.student?.student_id || '',
-        record.class?.title || '',
+        record.student?.student_code || record.student?.id || '',
+        record.class?.name || '',
         record.status === 'present' ? 'Có mặt' : 'Vắng',
         record.remarks || ''
       ])
@@ -181,7 +250,9 @@ export default function AttendanceReportsPage() {
   const getStatusColor = (status: string) => {
     const colors = {
       present: 'bg-green-100 text-green-800',
-      absent: 'bg-red-100 text-red-800'
+      absent: 'bg-red-100 text-red-800',
+      late: 'bg-yellow-100 text-yellow-800',
+      excused: 'bg-blue-100 text-blue-800'
     }
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
   }
@@ -194,7 +265,7 @@ export default function AttendanceReportsPage() {
   }
 
   // Get top and bottom performers
-  const studentStats = analytics ? Object.values(analytics.byStudent).sort((a, b) => b.rate - a.rate) : []
+  const studentStats = analytics ? Object.values(analytics.byStudent).sort((a: any, b: any) => b.rate - a.rate) : []
   const topPerformers = studentStats.slice(0, 5)
   const bottomPerformers = studentStats.slice(-5).reverse()
 
@@ -225,7 +296,7 @@ export default function AttendanceReportsPage() {
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-blue-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">Tất cả lớp</option>
                 {classes.map((cls) => (
@@ -289,19 +360,19 @@ export default function AttendanceReportsPage() {
           {/* Date Shortcuts */}
           <div className="flex flex-wrap gap-2 mt-4">
             <span className="text-xs font-medium text-gray-500 self-center mr-1">Nhanh:</span>
-            <button 
+            <button
               onClick={() => setQuickRange('today')}
               className={`px-3 py-1 text-xs rounded-full border ${dateRange === 'today' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'}`}
             >
               Hôm nay
             </button>
-            <button 
+            <button
               onClick={() => setQuickRange('week')}
               className={`px-3 py-1 text-xs rounded-full border ${dateRange === 'week' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'}`}
             >
               7 ngày qua
             </button>
-            <button 
+            <button
               onClick={() => setQuickRange('month')}
               className={`px-3 py-1 text-xs rounded-full border ${dateRange === 'month' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'}`}
             >
@@ -356,7 +427,7 @@ export default function AttendanceReportsPage() {
                     </div>
                     {/* Progress indicator */}
                     <div className="relative h-2 bg-green-100 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="absolute top-0 left-0 h-full bg-green-500 transition-all duration-1000"
                         style={{ width: `${analytics.attendanceRate}%` }}
                       />
@@ -435,7 +506,7 @@ export default function AttendanceReportsPage() {
                     <div className="h-64" style={{ minHeight: '256px' }}>
                       <ResponsiveContainer width="100%" height={256}>
                         <BarChart
-                          data={Object.values(analytics.byClass).slice(0, 6).map(c => ({
+                          data={Object.values(analytics.byClass).slice(0, 6).map((c: any) => ({
                             name: c.name.length > 10 ? c.name.substring(0, 10) + '...' : c.name,
                             rate: c.rate,
                             present: c.present,
@@ -456,35 +527,6 @@ export default function AttendanceReportsPage() {
                   </div>
                 </div>
 
-                {/* Attendance Trend Line Chart */}
-                <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Xu Hướng Điểm Danh</h2>
-                  <p className="text-sm text-gray-500 mb-4">Tỉ lệ điểm danh theo thời gian</p>
-                  <div className="h-64" style={{ minHeight: '256px' }}>
-                    <ResponsiveContainer width="100%" height={256}>
-                      <LineChart
-                        data={[
-                          { period: 'Tuần 1', rate: 92 },
-                          { period: 'Tuần 2', rate: 88 },
-                          { period: 'Tuần 3', rate: 95 },
-                          { period: 'Tuần 4', rate: analytics.attendanceRate || 90 },
-                        ]}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis dataKey="period" tick={{ fill: '#6b7280', fontSize: 12 }} />
-                        <YAxis domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                          formatter={(value: any) => [`${Number(value).toFixed(1)}%`, 'Tỉ lệ']}
-                        />
-                        <Legend />
-                        <Line type="monotone" dataKey="rate" stroke="#22c55e" strokeWidth={3} name="Tỉ lệ điểm danh" dot={{ r: 6, fill: '#22c55e' }} activeDot={{ r: 8 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
                 {/* Class Performance */}
                 {Object.keys(analytics.byClass).length > 0 && (
                   <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm p-4 sm:p-6 mb-6">
@@ -493,8 +535,8 @@ export default function AttendanceReportsPage() {
                     {/* Mobile Card View */}
                     <div className="md:hidden space-y-3 mobile-card-list animate-fade-in">
                       {Object.entries(analytics.byClass)
-                        .sort((a, b) => b[1].rate - a[1].rate)
-                        .map(([classId, stats]) => (
+                        .sort((a: any, b: any) => b[1].rate - a[1].rate)
+                        .map(([classId, stats]: [string, any]) => (
                           <div
                             key={classId}
                             className="bg-white dark:bg-[#1A1410] rounded-2xl p-5 border border-stone-100 dark:border-[#2C2420] shadow-sm press-effect"
@@ -511,14 +553,14 @@ export default function AttendanceReportsPage() {
                               </div>
                             </div>
                             <div className="flex gap-6 pt-3 border-t border-stone-50 dark:border-white/5">
-                                <div>
-                                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Tổng số</p>
-                                    <p className="text-sm font-bold text-stone-700 dark:text-stone-300">{stats.count}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Có mặt</p>
-                                    <p className="text-sm font-bold text-green-600">{stats.present}</p>
-                                </div>
+                              <div>
+                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Tổng số</p>
+                                <p className="text-sm font-bold text-stone-700 dark:text-stone-300">{stats.count}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Có mặt</p>
+                                <p className="text-sm font-bold text-green-600">{stats.present}</p>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -545,8 +587,8 @@ export default function AttendanceReportsPage() {
                         </thead>
                         <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
                           {Object.entries(analytics.byClass)
-                            .sort((a, b) => b[1].rate - a[1].rate)
-                            .map(([classId, stats]) => (
+                            .sort((a: any, b: any) => b[1].rate - a[1].rate)
+                            .map(([classId, stats]: [string, any]) => (
                               <tr key={classId} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                                   {stats.name}
@@ -577,7 +619,7 @@ export default function AttendanceReportsPage() {
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm p-6">
                       <h2 className="text-lg font-semibold text-gray-900 mb-4">🏆 Điểm Danh Tốt Nhất</h2>
                       <div className="space-y-3">
-                        {topPerformers.map((student, index) => (
+                        {topPerformers.map((student: any, index: number) => (
                           <div key={`top-${student.studentId || index}-${student.name}`} className="flex items-center justify-between p-3 bg-white rounded-lg">
                             <div className="flex items-center space-x-3">
                               <span className="text-lg font-bold text-gray-500">#{index + 1}</span>
@@ -598,7 +640,7 @@ export default function AttendanceReportsPage() {
                     <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl shadow-sm p-6">
                       <h2 className="text-lg font-semibold text-gray-900 mb-4">⚠️ Cần Chú Ý</h2>
                       <div className="space-y-3">
-                        {bottomPerformers.map((student, index) => (
+                        {bottomPerformers.map((student: any, index: number) => (
                           <div key={`bottom-${student.studentId || index}-${student.name}`} className="flex items-center justify-between p-3 bg-white rounded-lg">
                             <div>
                               <p className="font-medium text-gray-900">{student.name}</p>
@@ -638,14 +680,14 @@ export default function AttendanceReportsPage() {
 
                 {/* Mobile Card View */}
                 <div className="md:hidden p-4 space-y-3 mobile-card-list animate-fade-in pb-20">
-                  {records.filter(r => 
+                  {records.filter(r =>
                     (r.student?.full_name || r.student?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
                   ).length === 0 ? (
                     <div className="text-center py-12 text-stone-500 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
                       Không tìm thấy bản ghi nào khớp với tìm kiếm
                     </div>
                   ) : (
-                    records.filter(r => 
+                    records.filter(r =>
                       (r.student?.full_name || r.student?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
                     ).map((record) => (
                       <div
@@ -653,7 +695,7 @@ export default function AttendanceReportsPage() {
                         className="bg-white dark:bg-[#1A1410] rounded-2xl p-5 border border-stone-100 dark:border-[#2C2420] shadow-sm press-effect relative overflow-hidden"
                       >
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${record.status === 'present' ? 'bg-green-500' : 'bg-red-500'}`} />
-                        
+
                         {/* Header with status */}
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1 min-w-0">
@@ -661,7 +703,7 @@ export default function AttendanceReportsPage() {
                               {record.student?.full_name || record.student?.email}
                             </p>
                             <p className="text-xs text-stone-500 dark:text-stone-400 font-mono mt-1">
-                              {record.student?.student_id || 'ID-XXXX'}
+                              {record.student?.student_code || record.student?.id || 'ID-XXXX'}
                             </p>
                           </div>
                           <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${getStatusColor(record.status)}`}>
@@ -671,25 +713,25 @@ export default function AttendanceReportsPage() {
 
                         {/* Details Grid */}
                         <div className="grid grid-cols-2 gap-4 pt-3 border-t border-stone-50 dark:border-white/5">
-                            <div>
-                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-0.5">Ngày</p>
-                                <p className="text-sm font-bold text-stone-700 dark:text-stone-300">
-                                    {new Date(record.date).toLocaleDateString('vi-VN')}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-0.5">Lớp</p>
-                                <p className="text-sm font-bold text-stone-700 dark:text-stone-300 truncate">
-                                    {record.class?.name || record.class?.title || record.class?.code}
-                                </p>
-                            </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-0.5">Ngày</p>
+                            <p className="text-sm font-bold text-stone-700 dark:text-stone-300">
+                              {new Date(record.date).toLocaleDateString('vi-VN')}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-0.5">Lớp</p>
+                            <p className="text-sm font-bold text-stone-700 dark:text-stone-300 truncate">
+                              {record.class?.name || record.class?.code || 'N/A'}
+                            </p>
+                          </div>
                         </div>
 
                         {record.remarks && (
-                            <div className="mt-3 p-3 bg-stone-50 dark:bg-white/5 rounded-xl">
-                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Ghi chú</p>
-                                <p className="text-xs text-stone-600 dark:text-stone-400 italic">"{record.remarks}"</p>
-                            </div>
+                          <div className="mt-3 p-3 bg-stone-50 dark:bg-white/5 rounded-xl">
+                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Ghi chú</p>
+                            <p className="text-xs text-stone-600 dark:text-stone-400 italic">"{record.remarks}"</p>
+                          </div>
                         )}
                       </div>
                     ))
@@ -719,9 +761,9 @@ export default function AttendanceReportsPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
-                      {records.filter(r => 
-                          (r.student?.full_name || r.student?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-                        ).map((record) => (
+                      {records.filter(r =>
+                        (r.student?.full_name || r.student?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+                      ).map((record) => (
                         <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                             {new Date(record.date).toLocaleDateString('vi-VN')}
@@ -732,12 +774,12 @@ export default function AttendanceReportsPage() {
                                 {record.student?.full_name || record.student?.email}
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {record.student?.student_id}
+                                {record.student?.student_code || record.student?.id}
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                            {record.class?.name || record.class?.title}
+                            {record.class?.name || record.class?.code}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>

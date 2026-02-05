@@ -2,6 +2,7 @@
 /// Provides common Supabase access and error handling
 library;
 
+import 'dart:developer' as developer;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/supabase_config.dart' as config;
 
@@ -23,7 +24,7 @@ abstract class BaseRepository {
       return action();
     } catch (e) {
       // Log error or rethrow custom exception
-      print('[Repository Error] $e');
+      developer.log('[Repository Error]', error: e);
       rethrow;
     }
   }
@@ -34,9 +35,9 @@ abstract class BaseRepository {
       return await action();
     } catch (e) {
       if (e is PostgrestException) {
-        print('[Supabase Error] Code: ${e.code}, Message: ${e.message}, Hint: ${e.hint}');
+        developer.log('[Supabase Error]', error: e);
       } else {
-        print('[Repository Error] $e');
+        developer.log('[Repository Error]', error: e);
       }
       rethrow;
     }

@@ -1,65 +1,52 @@
-// @ts-nocheck
-/**
- * Report Card API Endpoint
- * 
- * Generates report card data for a specific student
- */
+import { NextResponse } from "next/server";
+import { apiSuccess, createGetHandler } from "@/lib/api";
+import { createServiceClient } from "@/lib/supabase/server";
+import { ReportsRepository } from "@/lib/repositories/ReportsRepository";
+import { reportCardQuerySchema } from "@/lib/schemas/reports";
+import { createAbility } from "@/lib/auth/permissions";
+import { validateQuery } from "@/lib/api/validation";
+import {
+  calculateSubjectAverage,
+  getLetterGradeFromScore,
+} from "@/lib/grades/gpaCalculator";
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { calculateSubjectAverage, getLetterGradeFromScore, getAcademicStanding } from '@/lib/grades/gpaCalculator';
+export const GET = createGetHandler(
+  { requireAuth: true },
+  async ({ request, user }) => {
+    // 1. Validation
+    const query = validateQuery(request, reportCardQuerySchema);
+    const { studentId, semesterId, academicYearId } = query;
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = await createClient();
-    
-    // Verify authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 2. Auth Check
+    const ability = createAbility({ userId: user.id, role: user.role });
+    if (user.role === "student" && user.id !== studentId) {
+      if (ability.cannot("read", "Grade")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      }
+    }
+    if (ability.cannot("read", "Grade")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const searchParams = request.nextUrl.searchParams;
-    const studentId = searchParams.get('studentId');
-    
-    if (!studentId) {
-      return NextResponse.json({ error: 'Student ID required' }, { status: 400 });
+    // 3. Data Fetching
+    const supabase = createServiceClient();
+    const repository = new ReportsRepository(supabase);
+
+    const data = await repository.getReportCard(studentId, {
+      semesterId,
+      academicYearId,
+    });
+
+    if (!data) {
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
     }
 
-    // Fetch student info
-    const { data: student, error: studentError } = await supabase
-      .from('profiles')
-      .select('id, full_name, student_id, date_of_birth, gender, email')
-      .eq('id', studentId)
-      .single();
+    const { student, enrollment, grades, attendance } = data;
 
-    if (studentError || !student) {
-      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
-    }
-
-    // Fetch student's enrollment for class info
-    const { data: enrollment } = await supabase
-      .from('enrollments')
-      .select('class:class_id(id, name)')
-      .eq('student_id', studentId)
-      .single();
-
-    // Fetch grades for the student
-    const { data: grades, error: gradesError } = await supabase
-      .from('grades')
-      .select(`
-        id,
-        score,
-        evaluation_type,
-        subject:subject_id(id, name),
-        created_at
-      `)
-      .eq('student_id', studentId)
-      .order('created_at', { ascending: false });
-
-    // Group grades by subject
+    // 4. Transformation Logic (Subject grouping & GPA)
     const subjectGrades = new Map<string, {
       name: string;
+      credits: number;
       oral?: number;
       fifteenMin?: number;
       fortyFiveMin?: number;
@@ -68,46 +55,48 @@ export async function GET(request: NextRequest) {
     }>();
 
     for (const grade of grades || []) {
-      const subjectId = grade.subject?.id;
-      const subjectName = grade.subject?.name || 'Unknown';
-      
+      const subjectId = (grade.subject as any)?.id;
+      const subjectName = (grade.subject as any)?.name || "Unknown";
+      const credits = (grade.subject as any)?.credits || 1;
+
       if (!subjectId) continue;
 
       if (!subjectGrades.has(subjectId)) {
-        subjectGrades.set(subjectId, { name: subjectName });
+        subjectGrades.set(subjectId, { name: subjectName, credits });
       }
 
       const subject = subjectGrades.get(subjectId)!;
-      const evalType = grade.evaluation_type?.toLowerCase() || '';
-      
-      if (evalType.includes('oral') || evalType.includes('miệng')) {
+      const evalType = grade.evaluation_type?.toLowerCase() || "";
+
+      // Map scores
+      if (evalType.includes("oral") || evalType.includes("miệng")) {
         subject.oral = grade.score;
-      } else if (evalType.includes('15') || evalType.includes('kiểm tra 15')) {
+      } else if (evalType.includes("15") || evalType.includes("kiểm tra 15")) {
         subject.fifteenMin = grade.score;
-      } else if (evalType.includes('45') || evalType.includes('1 tiết')) {
+      } else if (evalType.includes("45") || evalType.includes("1 tiết")) {
         subject.fortyFiveMin = grade.score;
-      } else if (evalType.includes('midterm') || evalType.includes('giữa kỳ')) {
+      } else if (evalType.includes("midterm") || evalType.includes("giữa kỳ")) {
         subject.midterm = grade.score;
-      } else if (evalType.includes('final') || evalType.includes('cuối kỳ')) {
+      } else if (evalType.includes("final") || evalType.includes("cuối kỳ")) {
         subject.final = grade.score;
       }
     }
 
-    // Calculate averages and build subject list
+    // Calculate averages
     const subjects = Array.from(subjectGrades.entries()).map(([id, data]) => {
       const gradeData = {
         subjectId: id,
         subjectName: data.name,
-        credits: 1,
+        credits: data.credits,
         oralScore: data.oral,
         fifteenMinScore: data.fifteenMin,
         fortyFiveMinScore: data.fortyFiveMin,
         midtermScore: data.midterm,
         finalScore: data.final,
       };
-      
+
       const avg = calculateSubjectAverage(gradeData);
-      
+
       return {
         name: data.name,
         oralScore: data.oral,
@@ -116,45 +105,51 @@ export async function GET(request: NextRequest) {
         midtermScore: data.midterm,
         finalScore: data.final,
         averageScore: avg || 0,
-        letterGrade: avg ? getLetterGradeFromScore(avg) : 'N/A',
+        letterGrade: avg ? getLetterGradeFromScore(avg) : "N/A",
       };
     });
 
     // Calculate overall GPA
-    const validSubjects = subjects.filter(s => s.averageScore > 0);
+    const validSubjects = subjects.filter((s) => s.averageScore > 0);
     const semesterGPA = validSubjects.length > 0
-      ? validSubjects.reduce((sum, s) => sum + s.averageScore, 0) / validSubjects.length
+      ? validSubjects.reduce((sum, s) => sum + s.averageScore, 0) /
+        validSubjects.length
       : 0;
 
-    // Fetch attendance rate
-    const { data: attendance } = await supabase
-      .from('attendance')
-      .select('status')
-      .eq('student_id', studentId);
+    // Calculate Attendance Rate
+    const totalDays = attendance.length;
+    const presentDays =
+      attendance.filter((a: any) =>
+        a.status === "present" || a.status === "late"
+      ).length;
+    // Note: If totalDays is 0, we might want to show N/A or 100%.
+    const attendanceRate = totalDays > 0
+      ? (presentDays / totalDays) * 100
+      : 100;
 
-    const totalDays = attendance?.length || 0;
-    const presentDays = attendance?.filter(a => a.status === 'present' || a.status === 'late').length || 0;
-    const attendanceRate = totalDays > 0 ? (presentDays / totalDays) * 100 : 100;
+    const className = (enrollment?.class as any)?.name || "Chưa phân lớp";
 
-    // Build response
+    // Conduct Grade (Simplified logic)
+    const conductGrade = semesterGPA >= 8.0
+      ? "Tốt"
+      : semesterGPA >= 6.5
+      ? "Khá"
+      : semesterGPA >= 5.0
+      ? "Trung bình"
+      : "Yếu";
+
     const reportCardData = {
       studentName: student.full_name,
-      studentCode: student.student_id || '',
-      className: enrollment?.class?.name || 'Chưa phân lớp',
-      dateOfBirth: student.date_of_birth || '',
-      gender: student.gender || '',
+      studentCode: student.student_id || "",
+      className: className,
+      dateOfBirth: student.date_of_birth || "",
+      gender: student.gender || "",
       subjects,
       semesterGPA,
       attendanceRate,
-      conductGrade: semesterGPA >= 8.0 ? 'Tốt' : semesterGPA >= 6.5 ? 'Khá' : semesterGPA >= 5.0 ? 'Trung bình' : 'Yếu',
+      conductGrade,
     };
 
-    return NextResponse.json(reportCardData);
-  } catch (error) {
-    console.error('Report card error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate report card' },
-      { status: 500 }
-    );
-  }
-}
+    return apiSuccess(reportCardData);
+  },
+);

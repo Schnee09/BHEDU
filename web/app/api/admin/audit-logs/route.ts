@@ -1,25 +1,25 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { adminAuth } from "@/lib/auth/adminAuth";
+import { getDataClient } from "@/lib/auth/dataClient";
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
-    
-    // Check if user is admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Use the centralized adminAuth helper which supports super_admin via inheritance
+    const auth = await adminAuth(request);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || "Forbidden" }, {
+        status: auth.userId ? 403 : 401,
+      });
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profile?.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    // Use the privileged client from adminAuth (once updated) or getDataClient
+    const { supabase, viewerRole, usingServiceClient } = await getDataClient(
+      request,
+    );
+    console.log(
+      `[audit-logs API] Role: ${viewerRole}, Privileged: ${usingServiceClient}`,
+    );
 
     // Parse query params
     const { searchParams } = new URL(request.url);

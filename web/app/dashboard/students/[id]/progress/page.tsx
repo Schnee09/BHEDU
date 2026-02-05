@@ -83,7 +83,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
     try {
       setLoading(true);
       const yearParam = selectedYear !== "all" ? `?academic_year=${selectedYear}` : "";
-      const res = await apiFetch(`/api/students/${resolvedParams.id}/progress${yearParam}`);
+      const res = await apiFetch(`/api/v2/students/${resolvedParams.id}/progress${yearParam}`);
       const data = await res.json();
 
       if (data.success) {

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
+import PageGuard from "@/components/PageGuard";
 import { apiFetch } from "@/lib/api/client";
 import {
     Calendar,
@@ -31,12 +33,12 @@ import {
 } from "lucide-react";
 import MobileTimetableList from "@/components/timetable/MobileTimetableList";
 import { cn } from "@/lib/utils";
-import { 
-    Button, 
-    Card, 
-    Badge, 
-    Modal, 
-    Input, 
+import {
+    Button,
+    Card,
+    Badge,
+    Modal,
+    Input,
     LoadingState,
     Alert,
     EmptyState,
@@ -63,16 +65,24 @@ interface TimetableSlot {
 interface ClassOption {
     id: string;
     name: string;
+    course_id?: string;
+    course?: {
+        id: string;
+        name: string;
+        code: string;
+    };
     teacher_id?: string;
     teacher?: {
-        id: string;
         full_name: string;
-        subject_id?: string;
-        subjects?: {
-            id: string;
-            name: string;
-            code: string;
-        }
+        teacher_subjects?: Array<{
+            subject_id: string;
+            is_primary: boolean;
+            subjects: {
+                id: string;
+                name: string;
+                code: string;
+            }
+        }>;
     }
 }
 
@@ -169,8 +179,18 @@ const isSessionAvailable = (sessionStart: string, dayIndex: number) => {
 const PERIODS = WEEKDAY_SESSIONS;
 
 export default function TimetablePage() {
+    return (
+        <PageGuard permissions="timetable.view">
+            <TimetableContent />
+        </PageGuard>
+    );
+}
+
+function TimetableContent() {
     const { profile, loading: profileLoading } = useProfile();
+    const { isAdmin: isSystemAdmin, isStaff: isSystemStaff, isTeacher, isStudent } = usePermissions();
     const [slots, setSlots] = useState<TimetableSlot[]>([]);
+    // ... rest of state
     const [classes, setClasses] = useState<ClassOption[]>([]);
     const [subjects, setSubjects] = useState<SubjectOption[]>([]);
     const [teachers, setTeachers] = useState<TeacherOption[]>([]);
@@ -204,9 +224,7 @@ export default function TimetablePage() {
         weekly_note: "" // Weekly-specific note
     });
 
-    const isAdmin = profile?.role === "admin" || profile?.role === "staff";
-    const isTeacher = profile?.role === "teacher";
-    const isStudent = profile?.role === "student";
+    const isAdmin = isSystemAdmin || isSystemStaff;
     const currentCampus = CAMPUSES.find(c => c.id === selectedCampus);
     const isTutoring = selectedCampus === "HK";
 
@@ -237,7 +255,9 @@ export default function TimetablePage() {
             // Fetch all slots (no class filter) for room view
             const response = await apiFetch(`/api/timetable/all?week_start_date=${weekStartStr}`);
             const data = await response.json();
-            setSlots(data.slots || []);
+            // Unwrap V2 response if needed
+            const slotsData = data.data?.slots || data.slots || [];
+            setSlots(slotsData);
         } catch (error) {
             console.error("Failed to fetch timetable:", error);
             setSlots([]);
@@ -260,7 +280,9 @@ export default function TimetablePage() {
 
             const response = await apiFetch(`/api/timetable?class_id=${selectedClass}&week_start_date=${weekStartStr}`);
             const data = await response.json();
-            setSlots(data.slots || []);
+            // Unwrap V2 response if needed
+            const slotsData = data.data?.slots || data.slots || [];
+            setSlots(slotsData);
         } catch (error) {
             console.error("Failed to fetch timetable:", error);
             setSlots([]);
@@ -273,7 +295,9 @@ export default function TimetablePage() {
         try {
             const response = await apiFetch("/api/classes");
             const data = await response.json();
-            setClasses(data.classes || []);
+            // Unwrap V2 response if needed
+            const classesData = data.data?.data || data.data || data.classes || [];
+            setClasses(classesData);
         } catch (error) {
             console.error("Failed to fetch classes:", error);
         }
@@ -283,18 +307,19 @@ export default function TimetablePage() {
         try {
             const [subRes, teacherRes, tutorRes, studentRes] = await Promise.all([
                 apiFetch('/api/subjects'),
-                apiFetch('/api/admin/users?role=teacher'),
-                apiFetch('/api/tutors'),
-                apiFetch('/api/admin/users?role=student')
+                apiFetch('/api/admin/users?role=teacher&limit=1000'),
+                apiFetch('/api/tutors?limit=1000'),
+                apiFetch('/api/admin/users?role=student&limit=1000')
             ]);
             const subData = await subRes.json();
             const teacherData = await teacherRes.json();
             const tutorData = await tutorRes.json();
             const studentData = await studentRes.json();
-            setSubjects(subData.subjects || []);
-            setTeachers(teacherData.users || []);
-            setTutors(tutorData.tutors || []);
-            setStudents(studentData.users || []);
+
+            setSubjects(subData.data || subData.subjects || []);
+            setTeachers(teacherData.data?.data || teacherData.data || teacherData.users || []);
+            setTutors(tutorData.data || tutorData.tutors || []);
+            setStudents(studentData.data?.data || studentData.data || studentData.users || []);
         } catch (e) {
             console.error('Failed to fetch subjects/teachers:', e);
         }
@@ -524,9 +549,9 @@ export default function TimetablePage() {
                     </div>
 
                     <div className="flex items-center gap-3 bg-gray-100 dark:bg-white/5 p-1.5 rounded-2xl">
-                        <Button 
-                            variant="primary" 
-                            size="sm" 
+                        <Button
+                            variant="primary"
+                            size="sm"
                             className="rounded-xl px-5"
                             onClick={() => setCurrentWeek(new Date())}
                         >
@@ -562,8 +587,8 @@ export default function TimetablePage() {
                                 onClick={() => setViewMode('room')}
                                 className={cn(
                                     "px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2",
-                                    viewMode === 'room' 
-                                        ? "bg-white dark:bg-gray-700 text-primary shadow-sm" 
+                                    viewMode === 'room'
+                                        ? "bg-white dark:bg-gray-700 text-primary shadow-sm"
                                         : "text-muted hover:text-gray-900 dark:hover:text-white"
                                 )}
                             >
@@ -574,8 +599,8 @@ export default function TimetablePage() {
                                 onClick={() => setViewMode('class')}
                                 className={cn(
                                     "px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2",
-                                    viewMode === 'class' 
-                                        ? "bg-white dark:bg-gray-700 text-primary shadow-sm" 
+                                    viewMode === 'class'
+                                        ? "bg-white dark:bg-gray-700 text-primary shadow-sm"
                                         : "text-muted hover:text-gray-900 dark:hover:text-white"
                                 )}
                             >
@@ -586,8 +611,8 @@ export default function TimetablePage() {
                                 onClick={() => setViewMode('teacher')}
                                 className={cn(
                                     "px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2",
-                                    viewMode === 'teacher' 
-                                        ? "bg-white dark:bg-gray-700 text-primary shadow-sm" 
+                                    viewMode === 'teacher'
+                                        ? "bg-white dark:bg-gray-700 text-primary shadow-sm"
                                         : "text-muted hover:text-gray-900 dark:hover:text-white"
                                 )}
                             >
@@ -606,8 +631,8 @@ export default function TimetablePage() {
                                             className={cn(
                                                 "px-6 py-2.5 rounded-xl text-sm font-black transition-all",
                                                 (campus as any).upcoming ? "opacity-30 cursor-not-allowed" : "cursor-pointer",
-                                                selectedCampus === campus.id 
-                                                    ? "bg-white dark:bg-gray-700 text-primary shadow-sm" 
+                                                selectedCampus === campus.id
+                                                    ? "bg-white dark:bg-gray-700 text-primary shadow-sm"
                                                     : "text-muted hover:text-gray-900 dark:hover:text-white"
                                             )}
                                             disabled={(campus as any).upcoming}
@@ -1216,8 +1241,8 @@ export default function TimetablePage() {
                     size="md"
                     footer={(
                         <>
-                            <Button 
-                                variant="ghost" 
+                            <Button
+                                variant="ghost"
                                 onClick={() => { setShowModal(false); setEditingSlot(null); }}
                             >
                                 Hủy bỏ
@@ -1298,11 +1323,26 @@ export default function TimetablePage() {
                                             onChange={(e) => {
                                                 const classId = e.target.value;
                                                 const selectedClassObj = classes.find(c => c.id === classId);
+
+                                                // 1. Try course_id
+                                                let subjectId = selectedClassObj?.course_id || "";
+
+                                                // 2. Try teacher's primary subject from teacher_subjects join table
+                                                if (!subjectId && selectedClassObj?.teacher?.teacher_subjects) {
+                                                    const primarySubject = selectedClassObj.teacher.teacher_subjects.find(ts => ts.is_primary);
+                                                    if (primarySubject) {
+                                                        subjectId = primarySubject.subject_id;
+                                                    } else if (selectedClassObj.teacher.teacher_subjects.length > 0) {
+                                                        // Use first subject if no primary is set
+                                                        subjectId = selectedClassObj.teacher.teacher_subjects[0].subject_id;
+                                                    }
+                                                }
+
                                                 setFormData(prev => ({
                                                     ...prev,
                                                     class_id: classId,
                                                     teacher_id: selectedClassObj?.teacher_id || prev.teacher_id,
-                                                    subject_id: selectedClassObj?.teacher?.subject_id || prev.subject_id
+                                                    subject_id: subjectId || prev.subject_id
                                                 }));
                                             }}
                                             className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-white/5 rounded-xl text-sm font-black focus:border-primary outline-none transition-all shadow-sm"
@@ -1322,7 +1362,19 @@ export default function TimetablePage() {
                                             <div className="flex flex-col text-right">
                                                 <span className="text-[10px] font-black text-muted uppercase tracking-tighter">Môn học:</span>
                                                 <span className="text-sm font-black text-primary">
-                                                    {subjects.find(s => s.id === formData.subject_id)?.name || "Chưa có"}
+                                                    {(() => {
+                                                        const subject = subjects.find(s => s.id === formData.subject_id);
+                                                        if (subject) return subject.name;
+
+                                                        const selectedClass = classes.find(c => c.id === formData.class_id);
+                                                        const primarySubject = selectedClass?.teacher?.teacher_subjects?.find(ts => ts.is_primary);
+                                                        if (primarySubject) return primarySubject.subjects.name;
+
+                                                        const firstSubject = selectedClass?.teacher?.teacher_subjects?.[0];
+                                                        if (firstSubject) return firstSubject.subjects.name;
+
+                                                        return "Chưa có";
+                                                    })()}
                                                 </span>
                                             </div>
                                         </div>

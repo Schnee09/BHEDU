@@ -1,0 +1,30 @@
+﻿Analyzing flutter_app...                                        
+
+   info - Use the end-of-line form ('///') for doc comments - lib\config\design_tokens.dart:3:1 - slash_for_doc_comments
+warning - Unused import: '../../config/theme.dart' - lib\core\ui\ui_components.dart:8:8 - unused_import
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\settings\settings_screen.dart:371:23 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\settings\settings_screen.dart:372:23 - deprecated_member_use
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\settings\settings_screen.dart:380:23 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\settings\settings_screen.dart:381:23 - deprecated_member_use
+
+flutter : 6 issues 
+found. (ran in 3.6s)
+At line:1 char:1
++ flutter analyze > 
+analyze_output.txt 
+2>&1 ; Get-Content 
+-Path analyze ...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (6 issue   
+ s found. (ran in    
+ 3.6s):String) [    
+], RemoteExcepti    
+on
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 

@@ -1,11 +1,9 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api/client";
 import { usePermissions, PermissionGuard } from "@/hooks/usePermissions";
-import { PERMISSIONS, getPermissionsByCategory } from "@/lib/auth/permissions.config";
-import type { PermissionCode } from "@/lib/auth/permissions.config";
+import { ROLE_HIERARCHY } from "@/lib/auth/core";
 import {
     Shield, Search, Check, X, Clock,
     User, ChevronDown, ChevronUp, AlertCircle, Filter, UserCog
@@ -14,6 +12,14 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/useToast";
 
 // Types
+interface Permission {
+    id: string;
+    code: string;
+    name: string;
+    description: string | null;
+    category: string;
+}
+
 interface UserForPermissions {
     id: string;
     full_name: string;
@@ -50,6 +56,8 @@ interface PendingRoleChange {
 }
 
 const ROLE_OPTIONS = [
+    { value: 'super_admin', label: 'Super Admin', color: 'bg-black text-white dark:bg-white/10' },
+    { value: 'owner', label: 'Owner', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
     { value: 'admin', label: 'Admin', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
     { value: 'staff', label: 'Staff', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
     { value: 'teacher', label: 'Teacher', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
@@ -60,7 +68,7 @@ const ROLE_OPTIONS = [
 export default function PermissionsPage() {
     return (
         <PermissionGuard
-            permissions="users.permissions"
+            permissions="permissions.manage"
             fallback={<UnauthorizedMessage />}
         >
             <PermissionsContent />
@@ -75,7 +83,7 @@ function UnauthorizedMessage() {
                 <Shield className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                 <h2 className="text-xl font-semibold">Không có quyền truy cập</h2>
                 <p className="text-muted-foreground mt-2">
-                    Bạn cần quyền quản trị để xem trang này
+                    Bạn cần quyền quản trị cao cấp để xem trang này
                 </p>
             </div>
         </div>
@@ -185,6 +193,7 @@ function PermissionsContent() {
     const [users, setUsers] = useState<UserForPermissions[]>([]);
     const [selectedUser, setSelectedUser] = useState<UserForPermissions | null>(null);
     const [userPermData, setUserPermData] = useState<UserPermissionData | null>(null);
+    const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [permissionSearch, setPermissionSearch] = useState("");
@@ -198,8 +207,23 @@ function PermissionsContent() {
     const [savingRole, setSavingRole] = useState(false);
 
     const toast = useToast();
-    const { isAdmin } = usePermissions();
-    const permissionsByCategory = getPermissionsByCategory();
+    const { isAdmin: isCurrentAdmin } = usePermissions();
+
+    // Fetch all available permissions metadata
+    useEffect(() => {
+        async function fetchAllPerms() {
+            try {
+                const res = await apiFetch('/api/admin/permissions');
+                if (res.ok) {
+                    const data = await res.json();
+                    setAllPermissions(data.permissions || []);
+                }
+            } catch (e) {
+                console.error("Failed to fetch permissions:", e);
+            }
+        }
+        fetchAllPerms();
+    }, []);
 
     // Debounce search
     useEffect(() => {
@@ -227,13 +251,13 @@ function PermissionsContent() {
                 if (res.ok) {
                     const data = await res.json();
                     const newUsers = data.users || [];
-                    
+
                     if (page === 1) {
                         setUsers(newUsers);
                     } else {
                         setUsers(prev => [...prev, ...newUsers]);
                     }
-                    
+
                     setHasMore(newUsers.length === 50);
                 }
             } catch (error) {
@@ -382,6 +406,24 @@ function PermissionsContent() {
         }
     };
 
+    const getPermissionsByCategory = () => {
+        const categories: Record<string, Permission[]> = {};
+        allPermissions.forEach(perm => {
+            const category = perm.category || 'other';
+            if (!categories[category]) categories[category] = [];
+
+            const matchesSearch = permissionSearch === "" ||
+                perm.name.toLowerCase().includes(permissionSearch.toLowerCase()) ||
+                perm.code.toLowerCase().includes(permissionSearch.toLowerCase());
+
+            if (matchesSearch) {
+                categories[category].push(perm);
+            }
+        });
+        return categories;
+    };
+
+    const permissionsByCategory = getPermissionsByCategory();
 
     return (
         <div className="min-h-screen bg-background">
@@ -393,7 +435,7 @@ function PermissionsContent() {
                         Quản lý Quyền
                     </h1>
                     <p className="mt-2 text-muted-foreground">
-                        Cấp và thu hồi quyền truy cập cho từng người dùng
+                        Cấp và thu hồi quyền truy cập cho từng người dùng (RBAC v2)
                     </p>
                 </div>
 
@@ -457,7 +499,7 @@ function PermissionsContent() {
                                                     </div>
                                                 </button>
                                             ))}
-                                            
+
                                             {hasMore && (
                                                 <div className="pt-2">
                                                     <button
@@ -503,7 +545,7 @@ function PermissionsContent() {
                                         </p>
                                     </div>
                                     {/* Role Selector */}
-                                    {isAdmin && (
+                                    {isCurrentAdmin && (
                                         <div className="flex items-center gap-2">
                                             <UserCog className="w-5 h-5 text-muted-foreground" />
                                             <select
@@ -523,10 +565,10 @@ function PermissionsContent() {
                                 </div>
 
                                 {/* Admin Notice */}
-                                {userPermData.user.role === "admin" && (
+                                {(userPermData.user.role === "admin" || userPermData.user.role === "super_admin") && (
                                     <div className="flex items-center gap-2 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-yellow-700 dark:text-yellow-400">
                                         <AlertCircle className="w-5 h-5" />
-                                        <span>Admin có tất cả quyền theo mặc định</span>
+                                        <span>Quản trị viên có tất cả quyền theo mặc định</span>
                                     </div>
                                 )}
 
@@ -543,29 +585,18 @@ function PermissionsContent() {
                                 </div>
 
                                 {/* Permission Categories */}
-                                {Object.entries(permissionsByCategory).map(([category, perms]) => {
-                                    const filteredPerms = perms.filter(p =>
-                                        permissionSearch === "" ||
-                                        p.name.toLowerCase().includes(permissionSearch.toLowerCase()) ||
-                                        p.description.toLowerCase().includes(permissionSearch.toLowerCase()) ||
-                                        p.code.toLowerCase().includes(permissionSearch.toLowerCase())
-                                    );
-
-                                    if (filteredPerms.length === 0) return null;
-
-                                    return (
-                                        <PermissionCategory
-                                            key={category}
-                                            category={category}
-                                            permissions={filteredPerms}
-                                            rolePermissions={userPermData.rolePermissions}
-                                            customPermissions={userPermData.customPermissions}
-                                            userRole={userPermData.user.role}
-                                            onToggle={handleToggleClick}
-                                            saving={saving}
-                                        />
-                                    );
-                                })}
+                                {Object.entries(permissionsByCategory).map(([category, perms]) => (
+                                    <PermissionCategory
+                                        key={category}
+                                        category={category}
+                                        permissions={perms}
+                                        rolePermissions={userPermData.rolePermissions}
+                                        customPermissions={userPermData.customPermissions}
+                                        userRole={userPermData.user.role}
+                                        onToggle={handleToggleClick}
+                                        saving={saving}
+                                    />
+                                ))}
                             </div>
                         )}
                     </div>
@@ -610,7 +641,7 @@ function PermissionsContent() {
 // Permission Category Component
 interface PermissionCategoryProps {
     category: string;
-    permissions: typeof PERMISSIONS[PermissionCode][];
+    permissions: Permission[];
     rolePermissions: string[];
     customPermissions: CustomPermission[];
     userRole: string;
@@ -638,6 +669,9 @@ function PermissionCategory({
         attendance: "Điểm Danh",
         finance: "Tài Chính",
         reports: "Báo Cáo",
+        roles: "Vai Trò",
+        permissions: "Quyền Hạn",
+        timetable: "Thời Khóa Biểu",
     };
 
     return (
@@ -663,9 +697,9 @@ function PermissionCategory({
                         const hasFromRole = rolePermissions.includes(perm.code);
                         const customPerm = customPermissions.find((c) => c.permission_code === perm.code);
                         const hasCustom = !!customPerm && !customPerm.is_denied;
-                        const isAdmin = userRole === "admin";
-                        const hasPermission = isAdmin || hasFromRole || hasCustom;
-                        const canToggle = !isAdmin && !hasFromRole;
+                        const isGlobalAdmin = userRole === "admin" || userRole === "super_admin";
+                        const hasPermission = isGlobalAdmin || hasFromRole || hasCustom;
+                        const canToggle = !isGlobalAdmin && !hasFromRole;
 
                         return (
                             <div
@@ -676,12 +710,12 @@ function PermissionCategory({
                                     <div className="flex items-center gap-2">
                                         <p className="font-medium text-sm">{perm.name}</p>
                                         {/* Status badges */}
-                                        {isAdmin && (
+                                        {isGlobalAdmin && (
                                             <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                                                 Admin
                                             </span>
                                         )}
-                                        {hasFromRole && !isAdmin && (
+                                        {hasFromRole && !isGlobalAdmin && (
                                             <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                                                 Từ vai trò
                                             </span>

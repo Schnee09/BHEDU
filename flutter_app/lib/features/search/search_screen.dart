@@ -3,7 +3,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../core/ui/ui_components.dart';
 
@@ -46,9 +45,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
         ],
       ),
-      body: _query.isEmpty
-          ? _RecentSearches()
-          : _SearchResults(query: _query),
+      body: _query.isEmpty ? _RecentSearches() : _SearchResults(query: _query),
     );
   }
 }
@@ -83,11 +80,29 @@ class _SearchResults extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Mock search results
-    final results = [
-      {'type': 'student', 'title': 'Nguyễn Văn An', 'subtitle': 'Lớp 10A1'},
-      {'type': 'student', 'title': 'Trần Thị Bình', 'subtitle': 'Lớp 11B2'},
-      {'type': 'class', 'title': 'Lớp 10A1', 'subtitle': 'Phòng 201 - GVCN: Lê Văn C'},
-    ].where((item) => item['title']!.toLowerCase().contains(query.toLowerCase())).toList();
+    final results =
+        [
+              {
+                'type': 'student',
+                'title': 'Nguyễn Văn An',
+                'subtitle': 'Lớp 10A1',
+              },
+              {
+                'type': 'student',
+                'title': 'Trần Thị Bình',
+                'subtitle': 'Lớp 11B2',
+              },
+              {
+                'type': 'class',
+                'title': 'Lớp 10A1',
+                'subtitle': 'Phòng 201 - GVCN: Lê Văn C',
+              },
+            ]
+            .where(
+              (item) =>
+                  item['title']!.toLowerCase().contains(query.toLowerCase()),
+            )
+            .toList();
 
     if (results.isEmpty) {
       return Center(
@@ -108,7 +123,7 @@ class _SearchResults extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = results[index];
         final isStudent = item['type'] == 'student';
-        
+
         return AppCard(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           onTap: () {
@@ -121,7 +136,9 @@ class _SearchResults extends StatelessWidget {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: isStudent ? AppColors.student : AppColors.primary,
+                backgroundColor: isStudent
+                    ? AppColors.student
+                    : AppColors.primary,
                 child: Icon(
                   isStudent ? Icons.person : Icons.class_,
                   color: Colors.white,
@@ -139,7 +156,10 @@ class _SearchResults extends StatelessWidget {
                     ),
                     Text(
                       item['subtitle']!,
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),

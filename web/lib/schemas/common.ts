@@ -3,7 +3,7 @@
  * Shared schema helpers for pagination, sorting, and common fields
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 // ============================================
 // PAGINATION
@@ -13,8 +13,8 @@ import { z } from 'zod';
  * Standard pagination schema
  */
 export const paginationSchema = z.object({
-  page: z.string().optional().default('1').transform(Number),
-  limit: z.string().optional().default('25').transform(Number),
+  page: z.string().optional().default("1").transform(Number),
+  limit: z.string().optional().default("25").transform(Number),
 });
 
 /**
@@ -22,8 +22,10 @@ export const paginationSchema = z.object({
  */
 export const paginationWithDefaults = (defaultLimit = 25) =>
   z.object({
-    page: z.string().optional().default('1').transform(Number),
-    limit: z.string().optional().default(String(defaultLimit)).transform(Number),
+    page: z.string().optional().default("1").transform(Number),
+    limit: z.string().optional().default(String(defaultLimit)).transform(
+      Number,
+    ),
   });
 
 // ============================================
@@ -33,14 +35,16 @@ export const paginationWithDefaults = (defaultLimit = 25) =>
 /**
  * Standard sort order
  */
-export const sortOrderSchema = z.enum(['asc', 'desc']).optional().default('desc');
+export const sortOrderSchema = z.enum(["asc", "desc"]).optional().default(
+  "desc",
+);
 
 /**
  * Create a sort schema with allowed fields
  */
 export function createSortSchema<T extends readonly [string, ...string[]]>(
   allowedFields: T,
-  defaultField: T[number] = 'created_at' as T[number]
+  defaultField: T[number] = "created_at" as T[number],
 ) {
   return z.object({
     sort: z.enum(allowedFields).optional().default(defaultField),
@@ -64,8 +68,17 @@ export const dateStringSchema = z.string().date();
 /** Optional date string field */
 export const optionalDateStringSchema = z.string().date().optional().nullable();
 
+/** Timestamp schema (ISO 8601 datetime) */
+export const timestampSchema = z.string().datetime();
+
+/** Time string schema (HH:mm or HH:mm:ss) */
+export const timeStringSchema = z.string().regex(
+  /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/,
+  "Invalid time format (HH:mm)",
+);
+
 /** Email field */
-export const emailSchema = z.string().email('Invalid email format');
+export const emailSchema = z.string().email("Invalid email format");
 
 /** Optional email field */
 export const optionalEmailSchema = z.string().email().optional().nullable();
@@ -83,23 +96,98 @@ export const notesSchema = z.string().max(500).optional().nullable();
 export const booleanStringSchema = z
   .string()
   .optional()
-  .transform((val) => val === 'true');
+  .transform((val) => (val === undefined ? undefined : val === "true"));
 
 // ============================================
 // COMMON ENUMS
 // ============================================
 
-/** User roles */
-export const userRoleSchema = z.enum(['student', 'teacher', 'staff', 'admin']);
+/** User roles (matches database enum) */
+export const userRoleSchema = z.enum([
+  "super_admin",
+  "owner",
+  "admin",
+  "staff",
+  "teacher",
+  "tutor",
+  "parent",
+  "student",
+]);
 
 /** Student status */
-export const studentStatusSchema = z.enum(['active', 'inactive', 'graduated', 'suspended', 'transferred']);
+export const studentStatusSchema = z.enum([
+  "active",
+  "inactive",
+  "graduated",
+  "suspended",
+  "transferred",
+]);
 
 /** Gender */
-export const genderSchema = z.enum(['male', 'female', 'other']);
+export const genderSchema = z.enum(["male", "female", "other"]);
 
 /** Semester */
-export const semesterSchema = z.enum(['1', '2', 'final']);
+export const semesterSchema = z.enum(["1", "2", "final"]);
+
+/** Grade component (matches database enum) */
+export const gradeComponentSchema = z.enum([
+  "oral",
+  "fifteen_min",
+  "one_period",
+  "midterm",
+  "final",
+]);
+
+/** Attendance status (matches database enum) */
+export const attendanceStatusSchema = z.enum([
+  "present",
+  "absent",
+  "late",
+  "excused",
+  "half_day",
+]);
+
+/** Enrollment status (matches database enum) */
+export const enrollmentStatusSchema = z.enum([
+  "enrolled",
+  "completed",
+  "dropped",
+  "withdrawn",
+]);
+
+/** Invoice status (matches database enum) */
+export const invoiceStatusSchema = z.enum([
+  "draft",
+  "sent",
+  "pending",
+  "partial",
+  "paid",
+  "overdue",
+  "cancelled",
+  "refunded",
+]);
+
+/** Payment status (matches database enum) */
+export const paymentStatusSchema = z.enum([
+  "pending",
+  "completed",
+  "failed",
+  "refunded",
+  "cancelled",
+  "received",
+  "verified",
+]);
+
+/** Grade level (Vietnamese system) */
+export const gradeLevelSchema = z.enum([
+  "Lớp 6",
+  "Lớp 7",
+  "Lớp 8",
+  "Lớp 9",
+  "Lớp 10",
+  "Lớp 11",
+  "Lớp 12",
+]).optional().nullable();
 
 // ============================================
 // QUERY HELPERS
@@ -110,8 +198,8 @@ export const semesterSchema = z.enum(['1', '2', 'final']);
  */
 export function createListQuerySchema<T extends z.ZodRawShape>(
   filters: T,
-  sortFields: readonly [string, ...string[]] = ['created_at'],
-  defaultLimit = 25
+  sortFields: readonly [string, ...string[]] = ["created_at"],
+  defaultLimit = 25,
 ) {
   return z.object({
     ...paginationWithDefaults(defaultLimit).shape,
@@ -121,116 +209,6 @@ export function createListQuerySchema<T extends z.ZodRawShape>(
 }
 
 // ============================================
-// CLASSES SCHEMA
-// ============================================
-
-/**
- * Class query parameters
- */
-export const classQuerySchema = z.object({
-  page: z.string().optional().default('1').transform(Number),
-  limit: z.string().optional().default('50').transform(Number),
-  search: z.string().optional(),
-  teacher_id: z.string().uuid().optional(),
-  grade: z.string().optional(),
-  academic_year_id: z.string().uuid().optional(),
-});
-
-/**
- * Class creation schema
- */
-export const createClassSchema = z.object({
-  name: z.string().min(1, 'Class name is required').max(100),
-  code: z.string().max(20).optional(),
-  description: z.string().max(500).optional().nullable(),
-  teacher_id: z.string().uuid('Invalid teacher ID').optional().nullable(),
-  grade: z.string().max(20).optional(),
-  academic_year_id: z.string().uuid().optional().nullable(),
-  max_students: z.number().int().positive().optional().default(40),
-});
-
-// ============================================
-// ENROLLMENT SCHEMA
-// ============================================
-
-/**
- * Enrollment query parameters
- */
-export const enrollmentQuerySchema = z.object({
-  page: z.string().optional().default('1').transform(Number),
-  limit: z.string().optional().default('50').transform(Number),
-  class_id: z.string().uuid().optional(),
-  student_id: z.string().uuid().optional(),
-  status: z.enum(['active', 'withdrawn', 'completed', 'all']).optional(),
-  academic_year_id: z.string().uuid().optional(),
-});
-
-/**
- * Enrollment creation schema
- */
-export const createEnrollmentSchema = z.object({
-  student_id: z.string().uuid('Invalid student ID'),
-  class_id: z.string().uuid('Invalid class ID'),
-  enrollment_date: z.string().date().optional(),
-  status: z.enum(['active', 'withdrawn', 'completed']).optional().default('active'),
-  notes: z.string().max(500).optional().nullable(),
-});
-
-/**
- * Bulk enrollment schema
- */
-export const bulkEnrollmentSchema = z.object({
-  class_id: z.string().uuid('Invalid class ID'),
-  student_ids: z.array(z.string().uuid()).min(1, 'At least one student required').max(100),
-  enrollment_date: z.string().date().optional(),
-});
-
-// ============================================
-// ATTENDANCE SCHEMA
-// ============================================
-
-/**
- * Attendance query parameters
- */
-export const attendanceQuerySchema = z.object({
-  page: z.string().optional().default('1').transform(Number),
-  limit: z.string().optional().default('50').transform(Number),
-  class_id: z.string().uuid().optional(),
-  student_id: z.string().uuid().optional(),
-  date: z.string().date().optional(),
-  start_date: z.string().date().optional(),
-  end_date: z.string().date().optional(),
-  status: z.enum(['present', 'absent', 'late', 'excused', 'all']).optional(),
-});
-
-/**
- * Attendance record schema
- */
-export const attendanceRecordSchema = z.object({
-  student_id: z.string().uuid('Invalid student ID'),
-  class_id: z.string().uuid('Invalid class ID'),
-  date: z.string().date('Invalid date'),
-  status: z.enum(['present', 'absent', 'late', 'excused']),
-  notes: z.string().max(500).optional().nullable(),
-  excused_reason: z.string().max(200).optional().nullable(),
-});
-
-/**
- * Bulk attendance schema
- */
-export const bulkAttendanceSchema = z.object({
-  class_id: z.string().uuid('Invalid class ID'),
-  date: z.string().date('Invalid date'),
-  records: z.array(
-    z.object({
-      student_id: z.string().uuid('Invalid student ID'),
-      status: z.enum(['present', 'absent', 'late', 'excused']),
-      notes: z.string().max(500).optional().nullable(),
-    })
-  ).min(1, 'At least one record required'),
-});
-
-// ============================================
 // SUBJECT SCHEMA
 // ============================================
 
@@ -238,8 +216,8 @@ export const bulkAttendanceSchema = z.object({
  * Subject query parameters
  */
 export const subjectQuerySchema = z.object({
-  page: z.string().optional().default('1').transform(Number),
-  limit: z.string().optional().default('50').transform(Number),
+  page: z.string().optional().default("1").transform(Number),
+  limit: z.string().optional().default("50").transform(Number),
   search: z.string().optional(),
   department: z.string().optional(),
 });
@@ -248,10 +226,16 @@ export const subjectQuerySchema = z.object({
  * Subject creation schema
  */
 export const createSubjectSchema = z.object({
-  name: z.string().min(1, 'Subject name is required').max(100),
-  code: z.string().max(20).optional(),
+  name: z.string().min(1, "Subject name is required").max(100),
+  code: z.string().min(1, "Subject code is required").max(20),
   description: z.string().max(500).optional().nullable(),
   department: z.string().max(100).optional(),
   credits: z.number().int().min(0).optional().default(1),
   is_active: z.boolean().optional().default(true),
 });
+
+/**
+ * Subject update schema
+ */
+export const updateSubjectSchema = createSubjectSchema.partial();
+export type UpdateSubjectInput = z.infer<typeof updateSubjectSchema>;

@@ -1,14 +1,21 @@
 /**
  * Tests for StudentService
+ *
+ * Updated for instance-based pattern (Phase 2)
  */
 
-import { StudentService } from '@/lib/services/studentService';
-import { NotFoundError, ValidationError } from '@/lib/api/errors';
+import { StudentService, studentService } from "@/lib/services/studentService";
+import { NotFoundError, ValidationError } from "@/lib/api/errors";
 
-jest.mock('@/lib/supabase/server');
-import { createClient } from '@/lib/supabase/server';
+// Mock Supabase client
+jest.mock("@/lib/supabase/server", () => ({
+  createClient: jest.fn(),
+  createServiceClient: jest.fn(),
+}));
 
-describe('StudentService', () => {
+import { createServiceClient } from "@/lib/supabase/server";
+
+describe("StudentService", () => {
   let mockSupabase: any;
 
   beforeEach(() => {
@@ -24,18 +31,18 @@ describe('StudentService', () => {
       },
     };
 
-    (createClient as jest.Mock).mockResolvedValue(mockSupabase);
+    (createServiceClient as jest.Mock).mockReturnValue(mockSupabase);
   });
 
-  describe('getStudents', () => {
-    it('should return paginated students', async () => {
+  describe("getStudents", () => {
+    it("should return paginated students", async () => {
       const mockStudents = [
         {
-          id: '1',
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john@example.com',
-          role: 'student',
+          id: "1",
+          first_name: "John",
+          last_name: "Doe",
+          email: "john@example.com",
+          role: "student",
         },
       ];
 
@@ -53,14 +60,15 @@ describe('StudentService', () => {
         }),
       });
 
-      const result = await StudentService.getStudents({ page: 1, pageSize: 20 });
+      const service = new StudentService(mockSupabase);
+      const result = await service.getStudents({ page: 1, pageSize: 20 });
 
       expect(result.students).toEqual(mockStudents);
       expect(result.total).toBe(1);
-      expect(mockSupabase.from).toHaveBeenCalledWith('profiles');
+      expect(mockSupabase.from).toHaveBeenCalledWith("profiles");
     });
 
-    it('should filter by search term', async () => {
+    it("should filter by search term", async () => {
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -77,19 +85,40 @@ describe('StudentService', () => {
         }),
       });
 
-      await StudentService.getStudents({ search: 'John' });
+      const service = new StudentService(mockSupabase);
+      await service.getStudents({ search: "John" });
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('profiles');
+      expect(mockSupabase.from).toHaveBeenCalledWith("profiles");
+    });
+
+    it("should throw error when database fails", async () => {
+      mockSupabase.from.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            range: jest.fn().mockReturnValue({
+              order: jest.fn().mockResolvedValue({
+                data: null,
+                error: { message: "Database error" },
+              }),
+            }),
+          }),
+        }),
+      });
+
+      const service = new StudentService(mockSupabase);
+      await expect(service.getStudents()).rejects.toThrow(
+        "Failed to fetch students",
+      );
     });
   });
 
-  describe('getStudentById', () => {
-    it('should return student with enrollments', async () => {
+  describe("getStudentById", () => {
+    it("should return student with enrollments", async () => {
       const mockStudent = {
-        id: '1',
-        first_name: 'John',
-        last_name: 'Doe',
-        enrollments: [{ id: 'e1', class_id: 'c1' }],
+        id: "1",
+        first_name: "John",
+        last_name: "Doe",
+        enrollments: [{ id: "e1", class_id: "c1" }],
       };
 
       mockSupabase.from.mockReturnValue({
@@ -105,43 +134,47 @@ describe('StudentService', () => {
         }),
       });
 
-      const student = await StudentService.getStudentById('1');
+      const service = new StudentService(mockSupabase);
+      const student = await service.getStudentById("1");
 
       expect(student).toEqual(mockStudent);
       expect(student.enrollments).toHaveLength(1);
     });
 
-    it('should throw NotFoundError when student not found', async () => {
+    it("should throw NotFoundError when student not found", async () => {
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: null,
-                error: { message: 'Not found' },
+                error: { message: "Not found" },
               }),
             }),
           }),
         }),
       });
 
-      await expect(StudentService.getStudentById('999')).rejects.toThrow(NotFoundError);
+      const service = new StudentService(mockSupabase);
+      await expect(service.getStudentById("999")).rejects.toThrow(
+        NotFoundError,
+      );
     });
   });
 
-  describe('enrollStudent', () => {
-    it('should enroll student in class', async () => {
+  describe("enrollStudent", () => {
+    it("should enroll student in class", async () => {
       const mockStudent = {
-        id: '1',
-        first_name: 'John',
+        id: "1",
+        first_name: "John",
         enrollments: [],
       };
 
       const mockEnrollment = {
-        id: 'e1',
-        student_id: '1',
-        class_id: 'c1',
-        status: 'active',
+        id: "e1",
+        student_id: "1",
+        class_id: "c1",
+        status: "active",
       };
 
       // Mock getStudentById
@@ -183,20 +216,21 @@ describe('StudentService', () => {
           }),
         });
 
-      const enrollment = await StudentService.enrollStudent('1', 'c1');
+      const service = new StudentService(mockSupabase);
+      const enrollment = await service.enrollStudent("1", "c1");
 
-      expect(enrollment.student_id).toBe('1');
-      expect(enrollment.class_id).toBe('c1');
+      expect(enrollment.student_id).toBe("1");
+      expect(enrollment.class_id).toBe("c1");
     });
 
-    it('should throw ValidationError if already enrolled', async () => {
+    it("should throw ValidationError if already enrolled", async () => {
       mockSupabase.from
         .mockReturnValueOnce({
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
-                  data: { id: '1', enrollments: [] },
+                  data: { id: "1", enrollments: [] },
                   error: null,
                 }),
               }),
@@ -208,7 +242,7 @@ describe('StudentService', () => {
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
-                  data: { id: 'existing' },
+                  data: { id: "existing" },
                   error: null,
                 }),
               }),
@@ -216,21 +250,22 @@ describe('StudentService', () => {
           }),
         });
 
-      await expect(StudentService.enrollStudent('1', 'c1')).rejects.toThrow(
-        ValidationError
+      const service = new StudentService(mockSupabase);
+      await expect(service.enrollStudent("1", "c1")).rejects.toThrow(
+        ValidationError,
       );
     });
   });
 
-  describe('deleteStudent', () => {
-    it('should throw ValidationError if student has active enrollments', async () => {
+  describe("deleteStudent", () => {
+    it("should throw ValidationError if student has active enrollments", async () => {
       mockSupabase.from
         .mockReturnValueOnce({
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
-                  data: { id: '1', enrollments: [] },
+                  data: { id: "1", enrollments: [] },
                   error: null,
                 }),
               }),
@@ -242,7 +277,7 @@ describe('StudentService', () => {
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockReturnValue({
                 limit: jest.fn().mockResolvedValue({
-                  data: [{ id: 'e1' }],
+                  data: [{ id: "e1" }],
                   error: null,
                 }),
               }),
@@ -250,7 +285,29 @@ describe('StudentService', () => {
           }),
         });
 
-      await expect(StudentService.deleteStudent('1')).rejects.toThrow(ValidationError);
+      const service = new StudentService(mockSupabase);
+      await expect(service.deleteStudent("1")).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe("Static methods backward compatibility", () => {
+    it("should delegate static getStudents to instance method", async () => {
+      mockSupabase.from.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            range: jest.fn().mockReturnValue({
+              order: jest.fn().mockResolvedValue({
+                data: [],
+                error: null,
+                count: 0,
+              }),
+            }),
+          }),
+        }),
+      });
+
+      const result = await StudentService.getStudents();
+      expect(result.students).toEqual([]);
     });
   });
 });

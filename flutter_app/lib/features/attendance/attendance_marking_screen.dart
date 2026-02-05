@@ -1,13 +1,16 @@
 /// Attendance Marking Screen - Teachers mark attendance for a class
+/// Cross-platform synchronized with web Pro Max design
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/providers/customization_provider.dart';
 import '../../data/models/profile_model.dart';
 import '../../data/repositories/students_repository.dart';
 import '../../data/repositories/attendance_repository.dart';
+import '../../shared/widgets/glass_container.dart';
 
 /// Attendance state for each student
 class AttendanceEntry {
@@ -163,31 +166,101 @@ class _AttendanceMarkingScreenState extends ConsumerState<AttendanceMarkingScree
                     );
                   },
                 ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.surfaceVariant)),
-        ),
-        child: SafeArea(
-          child: Row(
-            children: [
-              // Stats
-              Expanded(
-                child: _AttendanceStats(entries: entries),
+      bottomNavigationBar: Consumer(
+        builder: (context, ref, _) {
+          final palette = ref.watch(accentColorProvider);
+          
+          return GlassContainer(
+            padding: const EdgeInsets.all(16),
+            borderRadius: 0,
+            showBorder: false,
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Bulk action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ref.read(classAttendanceProvider(widget.classId).notifier).markAllPresent();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Đã đánh dấu tất cả có mặt'),
+                                backgroundColor: AppColors.success,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.check_circle, color: AppColors.success),
+                          label: const Text('Tất cả có mặt'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.success,
+                            side: const BorderSide(color: AppColors.success),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ref.read(classAttendanceProvider(widget.classId).notifier).markAllAbsent();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Đã đánh dấu tất cả vắng mặt'),
+                                backgroundColor: AppColors.error,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.cancel, color: AppColors.error),
+                          label: const Text('Tất cả vắng'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.error,
+                            side: const BorderSide(color: AppColors.error),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Stats and Save row
+                  Row(
+                    children: [
+                      // Stats
+                      Expanded(
+                        child: _AttendanceStats(entries: entries),
+                      ),
+                      const SizedBox(width: 16),
+                      // Save button
+                      ElevatedButton.icon(
+                        onPressed: _isSaving ? null : _saveAttendance,
+                        icon: _isSaving 
+                            ? SizedBox(
+                                width: 20, 
+                                height: 20, 
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation(Colors.white),
+                                ),
+                              )
+                            : const Icon(Icons.save),
+                        label: const Text('Lưu điểm danh'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: palette.primary,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              // Save button
-              ElevatedButton.icon(
-                onPressed: _isSaving ? null : _saveAttendance,
-                icon: _isSaving 
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.save),
-                label: const Text('Save'),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

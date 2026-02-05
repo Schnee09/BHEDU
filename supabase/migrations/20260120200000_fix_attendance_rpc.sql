@@ -1,6 +1,8 @@
 -- Redefine get_class_attendance RPC to use correct schema and return consistent data
 -- This function gets all students enrolled in a class and their attendance for a specific date
 
+DROP FUNCTION IF EXISTS public.get_class_attendance(UUID, DATE) CASCADE;
+
 CREATE OR REPLACE FUNCTION get_class_attendance(p_class_id UUID, p_date DATE)
 RETURNS TABLE (
     student_id UUID,

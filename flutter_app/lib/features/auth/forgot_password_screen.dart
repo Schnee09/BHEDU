@@ -3,7 +3,6 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
-import '../../core/ui/ui_components.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -20,10 +19,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       extendBodyBehindAppBar: true,
       body: Container(
         decoration: const BoxDecoration(
@@ -81,7 +77,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : const Text('Gửi yêu cầu'),
           ),

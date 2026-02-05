@@ -2,6 +2,7 @@
 /// Maps to Web App's StudentRepository logic
 library;
 
+import 'dart:developer' as developer;
 import '../models/profile_model.dart';
 import 'base_repository.dart';
 
@@ -19,12 +20,9 @@ class StudentsRepository extends BaseRepository {
     String? gradeLevel,
   }) async {
     return handleAsyncErrors(() async {
-      print('[StudentsRepository] Fetching students page $page');
-      
-      var query = supabase
-          .from(tableName)
-          .select()
-          .eq('role', 'student');
+      developer.log('[StudentsRepository] Fetching students page $page');
+
+      var query = supabase.from(tableName).select().eq('role', 'student');
 
       if (search != null && search.isNotEmpty) {
         query = query.or('full_name.ilike.%$search%,email.ilike.%$search%');
@@ -72,7 +70,7 @@ class StudentsRepository extends BaseRepository {
           .select('student_id')
           .eq('class_id', classId)
           .eq('status', 'active');
-      
+
       final studentIds = (enrollments as List)
           .map((e) => e['student_id'] as String)
           .toList();

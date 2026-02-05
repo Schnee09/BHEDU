@@ -72,7 +72,7 @@ export default function TranscriptPage({ params }: { params: Promise<{ id: strin
 
   const fetchStudent = async () => {
     try {
-      const res = await apiFetch(`/api/students/${resolvedParams.id}`);
+      const res = await apiFetch(`/api/v2/students/${resolvedParams.id}`);
       const data = await res.json();
       if (data.success) {
         setStudent(data.student);
@@ -107,7 +107,7 @@ export default function TranscriptPage({ params }: { params: Promise<{ id: strin
 
     try {
       const res = await apiFetch(
-        `/api/students/${resolvedParams.id}/transcript?academic_year_id=${selectedYear}&semester=${selectedSemester}`
+        `/api/v2/students/${resolvedParams.id}/transcript?academic_year_id=${selectedYear}&semester=${selectedSemester}`
       );
       const data = await res.json();
 

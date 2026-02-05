@@ -10,10 +10,12 @@ BEGIN
 END $$;
 
 -- Ensure the RPC uses the correct column
+DROP FUNCTION IF EXISTS get_class_attendance(p_class_id UUID, p_date DATE);
+
 CREATE OR REPLACE FUNCTION get_class_attendance(p_class_id UUID, p_date DATE)
 RETURNS TABLE (
     student_id UUID,
-    full_name TEXT,
+    student_name TEXT,
     student_code TEXT,
     email TEXT,
     status TEXT,
@@ -23,7 +25,7 @@ BEGIN
     RETURN QUERY
     SELECT 
         p.id as student_id,
-        p.full_name,
+        p.full_name as student_name,
         p.student_id as student_code,
         p.email,
         COALESCE(a.status, 'unmarked') as status,

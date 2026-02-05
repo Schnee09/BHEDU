@@ -13,7 +13,11 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useFetch, useToast } from "@/hooks";
 import { usePermissions, PermissionGuard } from "@/hooks/usePermissions";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, getClasses, createClass, enrollStudent, updateClass } from "@/lib/api/client";
+import { routes } from "@/lib/routes";
+// ... imports
+
+
 import {
   Button,
   Card,
@@ -24,6 +28,7 @@ import { Icons } from "@/components/ui/Icons";
 // CardGridSkeleton removed (unused)
 import { ToastContainer } from "@/components/ui/Toast";
 import { logger } from "@/lib/logger";
+
 
 interface Teacher {
   full_name: string;
@@ -59,6 +64,12 @@ export default function ClassesPageModern() {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [enrolling, setEnrolling] = useState(false);
 
+  // Data state
+  const [classes, setClasses] = useState<ClassData[]>([]);
+  const [statistics, setStatistics] = useState<ClassStats | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   // Create Class Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [teachers, setTeachers] = useState<{ id: string; full_name: string; email: string }[]>([]);
@@ -76,40 +87,60 @@ export default function ClassesPageModern() {
   const canManageClasses = can('classes.create') || can('classes.edit');
   const canEnrollStudents = can('classes.enroll');
 
-  // Single API endpoint - RLS handles filtering based on user role
-  // Only fetch when permissions are loaded
-  const apiEndpoint = permissionsLoading ? null : '/api/classes';
+  // Fetch classes
+  const fetchClasses = async () => {
+    if (permissionsLoading) return;
 
-  // Fetch classes - RLS automatically filters based on user role
-  const { data, loading, error, refetch } = useFetch<{
-    classes?: ClassData[];
-    data?: ClassData[];
-    statistics?: ClassStats;
-  }>(apiEndpoint);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getClasses({ limit: 50 }) as any; // Cast to any since useFetch adds extra fields
 
-  // Handle success
-  useEffect(() => {
-    if (data) {
-      const classesArray = data.classes || data.data || [];
-      logger.info('Classes loaded', { count: classesArray.length, role });
-    }
-  }, [data, role]);
+      // Extract classes data - handle both wrapped and unwrapped responses
+      const classesData = (res.data || res.classes || []) as unknown as ClassData[];
+      setClasses(classesData);
 
-  // Handle error
-  useEffect(() => {
-    if (error) {
-      // Show user-friendly rate limit message
-      if (error.includes('Rate limit exceeded')) {
-        toast.warning('Vui lòng chờ', 'Quá nhiều yêu cầu. Vui lòng chờ một chút trước khi thử lại.');
+      // Group by teacher and calculate stats
+      const byTeacher: Record<string, number> = {};
+      let totalStudents = 0;
+
+      classesData.forEach(cls => {
+        if (cls.teacher_id) {
+          byTeacher[cls.teacher_id] = (byTeacher[cls.teacher_id] || 0) + 1;
+        }
+        totalStudents += (cls.enrollment_count || 0);
+      });
+
+      const totalClasses = res.pagination?.totalItems || classesData.length;
+      const avgEnrollment = totalClasses > 0 ? totalStudents / totalClasses : 0;
+
+      // Calculate statistics from the response or derive them
+      if (res.statistics) {
+        setStatistics(res.statistics);
       } else {
-        toast.error('Không thể tải lớp học', error);
-        logger.error('Classes fetch error', new Error(error));
+        setStatistics({
+          total_classes: totalClasses,
+          total_students: totalStudents,
+          average_enrollment: avgEnrollment,
+          by_teacher: byTeacher
+        });
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error fetching classes';
+      setError(msg);
+      toast.error('Lỗi', msg);
+    } finally {
+      setLoading(false);
     }
-  }, [error, toast]);
+  };
 
-  const classes = data?.classes || data?.data || [];
-  const statistics = data?.statistics;
+  useEffect(() => {
+    if (!permissionsLoading) {
+      fetchClasses();
+    }
+  }, [permissionsLoading, role]);
+
+  const refetch = fetchClasses;
 
   const handleEnrollClick = async (classData: ClassData) => {
     if (!canEnrollStudents) {
@@ -127,6 +158,8 @@ export default function ClassesPageModern() {
         apiFetch('/api/students?status=active&limit=500'),
         apiFetch(`/api/admin/enrollments?class_id=${classData.id}`)
       ]);
+      // Note: Kept apiFetch for students/enrollments queries as specific client helpers for these specific availability checks might not exist or use different params.
+      // Or I could use getStudents() and getEnrollments in future.
 
       if (!studentsRes.ok || !enrollmentsRes.ok) {
         throw new Error('Không thể tải dữ liệu đăng ký');
@@ -135,11 +168,15 @@ export default function ClassesPageModern() {
       const studentsData = await studentsRes.json();
       const enrollmentsData = await enrollmentsRes.json();
 
+      // Unwrap V2 response if needed
+      const studentsList = studentsData.data?.data || studentsData.data || studentsData.students || [];
+      const enrollmentsList = enrollmentsData.data?.data || enrollmentsData.data || enrollmentsData.enrollments || [];
+
       const enrolledStudentIds = new Set(
-        (enrollmentsData.data || []).map((e: { student_id: string }) => e.student_id)
+        enrollmentsList.map((e: { student_id: string }) => e.student_id)
       );
 
-      const available = (studentsData.students || studentsData.data || []).filter(
+      const available = studentsList.filter(
         (s: { id: string }) => !enrolledStudentIds.has(s.id)
       );
 
@@ -158,19 +195,7 @@ export default function ClassesPageModern() {
 
     setEnrolling(true);
     try {
-      const response = await apiFetch('/api/admin/enrollments', {
-        method: 'POST',
-        body: JSON.stringify({
-          student_id: selectedStudentId,
-          class_id: selectedClass.id,
-          status: 'active'
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Không thể đăng ký học sinh');
-      }
+      await enrollStudent(selectedStudentId, selectedClass.id);
 
       toast.success('Đăng ký thành công', 'Học sinh đã được đăng ký vào lớp học');
       setShowEnrollModal(false);
@@ -192,10 +217,12 @@ export default function ClassesPageModern() {
 
     // Fetch teachers for dropdown
     try {
-      const response = await apiFetch('/api/users?role=teacher');
+      const response = await apiFetch('/api/admin/users?role=teacher&limit=1000');
       if (response.ok) {
-        const data = await response.json();
-        setTeachers(data.users || data.data || []);
+        const result = await response.json();
+        // Unwrap V2 response if needed
+        const teachersData = result.data?.data || result.data || result.users || [];
+        setTeachers(teachersData);
       }
     } catch (err) {
       console.error('Failed to fetch teachers:', err);
@@ -210,22 +237,14 @@ export default function ClassesPageModern() {
 
     setCreating(true);
     try {
-      const response = await apiFetch('/api/classes', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: newClass.name.trim(),
-          code: newClass.code.trim() || undefined,
-          description: newClass.description.trim() || undefined,
-          teacherId: newClass.teacherId || undefined,
-          room: newClass.room.trim() || undefined,
-          schedule: newClass.schedule.trim() || undefined,
-        })
+      await createClass({
+        name: newClass.name.trim(),
+        code: newClass.code.trim() || undefined,
+        description: newClass.description.trim() || undefined,
+        teacher_id: newClass.teacherId || undefined, // Map camelCase to snake_case
+        room: newClass.room.trim() || undefined,
+        schedule: newClass.schedule.trim() || undefined,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Không thể tạo lớp học');
-      }
 
       toast.success('Tạo thành công', 'Lớp học đã được tạo');
       setShowCreateModal(false);
@@ -480,23 +499,49 @@ export default function ClassesPageModern() {
                       </p>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4 border-t border-gray-100">
-                      <Link href={`/dashboard/classes/${classData.id}`} className="flex-1">
-                        <Button variant="outline" fullWidth size="sm" className="font-semibold hover:bg-gray-50">
-                          Xem chi tiết
+                    {/* Class Actions */}
+                    <div className="flex flex-wrap gap-2 border-t border-gray-100 pt-5">
+                      <Link
+                        href={routes.classes.detail(classData.id)}
+                        className="flex-1 min-w-[100px]"
+                      >
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full rounded-lg border-gray-200 hover:bg-stone-50 hover:text-stone-900 transition-all duration-200"
+                          leftIcon={<Icons.Classes className="w-3.5 h-3.5" />}
+                        >
+                          Chi tiết
                         </Button>
                       </Link>
-                      {canEnrollStudents && (
+
+                      <PermissionGuard permissions="classes.enroll">
                         <Button
-                          variant="primary"
+                          variant="outline"
                           size="sm"
+                          className="flex-1 min-w-[100px] rounded-lg border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all duration-200"
                           onClick={() => handleEnrollClick(classData)}
-                          className="px-6 font-semibold"
+                          leftIcon={<Icons.Add className="w-3.5 h-3.5" />}
                         >
-                          Đăng ký
+                          Ghi danh
                         </Button>
-                      )}
+                      </PermissionGuard>
+
+                      <PermissionGuard permissions="classes.manage">
+                        <Link
+                          href={routes.classes.edit(classData.id)}
+                          className="flex-1 min-w-[100px]"
+                        >
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                            leftIcon={<Icons.Edit className="w-3.5 h-3.5" />}
+                          >
+                            Chỉnh sửa
+                          </Button>
+                        </Link>
+                      </PermissionGuard>
                     </div>
                   </div>
                 </div>

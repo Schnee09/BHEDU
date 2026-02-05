@@ -1,109 +1,88 @@
-import { createServiceClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { createServiceClient } from "@/lib/supabase/server";
+import { TimetableRepository } from "@/lib/repositories/TimetableRepository";
+import { z } from "zod";
+import {
+    dateStringSchema,
+    notesSchema,
+    uuidSchema,
+} from "@/lib/schemas/common";
 
-export async function GET(request: NextRequest) {
-    try {
-        const supabase = createServiceClient();
-        const { searchParams } = new URL(request.url);
-        const slotId = searchParams.get('slot_id');
-        const weekStartDate = searchParams.get('week_start_date');
+const weeklyNoteQuerySchema = z.object({
+    slot_id: uuidSchema,
+    week_start_date: dateStringSchema,
+});
 
-        if (!slotId || !weekStartDate) {
-            return NextResponse.json(
-                { success: false, error: 'Missing slot_id or week_start_date' },
-                { status: 400 }
-            );
-        }
+const saveWeeklyNoteSchema = z.object({
+    slot_id: uuidSchema,
+    week_start_date: dateStringSchema,
+    notes: notesSchema,
+});
 
-        const { data, error } = await supabase
-            .from('weekly_notes')
-            .select('*')
-            .eq('slot_id', slotId)
-            .eq('week_start_date', weekStartDate)
-            .maybeSingle();
-
-        if (error) throw error;
-
-        return NextResponse.json({ success: true, note: data });
-    } catch (error) {
-        console.error('Error fetching weekly note:', error);
-        return NextResponse.json(
-            { success: false, error: 'Failed to fetch weekly note' },
-            { status: 500 }
-        );
-    }
-}
-
-export async function POST(request: NextRequest) {
-    try {
-        const supabase = createServiceClient();
-        const body = await request.json();
-        const { slot_id, week_start_date, notes } = body;
+export const GET = createGetHandler(
+    { requireAuth: true }, // Auth likely required
+    async ({ request }) => {
+        const url = new URL(request.url);
+        const slot_id = url.searchParams.get("slot_id");
+        const week_start_date = url.searchParams.get("week_start_date");
 
         if (!slot_id || !week_start_date) {
-            return NextResponse.json(
-                { success: false, error: 'Missing slot_id or week_start_date' },
-                { status: 400 }
-            );
+            // Handled by validation ideally, but standard manual check here matches schema
+            // Could use validateQuery if we want strictness
+            throw new Error("Missing slot_id or week_start_date");
         }
 
-        // Upsert: insert or update if exists
-        const { data, error } = await supabase
-            .from('weekly_notes')
-            .upsert(
-                {
-                    slot_id,
-                    week_start_date,
-                    notes,
-                    updated_at: new Date().toISOString()
-                },
-                {
-                    onConflict: 'slot_id,week_start_date'
-                }
-            )
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        return NextResponse.json({ success: true, note: data });
-    } catch (error) {
-        console.error('Error saving weekly note:', error);
-        return NextResponse.json(
-            { success: false, error: 'Failed to save weekly note' },
-            { status: 500 }
-        );
-    }
-}
-
-export async function DELETE(request: NextRequest) {
-    try {
         const supabase = createServiceClient();
-        const { searchParams } = new URL(request.url);
-        const slotId = searchParams.get('slot_id');
-        const weekStartDate = searchParams.get('week_start_date');
+        const repository = new TimetableRepository(supabase);
 
-        if (!slotId || !weekStartDate) {
-            return NextResponse.json(
-                { success: false, error: 'Missing slot_id or week_start_date' },
-                { status: 400 }
-            );
+        const note = await repository.getWeeklyNote(slot_id, week_start_date);
+        return apiSuccess({ note });
+    },
+);
+
+export const POST = createApiHandler(
+    {
+        permission: "classes.manage", // Or 'timetable.manage'? Standard permissions?
+        // Original: Anyone? No distinct checks in original POST besides generic rate limit/auth
+        // Assuming teachers/staff can add notes.
+        allowedRoles: ["admin", "staff", "teacher", "tutor", "owner"],
+        bodySchema: saveWeeklyNoteSchema,
+    },
+    async ({ body }) => {
+        const supabase = createServiceClient();
+        const repository = new TimetableRepository(supabase);
+        const { slot_id, week_start_date, notes } = body;
+
+        // Ensure notes is treated as string if optional/null
+        const noteContent = notes || "";
+
+        const note = await repository.saveWeeklyNote(
+            slot_id,
+            week_start_date,
+            noteContent,
+        );
+        return apiSuccess({ note });
+    },
+);
+
+export const DELETE = createApiHandler(
+    {
+        permission: "classes.manage",
+        allowedRoles: ["admin", "staff", "teacher", "tutor", "owner"],
+    },
+    async ({ request }) => {
+        const url = new URL(request.url);
+        const slot_id = url.searchParams.get("slot_id");
+        const week_start_date = url.searchParams.get("week_start_date");
+
+        if (!slot_id || !week_start_date) {
+            throw new Error("Missing slot_id or week_start_date");
         }
 
-        const { error } = await supabase
-            .from('weekly_notes')
-            .delete()
-            .eq('slot_id', slotId)
-            .eq('week_start_date', weekStartDate);
+        const supabase = createServiceClient();
+        const repository = new TimetableRepository(supabase);
 
-        if (error) throw error;
-
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error('Error deleting weekly note:', error);
-        return NextResponse.json(
-            { success: false, error: 'Failed to delete weekly note' },
-            { status: 500 }
-        );
-    }
-}
+        await repository.deleteWeeklyNote(slot_id, week_start_date);
+        return apiSuccess({ success: true });
+    },
+);

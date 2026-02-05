@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
+import PageGuard from "@/components/PageGuard";
 import { apiFetch } from "@/lib/api/client";
 import {
     Plus,
@@ -35,7 +37,16 @@ interface Subject {
 }
 
 export default function TutorsPage() {
+    return (
+        <PageGuard permissions="users.view">
+            <TutorsContent />
+        </PageGuard>
+    );
+}
+
+function TutorsContent() {
     const { profile, loading: profileLoading } = useProfile();
+    const { isAdmin: isSystemAdmin, isStaff } = usePermissions();
     const [tutors, setTutors] = useState<Tutor[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
@@ -55,7 +66,8 @@ export default function TutorsPage() {
         bio: ""
     });
 
-    const isAdmin = profile?.role === "admin" || profile?.role === "staff";
+    // Check if user can manage tutors (isAdmin or isStaff)
+    const canManage = isSystemAdmin || isStaff;
 
     const fetchTutors = async () => {
         setLoading(true);
@@ -186,17 +198,6 @@ export default function TutorsPage() {
         );
     }
 
-    if (!isAdmin) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <GraduationCap className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">Bạn không có quyền truy cập trang này</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="p-6 max-w-7xl mx-auto">
             {/* Header */}
@@ -208,13 +209,15 @@ export default function TutorsPage() {
                     </h1>
                     <p className="text-gray-500 mt-1">Quản lý danh sách sinh viên dạy kèm</p>
                 </div>
-                <button
-                    onClick={openCreateModal}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
-                >
-                    <Plus className="w-5 h-5" />
-                    Thêm gia sư
-                </button>
+                {canManage && (
+                    <button
+                        onClick={openCreateModal}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Thêm gia sư
+                    </button>
+                )}
             </div>
 
             {/* Search */}
@@ -263,7 +266,7 @@ export default function TutorsPage() {
                     <p className="text-gray-500 mb-4">
                         {searchQuery ? "Không tìm thấy gia sư nào" : "Chưa có gia sư nào"}
                     </p>
-                    {!searchQuery && (
+                    {!searchQuery && canManage && (
                         <button
                             onClick={openCreateModal}
                             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
@@ -299,20 +302,22 @@ export default function TutorsPage() {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="flex gap-1">
-                                    <button
-                                        onClick={() => openEditModal(tutor)}
-                                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                                    >
-                                        <Edit3 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => deleteTutor(tutor.id)}
-                                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
+                                {canManage && (
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={() => openEditModal(tutor)}
+                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                        >
+                                            <Edit3 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => deleteTutor(tutor.id)}
+                                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-2 text-sm">

@@ -92,7 +92,7 @@ export default function EnrollmentsPage() {
 
     const loadAllStudents = async () => {
         try {
-            const response = await apiFetch('/api/admin/users?role=student&limit=200')
+            const response = await apiFetch('/api/admin/users?role=student&limit=1000')
             if (response.ok) {
                 const data = await response.json()
                 setAvailableStudents(data.users || data.data || [])
@@ -443,17 +443,16 @@ export default function EnrollmentsPage() {
                                                 ) : (
                                                     <button
                                                         onClick={() => setEditingEnrollment(student.student_id)}
-                                                        className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
-                                                            student.status === 'active' || !student.status
+                                                        className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${student.status === 'active' || !student.status
                                                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                                                                 : student.status === 'inactive'
-                                                                ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                                                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                                        }`}
+                                                                    ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                                                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                                            }`}
                                                     >
                                                         {student.status === 'active' || !student.status ? 'Đang học' :
-                                                         student.status === 'inactive' ? 'Nghỉ học' :
-                                                         student.status === 'completed' ? 'Hoàn thành' : 'Rút lui'}
+                                                            student.status === 'inactive' ? 'Nghỉ học' :
+                                                                student.status === 'completed' ? 'Hoàn thành' : 'Rút lui'}
                                                         <ChevronDownIcon className="w-3 h-3" />
                                                     </button>
                                                 )}
@@ -508,9 +507,8 @@ export default function EnrollmentsPage() {
                                     filteredStudents.slice(0, 50).map(student => (
                                         <label
                                             key={student.id}
-                                            className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-3 cursor-pointer ${
-                                                selectedToEnroll.has(student.id) ? 'bg-green-50 dark:bg-green-900/20' : ''
-                                            }`}
+                                            className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-3 cursor-pointer ${selectedToEnroll.has(student.id) ? 'bg-green-50 dark:bg-green-900/20' : ''
+                                                }`}
                                         >
                                             <input
                                                 type="checkbox"

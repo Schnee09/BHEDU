@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { apiFetch } from '@/lib/api/client'
+import { apiFetch, deleteStudent } from '@/lib/api/client'
 import { showToast } from '@/components/ToastProvider'
 
 interface StudentActionsProps {
@@ -22,22 +22,16 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
     const loadingToast = showToast.loading('Archiving student...')
 
     try {
-      const response = await apiFetch(`/api/admin/students/${studentId}`, {
-        method: 'DELETE'
-      })
+      await deleteStudent(studentId);
 
-      const result = await response.json()
       showToast.dismiss(loadingToast)
+      showToast.success('Student archived successfully!')
+      setShowDeleteModal(false)
+      setTimeout(() => {
+        router.push('/dashboard/students')
+      }, 1500)
 
-      if (response.ok) {
-        showToast.success('Student archived successfully!')
-        setShowDeleteModal(false)
-        setTimeout(() => {
-          router.push('/dashboard/students')
-        }, 1500)
-      } else {
-        showToast.error(result.error || 'Failed to archive student')
-      }
+
     } catch (error) {
       showToast.dismiss(loadingToast)
       console.error('Failed to archive student:', error)
@@ -114,10 +108,10 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
               Are you sure you want to archive <strong>{studentName}</strong>?
             </p>
             <p className="text-sm text-gray-600 mb-6">
-              This will set their status to &quot;inactive&quot; and hide them from active student lists. 
+              This will set their status to &quot;inactive&quot; and hide them from active student lists.
               This action can be reversed by editing the student later.
             </p>
-            
+
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
               <p className="text-sm text-yellow-800">
                 <strong>Note:</strong> All student data (grades, attendance, enrollments) will be preserved.

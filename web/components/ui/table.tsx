@@ -1,12 +1,10 @@
-/**
- * Enhanced Table Component - Clean Readable Design
- * Eye-friendly data tables for education platform
- */
-
 import React, { ReactNode } from 'react';
+import { EmptyState } from './EmptyState';
+import { SkeletonTable } from './skeleton';
+import { cn } from '@/lib/utils';
 
 // ============================================================================
-// TABLE COMPONENTS - CLEAN READABLE STYLE
+// TABLE COMPONENTS - PREMIUM DATA PRESENTATION
 // ============================================================================
 
 interface Column<T = any> {
@@ -32,6 +30,12 @@ interface TableProps<T = any> {
   className?: string;
   /** Show stacked cards on mobile instead of table */
   mobileCards?: boolean;
+  loading?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyIcon?: ReactNode;
+  emptyActionLabel?: string;
+  onEmptyAction?: () => void;
 }
 
 export function Table<T = any>({
@@ -44,34 +48,61 @@ export function Table<T = any>({
   compact = false,
   className = '',
   mobileCards = false,
+  loading = false,
+  emptyTitle = 'Không có dữ liệu',
+  emptyDescription,
+  emptyIcon,
+  emptyActionLabel,
+  onEmptyAction,
 }: TableProps<T>) {
   const paddingClass = compact ? 'px-4 py-3' : 'px-6 py-4';
 
-  // Mobile card view
-  if (mobileCards && data.length > 0) {
-    const primaryCol = columns.find(c => c.mobilePrimary) || columns[0];
-
+  if (loading) {
     return (
-      <>
-        {/* Mobile Cards - shown on small screens */}
-        <div className={`md:hidden space-y-3 ${className}`}>
+      <div className={cn("bg-white dark:bg-stone-900/40 rounded-[32px] p-6 border border-stone-200 dark:border-white/10 shadow-xl overflow-hidden", className)}>
+        <SkeletonTable rows={5} columns={columns.length} />
+      </div>
+    );
+  }
+
+  // No data case
+  if (data.length === 0) {
+    return (
+      <EmptyState
+        title={emptyTitle}
+        description={emptyDescription}
+        icon={emptyIcon}
+        actionLabel={emptyActionLabel}
+        onAction={onEmptyAction}
+        className={className}
+      />
+    );
+  }
+
+  const primaryCol = columns.find(c => c.mobilePrimary) || columns[0];
+
+  return (
+    <div className={cn("relative", className)}>
+      {/* Mobile view - Cards */}
+      {mobileCards && (
+        <div className="md:hidden space-y-4">
           {data.map((row) => (
             <div
               key={keyExtractor(row)}
               onClick={() => onRowClick?.(row)}
-              className={`bg-surface p-4 rounded-xl border border-border shadow-sm ${hoverable ? 'hover:bg-surface-hover cursor-pointer transition-colors' : ''
-                }`}
+              className={cn(
+                "bg-white dark:bg-stone-900/60 p-6 rounded-[24px] border border-stone-100 dark:border-white/5 shadow-md active:scale-[0.98] transition-all",
+                hoverable && "hover:border-amber-500/30 cursor-pointer"
+              )}
             >
-              {/* Primary field as header */}
-              <div className="font-semibold text-foreground mb-2">
+              <div className="font-black text-stone-900 dark:text-white mb-4 text-base uppercase tracking-tight">
                 {primaryCol.render ? primaryCol.render(row) : (row as any)[primaryCol.key]}
               </div>
-              {/* Other fields */}
-              <div className="space-y-1 text-sm text-muted">
+              <div className="space-y-3">
                 {columns.filter(c => c.key !== primaryCol.key && !c.mobileHidden).map((col) => (
-                  <div key={col.key} className="flex justify-between">
-                    <span className="text-muted">{col.header}:</span>
-                    <span className="text-foreground">
+                  <div key={col.key} className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500">{col.header}</span>
+                    <span className="text-sm font-bold text-stone-700 dark:text-stone-200">
                       {col.render ? col.render(row) : (row as any)[col.key]}
                     </span>
                   </div>
@@ -80,118 +111,51 @@ export function Table<T = any>({
             </div>
           ))}
         </div>
+      )}
 
-        {/* Desktop Table - hidden on small screens */}
-        <div className={`hidden md:block overflow-x-auto rounded-xl border border-border shadow-sm ${className}`}>
-          <table className="min-w-full">
-            <thead className="bg-surface-secondary/50 border-b border-border">
-              <tr>
-                {columns.map((column) => (
-                  <th
-                    key={column.key}
-                    scope="col"
-                    className={`${paddingClass} text-left text-sm font-semibold text-muted font-heading uppercase tracking-wider ${column.width || ''}`}
-                  >
-                    {column.header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-surface divide-y divide-border">
-              {data.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-[#9A9A9A]"
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 bg-gray-100 dark:bg-[#3A3A3A] rounded-xl flex items-center justify-center">
-                        <svg className="w-8 h-8 text-gray-400 dark:text-[#757575]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                        </svg>
-                      </div>
-                      <p className="font-semibold text-lg text-gray-600 dark:text-[#C0C0C0]">No data available</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                data.map((row, index) => (
-                  <tr
-                    key={keyExtractor(row)}
-                    onClick={() => onRowClick?.(row)}
-                    className={`
-                  ${hoverable ? 'hover:bg-surface-hover cursor-pointer transition-colors' : ''}
-                  ${striped && index % 2 === 1 ? 'bg-surface-secondary/30' : ''}
-                `}
-                  >
-                    {columns.map((column) => (
-                      <td
-                        key={column.key}
-                        className={`${paddingClass} text-sm font-medium text-foreground`}
-                      >
-                        {column.render
-                          ? column.render(row)
-                          : (row as any)[column.key]}
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </>
-    );
-  }
-
-  // Regular table view (no mobileCards)
-  return (
-    <div className={`overflow-x-auto rounded-xl border border-border shadow-sm ${className}`}>
-      <table className="min-w-full">
-        <thead className="bg-surface-secondary/50 border-b border-border">
-          <tr>
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                scope="col"
-                className={`${paddingClass} text-left text-sm font-semibold text-muted font-heading uppercase tracking-wider ${column.width || ''} ${column.mobileHidden ? 'hidden md:table-cell' : ''}`}
-              >
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-surface divide-y divide-border">
-          {data.length === 0 ? (
+      {/* Desktop view - Table */}
+      <div className={cn(
+        "overflow-hidden rounded-[32px] bg-white dark:bg-stone-900/40 border border-stone-200 dark:border-white/10 shadow-xl",
+        mobileCards ? "hidden md:block" : "block"
+      )}>
+        <table className="min-w-full border-collapse">
+          <thead className="bg-stone-50/50 dark:bg-stone-800/20">
             <tr>
-              <td
-                colSpan={columns.length}
-                className="px-6 py-12 text-center text-gray-500 dark:text-[#9A9A9A]"
-              >
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-[#3A3A3A] rounded-xl flex items-center justify-center">
-                    <svg className="w-8 h-8 text-gray-400 dark:text-[#757575]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                    </svg>
-                  </div>
-                  <p className="font-semibold text-lg text-gray-600 dark:text-[#C0C0C0]">No data available</p>
-                </div>
-              </td>
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  scope="col"
+                  className={cn(
+                    paddingClass,
+                    "text-left text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 border-b border-stone-100 dark:border-white/5",
+                    column.width || '',
+                    column.mobileHidden && "hidden md:table-cell"
+                  )}
+                >
+                  {column.header}
+                </th>
+              ))}
             </tr>
-          ) : (
-            data.map((row, index) => (
+          </thead>
+          <tbody className="divide-y divide-stone-100 dark:divide-white/5">
+            {data.map((row, index) => (
               <tr
                 key={keyExtractor(row)}
                 onClick={() => onRowClick?.(row)}
-                className={`
-                  ${hoverable ? 'hover:bg-surface-hover cursor-pointer transition-colors' : ''}
-                  ${striped && index % 2 === 1 ? 'bg-surface-secondary/30' : ''}
-                `}
+                className={cn(
+                  "group transition-all duration-300",
+                  hoverable && "hover:bg-amber-50/30 dark:hover:bg-amber-500/5 cursor-pointer",
+                  striped && index % 2 === 1 && "bg-stone-50/30 dark:bg-white/[0.02]"
+                )}
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`${paddingClass} text-sm font-medium text-foreground ${column.mobileHidden ? 'hidden md:table-cell' : ''}`}
+                    className={cn(
+                      paddingClass,
+                      "text-sm font-bold text-stone-700 dark:text-stone-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors",
+                      column.mobileHidden && "hidden md:table-cell"
+                    )}
                   >
                     {column.render
                       ? column.render(row)
@@ -199,10 +163,10 @@ export function Table<T = any>({
                   </td>
                 ))}
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -323,7 +287,7 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
   };
 
   return (
-      <div className="flex flex-col sm:flex-row items-center justify-between mt-6 px-2 gap-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between mt-6 px-2 gap-4">
       <div className="text-sm text-stone-600 dark:text-stone-400 order-2 sm:order-1 text-center sm:text-left">
         {totalItems && itemsPerPage && (
           <span>

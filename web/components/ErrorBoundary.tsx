@@ -55,41 +55,48 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Default fallback UI with improved design
       return (
-        <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
-          <Card className="max-w-2xl w-full">
-            <div className="p-8 text-center space-y-6">
+        <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950 p-4">
+          <Card className="max-w-2xl w-full rounded-[40px] border-none shadow-2xl overflow-hidden bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl">
+            <div className="p-12 text-center space-y-8 relative">
+              {/* Background Accent */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl rounded-full" />
+
               {/* Error Icon */}
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                  <Icons.Warning className="w-8 h-8 text-red-600" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-red-500/20 blur-2xl rounded-full animate-pulse" />
+                  <div className="relative w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-[28px] flex items-center justify-center border border-red-100 dark:border-red-900/30">
+                    <Icons.Warning className="w-10 h-10 text-red-500" />
+                  </div>
                 </div>
               </div>
 
               {/* Error Message */}
-              <div className="space-y-2">
-                <h1 className="text-2xl font-bold text-stone-900">
-                  Oops! Something went wrong
+              <div className="space-y-4">
+                <h1 className="text-3xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                  {this.props.pageName ? `Lỗi khi tải ${this.props.pageName}` : 'Đã có sự cố xảy ra'}
                 </h1>
-                <p className="text-stone-600">
-                  {this.props.pageName 
-                    ? `We encountered an error loading ${this.props.pageName}.`
-                    : 'We encountered an unexpected error.'
-                  } Don&apos;t worry, your data is safe.
+                <p className="text-stone-600 dark:text-stone-400 font-medium leading-relaxed max-w-md mx-auto">
+                  Hệ thống gặp lỗi không mong muốn. Đừng lo lắng, dữ liệu của bạn vẫn an toàn. Hãy thử tải lại trang hoặc quay lại sau.
                 </p>
               </div>
 
               {/* Error Details (development mode) */}
               {this.props.showDetails && this.state.error && (
-                <div className="mt-6 p-4 bg-stone-100 rounded-lg text-left">
-                  <p className="text-sm font-mono text-red-600 mb-2">
+                <div className="mt-6 p-6 bg-stone-100 dark:bg-stone-800/50 rounded-3xl text-left border border-stone-200 dark:border-white/5">
+                  <p className="text-xs font-mono text-red-500 dark:text-red-400 mb-3 uppercase tracking-widest font-bold">
+                    Chi tiết lỗi:
+                  </p>
+                  <p className="text-sm font-mono text-stone-700 dark:text-stone-300 break-words mb-4">
                     {this.state.error.toString()}
                   </p>
                   {this.state.errorInfo && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-sm text-stone-600 hover:text-stone-900">
+                    <details className="mt-2 group">
+                      <summary className="cursor-pointer text-[10px] font-black text-stone-500 dark:text-stone-500 hover:text-stone-900 dark:hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2">
+                        <div className="w-1 h-3 bg-stone-300 dark:bg-stone-700 rounded-full" />
                         Component Stack
                       </summary>
-                      <pre className="mt-2 text-xs text-stone-700 overflow-auto max-h-48">
+                      <pre className="mt-4 p-4 text-[10px] text-stone-500 dark:text-stone-400 overflow-auto max-h-48 bg-black/5 dark:bg-black/20 rounded-xl leading-relaxed">
                         {this.state.errorInfo.componentStack}
                       </pre>
                     </details>
@@ -98,32 +105,25 @@ export class ErrorBoundary extends Component<Props, State> {
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <Button
                   onClick={this.handleReset}
-                  variant="outline"
-                  className="min-w-[120px]"
+                  className="px-8 py-6 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all active:scale-95"
                 >
-                  Try Again
+                  Thử lại
                 </Button>
                 <Button
                   onClick={() => window.location.reload()}
-                  variant="primary"
-                  className="min-w-[120px]"
+                  variant="outline"
+                  className="px-8 py-6 rounded-2xl border-stone-200 dark:border-white/10 font-bold uppercase tracking-wider transition-all active:scale-95"
                 >
-                  Reload Page
+                  Tải lại trang
                 </Button>
               </div>
 
               {/* Support Link */}
-              <p className="text-sm text-stone-500">
-                If this problem persists, please{' '}
-                <a
-                  href="/dashboard"
-                  className="text-blue-600 hover:underline"
-                >
-                  return to dashboard
-                </a>
+              <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] pt-4 opacity-60">
+                Nếu vấn đề tiếp tục, vui lòng liên hệ quản trị viên
               </p>
             </div>
           </Card>
@@ -163,19 +163,27 @@ export class PageErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <Card className="p-8">
-          <div className="text-center space-y-4">
-            <Icons.Warning className="w-12 h-12 text-red-500 mx-auto" />
-            <div>
-              <h3 className="text-lg font-semibold text-stone-900">
-                Failed to load {this.props.pageName || 'this section'}
+        <Card className="p-12 rounded-[40px] border-2 border-dashed border-red-200 dark:border-red-900/20 bg-red-50/30 dark:bg-red-950/10">
+          <div className="text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-2xl flex items-center justify-center">
+                <Icons.Warning className="w-8 h-8 text-red-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                Không thể tải {this.props.pageName || 'nội dung này'}
               </h3>
-              <p className="text-sm text-stone-600 mt-1">
-                {this.state.error?.message || 'An unexpected error occurred'}
+              <p className="text-sm text-stone-500 dark:text-stone-400 font-medium">
+                {this.state.error?.message || 'Đã xảy ra lỗi không xác định'}
               </p>
             </div>
-            <Button onClick={this.handleReset} variant="outline" size="sm">
-              Try Again
+            <Button
+              onClick={this.handleReset}
+              variant="outline"
+              className="px-6 py-4 rounded-xl border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 font-bold uppercase tracking-widest text-[10px]"
+            >
+              Thử lại
             </Button>
           </div>
         </Card>

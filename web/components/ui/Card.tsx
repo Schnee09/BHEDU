@@ -49,7 +49,7 @@ interface CardHeaderProps {
   className?: string;
 }
 
-export const CardHeader = memo(function CardHeader({ children, className = '' }: CardHeaderProps) {
+export const CardHeader = memo(({ children, className = '' }: CardHeaderProps) => {
   return (
     <div className={`px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100/10 dark:border-white/5 ${className}`}>
       {children}
@@ -62,7 +62,7 @@ interface CardBodyProps {
   className?: string;
 }
 
-export const CardBody = memo(function CardBody({ children, className = '' }: CardBodyProps) {
+export const CardBody = memo(({ children, className = '' }: CardBodyProps) => {
   return (
     <div className={`px-4 sm:px-6 py-4 sm:py-5 ${className}`}>
       {children}
@@ -172,10 +172,10 @@ export const StatCard = memo(function StatCard({
   const styles = useMemo(() => COLOR_CLASSES[color], [color]);
 
   const containerClassName = useMemo(() => `
-    group relative overflow-hidden rounded-[24px] transition-all duration-500
-    bg-white/80 dark:bg-stone-900/60 backdrop-blur-xl
-    border border-stone-200 dark:border-white/10 shadow-sm
-    hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] hover:border-amber-500/30
+    group relative overflow-hidden rounded-[20px] transition-all duration-300
+    bg-white dark:bg-stone-900/60 backdrop-blur-xl
+    border border-stone-200 dark:border-white/10
+    hover:border-amber-500/50 hover:shadow-md
     ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}
     ${className}
   `, [onClick, className]);
@@ -185,30 +185,23 @@ export const StatCard = memo(function StatCard({
       onClick={onClick}
       className={containerClassName}
     >
-      {/* Subtle Color Glow */}
-      <div className={cn(
-        "absolute -right-4 -top-4 w-24 h-24 blur-[40px] opacity-20 transition-opacity group-hover:opacity-40 rounded-full",
-        color === 'blue' ? 'bg-blue-500' :
-        color === 'green' ? 'bg-green-500' :
-        color === 'orange' ? 'bg-orange-500' :
-        color === 'purple' ? 'bg-purple-500' : 'bg-stone-500'
-      )} />
 
-      <div className="p-5 sm:p-6 flex items-start justify-between relative z-10">
+
+      <div className="p-4 sm:p-5 md:p-6 flex items-start justify-between relative z-10">
         <div className="flex-1">
-          <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] mb-2">{label}</p>
+          <p className="text-[9px] sm:text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest mb-1">{label}</p>
           <div className="flex items-baseline gap-2">
-            <p className="text-3xl md:text-4xl font-black text-stone-900 dark:text-white font-heading tabular-nums tracking-tighter italic">{value}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white tabular-nums tracking-tight">{value}</p>
           </div>
           {subtitle && (
-            <p className="text-xs font-bold text-stone-500 dark:text-stone-400 mt-2 italic opacity-80">{subtitle}</p>
+            <p className="text-xs font-medium text-stone-500 dark:text-stone-400 mt-1 opacity-70">{subtitle}</p>
           )}
           {trend && (
             <div className="flex items-center gap-1 mt-2">
               <span className={cn(
                 "text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest",
-                trend.isPositive 
-                  ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20' 
+                trend.isPositive
+                  ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20'
                   : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
               )}>
                 {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
@@ -218,10 +211,10 @@ export const StatCard = memo(function StatCard({
         </div>
         {icon && (
           <div className={cn(
-            "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg",
+            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:bg-amber-500/10",
             styles.icon
           )}>
-            <div className="scale-125">{icon}</div>
+            <div className="scale-90 sm:scale-100">{icon}</div>
           </div>
         )}
       </div>

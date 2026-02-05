@@ -9,10 +9,16 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SkipToMainContent } from "@/lib/a11y";
 import { ReactNode, useState } from "react";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import { useSwipe } from "@/hooks/useSwipe";
 
 function DashboardContent({ children }: { children: ReactNode }) {
   const { profile, loading } = useProfileContext();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Swipe to open sidebar
+  const swipeHandlers = useSwipe({
+    onSwipedRight: () => setIsMobileMenuOpen(true),
+  });
 
   if (loading) return <LoadingScreen />;
   if (!profile) return <div className="flex items-center justify-center min-h-screen bg-background text-foreground font-semibold text-xl">Profile not found.</div>;
@@ -23,18 +29,21 @@ function DashboardContent({ children }: { children: ReactNode }) {
         {/* Skip Navigation Link */}
         <SkipToMainContent />
 
-        <div className="flex min-h-screen bg-gray-50/50 dark:bg-transparent">
+        <div
+          {...swipeHandlers}
+          className="flex h-screen overflow-hidden bg-gray-50/50 dark:bg-transparent"
+        >
           {/* Sidebar - Dual Theme */}
-          <Sidebar 
-            isMobileMenuOpen={isMobileMenuOpen} 
-            setIsMobileMenuOpen={setIsMobileMenuOpen} 
+          <Sidebar
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
           />
 
           {/* Main Content Area */}
-          <div className="flex-1 ml-0 lg:ml-80 flex flex-col transition-all duration-300">
+          <div className="flex-1 ml-0 lg:ml-80 flex flex-col h-full overflow-hidden transition-all duration-300">
             {/* Header */}
-            <Header 
-              profile={profile} 
+            <Header
+              profile={profile}
               onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               isMenuOpen={isMobileMenuOpen}
             />

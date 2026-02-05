@@ -1,16 +1,12 @@
-/**
- * SubjectService
- * 
- * CRUD operations for curriculum subjects.
- */
-
-import { createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from "@/lib/supabase/server";
+import { ConflictError, ValidationError } from "@/lib/api/errors";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface Subject {
   id: string;
   name: string;
   code: string;
-  description?: string;
+  description?: string | null;
   credits?: number;
   isActive?: boolean;
   createdAt: string;
@@ -20,14 +16,15 @@ export interface Subject {
 export interface CreateSubjectInput {
   name: string;
   code: string;
-  description?: string;
+  description?: string | null;
   credits?: number;
+  isActive?: boolean;
 }
 
 export interface UpdateSubjectInput {
   name?: string;
   code?: string;
-  description?: string;
+  description?: string | null;
   credits?: number;
   isActive?: boolean;
 }
@@ -40,36 +37,44 @@ export interface SubjectListOptions {
 }
 
 export class SubjectService {
-  private supabase;
+  private supabase: SupabaseClient;
 
-  constructor() {
-    this.supabase = createServiceClient();
+  /**
+   * @param supabase - Optional Supabase client for dependency injection (testing)
+   */
+  constructor(supabase?: SupabaseClient) {
+    this.supabase = supabase || createServiceClient();
   }
 
   /**
    * Get all subjects with optional filters
    */
-  async getSubjects(options: SubjectListOptions = {}): Promise<{ subjects: Subject[]; total: number }> {
+  async getSubjects(
+    options: SubjectListOptions = {},
+  ): Promise<{ subjects: Subject[]; total: number }> {
     const { search, isActive, page = 1, limit = 100 } = options;
 
     let query = this.supabase
-      .from('subjects')
-      .select('id, name, code, description, credits, is_active, created_at, updated_at', { count: 'exact' });
+      .from("subjects")
+      .select(
+        "id, name, code, description, credits, is_active, created_at, updated_at",
+        { count: "exact" },
+      );
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%`);
     }
     if (isActive !== undefined) {
-      query = query.eq('is_active', isActive);
+      query = query.eq("is_active", isActive);
     }
 
     const offset = (page - 1) * limit;
-    query = query.range(offset, offset + limit - 1).order('name');
+    query = query.range(offset, offset + limit - 1).order("name");
 
     const { data, count, error } = await query;
 
     if (error) {
-      throw new Error(`Failed to fetch subjects: ${error.message}`);
+      throw error;
     }
 
     const subjects: Subject[] = (data || []).map((s: any) => ({
@@ -91,14 +96,14 @@ export class SubjectService {
    */
   async getSubjectById(id: string): Promise<Subject | null> {
     const { data, error } = await this.supabase
-      .from('subjects')
-      .select('*')
-      .eq('id', id)
+      .from("subjects")
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') return null;
-      throw new Error(`Failed to fetch subject: ${error.message}`);
+      if (error.code === "PGRST116") return null;
+      throw error;
     }
 
     return {
@@ -107,7 +112,7 @@ export class SubjectService {
       code: data.code,
       description: data.description,
       credits: data.credits,
-      isActive: data.is_active,
+      isActive: data.is_active !== undefined ? data.is_active : true,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -119,29 +124,29 @@ export class SubjectService {
   async createSubject(input: CreateSubjectInput): Promise<Subject> {
     // Check for duplicate code
     const { data: existing } = await this.supabase
-      .from('subjects')
-      .select('id')
-      .eq('code', input.code.toUpperCase())
-      .single();
+      .from("subjects")
+      .select("id")
+      .eq("code", input.code.toUpperCase())
+      .maybeSingle();
 
     if (existing) {
-      throw new Error(`Môn học với mã "${input.code}" đã tồn tại`);
+      throw new ConflictError(`Môn học với mã "${input.code}" đã tồn tại`);
     }
 
     const { data, error } = await this.supabase
-      .from('subjects')
+      .from("subjects")
       .insert({
         name: input.name,
         code: input.code.toUpperCase(),
         description: input.description,
         credits: input.credits,
-        is_active: true,
+        is_active: input.isActive !== undefined ? input.isActive : true,
       })
-      .select('*')
+      .select("*")
       .single();
 
     if (error) {
-      throw new Error(`Failed to create subject: ${error.message}`);
+      throw error;
     }
 
     return {
@@ -163,19 +168,21 @@ export class SubjectService {
 
     if (input.name !== undefined) updateData.name = input.name;
     if (input.code !== undefined) updateData.code = input.code.toUpperCase();
-    if (input.description !== undefined) updateData.description = input.description;
+    if (input.description !== undefined) {
+      updateData.description = input.description;
+    }
     if (input.credits !== undefined) updateData.credits = input.credits;
     if (input.isActive !== undefined) updateData.is_active = input.isActive;
 
     const { data, error } = await this.supabase
-      .from('subjects')
+      .from("subjects")
       .update(updateData)
-      .eq('id', id)
-      .select('*')
+      .eq("id", id)
+      .select("*")
       .single();
 
     if (error) {
-      throw new Error(`Failed to update subject: ${error.message}`);
+      throw error;
     }
 
     return {
@@ -183,8 +190,7 @@ export class SubjectService {
       name: data.name,
       code: data.code,
       description: data.description,
-      credits: data.credits,
-      isActive: data.is_active,
+      isActive: input.isActive ?? true,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -196,26 +202,64 @@ export class SubjectService {
   async deleteSubject(id: string, hardDelete = false): Promise<void> {
     // Check for grades using this subject
     const { count: gradeCount } = await this.supabase
-      .from('grades')
-      .select('*', { count: 'exact', head: true })
-      .eq('subject_id', id);
+      .from("grades")
+      .select("*", { count: "exact", head: true })
+      .eq("subject_id", id);
 
-    if (gradeCount && gradeCount > 0 && hardDelete) {
-      throw new Error(`Không thể xóa môn học có ${gradeCount} bản ghi điểm`);
+    if (gradeCount && gradeCount > 0 && !hardDelete) {
+      throw new ValidationError(
+        `Không thể xóa môn học có ${gradeCount} bản ghi điểm`,
+      );
     }
 
     if (hardDelete) {
+      // 1. Delete related grades
+      if (gradeCount && gradeCount > 0) {
+        await this.supabase.from("grades").delete().eq("subject_id", id);
+      }
+
+      // 2. Delete related timetable slots
+      await this.supabase.from("timetable_slots").delete().eq("subject_id", id);
+
+      // 3. Delete the subject
       const { error } = await this.supabase
-        .from('subjects')
+        .from("subjects")
         .delete()
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) {
-        throw new Error(`Failed to delete subject: ${error.message}`);
+        throw error;
       }
     } else {
       // Soft delete
       await this.updateSubject(id, { isActive: false });
     }
   }
+
+  // ============================================================
+  // STATIC METHODS FOR BACKWARD COMPATIBILITY
+  // ============================================================
+
+  static async getSubjects(options?: SubjectListOptions) {
+    return subjectService.getSubjects(options);
+  }
+
+  static async getSubjectById(id: string) {
+    return subjectService.getSubjectById(id);
+  }
+
+  static async createSubject(input: CreateSubjectInput) {
+    return subjectService.createSubject(input);
+  }
+
+  static async updateSubject(id: string, input: UpdateSubjectInput) {
+    return subjectService.updateSubject(id, input);
+  }
+
+  static async deleteSubject(id: string, hardDelete = false) {
+    return subjectService.deleteSubject(id, hardDelete);
+  }
 }
+
+// Default singleton instance
+export const subjectService = new SubjectService();

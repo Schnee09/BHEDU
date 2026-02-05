@@ -6,7 +6,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { BaseRepository, type PaginatedResult, type PaginationParams } from './index'
+import { BaseRepository, type PaginatedResult, type PaginationParams } from './base'
 
 // ============================================
 // Types

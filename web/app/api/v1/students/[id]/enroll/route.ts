@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/middleware';
 import { created, noContent } from '@/lib/api/responses';
 import { handleApiError } from '@/lib/api/errors';
-import { uuidSchema } from '@/lib/api/schemas';
+import { uuidSchema } from "@/lib/schemas";
 import { StudentService } from '@/lib/services/studentService';
 import { withLogging } from '@/lib/api/logging';
 import { z } from 'zod';

@@ -8,11 +8,11 @@
  */
 
 export const routes = {
-  dashboard: () => '/dashboard',
+  dashboard: () => "/dashboard",
 
   students: {
-    list: () => '/dashboard/students',
-    import: () => '/dashboard/students/import',
+    list: () => "/dashboard/students",
+    import: () => "/dashboard/students/import",
     detail: (id: string) => `/dashboard/students/${id}`,
     edit: (id: string) => `/dashboard/students/${id}/edit`,
     progress: (id: string) => `/dashboard/students/${id}/progress`,
@@ -20,59 +20,92 @@ export const routes = {
   },
 
   classes: {
-    list: () => '/dashboard/classes',
+    list: () => "/dashboard/classes",
     detail: (id: string) => `/dashboard/classes/${id}`,
+    edit: (id: string) => `/dashboard/classes/${id}/edit`,
   },
 
   attendance: {
-    list: () => '/dashboard/attendance',
-    mark: () => '/dashboard/attendance/mark',
-    history: () => '/dashboard/attendance/history',
-    reports: () => '/dashboard/attendance/reports',
+    list: () => "/dashboard/attendance",
+    mark: () => "/dashboard/attendance/mark",
+    history: () => "/dashboard/attendance/history",
+    reports: () => "/dashboard/attendance/reports",
   },
 
   grades: {
-    list: () => '/dashboard/grades',
-    entry: () => '/dashboard/grades/entry',
-    assignments: () => '/dashboard/grades/assignments',
-    analytics: () => '/dashboard/grades/analytics',
-    reports: () => '/dashboard/grades/reports',
-    transcripts: () => '/dashboard/grades/transcripts',
-    vietnameseEntry: () => '/dashboard/grades/entry', // Now unified with standard entry
+    list: () => "/dashboard/grades",
+    entry: () => "/dashboard/grades/entry",
+    assignments: () => "/dashboard/grades/assignments",
+    analytics: () => "/dashboard/grades/analytics",
+    reports: () => "/dashboard/grades/reports",
+    transcripts: () => "/dashboard/grades/transcripts",
+    vietnameseEntry: () => "/dashboard/grades/entry", // Now unified with standard entry
   },
 
   finance: {
-    root: () => '/dashboard/finance',
-    fees: () => '/dashboard/finance/fees',
-    payments: () => '/dashboard/finance/payments',
-    invoices: () => '/dashboard/finance/invoices',
+    root: () => "/dashboard/finance",
+    fees: () => "/dashboard/finance/fees",
+    payments: () => "/dashboard/finance/payments",
+    invoices: () => "/dashboard/finance/invoices",
     invoiceDetail: (id: string) => `/dashboard/finance/invoices/${id}`,
-    accounts: () => '/dashboard/finance/accounts',
+    accounts: () => "/dashboard/finance/accounts",
     accountDetail: (id: string) => `/dashboard/finance/accounts/${id}`,
-    reports: () => '/dashboard/finance/reports',
+    reports: () => "/dashboard/finance/reports",
   },
 
   admin: {
-    root: () => '/dashboard/admin',
+    root: () => "/dashboard/admin",
 
     students: {
-      list: () => '/dashboard/admin/students',
+      list: () => "/dashboard/admin/students",
       detail: (id: string) => `/dashboard/admin/students/${id}`,
     },
 
     finance: {
       studentAccounts: {
-        list: () => '/dashboard/admin/finance/student-accounts',
-        detail: (id: string) => `/dashboard/admin/finance/student-accounts/${id}`,
+        list: () => "/dashboard/admin/finance/student-accounts",
+        detail: (id: string) =>
+          `/dashboard/admin/finance/student-accounts/${id}`,
       },
       invoices: {
-        list: () => '/dashboard/admin/finance/invoices',
+        list: () => "/dashboard/admin/finance/invoices",
         detail: (id: string) => `/dashboard/admin/finance/invoices/${id}`,
       },
-      payments: () => '/dashboard/admin/finance/payments',
-      reports: () => '/dashboard/admin/finance/reports',
+      payments: () => "/dashboard/admin/finance/payments",
+      reports: () => "/dashboard/admin/finance/reports",
     },
   },
 
-  unauthorized: () => '/unauthorized',
-} as const
+  // User management routes
+  users: {
+    list: () => "/dashboard/users",
+    detail: (id: string) => `/dashboard/users/${id}`,
+  },
+
+  // Tutor management routes
+  tutors: {
+    list: () => "/dashboard/tutors",
+    detail: (id: string) => `/dashboard/tutors/${id}`,
+  },
+
+  // Profile routes
+  profile: () => "/dashboard/profile",
+
+  // Timetable routes
+  timetable: {
+    manage: () => "/dashboard/timetable",
+    mySchedule: () => "/dashboard/my-schedule",
+  },
+
+  // Parent routes
+  parent: {
+    root: () => "/dashboard/parent",
+    linkStudent: () => "/dashboard/parent/link-student",
+    studentDetail: (id: string) => `/dashboard/parent/student/${id}`,
+  },
+
+  // Notifications
+  notifications: () => "/dashboard/notifications",
+
+  unauthorized: () => "/unauthorized",
+} as const;

@@ -1,98 +1,85 @@
 /**
- * Single Subject API
+ * Single Subject API (REFACTORED)
+ *
+ * Uses the new createApiHandler pattern for cleaner, more maintainable code.
+ *
  * GET /api/subjects/[id] - Get subject details
  * PUT /api/subjects/[id] - Update subject
  * DELETE /api/subjects/[id] - Delete subject
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { staffAuth, teacherAuth } from '@/lib/auth/adminAuth';
-import { handleApiError, AuthenticationError, NotFoundError } from '@/lib/api/errors';
-import { SubjectService } from '@/lib/services/SubjectService';
+import { NextResponse } from "next/server";
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { updateSubjectSchema, uuidSchema, type UpdateSubjectInput } from "@/lib/schemas";
+import { subjectService } from "@/lib/services/subjectService";
+import { NotFoundError } from "@/lib/api/errors";
+import { CACHE_KEYS, CACHE_TTL, cached, invalidateCache } from "@/lib/cache";
 
-interface RouteParams {
-  params: Promise<{ id: string }>;
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
-    const authResult = await teacherAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
-    }
-
-    const { id } = await params;
-    const subjectService = new SubjectService();
-    const subject = await subjectService.getSubjectById(id);
+// GET /api/subjects/[id]
+export const GET = createGetHandler(
+  {
+    allowedRoles: ["admin", "teacher", "student"],
+  },
+  async ({ params }) => {
+    // Use cache for subject details
+    const subject = await cached(
+      `subject:${params.id}`,
+      () => subjectService.getSubjectById(params.id),
+      { ttl: CACHE_TTL.MEDIUM },
+    );
 
     if (!subject) {
-      throw new NotFoundError('Không tìm thấy môn học');
+      throw new NotFoundError("Không tìm thấy môn học");
     }
 
-    return NextResponse.json({ success: true, subject });
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
+    return apiSuccess(subject);
+  },
+);
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-  try {
-    const authResult = await staffAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
-    }
-
-    const { id } = await params;
-    const body = await request.json();
-    const { name, code, description, credits, isActive } = body;
-
-    const subjectService = new SubjectService();
-    
-    const existing = await subjectService.getSubjectById(id);
+// PUT /api/subjects/[id]
+export const PUT = createApiHandler(
+  {
+    allowedRoles: ["admin"],
+    bodySchema: updateSubjectSchema,
+  },
+  async ({ params, body }) => {
+    const existing = await subjectService.getSubjectById(params.id);
     if (!existing) {
-      throw new NotFoundError('Không tìm thấy môn học');
+      throw new NotFoundError("Không tìm thấy môn học");
     }
 
-    const updated = await subjectService.updateSubject(id, {
-      name,
-      code,
-      description,
-      credits,
-      isActive,
-    });
+    const updated = await subjectService.updateSubject(params.id, body);
 
-    return NextResponse.json({ success: true, subject: updated });
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
+    // Invalidate cache
+    invalidateCache("subject:");
+    invalidateCache(CACHE_KEYS.SUBJECTS_ALL);
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  try {
-    const authResult = await staffAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
-    }
+    return apiSuccess(updated);
+  },
+);
 
-    const { id } = await params;
-    const searchParams = request.nextUrl.searchParams;
-    const hardDelete = searchParams.get('hard') === 'true';
+// DELETE /api/subjects/[id]
+export const DELETE = createGetHandler(
+  {
+    allowedRoles: ["admin"],
+  },
+  async ({ params, searchParams }) => {
+    const hardDelete = searchParams.get("hard") === "true";
 
-    const subjectService = new SubjectService();
-    
-    const existing = await subjectService.getSubjectById(id);
+    const existing = await subjectService.getSubjectById(params.id);
     if (!existing) {
-      throw new NotFoundError('Không tìm thấy môn học');
+      throw new NotFoundError("Không tìm thấy môn học");
     }
 
-    await subjectService.deleteSubject(id, hardDelete);
+    await subjectService.deleteSubject(params.id, hardDelete);
 
-    return NextResponse.json({ 
-      success: true, 
-      message: hardDelete ? 'Đã xóa môn học' : 'Đã vô hiệu hóa môn học' 
+    // Invalidate cache
+    invalidateCache("subject:");
+    invalidateCache(CACHE_KEYS.SUBJECTS_ALL);
+
+    return NextResponse.json({
+      success: true,
+      message: hardDelete ? "Đã xóa môn học" : "Đã vô hiệu hóa môn học",
     });
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
-
+  },
+);

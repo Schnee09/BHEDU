@@ -1,0 +1,6 @@
+﻿app/api/auth/verify-invite/route.ts(61,47): error TS2339: Property 'full_name' does not exist on type '{ full_name: any; }[]'.
+app/dashboard/page.tsx(96,11): error TS2552: Cannot find name 'router'. Did you mean 'routes'?
+app/dashboard/page.tsx(99,11): error TS2552: Cannot find name 'router'. Did you mean 'routes'?
+app/dashboard/page.tsx(102,11): error TS2552: Cannot find name 'router'. Did you mean 'routes'?
+app/dashboard/page.tsx(105,11): error TS2552: Cannot find name 'router'. Did you mean 'routes'?
+app/dashboard/page.tsx(113,41): error TS2552: Cannot find name 'router'. Did you mean 'routes'?

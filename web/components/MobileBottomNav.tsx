@@ -18,17 +18,48 @@ import {
     Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProfile } from "@/hooks/useProfile";
+import { useCustomization } from "@/contexts/CustomizationContext";
 
 export default function MobileBottomNav() {
     const pathname = usePathname();
+    const { profile } = useProfile();
     const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const { accentColor } = useCustomization();
 
-    const mainNavItems = [
-        { name: "Trang chủ", href: "/dashboard", icon: Home, color: "orange" },
+    const role = profile?.role as string;
+
+    // Define navigation items based on role
+    let mainNavItems = [
+      { name: "Trang chủ", href: "/dashboard", icon: Home, color: "var(--color-primary)" },
+    ];
+
+    if (role === 'parent') {
+      mainNavItems.push(
+        { name: "Của tôi", href: "/dashboard/parent", icon: GraduationCap, color: "purple" },
+        { name: "Học phí", href: "/dashboard/finance", icon: DollarSign, color: "green" },
+        { name: "Lịch học", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" }
+      );
+    } else if (role === 'student') {
+      mainNavItems.push(
+        { name: "Điểm số", href: "/dashboard/grades", icon: GraduationCap, color: "purple" },
+        { name: "Lịch học", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" },
+        { name: "Thông báo", href: "/dashboard/notifications", icon: Bell, color: "orange" }
+      );
+    } else if (role === 'teacher' || role === 'tutor') {
+      mainNavItems.push(
+        { name: "Lịch dạy", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" },
+        { name: "Lớp học", href: "/dashboard/classes", icon: BookOpen, color: "purple" },
+        { name: "Điểm danh", href: "/dashboard/attendance", icon: Users, color: "green" }
+      );
+    } else {
+      // Admin/Staff/Super_admin default
+      mainNavItems.push(
         { name: "Lớp", href: "/dashboard/classes", icon: BookOpen, color: "blue" },
         { name: "Học sinh", href: "/dashboard/students", icon: Users, color: "purple" },
-        { name: "Điểm danh", href: "/dashboard/attendance", icon: CalendarCheck, color: "green" },
-    ];
+        { name: "Điểm danh", href: "/dashboard/attendance", icon: CalendarCheck, color: "green" }
+      );
+    }
 
     const moreMenuItems = [
         { name: "Tài chính", href: "/dashboard/finance", icon: DollarSign, color: "green" },
@@ -125,13 +156,16 @@ export default function MobileBottomNav() {
                                 href={item.href}
                                 className={cn(
                                     "relative flex flex-col items-center justify-center flex-1 h-full py-1 transition-all press-effect z-10",
-                                    active ? "text-amber-600 dark:text-amber-500" : "text-stone-400 dark:text-stone-600"
+                                    active ? "text-stone-900 dark:text-white" : "text-stone-400 dark:text-stone-600"
                                 )}
+                                style={active ? { color: 'var(--color-primary)' } : {}}
                             >
                                 <div className={cn(
                                     "p-2.5 rounded-[18px] transition-all duration-500",
-                                    active ? "bg-amber-500/10 scale-110 mb-1" : "bg-transparent mb-0.5"
-                                )}>
+                                    active ? "scale-110 mb-1" : "bg-transparent mb-0.5"
+                                )}
+                                style={active ? { backgroundColor: 'var(--color-primary-10)' } : {}}
+                                >
                                     <item.icon 
                                         className={cn("w-6 h-6", active ? "stroke-[2.5px]" : "stroke-[1.5px]")} 
                                     />
@@ -144,7 +178,7 @@ export default function MobileBottomNav() {
                                 </span>
                                 
                                 {active && (
-                                    <div className="absolute top-2 w-1 h-1 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,166,35,0.8)]" />
+                                    <div className="absolute top-2 w-1 h-1 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,166,35,0.8)]" style={{ backgroundColor: 'var(--color-primary)', boxShadow: '0 0 10px var(--color-primary)' }} />
                                 )}
                             </Link>
                         );
@@ -155,13 +189,16 @@ export default function MobileBottomNav() {
                         onClick={() => setShowMoreMenu(true)}
                         className={cn(
                             "flex flex-col items-center justify-center flex-1 h-full py-1 transition-all press-effect z-10",
-                            showMoreMenu ? "text-amber-600 dark:text-amber-500" : "text-stone-400 dark:text-stone-600"
+                            showMoreMenu ? "" : "text-stone-400 dark:text-stone-600"
                         )}
+                        style={showMoreMenu ? { color: 'var(--color-primary)' } : {}}
                     >
                         <div className={cn(
                             "p-2.5 rounded-[18px] transition-all duration-500",
-                            showMoreMenu ? "bg-amber-500/10 scale-110 mb-1" : "bg-transparent mb-0.5"
-                        )}>
+                            showMoreMenu ? "scale-110 mb-1" : "bg-transparent mb-0.5"
+                        )}
+                        style={showMoreMenu ? { backgroundColor: 'var(--color-primary-10)' } : {}}
+                        >
                             <MoreHorizontal className="w-6 h-6" strokeWidth={2.5} />
                         </div>
                         <span className={cn(

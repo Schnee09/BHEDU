@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../core/ui/ui_components.dart';
-import 'package:intl/intl.dart';
 
 class FinanceScreen extends ConsumerWidget {
   const FinanceScreen({super.key});
@@ -13,9 +12,7 @@ class FinanceScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tài chính & Học phí'),
-      ),
+      appBar: AppBar(title: const Text('Tài chính & Học phí')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -28,7 +25,7 @@ class FinanceScreen extends ConsumerWidget {
             // Recent Transactions
             SectionHeader(title: 'Lịch sử giao dịch'),
             _TransactionList(),
-            
+
             const SizedBox(height: 24),
 
             // Upcoming Fees
@@ -107,7 +104,11 @@ class _TransactionList extends StatelessWidget {
                   color: AppColors.success.withAlpha(30),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check, color: AppColors.success, size: 20),
+                child: const Icon(
+                  Icons.check,
+                  color: AppColors.success,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -120,7 +121,10 @@ class _TransactionList extends StatelessWidget {
                     ),
                     Text(
                       '15/12/2025',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -149,7 +153,10 @@ class _UpcomingFeesList extends StatelessWidget {
             subtitle: const Text('Hạn: 15/02/2026'),
             trailing: const Text(
               '2,500,000 ₫',
-              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.error,
+              ),
             ),
           ),
           const Divider(),

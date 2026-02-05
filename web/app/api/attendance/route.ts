@@ -1,24 +1,17 @@
 /**
- * Attendance API
- * GET /api/attendance - Fetch attendance records
- * Updated: 2025-12-08 - Standardized error handling
+ * Attendance API (REFACTORED)
+ * GET /api/attendance - Fetch attendance records with role-based filtering
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { teacherAuth } from "@/lib/auth/adminAuth";
-import { hasAdminAccess } from "@/lib/auth/permissions";
-import { AuthenticationError, handleApiError } from "@/lib/api/errors";
+import { apiSuccess, createGetHandler } from "@/lib/api";
+import { hasPermission } from "@/lib/auth/core";
 import { logger } from "@/lib/logger";
 
-export async function GET(request: NextRequest) {
-  try {
-    // Use standardized auth
-    const authResult = await teacherAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || "Unauthorized");
-    }
-
+export const GET = createGetHandler(
+  { permission: "attendance.view" },
+  async ({ user, searchParams }) => {
     const supabase = createServiceClient();
 
     // Build base query
@@ -27,26 +20,41 @@ export async function GET(request: NextRequest) {
       .select(`id, class_id, student_id, date, status, remarks`)
       .order("date", { ascending: false });
 
-    const userRole = authResult.userRole || "";
+    // --- Role-based Visibility Logic ---
 
-    if (hasAdminAccess(userRole)) {
-      // Admin and Staff see all
-    } else if (userRole === "teacher") {
+    // 1. Staff and Higher (Admins, Super Admins) see all attendance
+    const canViewAll = hasPermission(user.role as any, "attendance.manage");
+
+    if (canViewAll) {
+      // No filter needed
+    } else if (user.role === "teacher") {
       // Teacher sees own classes
       const { data: classes } = await supabase
         .from("classes")
         .select("id")
-        .eq("teacher_id", authResult.userId);
+        .eq("teacher_id", user.id);
 
       const classIds = classes?.map((c) => c.id) || [];
       if (classIds.length === 0) {
-        return NextResponse.json({ success: true, data: [] });
+        return apiSuccess([]);
       }
       query = query.in("class_id", classIds);
-    } else if (userRole === "student") {
+    } else if (user.role === "student") {
       // Student sees own attendance
-      query = query.eq("student_id", authResult.userId);
+      query = query.eq("student_id", user.id);
+    } else {
+      return apiSuccess([]);
     }
+
+    // Apply basic filters from query params
+    const qClassId = searchParams.get("classId");
+    if (qClassId) query = query.eq("class_id", qClassId);
+
+    const qStudentId = searchParams.get("studentId");
+    if (qStudentId) query = query.eq("student_id", qStudentId);
+
+    const qDate = searchParams.get("date");
+    if (qDate) query = query.eq("date", qDate);
 
     const { data, error } = await query;
 
@@ -55,30 +63,26 @@ export async function GET(request: NextRequest) {
       throw new Error(`Database error: ${error.message}`);
     }
 
-    // If no attendance records, return empty array
     if (!data || data.length === 0) {
-      return NextResponse.json({ success: true, data: [] });
+      return apiSuccess([]);
     }
 
-    // Batch fetch profile names and class names to avoid ambiguous embedded relationships
+    // Batch fetch student/class metadata for transformation
     const classIds = Array.from(
-      new Set((data || []).map((r: any) => r.class_id).filter(Boolean)),
+      new Set(data.map((r: any) => r.class_id).filter(Boolean)),
     );
     const studentIds = Array.from(
-      new Set((data || []).map((r: any) => r.student_id).filter(Boolean)),
+      new Set(data.map((r: any) => r.student_id).filter(Boolean)),
     );
 
     const classesMap: Record<string, any> = {};
     if (classIds.length > 0) {
-      const { data: classesData, error: classesError } = await supabase
+      const { data: classesData } = await supabase
         .from("classes")
         .select("id, name")
         .in("id", classIds as string[]);
 
-      if (classesError) {
-        console.error("[API] Classes fetch error:", classesError);
-        // Continue with empty map rather than failing
-      } else if (classesData) {
+      if (classesData) {
         classesData.forEach((c: any) => {
           classesMap[c.id] = c;
         });
@@ -87,15 +91,12 @@ export async function GET(request: NextRequest) {
 
     const profilesMap: Record<string, any> = {};
     if (studentIds.length > 0) {
-      const { data: profilesData, error: profilesError } = await supabase
+      const { data: profilesData } = await supabase
         .from("profiles")
         .select("id, full_name")
         .in("id", studentIds as string[]);
 
-      if (profilesError) {
-        console.error("[API] Profiles fetch error:", profilesError);
-        // Continue with empty map rather than failing
-      } else if (profilesData) {
+      if (profilesData) {
         profilesData.forEach((p: any) => {
           profilesMap[p.id] = p;
         });
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data
-    const attendance = (data || []).map((record: any) => ({
+    const attendance = data.map((record: any) => ({
       id: record.id,
       class_id: record.class_id,
       student_id: record.student_id,
@@ -114,8 +115,6 @@ export async function GET(request: NextRequest) {
       class_name: classesMap[record.class_id]?.name || "Unknown",
     }));
 
-    return NextResponse.json({ success: true, data: attendance });
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
+    return apiSuccess(attendance);
+  },
+);

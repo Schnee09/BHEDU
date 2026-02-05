@@ -1,138 +1,108 @@
 /**
- * Grades API
- * GET/POST/PUT /api/grades
- * 
- * Manage student grades for assignments
- * Updated: 2024-12-05
+ * Grades API (REFACTORED)
+ *
+ * Manages student grades for assignments using the unified API handler.
+ * GET/POST /api/grades
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
-import { teacherAuth } from '@/lib/auth/adminAuth'
-import { logger } from '@/lib/logger'
-import { handleApiError } from '@/lib/api/errors'
-import { validateQuery } from '@/lib/api/validation'
-import { createGradeSchema, bulkGradeEntrySchema, gradeQuerySchema } from '@/lib/schemas/grades'
+import { NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { logger } from "@/lib/logger";
+import {
+  bulkGradeEntrySchema,
+  createGradeSchema,
+  gradeQuerySchema,
+} from "@/lib/schemas/grades";
+import { validateQuery } from "@/lib/api/validation";
 
-export async function GET(request: NextRequest) {
-  try {
-    const authResult = await teacherAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
+// GET /api/grades
+export const GET = createGetHandler(
+  { permission: "grades.view" },
+  async ({ request, user }) => {
     // Validate query parameters
-    const queryParams = validateQuery(request, gradeQuerySchema)
-
-    // Use service client to bypass RLS
-    const supabase = createServiceClient()
-    const userRole = authResult.userRole
-    const profileId = authResult.userId
+    const queryParams = validateQuery(request, gradeQuerySchema);
+    const supabase = createServiceClient();
 
     // ========== TEACHER SCOPE FILTER ==========
-    // If user is a teacher, only show grades from their classes
-    let teacherClassIds: string[] | null = null
-    if (userRole === 'teacher' && profileId) {
+    let teacherClassIds: string[] | null = null;
+    if (user.role === "teacher") {
       const { data: teacherClasses } = await supabase
-        .from('classes')
-        .select('id')
-        .eq('teacher_id', profileId)
-      
+        .from("classes")
+        .select("id")
+        .eq("teacher_id", user.id);
+
       if (teacherClasses && teacherClasses.length > 0) {
-        teacherClassIds = teacherClasses.map(c => c.id)
+        teacherClassIds = teacherClasses.map((c) => c.id);
       } else {
-        // Teacher has no classes - return empty
-        return NextResponse.json({ success: true, grades: [] })
+        return apiSuccess([]);
       }
     }
-    // =========================================
 
-    // Build simple query without complex joins that may fail
+    // Build query
     let query = supabase
-      .from('grades')
-      .select('*')
+      .from("grades")
+      .select("*");
 
     if (queryParams.assignment_id) {
-      query = query.eq('assignment_id', queryParams.assignment_id)
+      query = query.eq("assignment_id", queryParams.assignment_id);
     }
 
     if (queryParams.student_id) {
-      query = query.eq('student_id', queryParams.student_id)
+      query = query.eq("student_id", queryParams.student_id);
     }
 
-    // For teachers, filter by assignments from their classes
+    // Teacher filtering logic
     if (teacherClassIds) {
-      // Get assignment IDs from teacher's classes
       const { data: teacherAssignments } = await supabase
-        .from('assignments')
-        .select('id')
-        .in('class_id', teacherClassIds)
-      
+        .from("assignments")
+        .select("id")
+        .in("class_id", teacherClassIds);
+
       if (teacherAssignments && teacherAssignments.length > 0) {
-        const assignmentIds = teacherAssignments.map(a => a.id)
-        query = query.in('assignment_id', assignmentIds)
+        const assignmentIds = teacherAssignments.map((a) => a.id);
+        query = query.in("assignment_id", assignmentIds);
       } else {
-        // No assignments in teacher's classes
-        return NextResponse.json({ success: true, grades: [] })
+        return apiSuccess([]);
       }
     }
 
-    const { data: grades, error } = await query
+    const { data: grades, error } = await query;
 
     if (error) {
-      logger.error('Failed to fetch grades:', {
-        error: error.message,
-        errorCode: error.code,
-        errorDetails: error.details,
-        errorHint: error.hint
-      })
-      throw new Error(`Database error: ${error.message}`)
+      logger.error("Failed to fetch grades:", error);
+      throw new Error(`Database error: ${error.message}`);
     }
 
-    return NextResponse.json({
-      success: true,
-      grades: grades || []
-    })
-  } catch (error) {
-    return handleApiError(error)
-  }
-}
+    return apiSuccess(grades || []);
+  },
+);
 
+// POST /api/grades
+export const POST = createApiHandler(
+  { permission: "grades.manage" },
+  async ({ body }) => {
+    const supabase = createServiceClient();
+    const data = body as any;
 
-export async function POST(request: NextRequest) {
-  try {
-    const authResult = await teacherAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-  const body = await request.json()
-    
-    // Check if it's bulk entry or single grade
+    // Manual validation because it can be bulk or single
     let validatedData;
-    if (body.grades && Array.isArray(body.grades)) {
-      // Bulk entry
-      validatedData = bulkGradeEntrySchema.parse(body)
-    } else {
-      // Single grade
-      validatedData = createGradeSchema.parse(body)
+    try {
+      if (data.grades && Array.isArray(data.grades)) {
+        validatedData = bulkGradeEntrySchema.parse(data);
+      } else {
+        validatedData = createGradeSchema.parse(data);
+      }
+    } catch (e: any) {
+      return NextResponse.json({ success: false, error: e.message }, {
+        status: 400,
+      });
     }
 
-    const supabase = createServiceClient()
-    
     const normalizeRow = (row: any) => {
-      // Prefer points_earned. If only legacy score provided, use it.
-      const pointsEarned = row.points_earned ?? row.score ?? null
-
-      // Keep the points-only workflow: if missing/excused is true, treat points as null.
-      const missing = !!row.missing
-      const excused = !!row.excused
+      const pointsEarned = row.points_earned ?? row.score ?? null;
+      const missing = !!row.missing;
+      const excused = !!row.excused;
 
       return {
         student_id: row.student_id,
@@ -143,49 +113,45 @@ export async function POST(request: NextRequest) {
         missing,
         feedback: row.feedback ?? row.notes ?? null,
         graded_at: row.graded_at,
-      }
-    }
+      };
+    };
 
-    if ('grades' in validatedData) {
+    if ("grades" in validatedData) {
       // Bulk insert
       const gradeRows = (validatedData.grades as any[]).map((g) =>
-        normalizeRow({ ...g, assignment_id: validatedData.assignment_id, graded_at: validatedData.graded_at })
-      )
+        normalizeRow({
+          ...g,
+          assignment_id: validatedData.assignment_id,
+          graded_at: validatedData.graded_at,
+        })
+      );
 
-      const { data, error } = await supabase
-        .from('grades')
+      const { data: insertedData, error } = await supabase
+        .from("grades")
         .insert(gradeRows)
-        .select()
-      
+        .select();
+
       if (error) {
-        logger.error('Bulk grade insert failed:', error)
-        throw new Error(`Failed to create grades: ${error.message}`)
+        logger.error("Bulk grade insert failed:", error);
+        throw new Error(`Failed to create grades: ${error.message}`);
       }
-      
-      return NextResponse.json({
-        success: true,
-        grades: data
-      }, { status: 201 })
+
+      return apiSuccess(insertedData, { _status: 201 });
     } else {
       // Single insert
-      const gradeRow = normalizeRow(validatedData)
-      const { data, error } = await supabase
-        .from('grades')
+      const gradeRow = normalizeRow(validatedData);
+      const { data: insertedData, error } = await supabase
+        .from("grades")
         .insert(gradeRow)
         .select()
-        .single()
-      
+        .single();
+
       if (error) {
-        logger.error('Grade insert failed:', error)
-        throw new Error(`Failed to create grade: ${error.message}`)
+        logger.error("Grade insert failed:", error);
+        throw new Error(`Failed to create grade: ${error.message}`);
       }
-      
-      return NextResponse.json({
-        success: true,
-        grade: data
-      }, { status: 201 })
+
+      return apiSuccess(insertedData, { _status: 201 });
     }
-  } catch (error) {
-    return handleApiError(error)
-  }
-}
+  },
+);

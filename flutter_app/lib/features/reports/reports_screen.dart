@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../config/theme.dart';
-import '../../core/l10n/app_strings.dart';
 
 /// Report type enum
 enum ReportType { attendance, grades }
 
 /// Selected report type provider
-final selectedReportTypeProvider = StateProvider<ReportType>((ref) => ReportType.attendance);
+final selectedReportTypeProvider = StateProvider<ReportType>(
+  (ref) => ReportType.attendance,
+);
 
 class ReportsScreen extends ConsumerWidget {
   const ReportsScreen({super.key});
@@ -21,9 +22,7 @@ class ReportsScreen extends ConsumerWidget {
     final reportType = ref.watch(selectedReportTypeProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Báo cáo'),
-      ),
+      appBar: AppBar(title: const Text('Báo cáo')),
       body: Column(
         children: [
           // Report type selector
@@ -44,7 +43,8 @@ class ReportsScreen extends ConsumerWidget {
               ],
               selected: {reportType},
               onSelectionChanged: (selected) {
-                ref.read(selectedReportTypeProvider.notifier).state = selected.first;
+                ref.read(selectedReportTypeProvider.notifier).state =
+                    selected.first;
               },
             ),
           ),
@@ -75,37 +75,45 @@ class _AttendanceReport extends StatelessWidget {
         // Summary cards
         Row(
           children: [
-            Expanded(child: _SummaryCard(
-              title: 'Tỷ lệ chuyên cần',
-              value: '95%',
-              color: AppColors.success,
-              icon: Icons.check_circle,
-            )),
+            Expanded(
+              child: _SummaryCard(
+                title: 'Tỷ lệ chuyên cần',
+                value: '95%',
+                color: AppColors.success,
+                icon: Icons.check_circle,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _SummaryCard(
-              title: 'Ngày có mặt',
-              value: '42',
-              color: AppColors.info,
-              icon: Icons.calendar_today,
-            )),
+            Expanded(
+              child: _SummaryCard(
+                title: 'Ngày có mặt',
+                value: '42',
+                color: AppColors.info,
+                icon: Icons.calendar_today,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _SummaryCard(
-              title: 'Ngày vắng',
-              value: '2',
-              color: AppColors.error,
-              icon: Icons.cancel,
-            )),
+            Expanded(
+              child: _SummaryCard(
+                title: 'Ngày vắng',
+                value: '2',
+                color: AppColors.error,
+                icon: Icons.cancel,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _SummaryCard(
-              title: 'Đi trễ',
-              value: '3',
-              color: AppColors.warning,
-              icon: Icons.schedule,
-            )),
+            Expanded(
+              child: _SummaryCard(
+                title: 'Đi trễ',
+                value: '3',
+                color: AppColors.warning,
+                icon: Icons.schedule,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 24),
@@ -116,10 +124,7 @@ class _AttendanceReport extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 200,
-          child: _AttendancePieChart(),
-        ),
+        SizedBox(height: 200, child: _AttendancePieChart()),
         const SizedBox(height: 24),
 
         // Weekly trend
@@ -128,10 +133,7 @@ class _AttendanceReport extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 200,
-          child: _WeeklyBarChart(),
-        ),
+        SizedBox(height: 200, child: _WeeklyBarChart()),
       ],
     );
   }
@@ -148,19 +150,23 @@ class _GradesReport extends StatelessWidget {
         // Summary cards
         Row(
           children: [
-            Expanded(child: _SummaryCard(
-              title: 'Điểm TB',
-              value: '7.8',
-              color: AppColors.primary,
-              icon: Icons.grade,
-            )),
+            Expanded(
+              child: _SummaryCard(
+                title: 'Điểm TB',
+                value: '7.8',
+                color: AppColors.primary,
+                icon: Icons.grade,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _SummaryCard(
-              title: 'Xếp hạng',
-              value: '5/45',
-              color: AppColors.info,
-              icon: Icons.leaderboard,
-            )),
+            Expanded(
+              child: _SummaryCard(
+                title: 'Xếp hạng',
+                value: '5/45',
+                color: AppColors.info,
+                icon: Icons.leaderboard,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 24),
@@ -171,10 +177,7 @@ class _GradesReport extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 250,
-          child: _SubjectBarChart(),
-        ),
+        SizedBox(height: 250, child: _SubjectBarChart()),
         const SizedBox(height: 24),
 
         // Grade distribution
@@ -183,10 +186,7 @@ class _GradesReport extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 200,
-          child: _GradeDistributionChart(),
-        ),
+        SizedBox(height: 200, child: _GradeDistributionChart()),
       ],
     );
   }
@@ -230,10 +230,7 @@ class _SummaryCard extends StatelessWidget {
             ),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -255,21 +252,30 @@ class _AttendancePieChart extends StatelessWidget {
             title: '89%',
             color: AppColors.present,
             radius: 50,
-            titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            titleStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           PieChartSectionData(
             value: 2,
             title: '4%',
             color: AppColors.absent,
             radius: 50,
-            titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            titleStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           PieChartSectionData(
             value: 3,
             title: '7%',
             color: AppColors.late,
             radius: 50,
-            titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            titleStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -292,7 +298,10 @@ class _WeeklyBarChart extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 const days = ['T2', 'T3', 'T4', 'T5', 'T6'];
-                return Text(days[value.toInt()], style: const TextStyle(fontSize: 10));
+                return Text(
+                  days[value.toInt()],
+                  style: const TextStyle(fontSize: 10),
+                );
               },
             ),
           ),
@@ -346,7 +355,10 @@ class _SubjectBarChart extends StatelessWidget {
               getTitlesWidget: (value, meta) {
                 const subjects = ['Toán', 'Văn', 'Anh', 'Lý', 'Hóa', 'Sinh'];
                 if (value.toInt() >= subjects.length) return const Text('');
-                return Text(subjects[value.toInt()], style: const TextStyle(fontSize: 10));
+                return Text(
+                  subjects[value.toInt()],
+                  style: const TextStyle(fontSize: 10),
+                );
               },
             ),
           ),
@@ -355,7 +367,10 @@ class _SubjectBarChart extends StatelessWidget {
               showTitles: true,
               reservedSize: 30,
               getTitlesWidget: (value, meta) {
-                return Text('${value.toInt()}', style: const TextStyle(fontSize: 10));
+                return Text(
+                  '${value.toInt()}',
+                  style: const TextStyle(fontSize: 10),
+                );
               },
             ),
           ),
@@ -403,7 +418,10 @@ class _GradeDistributionChart extends StatelessWidget {
               getTitlesWidget: (value, meta) {
                 const months = ['T8', 'T9', 'T10', 'T11', 'T12'];
                 if (value.toInt() >= months.length) return const Text('');
-                return Text(months[value.toInt()], style: const TextStyle(fontSize: 10));
+                return Text(
+                  months[value.toInt()],
+                  style: const TextStyle(fontSize: 10),
+                );
               },
             ),
           ),
@@ -412,7 +430,10 @@ class _GradeDistributionChart extends StatelessWidget {
               showTitles: true,
               reservedSize: 30,
               getTitlesWidget: (value, meta) {
-                return Text('${value.toInt()}', style: const TextStyle(fontSize: 10));
+                return Text(
+                  '${value.toInt()}',
+                  style: const TextStyle(fontSize: 10),
+                );
               },
             ),
           ),

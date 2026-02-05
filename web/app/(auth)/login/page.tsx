@@ -5,29 +5,78 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import GuestGuard from "@/components/GuestGuard";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, User, GraduationCap } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, User, GraduationCap, Phone, CheckCircle } from "lucide-react";
 
-type LoginMode = 'email' | 'student_code';
+type LoginMode = 'email' | 'student_code' | 'phone';
 
 export default function LoginPage() {
   const router = useRouter();
   const [loginMode, setLoginMode] = useState<LoginMode>('email');
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otpMode, setOtpMode] = useState(false);
+  const [otp, setOtp] = useState("");
   const [studentCode, setStudentCode] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const handleRedirect = (role: string | null | undefined) => {
+    switch (role) {
+      case "owner":
+        router.replace("/dashboard/admin/finance");
+        break;
+      case "super_admin":
+      case "admin":
+      case "staff":
+        router.replace("/dashboard");
+        break;
+      case "teacher":
+      case "tutor":
+        router.replace("/dashboard/timetable");
+        break;
+      case "parent":
+        router.replace("/dashboard/parent");
+        break;
+      case "student":
+        router.replace("/dashboard/grades");
+        break;
+      default:
+        router.replace("/dashboard");
+    }
+  };
+
+  const getProfileRole = async (userId: string) => {
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", userId)
+      .single();
+    return (profileRow as { role?: string } | null)?.role;
+  };
+
+  const handleAuthResult = async (userId: string | undefined, metadataRole?: string) => {
+    if (!userId) return;
+
+    let userRole = metadataRole;
+    if (!userRole) {
+      userRole = await getProfileRole(userId);
+    }
+
+    handleRedirect(userRole);
+  };
 
   const signInWithPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setMessage(null);
 
     try {
       if (loginMode === 'student_code') {
-        // For student code login, lookup the student first
         const res = await fetch('/api/auth/student-lookup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -35,16 +84,13 @@ export default function LoginPage() {
         });
 
         const lookupData = await res.json();
-
         if (!res.ok || !lookupData.success) {
-          setError(lookupData.error || 'Không tìm thấy học sinh với mã số này');
+          setError(lookupData.error || 'Không tìm thấy học sinh');
           setLoading(false);
           return;
         }
 
         const student = lookupData.student;
-
-        // If student has email, assume they need to login with password
         if (student.email) {
           if (!password) {
             setError('Vui lòng nhập mật khẩu');
@@ -52,61 +98,45 @@ export default function LoginPage() {
             return;
           }
 
-          // Use looked-up email + entered password for auth
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email: student.email,
             password,
           });
 
-          if (signInError) {
-            setError(signInError.message);
-          } else {
-            // Determine user role and redirect
-            let userRole = signInData.user?.user_metadata?.role as string | undefined;
-            if (!userRole) {
-              const { data: profileRow } = await supabase
-                .from("profiles")
-                .select("role")
-                .eq("user_id", signInData.user?.id)
-                .single();
-              userRole = (profileRow as { role?: unknown } | null)?.role as string | undefined;
-            }
-
-            if (userRole === "admin" || userRole === "staff") router.replace("/dashboard");
-            else if (userRole === "teacher") router.replace("/dashboard/classes");
-            else router.replace("/dashboard");
-          }
-          setLoading(false);
-          return;
+          if (signInError) setError(signInError.message);
+          else await handleAuthResult(signInData.user?.id, signInData.user?.user_metadata?.role);
+        } else {
+          setError('Tài khoản này chưa có email, vui lòng liên hệ NV hỗ trợ');
         }
+      } else if (loginMode === 'phone') {
+        if (otpMode) {
+          const { data, error: otpError } = await supabase.auth.verifyOtp({
+            phone: phone.startsWith('0') ? `+84${phone.substring(1)}` : phone,
+            token: otp,
+            type: 'sms',
+          });
 
-        // Only fallback to session storage if strictly no email (legacy/edge case)
-        sessionStorage.setItem('studentProfile', JSON.stringify(student));
-        router.replace('/dashboard');
+          if (otpError) setError(otpError.message);
+          else await handleAuthResult(data.user?.id, data.user?.user_metadata?.role);
+        } else {
+          const { error: sendError } = await supabase.auth.signInWithOtp({
+            phone: phone.startsWith('0') ? `+84${phone.substring(1)}` : phone,
+          });
+
+          if (sendError) setError(sendError.message);
+          else {
+            setOtpMode(true);
+            setMessage("Mã OTP đã được gửi đến SĐT của bạn");
+          }
+        }
       } else {
-        // Regular email login
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        if (error) {
-          setError(error.message);
-        } else {
-          let userRole = data.user?.user_metadata?.role as string | undefined;
-          if (!userRole) {
-            const { data: profileRow } = await supabase
-              .from("profiles")
-              .select("role")
-              .eq("user_id", data.user?.id)
-              .single();
-            userRole = (profileRow as { role?: unknown } | null)?.role as string | undefined;
-          }
-
-          if (userRole === "admin" || userRole === "staff") router.replace("/dashboard");
-          else if (userRole === "teacher") router.replace("/dashboard/classes");
-          else router.replace("/dashboard");
-        }
+        if (error) setError(error.message);
+        else await handleAuthResult(data.user?.id, data.user?.user_metadata?.role);
       }
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi');
@@ -138,10 +168,10 @@ export default function LoginPage() {
 
   return (
     <GuestGuard>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 px-4 py-12">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-white dark:from-stone-900 dark:via-stone-900 dark:to-black px-4 py-12">
         <div className="w-full max-w-md">
           {/* Card with glass effect */}
-          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-2xl shadow-2xl shadow-amber-500/10 dark:shadow-orange-500/10 border border-amber-100/50 dark:border-gray-700 p-8">
+          <div className="glass-premium rounded-[40px] shadow-2xl shadow-amber-500/10 dark:shadow-orange-500/10 border border-white/20 dark:border-white/5 p-8 sm:p-12 animate-card-entrance">
             {/* Logo and Header */}
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
@@ -156,17 +186,17 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                BÙI HOÀNG EDU
-              </h2>
-              <p className="text-slate-600 dark:text-gray-300">Đăng nhập hệ thống quản lý giáo dục</p>
+              <h1 className="text-3xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tighter">
+                Bùi Hoàng Edu
+              </h1>
+              <p className="text-[11px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">Hệ thống quản lý giáo dục</p>
             </div>
 
             {/* Login Mode Toggle */}
             <div className="flex rounded-xl bg-slate-100 dark:bg-gray-700 p-1 mb-6">
               <button
                 type="button"
-                onClick={() => setLoginMode('email')}
+                onClick={() => { setLoginMode('email'); setOtpMode(false); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${loginMode === 'email'
                   ? 'bg-white dark:bg-gray-600 text-amber-600 dark:text-amber-400 shadow-sm'
                   : 'text-slate-600 dark:text-gray-300 hover:text-slate-800 dark:hover:text-white'
@@ -177,14 +207,25 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setLoginMode('student_code')}
+                onClick={() => { setLoginMode('phone'); setOtpMode(false); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${loginMode === 'phone'
+                  ? 'bg-white dark:bg-gray-600 text-amber-600 dark:text-amber-400 shadow-sm'
+                  : 'text-slate-600 dark:text-gray-300 hover:text-slate-800 dark:hover:text-white'
+                  }`}
+              >
+                <Phone className="w-4 h-4" />
+                SĐT
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLoginMode('student_code'); setOtpMode(false); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${loginMode === 'student_code'
                   ? 'bg-white dark:bg-gray-600 text-amber-600 dark:text-amber-400 shadow-sm'
                   : 'text-slate-600 dark:text-gray-300 hover:text-slate-800 dark:hover:text-white'
                   }`}
               >
                 <GraduationCap className="w-4 h-4" />
-                Mã học sinh
+                Mã số
               </button>
             </div>
 
@@ -210,7 +251,6 @@ export default function LoginPage() {
                   {googleLoading ? "Đang kết nối..." : "Tiếp tục với Google"}
                 </button>
 
-                {/* Divider */}
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-slate-200 dark:border-gray-600"></div>
@@ -224,7 +264,6 @@ export default function LoginPage() {
 
             <form onSubmit={signInWithPassword} className="space-y-4">
               {loginMode === 'email' ? (
-                /* Email Field */
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
                     Địa chỉ Email
@@ -241,8 +280,53 @@ export default function LoginPage() {
                     />
                   </div>
                 </div>
+              ) : loginMode === 'phone' ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
+                      Số điện thoại
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
+                      <input
+                        className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 font-mono"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        type="tel"
+                        placeholder="0987xxx..."
+                        required
+                        disabled={otpMode}
+                      />
+                    </div>
+                  </div>
+                  {otpMode && (
+                    <div className="animate-in slide-in-from-top-2 duration-300">
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
+                        Mã OTP
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
+                        <input
+                          className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 tracking-widest text-lg font-bold"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value)}
+                          type="text"
+                          placeholder="123456"
+                          required
+                          maxLength={6}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setOtpMode(false)}
+                        className="text-xs text-amber-600 mt-2 hover:underline"
+                      >
+                        Thay đổi số điện thoại
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
-                /* Student Code Field */
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
                     Mã học sinh
@@ -258,50 +342,44 @@ export default function LoginPage() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
-                    Nhập mã học sinh được cấp (VD: HS2025001)
-                  </p>
                 </div>
               )}
 
-              {/* Password Field - now for BOTH modes */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                  Mật khẩu
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                  <input
-                    className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-12 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
+              {/* Password Field - only for email and student_code modes */}
+              {loginMode !== 'phone' && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
+                    Mật khẩu
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
+                    <input
+                      className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-12 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Forgot Password Link - only for email mode */}
               {loginMode === 'email' && (
                 <div className="flex justify-end">
-                  <a
-                    href="/forgot-password"
-                    className="text-sm text-slate-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition-colors"
-                  >
+                  <a href="/forgot-password" title="Quên mật khẩu" className="text-sm text-slate-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition-colors">
                     Quên mật khẩu?
                   </a>
                 </div>
               )}
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading || googleLoading}
@@ -310,18 +388,18 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Đang đăng nhập...
+                    Đang xử lý...
                   </>
                 ) : (
                   <>
-                    {loginMode === 'student_code' ? 'Đăng nhập với mã số' : 'Đăng nhập'}
+                    {loginMode === 'student_code' ? 'Đăng nhập mã số' : loginMode === 'phone' ? (otpMode ? 'Xác nhận OTP' : 'Gửi mã OTP') : 'Đăng nhập'}
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Error Message */}
+            {/* Error/Success Messages */}
             {error && (
               <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl">
                 <p className="text-red-700 dark:text-red-300 text-sm font-medium flex items-center gap-2">
@@ -332,12 +410,19 @@ export default function LoginPage() {
                 </p>
               </div>
             )}
+            {message && (
+              <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl">
+                <p className="text-green-700 dark:text-green-300 text-sm font-medium flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                  {message}
+                </p>
+              </div>
+            )}
 
-            {/* Sign Up Link - only for email mode */}
             {loginMode === 'email' && (
               <p className="text-center text-sm mt-6 text-slate-600 dark:text-gray-300">
                 Chưa có tài khoản?{" "}
-                <a href="/signup" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold hover:underline transition-colors">
+                <a href="/signup" title="Đăng ký" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold hover:underline transition-colors">
                   Tạo tài khoản
                 </a>
               </p>

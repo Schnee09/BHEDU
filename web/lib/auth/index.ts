@@ -6,64 +6,63 @@
 // Core authentication functions
 export {
   adminAuth,
-  teacherAuth,
-  checkPermission,
   type AuthResult,
-  type Resource,
-  type Action
-} from './adminAuth'
+  checkPermission,
+  staffAuth,
+  teacherAuth,
+} from "./adminAuth";
 
-// Permission system
+// Permission system (Unified Core)
 export {
+  BASE_ROLE_PERMISSIONS,
+  getFlattenedPermissions,
   hasPermission,
-  getPermissionConditions,
-  checkPermissionWithConditions,
-  getRolePermissions,
-  isAdminRole,
-  describePermission,
-  rolePermissions,
-  type Permission
-} from './permissions'
+  isAtLeast,
+  type Permission,
+  type PermissionCode,
+  ROLE_HIERARCHY,
+  type UserRole,
+} from "./core";
 
 // Rate limiting
 export {
   checkRateLimit,
-  resetRateLimit,
   cleanupRateLimits,
-  getRateLimitStatus,
-  getRateLimitIdentifier,
-  getAllRateLimits,
   clearAllRateLimits,
+  getAllRateLimits,
+  getRateLimitIdentifier,
+  getRateLimitStatus,
+  type RateLimitConfig,
   rateLimitConfigs,
-  type RateLimitConfig
-} from './rateLimit'
+  resetRateLimit,
+} from "./rateLimit";
 
 // Caching
 export {
-  getCached,
-  setCached,
-  deleteCached,
-  clearNamespace,
-  clearAllCache,
-  cleanupExpiredCache,
-  getCacheStats,
-  withCache,
+  type CacheConfig,
   cacheConfigs,
-  type CacheConfig
-} from './cache'
+  cleanupExpiredCache,
+  clearAllCache,
+  clearNamespace,
+  deleteCached,
+  getCached,
+  getCacheStats,
+  setCached,
+  withCache,
+} from "./cache";
 
 // Audit logging
 export {
+  type AuditEvent,
+  type AuditEventType,
+  clearAuditLogs,
+  exportAuditLogs,
+  getAuditStats,
+  logAdminAction,
   logAuditEvent,
   logAuthAttempt,
   logAuthzCheck,
-  logAdminAction,
   logDataAccess,
   logRateLimitEvent,
   queryAuditLogs,
-  getAuditStats,
-  exportAuditLogs,
-  clearAuditLogs,
-  type AuditEvent,
-  type AuditEventType
-} from './auditLog'
+} from "./auditLog";

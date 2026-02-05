@@ -19,22 +19,32 @@ final attendanceRepoProvider = Provider((ref) => AttendanceRepository());
 final gradesRepoProvider = Provider((ref) => GradesRepository());
 
 /// Selected student provider
-final selectedStudentProvider = FutureProvider.family<ProfileModel?, String>((ref, studentId) async {
+final selectedStudentProvider = FutureProvider.family<ProfileModel?, String>((
+  ref,
+  studentId,
+) async {
   final repo = ref.watch(studentsRepoProvider);
   return repo.getStudent(studentId);
 });
 
 /// Student grades provider
-final studentGradesProvider = FutureProvider.family<List<GradeModel>, String>((ref, studentId) async {
+final studentGradesProvider = FutureProvider.family<List<GradeModel>, String>((
+  ref,
+  studentId,
+) async {
   final repo = ref.watch(gradesRepoProvider);
   return repo.getStudentGrades(studentId: studentId);
 });
 
 /// Student attendance provider
-final studentAttendanceProvider = FutureProvider.family<List<AttendanceModel>, String>((ref, studentId) async {
-  final repo = ref.watch(attendanceRepoProvider);
-  return repo.getStudentAttendance(studentId: studentId);
-});
+final studentAttendanceProvider =
+    FutureProvider.family<List<AttendanceModel>, String>((
+      ref,
+      studentId,
+    ) async {
+      final repo = ref.watch(attendanceRepoProvider);
+      return repo.getStudentAttendance(studentId: studentId);
+    });
 
 class StudentDetailScreen extends ConsumerStatefulWidget {
   final String studentId;
@@ -42,7 +52,8 @@ class StudentDetailScreen extends ConsumerStatefulWidget {
   const StudentDetailScreen({super.key, required this.studentId});
 
   @override
-  ConsumerState<StudentDetailScreen> createState() => _StudentDetailScreenState();
+  ConsumerState<StudentDetailScreen> createState() =>
+      _StudentDetailScreenState();
 }
 
 class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen>
@@ -104,7 +115,10 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen>
                       decoration: BoxDecoration(
                         color: Colors.white.withAlpha(40),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withAlpha(50), width: 3),
+                        border: Border.all(
+                          color: Colors.white.withAlpha(50),
+                          width: 3,
+                        ),
                       ),
                       child: Center(
                         child: Text(
@@ -131,21 +145,32 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withAlpha(30),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             student.studentCode ?? 'N/A',
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(student.status).withAlpha(40),
+                            color: _getStatusColor(
+                              student.status,
+                            ).withAlpha(40),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -220,8 +245,6 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen>
         return AppColors.error;
       case StudentStatus.transferred:
         return AppColors.textMuted;
-      default:
-        return AppColors.textMuted;
     }
   }
 }
@@ -233,11 +256,12 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   _TabBarDelegate(this.tabBar);
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: AppColors.surface,
-      child: tabBar,
-    );
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: AppColors.surface, child: tabBar);
   }
 
   @override
@@ -247,7 +271,8 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => tabBar.preferredSize.height;
 
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => false;
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
+      false;
 }
 
 /// Overview Tab Content
@@ -300,8 +325,15 @@ class _OverviewTab extends StatelessWidget {
             title: 'Thông tin cá nhân',
             icon: Icons.person,
             children: [
-              _DetailRow(label: 'Mã học sinh', value: student.studentCode ?? '-'),
-              _DetailRow(label: 'Ngày sinh', value: student.dateOfBirth?.toIso8601String().split('T')[0] ?? '-'),
+              _DetailRow(
+                label: 'Mã học sinh',
+                value: student.studentCode ?? '-',
+              ),
+              _DetailRow(
+                label: 'Ngày sinh',
+                value:
+                    student.dateOfBirth?.toIso8601String().split('T')[0] ?? '-',
+              ),
               _DetailRow(label: 'Giới tính', value: student.gender ?? '-'),
               _DetailRow(label: 'Địa chỉ', value: student.address ?? '-'),
             ],
@@ -314,9 +346,12 @@ class _OverviewTab extends StatelessWidget {
             icon: Icons.contact_phone,
             children: [
               _DetailRow(label: 'Điện thoại', value: student.phone ?? '-'),
-              _DetailRow(label: 'Email', value: student.email ?? '-'),
+              _DetailRow(label: 'Email', value: student.email),
               _DetailRow(label: 'Phụ huynh', value: student.parentName ?? '-'),
-              _DetailRow(label: 'SĐT Phụ huynh', value: student.parentPhone ?? '-'),
+              _DetailRow(
+                label: 'SĐT Phụ huynh',
+                value: student.parentPhone ?? '-',
+              ),
             ],
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1, end: 0),
           const SizedBox(height: 16),
@@ -359,9 +394,16 @@ class _GradesTab extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.grade_outlined, size: 48, color: AppColors.textMuted),
+                Icon(
+                  Icons.grade_outlined,
+                  size: 48,
+                  color: AppColors.textMuted,
+                ),
                 SizedBox(height: 12),
-                Text('Chưa có điểm nào', style: TextStyle(color: AppColors.textSecondary)),
+                Text(
+                  'Chưa có điểm nào',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
               ],
             ),
           );
@@ -373,31 +415,37 @@ class _GradesTab extends ConsumerWidget {
           itemBuilder: (context, index) {
             final grade = grades[index];
             return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                leading: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: _getGradeColor(grade.score).withAlpha(30),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      grade.score.toStringAsFixed(1),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: _getGradeColor(grade.score),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    leading: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: _getGradeColor(grade.score).withAlpha(30),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          grade.score.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: _getGradeColor(grade.score),
+                          ),
+                        ),
                       ),
                     ),
+                    title: Text(grade.subjectName ?? 'Subject'),
+                    subtitle: Text(grade.category.labelVi),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: AppColors.textMuted,
+                    ),
                   ),
-                ),
-                title: Text(grade.subjectName ?? 'Subject'),
-                subtitle: Text(grade.category.labelVi),
-                trailing: Icon(Icons.chevron_right, color: AppColors.textMuted),
-              ),
-            ).animate(delay: (index * 50).ms).fadeIn().slideX(begin: 0.05, end: 0);
+                )
+                .animate(delay: (index * 50).ms)
+                .fadeIn()
+                .slideX(begin: 0.05, end: 0);
           },
         );
       },
@@ -431,9 +479,16 @@ class _AttendanceTab extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.calendar_today_outlined, size: 48, color: AppColors.textMuted),
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 48,
+                  color: AppColors.textMuted,
+                ),
                 SizedBox(height: 12),
-                Text('Chưa có dữ liệu điểm danh', style: TextStyle(color: AppColors.textSecondary)),
+                Text(
+                  'Chưa có dữ liệu điểm danh',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
               ],
             ),
           );
@@ -445,27 +500,34 @@ class _AttendanceTab extends ConsumerWidget {
           itemBuilder: (context, index) {
             final record = records[index];
             return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                leading: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(record.status).withAlpha(30),
-                    borderRadius: BorderRadius.circular(12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    leading: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(record.status).withAlpha(30),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        _getStatusIcon(record.status),
+                        color: _getStatusColor(record.status),
+                      ),
+                    ),
+                    title: Text(record.date),
+                    subtitle: Text(record.status.labelVi),
+                    trailing: record.notes != null
+                        ? Icon(
+                            Icons.notes,
+                            size: 18,
+                            color: AppColors.textMuted,
+                          )
+                        : null,
                   ),
-                  child: Icon(
-                    _getStatusIcon(record.status),
-                    color: _getStatusColor(record.status),
-                  ),
-                ),
-                title: Text(record.date ?? 'Unknown date'),
-                subtitle: Text(record.status.labelVi),
-                trailing: record.notes != null
-                    ? Icon(Icons.notes, size: 18, color: AppColors.textMuted)
-                    : null,
-              ),
-            ).animate(delay: (index * 50).ms).fadeIn().slideX(begin: 0.05, end: 0);
+                )
+                .animate(delay: (index * 50).ms)
+                .fadeIn()
+                .slideX(begin: 0.05, end: 0);
           },
         );
       },
@@ -539,10 +601,7 @@ class _QuickStatCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
-              color: color.withAlpha(200),
-            ),
+            style: TextStyle(fontSize: 11, color: color.withAlpha(200)),
           ),
         ],
       ),
@@ -600,9 +659,7 @@ class _SectionCard extends StatelessWidget {
           const Divider(height: 1, color: AppColors.borderSubtle),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: children,
-            ),
+            child: Column(children: children),
           ),
         ],
       ),
@@ -626,7 +683,10 @@ class _DetailRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
           ),
           Text(
             value,

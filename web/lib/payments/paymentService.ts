@@ -1,28 +1,29 @@
-// @ts-nocheck
 /**
  * Payment Service
- * 
+ *
  * Handles payment processing, status tracking, and receipt generation.
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from "@/lib/supabase/server";
+import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import { createPaymentSchema } from "@/lib/schemas";
 import {
   createPaymentUrl,
-  generateOrderId,
   formatCurrency,
+  generateOrderId,
   parseCallbackResponse,
-  verifyCallback,
   type PaymentRequest,
   type PaymentResult,
-} from './vnpay';
+  verifyCallback,
+} from "./vnpay";
 
 export interface Payment {
   id: string;
   invoiceId: string;
   studentId: string;
   amount: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
-  paymentMethod: 'vnpay' | 'cash' | 'bank_transfer';
+  status: "pending" | "processing" | "completed" | "failed" | "cancelled";
+  paymentMethod: "vnpay" | "cash" | "bank_transfer";
   transactionId?: string;
   gatewayResponse?: Record<string, any>;
   createdAt: string;
@@ -37,7 +38,7 @@ export interface Invoice {
   amount: number;
   description: string;
   dueDate: string;
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+  status: "pending" | "paid" | "overdue" | "cancelled";
   createdAt: string;
 }
 
@@ -58,28 +59,38 @@ export async function createPayment(params: CreatePaymentParams): Promise<{
   orderId: string;
   paymentUrl: string;
 }> {
+  // Validate input
+  const validated = createPaymentSchema.safeParse(params);
+  if (!validated.success) {
+    throw new ValidationError(validated.error.issues[0].message);
+  }
+
   const supabase = await createClient();
-  
+
   // Generate order ID
-  const orderId = generateOrderId('EDU');
-  
+  const orderId = generateOrderId("EDU");
+
+  console.log(
+    `[PaymentService] Starting transaction for Invoice: ${params.invoiceId}, Amount: ${params.amount}`,
+  );
+
   // Create payment record
   const { data: payment, error } = await supabase
-    .from('payment_transactions')
+    .from("payment_transactions")
     .insert({
       invoice_id: params.invoiceId,
       student_id: params.studentId,
       amount: params.amount,
-      payment_method: 'vnpay',
-      status: 'pending',
+      payment_method: "vnpay",
+      status: "pending",
       transaction_id: orderId,
     })
-    .select('id')
+    .select("id")
     .single();
 
   if (error) {
-    console.error('Failed to create payment record:', error);
-    throw new Error('Không thể tạo giao dịch thanh toán');
+    console.error(`[PaymentService] Failed to create payment record:`, error);
+    throw new Error("Không thể tạo giao dịch thanh toán trên hệ thống");
   }
 
   // Create VNPay URL
@@ -88,7 +99,7 @@ export async function createPayment(params: CreatePaymentParams): Promise<{
     amount: params.amount,
     orderInfo: params.description,
     ipAddress: params.ipAddress,
-    locale: 'vn',
+    locale: "vn",
     bankCode: params.bankCode,
   };
 
@@ -96,9 +107,15 @@ export async function createPayment(params: CreatePaymentParams): Promise<{
 
   // Update payment with processing status
   await supabase
-    .from('payment_transactions')
-    .update({ status: 'processing' })
-    .eq('id', payment.id);
+    .from("payment_transactions")
+    .update({ status: "processing" })
+    .eq("id", payment.id);
+
+  console.log(
+    `[PaymentService] Transaction initialized: ${orderId}, URL: ${
+      paymentUrl.substring(0, 50)
+    }...`,
+  );
 
   return {
     paymentId: payment.id,
@@ -111,51 +128,51 @@ export async function createPayment(params: CreatePaymentParams): Promise<{
  * Process payment callback from VNPay
  */
 export async function processPaymentCallback(
-  query: Record<string, string>
+  query: Record<string, string>,
 ): Promise<PaymentResult & { paymentId?: string }> {
   const supabase = await createClient();
-  
+
   // Verify signature
   const isValid = verifyCallback(query);
   if (!isValid) {
     return {
       success: false,
-      orderId: query['vnp_TxnRef'] || '',
+      orderId: query["vnp_TxnRef"] || "",
       amount: 0,
-      responseCode: '97',
-      message: 'Chữ ký không hợp lệ',
+      responseCode: "97",
+      message: "Chữ ký không hợp lệ",
     };
   }
 
   // Parse response
   const result = parseCallbackResponse(query);
-  
+
   // Find and update payment
   const { data: payment } = await supabase
-    .from('payment_transactions')
-    .select('id, invoice_id')
-    .eq('transaction_id', result.orderId)
+    .from("payment_transactions")
+    .select("id, invoice_id")
+    .eq("transaction_id", result.orderId)
     .single();
 
   if (payment) {
-    const newStatus = result.success ? 'completed' : 'failed';
-    
+    const newStatus = result.success ? "completed" : "failed";
+
     // Update payment status
     await supabase
-      .from('payment_transactions')
+      .from("payment_transactions")
       .update({
         status: newStatus,
         gateway_response: query,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', payment.id);
+      .eq("id", payment.id);
 
     // If successful, update invoice status
     if (result.success && payment.invoice_id) {
       await supabase
-        .from('invoices')
-        .update({ status: 'paid' })
-        .eq('id', payment.invoice_id);
+        .from("invoices")
+        .update({ status: "paid" })
+        .eq("id", payment.invoice_id);
     }
 
     return { ...result, paymentId: payment.id };
@@ -167,21 +184,23 @@ export async function processPaymentCallback(
 /**
  * Get payment history for a student
  */
-export async function getStudentPayments(studentId: string): Promise<Payment[]> {
+export async function getStudentPayments(
+  studentId: string,
+): Promise<Payment[]> {
   const supabase = await createClient();
-  
+
   const { data, error } = await supabase
-    .from('payment_transactions')
-    .select('*')
-    .eq('student_id', studentId)
-    .order('created_at', { ascending: false });
+    .from("payment_transactions")
+    .select("*")
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error('Failed to fetch payments:', error);
+    console.error("Failed to fetch payments:", error);
     return [];
   }
 
-  return data.map(p => ({
+  return (data || []).map((p) => ({
     id: p.id,
     invoiceId: p.invoice_id,
     studentId: p.student_id,
@@ -200,9 +219,9 @@ export async function getStudentPayments(studentId: string): Promise<Payment[]> 
  */
 export async function getUnpaidInvoices(studentId: string): Promise<Invoice[]> {
   const supabase = await createClient();
-  
+
   const { data, error } = await supabase
-    .from('invoices')
+    .from("invoices")
     .select(`
       id,
       student_id,
@@ -213,20 +232,20 @@ export async function getUnpaidInvoices(studentId: string): Promise<Invoice[]> {
       created_at,
       student:student_id(full_name, student_id)
     `)
-    .eq('student_id', studentId)
-    .in('status', ['pending', 'overdue'])
-    .order('due_date', { ascending: true });
+    .eq("student_id", studentId)
+    .in("status", ["pending", "overdue"])
+    .order("due_date", { ascending: true });
 
   if (error) {
-    console.error('Failed to fetch invoices:', error);
+    console.error("Failed to fetch invoices:", error);
     return [];
   }
 
-  return data.map(inv => ({
+  return (data || []).map((inv) => ({
     id: inv.id,
     studentId: inv.student_id,
-    studentName: inv.student?.full_name,
-    studentCode: inv.student?.student_id,
+    studentName: (inv.student as any)?.full_name,
+    studentCode: (inv.student as any)?.student_id,
     amount: inv.amount,
     description: inv.description,
     dueDate: inv.due_date,
@@ -244,7 +263,7 @@ export function generateReceipt(payment: Payment, invoice: Invoice): string {
     ===================
     
     Mã giao dịch: ${payment.transactionId}
-    Ngày thanh toán: ${new Date(payment.updatedAt).toLocaleString('vi-VN')}
+    Ngày thanh toán: ${new Date(payment.updatedAt).toLocaleString("vi-VN")}
     
     Thông tin học sinh:
     - Họ tên: ${invoice.studentName}
@@ -254,10 +273,17 @@ export function generateReceipt(payment: Payment, invoice: Invoice): string {
     - Nội dung: ${invoice.description}
     - Số tiền: ${formatCurrency(payment.amount)}
     
-    Phương thức: ${payment.paymentMethod === 'vnpay' ? 'Thanh toán trực tuyến (VNPay)' : 
-                   payment.paymentMethod === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'}
+    Phương thức: ${
+    payment.paymentMethod === "vnpay"
+      ? "Thanh toán trực tuyến (VNPay)"
+      : payment.paymentMethod === "cash"
+      ? "Tiền mặt"
+      : "Chuyển khoản"
+  }
     
-    Trạng thái: ${payment.status === 'completed' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+    Trạng thái: ${
+    payment.status === "completed" ? "Đã thanh toán" : "Chưa thanh toán"
+  }
     
     ===================
     Cảm ơn quý phụ huynh!

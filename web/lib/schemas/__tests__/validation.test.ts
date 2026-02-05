@@ -6,7 +6,7 @@ import {
   createStudentSchema,
   updateStudentSchema,
   studentQuerySchema,
-} from '@/lib/schemas/students';
+} from '@/lib/schemas';
 import {
   createGradeSchema,
   bulkGradeEntrySchema,

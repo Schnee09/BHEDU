@@ -9,14 +9,14 @@
  * hook returns stable shapes for the most common API responses in this repo.
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { useFetch, useMutation } from '@/hooks/useFetch';
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { useFetch, useMutation } from "@/hooks/useFetch";
 
-jest.mock('@/lib/api/client', () => ({
+jest.mock("@/lib/api/client", () => ({
   apiFetch: jest.fn(),
 }));
 
-jest.mock('@/lib/logger', () => ({
+jest.mock("@/lib/logger", () => ({
   logger: {
     debug: jest.fn(),
     info: jest.fn(),
@@ -24,7 +24,7 @@ jest.mock('@/lib/logger', () => ({
   },
 }));
 
-const { apiFetch } = jest.requireMock('@/lib/api/client') as {
+const { apiFetch } = jest.requireMock("@/lib/api/client") as {
   apiFetch: jest.Mock;
 };
 
@@ -33,21 +33,23 @@ const mockJsonResponse = (payload: any, ok = true, status = ok ? 200 : 400) =>
     ok,
     status,
     headers: {
-      get: (key: string) => (key.toLowerCase() === 'content-type' ? 'application/json' : null),
+      get: (
+        key: string,
+      ) => (key.toLowerCase() === "content-type" ? "application/json" : null),
     },
     json: async () => payload,
     text: async () => JSON.stringify(payload),
   });
 
-describe('useFetch normalization', () => {
+describe("useFetch normalization", () => {
   beforeEach(() => {
     apiFetch.mockReset();
   });
 
-  it('wraps raw array responses into an envelope with data + total', async () => {
+  it("wraps raw array responses into an envelope with data + total", async () => {
     apiFetch.mockImplementation(() => mockJsonResponse([{ id: 1 }, { id: 2 }]));
 
-    const { result } = renderHook(() => useFetch<any>('/api/students'));
+    const { result } = renderHook(() => useFetch<any>("/api/students"));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -58,21 +60,23 @@ describe('useFetch normalization', () => {
       expect.objectContaining({
         data: [{ id: 1 }, { id: 2 }],
         total: 2,
-      })
+      }),
     );
   });
 
-  it('preserves envelopes like { students, total, statistics }', async () => {
+  it("preserves envelopes like { students, total, statistics }", async () => {
     apiFetch.mockImplementation(() =>
       mockJsonResponse({
         success: true,
-        students: [{ id: 's1' }],
+        students: [{ id: "s1" }],
         total: 1,
         statistics: { total_students: 1 },
       })
     );
 
-    const { result } = renderHook(() => useFetch<any>('/api/students?page=1&limit=50'));
+    const { result } = renderHook(() =>
+      useFetch<any>("/api/students?page=1&limit=50")
+    );
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -83,20 +87,22 @@ describe('useFetch normalization', () => {
     expect(result.current.data.statistics).toEqual({ total_students: 1 });
   });
 
-  it('sets error when success=false', async () => {
-    apiFetch.mockImplementation(() => mockJsonResponse({ success: false, error: 'Nope' }));
+  it("sets error when success=false", async () => {
+    apiFetch.mockImplementation(() =>
+      mockJsonResponse({ success: false, error: "Nope" })
+    );
 
-    const { result } = renderHook(() => useFetch<any>('/api/admin/courses'));
+    const { result } = renderHook(() => useFetch<any>("/api/admin/courses"));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
     expect(result.current.data).toBeNull();
-    expect(result.current.error).toBe('Nope');
+    expect(result.current.error).toBe("Nope");
   });
 
-  it('ignores stale responses when url changes quickly (default cancellation-on)', async () => {
+  it("ignores stale responses when url changes quickly (default cancellation-on)", async () => {
     let resolveFirst!: (value: any) => void;
     const first = new Promise((r) => (resolveFirst = r));
 
@@ -104,14 +110,16 @@ describe('useFetch normalization', () => {
       // First call: delayed
       .mockImplementationOnce(() => first)
       // Second call: immediate
-      .mockImplementationOnce(() => mockJsonResponse({ success: true, data: [{ id: 'new' }] }));
+      .mockImplementationOnce(() =>
+        mockJsonResponse({ success: true, data: [{ id: "new" }] })
+      );
 
     const { result, rerender } = renderHook(
       ({ url }) => useFetch<any>(url),
-      { initialProps: { url: '/api/anything?slow=1' } }
+      { initialProps: { url: "/api/anything?slow=1" } },
     );
 
-    rerender({ url: '/api/anything?fast=1' });
+    rerender({ url: "/api/anything?fast=1" });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -119,11 +127,15 @@ describe('useFetch normalization', () => {
 
     // Should reflect the second response (new).
     expect(result.current.error).toBeNull();
-    expect(result.current.data).toEqual(expect.objectContaining({ data: [{ id: 'new' }] }));
+    const expected = {
+      data: [{ id: "new" }],
+      total: 1,
+    };
+    expect(result.current.data).toMatchObject(expected);
 
     // Resolve the first (stale) request — it must NOT overwrite state.
     resolveFirst(
-      await mockJsonResponse({ success: true, data: [{ id: 'old' }] })
+      await mockJsonResponse({ success: true, data: [{ id: "old" }] }),
     );
 
     // Give the microtask queue a turn.
@@ -131,11 +143,11 @@ describe('useFetch normalization', () => {
       await Promise.resolve();
     });
 
-    expect(result.current.data).toEqual(expect.objectContaining({ data: [{ id: 'new' }] }));
+    expect(result.current.data).toMatchObject(expected);
   });
 
   it("doesn't fetch when url is empty", async () => {
-    const { result } = renderHook(() => useFetch<any>(''));
+    const { result } = renderHook(() => useFetch<any>(""));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -147,28 +159,32 @@ describe('useFetch normalization', () => {
   });
 });
 
-describe('useMutation normalization', () => {
+describe("useMutation normalization", () => {
   beforeEach(() => {
     apiFetch.mockReset();
   });
 
-  it('returns data when API responds with { success:true, data: ... }', async () => {
-    apiFetch.mockImplementation(() => mockJsonResponse({ success: true, data: { id: 'x' } }));
+  it("returns data when API responds with { success:true, data: ... }", async () => {
+    apiFetch.mockImplementation(() =>
+      mockJsonResponse({ success: true, data: { id: "x" } })
+    );
 
-    const { result } = renderHook(() => useMutation('/api/grades', 'POST'));
+    const { result } = renderHook(() => useMutation("/api/grades", "POST"));
 
     let out: any;
     await act(async () => {
-      out = await result.current.mutate({ hello: 'world' });
+      out = await result.current.mutate({ hello: "world" });
     });
 
-    expect(out).toEqual({ id: 'x' });
+    expect(out).toEqual({ id: "x" });
   });
 
-  it('throws when success=false', async () => {
-    apiFetch.mockImplementation(() => mockJsonResponse({ success: false, error: 'Bad' }, false));
+  it("throws when success=false", async () => {
+    apiFetch.mockImplementation(() =>
+      mockJsonResponse({ success: false, error: "Bad" }, false)
+    );
 
-    const { result } = renderHook(() => useMutation('/api/students', 'DELETE'));
+    const { result } = renderHook(() => useMutation("/api/students", "DELETE"));
 
     let thrown: any;
     await act(async () => {
@@ -180,6 +196,6 @@ describe('useMutation normalization', () => {
     });
 
     expect(thrown).toBeTruthy();
-    expect(thrown.message).toBe('Bad');
+    expect(thrown.message).toBe("Bad");
   });
 });

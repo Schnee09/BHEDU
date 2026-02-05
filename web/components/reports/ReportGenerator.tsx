@@ -12,9 +12,21 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui';
 import { Badge } from '@/components/ui/badge';
 import { apiFetch } from '@/lib/api/client';
+import { cn } from '@/lib/utils';
+import { toast } from 'react-hot-toast';
+import {
+    FileText,
+    ClipboardCheck,
+    BookOpen,
+    Users,
+    Printer,
+    Calendar,
+    ChevronRight,
+    Search
+} from 'lucide-react';
 import {
     generateReportCardHTML,
     generateAttendanceReportHTML,
@@ -25,6 +37,8 @@ import {
     type ReportCardData,
     type AttendanceReportData,
 } from '@/lib/reports/pdfGenerator';
+import { logger } from '@/lib/logger';
+import { usePerformanceMonitor } from '@/lib/performanceMonitor';
 
 type ReportType = 'report_card' | 'attendance' | 'transcript' | 'class_performance';
 
@@ -41,45 +55,29 @@ const REPORT_OPTIONS: ReportOption[] = [
         id: 'report_card',
         title: 'Report Card',
         titleVi: 'Học Bạ',
-        description: 'Bảng điểm cá nhân của học sinh theo học kỳ',
-        icon: (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-        ),
+        description: 'Bảng điểm cá nhân của học sinh theo từng học kỳ cụ thể.',
+        icon: <FileText className="w-6 h-6" />,
     },
     {
         id: 'attendance',
         title: 'Attendance Report',
-        titleVi: 'Báo Cáo Điểm Danh',
-        description: 'Thống kê đi học của học sinh theo thời gian',
-        icon: (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-        ),
+        titleVi: 'Điểm Danh',
+        description: 'Thống kê tình trạng chuyên cần và đi học muộn.',
+        icon: <ClipboardCheck className="w-6 h-6" />,
     },
     {
         id: 'transcript',
         title: 'Transcript',
-        titleVi: 'Bảng Điểm Toàn Khóa',
-        description: 'Bảng điểm tổng hợp tất cả các học kỳ',
-        icon: (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-        ),
+        titleVi: 'Bảng Điểm',
+        description: 'Tổng hợp kết quả học tập toàn khóa của học sinh.',
+        icon: <BookOpen className="w-6 h-6" />,
     },
     {
         id: 'class_performance',
         title: 'Class Performance',
-        titleVi: 'Báo Cáo Lớp Học',
-        description: 'Tổng hợp kết quả học tập của cả lớp',
-        icon: (
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-        ),
+        titleVi: 'Báo Cáo Lớp',
+        description: 'Phân tích hiệu suất học tập của toàn bộ lớp học.',
+        icon: <Users className="w-6 h-6" />,
     },
 ];
 
@@ -109,15 +107,20 @@ export default function ReportGenerator() {
     const [loading, setLoading] = useState(false);
     const [generating, setGenerating] = useState(false);
 
+    // Performance monitoring
+    usePerformanceMonitor('ReportGenerator');
+
     // Load classes on mount
     useEffect(() => {
         loadClasses();
+        logger.info('ReportGenerator mounted');
     }, []);
 
     // Load students when class changes
     useEffect(() => {
         if (selectedClass) {
             loadStudents(selectedClass);
+            logger.debug('Class selected for reports', { classId: selectedClass });
         } else {
             setStudents([]);
         }
@@ -153,19 +156,21 @@ export default function ReportGenerator() {
     const generateReport = async () => {
         if (!selectedReport) return;
 
+        logger.info('Starting report generation', { type: selectedReport, classId: selectedClass });
         setGenerating(true);
+        const startTime = performance.now();
         try {
             // Fetch school settings
             let schoolName = 'TRUNG TÂM GIÁO DỤC BÙI HOÀNG';
             let academicYear = '2024-2025';
-            
+
             try {
                 const settingsRes = await apiFetch('/api/settings?category=school');
                 if (settingsRes.ok) {
                     const { settings } = await settingsRes.json();
                     if (settings.school_name) schoolName = settings.school_name;
                 }
-                
+
                 const academicRes = await apiFetch('/api/settings?key=academic_year');
                 if (academicRes.ok) {
                     const { settings } = await academicRes.json();
@@ -218,9 +223,18 @@ export default function ReportGenerator() {
 
             if (htmlContent) {
                 printReport(htmlContent);
+                toast.success('Báo cáo đã sẵn sàng để in');
+            } else {
+                toast.error('Không tìm thấy dữ liệu cho báo cáo này');
+                logger.warn('Empty report data', { type: selectedReport });
             }
+
+            const duration = performance.now() - startTime;
+            logger.info('Report generated successfully', { type: selectedReport, duration });
         } catch (error) {
             console.error('Failed to generate report:', error);
+            logger.error('Failed to generate report', error, { type: selectedReport });
+            toast.error('Lỗi khi tạo báo cáo. Vui lòng thử lại.');
         } finally {
             setGenerating(false);
         }
@@ -231,52 +245,58 @@ export default function ReportGenerator() {
     const needsDateRange = selectedReport === 'attendance';
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                        </svg>
+        <Card className="glass-premium rounded-[40px] border border-white/20 dark:border-white/5 shadow-2xl shadow-stone-500/10 overflow-hidden">
+            <CardHeader className="p-8 border-b border-white/10">
+                <div className="flex items-center gap-5">
+                    <div className="p-4 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <Printer className="w-8 h-8" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold">Tạo Báo Cáo</h2>
-                        <p className="text-sm text-muted-foreground">Chọn loại báo cáo và thông tin cần thiết</p>
+                        <h2 className="text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight">Hệ Thống Báo Cáo</h2>
+                        <p className="text-sm font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest mt-1">Xuất dữ liệu học tập và điểm danh chuyên nghiệp</p>
                     </div>
                 </div>
             </CardHeader>
 
-            <CardBody>
+            <CardBody className="p-8">
                 {/* Report Type Selection */}
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-foreground mb-3">
-                        Loại báo cáo
+                <div className="mb-10">
+                    <label className="block text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] mb-4">
+                        1. Chọn loại báo cáo
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {REPORT_OPTIONS.map((option) => (
                             <button
                                 key={option.id}
                                 onClick={() => setSelectedReport(option.id)}
-                                className={`flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all ${selectedReport === option.id
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-border hover:border-primary/50 hover:bg-muted/5'
-                                    }`}
+                                className={cn(
+                                    "group relative flex items-start gap-5 p-6 rounded-[32px] border-2 text-left transition-all duration-300",
+                                    selectedReport === option.id
+                                        ? "border-amber-500 bg-amber-500/5 ring-4 ring-amber-500/10"
+                                        : "border-stone-100 dark:border-white/5 hover:border-amber-500/30 hover:bg-stone-50/50 dark:hover:bg-white/5"
+                                )}
                             >
-                                <div className={`p-2 rounded-lg ${selectedReport === option.id
-                                    ? 'bg-primary text-white'
-                                    : 'bg-muted/10 text-muted-foreground'
-                                    }`}>
+                                <div className={cn(
+                                    "p-4 rounded-2xl transition-all duration-300",
+                                    selectedReport === option.id
+                                        ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20"
+                                        : "bg-stone-100 dark:bg-white/5 text-stone-400 dark:text-stone-500 group-hover:bg-amber-500/10 group-hover:text-amber-500"
+                                )}>
                                     {option.icon}
                                 </div>
-                                <div className="flex-1">
+                                <div className="flex-1 pr-6">
                                     <div className="flex items-center gap-2">
-                                        <span className="font-semibold text-foreground">{option.titleVi}</span>
-                                        {selectedReport === option.id && (
-                                            <Badge variant="success" size="sm">Đã chọn</Badge>
-                                        )}
+                                        <span className="font-black text-stone-900 dark:text-white uppercase tracking-tight">{option.titleVi}</span>
                                     </div>
-                                    <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
+                                    <p className="text-sm font-medium text-stone-500 dark:text-stone-400 mt-2 line-clamp-2 leading-relaxed">{option.description}</p>
                                 </div>
+                                {selectedReport === option.id && (
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2">
+                                        <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white">
+                                            <ChevronRight className="w-5 h-5" />
+                                        </div>
+                                    </div>
+                                )}
                             </button>
                         ))}
                     </div>
@@ -284,81 +304,92 @@ export default function ReportGenerator() {
 
                 {/* Filters based on report type */}
                 {selectedReport && (
-                    <div className="space-y-4 p-4 bg-muted/5 rounded-xl">
-                        {/* Class Selection */}
-                        {(needsClass || needsStudent) && (
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">
-                                    Lớp học
-                                </label>
-                                <select
-                                    value={selectedClass}
-                                    onChange={(e) => setSelectedClass(e.target.value)}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                    disabled={loading}
-                                >
-                                    <option value="">-- Chọn lớp --</option>
-                                    {classes.map((cls) => (
-                                        <option key={cls.id} value={cls.id}>{cls.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
+                    <div className="animate-fade-in-up space-y-8 p-8 bg-stone-50/50 dark:bg-white/5 rounded-[32px] border border-stone-100 dark:border-white/10">
+                        <label className="block text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em]">
+                            2. Cấu hình thông tin
+                        </label>
 
-                        {/* Student Selection */}
-                        {needsStudent && selectedClass && (
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">
-                                    Học sinh
-                                </label>
-                                <select
-                                    value={selectedStudent}
-                                    onChange={(e) => setSelectedStudent(e.target.value)}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                >
-                                    <option value="">-- Chọn học sinh --</option>
-                                    {students.map((student) => (
-                                        <option key={student.id} value={student.id}>
-                                            {student.full_name} {student.student_code ? `(${student.student_code})` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                            {/* Class Selection */}
+                            {(needsClass || needsStudent) && (
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-2 text-sm font-black text-stone-700 dark:text-stone-200 uppercase tracking-tight">
+                                        <Users className="w-4 h-4 text-amber-500" />
+                                        Lớp học
+                                    </label>
+                                    <select
+                                        value={selectedClass}
+                                        onChange={(e) => setSelectedClass(e.target.value)}
+                                        className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 dark:border-white/10 bg-white dark:bg-stone-900 text-stone-900 dark:text-white font-bold focus:outline-none focus:border-amber-500 transition-all appearance-none cursor-pointer"
+                                        disabled={loading}
+                                    >
+                                        <option value="">-- Chọn lớp --</option>
+                                        {classes.map((cls) => (
+                                            <option key={cls.id} value={cls.id}>{cls.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
-                        {/* Date Range */}
-                        {needsDateRange && (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-foreground mb-2">
-                                        Từ ngày
+                            {/* Student Selection */}
+                            {needsStudent && (
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-2 text-sm font-black text-stone-700 dark:text-stone-200 uppercase tracking-tight">
+                                        <Search className="w-4 h-4 text-amber-500" />
+                                        Học sinh
                                     </label>
-                                    <input
-                                        type="date"
-                                        value={dateFrom}
-                                        onChange={(e) => setDateFrom(e.target.value)}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                    />
+                                    <select
+                                        value={selectedStudent}
+                                        onChange={(e) => setSelectedStudent(e.target.value)}
+                                        className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 dark:border-white/10 bg-white dark:bg-stone-900 text-stone-900 dark:text-white font-bold focus:outline-none focus:border-amber-500 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={!selectedClass}
+                                    >
+                                        <option value="">-- Chọn học sinh --</option>
+                                        {students.map((student) => (
+                                            <option key={student.id} value={student.id}>
+                                                {student.full_name} {student.student_code ? `(${student.student_code})` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-foreground mb-2">
-                                        Đến ngày
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={dateTo}
-                                        onChange={(e) => setDateTo(e.target.value)}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                    />
-                                </div>
-                            </div>
-                        )}
+                            )}
+
+                            {/* Date Range */}
+                            {needsDateRange && (
+                                <>
+                                    <div className="space-y-3">
+                                        <label className="flex items-center gap-2 text-sm font-black text-stone-700 dark:text-stone-200 uppercase tracking-tight">
+                                            <Calendar className="w-4 h-4 text-amber-500" />
+                                            Từ ngày
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={dateFrom}
+                                            onChange={(e) => setDateFrom(e.target.value)}
+                                            className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 dark:border-white/10 bg-white dark:bg-stone-900 text-stone-900 dark:text-white font-bold focus:outline-none focus:border-amber-500 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="flex items-center gap-2 text-sm font-black text-stone-700 dark:text-stone-200 uppercase tracking-tight">
+                                            <Calendar className="w-4 h-4 text-amber-500" />
+                                            Đến ngày
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={dateTo}
+                                            onChange={(e) => setDateTo(e.target.value)}
+                                            className="w-full px-5 py-4 rounded-2xl border-2 border-stone-200 dark:border-white/10 bg-white dark:bg-stone-900 text-stone-900 dark:text-white font-bold focus:outline-none focus:border-amber-500 transition-all"
+                                        />
+                                    </div>
+                                </>
+                            )}
+                        </div>
 
                         {/* Generate Button */}
-                        <div className="pt-4">
+                        <div className="pt-6 border-t border-stone-200 dark:border-white/10">
                             <Button
                                 size="lg"
-                                fullWidth
+                                className="w-full py-8 rounded-[24px] bg-amber-500 hover:bg-amber-600 text-white font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 active:scale-[0.98] transition-all"
                                 onClick={generateReport}
                                 isLoading={generating}
                                 disabled={
@@ -367,9 +398,7 @@ export default function ReportGenerator() {
                                     (needsClass && !selectedClass)
                                 }
                             >
-                                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                </svg>
+                                <Printer className="w-6 h-6 mr-3" />
                                 Tạo và In Báo Cáo
                             </Button>
                         </div>

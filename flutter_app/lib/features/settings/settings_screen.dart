@@ -1,15 +1,14 @@
 /// Settings Screen - App settings and preferences
+/// Cross-platform synchronized with web Control Center
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
-import '../../core/l10n/app_strings.dart';
+import '../../core/providers/customization_provider.dart';
 import '../../core/services/biometric_service.dart';
 import '../../core/services/cache_service.dart';
-
-/// Dark mode provider
-final darkModeProvider = StateProvider<bool>((ref) => false);
+import '../../shared/widgets/glass_container.dart';
 
 /// Language provider
 final languageProvider = StateProvider<String>((ref) => 'vi');
@@ -49,33 +48,215 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = ref.watch(darkModeProvider);
+    final customization = ref.watch(customizationProvider);
     final language = ref.watch(languageProvider);
     final cacheStatus = ref.watch(cacheStatusProvider);
+    final palette = customization.palette;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cài đặt'),
-      ),
+      appBar: AppBar(title: const Text('Cài đặt')),
       body: ListView(
         children: [
-          // Appearance section
-          _SectionHeader(title: 'Giao diện'),
-          _SettingsTile(
-            icon: Icons.dark_mode,
-            title: 'Chế độ tối',
-            subtitle: isDarkMode ? 'Bật' : 'Tắt',
-            trailing: Switch(
-              value: isDarkMode,
-              onChanged: (value) {
-                ref.read(darkModeProvider.notifier).state = value;
-                // TODO: Apply theme change
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Tính năng đang phát triển')),
-                );
-              },
+          // Customization section (Pro Max Control Center)
+          _SectionHeader(title: 'Tùy chỉnh giao diện'),
+
+          // Accent Color Picker
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: GlassContainer(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.palette, color: palette.primary),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Màu chủ đạo',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: AccentColor.values.map((color) {
+                      final isSelected = customization.accentColor == color;
+                      final colorPalette = accentPalettes[color]!;
+                      return GestureDetector(
+                        onTap: () => ref
+                            .read(customizationProvider.notifier)
+                            .setAccentColor(color),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: colorPalette.primary,
+                            shape: BoxShape.circle,
+                            border: isSelected
+                                ? Border.all(color: Colors.white, width: 3)
+                                : null,
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: colorPalette.primary.withAlpha(
+                                        102,
+                                      ),
+                                      blurRadius: 12,
+                                      spreadRadius: 2,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: isSelected
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 24,
+                                )
+                              : null,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             ),
           ),
+
+          // Glass Effects Controls
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: GlassContainer(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.blur_on, color: palette.primary),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Hiệu ứng kính',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Glass Opacity
+                  Row(
+                    children: [
+                      const SizedBox(width: 80, child: Text('Độ trong')),
+                      Expanded(
+                        child: Slider(
+                          value: customization.glassOpacity,
+                          min: 0.3,
+                          max: 1.0,
+                          activeColor: palette.primary,
+                          onChanged: (value) => ref
+                              .read(customizationProvider.notifier)
+                              .setGlassOpacity(value),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 40,
+                        child: Text(
+                          '${(customization.glassOpacity * 100).round()}%',
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Blur Strength
+                  Row(
+                    children: [
+                      const SizedBox(width: 80, child: Text('Độ mờ')),
+                      Expanded(
+                        child: Slider(
+                          value: customization.blurStrength,
+                          min: 8,
+                          max: 32,
+                          activeColor: palette.primary,
+                          onChanged: (value) => ref
+                              .read(customizationProvider.notifier)
+                              .setBlurStrength(value),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 40,
+                        child: Text('${customization.blurStrength.round()}px'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // UI Density Toggle
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: GlassContainer(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.view_compact, color: palette.primary),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Giao diện thu gọn',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  Switch(
+                    value: customization.density == UIDensity.compact,
+                    activeThumbColor: palette.primary,
+                    onChanged: (value) => ref
+                        .read(customizationProvider.notifier)
+                        .setDensity(value ? UIDensity.compact : UIDensity.cozy),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Theme Mode Toggle
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: GlassContainer(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    customization.themeMode == ThemeMode.dark
+                        ? Icons.dark_mode
+                        : Icons.light_mode,
+                    color: palette.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text('Chế độ tối', style: TextStyle(fontSize: 16)),
+                  ),
+                  Switch(
+                    value: customization.themeMode == ThemeMode.dark,
+                    activeThumbColor: palette.primary,
+                    onChanged: (value) => ref
+                        .read(customizationProvider.notifier)
+                        .setThemeMode(value ? ThemeMode.dark : ThemeMode.light),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Language
           _SettingsTile(
             icon: Icons.language,
             title: 'Ngôn ngữ',
@@ -95,7 +276,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 value: _biometricEnabled,
                 onChanged: (value) async {
                   final service = ref.read(biometricServiceProvider);
-                  
+
                   if (value) {
                     // Authenticate first before enabling
                     final authenticated = await service.authenticate(
@@ -133,7 +314,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               await CacheService.updateLastSync();
-              if (mounted) {
+              if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Đã đồng bộ dữ liệu')),
                 );
@@ -178,27 +359,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              title: const Text('Tiếng Việt'),
-              leading: Radio<String>(
-                value: 'vi',
-                groupValue: ref.read(languageProvider),
-                onChanged: (value) {
-                  ref.read(languageProvider.notifier).state = value!;
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-            ListTile(
-              title: const Text('English'),
-              leading: Radio<String>(
-                value: 'en',
-                groupValue: ref.read(languageProvider),
-                onChanged: (value) {
-                  ref.read(languageProvider.notifier).state = value!;
-                  Navigator.pop(context);
-                },
-              ),
+            Consumer(
+              builder: (context, ref, child) {
+                final currentLang = ref.watch(languageProvider);
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: const Text('Tiếng Việt'),
+                      value: 'vi',
+                      groupValue: currentLang,
+                      onChanged: (value) {
+                        ref.read(languageProvider.notifier).state = value!;
+                        Navigator.pop(context);
+                      },
+                    ),
+                    RadioListTile<String>(
+                      title: const Text('English'),
+                      value: 'en',
+                      groupValue: currentLang,
+                      onChanged: (value) {
+                        ref.read(languageProvider.notifier).state = value!;
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -211,7 +398,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xóa bộ nhớ đệm?'),
-        content: const Text('Dữ liệu lưu trữ cục bộ sẽ bị xóa. Bạn sẽ cần kết nối internet để tải lại dữ liệu.'),
+        content: const Text(
+          'Dữ liệu lưu trữ cục bộ sẽ bị xóa. Bạn sẽ cần kết nối internet để tải lại dữ liệu.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -220,7 +409,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           TextButton(
             onPressed: () async {
               await CacheService.clearAll();
-              if (mounted) {
+              if (context.mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Đã xóa bộ nhớ đệm')),

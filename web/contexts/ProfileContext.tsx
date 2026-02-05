@@ -2,12 +2,13 @@
 
 import { createContext, useContext, ReactNode, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-
-type UserRole = 'admin' | 'teacher' | 'student' | 'staff';
+import { UserRole } from "@/lib/auth/core";
 
 export type Profile = {
   id: string;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   role: UserRole;
   avatar_url?: string | null;
   email?: string | null;
@@ -41,7 +42,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       // Try user_id first
       let { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, role, email, phone, address, date_of_birth, user_id")
+        .select("id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, user_id")
         .eq("user_id", session.user.id)
         .maybeSingle();
 
@@ -49,7 +50,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       if (!data && !error) {
         const result = await supabase
           .from("profiles")
-          .select("id, full_name, role, email, phone, address, date_of_birth, user_id")
+          .select("id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, user_id")
           .eq("id", session.user.id)
           .maybeSingle();
 
@@ -57,11 +58,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         error = result.error;
       }
 
-      if (!error && data) {
+      if (data) {
         console.log('[ProfileProvider] Profile loaded:', { role: data.role, id: data.id });
         setProfile(data);
+      } else if (error) {
+        console.error('[ProfileProvider] Database error fetching profile:', error);
       } else {
-        console.error('[ProfileProvider] Failed to fetch profile:', error);
+        console.warn('[ProfileProvider] No profile found for authenticated user. Ensure profiles are created on signup.');
       }
 
       setLoading(false);

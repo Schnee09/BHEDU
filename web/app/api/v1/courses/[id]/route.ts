@@ -1,69 +1,46 @@
 /**
- * Individual course API endpoint
+ * Individual course API endpoint (v1) - REFACTORED
  */
 
-import { NextRequest } from 'next/server';
-import { withAuth, withAdmin } from '@/lib/api/middleware';
-import { success, noContent } from '@/lib/api/responses';
-import { updateCourseSchema, uuidSchema } from '@/lib/api/schemas';
-import { CourseService } from '@/lib/services/courseService';
-import { handleApiError } from '@/lib/api/errors';
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { updateCourseSchema, uuidSchema } from "@/lib/schemas";
+import { CourseService } from "@/lib/services/courseService";
 
 /**
- * GET /api/courses/[id]
+ * GET /api/v1/courses/[id]
  * Get a single course by ID
  */
-export const GET = withAuth(
-  async (_request: NextRequest, context: { params?: Promise<Record<string, string>> }) => {
-    try {
-      const params = await context.params;
-      const id = uuidSchema.parse(params?.id);
-
-      const course = await CourseService.getCourseById(id);
-
-      return success(course);
-    } catch (error) {
-      return handleApiError(error);
-    }
-  }
+export const GET = createGetHandler(
+  { requireAuth: true },
+  async ({ params }) => {
+    const course = await CourseService.getCourseById(params.id);
+    return apiSuccess(course);
+  },
 );
 
 /**
- * PATCH /api/courses/[id]
+ * PATCH /api/v1/courses/[id]
  * Update a course (admin only)
  */
-export const PATCH = withAdmin(
-  async (request: NextRequest, context: { params?: Promise<Record<string, string>> }) => {
-    try {
-      const params = await context.params;
-      const id = uuidSchema.parse(params?.id);
-      const body = await request.json();
-      const validatedData = updateCourseSchema.parse(body);
-
-      const course = await CourseService.updateCourse(id, validatedData);
-
-      return success(course, 'Course updated successfully');
-    } catch (error) {
-      return handleApiError(error);
-    }
-  }
+export const PATCH = createApiHandler(
+  {
+    allowedRoles: ["admin"],
+    bodySchema: updateCourseSchema,
+  },
+  async ({ params, body }) => {
+    const course = await CourseService.updateCourse(params.id, body);
+    return apiSuccess(course, { message: "Course updated successfully" });
+  },
 );
 
 /**
- * DELETE /api/courses/[id]
+ * DELETE /api/v1/courses/[id]
  * Delete a course (admin only)
  */
-export const DELETE = withAdmin(
-  async (_request: NextRequest, context: { params?: Promise<Record<string, string>> }) => {
-    try {
-      const params = await context.params;
-      const id = uuidSchema.parse(params?.id);
-
-      await CourseService.deleteCourse(id);
-
-      return noContent();
-    } catch (error) {
-      return handleApiError(error);
-    }
-  }
+export const DELETE = createGetHandler(
+  { allowedRoles: ["admin"] },
+  async ({ params }) => {
+    await CourseService.deleteCourse(params.id);
+    return apiSuccess(null, { message: "Course deleted successfully" });
+  },
 );

@@ -8,8 +8,8 @@ import '../config/theme.dart';
 import '../core/constants/app_constants.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
-import '../features/finance/finance_screen.dart';
-import '../features/search/search_screen.dart';
+// import '../features/finance/finance_screen.dart'; // Unused
+// import '../features/search/search_screen.dart'; // Unused
 import '../features/attendance/attendance_screen.dart';
 import '../features/attendance/attendance_marking_screen.dart';
 import '../features/attendance/qr_scanner_screen.dart';
@@ -28,13 +28,12 @@ import '../features/students/student_detail_screen.dart';
 import '../features/timetable/timetable_screen.dart';
 import '../shared/providers/auth_provider.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 /// Router provider
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authNotifierProvider);
-  
+
   return GoRouter(
     initialLocation: '/login',
     debugLogDiagnostics: true,
@@ -65,7 +64,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'forgot-password',
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
-      
+
       // Dashboard shell with bottom navigation
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
@@ -94,9 +93,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 name: 'student-detail',
-                builder: (context, state) => StudentDetailScreen(
-                  studentId: state.pathParameters['id']!,
-                ),
+                builder: (context, state) =>
+                    StudentDetailScreen(studentId: state.pathParameters['id']!),
               ),
             ],
           ),
@@ -108,9 +106,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 name: 'class-detail',
-                builder: (context, state) => ClassDetailScreen(
-                  classId: state.pathParameters['id']!,
-                ),
+                builder: (context, state) =>
+                    ClassDetailScreen(classId: state.pathParameters['id']!),
               ),
             ],
           ),
@@ -122,9 +119,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/qr-scanner',
             name: 'qr-scanner',
-            builder: (context, state) => QRScannerScreen(
-              classId: state.uri.queryParameters['classId'],
-            ),
+            builder: (context, state) =>
+                QRScannerScreen(classId: state.uri.queryParameters['classId']),
           ),
           GoRoute(
             path: '/attendance-marking',
@@ -203,14 +199,14 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// Dashboard shell with bottom navigation
 class DashboardShell extends ConsumerWidget {
   final Widget child;
-  
+
   const DashboardShell({super.key, required this.child});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(authNotifierProvider).value;
     final currentIndex = _calculateSelectedIndex(context);
-    
+
     // Get navigation items based on role
     final navItems = _getNavItems(profile?.role ?? UserRole.student);
 
@@ -222,23 +218,39 @@ class DashboardShell extends ConsumerWidget {
           final item = navItems[index];
           context.goNamed(item.route);
         },
-        destinations: navItems.map((item) => NavigationDestination(
-          icon: Icon(item.icon),
-          selectedIcon: Icon(item.selectedIcon),
-          label: item.label,
-        )).toList(),
+        destinations: navItems
+            .map(
+              (item) => NavigationDestination(
+                icon: Icon(item.icon),
+                selectedIcon: Icon(item.selectedIcon),
+                label: item.label,
+              ),
+            )
+            .toList(),
       ),
     );
   }
 
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith('/dashboard')) return 0;
-    if (location.startsWith('/attendance')) return 1;
-    if (location.startsWith('/grades')) return 2;
-    if (location.startsWith('/timetable')) return 3;
-    if (location.startsWith('/students') || location.startsWith('/classes')) return 4;
-    if (location.startsWith('/profile')) return 5;
+    if (location.startsWith('/dashboard')) {
+      return 0;
+    }
+    if (location.startsWith('/attendance')) {
+      return 1;
+    }
+    if (location.startsWith('/grades')) {
+      return 2;
+    }
+    if (location.startsWith('/timetable')) {
+      return 3;
+    }
+    if (location.startsWith('/students') || location.startsWith('/classes')) {
+      return 4;
+    }
+    if (location.startsWith('/profile')) {
+      return 5;
+    }
     return 0;
   }
 
@@ -273,28 +285,34 @@ class DashboardShell extends ConsumerWidget {
 
     // Admin/Staff see Students, Teacher sees Classes
     if (role == UserRole.admin || role == UserRole.staff) {
-      items.add(_NavItem(
-        icon: Icons.people_outlined,
-        selectedIcon: Icons.people,
-        label: 'Students',
-        route: 'students',
-      ));
+      items.add(
+        _NavItem(
+          icon: Icons.people_outlined,
+          selectedIcon: Icons.people,
+          label: 'Students',
+          route: 'students',
+        ),
+      );
     } else if (role == UserRole.teacher) {
-      items.add(_NavItem(
-        icon: Icons.class_outlined,
-        selectedIcon: Icons.class_,
-        label: 'Classes',
-        route: 'classes',
-      ));
+      items.add(
+        _NavItem(
+          icon: Icons.class_outlined,
+          selectedIcon: Icons.class_,
+          label: 'Classes',
+          route: 'classes',
+        ),
+      );
     }
 
     // Profile for all
-    items.add(_NavItem(
-      icon: Icons.person_outlined,
-      selectedIcon: Icons.person,
-      label: 'Profile',
-      route: 'profile',
-    ));
+    items.add(
+      _NavItem(
+        icon: Icons.person_outlined,
+        selectedIcon: Icons.person,
+        label: 'Profile',
+        route: 'profile',
+      ),
+    );
 
     return items;
   }
@@ -314,29 +332,4 @@ class _NavItem {
   });
 }
 
-/// Placeholder screen for unimplemented features
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-  
-  const _PlaceholderScreen({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.construction, size: 64, color: AppColors.primary),
-            const SizedBox(height: 16),
-            Text(
-              '$title - Coming Soon',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// _PlaceholderScreen removed

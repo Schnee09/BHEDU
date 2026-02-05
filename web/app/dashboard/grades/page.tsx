@@ -12,8 +12,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useUser } from "@/hooks";
-import { apiFetch } from "@/lib/api/client";
+import { useProfile } from "@/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
+import { apiFetch, getGrades, getClasses } from "@/lib/api/client";
 import { LoadingState } from "@/components/ui";
 import { Icons } from "@/components/ui/Icons";
 import {
@@ -32,7 +33,8 @@ interface NavCard {
   title: string;
   description: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  roles: string[];
+  permission?: string;
+  isStudentOnly?: boolean;
   color: string;
 }
 
@@ -58,7 +60,7 @@ const navCards: NavCard[] = [
     title: "Nhập điểm",
     description: "Nhập điểm sử dụng thang điểm Việt Nam",
     icon: PencilSquareIcon,
-    roles: ["teacher", "admin", "staff"],
+    permission: "grades.entry",
     color: "indigo",
   },
   {
@@ -66,7 +68,7 @@ const navCards: NavCard[] = [
     title: "Phân tích điểm",
     description: "Xem hiệu suất lớp học và phân bố điểm",
     icon: DocumentChartBarIcon,
-    roles: ["teacher", "admin", "staff"],
+    permission: "grades.analytics",
     color: "emerald",
   },
   {
@@ -74,7 +76,7 @@ const navCards: NavCard[] = [
     title: "Báo cáo điểm",
     description: "Tạo và xuất báo cáo điểm chi tiết",
     icon: DocumentTextIcon,
-    roles: ["teacher", "admin", "staff"],
+    permission: "reports.view",
     color: "amber",
   },
   {
@@ -82,7 +84,7 @@ const navCards: NavCard[] = [
     title: "Điểm của tôi",
     description: "Xem điểm và kết quả bài tập của bạn",
     icon: AcademicCapIcon,
-    roles: ["student"],
+    isStudentOnly: true,
     color: "blue",
   },
 ];
@@ -95,33 +97,33 @@ const colorClasses: Record<string, { bg: string; hover: string; text: string; ic
 };
 
 export default function GradesPageModern() {
-  const { user, loading: userLoading } = useUser();
+  const { profile, loading: profileLoading } = useProfile();
+  const { can, isTeacher, isAdmin, isStaff, isStudent } = usePermissions();
   const [stats, setStats] = useState<GradeStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
 
+  const canSeeStats = isTeacher || isAdmin || isStaff;
+
   useEffect(() => {
-    if (user && (user.role === "teacher" || user.role === "admin" || user.role === "staff")) {
+    if (canSeeStats) {
       fetchStats();
     } else {
       setLoadingStats(false);
     }
-  }, [user]);
+  }, [canSeeStats]);
 
   const fetchStats = async () => {
     try {
       // Fetch grade statistics
       const [gradesRes, classesRes] = await Promise.all([
-        apiFetch("/api/grades?limit=100"),
-        apiFetch("/api/classes"),
+        getGrades({ limit: 100 }),
+        getClasses()
       ]);
 
-      const gradesData = await gradesRes.json();
-      const classesData = await classesRes.json();
-
       // Calculate stats from grades data
-      const grades = gradesData.grades || gradesData.data || [];
-      const classes = classesData.classes || classesData.data || [];
+      const grades = gradesRes.data || [];
+      const classes = classesRes.data || [];
 
       // Get unique students with grades
       const studentIds = new Set(grades.map((g: any) => g.student_id));
@@ -136,7 +138,7 @@ export default function GradesPageModern() {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       const recentGrades = grades.filter((g: any) =>
-        new Date(g.created_at || g.graded_at) > oneWeekAgo
+        new Date(g.created_at || g.graded_at || new Date().toISOString()) > oneWeekAgo
       );
 
       setStats({
@@ -154,8 +156,8 @@ export default function GradesPageModern() {
           id: g.id,
           action: "Nhập điểm",
           description: `${g.student?.full_name || 'Học sinh'} - ${g.score} điểm`,
-          timestamp: g.created_at || g.graded_at,
-          className: g.class?.name,
+          timestamp: g.created_at || g.graded_at || new Date().toISOString(),
+          className: g.class?.name || (classes.find((c: any) => c.id === g.class_id)?.name),
         }));
 
       setRecentActivity(activities);
@@ -173,15 +175,15 @@ export default function GradesPageModern() {
     }
   };
 
-  if (userLoading) {
+  if (profileLoading) {
     return <LoadingState message="Đang tải..." />;
   }
 
-  const userRole = user?.role || "";
-  const availableCards = navCards.filter(card =>
-    card.roles.includes(userRole)
-  );
-  const isTeacherOrAdmin = userRole === "teacher" || userRole === "admin" || userRole === "staff";
+  const availableCards = navCards.filter(card => {
+    if (card.isStudentOnly) return isStudent;
+    if (card.permission) return can(card.permission as any);
+    return false;
+  });
 
   // Format relative time
   const formatRelativeTime = (timestamp: string) => {
@@ -206,7 +208,7 @@ export default function GradesPageModern() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Điểm & Bài tập</h1>
               <p className="mt-2 text-gray-600">
-                {userRole === "student"
+                {isStudent
                   ? "Xem điểm và tiến độ học tập của bạn"
                   : "Quản lý điểm, bài tập và báo cáo"}
               </p>
@@ -215,7 +217,7 @@ export default function GradesPageModern() {
         </div>
 
         {/* Quick Stats Cards for Teachers/Admins */}
-        {isTeacherOrAdmin && (
+        {canSeeStats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <div className="flex items-center gap-3">
@@ -329,7 +331,7 @@ export default function GradesPageModern() {
         )}
 
         {/* Additional Info Cards for Teachers/Admins */}
-        {isTeacherOrAdmin && (
+        {canSeeStats && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Recent Activity */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">

@@ -1,38 +1,34 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { adminAuth } from "@/lib/auth/adminAuth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Use the centralized adminAuth helper which supports super_admin via inheritance
+    const auth = await adminAuth(request);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || "Forbidden" }, {
+        status: auth.userId ? 403 : 401,
+      });
+    }
+
+    const { userId, userEmail } = auth;
     const supabase = await createClient();
 
-    // Check if user is admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profile?.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     // Fetch all data from main tables
-    const [students, classes, grades, attendance, profiles] = await Promise.all([
-      supabase.from("students").select("*"),
-      supabase.from("classes").select("*"),
-      supabase.from("grades").select("*"),
-      supabase.from("attendance").select("*"),
-      supabase.from("profiles").select("*"),
-    ]);
+    const [students, classes, grades, attendance, profiles] = await Promise.all(
+      [
+        supabase.from("students").select("*"),
+        supabase.from("classes").select("*"),
+        supabase.from("grades").select("*"),
+        supabase.from("attendance").select("*"),
+        supabase.from("profiles").select("*"),
+      ],
+    );
 
     const exportData = {
       exportedAt: new Date().toISOString(),
-      exportedBy: user.email,
+      exportedBy: userEmail,
       version: "1.0",
       data: {
         students: students.data || [],
@@ -52,8 +48,8 @@ export async function GET() {
 
     // Log audit entry
     await supabase.from("audit_logs").insert({
-      user_id: user.id,
-      user_email: user.email,
+      user_id: userId,
+      user_email: userEmail,
       action: "export",
       resource_type: "backup",
       new_data: { counts: exportData.counts },
@@ -64,7 +60,7 @@ export async function GET() {
     console.error("Export data error:", error);
     return NextResponse.json(
       { error: "Failed to export data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

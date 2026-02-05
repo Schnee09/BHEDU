@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { apiFetch } from '@/lib/api/client'
+import { getPayments, createPayment, apiFetch } from '@/lib/api/client'
 
 interface Payment {
   id: string
@@ -21,9 +21,9 @@ interface Payment {
   student_account?: {
     id: string
     student?: {
-      first_name: string
-      last_name: string
-      student_id: string
+      id: string
+      full_name: string
+      student_code: string
     }
   }
   created_at: string
@@ -67,10 +67,10 @@ export default function PaymentsPage() {
   const fetchPayments = async () => {
     try {
       setLoading(true)
-      const response = await apiFetch('/api/admin/finance/payments')
-      const result = await response.json()
-
-      if (!response.ok) throw new Error(result.error || 'Failed to fetch payments')
+      // Use V2 Client
+      const result = await getPayments({
+        limit: 1000 // Fetch all for now
+      })
       setPayments(result.data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
@@ -125,31 +125,24 @@ export default function PaymentsPage() {
     }
 
     try {
-      const response = await apiFetch('/api/admin/finance/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          student_account_id: formData.student_account_id,
-          amount: paymentAmount,
-          payment_method_id: formData.payment_method_id,
-          payment_date: formData.payment_date,
-          reference_number: formData.reference_number || null,
-          notes: formData.notes || null,
-          allocations: formData.allocations.filter(a => a.invoice_id && a.amount > 0)
-        })
+      // Use V2 Client
+      const result = await createPayment({
+        student_account_id: formData.student_account_id,
+        amount: paymentAmount,
+        payment_method_id: formData.payment_method_id,
+        payment_date: formData.payment_date,
+        transaction_reference: formData.reference_number || null,
+        notes: formData.notes || null,
+        allocations: formData.allocations.filter(a => a.invoice_id && a.amount > 0)
       })
-
-      const result = await response.json()
-
-      if (!response.ok) throw new Error(result.error || 'Failed to record payment')
 
       setShowModal(false)
       resetForm()
       fetchPayments()
 
       // Show success with receipt number
-      if (result.data?.receipt_number) {
-        alert(`Payment recorded successfully!\nReceipt #: ${result.data.receipt_number}`)
+      if (result?.receipt_number) {
+        alert(`Payment recorded successfully!\nReceipt #: ${result.receipt_number}`)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
@@ -186,8 +179,8 @@ export default function PaymentsPage() {
   const filteredPayments = payments.filter(payment => {
     if (!searchTerm) return true
     const search = searchTerm.toLowerCase()
-    const studentName = `${payment.student_account?.student?.first_name} ${payment.student_account?.student?.last_name}`.toLowerCase()
-    const studentId = payment.student_account?.student?.student_id.toLowerCase() || ''
+    const studentName = payment.student_account?.student?.full_name?.toLowerCase() || ''
+    const studentId = payment.student_account?.student?.student_code?.toLowerCase() || ''
     const receiptNumber = payment.receipt_number.toLowerCase()
     return studentName.includes(search) || studentId.includes(search) || receiptNumber.includes(search)
   })
@@ -289,11 +282,10 @@ export default function PaymentsPage() {
                       {payment.receipt_number}
                     </p>
                     <h3 className="font-bold text-stone-900 dark:text-stone-100 text-base leading-tight truncate">
-                      {payment.student_account?.student?.first_name}{' '}
-                      {payment.student_account?.student?.last_name}
+                      {payment.student_account?.student?.full_name}
                     </h3>
                     <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                      ID: {payment.student_account?.student?.student_id}
+                      ID: {payment.student_account?.student?.student_code}
                     </p>
                   </div>
                   <div className="bg-emerald-50 dark:bg-emerald-900/30 px-3 py-2 rounded-xl flex-shrink-0 ml-2 border border-emerald-100 dark:border-emerald-800/50">
@@ -384,11 +376,10 @@ export default function PaymentsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {payment.student_account?.student?.first_name}{' '}
-                        {payment.student_account?.student?.last_name}
+                        {payment.student_account?.student?.full_name}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {payment.student_account?.student?.student_id}
+                        {payment.student_account?.student?.student_code}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600 dark:text-green-400">

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../config/theme.dart';
-import '../../data/repositories/attendance_repository.dart';
+// import '../../data/repositories/attendance_repository.dart'; // Unused
 
 class QRScannerScreen extends ConsumerStatefulWidget {
   final String? classId;
@@ -39,8 +39,8 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
 
     try {
       // Parse QR code (expected format: student_id or attendance data)
-      final repo = AttendanceRepository();
-      
+      // final repo = AttendanceRepository(); // Unused
+
       // For now, show the scanned result
       // In production, this would call the attendance API
       setState(() {
@@ -60,7 +60,6 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
 
       // Wait before allowing next scan
       await Future.delayed(const Duration(seconds: 2));
-      
     } catch (e) {
       setState(() {
         _resultMessage = 'Error: $e';
@@ -109,7 +108,8 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
                   controller: _controller,
                   onDetect: (capture) {
                     final barcodes = capture.barcodes;
-                    if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
+                    if (barcodes.isNotEmpty &&
+                        barcodes.first.rawValue != null) {
                       _processQRCode(barcodes.first.rawValue!);
                     }
                   },
@@ -135,20 +135,28 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
                   else if (_resultMessage != null) ...[
                     Icon(
                       _isSuccess == true ? Icons.check_circle : Icons.error,
-                      color: _isSuccess == true ? AppColors.success : AppColors.error,
+                      color: _isSuccess == true
+                          ? AppColors.success
+                          : AppColors.error,
                       size: 48,
                     ),
                     const SizedBox(height: 12),
                     Text(
                       _resultMessage!,
                       style: TextStyle(
-                        color: _isSuccess == true ? AppColors.success : AppColors.error,
+                        color: _isSuccess == true
+                            ? AppColors.success
+                            : AppColors.error,
                         fontWeight: FontWeight.w500,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ] else ...[
-                    Icon(Icons.qr_code_scanner, size: 48, color: AppColors.textMuted),
+                    Icon(
+                      Icons.qr_code_scanner,
+                      size: 48,
+                      color: AppColors.textMuted,
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'Point camera at student QR code',
@@ -236,83 +244,51 @@ class _ScannerOverlay extends StatelessWidget {
   List<Widget> _buildCorners(double left, double top, double size) {
     const cornerSize = 24.0;
     const color = AppColors.primary;
-    
+
     return [
       // Top-left
       Positioned(
         left: left - 2,
         top: top - 2,
-        child: Container(
-          width: cornerSize,
-          height: 4,
-          color: color,
-        ),
+        child: Container(width: cornerSize, height: 4, color: color),
       ),
       Positioned(
         left: left - 2,
         top: top - 2,
-        child: Container(
-          width: 4,
-          height: cornerSize,
-          color: color,
-        ),
+        child: Container(width: 4, height: cornerSize, color: color),
       ),
       // Top-right
       Positioned(
         right: left - 2,
         top: top - 2,
-        child: Container(
-          width: cornerSize,
-          height: 4,
-          color: color,
-        ),
+        child: Container(width: cornerSize, height: 4, color: color),
       ),
       Positioned(
         right: left - 2,
         top: top - 2,
-        child: Container(
-          width: 4,
-          height: cornerSize,
-          color: color,
-        ),
+        child: Container(width: 4, height: cornerSize, color: color),
       ),
       // Bottom-left
       Positioned(
         left: left - 2,
         bottom: top - 2,
-        child: Container(
-          width: cornerSize,
-          height: 4,
-          color: color,
-        ),
+        child: Container(width: cornerSize, height: 4, color: color),
       ),
       Positioned(
         left: left - 2,
         bottom: top - 2,
-        child: Container(
-          width: 4,
-          height: cornerSize,
-          color: color,
-        ),
+        child: Container(width: 4, height: cornerSize, color: color),
       ),
       // Bottom-right
       Positioned(
         right: left - 2,
         bottom: top - 2,
-        child: Container(
-          width: cornerSize,
-          height: 4,
-          color: color,
-        ),
+        child: Container(width: cornerSize, height: 4, color: color),
       ),
       Positioned(
         right: left - 2,
         bottom: top - 2,
-        child: Container(
-          width: 4,
-          height: cornerSize,
-          color: color,
-        ),
+        child: Container(width: 4, height: cornerSize, color: color),
       ),
     ];
   }

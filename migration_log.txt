@@ -1,0 +1,62 @@
+Initialising login role...
+Connecting to remote database...
+Do you want to push these migrations to the remote database?
+ • 20260206120000_global_optimization_finance.sql
+
+ [Y/n] y
+Applying migration 20260206120000_global_optimization_finance.sql...
+NOTICE (00000): constraint "fee_assignments_amount_check" of relation "fee_assignments" does not exist, skipping
+ERROR: invalid input value for enum payment_status: "received" (SQLSTATE 22P02)                                                                     
+At statement: 7                                                                                                                                     
+-- 2.7 Payments                                                                                                                                     
+DO $$                                                                                                                                               
+DECLARE constraint_name_var text;                                                                                                                   
+BEGIN                                                                                                                                               
+  IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'payments') THEN                                               
+    CREATE TABLE public.payments (                                                                                                                  
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),                                                                                                
+      student_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,                                                                           
+      invoice_id UUID REFERENCES invoices(id) ON DELETE SET NULL,                                                                                   
+      payment_method_id UUID REFERENCES payment_methods(id) ON DELETE SET NULL,                                                                     
+      amount DECIMAL(10, 2) NOT NULL CHECK (amount >= 0),                                                                                           
+      reference_number TEXT,                                                                                                                        
+      payment_date DATE NOT NULL DEFAULT CURRENT_DATE,                                                                                              
+      received_by UUID REFERENCES profiles(id) ON DELETE SET NULL,                                                                                  
+      notes TEXT,                                                                                                                                   
+      status payment_status NOT NULL DEFAULT 'received'::payment_status,                                                                            
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),                                                                                                
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()                                                                                                 
+    );                                                                                                                                              
+    CREATE INDEX idx_payments_student ON payments(student_id);                                                                                      
+    CREATE INDEX idx_payments_invoice ON payments(invoice_id);                                                                                      
+    CREATE INDEX idx_payments_status ON payments(status);                                                                                           
+  ELSE                                                                                                                                              
+    ALTER TABLE public.payments ALTER COLUMN status DROP DEFAULT;                                                                                   
+    FOR constraint_name_var IN                                                                                                                      
+      SELECT conname FROM pg_constraint WHERE conrelid = 'public.payments'::regclass AND contype = 'c' AND pg_get_constraintdef(oid) LIKE '%status%'
+    LOOP                                                                                                                                            
+      EXECUTE format('ALTER TABLE public.payments DROP CONSTRAINT %I', constraint_name_var);                                                        
+    END LOOP;                                                                                                                                       
+                                                                                                                                                    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'status_new') THEN                      
+        ALTER TABLE public.payments ADD COLUMN status_new payment_status;                                                                           
+    END IF;                                                                                                                                         
+                                                                                                                                                    
+    UPDATE public.payments SET status_new =                                                                                                         
+      CASE TRIM(LOWER(status::text))                                                                                                                
+          WHEN 'pending' THEN 'pending'::payment_status                                                                                             
+          WHEN 'received' THEN 'received'::payment_status                                                                                           
+          WHEN 'verified' THEN 'verified'::payment_status                                                                                           
+          WHEN 'cancelled' THEN 'cancelled'::payment_status                                                                                         
+          ELSE 'received'::payment_status                                                                                                           
+      END;                                                                                                                                          
+                                                                                                                                                    
+    ALTER TABLE public.payments DROP COLUMN status;                                                                                                 
+    ALTER TABLE public.payments RENAME COLUMN status_new TO status;                                                                                 
+    ALTER TABLE public.payments ALTER COLUMN status SET DEFAULT 'received'::payment_status;                                                         
+                                                                                                                                                    
+    ALTER TABLE public.payments DROP CONSTRAINT IF EXISTS payments_amount_check;                                                                    
+    ALTER TABLE public.payments ADD CONSTRAINT payments_amount_check CHECK (amount >= 0);                                                           
+  END IF;                                                                                                                                           
+END $$                                                                                                                                              
+Try rerunning the command with --debug to troubleshoot the error.

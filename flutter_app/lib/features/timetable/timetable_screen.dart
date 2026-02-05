@@ -1,12 +1,13 @@
 /// Timetable Screen - Weekly schedule view
+/// Cross-platform synchronized with web Pro Max design
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
-import '../../core/constants/app_constants.dart';
-import '../../shared/providers/auth_provider.dart';
+import '../../core/providers/customization_provider.dart';
+import '../../shared/widgets/glass_container.dart';
 
 /// Current week offset provider
 final weekOffsetProvider = StateProvider<int>((ref) => 0);
@@ -20,43 +21,57 @@ class TimetableScreen extends ConsumerWidget {
     final weekDates = _getWeekDates(weekOffset);
     final today = DateTime.now();
     final todayIndex = today.weekday - 1; // 0 = Monday
+    final palette = ref.watch(accentColorProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Timetable'),
+        title: const Text('Thời khóa biểu'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.today),
+            icon: Icon(Icons.today, color: palette.primary),
+            tooltip: 'Hôm nay',
             onPressed: () {
               ref.read(weekOffsetProvider.notifier).state = 0;
             },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Week navigation
-          _WeekNavigator(
-            weekDates: weekDates,
-            weekOffset: weekOffset,
-            onPrevious: () => ref.read(weekOffsetProvider.notifier).state--,
-            onNext: () => ref.read(weekOffsetProvider.notifier).state++,
-          ),
+      body: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          // Swipe right = previous week, swipe left = next week
+          if (details.primaryVelocity != null) {
+            if (details.primaryVelocity! > 300) {
+              ref.read(weekOffsetProvider.notifier).state--;
+            } else if (details.primaryVelocity! < -300) {
+              ref.read(weekOffsetProvider.notifier).state++;
+            }
+          }
+        },
+        child: Column(
+          children: [
+            // Week navigation
+            _WeekNavigator(
+              weekDates: weekDates,
+              weekOffset: weekOffset,
+              onPrevious: () => ref.read(weekOffsetProvider.notifier).state--,
+              onNext: () => ref.read(weekOffsetProvider.notifier).state++,
+            ),
 
-          // Day tabs
-          _DayTabs(
-            weekDates: weekDates,
-            todayIndex: weekOffset == 0 ? todayIndex : -1,
-          ),
-
-          // Schedule content
-          Expanded(
-            child: _ScheduleContent(
+            // Day tabs
+            _DayTabs(
               weekDates: weekDates,
               todayIndex: weekOffset == 0 ? todayIndex : -1,
             ),
-          ),
-        ],
+
+            // Schedule content
+            Expanded(
+              child: _ScheduleContent(
+                weekDates: weekDates,
+                todayIndex: weekOffset == 0 ? todayIndex : -1,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -65,7 +80,7 @@ class TimetableScreen extends ConsumerWidget {
     final now = DateTime.now();
     final monday = now.subtract(Duration(days: now.weekday - 1));
     final offsetMonday = monday.add(Duration(days: weekOffset * 7));
-    
+
     return List.generate(7, (i) => offsetMonday.add(Duration(days: i)));
   }
 }
@@ -110,17 +125,11 @@ class _WeekNavigator extends StatelessWidget {
               if (weekOffset == 0)
                 Text(
                   'This Week',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: AppColors.primary, fontSize: 12),
                 ),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: onNext,
-          ),
+          IconButton(icon: const Icon(Icons.chevron_right), onPressed: onNext),
         ],
       ),
     );
@@ -131,10 +140,7 @@ class _DayTabs extends StatefulWidget {
   final List<DateTime> weekDates;
   final int todayIndex;
 
-  const _DayTabs({
-    required this.weekDates,
-    required this.todayIndex,
-  });
+  const _DayTabs({required this.weekDates, required this.todayIndex});
 
   @override
   State<_DayTabs> createState() => _DayTabsState();
@@ -146,8 +152,8 @@ class _DayTabsState extends State<_DayTabs> {
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.todayIndex >= 0 && widget.todayIndex < 5 
-        ? widget.todayIndex 
+    _selectedIndex = widget.todayIndex >= 0 && widget.todayIndex < 5
+        ? widget.todayIndex
         : 0;
   }
 
@@ -170,11 +176,11 @@ class _DayTabsState extends State<_DayTabs> {
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected 
-                      ? AppColors.primary 
-                      : isToday 
-                          ? AppColors.primary.withAlpha(30)
-                          : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.primary
+                      : isToday
+                      ? AppColors.primary.withAlpha(30)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: isToday && !isSelected
                       ? Border.all(color: AppColors.primary, width: 2)
@@ -187,8 +193,8 @@ class _DayTabsState extends State<_DayTabs> {
                       dayNames[index],
                       style: TextStyle(
                         fontSize: 11,
-                        color: isSelected 
-                            ? Colors.white 
+                        color: isSelected
+                            ? Colors.white
                             : AppColors.textSecondary,
                       ),
                     ),
@@ -198,11 +204,11 @@ class _DayTabsState extends State<_DayTabs> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: isSelected 
-                            ? Colors.white 
-                            : isToday 
-                                ? AppColors.primary 
-                                : AppColors.textPrimary,
+                        color: isSelected
+                            ? Colors.white
+                            : isToday
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -220,19 +226,36 @@ class _ScheduleContent extends StatelessWidget {
   final List<DateTime> weekDates;
   final int todayIndex;
 
-  const _ScheduleContent({
-    required this.weekDates,
-    required this.todayIndex,
-  });
+  const _ScheduleContent({required this.weekDates, required this.todayIndex});
 
   @override
   Widget build(BuildContext context) {
     // Sample schedule data - in production, fetch from API
     final sampleClasses = [
-      _ScheduleItem(time: '08:00 - 09:30', subject: 'Toán', room: 'A101', teacher: 'Nguyễn Văn A'),
-      _ScheduleItem(time: '09:45 - 11:15', subject: 'Văn', room: 'A102', teacher: 'Trần Thị B'),
-      _ScheduleItem(time: '13:00 - 14:30', subject: 'Anh', room: 'A103', teacher: 'Lê Văn C'),
-      _ScheduleItem(time: '14:45 - 16:15', subject: 'Vật lý', room: 'Lab 1', teacher: 'Phạm Thị D'),
+      _ScheduleItem(
+        time: '08:00 - 09:30',
+        subject: 'Toán',
+        room: 'A101',
+        teacher: 'Nguyễn Văn A',
+      ),
+      _ScheduleItem(
+        time: '09:45 - 11:15',
+        subject: 'Văn',
+        room: 'A102',
+        teacher: 'Trần Thị B',
+      ),
+      _ScheduleItem(
+        time: '13:00 - 14:30',
+        subject: 'Anh',
+        room: 'A103',
+        teacher: 'Lê Văn C',
+      ),
+      _ScheduleItem(
+        time: '14:45 - 16:15',
+        subject: 'Vật lý',
+        room: 'Lab 1',
+        teacher: 'Phạm Thị D',
+      ),
     ];
 
     return ListView.builder(
@@ -260,42 +283,60 @@ class _ScheduleItem {
   });
 }
 
-class _ScheduleCard extends StatelessWidget {
+class _ScheduleCard extends ConsumerWidget {
   final _ScheduleItem item;
   final int index;
 
   const _ScheduleCard({required this.item, required this.index});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = ref.watch(accentColorProvider);
     final colors = [
       AppColors.info,
       AppColors.success,
-      AppColors.primary,
+      palette.primary, // Use dynamic accent color
       AppColors.warning,
     ];
     final color = colors[index % colors.length];
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () {
-          // TODO: Navigate to class detail
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GlassContainer(
+        padding: const EdgeInsets.all(16),
+        showGlow: false,
+        child: InkWell(
+          onTap: () {
+            // TODO: Navigate to class detail
+          },
+          borderRadius: BorderRadius.circular(12),
           child: Row(
             children: [
               // Time column
               SizedBox(
-                width: 70,
-                child: Text(
-                  item.time.split(' - ')[0],
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
-                  ),
+                width: 60,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.time.split(' - ')[0],
+                      style: TextStyle(
+                        color: palette.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.time.split(' - ').length > 1
+                          ? item.time.split(' - ')[1]
+                          : '',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // Color indicator
@@ -306,6 +347,13 @@ class _ScheduleCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withAlpha(100),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                    ),
+                  ],
                 ),
               ),
               // Content
@@ -320,7 +368,7 @@ class _ScheduleCard extends StatelessWidget {
                         fontSize: 16,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         Icon(Icons.room, size: 14, color: AppColors.textMuted),
@@ -333,7 +381,11 @@ class _ScheduleCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Icon(Icons.person, size: 14, color: AppColors.textMuted),
+                        Icon(
+                          Icons.person,
+                          size: 14,
+                          color: AppColors.textMuted,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -350,6 +402,8 @@ class _ScheduleCard extends StatelessWidget {
                   ],
                 ),
               ),
+              // Arrow indicator
+              Icon(Icons.chevron_right, color: AppColors.textMuted),
             ],
           ),
         ),

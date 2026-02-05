@@ -1,6 +1,7 @@
 /// Dashboard Repository
 library;
 
+import 'dart:developer' as developer;
 import 'base_repository.dart';
 
 class DashboardStats {
@@ -34,9 +35,9 @@ class DashboardRepository extends BaseRepository {
             .eq('role', 'student')
             .limit(1)
             .count(CountOption.exact);
-         studentsCount = res.count;
+        studentsCount = res.count;
       } catch (e) {
-        print('Error getting students count: $e');
+        developer.log('Error getting students count', error: e);
       }
 
       int teachersCount = 0;
@@ -49,22 +50,20 @@ class DashboardRepository extends BaseRepository {
             .count(CountOption.exact);
         teachersCount = res.count;
       } catch (e) {
-        print('Error getting teachers count: $e');
+        developer.log('Error getting teachers count', error: e);
       }
 
       int classesCount = 0;
       try {
         // Use a simple select to avoid RLS recursion issues with count()
-        final res = await supabase
-            .from('classes')
-            .select('id');
+        final res = await supabase.from('classes').select('id');
         classesCount = (res as List).length;
       } catch (e) {
-         print('Error getting classes count: $e');
+        developer.log('Error getting classes count', error: e);
       }
 
       // 4. Attendance (simplified)
-      double attendanceRate = 95.0; 
+      double attendanceRate = 95.0;
 
       // 5. Today's lessons
       int todayLessons = 0;
@@ -79,7 +78,7 @@ class DashboardRepository extends BaseRepository {
             .count(CountOption.exact);
         todayLessons = res.count;
       } catch (e) {
-        print('Error getting lessons count: $e');
+        developer.log('Error getting lessons count', error: e);
       }
 
       return DashboardStats(

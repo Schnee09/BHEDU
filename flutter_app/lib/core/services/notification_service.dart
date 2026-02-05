@@ -1,15 +1,19 @@
-/// Notification Service for push notifications
+/// Notification Service for push/real-time notifications
 library;
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/supabase_config.dart';
 
-/// Notification model
+/// Notification model matching database schema
 class AppNotification {
   final String id;
   final String title;
-  final String body;
-  final String type; // attendance, grade, announcement
+  final String? body;
+  final String type; // info, success, warning, error
+  final String category; // grade, attendance, system
+  final String? link;
   final DateTime createdAt;
   final bool isRead;
   final Map<String, dynamic>? data;
@@ -17,8 +21,10 @@ class AppNotification {
   AppNotification({
     required this.id,
     required this.title,
-    required this.body,
+    this.body,
     required this.type,
+    required this.category,
+    this.link,
     required this.createdAt,
     this.isRead = false,
     this.data,
@@ -28,8 +34,10 @@ class AppNotification {
     return AppNotification(
       id: json['id'] as String,
       title: json['title'] as String,
-      body: json['body'] as String,
-      type: json['type'] as String? ?? 'general',
+      body: json['message'] as String?, // Mapped from 'message' in DB
+      type: json['type'] as String? ?? 'info',
+      category: json['category'] as String? ?? 'general',
+      link: json['link'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       isRead: json['is_read'] as bool? ?? false,
       data: json['data'] as Map<String, dynamic>?,
@@ -37,13 +45,13 @@ class AppNotification {
   }
 
   IconData get icon {
-    switch (type) {
+    switch (category) {
       case 'attendance':
         return Icons.calendar_today;
       case 'grade':
         return Icons.grade;
-      case 'announcement':
-        return Icons.campaign;
+      case 'system':
+        return Icons.settings_suggest;
       default:
         return Icons.notifications;
     }
@@ -51,14 +59,15 @@ class AppNotification {
 
   Color get color {
     switch (type) {
-      case 'attendance':
-        return Colors.blue;
-      case 'grade':
+      case 'success':
+        return Colors.green;
+      case 'warning':
         return Colors.amber;
-      case 'announcement':
-        return Colors.purple;
+      case 'error':
+        return Colors.red;
+      case 'info':
       default:
-        return Colors.grey;
+        return Colors.blue;
     }
   }
 }
@@ -92,89 +101,99 @@ class NotificationsState {
 
 /// Notifications notifier
 class NotificationsNotifier extends StateNotifier<NotificationsState> {
-  NotificationsNotifier() : super(const NotificationsState());
+  StreamSubscription? _subscription;
+
+  NotificationsNotifier() : super(const NotificationsState()) {
+    _initRealtime();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _initRealtime() {
+    final user = currentUser;
+    if (user == null) return;
+
+    // Listen to real-time changes
+    _subscription = supabase
+        .from('notifications')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', user.id)
+        .order('created_at', ascending: false)
+        .listen(
+          (List<Map<String, dynamic>> data) {
+            final notifications = data
+                .map((json) => AppNotification.fromJson(json))
+                .toList();
+            state = state.copyWith(
+              notifications: notifications,
+              isLoading: false,
+            );
+          },
+          onError: (error) {
+            state = state.copyWith(error: error.toString(), isLoading: false);
+          },
+        );
+  }
 
   Future<void> loadNotifications() async {
-    state = state.copyWith(isLoading: true);
-    
-    try {
-      // TODO: Fetch from Supabase notifications table
-      // For now, use sample data
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      final sampleNotifications = [
-        AppNotification(
-          id: '1',
-          title: 'Điểm danh hôm nay',
-          body: 'Bạn đã được đánh dấu có mặt trong lớp Toán 10A',
-          type: 'attendance',
-          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-        ),
-        AppNotification(
-          id: '2',
-          title: 'Điểm mới',
-          body: 'Điểm kiểm tra 15 phút môn Văn: 8.5',
-          type: 'grade',
-          createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        ),
-        AppNotification(
-          id: '3',
-          title: 'Thông báo từ nhà trường',
-          body: 'Lịch thi học kỳ 1 đã được cập nhật',
-          type: 'announcement',
-          createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        ),
-      ];
+    final user = currentUser;
+    if (user == null) return;
 
-      state = state.copyWith(
-        notifications: sampleNotifications,
-        isLoading: false,
-      );
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final response = await supabase
+          .from('notifications')
+          .select()
+          .eq('user_id', user.id)
+          .order('created_at', ascending: false)
+          .limit(20);
+
+      final notifications = (response as List)
+          .map((json) => AppNotification.fromJson(json))
+          .toList();
+
+      state = state.copyWith(notifications: notifications, isLoading: false);
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  void markAsRead(String id) {
-    final updated = state.notifications.map((n) {
-      if (n.id == id) {
-        return AppNotification(
-          id: n.id,
-          title: n.title,
-          body: n.body,
-          type: n.type,
-          createdAt: n.createdAt,
-          isRead: true,
-          data: n.data,
-        );
-      }
-      return n;
-    }).toList();
-
-    state = state.copyWith(notifications: updated);
+  Future<void> markAsRead(String id) async {
+    try {
+      await supabase
+          .from('notifications')
+          .update({'is_read': true})
+          .eq('id', id);
+      // State updates automatically via stream subscription
+    } catch (e) {
+      debugPrint('Error marking notification as read: $e');
+    }
   }
 
-  void markAllAsRead() {
-    final updated = state.notifications.map((n) {
-      return AppNotification(
-        id: n.id,
-        title: n.title,
-        body: n.body,
-        type: n.type,
-        createdAt: n.createdAt,
-        isRead: true,
-        data: n.data,
-      );
-    }).toList();
+  Future<void> markAllAsRead() async {
+    final user = currentUser;
+    if (user == null) return;
 
-    state = state.copyWith(notifications: updated);
+    try {
+      await supabase
+          .from('notifications')
+          .update({'is_read': true})
+          .eq('user_id', user.id)
+          .eq('is_read', false);
+      // State updates automatically via stream subscription
+    } catch (e) {
+      debugPrint('Error marking all notifications as read: $e');
+    }
   }
 }
 
 /// Notifications provider
-final notificationsProvider = StateNotifierProvider<NotificationsNotifier, NotificationsState>((ref) {
-  return NotificationsNotifier();
-});
+final notificationsProvider =
+    StateNotifierProvider<NotificationsNotifier, NotificationsState>((ref) {
+      return NotificationsNotifier();
+    });

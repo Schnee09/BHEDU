@@ -1,19 +1,13 @@
-/**
- * Attendance Marking Page
- * Quick interface for teachers to mark class attendance
- */
-
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { apiFetch } from '@/lib/api/client'
+import { apiFetch, getClasses, getClassStudents, getAttendance, bulkCreateAttendance } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import {
   AttendanceStatus,
   AttendanceRecord
 } from '@/lib/attendance/types'
-import { AttendanceService } from '@/lib/attendance/services/AttendanceService'
 
 // Types
 interface Class {
@@ -92,14 +86,15 @@ export default function AttendanceMarkingPage() {
 
   const loadClasses = async () => {
     try {
-      const response = await apiFetch('/api/classes/my-classes')
-      if (response.ok) {
-        const data = await response.json()
-        const classList = data.data || data.classes || []
-        setClasses(classList)
-        if (classList.length > 0) {
-          setSelectedClass(classList[0].id)
-        }
+      // Fetch classes (defaults to my-classes for teachers if backend handles context, 
+      // or we can use specific endpoint if needed, but getClasses is V2 standard)
+      // We pass pageSize: 100 to get a good list.
+      const res = await getClasses({ limit: 100 });
+      const classList = (res.data || []) as any[];
+      setClasses(classList.map(c => ({ id: c.id, name: c.name })));
+
+      if (classList.length > 0) {
+        setSelectedClass(classList[0].id)
       }
     } catch (error) {
       console.error('Failed to load classes', error)
@@ -110,71 +105,109 @@ export default function AttendanceMarkingPage() {
   const loadAttendance = async () => {
     setLoading(true)
     try {
-      // Use the Service to fetch daily attendance
-      // Note: The API response format from previous implementation seems specific 
-      // (contains students list + summary). We might need to keep using the existing 
-      // endpoint via Service or directly if it's a composite view.
-      // For now, let's stick to the existing endpoint pattern but filtered through our understanding.
+      const [studentsRes, attendanceRes] = await Promise.all([
+        getClassStudents(selectedClass),
+        getAttendance({ class_id: selectedClass, date: date, limit: 1000 })
+      ]);
 
-      const response = await apiFetch(
-        `/api/attendance/class/${selectedClass}?date=${date}`
-      )
+      const classStudents = studentsRes || [];
+      const attendanceRecords = attendanceRes.data || [];
 
-      if (response.ok) {
-        const data = await response.json()
-        setStudents(data.students || [])
-        setSummary(data.summary || null)
-      } else {
-        alert('Không thể tải điểm danh')
-      }
+      // Map students and merge with attendance
+      const mappedStudents: StudentAttendanceView[] = classStudents.map((s: any) => {
+        const record = attendanceRecords.find((r: any) => r.student_id === s.id);
+        return {
+          studentId: s.id,
+          studentName: s.full_name || s.name || 'Unknown',
+          studentCode: s.student_code || s.student_id || '', // Adjust based on profile schema
+          email: s.email,
+          status: record ? (record.status as AttendanceStatus) : 'unmarked',
+          remarks: record?.notes || record?.remarks || '',
+          recordId: record?.id
+        };
+      });
+
+      setStudents(mappedStudents);
+      calculateSummary(mappedStudents);
+      setHasUnsavedChanges(false);
+
     } catch (error) {
       console.error('Failed to load attendance', error)
-      alert('Không thể tải điểm danh')
+      alert('Không thể tải dữ liệu điểm danh')
     } finally {
       setLoading(false)
     }
   }
 
+  const calculateSummary = (currentStudents: StudentAttendanceView[]) => {
+    const total = currentStudents.length;
+    const present = currentStudents.filter(s => s.status === AttendanceStatus.PRESENT).length;
+    const absent = currentStudents.filter(s => s.status === AttendanceStatus.ABSENT).length;
+    const unmarked = currentStudents.filter(s => s.status === 'unmarked').length;
+
+    const denominator = present + absent;
+    const rate = denominator > 0 ? Math.round((present / denominator) * 100) : 0;
+
+    setSummary({
+      totalStudents: total,
+      presentCount: present,
+      absentCount: absent,
+      unmarkedCount: unmarked,
+      attendanceRate: rate
+    });
+  }
+
   const updateStudentStatus = (studentId: string, status: string) => {
-    setStudents(prev =>
-      prev.map(student =>
+    setStudents(prev => {
+      const updated = prev.map(student =>
         student.studentId === studentId
           ? { ...student, status: status as any }
           : student
-      )
-    )
+      );
+      calculateSummary(updated);
+      return updated;
+    })
     setHasUnsavedChanges(true)
   }
 
   const markAll = (status: AttendanceStatus) => {
-    setStudents(prev =>
-      prev.map(student => ({ ...student, status }))
-    )
+    setStudents(prev => {
+      const updated = prev.map(student => ({ ...student, status }));
+      calculateSummary(updated);
+      return updated;
+    })
     setHasUnsavedChanges(true)
   }
 
   const saveAttendance = async () => {
     setSaving(true);
     try {
-      // Convert UI view model to Domain types
-      const recordsToSave: Partial<AttendanceRecord>[] = students.map(student => ({
-        student_id: student.studentId,
+      // Filter out unmarked if we don't want to save them
+      const recordsToSave = students
+        .filter(s => s.status !== 'unmarked')
+        .map(student => ({
+          student_id: student.studentId,
+          status: student.status,
+          notes: student.remarks
+        }));
+
+      if (recordsToSave.length === 0) {
+        setShowSuccess(true);
+        setHasUnsavedChanges(false);
+        setSaving(false);
+        return;
+      }
+
+      await bulkCreateAttendance({
         class_id: selectedClass,
         date: date,
-        status: student.status === 'unmarked' ? AttendanceStatus.ABSENT : student.status as AttendanceStatus,
-        remarks: student.remarks
-      }))
+        records: recordsToSave
+      });
 
-      const success = await AttendanceService.markAttendance(recordsToSave);
-
-      if (success) {
-        setShowSuccess(true)
-        setHasUnsavedChanges(false)
-        setTimeout(() => setShowSuccess(false), 3000)
-        loadAttendance() // Reload to refresh summary
-      } else {
-        alert('Không thể lưu điểm danh')
-      }
+      setShowSuccess(true)
+      setHasUnsavedChanges(false)
+      setTimeout(() => setShowSuccess(false), 3000)
+      loadAttendance() // Reload to refresh/sync IDs
     } catch (error) {
       console.error('Failed to save attendance', error)
       alert('Không thể lưu điểm danh')
@@ -228,7 +261,7 @@ export default function AttendanceMarkingPage() {
               disabled={loading || !selectedClass}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 w-full transition"
             >
-              {loading ? 'Đang tải...' : 'Load Attendance'}
+              {loading ? 'Đang tải...' : 'Tải dữ liệu'}
             </button>
           </div>
         </div>
@@ -259,11 +292,11 @@ export default function AttendanceMarkingPage() {
               <div className="text-xs font-medium text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">Tỷ lệ</div>
             </div>
           </div>
-          
+
           {/* Progress Bar */}
           <div className="bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
-            <div 
-              className="bg-green-500 h-full transition-all duration-500" 
+            <div
+              className="bg-green-500 h-full transition-all duration-500"
               style={{ width: `${((summary.totalStudents - summary.unmarkedCount) / summary.totalStudents) * 100}%` }}
             />
           </div>
@@ -338,8 +371,8 @@ export default function AttendanceMarkingPage() {
                   {/* Status Bloom */}
                   <div className={cn(
                     "absolute -top-10 -right-10 w-24 h-24 blur-3xl opacity-10 rounded-full",
-                    student.status === AttendanceStatus.PRESENT ? "bg-green-500" : 
-                    student.status === AttendanceStatus.ABSENT ? "bg-red-500" : "bg-stone-500"
+                    student.status === AttendanceStatus.PRESENT ? "bg-green-500" :
+                      student.status === AttendanceStatus.ABSENT ? "bg-red-500" : "bg-stone-500"
                   )} />
 
                   <div className="flex justify-between items-start mb-4 relative z-10">
@@ -396,18 +429,18 @@ export default function AttendanceMarkingPage() {
                   {/* Remarks - Premium Input Styling */}
                   <div className="relative group z-10">
                     <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                       <svg className="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      <svg className="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     </div>
-                    <input 
-                       type="text"
-                       value={student.remarks || ''}
-                       placeholder="Thêm ghi chú riêng..."
-                       onChange={(e) => {
-                         const newVal = e.target.value;
-                         setStudents(prev => prev.map(s => s.studentId === student.studentId ? {...s, remarks: newVal} : s))
-                         setHasUnsavedChanges(true)
-                       }}
-                       className="w-full text-[13px] bg-stone-500/5 dark:bg-white/5 border border-stone-100 dark:border-white/5 rounded-2xl pl-11 pr-4 py-4 focus:bg-stone-500/10 focus:border-amber-500/40 focus:outline-none transition-all placeholder:text-stone-400 font-bold"
+                    <input
+                      type="text"
+                      value={student.remarks || ''}
+                      placeholder="Thêm ghi chú riêng..."
+                      onChange={(e) => {
+                        const newVal = e.target.value;
+                        setStudents(prev => prev.map(s => s.studentId === student.studentId ? { ...s, remarks: newVal } : s))
+                        setHasUnsavedChanges(true)
+                      }}
+                      className="w-full text-[13px] bg-stone-500/5 dark:bg-white/5 border border-stone-100 dark:border-white/5 rounded-2xl pl-11 pr-4 py-4 focus:bg-stone-500/10 focus:border-amber-500/40 focus:outline-none transition-all placeholder:text-stone-400 font-bold"
                     />
                   </div>
                 </div>
@@ -442,7 +475,7 @@ export default function AttendanceMarkingPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-medium text-gray-900 dark:text-gray-100">
                           {student.studentName}
-                          <span className="text-[8px] text-gray-300 ml-1">#{idx+1}</span>
+                          <span className="text-[8px] text-gray-300 ml-1">#{idx + 1}</span>
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">{student.studentCode || student.email}</div>
                       </td>
@@ -461,15 +494,15 @@ export default function AttendanceMarkingPage() {
                         </select>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        <input 
-                           type="text"
-                           value={student.remarks || ''}
-                           placeholder="Ghi chú..."
-                           onChange={(e) => {
-                             const newVal = e.target.value;
-                             setStudents(prev => prev.map(s => s.studentId === student.studentId ? {...s, remarks: newVal} : s))
-                           }}
-                           className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none"
+                        <input
+                          type="text"
+                          value={student.remarks || ''}
+                          placeholder="Ghi chú..."
+                          onChange={(e) => {
+                            const newVal = e.target.value;
+                            setStudents(prev => prev.map(s => s.studentId === student.studentId ? { ...s, remarks: newVal } : s))
+                          }}
+                          className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none"
                         />
                       </td>
                     </tr>
@@ -498,13 +531,13 @@ export default function AttendanceMarkingPage() {
             >
               {saving ? 'Đang lưu...' : 'Xác nhận điểm danh'}
             </button>
-            
+
             {/* Desktop Cancel Button (Hidden on Mobile inside the pill) */}
             <button
-               onClick={() => router.push('/dashboard')}
-               className="hidden md:block h-12 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-8 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 font-bold transition-all active:scale-[0.98]"
+              onClick={() => router.push('/dashboard')}
+              className="hidden md:block h-12 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-8 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 font-bold transition-all active:scale-[0.98]"
             >
-               Quay lại
+              Quay lại
             </button>
           </div>
         </div>
@@ -512,4 +545,3 @@ export default function AttendanceMarkingPage() {
     </div>
   )
 }
-

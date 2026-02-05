@@ -1,29 +1,25 @@
 /**
- * Admin Individual Attendance Record API
+ * Admin Individual Attendance Record API (REFACTORED)
  * GET /api/admin/attendance/[id] - Get attendance record details
  * PATCH /api/admin/attendance/[id] - Update attendance record
  * DELETE /api/admin/attendance/[id] - Delete attendance record
  */
 
-import { NextResponse } from 'next/server'
-import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth'
+import { NextResponse } from "next/server";
+import { getDataClient } from "@/lib/auth/dataClient";
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+// import { createAttendanceSchema } from "@/lib/api/schemas"; // Unused
+import { NotFoundError } from "@/lib/api/errors";
+import { logger } from "@/lib/logger";
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
-    const authResult = await adminAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
-
-  const { supabase } = await getDataClient(request)
-    const { id } = await context.params
+// GET /api/admin/attendance/[id]
+export const GET = createGetHandler(
+  { allowedRoles: ["admin", "staff"] },
+  async ({ params, request }) => {
+    const { supabase } = await getDataClient(request);
 
     const { data: record, error } = await supabase
-      .from('attendance')
+      .from("attendance")
       .select(`
         *,
         student:profiles!attendance_student_id_fkey(
@@ -33,18 +29,18 @@ export async function GET(
           student_code
         )
       `)
-      .eq('id', id)
-      .single()
+      .eq("id", params.id)
+      .single();
 
     if (error || !record) {
-      return NextResponse.json({ error: 'Attendance record not found' }, { status: 404 })
+      throw new NotFoundError("Attendance record not found");
     }
 
-    // Fetch class info separately since there's no FK constraint
+    // Fetch class info separately if needed (preserving previous logic)
     let classInfo = null;
     if (record.class_id) {
       const { data: classData } = await supabase
-        .from('classes')
+        .from("classes")
         .select(`
           id,
           name,
@@ -52,134 +48,109 @@ export async function GET(
             full_name
           )
         `)
-        .eq('id', record.class_id)
+        .eq("id", record.class_id)
         .single();
-      
+
       classInfo = classData;
     }
 
-    // Attach class info to record
-    const recordWithClass = {
+    return apiSuccess({
       ...record,
-      class: classInfo
-    };
+      class: classInfo,
+    });
+  },
+);
 
-    return NextResponse.json({
-      success: true,
-      record: recordWithClass
-    })
-
-  } catch (error) {
-    console.error('Error in GET /api/admin/attendance/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function PATCH(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
-    const authResult = await adminAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
-
-  const { supabase } = await getDataClient(request)
-    const { id } = await context.params
-    const body = await request.json()
+// PATCH /api/admin/attendance/[id]
+export const PATCH = createApiHandler(
+  {
+    allowedRoles: ["admin", "staff"],
+    // Manual partial validation for attendance
+  },
+  async ({ params, body, request }) => {
+    const { supabase } = await getDataClient(request);
+    const id = params.id;
 
     // Verify record exists
     const { data: existingRecord, error: fetchError } = await supabase
-      .from('attendance')
-      .select('id')
-      .eq('id', id)
-      .single()
+      .from("attendance")
+      .select("id")
+      .eq("id", id)
+      .single();
 
     if (fetchError || !existingRecord) {
-      return NextResponse.json({ error: 'Attendance record not found' }, { status: 404 })
+      throw new NotFoundError("Attendance record not found");
     }
 
     // Allowed fields to update
-    const allowedFields = ['status', 'notes', 'date']
-    const updates: Record<string, unknown> = {}
+    const allowedFields = ["status", "notes", "date"];
+    const updates: Record<string, any> = {};
 
     for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updates[field] = body[field]
+      if ((body as any)[field] !== undefined) {
+        updates[field] = (body as any)[field];
       }
     }
 
     if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+      return NextResponse.json({
+        success: false,
+        error: "No valid fields to update",
+      }, { status: 400 });
     }
 
     // Update record
     const { data: updatedRecord, error: updateError } = await supabase
-      .from('attendance')
+      .from("attendance")
       .update(updates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
-      .single()
+      .single();
 
     if (updateError) {
-      console.error('Error updating attendance record:', updateError)
-      return NextResponse.json({ error: 'Failed to update attendance record' }, { status: 500 })
+      logger.error("Error updating attendance record:", updateError);
+      throw new Error(
+        `Failed to update attendance record: ${updateError.message}`,
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      record: updatedRecord
-    })
+    return apiSuccess(updatedRecord);
+  },
+);
 
-  } catch (error) {
-    console.error('Error in PATCH /api/admin/attendance/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
-    const authResult = await adminAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
-
-  const { supabase } = await getDataClient(request)
-    const { id } = await context.params
+// DELETE /api/admin/attendance/[id]
+export const DELETE = createGetHandler(
+  { allowedRoles: ["admin"] },
+  async ({ params, request }) => {
+    const { supabase } = await getDataClient(request);
+    const id = params.id;
 
     // Check if record exists
     const { data: record, error: fetchError } = await supabase
-      .from('attendance')
-      .select('id')
-      .eq('id', id)
-      .single()
+      .from("attendance")
+      .select("id")
+      .eq("id", id)
+      .single();
 
     if (fetchError || !record) {
-      return NextResponse.json({ error: 'Attendance record not found' }, { status: 404 })
+      throw new NotFoundError("Attendance record not found");
     }
 
     // Delete the record
     const { error: deleteError } = await supabase
-      .from('attendance')
+      .from("attendance")
       .delete()
-      .eq('id', id)
+      .eq("id", id);
 
     if (deleteError) {
-      console.error('Error deleting attendance record:', deleteError)
-      return NextResponse.json({ error: 'Failed to delete attendance record' }, { status: 500 })
+      logger.error("Error deleting attendance record:", deleteError);
+      throw new Error(
+        `Failed to delete attendance record: ${deleteError.message}`,
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Attendance record deleted successfully'
-    })
-
-  } catch (error) {
-    console.error('Error in DELETE /api/admin/attendance/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+    return apiSuccess(null, {
+      message: "Attendance record deleted successfully",
+    });
+  },
+);

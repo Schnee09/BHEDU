@@ -1,90 +1,94 @@
-/**
- * Enrollments API
- * GET /api/enrollments - List enrollments
- * POST /api/enrollments - Create enrollment (enroll student in class)
- */
+import {
+  apiSuccess,
+  createApiHandler,
+  createGetHandler,
+} from "@/lib/api/apiHandler";
+import { enrollmentService } from "@/lib/services/enrollmentService";
+import { enrollmentQuerySchema } from "@/lib/schemas";
+import { logger } from "@/lib/logger";
+import { ValidationError } from "@/lib/api/errors";
 
-import { NextRequest, NextResponse } from 'next/server';
-import { staffAuth, teacherAuth } from '@/lib/auth/adminAuth';
-import { hasAdminAccess } from '@/lib/auth/permissions';
-import { handleApiError, AuthenticationError } from '@/lib/api/errors';
-import { logger } from '@/lib/logger';
-import { EnrollmentService } from '@/lib/services/EnrollmentService';
-
-export async function GET(request: NextRequest) {
-  try {
-    const authResult = await teacherAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
-    }
-
-    const searchParams = request.nextUrl.searchParams;
-    const classId = searchParams.get('classId') || undefined;
-    const studentId = searchParams.get('studentId') || undefined;
-    const search = searchParams.get('search') || undefined;
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
-
-    const enrollmentService = new EnrollmentService();
-    const result = await enrollmentService.getEnrollments({
-      classId,
-      studentId,
-      search,
-      page,
-      limit,
+// GET /api/enrollments
+export const GET = createGetHandler(
+  { permission: "enrollments.view" },
+  async ({ searchParams }) => {
+    // Validate and normalize query params
+    const query = enrollmentQuerySchema.safeParse({
+      class_id: searchParams.get("classId") || searchParams.get("class_id"),
+      student_id: searchParams.get("studentId") ||
+        searchParams.get("student_id"),
+      status: searchParams.get("status"),
+      page: searchParams.get("page"),
+      limit: searchParams.get("limit") || searchParams.get("pageSize"),
     });
 
-    return NextResponse.json({ success: true, ...result });
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
+    const validatedQuery = query.success ? query.data : {
+      page: 1,
+      limit: 50,
+      status: "enrolled" as const,
+      sort: "created_at",
+      order: "desc" as const,
+    };
 
-export async function POST(request: NextRequest) {
-  try {
-    const authResult = await staffAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
+    const result = await enrollmentService.getEnrollments(validatedQuery);
+    return apiSuccess(result);
+  },
+);
+
+// POST /api/enrollments
+export const POST = createApiHandler(
+  {
+    permission: "enrollments.manage",
+  },
+  async ({ body }) => {
+    const {
+      studentId,
+      classId,
+      studentIds,
+      student_id,
+      class_id,
+      student_ids,
+    } = body as any;
+
+    const targetClassId = classId || class_id;
+    if (!targetClassId) {
+      throw new ValidationError("Mã lớp là bắt buộc");
     }
-
-    const body = await request.json();
-    const { studentId, classId, studentIds } = body;
-
-    if (!classId) {
-      return NextResponse.json(
-        { success: false, error: 'Mã lớp là bắt buộc' },
-        { status: 400 }
-      );
-    }
-
-    const enrollmentService = new EnrollmentService();
 
     // Bulk enrollment
-    if (studentIds && Array.isArray(studentIds)) {
-      const result = await enrollmentService.bulkEnroll(classId, studentIds);
-      logger.info('Bulk enrollment:', { classId, ...result });
-      const { success: enrollmentSuccess, ...restResult } = result;
-      return NextResponse.json({ 
-        success: true, 
-        message: `Đã ghi danh ${enrollmentSuccess || 0} học sinh, ${restResult.failed || 0} thất bại`,
-        enrolled: enrollmentSuccess,
-        ...restResult 
+    const targetStudentIds = studentIds || student_ids;
+    if (targetStudentIds && Array.isArray(targetStudentIds)) {
+      const result = await enrollmentService.bulkEnroll(
+        targetClassId,
+        targetStudentIds,
+      );
+      logger.info("Bulk enrollment completed", {
+        classId: targetClassId,
+        ...result,
+      });
+
+      return apiSuccess({
+        message: `Đã ghi danh ${result.success || 0} học sinh, ${
+          result.failed || 0
+        } thất bại`,
+        enrolledCount: result.success,
+        failedCount: result.failed,
+        errors: result.errors,
       });
     }
 
     // Single enrollment
-    if (!studentId) {
-      return NextResponse.json(
-        { success: false, error: 'Mã học sinh là bắt buộc' },
-        { status: 400 }
-      );
+    const targetStudentId = studentId || student_id;
+    if (!targetStudentId) {
+      throw new ValidationError("Mã học sinh là bắt buộc");
     }
 
-    const enrollment = await enrollmentService.createEnrollment({ studentId, classId });
-    logger.info('Enrollment created:', { enrollmentId: enrollment.id });
+    const enrollment = await enrollmentService.createEnrollment({
+      student_id: targetStudentId,
+      class_id: targetClassId,
+      status: "enrolled",
+    });
 
-    return NextResponse.json({ success: true, enrollment }, { status: 201 });
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
+    return apiSuccess({ enrollment });
+  },
+);

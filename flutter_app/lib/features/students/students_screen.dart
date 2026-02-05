@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/profile_model.dart';
@@ -23,10 +24,12 @@ final studentsListProvider = FutureProvider<List<ProfileModel>>((ref) async {
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
 /// Filtered students provider
-final filteredStudentsProvider = FutureProvider<List<ProfileModel>>((ref) async {
+final filteredStudentsProvider = FutureProvider<List<ProfileModel>>((
+  ref,
+) async {
   final query = ref.watch(searchQueryProvider);
   final repo = ref.watch(studentsRepositoryProvider);
-  
+
   if (query.isEmpty) {
     return repo.getStudents();
   }
@@ -177,7 +180,7 @@ class _StudentCard extends StatelessWidget {
         ),
         trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
         onTap: () {
-          // TODO: Navigate to student detail
+          context.goNamed('student-detail', pathParameters: {'id': student.id});
         },
       ),
     );
@@ -194,8 +197,6 @@ class _StudentCard extends StatelessWidget {
       case StudentStatus.suspended:
         return AppColors.error;
       case StudentStatus.transferred:
-        return AppColors.textMuted;
-      default:
         return AppColors.textMuted;
     }
   }

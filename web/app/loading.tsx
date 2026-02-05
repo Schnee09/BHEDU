@@ -1,25 +1,20 @@
-import { SkeletonCard, SkeletonList } from "@/components/ui/skeleton";
-
 export default function Loading() {
     return (
-        <div className="p-6 space-y-6 animate-fade-in">
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <div className="h-8 w-48 bg-surface-secondary/50 rounded-lg animate-pulse mb-2" />
-                    <div className="h-4 w-32 bg-surface-secondary/30 rounded-lg animate-pulse" />
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-stone-50 dark:bg-stone-950">
+            <div className="space-y-8 flex flex-col items-center">
+                {/* Animated Brand Loader */}
+                <div className="relative">
+                    <div className="absolute inset-0 bg-amber-500/30 blur-3xl rounded-full animate-pulse" />
+                    <div className="relative w-20 h-20 bg-white dark:bg-stone-900 rounded-[28px] shadow-2xl border border-stone-200 dark:border-white/5 flex items-center justify-center overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-transparent" />
+                        <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+                    </div>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-surface-secondary/50 animate-pulse" />
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <SkeletonCard />
-                <SkeletonCard />
-                <SkeletonCard />
-                <SkeletonCard />
-            </div>
-
-            <div className="mt-8">
-                <SkeletonList items={5} />
+                <div className="space-y-3 text-center">
+                    <div className="h-6 w-48 bg-stone-200 dark:bg-stone-800 rounded-lg animate-pulse mx-auto" />
+                    <div className="h-4 w-64 bg-stone-100 dark:bg-stone-900 rounded-md animate-pulse mx-auto" />
+                </div>
             </div>
         </div>
     );

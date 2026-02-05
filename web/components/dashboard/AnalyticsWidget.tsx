@@ -28,14 +28,28 @@ import {
     Cell,
 } from 'recharts';
 import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { ChartPie, BarChart3, TrendingUp, Activity } from 'lucide-react';
 
 // Loading skeleton for charts
 const ChartSkeleton = ({ height = 300 }: { height?: number }) => (
-    <div
-        className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center"
-        style={{ height }}
-    >
-        <span className="text-gray-400 dark:text-gray-500 text-sm">Đang tải biểu đồ...</span>
+    <div className="space-y-4 w-full" style={{ height }}>
+        <div className="flex justify-between items-end h-[70%] gap-2 px-2">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+                <Skeleton
+                    key={i}
+                    height={`${20 + Math.random() * 60}%`}
+                    width="12%"
+                    className="rounded-t-lg"
+                />
+            ))}
+        </div>
+        <div className="space-y-2">
+            <Skeleton height="1rem" width="100%" />
+            <Skeleton height="1rem" width="70%" />
+        </div>
     </div>
 );
 
@@ -61,16 +75,16 @@ const LazyRadarChart = dynamic(() => import('recharts').then(mod => mod.RadarCha
     loading: () => <ChartSkeleton />
 });
 
-// Chart color palette
+// Chart color palette - BH-EDU Premium
 const COLORS = {
-    primary: '#6366f1',
-    secondary: '#8b5cf6',
-    success: '#10b981',
-    warning: '#f59e0b',
-    danger: '#ef4444',
-    info: '#3b82f6',
-    gradient: ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'],
-    gradeScale: ['#10b981', '#22c55e', '#84cc16', '#eab308', '#f59e0b', '#ef4444'],
+    primary: '#F5A623',   // Amber (Brand Primary)
+    secondary: '#8B5A2B', // Brown (Brand Accent)
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#EF4444',
+    info: '#3B82F6',
+    gradient: ['#F5A623', '#D97706', '#B45309', '#8B5A2B', '#5D3E2A'],
+    gradeScale: ['#10B981', '#22C55E', '#84CC16', '#EAB308', '#F59E0B', '#EF4444'],
 };
 
 export type ChartType = 'line' | 'bar' | 'pie' | 'area' | 'radar';
@@ -138,9 +152,11 @@ export default function AnalyticsWidget({
 
         if (!data || data.length === 0) {
             return (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                    {emptyMessage}
-                </div>
+                <EmptyState
+                    title={emptyMessage}
+                    description="Chúng tôi chưa tìm thấy dữ liệu cho khoảng thời gian này."
+                    className="h-full border-none bg-transparent p-0"
+                />
             );
         }
 
@@ -349,24 +365,27 @@ export default function AnalyticsWidget({
     };
 
     return (
-        <Card className={`overflow-hidden ${className}`}>
-            <div className="p-4 sm:p-6">
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
+        <Card className={cn(
+            "overflow-hidden glass-premium rounded-[24px] sm:rounded-[32px] md:rounded-[40px] border border-white/20 dark:border-white/5 shadow-2xl shadow-stone-500/10 transition-all hover:scale-[1.01]",
+            className
+        )}>
+            <div className="p-4 sm:p-6 md:p-8">
+                <div className="flex items-center justify-between mb-6 md:mb-8">
+                    <div className="flex items-center gap-3 md:gap-4">
                         {icon && (
-                            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                            <div className="p-2 md:p-3 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                                 {icon}
                             </div>
                         )}
                         <div>
-                            <h3 className="font-semibold text-lg text-foreground">{title}</h3>
+                            <h3 className="font-black text-lg md:text-xl text-stone-900 dark:text-white uppercase tracking-tight">{title}</h3>
                             {subtitle && (
-                                <p className="text-sm text-muted-foreground">{subtitle}</p>
+                                <p className="text-xs font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest mt-0.5 md:mt-1">{subtitle}</p>
                             )}
                         </div>
                     </div>
                 </div>
-                <div style={{ height }}>
+                <div style={{ height }} className="relative">
                     {renderChart()}
                 </div>
             </div>

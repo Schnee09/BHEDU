@@ -15,6 +15,8 @@ import {
     BookOpen,
     Calendar,
 } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
+import PageGuard from "@/components/PageGuard";
 
 interface ImportResult {
     success: number;
@@ -31,7 +33,16 @@ const importTypes: { id: ImportType; label: string; icon: React.ReactNode; descr
 ];
 
 export default function BulkImportPage() {
+    return (
+        <PageGuard permissions="users.bulk_import">
+            <BulkImportContent />
+        </PageGuard>
+    );
+}
+
+function BulkImportContent() {
     const { profile, loading: profileLoading } = useProfile();
+    const { isAdmin } = usePermissions();
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,12 +52,6 @@ export default function BulkImportPage() {
     const [importing, setImporting] = useState(false);
     const [result, setResult] = useState<ImportResult | null>(null);
     const [error, setError] = useState<string | null>(null);
-
-    // Check admin access
-    if (!profileLoading && profile?.role !== "admin") {
-        router.replace("/unauthorized");
-        return null;
-    }
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
@@ -162,8 +167,8 @@ export default function BulkImportPage() {
                                     setResult(null);
                                 }}
                                 className={`p-4 rounded-xl border-2 text-left transition-all ${selectedType === type.id
-                                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
-                                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
+                                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                                     }`}
                             >
                                 <div className={`mb-2 ${selectedType === type.id ? "text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400"}`}>
@@ -192,8 +197,8 @@ export default function BulkImportPage() {
                     <div
                         onClick={() => fileInputRef.current?.click()}
                         className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${file
-                                ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/20"
-                                : "border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500"
+                            ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/20"
+                            : "border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500"
                             }`}
                     >
                         <input

@@ -8,13 +8,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { createClient } from '@/lib/supabase/client';
-import type { PermissionCode, UserRole } from '@/lib/auth/permissions.config';
 import {
-  ROLE_PERMISSIONS,
-  roleHasPermission,
-  canAccessRoute,
-  PERMISSIONS
-} from '@/lib/auth/permissions.config';
+  getFlattenedPermissions,
+  hasPermission,
+  isAtLeast,
+  UserRole,
+  PermissionCode
+} from '@/lib/auth/core';
 
 // ============================================
 // TYPES
@@ -35,13 +35,19 @@ export interface PermissionsState {
 // HOOK
 // ============================================
 
+interface PermissionRow {
+  permission_code: string;
+  is_denied: boolean;
+  expires_at: string | null;
+}
+
 export function usePermissions() {
   const { profile, loading: profileLoading } = useProfile();
   const [customPermissions, setCustomPermissions] = useState<Set<PermissionCode>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch custom permissions from database
+  // Fetch custom permissions from database (optional feature)
   useEffect(() => {
     async function fetchCustomPermissions() {
       if (!profile?.id) {
@@ -49,8 +55,8 @@ export function usePermissions() {
         return;
       }
 
-      // Admin has all permissions, no need to fetch
-      if (profile.role === 'admin') {
+      // Optimization: super_admin doesn't need to fetch custom perms (it has everything)
+      if (profile.role === 'super_admin') {
         setLoading(false);
         return;
       }
@@ -63,23 +69,21 @@ export function usePermissions() {
           .eq('user_id', profile.id);
 
         if (fetchError) {
-          // Table might not exist or RLS blocking - this is OK, just use role defaults
-          // Don't show error to user, just log it
-          console.warn('[usePermissions] Could not fetch custom permissions (table may not exist):', fetchError.code);
-          // Don't set error - gracefully degrade to role-based permissions only
+          console.warn('[usePermissions] Table user_permissions missing or inaccessible.');
         } else {
           const now = new Date();
-          const validPermissions = (data || [])
-            .filter((p: { is_denied: boolean; expires_at: string | null; permission_code: string }) =>
+          const rows = (data || []) as unknown as PermissionRow[];
+
+          const validPermissions = rows
+            .filter(p =>
               !p.is_denied &&
               (!p.expires_at || new Date(p.expires_at) > now)
             )
-            .map((p: { permission_code: string }) => p.permission_code as PermissionCode);
+            .map(p => p.permission_code as PermissionCode);
 
           setCustomPermissions(new Set(validPermissions));
         }
       } catch (err) {
-        // Silently fail - use role-based permissions only
         console.warn('[usePermissions] Error fetching custom permissions:', err);
       } finally {
         setLoading(false);
@@ -91,25 +95,27 @@ export function usePermissions() {
     }
   }, [profile?.id, profile?.role, profileLoading]);
 
-  // Compute all permissions (role defaults + custom)
+  // Compute all permissions (role inheritance + custom)
   const allPermissions = useMemo(() => {
     if (!profile?.role) return new Set<PermissionCode>();
 
     const role = profile.role as UserRole;
-    const rolePerms = new Set<PermissionCode>(ROLE_PERMISSIONS[role] || []);
+    const permissions = getFlattenedPermissions(role);
 
     // Merge with custom permissions
-    customPermissions.forEach(p => rolePerms.add(p));
+    customPermissions.forEach(p => permissions.add(p));
 
-    return rolePerms;
+    return permissions;
   }, [profile?.role, customPermissions]);
 
   // Permission check functions
   const can = useCallback((permission: PermissionCode): boolean => {
     if (!profile?.role) return false;
-    if (profile.role === 'admin') return true;
-    return allPermissions.has(permission);
-  }, [profile?.role, allPermissions]);
+    // Check custom permissions first
+    if (customPermissions.has(permission)) return true;
+    // Fallback to core RBAC logic (includes inheritance)
+    return hasPermission(profile.role as UserRole, permission);
+  }, [profile?.role, customPermissions]);
 
   const canAny = useCallback((permissions: PermissionCode[]): boolean => {
     return permissions.some(p => can(p));
@@ -119,16 +125,18 @@ export function usePermissions() {
     return permissions.every(p => can(p));
   }, [can]);
 
-  const canAccessPath = useCallback((path: string): boolean => {
-    return canAccessRoute(allPermissions, path);
-  }, [allPermissions]);
+  // Role checks using inheritance logic
+  const isAdmin = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'admin') : false, [profile]);
+  const isStaff = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'staff') : false, [profile]);
+  const isTeacher = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'teacher') : false, [profile]);
+  const isStudent = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'student') : false, [profile]);
+  const isParent = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'parent') : false, [profile]);
 
-  // Role checks
-  const isAdmin = profile?.role === 'admin';
-  const isStaff = profile?.role === 'staff' || isAdmin;
-  const isTeacher = profile?.role === 'teacher';
-  const isStudent = profile?.role === 'student';
-  const hasTeacherCapabilities = isAdmin || profile?.role === 'staff' || isTeacher;
+  // Capability convenience check
+  const hasTeacherCapabilities = useMemo(() => {
+    if (!profile) return false;
+    return isAtLeast(profile.role as UserRole, 'teacher');
+  }, [profile]);
 
   return {
     // State
@@ -141,17 +149,16 @@ export function usePermissions() {
     can,
     canAny,
     canAll,
-    canAccessPath,
 
-    // Role checks
+    // Role checks (Inheritance-aware)
     isAdmin,
     isStaff,
     isTeacher,
     isStudent,
+    isParent,
     hasTeacherCapabilities,
 
     // Utilities
-    getPermissionInfo: (code: PermissionCode) => PERMISSIONS[code],
     hasCustomPermission: (code: PermissionCode) => customPermissions.has(code),
   };
 }

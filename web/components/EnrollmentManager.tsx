@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiFetch } from '@/lib/api/client';
+import { apiFetch, enrollStudent, deleteEnrollment } from '@/lib/api/client';
 import { showToast } from "@/components/ToastProvider";
 import { CalendarDaysIcon, UserIcon } from "@heroicons/react/24/outline";
 
@@ -161,31 +161,19 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
     setProcessingEnrollment(selectedClassId);
 
     try {
-      const response = await apiFetch("/api/admin/enrollments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          student_id: studentId,
-          class_id: selectedClassId,
-        }),
-      });
+      await enrollStudent(studentId, selectedClassId);
 
-      if (response.ok) {
-        showToast.dismiss(toastId);
-        showToast.success("Student enrolled successfully");
-        setSelectedClassId("");
-        setScheduleConflicts([]);
-        setShowAddDropdown(false);
-        await fetchData(); // Refresh data
-      } else {
-        const error = await response.json();
-        showToast.dismiss(toastId);
-        showToast.error(error.error || "Failed to enroll student");
-      }
+      showToast.dismiss(toastId);
+      showToast.success("Student enrolled successfully");
+      setSelectedClassId("");
+      setScheduleConflicts([]);
+      setShowAddDropdown(false);
+      await fetchData(); // Refresh data
     } catch (error) {
+      const errMessage = error instanceof Error ? error.message : "An error occurred";
       console.error("Error enrolling student:", error);
       showToast.dismiss(toastId);
-      showToast.error("An error occurred while enrolling");
+      showToast.error(errMessage);
     } finally {
       setProcessingEnrollment(null);
     }
@@ -201,23 +189,16 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
     setProcessingEnrollment(enrollmentId);
 
     try {
-      const response = await apiFetch(`/api/admin/enrollments/${enrollmentId}`, {
-        method: "DELETE",
-      });
+      await deleteEnrollment(enrollmentId);
 
-      if (response.ok) {
-        showToast.dismiss(toastId);
-        showToast.success("Enrollment removed successfully");
-        await fetchData(); // Refresh data
-      } else {
-        const error = await response.json();
-        showToast.dismiss(toastId);
-        showToast.error(error.error || "Failed to remove enrollment");
-      }
+      showToast.dismiss(toastId);
+      showToast.success("Enrollment removed successfully");
+      await fetchData(); // Refresh data
     } catch (error) {
+      const errMessage = error instanceof Error ? error.message : "An error occurred";
       console.error("Error removing enrollment:", error);
       showToast.dismiss(toastId);
-      showToast.error("An error occurred while removing enrollment");
+      showToast.error(errMessage);
     } finally {
       setProcessingEnrollment(null);
     }

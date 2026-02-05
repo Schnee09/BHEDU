@@ -14,6 +14,13 @@ export const loginSchema = z.object({
 });
 
 /**
+ * Student lookup schema (public)
+ */
+export const studentLookupSchema = z.object({
+  student_code: z.string().min(1, 'Student code is required'),
+});
+
+/**
  * Signup schema
  */
 export const signupSchema = z.object({
@@ -71,39 +78,5 @@ export const changePasswordSchema = z.object({
   path: ['confirm_password'],
 });
 
-/**
- * User creation schema (admin)
- */
-export const createUserSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  first_name: z.string().min(1, 'First name is required').max(100),
-  last_name: z.string().min(1, 'Last name is required').max(100),
-  role: z.enum(['student', 'teacher', 'admin']),
-  phone: z.string().max(20).optional().nullable(),
-  status: z.enum(['active', 'inactive', 'suspended']).optional().default('active'),
-});
 
-/**
- * User update schema
- */
-export const updateUserSchema = z.object({
-  id: z.string().uuid('Invalid user ID'),
-  email: z.string().email().optional(),
-  first_name: z.string().min(1).max(100).optional(),
-  last_name: z.string().min(1).max(100).optional(),
-  role: z.enum(['student', 'teacher', 'admin']).optional(),
-  phone: z.string().max(20).optional().nullable(),
-  status: z.enum(['active', 'inactive', 'suspended']).optional(),
-});
-
-/**
- * User profile update schema
- */
-export const updateProfileSchema = z.object({
-  first_name: z.string().min(1).max(100).optional(),
-  last_name: z.string().min(1).max(100).optional(),
-  phone: z.string().max(20).optional().nullable(),
-  avatar_url: z.string().url('Invalid URL').optional().nullable(),
-  bio: z.string().max(500).optional().nullable(),
-});
+export type OneTimePassword = string;

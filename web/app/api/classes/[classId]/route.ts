@@ -1,105 +1,90 @@
 /**
- * Single Class API
+ * Single Class API (REFACTORED)
+ *
+ * Uses the new createApiHandler pattern for cleaner code.
+ *
  * GET /api/classes/[classId] - Get class details
  * PUT /api/classes/[classId] - Update class
  * DELETE /api/classes/[classId] - Delete class
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { staffAuth, teacherAuth } from '@/lib/auth/adminAuth'
-import { hasAdminAccess } from '@/lib/auth/permissions'
-import { handleApiError, AuthenticationError, NotFoundError } from '@/lib/api/errors'
-import { logger } from '@/lib/logger'
-import { ClassService } from '@/lib/services/classService'
+import { NextResponse } from "next/server";
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { updateClassSchema } from "@/lib/schemas";
+import { ClassService } from "@/lib/services/classService";
+import { AuthorizationError, NotFoundError } from "@/lib/api/errors";
+import { hasPermission } from "@/lib/auth/core";
+import { createServiceClient } from "@/lib/supabase/server";
 
-interface RouteParams {
-  params: Promise<{ classId: string }>
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
-    const authResult = await teacherAuth(request)
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized')
-    }
-
-    const { classId } = await params
-    const classData = await ClassService.getClassById(classId)
+// GET /api/classes/[classId]
+export const GET = createGetHandler(
+  { permission: "classes.view" },
+  async ({ params, user }) => {
+    const classData = await ClassService.getClassById(params.classId);
 
     if (!classData) {
-      throw new NotFoundError('Không tìm thấy lớp học')
+      throw new NotFoundError("Không tìm thấy lớp học");
     }
 
-    // Teachers can only view their own classes
-    if (!hasAdminAccess(authResult.userRole || '')) {
-      if (classData.teacher?.id !== authResult.userId) {
-        return NextResponse.json(
-          { success: false, error: 'Không có quyền truy cập lớp này' },
-          { status: 403 }
-        )
+    // Access Control Logic
+    const canManageAll = hasPermission(user.role, "classes.manage");
+
+    if (!canManageAll) {
+      if (user.role === "teacher") {
+        // Teacher can only view their own classes
+        if (classData.teacher?.id !== user.id) {
+          throw new AuthorizationError("Không có quyền truy cập lớp này");
+        }
+      } else if (user.role === "student") {
+        // Students can only view classes they are enrolled in
+        const client = createServiceClient();
+        const { data: enrollment } = await client
+          .from("enrollments")
+          .select("id")
+          .eq("student_id", user.id)
+          .eq("class_id", params.classId)
+          .eq("status", "active")
+          .maybeSingle();
+
+        if (!enrollment) {
+          throw new AuthorizationError("Không có quyền truy cập lớp này");
+        }
+      } else {
+        throw new AuthorizationError("Forbidden");
       }
     }
 
-    return NextResponse.json({ success: true, class: classData })
-  } catch (error) {
-    return handleApiError(error)
-  }
-}
+    return apiSuccess(classData);
+  },
+);
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-  try {
-    const authResult = await staffAuth(request)
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized')
-    }
-
-    const { classId } = await params
-    const body = await request.json()
-    const { name, code, description, room, schedule, teacherId, teacher_id, academicYearId } = body
-
-    // Check if class exists
-    const existing = await ClassService.getClassById(classId)
+// PUT /api/classes/[classId]
+export const PUT = createApiHandler(
+  {
+    permission: "classes.manage",
+    bodySchema: updateClassSchema,
+  },
+  async ({ params, body }) => {
+    const existing = await ClassService.getClassById(params.classId);
     if (!existing) {
-      throw new NotFoundError('Không tìm thấy lớp học')
+      throw new NotFoundError("Không tìm thấy lớp học");
     }
 
-    const updated = await ClassService.updateClass(classId, {
-      name,
-      room,
-      schedule,
-      teacher_id: teacher_id || teacherId,
-      academic_year_id: academicYearId,
-    })
+    const updated = await ClassService.updateClass(params.classId, body);
+    return apiSuccess(updated);
+  },
+);
 
-    logger.info('Class updated:', { classId, name: updated.name })
-
-    return NextResponse.json({ success: true, class: updated })
-  } catch (error) {
-    return handleApiError(error)
-  }
-}
-
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  try {
-    const authResult = await staffAuth(request)
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized')
-    }
-
-    const { classId } = await params
-    // Check if class exists
-    const existing = await ClassService.getClassById(classId)
+// DELETE /api/classes/[classId]
+export const DELETE = createGetHandler(
+  { permission: "classes.manage" },
+  async ({ params }) => {
+    const existing = await ClassService.getClassById(params.classId);
     if (!existing) {
-      throw new NotFoundError('Không tìm thấy lớp học')
+      throw new NotFoundError("Không tìm thấy lớp học");
     }
 
-    await ClassService.deleteClass(classId)
-
-    logger.info('Class deleted:', { classId, name: existing.name })
-
-    return NextResponse.json({ success: true, message: 'Đã xóa lớp học' })
-  } catch (error) {
-    return handleApiError(error)
-  }
-}
-
+    await ClassService.deleteClass(params.classId);
+    return NextResponse.json({ success: true, message: "Đã xóa lớp học" });
+  },
+);

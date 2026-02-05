@@ -16,7 +16,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useFetch, useMutation, usePagination, useDebounce, useToast, useUser } from "@/hooks";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, bulkArchiveStudents, deleteStudent } from "@/lib/api/client";
 import {
   Button,
   Card,
@@ -105,13 +105,17 @@ export default function StudentsPage() {
     total: number;
     statistics?: StudentStats;
   }>(
-    `/api/students?${queryParams.toString()}`
+    `/api/v2/students?${queryParams.toString()}`
   );
 
   // Handle successful fetch
+  const { setTotalItems } = pagination;
   useEffect(() => {
     if (data) {
-      pagination.setTotalItems(data.total);
+      const studentsData = data.students || (data as any).data || [];
+      const totalCount = data.total !== undefined ? data.total : (data as any).pagination?.total || 0;
+
+      setTotalItems(totalCount);
       // Guard against unexpected response shapes to avoid runtime errors
       const count = Array.isArray((data as any).students)
         ? (data as any).students.length
@@ -120,7 +124,7 @@ export default function StudentsPage() {
           : 0;
       logger.info('Students loaded', { count });
     }
-  }, [data, pagination]);
+  }, [data, setTotalItems]);
 
   // Handle errors
   useEffect(() => {
@@ -132,9 +136,9 @@ export default function StudentsPage() {
 
   // Bulk archive mutation (admin/staff only)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { mutate: archiveStudent, loading: archiving } = useMutation('/api/students', 'DELETE');
+  const { mutate: archiveStudent, loading: archiving } = useMutation('/api/v2/students', 'DELETE');
 
-  const students = data?.students || [];
+  const students = (data?.students || (data as any)?.data || []) as Student[];
   const statistics = data?.statistics;
 
   // Selection handlers
@@ -174,27 +178,9 @@ export default function StudentsPage() {
     try {
       logger.info('Bulk archiving students', { count: selectedIds.size });
 
-      const res = await apiFetch('/api/students/bulk-archive', {
-        method: 'POST',
-        body: JSON.stringify({ studentIds: Array.from(selectedIds) }),
-      });
+      await bulkArchiveStudents(Array.from(selectedIds));
 
-      const data = await res.json().catch(() => ({} as any));
-
-      if (!res.ok) {
-        throw new Error(data?.error || 'Failed to archive students');
-      }
-
-      const archivedCount = Number(data?.archivedCount || 0);
-      const failedIds: string[] = Array.isArray(data?.failedIds) ? data.failedIds : [];
-      const failed = failedIds.length;
-      const succeeded = archivedCount;
-
-      if (failed > 0) {
-        toast.warning('Partial success', `Archived ${succeeded} students, ${failed} failed`);
-      } else {
-        toast.success('Students archived', `Successfully archived ${succeeded} student(s)`);
-      }
+      toast.success('Students archived', `Successfully archived ${selectedIds.size} student(s)`);
 
       // Audit log
       await createAuditLog({
@@ -204,7 +190,7 @@ export default function StudentsPage() {
         action: AuditActions.STUDENT_DELETED,
         resourceType: 'student',
         resourceId: 'bulk',
-        metadata: { count: succeeded, studentIds: Array.from(selectedIds) },
+        metadata: { count: selectedIds.size, studentIds: Array.from(selectedIds) },
       });
 
       setSelectedIds(new Set());
@@ -228,11 +214,8 @@ export default function StudentsPage() {
 
     try {
       logger.info('Archiving student', { studentId: student.id });
-      const res = await apiFetch(`/api/students/${student.id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Không thể lưu trữ học sinh');
-      }
+
+      await deleteStudent(student.id);
 
       await createAuditLog({
         userId: user?.id || 'unknown',
@@ -297,7 +280,7 @@ export default function StudentsPage() {
     logger.info('Students exported', { count: studentsToExport.length });
   };
 
-// Render statistics
+  // Render statistics
   const renderStatistics = () => {
     if (loading && !statistics) {
       return (
@@ -314,39 +297,39 @@ export default function StudentsPage() {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-fade-in">
         <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
-            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
-                <Icons.Students className="w-10 h-10 text-blue-600" />
-            </div>
-            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Học sinh</p>
-            <p className="text-2xl font-black text-stone-900 dark:text-stone-100">{statistics.total_students}</p>
-            <div className="h-1 w-6 bg-blue-500 rounded-full" />
+          <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
+            <Icons.Students className="w-10 h-10 text-blue-600" />
+          </div>
+          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Học sinh</p>
+          <p className="text-2xl font-black text-stone-900 dark:text-stone-100">{statistics.total_students}</p>
+          <div className="h-1 w-6 bg-blue-500 rounded-full" />
         </div>
 
         <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
-            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
-                <Icons.Success className="w-10 h-10 text-green-600" />
-            </div>
-            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Đang học</p>
-            <p className="text-2xl font-black text-green-600">{statistics.active_students}</p>
-            <div className="h-1 w-6 bg-green-500 rounded-full" />
+          <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
+            <Icons.Success className="w-10 h-10 text-green-600" />
+          </div>
+          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Đang học</p>
+          <p className="text-2xl font-black text-green-600">{statistics.active_students}</p>
+          <div className="h-1 w-6 bg-green-500 rounded-full" />
         </div>
 
         <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
-            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
-                <Icons.Error className="w-10 h-10 text-stone-400" />
-            </div>
-            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Nghỉ học</p>
-            <p className="text-2xl font-black text-stone-400">{statistics.inactive_students}</p>
-            <div className="h-1 w-6 bg-stone-300 rounded-full" />
+          <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
+            <Icons.Error className="w-10 h-10 text-stone-400" />
+          </div>
+          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Nghỉ học</p>
+          <p className="text-2xl font-black text-stone-400">{statistics.inactive_students}</p>
+          <div className="h-1 w-6 bg-stone-300 rounded-full" />
         </div>
 
         <div className="bg-white dark:bg-[#1C1814] rounded-2xl p-4 border border-amber-500/20 shadow-lg shadow-amber-500/5 flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
-            <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:scale-110 transition-transform">
-                <Icons.Classes className="w-10 h-10 text-amber-500" />
-            </div>
-            <p className="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest">Khối lớp</p>
-            <p className="text-2xl font-black text-amber-500">{Object.keys(statistics.by_grade || {}).length}</p>
-            <div className="h-1 w-10 bg-amber-500 rounded-full" />
+          <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:scale-110 transition-transform">
+            <Icons.Classes className="w-10 h-10 text-amber-500" />
+          </div>
+          <p className="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest">Khối lớp</p>
+          <p className="text-2xl font-black text-amber-500">{Object.keys(statistics.by_grade || {}).length}</p>
+          <div className="h-1 w-10 bg-amber-500 rounded-full" />
         </div>
       </div>
     );
@@ -860,9 +843,7 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
       newErrors.full_name = 'Họ tên là bắt buộc';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email là bắt buộc'; // Enforce email requirement matching backend
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Định dạng email không hợp lệ';
     }
 
@@ -893,12 +874,12 @@ function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormMo
       // Sanitize payload: convert empty strings to null or undefined for optional fields
       const payload = {
         ...formData,
-        email: formData.email.trim(),
+        email: formData.email.trim() || undefined,
         full_name: formData.full_name.trim(),
         phone: formData.phone.trim() || null,
         address: formData.address.trim() || null,
         date_of_birth: formData.date_of_birth || null,
-        student_code: formData.student_code.trim() || null, // Let backend generate if empty
+        student_code: formData.student_code.trim() || undefined, // Let backend generate if empty
         grade_level: formData.grade_level || null,
         gender: formData.gender || null,
         // Status is always set to a value from select

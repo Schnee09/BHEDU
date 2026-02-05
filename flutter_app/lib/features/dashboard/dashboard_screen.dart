@@ -1,4 +1,5 @@
 /// Dashboard Screen for BH-EDU
+/// Cross-platform synchronized with web design system
 library;
 
 import 'package:flutter/material.dart';
@@ -7,10 +8,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/providers/customization_provider.dart';
 import '../../core/ui/ui_components.dart';
 import '../../data/models/profile_model.dart';
 import '../../data/repositories/dashboard_repository.dart';
 import '../../shared/providers/auth_provider.dart';
+import '../../shared/widgets/glass_container.dart';
 import 'widgets/activity_feed.dart';
 
 /// Dashboard stats provider
@@ -412,7 +415,7 @@ class _SummaryCards extends ConsumerWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
+class _StatCard extends ConsumerWidget {
   final String title;
   final String value;
   final String subtitle;
@@ -430,9 +433,12 @@ class _StatCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return AppCard(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = ref.watch(accentColorProvider);
+    
+    return GlassContainer(
       padding: const EdgeInsets.all(20),
+      showGlow: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -447,7 +453,14 @@ class _StatCard extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              Icon(icon, size: 20, color: color),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withAlpha(30),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 18, color: color),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -460,12 +473,25 @@ class _StatCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 12,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: palette.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
         ],
       ),

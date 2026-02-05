@@ -5,6 +5,8 @@ import ClientProviders from "@/components/ClientProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
+import { CustomizationProvider } from "@/contexts/CustomizationContext";
+
 export const metadata: Metadata = {
   title: "BH-EDU | Hệ thống quản lý giáo dục",
   description: "Hệ thống quản lý giáo dục BH-EDU - Education Management System",
@@ -31,13 +33,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="vi" suppressHydrationWarning data-scroll-behavior="smooth">
-      <body className="antialiased bg-background text-foreground">
+    <html lang="vi" suppressHydrationWarning data-scroll-behavior="smooth" className="h-full overflow-hidden">
+      <body className="antialiased bg-background text-foreground h-full overflow-hidden">
         <ErrorBoundary>
-          <ClientProviders>
-            {children}
-            <ServiceWorkerRegister />
-          </ClientProviders>
+          <CustomizationProvider>
+            <ClientProviders>
+              {children}
+              <ServiceWorkerRegister />
+            </ClientProviders>
+          </CustomizationProvider>
         </ErrorBoundary>
       </body>
     </html>

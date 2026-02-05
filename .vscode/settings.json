@@ -31,5 +31,9 @@
   "idf.pythonInstallPath": "C:\\Users\\Admin\\.espressif\\tools\\idf-python\\3.8.7\\python.exe",
   "css.lint.unknownAtRules": "ignore",
   "npm.packageManager": "npm",
-  "deno.path": "C:\\Users\\Admin\\.deno\\bin\\deno.exe"
+  "deno.path": "C:\\Users\\Admin\\.deno\\bin\\deno.exe",
+  "[css]": {
+    "editor.defaultFormatter": "vscode.css-language-features"
+  },
+  "editor.formatOnSave": true
 }

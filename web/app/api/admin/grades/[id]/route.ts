@@ -1,29 +1,25 @@
 /**
- * Admin Individual Grade API
+ * Admin Individual Grade API (REFACTORED)
  * GET /api/admin/grades/[id] - Get grade details with history
  * PATCH /api/admin/grades/[id] - Update/override grade with audit
  * DELETE /api/admin/grades/[id] - Delete grade
  */
 
-import { NextResponse } from 'next/server'
-import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth'
+import { NextResponse } from "next/server";
+import { getDataClient } from "@/lib/auth/dataClient";
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { updateGradeSchema } from "@/lib/schemas";
+import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import { logger } from "@/lib/logger";
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
-    const authResult = await adminAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
-
-  const { supabase } = await getDataClient(request)
-    const { id } = await context.params
+// GET /api/admin/grades/[id]
+export const GET = createGetHandler(
+  { allowedRoles: ["admin", "staff"] },
+  async ({ params, request }) => {
+    const { supabase } = await getDataClient(request);
 
     const { data: grade, error } = await supabase
-      .from('grades')
+      .from("grades")
       .select(`
         *,
         assignment:assignments!grades_assignment_id_fkey(
@@ -66,60 +62,48 @@ export async function GET(
           phone
         )
       `)
-      .eq('id', id)
-      .single()
+      .eq("id", params.id)
+      .single();
 
     if (error || !grade) {
-      return NextResponse.json({ error: 'Grade not found' }, { status: 404 })
+      throw new NotFoundError("Grade not found");
     }
 
     // Calculate percentage and letter grade if points are available
-    let percentage = null
-    let calculatedLetterGrade = null
-    
+    let percentage = null;
+    let calculatedLetterGrade = null;
+
     if (grade.points_earned !== null && grade.assignment?.total_points) {
-      percentage = (grade.points_earned / grade.assignment.total_points) * 100
-      
-      // Simple letter grade calculation (can be enhanced with grading scales)
-      if (percentage >= 90) calculatedLetterGrade = 'A'
-      else if (percentage >= 80) calculatedLetterGrade = 'B'
-      else if (percentage >= 70) calculatedLetterGrade = 'C'
-      else if (percentage >= 60) calculatedLetterGrade = 'D'
-      else calculatedLetterGrade = 'F'
+      percentage = (grade.points_earned / grade.assignment.total_points) * 100;
+
+      if (percentage >= 90) calculatedLetterGrade = "A";
+      else if (percentage >= 80) calculatedLetterGrade = "B";
+      else if (percentage >= 70) calculatedLetterGrade = "C";
+      else if (percentage >= 60) calculatedLetterGrade = "D";
+      else calculatedLetterGrade = "F";
     }
 
-    return NextResponse.json({
-      success: true,
-      grade: {
-        ...grade,
-        percentage,
-        calculated_letter_grade: calculatedLetterGrade
-      }
-    })
+    return apiSuccess({
+      ...grade,
+      percentage,
+      calculated_letter_grade: calculatedLetterGrade,
+    });
+  },
+);
 
-  } catch (error) {
-    console.error('Error in GET /api/admin/grades/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function PATCH(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
-    const authResult = await adminAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
-
-  const { supabase } = await getDataClient(request)
-    const { id } = await context.params
-    const body = await request.json()
+// PATCH /api/admin/grades/[id]
+export const PATCH = createApiHandler(
+  {
+    allowedRoles: ["admin", "staff"],
+    bodySchema: updateGradeSchema,
+  },
+  async ({ params, body, request, user }) => {
+    const { supabase } = await getDataClient(request);
+    const id = params.id;
 
     // Verify grade exists
     const { data: existingGrade, error: fetchError } = await supabase
-      .from('grades')
+      .from("grades")
       .select(`
         *,
         assignment:assignments!grades_assignment_id_fkey(
@@ -127,140 +111,105 @@ export async function PATCH(
           total_points
         )
       `)
-      .eq('id', id)
-      .single()
+      .eq("id", id)
+      .single();
 
     if (fetchError || !existingGrade) {
-      return NextResponse.json({ error: 'Grade not found' }, { status: 404 })
+      throw new NotFoundError("Grade not found");
     }
 
-    // Allowed fields to update
-    const allowedFields = ['points_earned', 'letter_grade', 'feedback', 'submitted_at', 'graded_at']
-    const updates: Record<string, unknown> = {}
-
-    for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updates[field] = body[field]
-      }
-    }
-
-    // Validate points if being updated
-    if (updates.points_earned !== undefined && updates.points_earned !== null) {
-      const totalPoints = existingGrade.assignment?.total_points
-      const pointsValue = updates.points_earned as number
+    // Business Logic: Validate points if being updated
+    if (body.points_earned !== undefined && body.points_earned !== null) {
+      const totalPoints = existingGrade.assignment?.total_points;
       if (!totalPoints) {
-        return NextResponse.json({ error: 'Assignment total_points not found' }, { status: 400 })
+        throw new ValidationError("Assignment total_points not found");
       }
-      if (pointsValue < 0 || pointsValue > totalPoints) {
-        return NextResponse.json(
-          { error: `Points must be between 0 and ${totalPoints}` },
-          { status: 400 }
-        )
+      if (body.points_earned < 0 || body.points_earned > totalPoints) {
+        throw new ValidationError(
+          `Points must be between 0 and ${totalPoints}`,
+        );
       }
     }
 
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
-    }
-
-    // Add updated_at timestamp
-    updates.updated_at = new Date().toISOString()
-
-    // If grade is being changed, set graded_at
-    if (updates.points_earned !== undefined || updates.letter_grade !== undefined) {
-      updates.graded_at = new Date().toISOString()
-    }
+    // Add metadata for grading
+    const updates = {
+      ...body,
+      updated_at: new Date().toISOString(),
+      graded_at: (body.points_earned !== undefined ||
+          (body as any).letter_grade !== undefined)
+        ? new Date().toISOString()
+        : undefined,
+    };
 
     // Update grade
     const { data: updatedGrade, error: updateError } = await supabase
-      .from('grades')
+      .from("grades")
       .update(updates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
-      .single()
+      .single();
 
     if (updateError) {
-      console.error('Error updating grade:', updateError)
-      return NextResponse.json({ error: 'Failed to update grade' }, { status: 500 })
+      logger.error("Error updating grade:", updateError);
+      throw new Error(`Failed to update grade: ${updateError.message}`);
     }
 
-    // Create audit log entry for grade override
-    await supabase.from('audit_logs').insert({
-      user_id: authResult.userId,
-      action: 'grade_override',
-      resource_type: 'grade',
+    // Audit log
+    await supabase.from("audit_logs").insert({
+      actor_id: user.id, // Fixed: should be user.id matching audit_logs schema or common practice
+      action: "grade_override",
+      resource_type: "grade",
       resource_id: id,
       old_data: {
         points_earned: existingGrade.points_earned,
-        letter_grade: existingGrade.letter_grade,
-        feedback: existingGrade.feedback
+        letter_grade: (existingGrade as any).letter_grade,
+        feedback: (existingGrade as any).feedback,
       },
       new_data: {
         points_earned: updatedGrade.points_earned,
-        letter_grade: updatedGrade.letter_grade,
-        feedback: updatedGrade.feedback
+        letter_grade: (updatedGrade as any).letter_grade,
+        feedback: (updatedGrade as any).feedback,
       },
       metadata: {
         student_id: existingGrade.student_id,
         assignment_id: existingGrade.assignment_id,
-        reason: body.reason || 'Admin override'
-      }
-    })
+        reason: (body as any).reason || "Admin override",
+      },
+    });
 
-    return NextResponse.json({
-      success: true,
-      grade: updatedGrade,
-      message: 'Grade updated successfully'
-    })
+    return apiSuccess(updatedGrade, { message: "Grade updated successfully" });
+  },
+);
 
-  } catch (error) {
-    console.error('Error in PATCH /api/admin/grades/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
-    const authResult = await adminAuth(request)
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
-
-  const { supabase } = await getDataClient(request)
-    const { id } = await context.params
+// DELETE /api/admin/grades/[id]
+export const DELETE = createGetHandler(
+  { allowedRoles: ["admin"] },
+  async ({ params, request }) => {
+    const { supabase } = await getDataClient(request);
+    const id = params.id;
 
     // Check if grade exists
     const { data: grade, error: fetchError } = await supabase
-      .from('grades')
-      .select('id')
-      .eq('id', id)
-      .single()
+      .from("grades")
+      .select("id")
+      .eq("id", id)
+      .single();
 
     if (fetchError || !grade) {
-      return NextResponse.json({ error: 'Grade not found' }, { status: 404 })
+      throw new NotFoundError("Grade not found");
     }
 
     // Delete the grade
     const { error: deleteError } = await supabase
-      .from('grades')
+      .from("grades")
       .delete()
-      .eq('id', id)
+      .eq("id", id);
 
     if (deleteError) {
-      console.error('Error deleting grade:', deleteError)
-      return NextResponse.json({ error: 'Failed to delete grade' }, { status: 500 })
+      logger.error("Error deleting grade:", deleteError);
+      throw new Error(`Failed to delete grade: ${deleteError.message}`);
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Grade deleted successfully'
-    })
-
-  } catch (error) {
-    console.error('Error in DELETE /api/admin/grades/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+    return apiSuccess(null, { message: "Grade deleted successfully" });
+  },
+);

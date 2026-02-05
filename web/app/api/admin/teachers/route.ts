@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/admin/teachers
- * Create a new teacher
+ * Create a new teacher/staff member
  */
 export async function POST(request: NextRequest) {
   try {
@@ -97,52 +97,30 @@ export async function POST(request: NextRequest) {
       throw new AuthenticationError(authResult.reason || "Unauthorized");
     }
 
-    const { supabase } = await getDataClient(request);
     const body = await request.json();
-    const { email, full_name, date_of_birth, phone } = body;
+    const { UserService } = await import("@/lib/services/userService");
+    const userService = new UserService();
 
-    // Validation
-    if (!email || !full_name) {
-      throw new ValidationError("Email and full name are required");
-    }
+    logger.info("Creating teacher/staff via UserService", {
+      email: body.email,
+      full_name: body.full_name,
+      role: body.role || "teacher",
+    });
 
-    // Create auth user first
-    const { data: authData, error: authError } = await supabase.auth.admin
-      .createUser({
-        email,
-        password: Math.random().toString(36).slice(-8), // Temporary password
-        email_confirm: true,
-      });
-
-    if (authError) {
-      logger.error("Create teacher auth error:", { error: authError });
-      throw new Error(`Auth error: ${authError.message}`);
-    }
-
-    // Create profile
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .insert({
-        user_id: authData.user.id,
-        email,
-        full_name,
-        role: "teacher",
-        date_of_birth,
-        phone,
-      })
-      .select()
-      .single();
-
-    if (profileError) {
-      logger.error("Create teacher profile error:", { error: profileError });
-      throw new Error(`Database error: ${profileError.message}`);
-    }
+    // Use UserService for centralized creation logic
+    const result = await userService.createUser({
+      ...body,
+      role: body.role || "teacher", // Use provided role or default to teacher
+    } as any, "admin");
 
     return NextResponse.json({
       success: true,
-      data: profile,
+      data: result,
+      message: `Teacher/Staff created successfully`,
+      tempPassword: result.tempPassword,
     });
   } catch (error) {
+    logger.error("Error creating teacher/staff", error);
     return handleApiError(error);
   }
 }
