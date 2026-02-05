@@ -13,6 +13,8 @@ interface CardProps {
   hover?: boolean;
   onClick?: () => void;
   as?: 'div' | 'article' | 'section';
+  padding?: string;
+  variant?: string;
 }
 
 export const Card = memo(function Card({
@@ -20,7 +22,9 @@ export const Card = memo(function Card({
   className = '',
   hover = false,
   onClick,
-  as: Component = 'div'
+  as: Component = 'div',
+  padding,
+  variant
 }: CardProps) {
   const isClickable = !!onClick;
 
@@ -29,8 +33,9 @@ export const Card = memo(function Card({
     glass-card text-foreground
     ${hover || isClickable ? 'hover:shadow-lg hover:-translate-y-0.5' : ''}
     ${isClickable ? 'cursor-pointer press-effect' : ''}
+    ${padding || ''}
     ${className}
-  `, [hover, isClickable, className]);
+  `, [hover, isClickable, className, padding]);
 
   return (
     <Component
@@ -45,13 +50,21 @@ export const Card = memo(function Card({
 });
 
 interface CardHeaderProps {
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
+  title?: string;
+  subtitle?: string;
 }
 
-export const CardHeader = memo(({ children, className = '' }: CardHeaderProps) => {
+export const CardHeader = memo(({ children, className = '', title, subtitle }: CardHeaderProps) => {
   return (
     <div className={`px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100/10 dark:border-white/5 ${className}`}>
+      {title && (
+        <CardTitle>{title}</CardTitle>
+      )}
+      {subtitle && (
+        <CardDescription>{subtitle}</CardDescription>
+      )}
       {children}
     </div>
   );

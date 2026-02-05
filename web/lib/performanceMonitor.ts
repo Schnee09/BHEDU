@@ -23,6 +23,7 @@ interface PerformanceBudget {
     name: string;
     threshold: number; // milliseconds
     type: "render" | "api" | "interaction" | "custom";
+    [key: string]: unknown;
 }
 
 class PerformanceMonitor {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AssignmentCategory, Assignment } from '@/lib/gradeService'
+import { AssignmentCategory, Assignment } from '@/lib/services/gradeService'
 import { apiFetch } from '@/lib/api/client'
 
 interface ClassOption {
@@ -256,21 +256,19 @@ export default function AssignmentManagementPage() {
                 <nav className="flex -mb-px">
                   <button
                     onClick={() => setActiveTab('assignments')}
-                    className={`px-6 py-3 text-sm font-medium border-b-2 ${
-                      activeTab === 'assignments'
+                    className={`px-6 py-3 text-sm font-medium border-b-2 ${activeTab === 'assignments'
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     📝 Assignments ({assignments.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('categories')}
-                    className={`px-6 py-3 text-sm font-medium border-b-2 ${
-                      activeTab === 'categories'
+                    className={`px-6 py-3 text-sm font-medium border-b-2 ${activeTab === 'categories'
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     📂 Categories ({categories.length})
                   </button>

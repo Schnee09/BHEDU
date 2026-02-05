@@ -1,6 +1,7 @@
 ﻿import { AttendanceStatus } from "@/lib/attendance/types";
 import { apiSuccess, createApiHandler } from "@/lib/api/apiHandler";
-import { attendanceService } from "@/lib/services/attendanceService";
+import { AttendanceRepository } from "@/lib/repositories/AttendanceRepository";
+import { createServiceClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 /**
@@ -20,10 +21,18 @@ export const POST = createApiHandler({
     })),
   }),
 }, async ({ body, user }) => {
-  const result = await attendanceService.bulkMark({
-    ...body,
-    actorId: user.id,
-    actorRole: user.role,
+  const supabase = createServiceClient();
+  const repository = new AttendanceRepository(supabase);
+
+  const result = await repository.createBulk({
+    class_id: body.classId,
+    date: body.date,
+    records: body.records.map((r) => ({
+      student_id: r.studentId,
+      status: r.status,
+      notes: r.remarks,
+    })),
+    marked_by: user.id,
   });
 
   return apiSuccess(result, { message: "Điểm danh đã được lưu thành công" });

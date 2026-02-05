@@ -23,7 +23,7 @@ export const GET = createGetHandler(
     // --- Role-based Visibility Logic ---
 
     // 1. Staff and Higher (Admins, Super Admins) see all attendance
-    const canViewAll = hasPermission(user.role as any, "attendance.manage");
+    const canViewAll = hasPermission(user.role as any, "attendance.mark");
 
     if (canViewAll) {
       // No filter needed

@@ -8,26 +8,26 @@ async function runVerification() {
     console.log("=== Verifying Quick Add Logic ===\n");
 
     const testNames = [
-        "Nguyễn Cao Quốc Bảo",
-        "Trần Thị Kim Liên",
+        "NguyềE Cao Quốc Bảo",
+        "Trần ThềEKim Liên",
         "Lê Văn Tám",
         "Phạm Minh Chính",
-        "Đặng Diễm Quỳnh",
+        "Đặng DiềE Quỳnh",
     ];
 
     console.log("--- Name Splitting & Email Slugs ---");
     testNames.forEach((name) => {
-        const { firstName, lastName } = splitFullName(name);
+        const { first_name, last_name } = splitFullName(name);
         const slug = generateUserEmailSlug(name);
         console.log(`Input: "${name}"`);
-        console.log(`  Split: First="${firstName}", Last="${lastName}"`);
+        console.log(`  Split: First="${first_name}", Last="${last_name}"`);
         console.log(`  Email Slug: "${slug}"`);
         console.log(`  Final candidate: "${slug}@bhedu.vn"\n`);
     });
 
     console.log("--- Role-Based Domain Logic ---");
     const roles = ["admin", "staff", "teacher", "parent", "student"];
-    const baseName = "Nguyễn Cao Quốc Bảo";
+    const baseName = "NguyềE Cao Quốc Bảo";
     const slug = generateUserEmailSlug(baseName);
 
     roles.forEach((role) => {
@@ -58,14 +58,15 @@ async function runVerification() {
     console.log(`3rd attempt: ${candidate} (available)`);
 
     console.log(
-        "\nLogic check for 'Nguyễn Cao Quốc Bảo' -> 'baoncq@bhedu.vn':",
+        "\nLogic check for 'NguyềE Cao Quốc Bảo' -> 'baoncq@bhedu.vn':",
     );
     const expected = "baoncq";
     if (slug === expected) {
-        console.log("✅ SUCCESS: Slug matches expectations.");
+        console.log("✁ESUCCESS: Slug matches expectations.");
     } else {
-        console.log(`❌ FAILURE: Expected '${expected}', got '${slug}'`);
+        console.log(`❁EFAILURE: Expected '${expected}', got '${slug}'`);
     }
 }
 
 runVerification().catch(console.error);
+

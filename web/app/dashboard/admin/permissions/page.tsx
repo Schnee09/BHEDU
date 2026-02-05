@@ -280,7 +280,7 @@ function PermissionsContent() {
 
         async function loadUserPermissions() {
             try {
-                const res = await apiFetch(`/api/admin/permissions/users/${selectedUser.id}`);
+                const res = await apiFetch(`/api/admin/permissions/users/${selectedUser?.id}`);
                 if (res.ok) {
                     const data = await res.json();
                     setUserPermData(data);

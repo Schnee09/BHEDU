@@ -18,7 +18,7 @@ import { SkeletonTable, SkeletonStatCard } from '@/components/ui/skeleton';
 import { Select } from '@/components/ui/form';
 import { Icons } from '@/components/ui/Icons';
 import PageGuard from '@/components/PageGuard';
-import type { UserRole } from '@/lib/database.types';
+import type { UserRole } from '@/lib/auth/core';
 import MobileUserList from "@/components/users/MobileUserList";
 import UserFormModal from "@/components/users/UserFormModal";
 import ResetPasswordModal from "@/components/users/ResetPasswordModal";
@@ -61,9 +61,9 @@ const roleOptions = [
   { value: 'tutor', label: 'Gia sư' },
   { value: 'parent', label: 'Phụ huynh' },
   { value: 'staff', label: 'Nhân viên' },
-  { value: 'admin', label: 'Quản trị viên' },
+  { value: 'admin', label: 'Quản trềEviên' },
   { value: 'owner', label: 'Chủ trung tâm' },
-  { value: 'super_admin', label: 'Siêu quản trị' },
+  { value: 'super_admin', label: 'Siêu quản trềE },
 ];
 
 export default function UserManagementPage() {
@@ -120,7 +120,7 @@ function UserManagementPageContent() {
         setTotalPages(data.pagination?.pages || 1);
         logger.info('Users fetched successfully', { count: data.data?.length || 0 });
       } else {
-        throw new Error(data.error || 'Không thể tải danh sách người dùng');
+        throw new Error(data.error || 'Không thềEtải danh sách người dùng');
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to fetch users';
@@ -168,7 +168,7 @@ function UserManagementPageContent() {
         throw new Error(data.error || 'Failed to toggle user status');
       }
     } catch (err: any) {
-      toast.error('Lỗi', err.message || 'Không thể thay đổi trạng thái');
+      toast.error('Lỗi', err.message || 'Không thềEthay đổi trạng thái');
     } finally {
       setLoading(false);
     }
@@ -283,7 +283,7 @@ function UserManagementPageContent() {
             </h1>
             <p className="text-stone-500 font-bold ml-1 flex items-center gap-2">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-bubble" />
-              Hệ thống quản trị người dùng thông minh V2 Pro Max
+              HềEthống quản trềEngười dùng thông minh V2 Pro Max
             </p>
           </div>
 
@@ -309,7 +309,7 @@ function UserManagementPageContent() {
             <div className="flex-1 w-full relative">
               <Input
                 type="text"
-                placeholder="Tìm tên, email, số điện thoại..."
+                placeholder="Tìm tên, email, sềEđiện thoại..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-14 rounded-2xl bg-white/50 border-stone-100 hover:border-amber-500/30 transition-all font-bold group"
@@ -324,7 +324,7 @@ function UserManagementPageContent() {
                   onChange={(e) => setRoleFilter(e.target.value)}
                   className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest"
                   options={[
-                    { value: 'all', label: 'TẤT CẢ VAI TRÒ' },
+                    { value: 'all', label: 'TẤT CẢ VAI TRÁE },
                     ...roleOptions.map(o => ({ value: o.value, label: o.label.toUpperCase() }))
                   ]}
                 />
@@ -338,7 +338,7 @@ function UserManagementPageContent() {
                   options={[
                     { value: 'all', label: 'TRẠNG THÁI: TẤT CẢ' },
                     { value: 'true', label: 'HOẠT ĐỘNG' },
-                    { value: 'false', label: 'VÔ HIỆU HÓA' },
+                    { value: 'false', label: 'VÁEHIềE HÓA' },
                   ]}
                 />
               </div>
@@ -365,7 +365,7 @@ function UserManagementPageContent() {
                   <Icons.Users className="w-10 h-10 text-stone-300" />
                 </div>
                 <h3 className="text-xl font-black text-stone-900 dark:text-white mb-2">Không tìm thấy ai cả!</h3>
-                <p className="text-stone-400 font-medium">Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
+                <p className="text-stone-400 font-medium">Thử điều chỉnh bềElọc hoặc từ khóa tìm kiếm của bạn.</p>
                 <Button
                   variant="outline"
                   className="mt-8 rounded-xl"
@@ -375,7 +375,7 @@ function UserManagementPageContent() {
                     setActiveFilter('all');
                   }}
                 >
-                  Xóa tất cả bộ lọc
+                  Xóa tất cả bềElọc
                 </Button>
               </div>
             ) : (
@@ -407,7 +407,7 @@ function UserManagementPageContent() {
                     },
                     {
                       key: 'role',
-                      label: 'VAI TRÒ',
+                      label: 'VAI TRÁE,
                       render: (user) => (
                         <Badge variant={getRoleBadgeVariant(user.role) as any} className="px-4 py-1.5 rounded-full border-none shadow-sm font-black uppercase tracking-widest text-[10px]">
                           {getRoleLabel(user.role)}
@@ -456,7 +456,7 @@ function UserManagementPageContent() {
                               icon={<Icons.Edit className="w-4 h-4" />}
                               className="font-bold py-3"
                             >
-                              Chỉnh sửa hồ sơ
+                              Chỉnh sửa hềEsơ
                             </DropdownItem>
                             <DropdownItem
                               onClick={() => openResetPasswordModal(user)}
@@ -471,7 +471,7 @@ function UserManagementPageContent() {
                               icon={user.is_active ? <Icons.Error className="w-4 h-4" /> : <Icons.Success className="w-4 h-4" />}
                               className="font-bold py-3"
                             >
-                              {user.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                              {user.is_active ? 'Khóa tài khoản' : 'MềEkhóa tài khoản'}
                             </DropdownItem>
                             <div className="h-px bg-stone-100 dark:bg-white/5 my-1" />
                             <DropdownItem
@@ -483,7 +483,7 @@ function UserManagementPageContent() {
                               icon={<Icons.Trash className="w-4 h-4" />}
                               className="font-bold py-3"
                             >
-                              Xóa vĩnh viễn
+                              Xóa vĩnh viềE
                             </DropdownItem>
                           </DropdownMenu>
                         </div>

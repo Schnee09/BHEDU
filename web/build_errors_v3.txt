@@ -1,0 +1,22 @@
+app/api/admin/students/import/route.ts(119,15): error TS2353: Object literal may only specify known properties, and 'date_of_birth' does not exist in type '{ role: "student" | "super_admin" | "owner" | "admin" | "staff" | "teacher" | "tutor" | "parent"; status: "active" | "inactive" | "suspended"; is_managed: boolean; email?: string | undefined; ... 14 more ...; hourly_rate?: number | undefined; }'.
+app/api/admin/users/[id]/route.ts(57,5): error TS2322: Type 'ZodObject<{ status: ZodOptional<ZodDefault<ZodOptional<ZodEnum<{ active: "active"; inactive: "inactive"; suspended: "suspended"; }>>>>; full_name: ZodOptional<...>; ... 17 more ...; is_active: ZodOptional<...>; }, $strip>' is not assignable to type 'ZodType<{ id: string; }, unknown, $ZodTypeInternals<{ id: string; }, unknown>>'.
+  The types of '_output.id' are incompatible between these types.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+app/api/admin/users/import/route.ts(83,13): error TS2353: Object literal may only specify known properties, and 'is_active' does not exist in type '{ role: "super_admin" | "owner" | "admin" | "staff" | "teacher" | "tutor" | "parent" | "student"; status: "active" | "inactive" | "suspended"; is_managed: boolean; email?: string | undefined; ... 14 more ...; hourly_rate?: number | undefined; }'.
+app/api/attendance/bulk/route.ts(3,35): error TS2307: Cannot find module '@/lib/services/attendanceService' or its corresponding type declarations.
+app/api/attendance/reports/route.ts(2,35): error TS2307: Cannot find module '@/lib/services/attendanceService' or its corresponding type declarations.
+app/api/attendance/route.ts(26,56): error TS2345: Argument of type '"attendance.manage"' is not assignable to parameter of type 'PermissionCode'.
+app/api/auth/verify-invite/route.ts(61,47): error TS2339: Property 'full_name' does not exist on type '{ full_name: any; }[]'.
+app/dashboard/admin/permissions/page.tsx(283,76): error TS18047: 'selectedUser' is possibly 'null'.
+app/dashboard/grades/assignments/page.tsx(4,10): error TS2305: Module '"@/lib/gradeService"' has no exported member 'AssignmentCategory'.
+app/dashboard/grades/assignments/page.tsx(4,30): error TS2305: Module '"@/lib/gradeService"' has no exported member 'Assignment'.
+app/dashboard/users/page.tsx(21,15): error TS2305: Module '"@/lib/database.types"' has no exported member 'UserRole'.
+app/dashboard/users/page.tsx(386,19): error TS2322: Type '{ data: User[]; keyExtractor: (user: User) => string; className: string; columns: { key: string; label: string; render: (user: User) => Element; }[]; }' is not assignable to type 'IntrinsicAttributes & TableProps<User>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & TableProps<User>'.
+app/dashboard/users/page.tsx(470,31): error TS2322: Type '"success" | "danger"' is not assignable to type '"default" | "danger" | "warning" | undefined'.
+  Type '"success"' is not assignable to type '"default" | "danger" | "warning" | undefined'.
+lib/performanceMonitor.ts(255,50): error TS2345: Argument of type 'PerformanceBudget' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'PerformanceBudget'.
+scripts/verify-quick-add.ts(20,17): error TS2339: Property 'firstName' does not exist on type '{ first_name: string; last_name: string; }'.
+scripts/verify-quick-add.ts(20,28): error TS2339: Property 'lastName' does not exist on type '{ first_name: string; last_name: string; }'.

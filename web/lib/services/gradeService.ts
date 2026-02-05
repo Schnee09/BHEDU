@@ -223,3 +223,27 @@ export class GradeService {
 }
 
 export const gradeService = new GradeService();
+
+// Legacy type exports for backward compatibility with assignment management system
+// These reference the old assignment/category tables that may still exist
+export interface AssignmentCategory {
+    id: string;
+    name: string;
+    description?: string;
+    weight: number;
+    drop_lowest: number;
+    class_id: string;
+}
+
+export interface Assignment {
+    id: string;
+    title: string;
+    description?: string;
+    category_id?: string;
+    total_points: number;
+    due_date?: string;
+    assigned_date: string;
+    published: boolean;
+    class_id: string;
+    category?: AssignmentCategory;
+}

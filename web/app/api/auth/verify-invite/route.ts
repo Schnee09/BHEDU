@@ -58,7 +58,9 @@ export async function GET(request: NextRequest) {
                 email: invite.email,
                 phone: invite.phone,
                 role: invite.role,
-                invitedBy: invite.invited_by?.full_name,
+                invitedBy: Array.isArray(invite.invited_by)
+                    ? invite.invited_by[0]?.full_name
+                    : invite.invited_by?.full_name,
                 metadata: invite.metadata,
             },
         });

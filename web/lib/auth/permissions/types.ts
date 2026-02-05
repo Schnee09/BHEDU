@@ -34,6 +34,7 @@ export type Subject =
     | "Report"
     | "Setting"
     | "Audit"
+    | "Finance"
     | "all"; // All subjects
 
 /**

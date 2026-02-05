@@ -29,7 +29,7 @@ import { UserRole } from '@/lib/auth/core';
  * }
  */
 export function useAbility(): AbilityService {
-    const profile = useProfile();
+    const { profile } = useProfile();
 
     return useMemo(() => {
         if (!profile) {

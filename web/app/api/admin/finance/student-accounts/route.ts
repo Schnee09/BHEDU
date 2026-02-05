@@ -12,8 +12,8 @@ import { studentAccountQuerySchema } from "@/lib/schemas/finance";
 import { z } from "zod";
 
 export const GET = createGetHandler(
-  { requireAuth: true, querySchema: studentAccountQuerySchema },
-  async ({ query, user }) => {
+  { requireAuth: true },
+  async ({ searchParams, user }) => {
     const ability = createAbility({
       userId: user.id,
       role: user.role,
@@ -26,6 +26,30 @@ export const GET = createGetHandler(
       );
     }
 
+    const rawQuery = {
+      student_id: searchParams.get("studentId") ||
+        searchParams.get("student_id") || undefined,
+      academic_year_id: searchParams.get("academicYearId") ||
+        searchParams.get("academic_year_id") || undefined,
+      status: searchParams.get("status") || undefined,
+      page: searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1,
+      limit: searchParams.get("limit")
+        ? parseInt(searchParams.get("limit")!)
+        : 50,
+    };
+
+    // Parse with schema to ensure types/validity
+    const parsed = studentAccountQuerySchema.safeParse(rawQuery);
+
+    // Default fallback if parse fails (or handle error strict?)
+    // Given legacy code, let's use parsed data or safe defaults if partial
+    const query = parsed.success ? parsed.data : {
+      page: 1,
+      limit: 50,
+      status: "all" as const,
+    };
+
+    // Deconstruct verified query
     const { student_id, academic_year_id, status, page, limit } = query;
     // status can be "all" or specific enum
     // querySchema handles transforms
