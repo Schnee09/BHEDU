@@ -61,9 +61,9 @@ const roleOptions = [
   { value: 'tutor', label: 'Gia sư' },
   { value: 'parent', label: 'Phụ huynh' },
   { value: 'staff', label: 'Nhân viên' },
-  { value: 'admin', label: 'Quản trềEviên' },
+  { value: 'admin', label: 'Quản trị viên' },
   { value: 'owner', label: 'Chủ trung tâm' },
-  { value: 'super_admin', label: 'Siêu quản trềE },
+  { value: 'super_admin', label: 'Siêu quản trị viên' },
 ];
 
 export default function UserManagementPage() {
@@ -324,7 +324,9 @@ function UserManagementPageContent() {
                   onChange={(e) => setRoleFilter(e.target.value)}
                   className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest"
                   options={[
-                    { value: 'all', label: 'TẤT CẢ VAI TRÁE },
+                    {
+                      value: 'all', label: 'TẤT CẢ VAI TRÒ'
+                    },
                     ...roleOptions.map(o => ({ value: o.value, label: o.label.toUpperCase() }))
                   ]}
                 />
@@ -338,7 +340,7 @@ function UserManagementPageContent() {
                   options={[
                     { value: 'all', label: 'TRẠNG THÁI: TẤT CẢ' },
                     { value: 'true', label: 'HOẠT ĐỘNG' },
-                    { value: 'false', label: 'VÁEHIềE HÓA' },
+                    { value: 'false', label: 'VÔ HIỆU HÓA' },
                   ]}
                 />
               </div>
@@ -365,7 +367,7 @@ function UserManagementPageContent() {
                   <Icons.Users className="w-10 h-10 text-stone-300" />
                 </div>
                 <h3 className="text-xl font-black text-stone-900 dark:text-white mb-2">Không tìm thấy ai cả!</h3>
-                <p className="text-stone-400 font-medium">Thử điều chỉnh bềElọc hoặc từ khóa tìm kiếm của bạn.</p>
+                <p className="text-stone-400 font-medium">Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
                 <Button
                   variant="outline"
                   className="mt-8 rounded-xl"
@@ -375,7 +377,7 @@ function UserManagementPageContent() {
                     setActiveFilter('all');
                   }}
                 >
-                  Xóa tất cả bềElọc
+                  Xóa tất cả bộ lọc
                 </Button>
               </div>
             ) : (
@@ -407,7 +409,7 @@ function UserManagementPageContent() {
                     },
                     {
                       key: 'role',
-                      label: 'VAI TRÁE,
+                      label: 'VAI TRÒ',
                       render: (user) => (
                         <Badge variant={getRoleBadgeVariant(user.role) as any} className="px-4 py-1.5 rounded-full border-none shadow-sm font-black uppercase tracking-widest text-[10px]">
                           {getRoleLabel(user.role)}

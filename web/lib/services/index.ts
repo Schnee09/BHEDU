@@ -9,16 +9,16 @@ export {
   type ClassWithDetails,
 } from "./classService";
 
-export { EnrollmentService, enrollmentService } from "./enrollmentService";
-export type { Enrollment } from "./enrollmentService";
+export { EnrollmentService, enrollmentService } from "./EnrollmentService";
+export type { Enrollment } from "./EnrollmentService";
 
-export { SubjectService, subjectService } from "./subjectService";
+export { SubjectService, subjectService } from "./SubjectService";
 export type {
   CreateSubjectInput,
   Subject,
   SubjectListOptions,
   UpdateSubjectInput,
-} from "./subjectService";
+} from "./SubjectService";
 
 export { StudentService, studentService } from "./studentService";
 export type { Student, StudentWithEnrollments } from "./studentService";
