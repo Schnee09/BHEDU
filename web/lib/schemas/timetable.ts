@@ -7,7 +7,7 @@ import { notesSchema, timeStringSchema, uuidSchema } from "./common";
 // Let's check DB usage. Code usually passes clean integer.
 // We will accept number.
 
-export const createTimetableSlotSchema = z.object({
+const timetableSlotBaseSchema = z.object({
     class_id: uuidSchema.optional().nullable(),
     student_id: uuidSchema.optional().nullable(),
     subject_id: uuidSchema.optional().nullable(),
@@ -17,12 +17,17 @@ export const createTimetableSlotSchema = z.object({
     end_time: timeStringSchema,
     room: z.string().max(50).optional().nullable(),
     notes: notesSchema,
-}).refine((data) => data.class_id || data.student_id, {
-    message: "Either class_id or student_id is required",
-    path: ["class_id"],
 });
 
-export const updateTimetableSlotSchema = createTimetableSlotSchema.partial();
+export const createTimetableSlotSchema = timetableSlotBaseSchema.refine(
+    (data) => data.class_id || data.student_id,
+    {
+        message: "Either class_id or student_id is required",
+        path: ["class_id"],
+    },
+);
+
+export const updateTimetableSlotSchema = timetableSlotBaseSchema.partial();
 
 export const timetableQuerySchema = z.object({
     class_id: uuidSchema.optional(),
