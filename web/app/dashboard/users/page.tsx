@@ -389,7 +389,7 @@ function UserManagementPageContent() {
                   columns={[
                     {
                       key: 'full_name',
-                      label: 'NGƯỜI DÙNG',
+                      header: 'NGƯỜI DÙNG',
                       render: (user) => (
                         <div className="flex items-center gap-4 py-2">
                           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-stone-100 to-stone-50 dark:from-white/5 dark:to-white/2 flex items-center justify-center font-black text-stone-400 border border-stone-100 dark:border-white/5 group-hover:scale-105 transition-transform">
@@ -409,7 +409,7 @@ function UserManagementPageContent() {
                     },
                     {
                       key: 'role',
-                      label: 'VAI TRÒ',
+                      header: 'VAI TRÒ',
                       render: (user) => (
                         <Badge variant={getRoleBadgeVariant(user.role) as any} className="px-4 py-1.5 rounded-full border-none shadow-sm font-black uppercase tracking-widest text-[10px]">
                           {getRoleLabel(user.role)}
@@ -417,33 +417,34 @@ function UserManagementPageContent() {
                       )
                     },
                     {
-                      key: 'is_active',
-                      label: 'TRẠNG THÁI',
+                      key: 'status',
+                      header: 'TRẠNG THÁI',
                       render: (user) => (
-                        <div className="flex items-center gap-2">
-                          <div className={cn(
-                            "w-2 h-2 rounded-full",
-                            user.is_active ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-stone-300"
-                          )} />
-                          <span className={cn(
-                            "text-[10px] font-black uppercase tracking-widest",
-                            user.is_active ? "text-green-600 dark:text-green-500" : "text-stone-400"
-                          )}>
-                            {user.is_active ? 'Hoạt động' : 'Tạm khóa'}
+                        <Badge
+                          variant={user.is_active ? "success" : "danger"}
+                          className="px-4 py-1.5 rounded-full border-none shadow-sm font-black uppercase tracking-widest text-[10px]"
+                        >
+                          {user.is_active ? 'Đang hoạt động' : 'Đã khóa'}
+                        </Badge>
+                      )
+                    },
+                    {
+                      key: 'created_at',
+                      header: 'NGÀY THAM GIA',
+                      render: (user) => (
+                        <div className="flex flex-col">
+                          <span className="text-stone-900 dark:text-white font-bold tracking-tight">
+                            {new Date(user.created_at).toLocaleDateString('vi-VN')}
+                          </span>
+                          <span className="text-[10px] text-stone-400 font-black uppercase tracking-widest">
+                            {new Date(user.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
                       )
                     },
                     {
-                      key: 'created_at',
-                      label: 'NGÀY GIA NHẬP',
-                      render: (user) => (
-                        <span className="text-stone-400 text-xs font-bold">{new Date(user.created_at).toLocaleDateString('vi-VN')}</span>
-                      )
-                    },
-                    {
                       key: 'actions',
-                      label: '',
+                      header: '',
                       render: (user) => (
                         <div className="flex justify-end pr-2">
                           <DropdownMenu
@@ -458,7 +459,7 @@ function UserManagementPageContent() {
                               icon={<Icons.Edit className="w-4 h-4" />}
                               className="font-bold py-3"
                             >
-                              Chỉnh sửa hềEsơ
+                              Chỉnh sửa hồ sơ
                             </DropdownItem>
                             <DropdownItem
                               onClick={() => openResetPasswordModal(user)}
@@ -469,11 +470,11 @@ function UserManagementPageContent() {
                             </DropdownItem>
                             <DropdownItem
                               onClick={() => handleToggleActive(user)}
-                              variant={user.is_active ? "danger" : "success"}
+                              variant={user.is_active ? "danger" : "default"}
                               icon={user.is_active ? <Icons.Error className="w-4 h-4" /> : <Icons.Success className="w-4 h-4" />}
                               className="font-bold py-3"
                             >
-                              {user.is_active ? 'Khóa tài khoản' : 'MềEkhóa tài khoản'}
+                              {user.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                             </DropdownItem>
                             <div className="h-px bg-stone-100 dark:bg-white/5 my-1" />
                             <DropdownItem

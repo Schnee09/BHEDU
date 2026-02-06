@@ -401,87 +401,8 @@ export const Textarea: React.FC<TextareaProps> = ({
   );
 };
 
-// ============================================================================
-// TABLE COMPONENTS - NEUBRUTALISM STYLE
-// ============================================================================
+// Table components are exported from ./table at the top of this file
 
-interface TableColumn<T> {
-  key: keyof T | string;
-  label: string;
-  render?: (item: T) => ReactNode;
-  width?: string;
-  align?: 'left' | 'center' | 'right';
-}
-
-interface TableProps<T> {
-  columns: TableColumn<T>[];
-  data: T[];
-  keyExtractor: (item: T) => string;
-  emptyMessage?: string;
-  isLoading?: boolean;
-  onRowClick?: (item: T) => void;
-}
-
-export function Table<T>({
-  columns,
-  data,
-  keyExtractor,
-  emptyMessage = 'No data found',
-  isLoading = false,
-  onRowClick,
-}: TableProps<T>) {
-  if (isLoading) {
-    return <LoadingState message="Loading data..." />;
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className="text-center py-12 text-indigo-700 font-semibold bg-indigo-50 border-3 border-dashed border-indigo-300 rounded-2xl">
-        {emptyMessage}
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto border-3 border-black rounded-2xl shadow-[6px_6px_0px_#000]">
-      <table className="min-w-full">
-        <thead className="bg-indigo-100 border-b-3 border-black">
-          <tr>
-            {columns.map((column, idx) => (
-              <th
-                key={idx}
-                className={`px-6 py-4 text-${column.align || 'left'} text-sm font-bold text-indigo-900 uppercase tracking-wider`}
-                style={{ ...column.width ? { width: column.width } : undefined, fontFamily: 'Fredoka, sans-serif' }}
-              >
-                {column.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y-2 divide-indigo-100">
-          {data.map((item) => (
-            <tr
-              key={keyExtractor(item)}
-              onClick={() => onRowClick?.(item)}
-              className={onRowClick ? 'hover:bg-amber-50 cursor-pointer transition-colors' : 'hover:bg-indigo-50'}
-            >
-              {columns.map((column, idx) => (
-                <td
-                  key={idx}
-                  className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-900 text-${column.align || 'left'}`}
-                >
-                  {column.render
-                    ? column.render(item)
-                    : String((item as any)[column.key] ?? '-')}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 // ============================================================================
 // MODAL COMPONENTS - PREMIUM DUAL THEME STYLE
