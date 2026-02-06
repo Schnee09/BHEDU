@@ -1,5 +1,5 @@
 import { apiSuccess, createApiHandler } from "@/lib/api/apiHandler";
-import { enrollmentService } from "@/lib/services/enrollmentService";
+import { enrollmentService } from "@/lib/services/EnrollmentService";
 
 /**
  * Single Enrollment API

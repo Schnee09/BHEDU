@@ -10,7 +10,7 @@
 import { NextResponse } from "next/server";
 import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
 import { createSubjectSchema } from "@/lib/schemas/common";
-import { subjectService } from "@/lib/services/subjectService";
+import { subjectService } from "@/lib/services/SubjectService";
 import { CACHE_KEYS, CACHE_TTL, cached, invalidateCache } from "@/lib/cache";
 import { createClientFromRequest } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";

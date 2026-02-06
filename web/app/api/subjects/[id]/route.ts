@@ -10,8 +10,12 @@
 
 import { NextResponse } from "next/server";
 import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
-import { updateSubjectSchema, uuidSchema, type UpdateSubjectInput } from "@/lib/schemas";
-import { subjectService } from "@/lib/services/subjectService";
+import {
+  type UpdateSubjectInput,
+  updateSubjectSchema,
+  uuidSchema,
+} from "@/lib/schemas";
+import { subjectService } from "@/lib/services/SubjectService";
 import { NotFoundError } from "@/lib/api/errors";
 import { CACHE_KEYS, CACHE_TTL, cached, invalidateCache } from "@/lib/cache";
 
