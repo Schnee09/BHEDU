@@ -25,8 +25,7 @@ import { classService } from "@/lib/services/classService";
 import { studentService } from "@/lib/services/studentService";
 import { courseService } from "@/lib/services/courseService";
 import { tuitionService } from "@/lib/services/tuitionService";
-import { enrollmentService } from "@/lib/services/enrollmentService";
-import { subjectService } from "@/lib/services/subjectService";
+import { enrollmentService, subjectService } from "@/lib/services";
 
 /**
  * Bootstrap the container with default service registrations.

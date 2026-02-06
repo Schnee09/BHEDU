@@ -3,7 +3,7 @@ import {
   createApiHandler,
   createGetHandler,
 } from "@/lib/api/apiHandler";
-import { enrollmentService } from "@/lib/services/EnrollmentService";
+import { enrollmentService } from "@/lib/services";
 import { enrollmentQuerySchema } from "@/lib/schemas";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/api/errors";

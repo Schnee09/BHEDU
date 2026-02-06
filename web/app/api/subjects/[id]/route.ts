@@ -15,7 +15,7 @@ import {
   updateSubjectSchema,
   uuidSchema,
 } from "@/lib/schemas";
-import { subjectService } from "@/lib/services/SubjectService";
+import { subjectService } from "@/lib/services";
 import { NotFoundError } from "@/lib/api/errors";
 import { CACHE_KEYS, CACHE_TTL, cached, invalidateCache } from "@/lib/cache";
 
@@ -52,13 +52,13 @@ export const PUT = createApiHandler(
       throw new NotFoundError("Không tìm thấy môn học");
     }
 
-    const updated = await subjectService.updateSubject(params.id, body);
+    const result = await subjectService.updateSubject(params.id, body);
 
     // Invalidate cache
     invalidateCache("subject:");
     invalidateCache(CACHE_KEYS.SUBJECTS_ALL);
 
-    return apiSuccess(updated);
+    return apiSuccess(result);
   },
 );
 
@@ -74,7 +74,6 @@ export const DELETE = createGetHandler(
     if (!existing) {
       throw new NotFoundError("Không tìm thấy môn học");
     }
-
     await subjectService.deleteSubject(params.id, hardDelete);
 
     // Invalidate cache
