@@ -611,7 +611,7 @@ export default function StudentsPage() {
                       columns={[
                         {
                           key: 'select',
-                          label: (
+                          header: (
                             <input
                               type="checkbox"
                               checked={students.length > 0 && selectedIds.size === students.length}
@@ -631,7 +631,7 @@ export default function StudentsPage() {
                         },
                         {
                           key: 'full_name',
-                          label: 'Tên',
+                          header: 'Tên',
                           render: (student) => (
                             <Link
                               href={`/dashboard/students/${student.id}`}
@@ -643,7 +643,7 @@ export default function StudentsPage() {
                         },
                         {
                           key: 'student_code',
-                          label: 'Mã học sinh',
+                          header: 'Mã học sinh',
                           render: (student) => (
                             <span className="text-gray-600 font-mono text-sm">
                               {student.student_code || '-'}
@@ -652,14 +652,14 @@ export default function StudentsPage() {
                         },
                         {
                           key: 'email',
-                          label: 'Email',
+                          header: 'Email',
                           render: (student) => (
                             <span className="text-gray-600">{student.email || '-'}</span>
                           ),
                         },
                         {
                           key: 'grade_level',
-                          label: 'Lớp',
+                          header: 'Lớp',
                           render: (student) => (
                             student.grade_level ? (
                               <Badge variant="info">{student.grade_level}</Badge>
@@ -670,14 +670,14 @@ export default function StudentsPage() {
                         },
                         {
                           key: 'phone',
-                          label: 'Điện thoại',
+                          header: 'Điện thoại',
                           render: (student) => (
                             <span className="text-slate-700">{student.phone || '-'}</span>
                           ),
                         },
                         {
                           key: 'status',
-                          label: 'Trạng thái',
+                          header: 'Trạng thái',
                           render: (student) => (
                             <Badge variant={student.status === 'active' ? 'success' : 'default'}>
                               {student.status || 'active'}
@@ -686,7 +686,7 @@ export default function StudentsPage() {
                         },
                         {
                           key: 'created_at',
-                          label: 'Ngày tham gia',
+                          header: 'Ngày tham gia',
                           render: (student) => (
                             <span className="text-gray-600 text-sm">
                               {new Date(student.created_at).toLocaleDateString('vi-VN')}
@@ -695,7 +695,7 @@ export default function StudentsPage() {
                         },
                         {
                           key: 'actions',
-                          label: 'Hành động',
+                          header: 'Hành động',
                           width: '160px',
                           render: (student) => (
                             <div className="flex items-center gap-2">
