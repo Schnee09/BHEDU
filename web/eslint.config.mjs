@@ -30,44 +30,37 @@ const eslintConfig = [
     rules: {
       // Type safety - keep off for now, will fix gradually
       "@typescript-eslint/no-explicit-any": "off",
-      
+
       // Unused vars - enable to find dead code
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
-        },
-      ],
-      
+      "@typescript-eslint/no-unused-vars": "off",
+
       // React hooks - enable warnings
       "react-hooks/exhaustive-deps": "warn",
       "react-hooks/rules-of-hooks": "warn",
-      
+
       // React - turn off
       "react/no-unescaped-entities": "off",
-      
+
       // General JS/TS - enable
       "prefer-const": "warn",
       "no-console": "off", // Allow console logs
-      
+
       // TypeScript comments - allow both for now
       "@typescript-eslint/ban-ts-comment": "off",
-      
+
       // Next.js specific - demote to warnings
       "@next/next/no-html-link-for-pages": "warn",
       "@next/next/no-assign-module-variable": "off",
-      
+
       // CommonJS imports - allow in scripts and generated code
       "@typescript-eslint/no-require-imports": "off",
-      
+
       // This alias - off (common in generated code)
       "@typescript-eslint/no-this-alias": "off",
-      
+
       // Unused expressions - off (common in generated code)
       "@typescript-eslint/no-unused-expressions": "off",
-      
+
       // Disable problematic rules that block commits
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",

@@ -204,7 +204,7 @@ export class ClassRepository
           full_name,
           email,
           subject_id,
-          subjects (
+          subjects!profiles_subject_id_fkey (
             id,
             name,
             code

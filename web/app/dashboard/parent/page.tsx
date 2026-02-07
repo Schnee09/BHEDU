@@ -26,7 +26,8 @@ export default function ParentDashboardPage() {
     if (!profile?.id) return;
     try {
       setLoading(true);
-      const res = await fetch('/api/parent/links');
+      const { apiFetch } = await import("@/lib/api/client");
+      const res = await apiFetch('/api/parent/links');
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error || 'Failed to fetch');

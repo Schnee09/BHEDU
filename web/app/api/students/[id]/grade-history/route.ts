@@ -45,7 +45,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get all grades for this student with subject info
-    let gradesQuery = supabase
+    const gradesQuery = supabase
       .from('grades')
       .select(`
         id,

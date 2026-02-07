@@ -13,7 +13,7 @@ import { Button, Input, Textarea } from "@/components/ui";
 import { splitFullName } from "@/lib/utils/names";
 
 export default function ProfilePage() {
-  const { profile: userProfile, loading: profileLoading } = useProfile();
+  const { profile: userProfile, loading: profileLoading, refreshProfile } = useProfile();
   const toast = useToast();
 
   const [formData, setFormData] = useState({
@@ -29,18 +29,21 @@ export default function ProfilePage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const supabase = createClient();
 
+  const [hasInitialized, setHasInitialized] = useState(false);
+
   useEffect(() => {
-    if (userProfile) {
+    if (userProfile && !hasInitialized) {
       setFormData({
         full_name: userProfile.full_name || "",
         email: userProfile.email || "",
         phone: userProfile.phone || "",
         address: userProfile.address || "",
         date_of_birth: userProfile.date_of_birth || "",
-        personal_email: (userProfile as any).personal_email || "",
+        personal_email: userProfile.personal_email || "",
       });
+      setHasInitialized(true);
     }
-  }, [userProfile]);
+  }, [userProfile, hasInitialized]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,14 +52,28 @@ export default function ProfilePage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Lỗi", "Chưa xác thực");
+        toast.error("Lỗi", "Vui lòng đăng nhập lại để tiếp tục");
         setSaving(false);
         return;
       }
 
       const { first_name, last_name } = splitFullName(formData.full_name);
 
-      const { error } = await supabase
+      console.log('[ProfileUpdate] Attempting update:', {
+        profile_id: userProfile?.id,
+        auth_uid: user.id,
+        payload: {
+          full_name: formData.full_name,
+          first_name,
+          last_name,
+          phone: formData.phone,
+          personal_email: formData.personal_email
+        }
+      });
+
+      // 1. Update Profile Table (Official Source)
+      // After identity consolidation, profiles.id === auth.users.id
+      const { error: profileError, data: updatedData } = await supabase
         .from("profiles")
         .update({
           full_name: formData.full_name,
@@ -66,17 +83,39 @@ export default function ProfilePage() {
           address: formData.address,
           date_of_birth: formData.date_of_birth || null,
           personal_email: formData.personal_email || null,
+          user_id: user.id, // Ensure user_id link is maintained
+          updated_at: new Date().toISOString()
         })
-        .eq("user_id", user.id);
+        .eq("id", user.id) // Use auth user ID (guaranteed correct after consolidation)
+        .select();
 
-      if (error) {
-        toast.error("Lỗi", error.message);
+
+      // 2. Sync with Auth Metadata (to prevent staleness in headers/sessions)
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          full_name: formData.full_name,
+          first_name: first_name,
+          last_name: last_name,
+        }
+      });
+
+      if (profileError) {
+        console.error('[ProfileUpdate] Supabase Profile Error:', profileError);
+        toast.error("Lỗi cập nhật hồ sơ", profileError.message);
+      } else if (!updatedData || updatedData.length === 0) {
+        console.error('[ProfileUpdate] Update executed but 0 rows changed.');
+        toast.error("Không thể lưu", "Hồ sơ không tồn tại hoặc bạn không có quyền chỉnh sửa.");
       } else {
-        toast.success("Thành công", "Hồ sơ đã được cập nhật!");
+        if (authError) {
+          console.warn('[ProfileUpdate] Auth metadata sync failed (non-critical):', authError);
+        }
+
+        await refreshProfile(); // Refresh the global context
+        toast.success("Thành công", "Hồ sơ của bạn đã được cập nhật Pro Max!");
       }
-    } catch (err) {
-      toast.error("Lỗi", "Không thể cập nhật hồ sơ");
-      console.error(err);
+    } catch (err: any) {
+      console.error('[ProfileUpdate] Crash:', err);
+      toast.error("Lỗi hệ thống", err?.message || "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.");
     } finally {
       setSaving(false);
     }
@@ -307,6 +346,35 @@ export default function ProfilePage() {
         isOpen={showPasswordModal}
         onClose={() => setShowPasswordModal(false)}
       />
+      {/* Debug Data (Temporary for Troubleshooting) */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="mt-12 p-6 rounded-3xl bg-gray-900 text-gray-300 font-mono text-xs overflow-auto">
+          <h3 className="text-amber-500 font-bold mb-4 uppercase tracking-widest text-sm">Debug Information (Dev Only)</h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-gray-500 mb-1">Row IDs:</p>
+              <p>Profile ID: <span className="text-white">{userProfile?.id}</span></p>
+              <p>User ID: <span className="text-white">{userProfile?.user_id}</span></p>
+            </div>
+            <div>
+              <p className="text-gray-500 mb-1">Raw Profiles DB Data:</p>
+              <pre className="mt-1 bg-black/30 p-2 rounded">
+                {JSON.stringify(userProfile, null, 2)}
+              </pre>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[10px] border-gray-700 hover:bg-gray-800"
+                onClick={() => refreshProfile()}
+              >
+                Force Context Refresh
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

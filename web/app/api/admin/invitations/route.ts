@@ -1,88 +1,74 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+    apiSuccess,
+    createApiHandler,
+    createGetHandler,
+} from "@/lib/api/apiHandler";
 import { createServiceClient } from "@/lib/supabase/server";
 import { randomUUID } from "crypto";
+import { z } from "zod";
 
-export async function GET(request: NextRequest) {
-    try {
-        const supabase = createServiceClient();
+/**
+ * GET /api/admin/invitations - List all invitations
+ * Restricted to admin/staff
+ */
+export const GET = createGetHandler({
+    allowedRoles: ["admin", "staff", "super_admin", "owner"],
+}, async () => {
+    const supabase = createServiceClient(); // Use service client for DB access (RLS bypass)
 
-        // Check if user is admin/staff
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, {
-                status: 401,
-            });
-        }
+    const { data: invites, error } = await supabase
+        .from("user_invitations")
+        .select(`
+            *,
+            invited_by:profiles!user_invitations_invited_by_fkey (
+                full_name
+            )
+        `)
+        .order("created_at", { ascending: false });
 
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", user.id)
-            .single();
+    if (error) throw error;
 
-        if (
-            !profile ||
-            !["admin", "staff", "super_admin"].includes(profile.role)
-        ) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        }
+    return apiSuccess({ invites }, {});
+});
 
-        const { data: invites, error } = await supabase
-            .from("user_invitations")
-            .select(`
-        *,
-        invited_by:profiles!user_invitations_invited_by_fkey (
-          full_name
-        )
-      `)
-            .order("created_at", { ascending: false });
+/**
+ * POST /api/admin/invitations - Create a new invitation
+ * Restricted to admin/staff
+ */
+export const POST = createApiHandler({
+    allowedRoles: ["admin", "staff", "super_admin", "owner"],
+    bodySchema: z.object({
+        email: z.string().email().optional().or(z.literal("")),
+        phone: z.string().optional(),
+        role: z.string(),
+        expires_in_days: z.number().min(1).max(30).default(7),
+        metadata: z.record(z.string(), z.any()).optional(),
+    }),
+}, async ({ body, user }) => {
+    const { email, phone, role, expires_in_days, metadata = {} } = body;
+    const supabase = createServiceClient();
 
-        if (error) throw error;
+    const token = randomUUID();
+    const expires_at = new Date();
+    expires_at.setDate(expires_at.getDate() + expires_in_days);
 
-        return NextResponse.json({ invites });
-    } catch (error: any) {
-        console.error("List invites error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-}
+    const { data: invite, error } = await supabase
+        .from("user_invitations")
+        .insert({
+            email: email || null,
+            phone: phone || null,
+            role,
+            token,
+            invited_by: user.id,
+            expires_at: expires_at.toISOString(),
+            metadata,
+        })
+        .select()
+        .single();
 
-export async function POST(request: NextRequest) {
-    try {
-        const { email, phone, role, expires_in_days = 7, metadata = {} } =
-            await request.json();
-        const supabase = createServiceClient();
+    if (error) throw error;
 
-        // Check if user is admin/staff
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, {
-                status: 401,
-            });
-        }
-
-        const token = randomUUID();
-        const expires_at = new Date();
-        expires_at.setDate(expires_at.getDate() + expires_in_days);
-
-        const { data: invite, error } = await supabase
-            .from("user_invitations")
-            .insert({
-                email,
-                phone,
-                role,
-                token,
-                invited_by: user.id,
-                expires_at: expires_at.toISOString(),
-                metadata,
-            })
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        return NextResponse.json({ success: true, invite });
-    } catch (error: any) {
-        console.error("Create invite error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-}
+    return apiSuccess({ invite }, {
+        message: "Lời mời đã được tạo thành công",
+    });
+});

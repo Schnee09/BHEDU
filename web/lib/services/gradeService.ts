@@ -169,7 +169,7 @@ export class GradeService {
      * Get student transcript for an academic year (or all time)
      */
     async getStudentTranscript(studentId: string, academicYearId?: string) {
-        let query = this.supabase
+        const query = this.supabase
             .from("grades")
             .select(`
         grade_value,

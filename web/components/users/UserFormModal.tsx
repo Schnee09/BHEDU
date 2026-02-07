@@ -318,7 +318,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
                                 <span className="font-mono font-bold text-red-600 dark:text-red-400 tracking-wider bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded">
                                     {createdUserInfo?.password}
                                 </span>
-                                <button onClick={() => copyToClipboard(createdUserInfo?.password!, 'Mật khẩu')} className="p-1 hover:bg-stone-100 dark:hover:bg-white/5 rounded transition-colors">
+                                <button onClick={() => copyToClipboard(createdUserInfo?.password || '', 'Mật khẩu')} className="p-1 hover:bg-stone-100 dark:hover:bg-white/5 rounded transition-colors">
                                     {copiedField === 'Mật khẩu' ? <Icons.Check className="w-4 h-4 text-green-500" /> : <Icons.Copy className="w-4 h-4 text-stone-400" />}
                                 </button>
                             </div>

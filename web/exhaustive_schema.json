@@ -1,0 +1,202 @@
+{
+  "profiles": [
+    "id",
+    "user_id",
+    "first_name",
+    "last_name",
+    "full_name",
+    "email",
+    "date_of_birth",
+    "phone",
+    "address",
+    "emergency_contact",
+    "role",
+    "created_at",
+    "updated_at",
+    "student_id",
+    "grade_level",
+    "gender",
+    "enrollment_date",
+    "status",
+    "photo_url",
+    "department",
+    "is_active",
+    "created_by",
+    "notes",
+    "student_code",
+    "subject_id",
+    "phone_verified",
+    "preferred_auth_method",
+    "account_status",
+    "status_changed_at",
+    "status_changed_by",
+    "status_note",
+    "is_managed",
+    "deleted_at",
+    "updated_by",
+    "personal_email"
+  ],
+  "classes": [
+    "id",
+    "name",
+    "teacher_id",
+    "created_at",
+    "grade_level",
+    "academic_year_id",
+    "subject_group_id",
+    "max_capacity",
+    "sessions_per_week",
+    "class_type",
+    "course_id",
+    "status",
+    "room",
+    "schedule",
+    "capacity",
+    "updated_at",
+    "deleted_at",
+    "created_by",
+    "updated_by"
+  ],
+  "attendance": [
+    "id",
+    "student_id",
+    "class_id",
+    "date",
+    "status",
+    "remarks",
+    "marked_by",
+    "created_at",
+    "timetable_slot_id",
+    "deleted_at",
+    "created_by",
+    "updated_by",
+    "updated_at"
+  ],
+  "attendance_reports": [
+    "(Empty Table)"
+  ],
+  "courses": [
+    "id",
+    "code",
+    "name",
+    "name_vi",
+    "description",
+    "subject_id",
+    "grade_level",
+    "credits",
+    "hours_per_week",
+    "is_required",
+    "is_active",
+    "created_at",
+    "updated_at",
+    "semester",
+    "academic_year_id",
+    "deleted_at",
+    "created_by",
+    "updated_by"
+  ],
+  "enrollments": [
+    "id",
+    "student_id",
+    "class_id",
+    "enrollment_date",
+    "deleted_at",
+    "created_by",
+    "updated_by",
+    "updated_at",
+    "status"
+  ],
+  "guardians": [
+    "(Error fetching columns: Could not find the table 'public.guardians' in the schema cache)"
+  ],
+  "student_accounts": [
+    "(Empty Table)"
+  ],
+  "invoices": [
+    "(Empty Table)"
+  ],
+  "payments": [
+    "(Empty Table)"
+  ],
+  "import_logs": [
+    "(Empty Table)"
+  ],
+  "notifications": [
+    "(Empty Table)"
+  ],
+  "grades": [
+    "(Empty Table)"
+  ],
+  "student_profiles": [
+    "id",
+    "profile_id",
+    "student_code",
+    "grade_level",
+    "enrollment_date",
+    "parent_name",
+    "parent_phone",
+    "notes",
+    "created_at",
+    "updated_at",
+    "deleted_at",
+    "created_by",
+    "updated_by"
+  ],
+  "teacher_profiles": [
+    "id",
+    "profile_id",
+    "department",
+    "specialization",
+    "teaching_subjects",
+    "hourly_rate",
+    "bio",
+    "created_at",
+    "updated_at",
+    "deleted_at",
+    "created_by",
+    "updated_by",
+    "teacher_type"
+  ],
+  "user_invitations": [
+    "(Empty Table)"
+  ],
+  "parent_student_links": [
+    "id",
+    "parent_id",
+    "student_id",
+    "relationship",
+    "status",
+    "requested_at",
+    "reviewed_at",
+    "reviewed_by",
+    "rejection_reason",
+    "can_view_grades",
+    "can_view_attendance",
+    "can_view_finance",
+    "can_view_schedule",
+    "notes",
+    "created_at",
+    "updated_at"
+  ],
+  "teacher_subjects": [
+    "id",
+    "profile_id",
+    "subject_id",
+    "is_primary",
+    "created_at",
+    "updated_at"
+  ],
+  "teacher_workload": [
+    "teacher_id",
+    "full_name",
+    "classes_assigned",
+    "total_slots",
+    "total_hours_per_week"
+  ],
+  "student_conducts": [
+    "(Empty Table)"
+  ],
+  "weekly_notes": [
+    "(Empty Table)"
+  ]
+}

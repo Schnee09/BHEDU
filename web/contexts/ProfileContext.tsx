@@ -6,6 +6,7 @@ import { UserRole } from "@/lib/auth/core";
 
 export type Profile = {
   id: string;
+  user_id: string;
   full_name: string | null;
   first_name: string | null;
   last_name: string | null;
@@ -15,42 +16,49 @@ export type Profile = {
   phone?: string | null;
   address?: string | null;
   date_of_birth?: string | null;
+  personal_email?: string | null;
   created_at?: string;
 };
 
 interface ProfileContextType {
   profile: Profile | null;
   loading: boolean;
+  refreshProfile: () => Promise<void>;
 }
 
-const ProfileContext = createContext<ProfileContextType>({ profile: null, loading: true });
+const ProfileContext = createContext<ProfileContextType>({
+  profile: null,
+  loading: true,
+  refreshProfile: async () => { }
+});
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
+  const fetchProfile = async () => {
+    try {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.user) {
         console.log('[ProfileProvider] No session found');
+        setProfile(null);
         setLoading(false);
         return;
       }
 
-      // Try user_id first
+      // Try user_id first (preferred link to auth.users)
       let { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, user_id")
+        .select("id, user_id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, personal_email")
         .eq("user_id", session.user.id)
         .maybeSingle();
 
-      // If not found by user_id, try by id
+      // Fallback to id (some legacy records might use id = user_id)
       if (!data && !error) {
         const result = await supabase
           .from("profiles")
-          .select("id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, user_id")
+          .select("id, user_id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, personal_email")
           .eq("id", session.user.id)
           .maybeSingle();
 
@@ -59,22 +67,23 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       }
 
       if (data) {
-        console.log('[ProfileProvider] Profile loaded:', { role: data.role, id: data.id });
-        setProfile(data);
+        setProfile(data as Profile);
       } else if (error) {
-        console.error('[ProfileProvider] Database error fetching profile:', error);
-      } else {
-        console.warn('[ProfileProvider] No profile found for authenticated user. Ensure profiles are created on signup.');
+        console.error('[ProfileProvider] Error fetching profile:', error);
       }
-
+    } catch (err) {
+      console.error('[ProfileProvider] Unexpected error:', err);
+    } finally {
       setLoading(false);
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchProfile();
   }, []);
 
   return (
-    <ProfileContext.Provider value={{ profile, loading }}>
+    <ProfileContext.Provider value={{ profile, loading, refreshProfile: fetchProfile }}>
       {children}
     </ProfileContext.Provider>
   );

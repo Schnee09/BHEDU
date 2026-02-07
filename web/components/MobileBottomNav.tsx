@@ -30,7 +30,7 @@ export default function MobileBottomNav() {
     const role = profile?.role as string;
 
     // Define navigation items based on role
-    let mainNavItems = [
+    const mainNavItems = [
       { name: "Trang chủ", href: "/dashboard", icon: Home, color: "var(--color-primary)" },
     ];
 

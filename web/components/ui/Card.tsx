@@ -48,6 +48,7 @@ export const Card = memo(function Card({
     </Component>
   );
 });
+Card.displayName = 'Card';
 
 interface CardHeaderProps {
   children?: ReactNode;
@@ -69,6 +70,12 @@ export const CardHeader = memo(({ children, className = '', title, subtitle }: C
     </div>
   );
 });
+CardHeader.displayName = 'CardHeader';
+
+interface CardBodyProps {
+  children: ReactNode;
+  className?: string;
+}
 
 interface CardBodyProps {
   children: ReactNode;
@@ -82,6 +89,12 @@ export const CardBody = memo(({ children, className = '' }: CardBodyProps) => {
     </div>
   );
 });
+CardBody.displayName = 'CardBody';
+
+interface CardContentProps {
+  children: ReactNode;
+  className?: string;
+}
 
 interface CardContentProps {
   children: ReactNode;
@@ -95,6 +108,12 @@ export const CardContent = memo(function CardContent({ children, className = '' 
     </div>
   );
 });
+CardContent.displayName = 'CardContent';
+
+interface CardDescriptionProps {
+  children: ReactNode;
+  className?: string;
+}
 
 interface CardDescriptionProps {
   children: ReactNode;
@@ -108,6 +127,12 @@ export const CardDescription = memo(function CardDescription({ children, classNa
     </p>
   );
 });
+CardDescription.displayName = 'CardDescription';
+
+interface CardTitleProps {
+  children: ReactNode;
+  className?: string;
+}
 
 interface CardTitleProps {
   children: ReactNode;
@@ -121,6 +146,12 @@ export const CardTitle = memo(function CardTitle({ children, className = '' }: C
     </h3>
   );
 });
+CardTitle.displayName = 'CardTitle';
+
+interface CardFooterProps {
+  children: ReactNode;
+  className?: string;
+}
 
 interface CardFooterProps {
   children: ReactNode;
@@ -134,6 +165,7 @@ export const CardFooter = memo(function CardFooter({ children, className = '' }:
     </div>
   );
 });
+CardFooter.displayName = 'CardFooter';
 
 /**
  * Stat Card - DUAL THEME Style Dashboard Metrics
@@ -234,5 +266,6 @@ export const StatCard = memo(function StatCard({
     </div>
   );
 });
+StatCard.displayName = 'StatCard';
 
 export default Card;

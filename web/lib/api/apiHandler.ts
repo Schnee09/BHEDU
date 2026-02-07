@@ -164,18 +164,23 @@ export function createGetHandler<TParams = Record<string, string>>(
 
 /**
  * Standardized success response
+ * Provides 'data' root key but also merges object keys for legacy compatibility
  */
 export function apiSuccess<T>(data: T, meta?: Record<string, unknown>) {
-    return NextResponse.json(
-        {
-            success: true,
-            data,
-            ...meta,
-        },
-        {
-            headers: { "X-API-Version": API_VERSION },
-        },
-    );
+    const response: Record<string, any> = {
+        success: true,
+        data,
+        ...meta,
+    };
+
+    // Compatibility: Merge keys if data is an object and not an array
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+        Object.assign(response, data);
+    }
+
+    return NextResponse.json(response, {
+        headers: { "X-API-Version": API_VERSION },
+    });
 }
 
 /**
@@ -186,18 +191,20 @@ export function apiPaginated<T>(
     pagination: { page: number; pageSize: number; total: number },
     meta?: Record<string, unknown>,
 ) {
-    return NextResponse.json(
-        {
-            success: true,
-            data,
-            pagination: {
-                ...pagination,
-                totalPages: Math.ceil(pagination.total / pagination.pageSize),
-            },
-            ...meta,
+    const response: Record<string, any> = {
+        success: true,
+        data,
+        pagination: {
+            ...pagination,
+            totalPages: Math.ceil(pagination.total / pagination.pageSize),
         },
-        {
-            headers: { "X-API-Version": API_VERSION },
-        },
-    );
+        ...meta,
+    };
+
+    // Compatibility: Try to infer a plural key from the request if possible
+    // Or callers can provide it in meta. For now, 'data' is the primary source.
+
+    return NextResponse.json(response, {
+        headers: { "X-API-Version": API_VERSION },
+    });
 }

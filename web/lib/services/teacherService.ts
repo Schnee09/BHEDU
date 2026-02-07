@@ -80,7 +80,7 @@ export class TeacherService {
                 email,
                 phone,
                 photo_url,
-                teacher_profiles!inner (
+                teacher_profiles!teacher_profiles_profile_id_fkey!inner (
                     teacher_type,
                     specialization,
                     teaching_subjects,

@@ -45,6 +45,7 @@ export type PermissionCode =
     | "students.create"
     | "students.edit"
     | "students.delete"
+    | "students.import"
     // Classes
     | "classes.manage"
     | "classes.view"
@@ -69,6 +70,7 @@ export type PermissionCode =
     // Attendance
     | "attendance.view"
     | "attendance.mark"
+    | "attendance.manage"
     | "attendance.reports"
     // Finance
     | "finance.view.all"
