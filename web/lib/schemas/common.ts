@@ -133,7 +133,7 @@ export const studentStatusSchema = z.enum([
 export const genderSchema = z.enum(["male", "female", "other"]);
 
 /** Semester */
-export const semesterSchema = z.enum(["1", "2", "final"]);
+export const semesterSchema = z.string();
 
 /** Grade component (matches database enum) */
 export const gradeComponentSchema = z.enum([

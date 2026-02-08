@@ -5,18 +5,18 @@
  */
 
 export enum EvaluationType {
-  MIDTERM = 'midterm',   // Giữa kỳ (50%)
-  FINAL = 'final'        // Cuối kỳ (50%)
+  MIDTERM = "midterm", // Giữa kỳ (50%)
+  FINAL = "final", // Cuối kỳ (50%)
 }
 
 // Backwards compatibility - map old types to new
 export const LEGACY_GRADE_TYPES = {
-  ORAL: 'oral',
-  FIFTEEN_MIN: 'fifteen_min', 
-  ONE_PERIOD: 'one_period',
+  ORAL: "oral",
+  FIFTEEN_MIN: "fifteen_min",
+  ONE_PERIOD: "one_period",
 } as const;
 
-export type Semester = '1' | '2' | 'year';
+export type Semester = "1" | "2" | "year" | string;
 
 export interface GradeRow {
   student_id: string;
@@ -48,10 +48,12 @@ export interface SaveResult {
  */
 export function calculateAverageGrade(
   midterm: number | null | undefined,
-  final: number | null | undefined
+  final: number | null | undefined,
 ): number | null {
-  if (midterm !== null && midterm !== undefined && 
-      final !== null && final !== undefined) {
+  if (
+    midterm !== null && midterm !== undefined &&
+    final !== null && final !== undefined
+  ) {
     return Math.round(((midterm + final) / 2) * 10) / 10;
   }
   if (midterm !== null && midterm !== undefined) {
@@ -67,14 +69,14 @@ export function calculateAverageGrade(
  * Grade weight configuration
  */
 export const GRADE_WEIGHTS = {
-  [EvaluationType.MIDTERM]: 0.5,  // 50%
-  [EvaluationType.FINAL]: 0.5,    // 50%
+  [EvaluationType.MIDTERM]: 0.5, // 50%
+  [EvaluationType.FINAL]: 0.5, // 50%
 } as const;
 
 /**
  * Vietnamese labels for grade types
  */
 export const GRADE_LABELS = {
-  [EvaluationType.MIDTERM]: 'Giữa kỳ',
-  [EvaluationType.FINAL]: 'Cuối kỳ',
+  [EvaluationType.MIDTERM]: "Giữa kỳ",
+  [EvaluationType.FINAL]: "Cuối kỳ",
 } as const;

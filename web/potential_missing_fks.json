@@ -1,0 +1,152 @@
+[
+  {
+    "table": "all_teachers",
+    "column": "user_id",
+    "type": "uuid"
+  },
+  {
+    "table": "grades",
+    "column": "assignment_id",
+    "type": "uuid"
+  },
+  {
+    "table": "grades",
+    "column": "category_id",
+    "type": "uuid"
+  },
+  {
+    "table": "class_statistics",
+    "column": "class_id",
+    "type": "uuid"
+  },
+  {
+    "table": "assignments",
+    "column": "teacher_id",
+    "type": "uuid"
+  },
+  {
+    "table": "timetable_slots",
+    "column": "student_id",
+    "type": "uuid"
+  },
+  {
+    "table": "v_active_profiles",
+    "column": "user_id",
+    "type": "uuid"
+  },
+  {
+    "table": "v_active_profiles",
+    "column": "student_id",
+    "type": "text"
+  },
+  {
+    "table": "classes",
+    "column": "subject_group_id",
+    "type": "uuid"
+  },
+  {
+    "table": "profiles",
+    "column": "user_id",
+    "type": "uuid"
+  },
+  {
+    "table": "profiles",
+    "column": "student_id",
+    "type": "text"
+  },
+  {
+    "table": "payment_allocations",
+    "column": "payment_id",
+    "type": "uuid"
+  },
+  {
+    "table": "payment_allocations",
+    "column": "invoice_id",
+    "type": "uuid"
+  },
+  {
+    "table": "invoice_items",
+    "column": "invoice_id",
+    "type": "uuid"
+  },
+  {
+    "table": "v_teacher_subjects",
+    "column": "profile_id",
+    "type": "uuid"
+  },
+  {
+    "table": "v_teacher_subjects",
+    "column": "subject_id",
+    "type": "uuid"
+  },
+  {
+    "table": "payment_schedule_installments",
+    "column": "schedule_id",
+    "type": "uuid"
+  },
+  {
+    "table": "teacher_workload",
+    "column": "teacher_id",
+    "type": "uuid"
+  },
+  {
+    "table": "v_active_classes",
+    "column": "subject_group_id",
+    "type": "uuid"
+  },
+  {
+    "table": "student_conducts",
+    "column": "student_id",
+    "type": "uuid"
+  },
+  {
+    "table": "student_notes",
+    "column": "student_id",
+    "type": "uuid"
+  },
+  {
+    "table": "student_documents",
+    "column": "student_id",
+    "type": "uuid"
+  },
+  {
+    "table": "tutors",
+    "column": "user_id",
+    "type": "uuid"
+  },
+  {
+    "table": "student_performance_summary",
+    "column": "student_id",
+    "type": "uuid"
+  },
+  {
+    "table": "permission_audit_logs",
+    "column": "user_id",
+    "type": "uuid"
+  },
+  {
+    "table": "v_active_students",
+    "column": "user_id",
+    "type": "uuid"
+  },
+  {
+    "table": "v_active_students",
+    "column": "student_id",
+    "type": "text"
+  },
+  {
+    "table": "user_permissions",
+    "column": "user_id",
+    "type": "uuid"
+  },
+  {
+    "table": "audit_logs",
+    "column": "user_id",
+    "type": "uuid"
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_id",
+    "type": "text"
+  }
+]

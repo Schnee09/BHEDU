@@ -16,26 +16,29 @@ import {
 } from "@/lib/role-utils";
 
 describe("Role Utilities", () => {
-    describe("ROLE_CONFIG", () => {
-        it("should have all four roles defined", () => {
-            expect(ROLE_CONFIG.admin).toBeDefined();
-            expect(ROLE_CONFIG.staff).toBeDefined();
-            expect(ROLE_CONFIG.teacher).toBeDefined();
-            expect(ROLE_CONFIG.student).toBeDefined();
-        });
+    it("should have all required roles defined", () => {
+        expect(ROLE_CONFIG.super_admin).toBeDefined();
+        expect(ROLE_CONFIG.owner).toBeDefined();
+        expect(ROLE_CONFIG.admin).toBeDefined();
+        expect(ROLE_CONFIG.staff).toBeDefined();
+        expect(ROLE_CONFIG.teacher).toBeDefined();
+        expect(ROLE_CONFIG.tutor).toBeDefined();
+        expect(ROLE_CONFIG.parent).toBeDefined();
+        expect(ROLE_CONFIG.student).toBeDefined();
+    });
 
-        it("should have correct Vietnamese labels", () => {
-            expect(ROLE_CONFIG.admin.label).toBe("Quản trị viên");
-            expect(ROLE_CONFIG.staff.label).toBe("Nhân viên");
-            expect(ROLE_CONFIG.teacher.label).toBe("Giáo viên");
-            expect(ROLE_CONFIG.student.label).toBe("Học sinh");
-        });
+    it("should have correct Vietnamese labels", () => {
+        expect(ROLE_CONFIG.admin.label).toBe("Quản trị viên");
+        expect(ROLE_CONFIG.staff.label).toBe("Nhân viên");
+        expect(ROLE_CONFIG.teacher.label).toBe("Giáo viên");
+        expect(ROLE_CONFIG.student.label).toBe("Học sinh");
+        expect(ROLE_CONFIG.owner.label).toBe("Chủ sở hữu");
+    });
 
-        it("should have unique colors for each role", () => {
-            const colors = getAllRoles().map((role) => ROLE_CONFIG[role].color);
-            const uniqueColors = new Set(colors);
-            expect(uniqueColors.size).toBe(4);
-        });
+    it("should have unique colors for each role", () => {
+        const colors = getAllRoles().map((role) => ROLE_CONFIG[role].color);
+        const uniqueColors = new Set(colors);
+        expect(uniqueColors.size).toBe(8);
     });
 
     describe("getRoleConfig", () => {
@@ -132,12 +135,16 @@ describe("Role Utilities", () => {
     });
 
     describe("getAllRoles", () => {
-        it("should return all four roles", () => {
+        it("should return all eight roles", () => {
             const roles = getAllRoles();
-            expect(roles).toHaveLength(4);
+            expect(roles).toHaveLength(8);
+            expect(roles).toContain("super_admin");
+            expect(roles).toContain("owner");
             expect(roles).toContain("admin");
             expect(roles).toContain("staff");
             expect(roles).toContain("teacher");
+            expect(roles).toContain("tutor");
+            expect(roles).toContain("parent");
             expect(roles).toContain("student");
         });
     });

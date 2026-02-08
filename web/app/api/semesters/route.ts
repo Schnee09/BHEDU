@@ -3,36 +3,30 @@
  * GET /api/semesters - Fetch all semesters
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createClientFromRequest } from '@/lib/supabase/server'
-import { logger } from '@/lib/logger'
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createClientFromRequest(req)
-    
+    const supabase = createServiceClient();
+
     const { data: semesters, error } = await supabase
-      .from('semesters')
-      .select('id, name, code, start_date, end_date')
-      .order('start_date', { ascending: false })
+      .from("semesters")
+      .select("id, name, code, start_date, end_date, is_active")
+      .order("start_date", { ascending: false });
 
     if (error) {
-      logger.warn('Error fetching semesters', { error: error.message })
-      return NextResponse.json({ success: true, semesters: [] })
+      logger.warn("Error fetching semesters", { error: error.message });
+      return NextResponse.json({ success: true, semesters: [] });
     }
 
-    // Add is_active: true as default since column might not exist in some records
-    const semestersWithActive = (semesters || []).map(s => ({
-      ...s,
-      is_active: false
-    }))
-
-    return NextResponse.json({ success: true, semesters: semestersWithActive })
+    return NextResponse.json({ success: true, semesters: semesters || [] });
   } catch (error: any) {
-    logger.error('Error fetching semesters', error)
+    logger.error("Error fetching semesters", error);
     return NextResponse.json(
       { success: false, error: error.message, semesters: [] },
-      { status: 200 }
-    )
+      { status: 200 },
+    );
   }
 }

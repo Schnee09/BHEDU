@@ -90,6 +90,7 @@ export interface IClassRepository {
   update(id: string, data: UpdateClassInput): Promise<Class>;
   delete(id: string): Promise<void>;
   getEnrollmentCount(classId: string): Promise<number>;
+  getClassStudents(classId: string): Promise<any[]>;
 }
 
 // ============================================
@@ -298,5 +299,41 @@ export class ClassRepository
     }
 
     return count || 0;
+  }
+
+  /**
+   * Get all students in a class
+   */
+  async getClassStudents(classId: string): Promise<any[]> {
+    const { data: enrollments, error } = await this.supabase
+      .from("enrollments")
+      .select(`
+        id,
+        student_id,
+        status,
+        enrollment_date,
+        profiles:student_id (
+          id,
+          email,
+          full_name,
+          student_code,
+          grade_level
+        )
+      `)
+      .eq("class_id", classId);
+
+    if (error) {
+      throw new Error(`Failed to fetch class students: ${error.message}`);
+    }
+
+    // Flatten for consistent API response
+    return (enrollments || []).map((e) => ({
+      id: e.student_id,
+      student_id: e.student_id,
+      enrollment_id: e.id,
+      status: e.status || "active",
+      enrollment_date: e.enrollment_date,
+      ...(e.profiles as any),
+    })).filter((s) => s.full_name);
   }
 }

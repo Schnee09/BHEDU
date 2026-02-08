@@ -66,10 +66,12 @@ function GradeEntryPageContent() {
   // State - Semester
   const [selectedSemester, setSelectedSemester] = useState<Semester>('1');
 
-  // State - Students & Grades
   const [students, setStudents] = useState<Student[]>([]);
   const [grades, setGrades] = useState<Record<string, Partial<GradeRow>>>({});
   const [errors, setErrors] = useState<Record<string, GradeError[]>>({});
+  const [semesters, setSemesters] = useState<any[]>([]);
+  const [classSubjects, setClassSubjects] = useState<any[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
 
   // State - UI
   const [loading, setLoading] = useState(false);
@@ -121,17 +123,28 @@ function GradeEntryPageContent() {
     const loadInitialData = async () => {
       setLoading(true);
       try {
-        console.log('🔄 Loading classes...');
-        const res = await getClasses({ limit: 100 });
-        const classList = (res.data || []) as ClassOption[];
-        setClasses(classList);
+        console.log('🔄 Loading initial data (classes & semesters)...');
+        const [classesRes, semestersRes] = await Promise.all([
+          getClasses({ limit: 100 }),
+          apiFetch('/api/semesters').then(res => res.json())
+        ]);
 
+        const classList = (classesRes.data || []) as ClassOption[];
+        setClasses(classList);
         if (classList.length > 0) {
           setSelectedClassId(classList[0].id);
         }
+
+        const semesterList = semestersRes.semesters || [];
+        setSemesters(semesterList);
+
+        const activeSemester = semesterList.find((s: any) => s.is_active);
+        if (activeSemester) {
+          setSelectedSemester(activeSemester.code as Semester);
+        }
       } catch (err) {
-        console.error("Failed to load classes", err);
-        toast.error('Không thể tải danh sách lớp');
+        console.error("Failed to load initial data", err);
+        toast.error('Không thể tải các thông tin cơ bản');
       } finally {
         setLoading(false);
       }
@@ -140,6 +153,35 @@ function GradeEntryPageContent() {
     loadInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Load subjects when class changes
+  useEffect(() => {
+    if (!selectedClassId) {
+      setClassSubjects([]);
+      setSelectedSubjectId(null);
+      return;
+    }
+
+    const loadSubjects = async () => {
+      try {
+        const res = await apiFetch(`/api/classes/${selectedClassId}/subjects`).then(r => r.json());
+        const subjects = res.data?.subjects || [];
+        setClassSubjects(subjects);
+        if (subjects.length > 0) {
+          // If previous subject exists in new list, keep it, otherwise take first
+          if (!subjects.some((s: any) => s.id === selectedSubjectId)) {
+            setSelectedSubjectId(subjects[0].id);
+          }
+        } else {
+          setSelectedSubjectId(null);
+        }
+      } catch (err) {
+        console.error("Failed to load subjects", err);
+      }
+    };
+
+    loadSubjects();
+  }, [selectedClassId]);
 
   // Load students when class changes
   useEffect(() => {
@@ -158,7 +200,9 @@ function GradeEntryPageContent() {
         // Fetch students and grades in parallel
         const [studentsData, gradesRes] = await Promise.all([
           getClassStudents(selectedClassId),
-          getGrades({ class_id: selectedClassId, semester: selectedSemester, limit: 1000 })
+          selectedSubjectId
+            ? getGrades({ class_id: selectedClassId, subject_id: selectedSubjectId, semester: selectedSemester, limit: 1000 })
+            : Promise.resolve({ data: [] })
         ]);
 
         // Students might be raw array (from my client.ts)
@@ -204,7 +248,7 @@ function GradeEntryPageContent() {
 
     loadStudents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedClassId, selectedSemester]);
+  }, [selectedClassId, selectedSemester, selectedSubjectId]);
 
   // Handle save
   const handleSave = async () => {
@@ -213,11 +257,10 @@ function GradeEntryPageContent() {
 
     try {
       console.log('📤 Saving grades...');
-      const selectedClass = classes.find(c => c.id === selectedClassId);
-      const subjectId = selectedClass?.subject_id || selectedClass?.course_id;
+      const subjectId = selectedSubjectId;
 
       if (!subjectId) {
-        toast.error("Không tìm thấy thông tin môn học của lớp này");
+        toast.error("Vui lòng chọn môn học");
         return;
       }
 
@@ -399,8 +442,34 @@ function GradeEntryPageContent() {
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value as Semester)}
               >
-                <option value="1">Học kỳ 1</option>
-                <option value="2">Học kỳ 2</option>
+                {semesters.length > 0 ? (
+                  semesters.map(s => (
+                    <option key={s.id} value={s.code}>
+                      {s.name} {s.is_active ? '(Hiện tại)' : ''}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="1">Học kỳ 1</option>
+                    <option value="2">Học kỳ 2</option>
+                  </>
+                )}
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Môn học</label>
+              <Select
+                value={selectedSubjectId || ''}
+                onChange={(e) => setSelectedSubjectId(e.target.value || null)}
+                disabled={classSubjects.length === 0}
+              >
+                <option value="">Chọn môn học...</option>
+                {classSubjects.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.code})
+                  </option>
+                ))}
               </Select>
             </div>
           </div>

@@ -174,14 +174,49 @@ export const POST = createApiHandler(
         const supabase = createServiceClient();
         const repository = new GradeRepository(supabase);
 
-        // Add graded_by field
-        const gradesWithGrader = body.grades.map((g: any) => ({
-            ...g,
-            graded_by: user.id,
-        }));
+        // Resolve "current" academic year if needed
+        let academicYearId = body.academic_year_id;
+        if (academicYearId === "current") {
+            const { data: year } = await supabase
+                .from("academic_years")
+                .select("id")
+                .eq("is_current", true)
+                .single();
+            academicYearId = year?.id;
+        }
 
-        // TODO: Phase 3 - Update repository types to match consolidated schema
-        const created = await repository.createMany(gradesWithGrader as any);
+        // Propagate top-level metadata to individual grades
+        console.log(
+            "[V2 Grades POST] Incoming body:",
+            JSON.stringify({
+                class_id: body.class_id,
+                subject_id: body.subject_id,
+                semester: body.semester,
+                component_type: body.component_type,
+                grades_count: body.grades.length,
+            }),
+        );
+
+        const gradesWithMetadata = body.grades.map((g: any) => {
+            const { notes, ...rest } = g;
+            return {
+                ...rest,
+                class_id: g.class_id || body.class_id,
+                subject_id: g.subject_id || body.subject_id,
+                semester: g.semester || body.semester,
+                academic_year_id: g.academic_year_id || academicYearId,
+                component_type: g.component_type || body.component_type,
+                feedback: g.feedback || notes,
+                graded_by: user.id,
+            };
+        });
+
+        console.log(
+            "[V2 Grades POST] First grade with metadata:",
+            JSON.stringify(gradesWithMetadata[0]),
+        );
+
+        const created = await repository.upsertMany(gradesWithMetadata as any);
 
         return apiSuccess({ grades: created }, { _status: 201 });
     },

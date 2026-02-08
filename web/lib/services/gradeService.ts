@@ -65,9 +65,9 @@ export class GradeService {
             .from("grades")
             .select(`
                 student_id,
-                evaluation_type,
-                grade_value,
-                student:profiles!grades_student_id_fkey(
+                component_type,
+                score,
+                student:profiles!student_id(
                     full_name,
                     student_profiles(student_code)
                 )
@@ -103,10 +103,10 @@ export class GradeService {
             }
 
             const row = studentMap.get(record.student_id);
-            if (record.evaluation_type === EvaluationType.MIDTERM) {
-                row.midterm = record.grade_value;
-            } else if (record.evaluation_type === EvaluationType.FINAL) {
-                row.final = record.grade_value;
+            if (record.component_type === EvaluationType.MIDTERM) {
+                row.midterm = record.score;
+            } else if (record.component_type === EvaluationType.FINAL) {
+                row.final = record.score;
             }
 
             row.average = calculateAverageGrade(row.midterm, row.final);
@@ -141,8 +141,8 @@ export class GradeService {
                     class_id,
                     subject_id: subject.id,
                     semester,
-                    evaluation_type: EvaluationType.MIDTERM,
-                    grade_value: s.grades[EvaluationType.MIDTERM],
+                    component_type: EvaluationType.MIDTERM,
+                    score: s.grades[EvaluationType.MIDTERM],
                 });
             }
             if (s.grades[EvaluationType.FINAL] !== undefined) {
@@ -151,8 +151,8 @@ export class GradeService {
                     class_id,
                     subject_id: subject.id,
                     semester,
-                    evaluation_type: EvaluationType.FINAL,
-                    grade_value: s.grades[EvaluationType.FINAL],
+                    component_type: EvaluationType.FINAL,
+                    score: s.grades[EvaluationType.FINAL],
                 });
             }
         }
@@ -164,7 +164,7 @@ export class GradeService {
             .from("grades")
             .upsert(recordsToInsert, {
                 onConflict:
-                    "student_id,class_id,subject_id,semester,evaluation_type",
+                    "student_id,class_id,subject_id,component_type,semester",
             });
 
         if (error) throw error;
@@ -179,11 +179,11 @@ export class GradeService {
         const query = this.supabase
             .from("grades")
             .select(`
-        grade_value,
-        evaluation_type,
+        score,
+        component_type,
         semester,
-        class:classes!grades_class_id_fkey(name),
-        subject:subjects!grades_subject_id_fkey(name, code)
+        class:classes!class_id(name),
+        subject:subjects!subject_id(name, code)
       `)
             .eq("student_id", studentId);
 

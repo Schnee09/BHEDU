@@ -18,7 +18,6 @@ import {
 
 const pointsEarnedSchema = z.number().min(0, "Points must be at least 0");
 const scoreSchema = z.coerce.number().min(0).max(10);
-const coefficientSchema = z.coerce.number().int().min(1).max(3);
 
 // ============================================
 // ASSIGNMENTS
@@ -59,21 +58,19 @@ export const createGradeSchema = z.object({
     late: z.boolean().optional().default(false),
     excused: z.boolean().optional().default(false),
     missing: z.boolean().optional().default(false),
-    feedback: z.string().max(2000).optional().nullable(),
 
     // Traditional model
     class_id: uuidSchema.optional().nullable(),
     subject_id: uuidSchema.optional().nullable(),
     score: scoreSchema.optional().nullable(),
     component_type: gradeComponentSchema.optional().nullable(),
-    coefficient: coefficientSchema.default(1),
     semester: semesterSchema.optional().nullable(),
-    academic_year_id: uuidSchema.optional().nullable(),
+    academic_year_id: uuidSchema.or(z.literal("current")).optional().nullable(),
 
     // Common
-    notes: z.string().max(500).optional().nullable(),
-    recorded_at: z.string().datetime().optional(),
-    graded_at: z.string().datetime().optional(), // Alias
+    feedback: z.string().max(2000).optional().nullable(),
+    notes: z.string().max(500).optional().nullable(), // Alias for feedback
+    graded_at: z.string().datetime().optional(),
 });
 
 export const updateGradeSchema = createGradeSchema.partial().extend({
@@ -89,7 +86,8 @@ export const bulkGradeEntrySchema = z.object({
     class_id: uuidSchema.optional(),
     subject_id: uuidSchema.optional(),
     semester: semesterSchema.optional(),
-    academic_year_id: uuidSchema.optional(),
+    component_type: gradeComponentSchema.optional(),
+    academic_year_id: uuidSchema.or(z.literal("current")).optional(),
     grades: z.array(z.object({
         student_id: uuidSchema,
         points_earned: pointsEarnedSchema.optional().nullable(),
@@ -144,7 +142,6 @@ export const gradeQuerySchema = paginationSchema.extend({
     semester: z.string().optional(),
     academic_year_id: uuidSchema.optional(),
     min_score: z.coerce.number().min(0).max(10).optional(),
-    max_score: z.coerce.number().min(0).max(10).optional(),
 });
 
 // ============================================

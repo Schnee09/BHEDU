@@ -1,0 +1,3609 @@
+{
+  "payments": {
+    "required": [
+      "id",
+      "student_id",
+      "amount",
+      "payment_date",
+      "status",
+      "created_at",
+      "updated_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "invoice_id": {
+        "description": "Note:\nThis is a Foreign Key to `invoices.id`.<fk table='invoices' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "payment_method_id": {
+        "description": "Note:\nThis is a Foreign Key to `payment_methods.id`.<fk table='payment_methods' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "amount": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "reference_number": {
+        "format": "text",
+        "type": "string"
+      },
+      "payment_date": {
+        "default": "CURRENT_DATE",
+        "format": "date",
+        "type": "string"
+      },
+      "received_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "status": {
+        "default": "received",
+        "enum": [
+          "pending",
+          "completed",
+          "failed",
+          "refunded",
+          "received",
+          "verified"
+        ],
+        "format": "public.payment_status",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "all_teachers": {
+    "properties": {
+      "id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "full_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "email": {
+        "format": "text",
+        "type": "string"
+      },
+      "phone": {
+        "format": "text",
+        "type": "string"
+      },
+      "photo_url": {
+        "format": "text",
+        "type": "string"
+      },
+      "department": {
+        "format": "text",
+        "type": "string"
+      },
+      "teacher_type": {
+        "enum": [
+          "full_time",
+          "part_time",
+          "tutor"
+        ],
+        "format": "public.teacher_type",
+        "type": "string"
+      },
+      "specialization": {
+        "format": "text",
+        "type": "string"
+      },
+      "teaching_subjects": {
+        "format": "uuid[]",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "hourly_rate": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "bio": {
+        "format": "text",
+        "type": "string"
+      },
+      "display_type": {
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "grades": {
+    "description": "Student grades for assignments",
+    "required": [
+      "id",
+      "student_id"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "assignment_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "score": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "feedback": {
+        "format": "text",
+        "type": "string"
+      },
+      "graded_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "graded_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "points_earned": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "component_type": {
+        "format": "text",
+        "type": "string"
+      },
+      "semester": {
+        "format": "text",
+        "type": "string"
+      },
+      "academic_year_id": {
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "category_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "subject_id": {
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "class_statistics": {
+    "properties": {
+      "class_id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "total_students": {
+        "format": "bigint",
+        "type": "integer"
+      },
+      "total_attendance_records": {
+        "format": "bigint",
+        "type": "integer"
+      },
+      "present_count": {
+        "format": "bigint",
+        "type": "integer"
+      },
+      "attendance_rate": {
+        "format": "numeric",
+        "type": "number"
+      }
+    },
+    "type": "object"
+  },
+  "parent_student_links": {
+    "description": "Links parent accounts to their children with approval workflow",
+    "required": [
+      "id",
+      "parent_id",
+      "student_id"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "parent_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "relationship": {
+        "default": "parent",
+        "format": "text",
+        "type": "string"
+      },
+      "status": {
+        "default": "pending",
+        "description": "pending: awaiting staff approval, approved: active link, rejected: denied, revoked: deactivated",
+        "format": "text",
+        "type": "string"
+      },
+      "requested_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "reviewed_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "reviewed_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "rejection_reason": {
+        "format": "text",
+        "type": "string"
+      },
+      "can_view_grades": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "can_view_attendance": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "can_view_finance": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "can_view_schedule": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "assignments": {
+    "required": [
+      "id",
+      "class_id",
+      "title"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "category_id": {
+        "description": "Note:\nThis is a Foreign Key to `assignment_categories.id`.<fk table='assignment_categories' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": {
+        "format": "text",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "due_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "max_points": {
+        "default": 100,
+        "format": "numeric",
+        "type": "number"
+      },
+      "teacher_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "role_permissions": {
+    "required": [
+      "id",
+      "role",
+      "permission_code"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "role": {
+        "format": "character varying",
+        "maxLength": 20,
+        "type": "string"
+      },
+      "permission_code": {
+        "description": "Note:\nThis is a Foreign Key to `permission_definitions.code`.<fk table='permission_definitions' column='code'/>",
+        "format": "character varying",
+        "maxLength": 100,
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "student_profiles": {
+    "required": [
+      "id",
+      "profile_id"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "profile_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_code": {
+        "format": "character varying",
+        "type": "string"
+      },
+      "grade_level": {
+        "format": "text",
+        "type": "string"
+      },
+      "enrollment_date": {
+        "default": "CURRENT_DATE",
+        "format": "date",
+        "type": "string"
+      },
+      "parent_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "parent_phone": {
+        "format": "text",
+        "type": "string"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "timetable_slots": {
+    "required": [
+      "id",
+      "day_of_week",
+      "start_time",
+      "end_time"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "subject_id": {
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "teacher_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "semester_id": {
+        "description": "Note:\nThis is a Foreign Key to `semesters.id`.<fk table='semesters' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "day_of_week": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "start_time": {
+        "format": "time without time zone",
+        "type": "string"
+      },
+      "end_time": {
+        "format": "time without time zone",
+        "type": "string"
+      },
+      "room": {
+        "format": "text",
+        "type": "string"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "student_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "subjects": {
+    "description": "Academic subjects (Math, Science, etc.)",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "code": {
+        "format": "text",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "credits": {
+        "default": 1,
+        "format": "integer",
+        "type": "integer"
+      },
+      "is_active": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "v_active_profiles": {
+    "properties": {
+      "id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "first_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "last_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "full_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "email": {
+        "format": "text",
+        "type": "string"
+      },
+      "date_of_birth": {
+        "format": "date",
+        "type": "string"
+      },
+      "phone": {
+        "format": "text",
+        "type": "string"
+      },
+      "address": {
+        "format": "text",
+        "type": "string"
+      },
+      "emergency_contact": {
+        "format": "text",
+        "type": "string"
+      },
+      "role": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "student_id": {
+        "format": "text",
+        "type": "string"
+      },
+      "grade_level": {
+        "format": "text",
+        "type": "string"
+      },
+      "gender": {
+        "format": "character varying",
+        "maxLength": 10,
+        "type": "string"
+      },
+      "enrollment_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "status": {
+        "format": "character varying",
+        "maxLength": 20,
+        "type": "string"
+      },
+      "photo_url": {
+        "format": "text",
+        "type": "string"
+      },
+      "department": {
+        "format": "text",
+        "type": "string"
+      },
+      "is_active": {
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "student_code": {
+        "format": "character varying",
+        "maxLength": 50,
+        "type": "string"
+      },
+      "subject_id": {
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "phone_verified": {
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "preferred_auth_method": {
+        "format": "text",
+        "type": "string"
+      },
+      "account_status": {
+        "format": "text",
+        "type": "string"
+      },
+      "status_changed_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "status_changed_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "status_note": {
+        "format": "text",
+        "type": "string"
+      },
+      "is_managed": {
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "evaluation_types": {
+    "required": [
+      "id",
+      "name",
+      "code",
+      "weight"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "code": {
+        "format": "text",
+        "type": "string"
+      },
+      "weight": {
+        "default": 1,
+        "format": "integer",
+        "type": "integer"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "payment_methods": {
+    "description": "Available payment methods (cash, bank transfer, card, etc)",
+    "required": [
+      "id",
+      "name",
+      "created_at",
+      "updated_at",
+      "type"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "requires_reference": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "is_active": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "type": {
+        "enum": [
+          "cash",
+          "bank_transfer",
+          "credit_card",
+          "cheque",
+          "digital_wallet",
+          "other"
+        ],
+        "format": "public.payment_method_type",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "classes": {
+    "description": "PRIMARY table for class/course management.",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "teacher_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "grade_level": {
+        "format": "text",
+        "type": "string"
+      },
+      "academic_year_id": {
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "subject_group_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "max_capacity": {
+        "default": 12,
+        "format": "integer",
+        "type": "integer"
+      },
+      "sessions_per_week": {
+        "default": 2,
+        "format": "integer",
+        "type": "integer"
+      },
+      "class_type": {
+        "default": "group",
+        "format": "character varying",
+        "maxLength": 20,
+        "type": "string"
+      },
+      "course_id": {
+        "description": "Note:\nThis is a Foreign Key to `courses.id`.<fk table='courses' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "status": {
+        "default": "active",
+        "format": "text",
+        "type": "string"
+      },
+      "room": {
+        "format": "text",
+        "type": "string"
+      },
+      "schedule": {
+        "format": "text",
+        "type": "string"
+      },
+      "capacity": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "assignment_categories": {
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "weight": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "school_settings": {
+    "description": "School-wide configuration settings",
+    "required": [
+      "id",
+      "key"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "key": {
+        "format": "text",
+        "type": "string"
+      },
+      "value": {
+        "format": "text",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "payment_schedules": {
+    "required": [
+      "id",
+      "name",
+      "academic_year_id",
+      "schedule_type",
+      "created_at",
+      "updated_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "academic_year_id": {
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "schedule_type": {
+        "default": "installment",
+        "enum": [
+          "installment",
+          "milestone",
+          "custom"
+        ],
+        "format": "public.schedule_type",
+        "type": "string"
+      },
+      "is_active": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "profiles": {
+    "required": [
+      "id"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "first_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "last_name": {
+        "description": "User last name",
+        "format": "text",
+        "type": "string"
+      },
+      "full_name": {
+        "description": "Auto-computed full name from first_name and last_name",
+        "format": "text",
+        "type": "string"
+      },
+      "email": {
+        "description": "User email address (synced from auth.users)",
+        "format": "text",
+        "type": "string"
+      },
+      "date_of_birth": {
+        "description": "Date of birth",
+        "format": "date",
+        "type": "string"
+      },
+      "phone": {
+        "description": "Contact phone number",
+        "format": "text",
+        "type": "string"
+      },
+      "address": {
+        "description": "Residential address",
+        "format": "text",
+        "type": "string"
+      },
+      "emergency_contact": {
+        "description": "Emergency contact information (phone or email)",
+        "format": "text",
+        "type": "string"
+      },
+      "role": {
+        "description": "User roles: super_admin, owner, admin, staff, teacher, tutor, parent, student",
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "student_id": {
+        "description": "Unique student ID number (school-assigned)",
+        "format": "text",
+        "type": "string"
+      },
+      "grade_level": {
+        "description": "Current grade level",
+        "format": "text",
+        "type": "string"
+      },
+      "gender": {
+        "description": "Gender",
+        "format": "character varying",
+        "maxLength": 10,
+        "type": "string"
+      },
+      "enrollment_date": {
+        "default": "CURRENT_DATE",
+        "description": "Date when student enrolled",
+        "format": "date",
+        "type": "string"
+      },
+      "status": {
+        "default": "active",
+        "description": "User status (active/inactive/etc)",
+        "format": "character varying",
+        "maxLength": 20,
+        "type": "string"
+      },
+      "photo_url": {
+        "description": "URL to profile photo",
+        "format": "text",
+        "type": "string"
+      },
+      "department": {
+        "description": "Department (for teachers/staff)",
+        "format": "text",
+        "type": "string"
+      },
+      "is_active": {
+        "default": true,
+        "description": "Whether user account is active",
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_by": {
+        "description": "User ID who created this profile",
+        "format": "uuid",
+        "type": "string"
+      },
+      "notes": {
+        "description": "Additional notes",
+        "format": "text",
+        "type": "string"
+      },
+      "student_code": {
+        "description": "Vietnamese student code format: HS + Year + 3-digit sequential (e.g., HS2025001). \r\nLegacy format STU-YYYY-NNNN supported for backward compatibility.",
+        "format": "character varying",
+        "maxLength": 50,
+        "type": "string"
+      },
+      "subject_id": {
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "phone_verified": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "preferred_auth_method": {
+        "default": "email",
+        "format": "text",
+        "type": "string"
+      },
+      "account_status": {
+        "default": "active",
+        "format": "text",
+        "type": "string"
+      },
+      "status_changed_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "status_changed_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "status_note": {
+        "description": "Reason for suspension or deactivation",
+        "format": "text",
+        "type": "string"
+      },
+      "is_managed": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "personal_email": {
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "payment_allocations": {
+    "description": "Tracks how payments are allocated to specific invoices",
+    "required": [
+      "id",
+      "payment_id",
+      "invoice_id",
+      "amount",
+      "created_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "payment_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "invoice_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "amount": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "weekly_notes": {
+    "required": [
+      "id",
+      "slot_id",
+      "week_start_date"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "slot_id": {
+        "description": "Note:\nThis is a Foreign Key to `timetable_slots.id`.<fk table='timetable_slots' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "week_start_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "settings": {
+    "description": "Key-value store for school configuration settings",
+    "required": [
+      "id",
+      "key"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "key": {
+        "format": "text",
+        "type": "string"
+      },
+      "value": {
+        "format": "text",
+        "type": "string"
+      },
+      "value_json": {
+        "format": "jsonb"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "category": {
+        "default": "general",
+        "format": "text",
+        "type": "string"
+      },
+      "is_public": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "teacher_profiles": {
+    "required": [
+      "id",
+      "profile_id"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "profile_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "department": {
+        "format": "text",
+        "type": "string"
+      },
+      "specialization": {
+        "format": "text",
+        "type": "string"
+      },
+      "teaching_subjects": {
+        "format": "uuid[]",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "hourly_rate": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "bio": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "teacher_type": {
+        "default": "full_time",
+        "enum": [
+          "full_time",
+          "part_time",
+          "tutor"
+        ],
+        "format": "public.teacher_type",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "attendance_reports": {
+    "description": "Pre-generated attendance summary reports.",
+    "required": [
+      "id",
+      "report_type",
+      "date_from",
+      "date_to"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "report_type": {
+        "format": "character varying",
+        "maxLength": 50,
+        "type": "string"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "date_from": {
+        "format": "date",
+        "type": "string"
+      },
+      "date_to": {
+        "format": "date",
+        "type": "string"
+      },
+      "total_days": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "present_count": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "absent_count": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "late_count": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "excused_count": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "attendance_rate": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "report_data": {
+        "format": "jsonb"
+      },
+      "generated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "generated_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "invoice_items": {
+    "description": "Line items on invoices detailing what fees are being charged",
+    "required": [
+      "id",
+      "invoice_id",
+      "description",
+      "unit_price",
+      "total_price",
+      "created_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "invoice_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "fee_type_id": {
+        "description": "Note:\nThis is a Foreign Key to `fee_types.id`.<fk table='fee_types' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "quantity": {
+        "default": 1,
+        "format": "integer",
+        "type": "integer"
+      },
+      "unit_price": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "total_price": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "grading_scales": {
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "scale": {
+        "format": "jsonb"
+      },
+      "is_default": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "user_invitations": {
+    "description": "Manages invite tokens for role-based user registration",
+    "required": [
+      "id",
+      "email",
+      "role",
+      "token",
+      "expires_at",
+      "invited_by"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "email": {
+        "format": "text",
+        "type": "string"
+      },
+      "phone": {
+        "format": "text",
+        "type": "string"
+      },
+      "role": {
+        "format": "text",
+        "type": "string"
+      },
+      "token": {
+        "description": "Secure random token sent to invitee",
+        "format": "text",
+        "type": "string"
+      },
+      "expires_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "invited_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "used_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "used_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "metadata": {
+        "description": "Additional data like department, subjects to teach, etc.",
+        "format": "jsonb"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "import_errors": {
+    "required": [
+      "id",
+      "import_log_id",
+      "row_number",
+      "error_message"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "import_log_id": {
+        "description": "Note:\nThis is a Foreign Key to `import_logs.id`.<fk table='import_logs' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "row_number": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "field_name": {
+        "format": "character varying",
+        "maxLength": 100,
+        "type": "string"
+      },
+      "error_type": {
+        "format": "character varying",
+        "maxLength": 50,
+        "type": "string"
+      },
+      "error_message": {
+        "format": "text",
+        "type": "string"
+      },
+      "row_data": {
+        "format": "jsonb"
+      },
+      "severity": {
+        "default": "error",
+        "format": "character varying",
+        "maxLength": 20,
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "v_teacher_subjects": {
+    "description": "Convenient view for querying teacher-subject relationships",
+    "properties": {
+      "profile_id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "full_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "email": {
+        "format": "text",
+        "type": "string"
+      },
+      "subject_id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "subject_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "subject_code": {
+        "format": "text",
+        "type": "string"
+      },
+      "is_primary": {
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "semesters": {
+    "required": [
+      "id",
+      "name",
+      "code",
+      "start_date",
+      "end_date"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "code": {
+        "format": "text",
+        "type": "string"
+      },
+      "start_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "end_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "is_active": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "payment_schedule_installments": {
+    "description": "Individual installments in a payment schedule",
+    "required": [
+      "schedule_id",
+      "installment_number",
+      "due_date",
+      "percentage",
+      "created_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "format": "uuid",
+        "type": "string"
+      },
+      "schedule_id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "installment_number": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "integer",
+        "type": "integer"
+      },
+      "due_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "percentage": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "teacher_workload": {
+    "properties": {
+      "teacher_id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "full_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "classes_assigned": {
+        "format": "bigint",
+        "type": "integer"
+      },
+      "total_slots": {
+        "format": "bigint",
+        "type": "integer"
+      },
+      "total_hours_per_week": {
+        "format": "numeric",
+        "type": "number"
+      }
+    },
+    "type": "object"
+  },
+  "fee_assignments": {
+    "description": "Assigns fees to classes for specific academic years",
+    "required": [
+      "id",
+      "academic_year_id",
+      "fee_type_id",
+      "amount",
+      "created_at",
+      "updated_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "academic_year_id": {
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "fee_type_id": {
+        "description": "Note:\nThis is a Foreign Key to `fee_types.id`.<fk table='fee_types' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "amount": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "is_active": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "v_active_classes": {
+    "properties": {
+      "id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "teacher_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "grade_level": {
+        "format": "text",
+        "type": "string"
+      },
+      "academic_year_id": {
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "subject_group_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "max_capacity": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "sessions_per_week": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "class_type": {
+        "format": "character varying",
+        "maxLength": 20,
+        "type": "string"
+      },
+      "course_id": {
+        "description": "Note:\nThis is a Foreign Key to `courses.id`.<fk table='courses' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "status": {
+        "format": "text",
+        "type": "string"
+      },
+      "room": {
+        "format": "text",
+        "type": "string"
+      },
+      "schedule": {
+        "format": "text",
+        "type": "string"
+      },
+      "capacity": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "updated_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "course_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "teacher_name": {
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "student_conducts": {
+    "required": [
+      "id",
+      "student_id",
+      "academic_year_id",
+      "term",
+      "rating"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "academic_year_id": {
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "term": {
+        "format": "text",
+        "type": "string"
+      },
+      "rating": {
+        "format": "text",
+        "type": "string"
+      },
+      "comments": {
+        "format": "text",
+        "type": "string"
+      },
+      "evaluated_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "evaluated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "invoices": {
+    "required": [
+      "id",
+      "invoice_number",
+      "student_id",
+      "academic_year_id",
+      "issue_date",
+      "due_date",
+      "total_amount",
+      "paid_amount",
+      "status",
+      "created_at",
+      "updated_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "invoice_number": {
+        "format": "text",
+        "type": "string"
+      },
+      "student_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_account_id": {
+        "description": "Note:\nThis is a Foreign Key to `student_accounts.id`.<fk table='student_accounts' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "academic_year_id": {
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "issue_date": {
+        "default": "CURRENT_DATE",
+        "format": "date",
+        "type": "string"
+      },
+      "due_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "total_amount": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "paid_amount": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "status": {
+        "default": "pending",
+        "enum": [
+          "draft",
+          "pending",
+          "paid",
+          "overdue",
+          "cancelled",
+          "partial",
+          "refunded"
+        ],
+        "format": "public.invoice_status",
+        "type": "string"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "academic_years": {
+    "description": "Academic year definitions (e.g. 2024-2025)",
+    "required": [
+      "id",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "start_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "end_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "is_current": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "student_notes": {
+    "required": [
+      "id",
+      "student_id",
+      "content"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "content": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "student_documents": {
+    "required": [
+      "id",
+      "student_id",
+      "name",
+      "type",
+      "url"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "type": {
+        "format": "text",
+        "type": "string"
+      },
+      "url": {
+        "format": "text",
+        "type": "string"
+      },
+      "size": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "storage_path": {
+        "format": "text",
+        "type": "string"
+      },
+      "uploaded_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "uploaded_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "tutors": {
+    "properties": {
+      "id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "full_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "email": {
+        "format": "text",
+        "type": "string"
+      },
+      "phone": {
+        "format": "text",
+        "type": "string"
+      },
+      "photo_url": {
+        "format": "text",
+        "type": "string"
+      },
+      "teacher_type": {
+        "enum": [
+          "full_time",
+          "part_time",
+          "tutor"
+        ],
+        "format": "public.teacher_type",
+        "type": "string"
+      },
+      "specialization": {
+        "format": "text",
+        "type": "string"
+      },
+      "teaching_subjects": {
+        "format": "uuid[]",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "hourly_rate": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "bio": {
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "fee_types": {
+    "description": "Defines types of fees (tuition, facility, activity, exam, etc)",
+    "required": [
+      "id",
+      "name",
+      "code",
+      "created_at",
+      "updated_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "code": {
+        "format": "text",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "is_active": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "category": {
+        "default": "tuition",
+        "enum": [
+          "tuition",
+          "facility",
+          "activity",
+          "exam",
+          "other"
+        ],
+        "format": "public.fee_category",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "student_performance_summary": {
+    "properties": {
+      "student_id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "full_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "student_code": {
+        "format": "character varying",
+        "maxLength": 50,
+        "type": "string"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "subjects_count": {
+        "format": "bigint",
+        "type": "integer"
+      },
+      "average_score": {
+        "format": "numeric",
+        "type": "number"
+      }
+    },
+    "type": "object"
+  },
+  "teacher_subjects": {
+    "description": "Many-to-many relationship between teachers and subjects they can teach",
+    "required": [
+      "id",
+      "profile_id",
+      "subject_id"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "profile_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "subject_id": {
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "is_primary": {
+        "default": false,
+        "description": "Marks the teacher's primary/main subject",
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "permission_audit_logs": {
+    "required": [
+      "id",
+      "action",
+      "user_id",
+      "permission_code",
+      "performed_by"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "action": {
+        "format": "character varying",
+        "maxLength": 20,
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "permission_code": {
+        "format": "character varying",
+        "maxLength": 100,
+        "type": "string"
+      },
+      "performed_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "old_value": {
+        "format": "jsonb"
+      },
+      "new_value": {
+        "format": "jsonb"
+      },
+      "reason": {
+        "format": "text",
+        "type": "string"
+      },
+      "ip_address": {
+        "format": "inet",
+        "type": "string"
+      },
+      "user_agent": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "qr_codes": {
+    "required": [
+      "id",
+      "token",
+      "valid_until"
+    ],
+    "properties": {
+      "id": {
+        "default": "extensions.uuid_generate_v4()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "token": {
+        "format": "text",
+        "type": "string"
+      },
+      "valid_until": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "used_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "permission_definitions": {
+    "required": [
+      "id",
+      "code",
+      "name",
+      "resource",
+      "action"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "code": {
+        "format": "character varying",
+        "maxLength": 100,
+        "type": "string"
+      },
+      "name": {
+        "format": "character varying",
+        "maxLength": 200,
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "resource": {
+        "format": "character varying",
+        "maxLength": 50,
+        "type": "string"
+      },
+      "action": {
+        "format": "character varying",
+        "maxLength": 20,
+        "type": "string"
+      },
+      "category": {
+        "default": "general",
+        "format": "character varying",
+        "maxLength": 50,
+        "type": "string"
+      },
+      "is_system": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "v_active_students": {
+    "properties": {
+      "id": {
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "first_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "last_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "full_name": {
+        "format": "text",
+        "type": "string"
+      },
+      "email": {
+        "format": "text",
+        "type": "string"
+      },
+      "date_of_birth": {
+        "format": "date",
+        "type": "string"
+      },
+      "phone": {
+        "format": "text",
+        "type": "string"
+      },
+      "address": {
+        "format": "text",
+        "type": "string"
+      },
+      "emergency_contact": {
+        "format": "text",
+        "type": "string"
+      },
+      "role": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "student_id": {
+        "format": "text",
+        "type": "string"
+      },
+      "grade_level": {
+        "format": "text",
+        "type": "string"
+      },
+      "gender": {
+        "format": "character varying",
+        "maxLength": 10,
+        "type": "string"
+      },
+      "enrollment_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "status": {
+        "format": "character varying",
+        "maxLength": 20,
+        "type": "string"
+      },
+      "photo_url": {
+        "format": "text",
+        "type": "string"
+      },
+      "department": {
+        "format": "text",
+        "type": "string"
+      },
+      "is_active": {
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "student_code": {
+        "format": "character varying",
+        "maxLength": 50,
+        "type": "string"
+      },
+      "subject_id": {
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "phone_verified": {
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "preferred_auth_method": {
+        "format": "text",
+        "type": "string"
+      },
+      "account_status": {
+        "format": "text",
+        "type": "string"
+      },
+      "status_changed_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "status_changed_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "status_note": {
+        "format": "text",
+        "type": "string"
+      },
+      "is_managed": {
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "sp_student_code": {
+        "format": "character varying",
+        "type": "string"
+      },
+      "sp_grade_level": {
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "attendance": {
+    "description": "Daily attendance records. Links to classes and students.",
+    "required": [
+      "id",
+      "student_id",
+      "class_id",
+      "date"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "date": {
+        "format": "date",
+        "type": "string"
+      },
+      "status": {
+        "format": "text",
+        "type": "string"
+      },
+      "remarks": {
+        "format": "text",
+        "type": "string"
+      },
+      "marked_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "timetable_slot_id": {
+        "description": "Note:\nThis is a Foreign Key to `timetable_slots.id`.<fk table='timetable_slots' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "user_permissions": {
+    "required": [
+      "id",
+      "user_id",
+      "permission_code"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "permission_code": {
+        "format": "character varying",
+        "maxLength": 100,
+        "type": "string"
+      },
+      "granted_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "granted_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "expires_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "is_denied": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "student_accounts": {
+    "description": "Tracks student financial account balances and status per academic year",
+    "required": [
+      "id",
+      "student_id",
+      "academic_year_id",
+      "balance",
+      "total_fees",
+      "total_paid",
+      "created_at",
+      "updated_at"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "academic_year_id": {
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "balance": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "total_fees": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "total_paid": {
+        "default": 0,
+        "format": "numeric",
+        "type": "number"
+      },
+      "notes": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "status": {
+        "default": "active",
+        "enum": [
+          "active",
+          "inactive",
+          "graduated"
+        ],
+        "format": "public.account_status",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "enrollments": {
+    "description": "Student enrollments in classes",
+    "required": [
+      "id",
+      "student_id",
+      "class_id"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "student_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "enrollment_date": {
+        "default": "CURRENT_DATE",
+        "description": "Date when student enrolled",
+        "format": "date",
+        "type": "string"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "status": {
+        "default": "enrolled",
+        "enum": [
+          "enrolled",
+          "completed",
+          "dropped",
+          "withdrawn"
+        ],
+        "format": "public.enrollment_status",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "import_logs": {
+    "required": [
+      "id",
+      "imported_by",
+      "import_type",
+      "total_rows",
+      "processed_rows",
+      "success_count",
+      "error_count",
+      "warning_count",
+      "status"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "imported_by": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "import_type": {
+        "format": "character varying",
+        "maxLength": 50,
+        "type": "string"
+      },
+      "file_name": {
+        "format": "character varying",
+        "maxLength": 255,
+        "type": "string"
+      },
+      "file_size": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "total_rows": {
+        "default": 0,
+        "format": "integer",
+        "type": "integer"
+      },
+      "processed_rows": {
+        "default": 0,
+        "format": "integer",
+        "type": "integer"
+      },
+      "success_count": {
+        "default": 0,
+        "format": "integer",
+        "type": "integer"
+      },
+      "error_count": {
+        "default": 0,
+        "format": "integer",
+        "type": "integer"
+      },
+      "warning_count": {
+        "default": 0,
+        "format": "integer",
+        "type": "integer"
+      },
+      "status": {
+        "default": "pending",
+        "format": "character varying",
+        "maxLength": 50,
+        "type": "string"
+      },
+      "error_summary": {
+        "format": "text",
+        "type": "string"
+      },
+      "started_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "completed_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "duration_seconds": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "notifications": {
+    "required": [
+      "id",
+      "user_id",
+      "title"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": {
+        "format": "text",
+        "type": "string"
+      },
+      "message": {
+        "format": "text",
+        "type": "string"
+      },
+      "type": {
+        "default": "info",
+        "format": "text",
+        "type": "string"
+      },
+      "is_read": {
+        "default": false,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "calendar_events": {
+    "required": [
+      "id",
+      "title",
+      "start_date"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": {
+        "format": "text",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "event_type": {
+        "default": "general",
+        "format": "text",
+        "type": "string"
+      },
+      "start_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "end_date": {
+        "format": "date",
+        "type": "string"
+      },
+      "start_time": {
+        "format": "time without time zone",
+        "type": "string"
+      },
+      "end_time": {
+        "format": "time without time zone",
+        "type": "string"
+      },
+      "is_all_day": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "semester_id": {
+        "description": "Note:\nThis is a Foreign Key to `semesters.id`.<fk table='semesters' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_id": {
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "color": {
+        "default": "#6366f1",
+        "format": "text",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "tuition_config": {
+    "required": [
+      "id",
+      "class_type",
+      "sessions_per_week",
+      "monthly_fee"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "class_type": {
+        "format": "character varying",
+        "maxLength": 20,
+        "type": "string"
+      },
+      "sessions_per_week": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "monthly_fee": {
+        "format": "numeric",
+        "type": "number"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "is_active": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "audit_logs": {
+    "description": "Tracks all important user actions for auditing purposes (Recovered)",
+    "required": [
+      "id",
+      "action",
+      "resource_type"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "user_email": {
+        "format": "text",
+        "type": "string"
+      },
+      "action": {
+        "format": "text",
+        "type": "string"
+      },
+      "resource_type": {
+        "format": "text",
+        "type": "string"
+      },
+      "resource_id": {
+        "format": "text",
+        "type": "string"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "old_data": {
+        "format": "jsonb"
+      },
+      "new_data": {
+        "format": "jsonb"
+      },
+      "ip_address": {
+        "format": "text",
+        "type": "string"
+      },
+      "user_agent": {
+        "format": "text",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "courses": {
+    "description": "Stores course/curriculum information for the school",
+    "required": [
+      "id",
+      "code",
+      "name"
+    ],
+    "properties": {
+      "id": {
+        "default": "gen_random_uuid()",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "code": {
+        "format": "text",
+        "type": "string"
+      },
+      "name": {
+        "format": "text",
+        "type": "string"
+      },
+      "name_vi": {
+        "format": "text",
+        "type": "string"
+      },
+      "description": {
+        "format": "text",
+        "type": "string"
+      },
+      "subject_id": {
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "grade_level": {
+        "format": "integer",
+        "type": "integer"
+      },
+      "credits": {
+        "default": 1,
+        "format": "integer",
+        "type": "integer"
+      },
+      "hours_per_week": {
+        "default": 2,
+        "format": "integer",
+        "type": "integer"
+      },
+      "is_required": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "is_active": {
+        "default": true,
+        "format": "boolean",
+        "type": "boolean"
+      },
+      "created_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "updated_at": {
+        "default": "now()",
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "semester": {
+        "default": 1,
+        "format": "integer",
+        "type": "integer"
+      },
+      "academic_year_id": {
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "format": "uuid",
+        "type": "string"
+      },
+      "deleted_at": {
+        "format": "timestamp with time zone",
+        "type": "string"
+      },
+      "created_by": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "updated_by": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  }
+}
