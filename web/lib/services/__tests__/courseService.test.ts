@@ -26,6 +26,7 @@ describe("CourseService", () => {
     };
 
     (createServiceClient as jest.Mock).mockReturnValue(mockSupabase);
+    courseService.setSupabase(mockSupabase);
   });
 
   describe("getCourses", () => {

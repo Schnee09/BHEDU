@@ -40,6 +40,10 @@ export const userQuerySchema = z.object({
 /**
  * User creation schema
  */
+
+/**
+ * User creation schema
+ */
 export const createUserSchema = z.object({
   email: z.string().email("Invalid email format").optional(),
   password: z.string().min(8, "Password must be at least 8 characters")

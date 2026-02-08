@@ -31,6 +31,13 @@ export class TuitionService {
     this.supabase = supabase || createServiceClient();
   }
 
+  /**
+   * Set the Supabase client (primarily for testing)
+   */
+  public setSupabase(supabase: SupabaseClient) {
+    this.supabase = supabase;
+  }
+
   async getTuitionRates(): Promise<TuitionRate[]> {
     const { data, error } = await this.supabase
       .from("tuition_config")

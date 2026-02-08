@@ -363,6 +363,13 @@ export class UserService {
         await this.supabase.from("profiles").delete().eq("id", id);
     }
 
+    /**
+     * Updates an existing user's profile and linked data
+     */
+    async updateProfile(id: string, input: any) {
+        return this.updateUser(id, input as UpdateUserInput);
+    }
+
     // ============================================================
     // STATIC METHODS FOR BACKWARD COMPATIBILITY
     // ============================================================
@@ -377,6 +384,10 @@ export class UserService {
 
     static async updateUser(id: string, input: UpdateUserInput) {
         return userService.updateUser(id, input);
+    }
+
+    static async updateProfile(id: string, input: any) {
+        return userService.updateProfile(id, input);
     }
 }
 

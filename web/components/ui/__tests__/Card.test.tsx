@@ -30,8 +30,8 @@ describe('Card Components', () => {
         <Card>Content</Card>
       );
 
-  const card = container.firstChild;
-  expect(card).toHaveClass('rounded-xl', 'bg-surface', 'border');
+      const card = container.firstChild;
+      expect(card).toHaveClass('rounded-2xl', 'glass-card', 'text-foreground');
     });
 
     it('applies hover class when hover is true', () => {
@@ -39,8 +39,8 @@ describe('Card Components', () => {
         <Card hover={true}>Content</Card>
       );
 
-  const card = container.firstChild;
-  expect(card).toHaveClass('hover:shadow-md', 'hover:border-primary/20');
+      const card = container.firstChild;
+      expect(card).toHaveClass('hover:shadow-lg', 'hover:-translate-y-0.5');
     });
 
     it('handles click events', () => {
@@ -57,7 +57,7 @@ describe('Card Components', () => {
 
     it('applies cursor-pointer when clickable', () => {
       const { container } = render(
-        <Card onClick={() => {}}>Clickable</Card>
+        <Card onClick={() => { }}>Clickable</Card>
       );
 
       const card = container.firstChild;
@@ -121,8 +121,8 @@ describe('Card Components', () => {
         </CardHeader>
       );
 
-  const header = container.firstChild;
-  expect(header).toHaveClass('border-b', 'border-gray-100', 'bg-gray-50');
+      const header = container.firstChild;
+      expect(header).toHaveClass('border-b', 'border-gray-100/10');
     });
 
     it('renders multiple children', () => {
@@ -143,7 +143,7 @@ describe('Card Components', () => {
       );
 
       const header = container.firstChild;
-      expect(header).toHaveClass('rounded-t-xl');
+      expect(header).toHaveClass('border-b');
     });
 
     it('memoizes to prevent unnecessary re-renders', () => {
@@ -189,7 +189,7 @@ describe('Card Components', () => {
       );
 
       const body = container.firstChild;
-      expect(body).toHaveClass('px-6', 'py-5');
+      expect(body).toHaveClass('px-4', 'sm:px-6');
     });
 
     it('memoizes to prevent unnecessary re-renders', () => {
@@ -234,8 +234,8 @@ describe('Card Components', () => {
         <CardFooter>Footer</CardFooter>
       );
 
-  const footer = container.firstChild;
-  expect(footer).toHaveClass('border-t', 'border-gray-100');
+      const footer = container.firstChild;
+      expect(footer).toHaveClass('border-t', 'border-gray-100/10');
     });
 
     it('rounds bottom corners', () => {
@@ -244,7 +244,7 @@ describe('Card Components', () => {
       );
 
       const footer = container.firstChild;
-      expect(footer).toHaveClass('rounded-b-xl');
+      expect(footer).toHaveClass('border-t');
     });
 
     it('memoizes to prevent unnecessary re-renders', () => {
@@ -284,9 +284,9 @@ describe('Card Components', () => {
 
     it('renders with positive trend', () => {
       render(
-        <StatCard 
-          label="Revenue" 
-          value="$5,000" 
+        <StatCard
+          label="Revenue"
+          value="$5,000"
           trend={{ value: 15, isPositive: true }}
         />
       );
@@ -297,9 +297,9 @@ describe('Card Components', () => {
 
     it('renders with negative trend', () => {
       render(
-        <StatCard 
-          label="Errors" 
-          value="42" 
+        <StatCard
+          label="Errors"
+          value="42"
           trend={{ value: 5, isPositive: false }}
         />
       );
@@ -390,8 +390,8 @@ describe('Card Components', () => {
       render(
         <Card>
           <CardBody>
-            <StatCard 
-              label="Total Revenue" 
+            <StatCard
+              label="Total Revenue"
               value="$50,000"
               subtitle="This month"
               trend={{ value: 10, isPositive: true }}
@@ -416,8 +416,8 @@ describe('Card Components', () => {
         </Card>
       );
 
-  const card = container.firstChild;
-  expect(card).toHaveClass('bg-surface', 'border-border', 'shadow-sm');
+      const card = container.firstChild;
+      expect(card).toHaveClass('glass-card', 'text-foreground');
     });
 
     it('applies transition classes for smooth interactions', () => {
@@ -437,11 +437,11 @@ describe('Card Components', () => {
         </Card>
       );
 
-  const header = screen.getByText('Header').closest('div');
-  const body = screen.getByText('Body').closest('div');
+      const header = screen.getByText('Header').closest('div');
+      const body = screen.getByText('Body').closest('div');
 
-  expect(header).toHaveClass('px-6', 'py-4');
-  expect(body).toHaveClass('px-6', 'py-5');
+      expect(header).toHaveClass('px-4', 'sm:px-6');
+      expect(body).toHaveClass('px-4', 'sm:px-6');
     });
   });
 

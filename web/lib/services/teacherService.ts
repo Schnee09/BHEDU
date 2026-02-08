@@ -1,13 +1,8 @@
-/**
- * Teacher Service - Business logic for teacher and tutor management
- *
- * MIGRATED TO INSTANCE-BASED (Phase 2/Architecture v5.0)
- */
-
 import { createServiceClient } from "@/lib/supabase/server";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import type { CreateUserInput, UpdateUserInput } from "@/lib/schemas";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { TeacherRepository } from "../repositories/TeacherRepository";
 
 export interface TeacherProfile {
     id: string;
@@ -24,9 +19,11 @@ export interface TeacherProfile {
 
 export class TeacherService {
     private supabase: SupabaseClient;
+    private repository: TeacherRepository;
 
     constructor(supabase?: SupabaseClient) {
         this.supabase = supabase || createServiceClient();
+        this.repository = new TeacherRepository(this.supabase);
     }
 
     /**
@@ -54,6 +51,15 @@ export class TeacherService {
      * Gets a teacher profile by profile_id
      */
     async getTeacherProfile(profileId: string): Promise<TeacherProfile | null> {
+        return this.getTeacherProfileByProfileId(profileId);
+    }
+
+    /**
+     * Helper to get teacher profile
+     */
+    private async getTeacherProfileByProfileId(
+        profileId: string,
+    ): Promise<TeacherProfile | null> {
         const { data, error } = await this.supabase
             .from("teacher_profiles")
             .select("*")
@@ -69,52 +75,40 @@ export class TeacherService {
     }
 
     /**
+     * Lists teachers with their profiles and class counts
+     */
+    async getTeachersWithStats(filters: {
+        search?: string;
+        include_staff?: boolean;
+        teacher_type?: "full_time" | "part_time" | "tutor" | "all";
+        page?: number;
+        limit?: number;
+    } = {}) {
+        return this.repository.findTeachersWithStats(filters);
+    }
+
+    /**
      * Lists tutors with their profiles and teacher details
      */
     async getTutors(filters?: { search?: string }) {
-        let query = this.supabase
-            .from("profiles")
-            .select(`
-                id,
-                full_name,
-                email,
-                phone,
-                photo_url,
-                teacher_profiles!teacher_profiles_profile_id_fkey!inner (
-                    teacher_type,
-                    specialization,
-                    teaching_subjects,
-                    hourly_rate,
-                    bio
-                )
-            `)
-            .eq("role", "teacher")
-            .eq("teacher_profiles.teacher_type", "tutor");
+        // Tutors are just a type of teacher, the repository can handle this or specialized query
+        const result = await this.repository.findTeachersWithStats({
+            search: filters?.search,
+            teacher_type: "tutor",
+            limit: 100,
+        });
 
-        if (filters?.search) {
-            query = query.or(
-                `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`,
-            );
-        }
-
-        const { data, error } = await query.order("full_name");
-
-        if (error) {
-            throw error;
-        }
-
-        // Transform to flat format for UI
-        return (data || []).map((item: any) => ({
+        return result.data.map((item) => ({
             id: item.id,
             full_name: item.full_name,
             email: item.email,
             phone: item.phone,
-            photo_url: item.photo_url,
-            teacher_type: item.teacher_profiles?.teacher_type,
-            specialization: item.teacher_profiles?.specialization,
-            teaching_subjects: item.teacher_profiles?.teaching_subjects || [],
-            hourly_rate: item.teacher_profiles?.hourly_rate,
-            bio: item.teacher_profiles?.bio,
+            photo_url: (item as any).photo_url,
+            teacher_type: item.teacher_type,
+            specialization: item.specialization,
+            teaching_subjects: (item as any).teaching_subjects || [],
+            hourly_rate: item.hourly_rate,
+            bio: (item as any).bio,
         }));
     }
 
@@ -178,6 +172,10 @@ export class TeacherService {
 
     static async getTeacherProfile(profileId: string) {
         return teacherService.getTeacherProfile(profileId);
+    }
+
+    static async getTeachersWithStats(filters: any) {
+        return teacherService.getTeachersWithStats(filters);
     }
 }
 

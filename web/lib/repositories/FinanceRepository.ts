@@ -5,7 +5,7 @@ import {
     CreateFeeTypeInput,
     CreateInvoiceInput,
     CreatePaymentInput,
-} from "@/lib/schemas/finance";
+} from "@/lib/schemas";
 
 export class FinanceRepository {
     private supabase: SupabaseClient;
@@ -178,7 +178,12 @@ export class FinanceRepository {
                 *,
                 student_account:student_accounts(
                   id,
-                  student:profiles(id, full_name, email, student_code)
+                  student:profiles(
+                    id,
+                    full_name,
+                    email,
+                    student_profiles(student_code)
+                  )
                 ),
                 academic_year:academic_years(id, name),
                 items:invoice_items(
@@ -333,7 +338,12 @@ export class FinanceRepository {
                 *,
                 student_account:student_accounts(
                   id,
-                  student:profiles(id, full_name, email, student_code)
+                  student:profiles(
+                    id,
+                    full_name,
+                    email,
+                    student_profiles(student_code)
+                  )
                 ),
                 payment_method:payment_methods(id, name),
                 allocations:payment_allocations(*)
@@ -406,7 +416,10 @@ export class FinanceRepository {
                 student:profiles!student_accounts_student_id_fkey(
                   id,
                   full_name,
-                  email
+                  email,
+                  student_profiles(
+                    student_code
+                  )
                 ),
                 academic_year:academic_years(id, name)
             `,

@@ -181,26 +181,35 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
-  color?: 'blue' | 'green' | 'orange' | 'purple' | 'slate';
+  color?: 'blue' | 'green' | 'orange' | 'purple' | 'slate' | 'amber';
   onClick?: () => void;
   className?: string;
 }
 
 const COLOR_CLASSES = {
   blue: {
-    icon: 'bg-primary-50 dark:bg-primary-900/20 text-primary dark:text-primary-400',
+    icon: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+    gradient: 'from-blue-500/5 to-transparent'
   },
   green: {
     icon: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
+    gradient: 'from-green-500/5 to-transparent'
   },
   orange: {
     icon: 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400',
+    gradient: 'from-orange-500/5 to-transparent'
   },
   purple: {
     icon: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
+    gradient: 'from-purple-500/5 to-transparent'
   },
   slate: {
-    icon: 'bg-surface-secondary text-secondary',
+    icon: 'bg-stone-50 dark:bg-stone-800/50 text-stone-600 dark:text-stone-400',
+    gradient: 'from-stone-500/5 to-transparent'
+  },
+  amber: {
+    icon: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
+    gradient: 'from-amber-500/5 to-transparent'
   },
 } as const;
 
@@ -214,14 +223,14 @@ export const StatCard = memo(function StatCard({
   onClick,
   className = ""
 }: StatCardProps) {
-  const styles = useMemo(() => COLOR_CLASSES[color], [color]);
+  const styles = useMemo(() => COLOR_CLASSES[color as keyof typeof COLOR_CLASSES] || COLOR_CLASSES.blue, [color]);
 
   const containerClassName = useMemo(() => `
-    group relative overflow-hidden rounded-[20px] transition-all duration-300
-    bg-white dark:bg-stone-900/60 backdrop-blur-xl
-    border border-stone-200 dark:border-white/10
-    hover:border-amber-500/50 hover:shadow-md
-    ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}
+    group relative overflow-hidden rounded-[32px] transition-all duration-500
+    bg-white dark:bg-stone-900/40 backdrop-blur-xl
+    border border-stone-200/60 dark:border-white/5
+    hover:border-amber-500/40 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]
+    ${onClick ? 'cursor-pointer active:scale-[0.97]' : ''}
     ${className}
   `, [onClick, className]);
 
@@ -230,24 +239,28 @@ export const StatCard = memo(function StatCard({
       onClick={onClick}
       className={containerClassName}
     >
+      {/* Dynamic Gradient Background */}
+      <div className={cn(
+        "absolute inset-0 bg-gradient-to-br transition-opacity duration-500 opacity-60 group-hover:opacity-100",
+        styles.gradient
+      )} />
 
-
-      <div className="p-4 sm:p-5 md:p-6 flex items-start justify-between relative z-10">
-        <div className="flex-1">
-          <p className="text-[9px] sm:text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest mb-1">{label}</p>
+      <div className="p-6 md:p-8 flex items-start justify-between relative z-10">
+        <div className="flex-1 space-y-2">
+          <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em]">{label}</p>
           <div className="flex items-baseline gap-2">
-            <p className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white tabular-nums tracking-tight">{value}</p>
+            <p className="text-3xl md:text-4xl font-black text-stone-900 dark:text-white tabular-nums tracking-tighter transition-transform duration-500 group-hover:translate-x-1">{value}</p>
           </div>
           {subtitle && (
-            <p className="text-xs font-medium text-stone-500 dark:text-stone-400 mt-1 opacity-70">{subtitle}</p>
+            <p className="text-[11px] font-bold text-stone-500 dark:text-stone-400 opacity-60 uppercase tracking-tight">{subtitle}</p>
           )}
           {trend && (
-            <div className="flex items-center gap-1 mt-2">
+            <div className="flex items-center gap-1 pt-1">
               <span className={cn(
-                "text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest",
+                "text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter",
                 trend.isPositive
-                  ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20'
-                  : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                  ? 'bg-green-500/10 text-green-600 dark:text-green-400'
+                  : 'bg-red-500/10 text-red-600 dark:text-red-400'
               )}>
                 {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
               </span>
@@ -256,10 +269,10 @@ export const StatCard = memo(function StatCard({
         </div>
         {icon && (
           <div className={cn(
-            "w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:bg-amber-500/10",
+            "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-sm group-hover:scale-110 group-hover:rotate-3",
             styles.icon
           )}>
-            <div className="scale-90 sm:scale-100">{icon}</div>
+            {icon}
           </div>
         )}
       </div>

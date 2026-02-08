@@ -13,7 +13,7 @@ import {
   bulkGradeEntrySchema,
   createGradeSchema,
   gradeQuerySchema,
-} from "@/lib/schemas/grades";
+} from "@/lib/schemas";
 import { validateQuery } from "@/lib/api/validation";
 
 // GET /api/grades

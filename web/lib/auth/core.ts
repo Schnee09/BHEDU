@@ -78,6 +78,15 @@ export type PermissionCode =
     | "finance.invoices"
     | "finance.payments"
     | "finance.refund"
+    // Enrollments
+    | "enrollments.view"
+    | "enrollments.manage"
+    // Subjects
+    | "subjects.view"
+    | "subjects.manage"
+    // Fee Types
+    | "fee_types.view"
+    | "fee_types.manage"
     // Reports
     | "reports.view"
     | "reports.export"
@@ -134,6 +143,12 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
         "users.bulk_import",
         "parent_links.approve",
         "curriculum.manage",
+        "enrollments.view",
+        "enrollments.manage",
+        "subjects.view",
+        "subjects.manage",
+        "fee_types.view",
+        "fee_types.manage",
     ],
     staff: [
         "users.view",
@@ -148,10 +163,13 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
         "classes.edit",
         "classes.delete",
         "classes.enroll",
+        "enrollments.view",
+        "enrollments.manage",
         "finance.invoices",
         "finance.payments",
         "finance.refund",
         "curriculum.manage",
+        "fee_types.view",
     ],
     teacher: [
         "grades.entry",

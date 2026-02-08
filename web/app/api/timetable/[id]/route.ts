@@ -1,7 +1,7 @@
 import { apiSuccess, createApiHandler, noContent } from "@/lib/api";
 import { createServiceClient } from "@/lib/supabase/server";
 import { TimetableRepository } from "@/lib/repositories/TimetableRepository";
-import { updateTimetableSlotSchema } from "@/lib/schemas/timetable";
+import { updateTimetableSlotSchema } from "@/lib/schemas";
 import { ConflictError } from "@/lib/api/errors";
 
 export const PUT = createApiHandler(

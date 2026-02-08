@@ -1,172 +1,81 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth';
+/**
+ * Admin Fee Type ID API
+ * GET/PATCH/DELETE /api/admin/fee-types/[id]
+ * Standardized to V5.0 Architecture
+ */
+
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { createFeeTypeSchema } from "@/lib/schemas";
+import { FeeTypeRepository } from "@/lib/repositories/FeeTypeRepository";
+import { createServiceClient } from "@/lib/supabase/server";
+import { NotFoundError } from "@/lib/api/errors";
 
 /**
  * GET /api/admin/fee-types/[id]
- * Get a single fee type by ID
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
+export const GET = createGetHandler(
+  { permission: "fee_types.view" },
+  async ({ params }) => {
+    const supabase = createServiceClient();
+    const repository = new FeeTypeRepository(supabase);
+
+    const data = await repository.findById(params.id);
+
+    if (!data) {
+      throw new NotFoundError("Fee type not found");
     }
 
-    const resolvedParams = await params;
-  const { supabase } = await getDataClient(request);
-    const { data, error } = await supabase
-      .from('fee_types')
-      .select('*, academic_years(name)')
-      .eq('id', resolvedParams.id)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Fee type not found' },
-          { status: 404 }
-        );
-      }
-      console.error('Error fetching fee type:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error in GET /api/admin/fee-types/[id]:', error);
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
-  }
-}
+    return apiSuccess(data);
+  },
+);
 
 /**
  * PATCH /api/admin/fee-types/[id]
- * Update a fee type
- * Body: { name?, description?, amount?, category?, is_mandatory?, is_active?, academic_year_id? }
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
+export const PATCH = createApiHandler(
+  {
+    permission: "fee_types.manage",
+    bodySchema: createFeeTypeSchema.partial(),
+  },
+  async ({ params, body }) => {
+    const supabase = createServiceClient();
+    const repository = new FeeTypeRepository(supabase);
+
+    // Verify existence
+    const existing = await repository.findById(params.id);
+    if (!existing) {
+      throw new NotFoundError("Fee type not found");
     }
 
-    const resolvedParams = await params;
-    const body = await request.json();
-    const { name, description, amount, category, is_mandatory, is_active, academic_year_id } = body;
+    const data = await repository.update(params.id, body);
 
-    // Validate amount if provided
-    if (amount !== undefined && amount < 0) {
-      return NextResponse.json(
-        { error: 'amount must be greater than or equal to 0' },
-        { status: 400 }
-      );
-    }
-
-  const { supabase } = await getDataClient(request);
-
-    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (name !== undefined) updates.name = name;
-    if (description !== undefined) updates.description = description;
-    if (amount !== undefined) updates.amount = amount;
-    if (category !== undefined) updates.category = category;
-    if (is_mandatory !== undefined) updates.is_mandatory = is_mandatory;
-    if (is_active !== undefined) updates.is_active = is_active;
-    if (academic_year_id !== undefined) updates.academic_year_id = academic_year_id;
-
-    const { data, error } = await supabase
-      .from('fee_types')
-      .update(updates)
-      .eq('id', resolvedParams.id)
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Fee type not found' },
-          { status: 404 }
-        );
-      }
-      if (error.code === '23505') {
-        return NextResponse.json(
-          { error: 'A fee type with this name already exists for this academic year' },
-          { status: 400 }
-        );
-      }
-      console.error('Error updating fee type:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error in PATCH /api/admin/fee-types/[id]:', error);
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
-  }
-}
+    return apiSuccess(data, {
+      message: "Loại phí đã được cập nhật thành công",
+    });
+  },
+);
 
 /**
  * DELETE /api/admin/fee-types/[id]
- * Delete a fee type
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const DELETE = createApiHandler(
+  { permission: "fee_types.manage" },
+  async ({ params }) => {
+    const supabase = createServiceClient();
+    const repository = new FeeTypeRepository(supabase);
 
-    const resolvedParams = await params;
-  const { supabase } = await getDataClient(request);
-
-    // Check if fee type exists
-    const { data: existing } = await supabase
-      .from('fee_types')
-      .select('id')
-      .eq('id', resolvedParams.id)
-      .single();
-
+    // Verify existence
+    const existing = await repository.findById(params.id);
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Fee type not found' },
-        { status: 404 }
-      );
+      throw new NotFoundError("Fee type not found");
     }
 
-    const { error } = await supabase
-      .from('fee_types')
-      .delete()
-      .eq('id', resolvedParams.id);
+    // Check if being used (Optional: Add check for active invoices later)
 
-    if (error) {
-      console.error('Error deleting fee type:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    await repository.delete(params.id);
 
-    return NextResponse.json({ success: true, message: 'Fee type deleted' });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error in DELETE /api/admin/fee-types/[id]:', error);
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
-  }
-}
+    return apiSuccess(null, {
+      message: "Loại phí đã được xóa thành công",
+    });
+  },
+);

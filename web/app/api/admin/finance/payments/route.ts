@@ -8,7 +8,7 @@ import {
 import { FinanceRepository } from "@/lib/repositories/FinanceRepository";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createAbility } from "@/lib/auth/permissions";
-import { createPaymentSchema } from "@/lib/schemas/finance";
+import { createPaymentSchema } from "@/lib/schemas";
 
 export const GET = createGetHandler(
   { requireAuth: true },
@@ -19,9 +19,9 @@ export const GET = createGetHandler(
     });
 
     if (ability.cannot("read", "Payment")) {
-       return NextResponse.json(
+      return NextResponse.json(
         { success: false, error: "Bạn không có quyền xem thanh toán" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -36,11 +36,11 @@ export const GET = createGetHandler(
     const repository = new FinanceRepository(supabase);
 
     const result = await repository.getPayments({
-        student_id,
-        start_date,
-        end_date,
-        page,
-        limit
+      student_id,
+      start_date,
+      end_date,
+      page,
+      limit,
     });
 
     return apiPaginated(result.data, {
@@ -48,7 +48,7 @@ export const GET = createGetHandler(
       pageSize: result.pageSize,
       total: result.total,
     });
-  }
+  },
 );
 
 export const POST = createApiHandler(
@@ -65,21 +65,23 @@ export const POST = createApiHandler(
     if (ability.cannot("create", "Payment")) {
       return NextResponse.json(
         { success: false, error: "Bạn không có quyền tạo thanh toán" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const supabase = createServiceClient();
     const repository = new FinanceRepository(supabase);
-    
+
     try {
-        const payment = await repository.createPayment(body, user.id);
-        return apiSuccess(payment, { message: "Thanh toán đã được tạo thành công" });
+      const payment = await repository.createPayment(body, user.id);
+      return apiSuccess(payment, {
+        message: "Thanh toán đã được tạo thành công",
+      });
     } catch (error: any) {
-        return NextResponse.json(
-            { success: false, error: error.message || "Failed to create payment" },
-            { status: 500 }
-        );
+      return NextResponse.json(
+        { success: false, error: error.message || "Failed to create payment" },
+        { status: 500 },
+      );
     }
-  }
+  },
 );

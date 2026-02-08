@@ -54,7 +54,9 @@ export const createStudentSchema = z.object({
 /**
  * Update student request schema
  */
-export const updateStudentSchema = createStudentSchema.partial();
+export const updateStudentSchema = createStudentSchema.partial().extend({
+    id: uuidSchema.optional(),
+});
 
 // ============================================
 // STUDENT QUERY

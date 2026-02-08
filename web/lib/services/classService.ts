@@ -11,6 +11,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import type { CreateClassInput, UpdateClassInput } from "@/lib/schemas";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { hasPermission, UserRole } from "@/lib/auth/core";
 
 export interface Class {
   id: string;
@@ -55,6 +56,19 @@ export interface ClassWithDetails extends Class {
   };
 }
 
+export interface ClassFilters {
+  courseId?: string;
+  teacherId?: string;
+  academicYearId?: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+  context?: {
+    role: UserRole;
+    profileId: string;
+  };
+}
+
 export class ClassService {
   private supabase: SupabaseClient;
 
@@ -66,19 +80,20 @@ export class ClassService {
   }
 
   /**
-   * Get all classes with optional filters
+   * Set the Supabase client (primarily for testing)
    */
-  async getClasses(filters?: {
-    courseId?: string;
-    teacherId?: string;
-    academicYearId?: string;
-    search?: string;
-    page?: number;
-    pageSize?: number;
-  }) {
+  public setSupabase(supabase: SupabaseClient) {
+    this.supabase = supabase;
+  }
+
+  /**
+   * Get all classes with optional filters and role-based visibility
+   */
+  async getClasses(filters?: ClassFilters) {
     const page = filters?.page || 1;
     const pageSize = filters?.pageSize || 20;
     const offset = (page - 1) * pageSize;
+    const { role, profileId } = filters?.context || {};
 
     let query = this.supabase
       .from("classes")
@@ -91,6 +106,33 @@ export class ClassService {
       `,
         { count: "exact" },
       );
+
+    // --- Role-based Visibility Logic (Centralized) ---
+    if (role && profileId) {
+      if (hasPermission(role, "classes.manage")) {
+        // Staff/Admin - No additional filtering (sees all)
+      } else if (role === "teacher") {
+        // Teachers - See their assigned classes
+        query = query.eq("teacher_id", profileId);
+      } else if (role === "student") {
+        // Students - See classes they are enrolled in
+        // We use a subquery/join approach for efficiency
+        const { data: enrollmentData } = await this.supabase
+          .from("enrollments")
+          .select("class_id")
+          .eq("student_id", profileId)
+          .eq("status", "active");
+
+        const classIds = (enrollmentData || []).map((e) => e.class_id);
+        if (classIds.length === 0) {
+          return { classes: [], total: 0, page, pageSize };
+        }
+        query = query.in("id", classIds);
+      } else {
+        // Other roles - return empty potentially or handle based on rules
+        return { classes: [], total: 0, page, pageSize };
+      }
+    }
 
     if (filters?.courseId) {
       query = query.eq("course_id", filters.courseId);
@@ -325,12 +367,15 @@ export class ClassService {
           first_name,
           last_name,
           email,
-          full_name
+          full_name,
+          student_profiles (
+            student_code
+          )
         )
       `)
       .eq("class_id", classId)
       .eq("status", "active")
-      .order("student.last_name");
+      .order("student(last_name)"); // Note: Specific join ordering syntax might vary
 
     if (error) {
       console.error("Failed to fetch class students:", error);

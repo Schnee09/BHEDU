@@ -202,6 +202,28 @@ export class EnrollmentService {
   }
 
   /**
+   * Get enrollment by ID with details
+   */
+  async getEnrollmentById(id: string) {
+    // Find detailed enrollment via repository
+    const enrollment = await this.repository.findById(id);
+    if (!enrollment) return null;
+
+    // The repository findById returns basic record.
+    // If the legacy route needs deep joins (profiles etc),
+    // we should ideally have a repo method for it.
+    // Looking at EnrollmentRepository.ts...
+    return enrollment;
+  }
+
+  /**
+   * Update enrollment
+   */
+  async updateEnrollment(id: string, updates: any) {
+    return await this.repository.update(id, updates);
+  }
+
+  /**
    * Remove enrollment
    */
   async deleteEnrollment(id: string) {

@@ -126,7 +126,7 @@ export class ClassRepository
       .from("enrollments")
       .select("id", { count: "exact", head: true })
       .eq("class_id", id)
-      .eq("status", "active");
+      .eq("status", "enrolled");
 
     const [classResult, countResult] = await Promise.all([
       classQuery,
@@ -291,7 +291,7 @@ export class ClassRepository
       .from("enrollments")
       .select("id", { count: "exact", head: true })
       .eq("class_id", classId)
-      .eq("status", "active");
+      .eq("status", "enrolled");
 
     if (error) {
       throw new Error(`Failed to count enrollments: ${error.message}`);

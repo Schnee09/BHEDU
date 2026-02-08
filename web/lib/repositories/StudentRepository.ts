@@ -123,17 +123,21 @@ export class StudentRepository
   async findByIdWithEnrollments(
     id: string,
   ): Promise<StudentWithEnrollments | null> {
-    // 1. Fetch student profile
+    // 1. Fetch student profile with student_profiles join
     const studentQuery = this.supabase
       .from(this.tableName)
-      .select("*")
+      .select(`
+        *,
+        student_profiles (
+          student_code,
+          grade_level
+        )
+      `)
       .eq("id", id)
       .eq("role", "student")
       .single();
 
     // 2. Fetch enrollments with class details (Parallel)
-    // Note: We avoid deep nesting if possible, but here we need class info.
-    // Since we are filtering by student_id (indexed), this is efficient.
     const enrollmentsQuery = this.supabase
       .from("enrollments")
       .select(`
@@ -159,10 +163,18 @@ export class StudentRepository
       throw new Error(`Failed to find student: ${studentResult.error.message}`);
     }
 
-    const student = studentResult.data as Student;
+    const rawData = studentResult.data as any;
+    const { student_profiles, ...rest } = rawData;
+
+    const student = {
+      ...rest,
+      student_code: student_profiles?.[0]?.student_code || rawData.student_code,
+      grade_level: student_profiles?.[0]?.grade_level || rawData.grade_level,
+    } as Student;
+
     const enrollments = (enrollmentsResult.data || []).map((e: any) => ({
       ...e,
-      classes: Array.isArray(e.classes) ? e.classes[0] : e.classes, // Handle Supabase single-relation array quirk
+      classes: Array.isArray(e.classes) ? e.classes[0] : e.classes,
     }));
 
     return {
@@ -184,7 +196,16 @@ export class StudentRepository
 
     let query = this.supabase
       .from(this.tableName)
-      .select("*", { count: "exact" })
+      .select(
+        `
+        *,
+        student_profiles (
+          student_code,
+          grade_level
+        )
+      `,
+        { count: "exact" },
+      )
       .eq("role", "student");
 
     // Apply filters
@@ -214,8 +235,18 @@ export class StudentRepository
       throw new Error(`Failed to fetch students: ${error.message}`);
     }
 
+    // Flatten
+    const flattenedData = (data || []).map((s: any) => {
+      const { student_profiles, ...rest } = s;
+      return {
+        ...rest,
+        student_code: student_profiles?.[0]?.student_code || s.student_code,
+        grade_level: student_profiles?.[0]?.grade_level || s.grade_level,
+      };
+    }) as Student[];
+
     return {
-      data: (data || []) as Student[],
+      data: flattenedData,
       total: count || 0,
       page,
       pageSize,
@@ -252,7 +283,7 @@ export class StudentRepository
       .from("enrollments")
       .select("student_id")
       .in("class_id", classIds)
-      .eq("status", "active");
+      .eq("status", "enrolled");
 
     const studentIds = [
       ...new Set(enrollments?.map((e) => e.student_id) || []),

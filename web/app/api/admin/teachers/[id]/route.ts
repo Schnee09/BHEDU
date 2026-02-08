@@ -1,259 +1,89 @@
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { teacherService } from "@/lib/services/teacherService";
+import { userService } from "@/lib/services/userService";
+import { updateProfileSchema } from "@/lib/schemas";
+import { NotFoundError } from "@/lib/api/errors";
+import { createServiceClient } from "@/lib/supabase/server";
+import { TeacherRepository } from "@/lib/repositories/TeacherRepository";
+
 /**
- * Admin Individual Teacher API
- * GET /api/admin/teachers/[id] - Get teacher details with classes and schedule
- * PATCH /api/admin/teachers/[id] - Update teacher information
- * DELETE /api/admin/teachers/[id] - Deactivate teacher
+ * GET /api/admin/teachers/[id]
+ * Standardized teacher details with history
  */
+export const GET = createGetHandler(
+  { permission: "users.view" },
+  async ({ params, user }) => {
+    const id = params.id;
+    const supabase = createServiceClient();
+    const repository = new TeacherRepository(supabase);
 
-import { NextResponse } from "next/server";
-import { getDataClient } from "@/lib/auth/dataClient";
-import { adminAuth } from "@/lib/auth/adminAuth";
+    const detail = await repository.findDetailById(id);
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> },
-) {
-  try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: "Admin access required" }, {
-        status: 403,
-      });
+    if (!detail) {
+      throw new NotFoundError("Teacher not found");
     }
 
-    const { supabase } = await getDataClient(request);
-    const { id } = await context.params;
+    return apiSuccess(detail, {
+      // Compatibility wrapper
+      teacher: detail,
+    });
+  },
+);
 
-    // Get teacher profile
-    // Allow both teachers and staff (staff can also teach)
-    const { data: teacher, error: teacherError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", id)
-      .in("role", ["teacher", "staff"])
-      .single();
+/**
+ * PATCH /api/admin/teachers/[id]
+ * Standardized update
+ */
+export const PATCH = createApiHandler(
+  {
+    permission: "users.edit",
+    bodySchema: updateProfileSchema.partial(),
+  },
+  async ({ params, body, user: actor }) => {
+    const id = params.id;
 
-    if (teacherError || !teacher) {
-      return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
-    }
+    // Use centralized UserService for profile updates
+    const updated = await userService.updateProfile(id, body);
 
-    // Get teacher's classes with enrollment counts
-    const { data: classes, error: classesError } = await supabase
+    return apiSuccess(updated, {
+      message: "Thông tin giáo viên đã được cập nhật thành công.",
+    });
+  },
+);
+
+/**
+ * DELETE /api/admin/teachers/[id]
+ * Standardized deactivation
+ */
+export const DELETE = createApiHandler(
+  { permission: "users.delete" },
+  async ({ params, user: actor }) => {
+    const id = params.id;
+    const supabase = createServiceClient();
+
+    // Check for active assignments before deactivating
+    const { count: activeClasses } = await supabase
       .from("classes")
-      .select(`
-        *,
-        academic_year:academic_years(id, name, status),
-        enrollments:enrollments(count)
-      `)
-      .eq("teacher_id", id)
-      .order("academic_year_id", { ascending: false })
-      .order("name", { ascending: true });
-
-    if (classesError) {
-      console.error("Error fetching teacher classes:", classesError);
-    }
-
-    // Calculate statistics
-    const activeClasses = (classes || []).filter((c) => c.status === "active");
-    const totalStudents = (classes || []).reduce((sum, cls) => {
-      return sum + (cls.enrollments?.[0]?.count || 0);
-    }, 0);
-
-    // Get recent activity (could be attendance marked, grades entered, etc.)
-    const { data: recentClasses } = await supabase
-      .from("classes")
-      .select("id, name, updated_at")
-      .eq("teacher_id", id)
-      .order("updated_at", { ascending: false })
-      .limit(5);
-
-    return NextResponse.json({
-      success: true,
-      teacher: {
-        ...teacher,
-        classes: classes || [],
-        statistics: {
-          total_classes: classes?.length || 0,
-          active_classes: activeClasses.length,
-          total_students: totalStudents,
-        },
-        recent_activity: recentClasses || [],
-      },
-    });
-  } catch (error) {
-    console.error("Error in GET /api/admin/teachers/[id]:", error);
-    return NextResponse.json({ error: "Internal server error" }, {
-      status: 500,
-    });
-  }
-}
-
-export async function PATCH(
-  request: Request,
-  context: { params: Promise<{ id: string }> },
-) {
-  try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: "Admin access required" }, {
-        status: 403,
-      });
-    }
-
-    const { supabase } = await getDataClient(request);
-    const { id } = await context.params;
-    const body = await request.json();
-
-    // Verify teacher exists
-    // Allow both teachers and staff
-    const { data: existingTeacher, error: fetchError } = await supabase
-      .from("profiles")
-      .select("id, role")
-      .eq("id", id)
-      .in("role", ["teacher", "staff"])
-      .single();
-
-    if (fetchError || !existingTeacher) {
-      return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
-    }
-
-    // Allowed fields to update
-    const allowedFields = [
-      "first_name",
-      "last_name",
-      "email",
-      "phone",
-      "department",
-      "status",
-      "date_of_birth",
-      "address",
-      "emergency_contact",
-      "qualifications",
-      "hire_date",
-      "notes",
-    ];
-
-    const updates: Record<string, unknown> = {};
-    for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updates[field] = body[field];
-      }
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: "No valid fields to update" }, {
-        status: 400,
-      });
-    }
-
-    // If email is being changed, check if it's already in use
-    if (updates.email) {
-      const { data: emailCheck } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", updates.email as string)
-        .neq("id", id)
-        .single();
-
-      if (emailCheck) {
-        return NextResponse.json({ error: "Email already in use" }, {
-          status: 400,
-        });
-      }
-    }
-
-    // Update teacher profile
-    const { data: updatedTeacher, error: updateError } = await supabase
-      .from("profiles")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error("Error updating teacher:", updateError);
-      return NextResponse.json({ error: "Failed to update teacher" }, {
-        status: 500,
-      });
-    }
-
-    return NextResponse.json({
-      success: true,
-      teacher: updatedTeacher,
-    });
-  } catch (error) {
-    console.error("Error in PATCH /api/admin/teachers/[id]:", error);
-    return NextResponse.json({ error: "Internal server error" }, {
-      status: 500,
-    });
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  context: { params: Promise<{ id: string }> },
-) {
-  try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: "Admin access required" }, {
-        status: 403,
-      });
-    }
-
-    const { supabase } = await getDataClient(request);
-    const { id } = await context.params;
-
-    // Check if teacher exists
-    // Allow both teachers and staff
-    const { data: teacher, error: fetchError } = await supabase
-      .from("profiles")
-      .select("id, role, status, full_name, first_name, last_name")
-      .eq("id", id)
-      .in("role", ["teacher", "staff"])
-      .single();
-
-    if (fetchError || !teacher) {
-      return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
-    }
-
-    // Check for active classes
-    const { data: activeClasses, count: activeClassCount } = await supabase
-      .from("classes")
-      .select("id, name", { count: "exact" })
+      .select("id", { count: "exact", head: true })
       .eq("teacher_id", id)
       .eq("status", "active");
 
-    if (activeClassCount && activeClassCount > 0) {
-      return NextResponse.json({
+    if (activeClasses && activeClasses > 0) {
+      return apiSuccess({
+        success: false,
         error:
-          `Cannot deactivate teacher with ${activeClassCount} active class(es). Please reassign or archive the classes first.`,
-        activeClasses: activeClasses,
-      }, { status: 409 });
+          `Không thể vô hiệu hóa giáo viên đang có ${activeClasses} lớp học đang hoạt động.`,
+      }, { _status: 409 });
     }
 
-    // Deactivate the teacher (don't actually delete)
-    const { error: updateError } = await supabase
+    // Standardized inactivation status
+    await supabase
       .from("profiles")
-      .update({ status: "inactive" })
+      .update({ is_active: false, status: "inactive" })
       .eq("id", id);
 
-    if (updateError) {
-      console.error("Error deactivating teacher:", updateError);
-      return NextResponse.json({ error: "Failed to deactivate teacher" }, {
-        status: 500,
-      });
-    }
-
-    return NextResponse.json({
-      success: true,
-      message:
-        `Teacher ${teacher.first_name} ${teacher.last_name} has been deactivated`,
+    return apiSuccess(null, {
+      message: "Giáo viên đã được vô hiệu hóa thành công.",
     });
-  } catch (error) {
-    console.error("Error in DELETE /api/admin/teachers/[id]:", error);
-    return NextResponse.json({ error: "Internal server error" }, {
-      status: 500,
-    });
-  }
-}
+  },
+);

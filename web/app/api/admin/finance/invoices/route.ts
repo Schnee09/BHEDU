@@ -8,7 +8,7 @@ import {
 import { FinanceRepository } from "@/lib/repositories/FinanceRepository";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createAbility } from "@/lib/auth/permissions";
-import { createInvoiceSchema } from "@/lib/schemas/finance";
+import { createInvoiceSchema } from "@/lib/schemas";
 
 export const GET = createGetHandler(
   { requireAuth: true },
@@ -19,9 +19,9 @@ export const GET = createGetHandler(
     });
 
     if (ability.cannot("read", "Invoice")) {
-       return NextResponse.json(
+      return NextResponse.json(
         { success: false, error: "Bạn không có quyền xem hóa đơn" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -36,11 +36,11 @@ export const GET = createGetHandler(
     const repository = new FinanceRepository(supabase);
 
     const result = await repository.getInvoices({
-        student_id,
-        status,
-        academic_year_id,
-        page,
-        limit
+      student_id,
+      status,
+      academic_year_id,
+      page,
+      limit,
     });
 
     return apiPaginated(result.data, {
@@ -48,7 +48,7 @@ export const GET = createGetHandler(
       pageSize: result.pageSize,
       total: result.total,
     });
-  }
+  },
 );
 
 export const POST = createApiHandler(
@@ -65,21 +65,21 @@ export const POST = createApiHandler(
     if (ability.cannot("create", "Invoice")) {
       return NextResponse.json(
         { success: false, error: "Bạn không có quyền tạo hóa đơn" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const supabase = createServiceClient();
     const repository = new FinanceRepository(supabase);
-    
+
     try {
-        const invoice = await repository.createInvoice(body);
-        return apiSuccess(invoice, { message: "Hóa đơn đã được tạo thành công" });
+      const invoice = await repository.createInvoice(body);
+      return apiSuccess(invoice, { message: "Hóa đơn đã được tạo thành công" });
     } catch (error: any) {
-        return NextResponse.json(
-            { success: false, error: error.message || "Failed to create invoice" },
-            { status: 500 }
-        );
+      return NextResponse.json(
+        { success: false, error: error.message || "Failed to create invoice" },
+        { status: 500 },
+      );
     }
-  }
+  },
 );

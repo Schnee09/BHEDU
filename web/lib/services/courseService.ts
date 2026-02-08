@@ -28,6 +28,13 @@ export class CourseService {
     this.supabase = supabase || createServiceClient();
   }
 
+  /**
+   * Set the Supabase client (primarily for testing)
+   */
+  public setSupabase(supabase: SupabaseClient) {
+    this.supabase = supabase;
+  }
+
   async getCourses(filters?: {
     subjectId?: string;
     search?: string;

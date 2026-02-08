@@ -1,120 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth';
+/**
+ * Admin Fee Types API
+ * GET/POST /api/admin/fee-types
+ * Refactored to V5.0 Standard API Handler
+ */
+
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { createFeeTypeSchema } from "@/lib/schemas";
+import { FeeTypeRepository } from "@/lib/repositories/FeeTypeRepository";
+import { createServiceClient } from "@/lib/supabase/server";
+import { z } from "zod";
 
 /**
  * GET /api/admin/fee-types
- * List all fee types with optional filters
- * Query params:
- * - is_active: boolean
- * - academic_year_id: uuid (filter by academic year)
+ * List all fee types
  */
-export async function GET(request: NextRequest) {
-  try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const GET = createGetHandler(
+  { permission: "fee_types.view" },
+  async ({ searchParams }) => {
+    const supabase = createServiceClient();
+    const repository = new FeeTypeRepository(supabase);
 
-  const { supabase } = await getDataClient(request);
-    const { searchParams } = new URL(request.url);
-    
-    const is_active = searchParams.get('is_active');
+    const is_active = searchParams.get("is_active");
+    const academic_year_id = searchParams.get("academic_year_id");
 
-    let query = supabase
-      .from('fee_types')
-      .select('*')
-      .order('name', { ascending: true });
+    const data = await repository.findAllFiltered({
+      is_active: is_active !== null ? is_active === "true" : undefined,
+      academic_year_id: academic_year_id || undefined,
+    });
 
-    // Apply filters
-    if (is_active !== null) {
-      query = query.eq('is_active', is_active === 'true');
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Error fetching fee types:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, data: data || [] });
-  } catch (error: any) {
-    console.error('Error in GET /api/admin/fee-types:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+    return apiSuccess(data);
+  },
+);
 
 /**
  * POST /api/admin/fee-types
  * Create a new fee type
- * Body: { 
- *   name, 
- *   description?, 
- *   amount,
- *   is_active?,
- *   academic_year_id?
- * }
  */
-export async function POST(request: NextRequest) {
-  try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const POST = createApiHandler(
+  {
+    permission: "fee_types.manage",
+    bodySchema: createFeeTypeSchema,
+  },
+  async ({ body }) => {
+    const supabase = createServiceClient();
+    const repository = new FeeTypeRepository(supabase);
 
-    const body = await request.json();
-    const { name, description, amount, is_active, academic_year_id } = body;
+    const data = await repository.create(body);
 
-    // Validation
-    if (!name || amount === undefined) {
-      return NextResponse.json(
-        { error: 'name and amount are required' },
-        { status: 400 }
-      );
-    }
-
-    if (amount < 0) {
-      return NextResponse.json(
-        { error: 'amount must be greater than or equal to 0' },
-        { status: 400 }
-      );
-    }
-
-  const { supabase } = await getDataClient(request);
-
-    const { data, error } = await supabase
-      .from('fee_types')
-      .insert({
-        name,
-        description,
-        amount,
-        is_active: is_active !== undefined ? is_active : true,
-        academic_year_id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating fee type:', error);
-      if (error.code === '23505') { // Unique constraint violation
-        return NextResponse.json(
-          { error: 'A fee type with this name already exists for this academic year' },
-          { status: 400 }
-        );
-      }
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, data }, { status: 201 });
-  } catch (error: any) {
-    console.error('Error in POST /api/admin/fee-types:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+    return apiSuccess(data, {
+      message: "Loại phí đã được tạo thành công",
+    });
+  },
+);

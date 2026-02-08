@@ -48,8 +48,8 @@ export default function MobileStudentList({
     }
 
     return (
-        <div className="space-y-4 pb-20 md:hidden animate-fade-in">
-            {students.map((student) => {
+        <div className="space-y-4 pb-20 md:hidden">
+            {students.map((student, index) => {
                 const isSelected = selectedIds.has(student.id);
                 const isActive = student.status === 'active';
 
@@ -57,11 +57,12 @@ export default function MobileStudentList({
                     <div
                         key={student.id}
                         className={cn(
-                            "bg-white dark:bg-[#1A1410] rounded-2xl p-5 shadow-sm border transition-all active:scale-[0.98] relative overflow-hidden press-effect",
+                            "bg-white dark:bg-[#1A1410] rounded-2xl p-5 shadow-sm border transition-all active:scale-[0.98] relative overflow-hidden press-effect animate-card-entrance",
                             isSelected
                                 ? 'border-amber-500 ring-1 ring-amber-500 bg-amber-50/5 dark:bg-amber-900/5'
                                 : 'border-stone-100 dark:border-[#2C2420]'
                         )}
+                        style={{ animationDelay: `${index * 50}ms` }}
                         onClick={() => onSelect(student.id)}
                     >
                         {/* Status Accent */}
@@ -88,8 +89,8 @@ export default function MobileStudentList({
                                     </span>
                                     <span className={cn(
                                         "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border",
-                                        isActive 
-                                            ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400' 
+                                        isActive
+                                            ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400'
                                             : 'bg-stone-100 text-stone-600 border-stone-200 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-400'
                                     )}>
                                         {isActive ? 'Active' : 'Archived'}

@@ -211,7 +211,7 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
   ].filter((action) => action.show);
 
   return (
-    <header className="relative h-20 md:h-24 flex items-center justify-between px-4 md:px-10 z-40 glass-premium border-b border-white/10 shrink-0">
+    <header className="sticky top-0 h-20 md:h-24 flex items-center justify-between px-4 md:px-10 z-40 glass-premium border-b border-white/10 shrink-0">
       <div className="flex items-center gap-6 relative z-10 flex-1 min-w-0">
         <button
           onClick={onMenuToggle}

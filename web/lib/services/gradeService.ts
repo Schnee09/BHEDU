@@ -60,15 +60,18 @@ export class GradeService {
             throw new NotFoundError(`Không tìm thấy môn học: ${subjectCode}`);
         }
 
-        // 2. Get grades joined with profiles
+        // 2. Get grades joined with profiles (and student_profiles for student_code)
         const { data, error } = await this.supabase
             .from("grades")
             .select(`
-        student_id,
-        evaluation_type,
-        grade_value,
-        student:profiles!grades_student_id_fkey(full_name, student_code)
-      `)
+                student_id,
+                evaluation_type,
+                grade_value,
+                student:profiles!grades_student_id_fkey(
+                    full_name,
+                    student_profiles(student_code)
+                )
+            `)
             .eq("class_id", classId)
             .eq("subject_id", subject.id)
             .eq("semester", semester);
@@ -84,11 +87,15 @@ export class GradeService {
                 : record.student;
             if (!student) return;
 
+            // Extract student_code from joined table
+            const studentCode = student.student_profiles?.[0]?.student_code ||
+                student.student_code;
+
             if (!studentMap.has(record.student_id)) {
                 studentMap.set(record.student_id, {
                     student_id: record.student_id,
                     full_name: student.full_name,
-                    student_code: student.student_code,
+                    student_code: studentCode,
                     midterm: null,
                     final: null,
                     average: null,

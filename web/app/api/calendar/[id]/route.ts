@@ -1,88 +1,58 @@
-/**
- * Calendar Event by ID API
- * PUT /api/calendar/[id] - Update a calendar event
- * DELETE /api/calendar/[id] - Delete a calendar event
- */
-
-import { NextRequest, NextResponse } from "next/server";
+import { apiSuccess, createApiHandler } from "@/lib/api";
 import { createServiceClient } from "@/lib/supabase/server";
-import { adminAuth } from "@/lib/auth/adminAuth";
+import { z } from "zod";
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const authResult = await adminAuth(req);
-    if (!authResult.authorized) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, {
-        status: 401,
-      });
-    }
+const eventSchema = z.object({
+  title: z.string().min(1, "Tiêu đề là bắt buộc"),
+  event_type: z.string().min(1, "Loại sự kiện là bắt buộc"),
+  start_date: z.string().regex(
+    /^\d{4}-\d{2}-\d{2}$/,
+    "Định dạng ngày không hợp lệ",
+  ),
+  end_date: z.string().regex(
+    /^\d{4}-\d{2}-\d{2}$/,
+    "Định dạng ngày không hợp lệ",
+  ).nullable().optional(),
+  start_time: z.string().nullable().optional(),
+  end_time: z.string().nullable().optional(),
+  is_all_day: z.boolean().default(true),
+  color: z.string().optional(),
+  description: z.string().nullable().optional(),
+});
 
-    const { id } = await params;
-    const body = await req.json();
-    const {
-      title,
-      event_type,
-      start_date,
-      end_date,
-      start_time,
-      end_time,
-      is_all_day,
-      color,
-      description,
-    } = body;
-
+export const PUT = createApiHandler(
+  {
+    requireAuth: true,
+    allowedRoles: ["super_admin", "admin", "staff"],
+    bodySchema: eventSchema,
+  },
+  async ({ body, params }) => {
+    const { id } = params;
     const supabase = createServiceClient();
 
     const { data: event, error } = await supabase
       .from("calendar_events")
       .update({
-        title,
-        event_type,
-        start_date,
-        end_date,
-        start_time,
-        end_time,
-        is_all_day,
-        color,
-        description,
+        ...body,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
       .select()
       .single();
 
-    if (error) {
-      console.error("Error updating calendar event:", error);
-      return NextResponse.json({ success: false, error: error.message }, {
-        status: 500,
-      });
-    }
+    if (error) throw error;
 
-    return NextResponse.json({ success: true, event });
-  } catch (error: any) {
-    console.error("Error in PUT /api/calendar/[id]:", error);
-    return NextResponse.json({ success: false, error: error.message }, {
-      status: 500,
-    });
-  }
-}
+    return apiSuccess({ event });
+  },
+);
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const authResult = await adminAuth(req);
-    if (!authResult.authorized) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, {
-        status: 401,
-      });
-    }
-
-    const { id } = await params;
+export const DELETE = createApiHandler(
+  {
+    requireAuth: true,
+    allowedRoles: ["super_admin", "admin", "staff"],
+  },
+  async ({ params }) => {
+    const { id } = params;
     const supabase = createServiceClient();
 
     const { error } = await supabase
@@ -90,18 +60,8 @@ export async function DELETE(
       .delete()
       .eq("id", id);
 
-    if (error) {
-      console.error("Error deleting calendar event:", error);
-      return NextResponse.json({ success: false, error: error.message }, {
-        status: 500,
-      });
-    }
+    if (error) throw error;
 
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error("Error in DELETE /api/calendar/[id]:", error);
-    return NextResponse.json({ success: false, error: error.message }, {
-      status: 500,
-    });
-  }
-}
+    return apiSuccess({ success: true });
+  },
+);

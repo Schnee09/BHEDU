@@ -129,7 +129,9 @@ export class AttendanceRepository extends BaseRepository<
           first_name,
           last_name,
           full_name,
-          student_code
+          student_profiles (
+            student_code
+          )
         ),
         class:classes (
           id,
@@ -231,7 +233,10 @@ export class AttendanceRepository extends BaseRepository<
           id,
           first_name,
           last_name,
-          full_name
+          full_name,
+          student_profiles (
+            student_code
+          )
         )
       `)
       .eq("class_id", classId);

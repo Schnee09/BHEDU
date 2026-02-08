@@ -8,7 +8,7 @@ import {
 import { FinanceRepository } from "@/lib/repositories/FinanceRepository";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createAbility } from "@/lib/auth/permissions";
-import { studentAccountQuerySchema } from "@/lib/schemas/finance";
+import { studentAccountQuerySchema } from "@/lib/schemas";
 import { z } from "zod";
 
 export const GET = createGetHandler(

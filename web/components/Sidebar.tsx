@@ -182,7 +182,7 @@ export default function Sidebar({
       {/* Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] transition-opacity"
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[60] transition-opacity duration-300"
           onClick={() => setIsMobileMenuOpen?.(false)}
         />
       )}

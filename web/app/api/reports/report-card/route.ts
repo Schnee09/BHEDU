@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { apiSuccess, createGetHandler } from "@/lib/api";
 import { createServiceClient } from "@/lib/supabase/server";
 import { ReportsRepository } from "@/lib/repositories/ReportsRepository";
-import { reportCardQuerySchema } from "@/lib/schemas/reports";
+import { reportCardQuerySchema } from "@/lib/schemas";
 import { createAbility } from "@/lib/auth/permissions";
 import { validateQuery } from "@/lib/api/validation";
 import {

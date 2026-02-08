@@ -24,6 +24,7 @@ describe("ClassService", () => {
         };
 
         (createServiceClient as jest.Mock).mockReturnValue(mockSupabase);
+        classService.setSupabase(mockSupabase);
     });
 
     describe("getClasses", () => {

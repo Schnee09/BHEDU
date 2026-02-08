@@ -1,9 +1,10 @@
 /**
- * Validation schemas for Course-related API requests
+ * Course Request Schemas
+ * Aligned with BH-EDU v5.0 Architecture
  */
 
 import { z } from "zod";
-import { paginationSchema } from "./common";
+import { paginationSchema, uuidSchema } from "../common";
 
 export const courseIdSchema = z.string().uuid("Invalid course ID");
 
@@ -12,7 +13,7 @@ export const createCourseSchema = z.object({
     name: z.string().min(1, "Course name is required").max(100),
     description: z.string().max(500).optional().nullable(),
     credits: z.number().int().min(1).max(10).default(1),
-    subject_id: z.string().uuid("Invalid subject ID"),
+    subject_id: uuidSchema,
     status: z.enum(["active", "inactive", "archived"]).default("active"),
 });
 

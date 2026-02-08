@@ -6,7 +6,7 @@ import {
 } from "@/lib/api";
 import { FinanceRepository } from "@/lib/repositories/FinanceRepository";
 import { createServiceClient } from "@/lib/supabase/server";
-import { createPaymentSchema } from "@/lib/schemas/finance";
+import { createPaymentSchema } from "@/lib/schemas";
 import { createAbility } from "@/lib/auth/permissions";
 import { NextResponse } from "next/server";
 

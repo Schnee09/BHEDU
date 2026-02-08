@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
 import { createServiceClient } from "@/lib/supabase/server";
 import { TimetableRepository } from "@/lib/repositories/TimetableRepository";
-import {
-  createTimetableSlotSchema,
-  timetableQuerySchema,
-} from "@/lib/schemas/timetable";
+import { createTimetableSlotSchema, timetableQuerySchema } from "@/lib/schemas";
 import { validateQuery } from "@/lib/api/validation";
 import { ConflictError, ValidationError } from "@/lib/api/errors";
 

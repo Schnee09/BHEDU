@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  apiSuccess,
-  createApiHandler,
-  createGetHandler,
-} from "@/lib/api";
-import { bankSettingsSchema } from "@/lib/schemas/finance";
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
+import { bankSettingsSchema } from "@/lib/schemas";
 import { createServiceClient } from "@/lib/supabase/server";
 import { FinanceRepository } from "@/lib/repositories/FinanceRepository";
 
@@ -17,13 +13,13 @@ export const GET = createGetHandler(
   async ({ user }) => {
     const supabase = createServiceClient();
     const repository = new FinanceRepository(supabase);
-    
-    // For now, get OWN settings. 
+
+    // For now, get OWN settings.
     // Later might allow admin to view others.
     const settings = await repository.getBankSettings(user.id);
-    
-    return apiSuccess(settings || {}); 
-  }
+
+    return apiSuccess(settings || {});
+  },
 );
 
 /**
@@ -38,9 +34,9 @@ export const POST = createApiHandler(
   async ({ body, user }) => {
     const supabase = createServiceClient();
     const repository = new FinanceRepository(supabase);
-    
+
     const updated = await repository.upsertBankSettings(user.id, body);
-    
+
     return apiSuccess(updated, { message: "Bank settings saved successfully" });
-  }
+  },
 );

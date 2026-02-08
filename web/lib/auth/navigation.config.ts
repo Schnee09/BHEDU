@@ -9,6 +9,7 @@ import {
   BookOpen,
   Building,
   Calendar,
+  CalendarDays,
   CheckCircle,
   Clock,
   CreditCard,
@@ -96,7 +97,12 @@ export const ALL_NAV_ITEMS: NavSection[] = [
       {
         href: "/dashboard/my-schedule",
         label: "Lịch của tôi",
-        icon: Calendar,
+        icon: Clock,
+      },
+      {
+        href: "/dashboard/calendar",
+        label: "Lịch học tập",
+        icon: CalendarDays,
       },
     ],
   },
