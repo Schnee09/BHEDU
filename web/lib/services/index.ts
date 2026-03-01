@@ -15,7 +15,6 @@ export type {
 } from "./subjectService";
 export * from "./courseService";
 export * from "./gradeService";
-export * from "./tuitionService";
 export * from "./linkService";
 export * from "./userService";
 export * from "./settingsService";

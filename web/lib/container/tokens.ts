@@ -31,7 +31,6 @@ export const TOKENS = {
     EnrollmentService: createToken<any>("EnrollmentService"),
     SubjectService: createToken<any>("SubjectService"),
     CourseService: createToken<any>("CourseService"),
-    TuitionService: createToken<any>("TuitionService"),
 
     // Infrastructure
     SupabaseClient: createToken<any>("SupabaseClient"),

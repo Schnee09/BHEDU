@@ -307,7 +307,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
         action: "revoke",
         user_id: userId,
         permission_code,
-        performed_by: adminProfile.id,
+        performed_by: adminProfile?.id || "",
         old_value: oldPerm,
       });
     } catch (auditError) {

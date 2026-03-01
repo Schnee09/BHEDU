@@ -34,7 +34,6 @@ export * from "./requests/timetable";
 // Specialized
 export * from "./requests/analytics";
 export * from "./requests/auth";
-export * from "./requests/finance";
 export * from "./requests/links";
 
 // ============================================
@@ -52,5 +51,4 @@ export * from "./responses/grade";
 
 export * from "./responses/analytics";
 export * from "./responses/auth";
-export * from "./responses/finance";
 export * from "./responses/links";
