@@ -27,7 +27,7 @@ export * from "./requests/enrollment";
 // Operations
 export * from "./requests/attendance";
 export * from "./requests/grade";
-export * from "./requests/finance";
+
 export * from "./requests/reports";
 export * from "./requests/timetable";
 
@@ -48,7 +48,7 @@ export * from "./responses/course";
 export * from "./responses/enrollment";
 export * from "./responses/attendance";
 export * from "./responses/grade";
-export * from "./responses/finance";
+
 export * from "./responses/analytics";
 export * from "./responses/auth";
 export * from "./responses/links";

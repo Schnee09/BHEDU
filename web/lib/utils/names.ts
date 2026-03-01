@@ -59,11 +59,37 @@ export function splitFullName(
  * Formats a name in Vietnamese order: Surname + Middle + Given Name
  */
 export function formatVietnameseName(
-    firstName: string,
-    lastName: string,
+    firstName?: string | null,
+    lastName?: string | null,
 ): string {
     if (!firstName && !lastName) return "";
-    if (!lastName) return firstName;
-    if (!firstName) return lastName;
+    if (!lastName) return firstName || "";
+    if (!firstName) return lastName || "";
     return `${lastName} ${firstName}`.trim();
+}
+
+/**
+ * Robust name resolver that tries full_name first, then first+last, then fallback
+ */
+export function getDisplayName(
+    profile?: {
+        full_name?: string | null;
+        first_name?: string | null;
+        last_name?: string | null;
+    } | null,
+): string {
+    if (!profile) return "Chưa có";
+
+    // Prioritize structured fields to ensure standard Vietnamese order
+    const formatted = formatVietnameseName(
+        profile.first_name,
+        profile.last_name,
+    );
+    if (formatted) return formatted;
+
+    if (profile.full_name && profile.full_name.trim()) {
+        return profile.full_name.trim();
+    }
+
+    return "Chưa có";
 }

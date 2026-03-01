@@ -216,7 +216,7 @@ function PermissionsContent() {
                 const res = await apiFetch('/api/admin/permissions');
                 if (res.ok) {
                     const data = await res.json();
-                    setAllPermissions(data.permissions || []);
+                    setAllPermissions(data.definitions || data.permissions || []);
                 }
             } catch (e) {
                 console.error("Failed to fetch permissions:", e);
@@ -250,7 +250,7 @@ function PermissionsContent() {
                 const res = await apiFetch(`/api/admin/users?${params.toString()}`);
                 if (res.ok) {
                     const data = await res.json();
-                    const newUsers = data.users || [];
+                    const newUsers = data.data || data.users || [];
 
                     if (page === 1) {
                         setUsers(newUsers);

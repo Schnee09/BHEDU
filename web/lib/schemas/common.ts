@@ -102,7 +102,11 @@ export const notesSchema = z.string().max(500).optional().nullable();
 export const booleanStringSchema = z
   .string()
   .optional()
-  .transform((val) => (val === undefined ? undefined : val === "true"));
+  .transform((val) => {
+    if (val === "true") return true;
+    if (val === "false") return false;
+    return undefined;
+  });
 
 // ============================================
 // COMMON ENUMS
