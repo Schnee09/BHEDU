@@ -14,15 +14,15 @@ export const timetableQuerySchema = z.object({
 });
 
 export const createTimetableSlotSchema = z.object({
-    class_id: z.string().uuid().optional(),
-    teacher_id: z.string().uuid().optional(),
-    student_id: z.string().uuid().optional(),
+    class_id: z.string().uuid().nullish(),
+    teacher_id: z.string().uuid().nullish(),
+    student_id: z.string().uuid().nullish(),
     subject_id: z.string().uuid(),
-    room: z.string().optional(),
+    room: z.string().nullish(),
     day_of_week: z.number().min(0).max(6),
     start_time: z.string(),
     end_time: z.string(),
-    notes: z.string().optional(),
+    notes: z.string().nullish(),
     is_active: z.boolean().optional(),
 });
 

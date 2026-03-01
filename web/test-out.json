@@ -1,0 +1,57 @@
+1. Fetch test admin user uid...
+2. Logging in as test admin...
+3. Attempting to update profile as the admin user with precise payload...
+{
+  full_name: ' Quản Trị Viê',
+  first_name: 'Viê',
+  last_name: 'Quản Trị',
+  phone: '0909090909',
+  address: '',
+  date_of_birth: '2026-02-05',
+  personal_email: null,
+  user_id: 'fb5a6b89-7882-4452-a8c0-884cf6a44cb9',
+  updated_at: '2026-02-24T12:04:15.345Z'
+}
+Update result:
+{
+  data: [
+    {
+      id: 'fb5a6b89-7882-4452-a8c0-884cf6a44cb9',
+      user_id: 'fb5a6b89-7882-4452-a8c0-884cf6a44cb9',
+      first_name: 'Viê',
+      last_name: 'Quản Trị',
+      full_name: 'Viê Quản Trị',
+      email: 'test_admin_rls@example.com',
+      date_of_birth: '2026-02-05',
+      phone: '0909090909',
+      address: '',
+      emergency_contact: null,
+      role: 'admin',
+      created_at: '2026-02-24T11:45:59.391487+00:00',
+      updated_at: '2026-02-24T12:04:13.72065+00:00',
+      student_id: null,
+      grade_level: null,
+      gender: null,
+      enrollment_date: '2026-02-24',
+      status: 'active',
+      photo_url: null,
+      department: null,
+      is_active: true,
+      created_by: null,
+      notes: null,
+      student_code: null,
+      subject_id: null,
+      phone_verified: false,
+      preferred_auth_method: 'email',
+      account_status: 'active',
+      status_changed_at: null,
+      status_changed_by: null,
+      status_note: null,
+      is_managed: false,
+      deleted_at: null,
+      updated_by: null,
+      personal_email: null
+    }
+  ],
+  error: null
+}

@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/Breadcrumb";
 import { routes } from "@/lib/routes";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
+import { getDisplayName } from "@/lib/utils/names";
 
 interface ClassData {
     id: string;
@@ -25,6 +26,8 @@ interface ClassData {
     teacher?: {
         id: string;
         full_name: string;
+        first_name?: string | null;
+        last_name?: string | null;
         email: string;
     };
 }
@@ -32,6 +35,8 @@ interface ClassData {
 interface Teacher {
     id: string;
     full_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
     email: string;
 }
 
@@ -213,7 +218,7 @@ export default function EditClassPage() {
                                 <option value="">-- Chọn giáo viên --</option>
                                 {teachers.map((teacher) => (
                                     <option key={teacher.id} value={teacher.id}>
-                                        {teacher.full_name} ({teacher.email || 'Không có email'})
+                                        {getDisplayName(teacher)} ({teacher.email || 'Không có email'})
                                     </option>
                                 ))}
                             </select>

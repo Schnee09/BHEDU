@@ -711,6 +711,8 @@ export interface AttendanceListParams extends PaginationParams {
   date?: string;
   startDate?: string;
   endDate?: string;
+  from_date?: string;
+  to_date?: string;
   status?: string;
 }
 
@@ -732,8 +734,10 @@ export async function getAttendance(params?: AttendanceListParams): Promise<{
   if (params?.class_id) searchParams.set("class_id", params.class_id);
   if (params?.student_id) searchParams.set("student_id", params.student_id);
   if (params?.date) searchParams.set("date", params.date);
-  if (params?.startDate) searchParams.set("startDate", params.startDate);
-  if (params?.endDate) searchParams.set("endDate", params.endDate);
+  if (params?.startDate) searchParams.set("from_date", params.startDate);
+  if (params?.endDate) searchParams.set("to_date", params.endDate);
+  if (params?.from_date) searchParams.set("from_date", params.from_date);
+  if (params?.to_date) searchParams.set("to_date", params.to_date);
   if (params?.status && params.status !== "all") {
     searchParams.set("status", params.status);
   }

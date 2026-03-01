@@ -72,21 +72,12 @@ export type PermissionCode =
     | "attendance.mark"
     | "attendance.manage"
     | "attendance.reports"
-    // Finance
-    | "finance.view.all"
-    | "finance.view.own"
-    | "finance.invoices"
-    | "finance.payments"
-    | "finance.refund"
     // Enrollments
     | "enrollments.view"
     | "enrollments.manage"
     // Subjects
     | "subjects.view"
     | "subjects.manage"
-    // Fee Types
-    | "fee_types.view"
-    | "fee_types.manage"
     // Reports
     | "reports.view"
     | "reports.export"
@@ -128,7 +119,6 @@ export const ROLE_HIERARCHY: Record<UserRole, UserRole[]> = {
 export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     super_admin: ["*"], // God mode
     owner: [
-        "finance.view.all",
         "reports.view",
         "reports.export",
         "grades.analytics",
@@ -147,8 +137,6 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
         "enrollments.manage",
         "subjects.view",
         "subjects.manage",
-        "fee_types.view",
-        "fee_types.manage",
     ],
     staff: [
         "users.view",
@@ -165,11 +153,7 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
         "classes.enroll",
         "enrollments.view",
         "enrollments.manage",
-        "finance.invoices",
-        "finance.payments",
-        "finance.refund",
         "curriculum.manage",
-        "fee_types.view",
     ],
     teacher: [
         "grades.entry",
@@ -186,7 +170,6 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     parent: [
         "parent.view_students",
         "parent.link_student",
-        "finance.view.own",
     ],
     student: [
         "students.view",

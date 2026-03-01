@@ -18,6 +18,7 @@ import { routes } from "@/lib/routes";
 // ... imports
 
 
+import { getDisplayName } from "@/lib/utils/names";
 import {
   Button,
   Card,
@@ -32,6 +33,8 @@ import { logger } from "@/lib/logger";
 
 interface Teacher {
   full_name: string;
+  first_name?: string | null;
+  last_name?: string | null;
   email: string;
 }
 
@@ -457,9 +460,9 @@ export default function ClassesPageModern() {
                         <div className="p-1.5 bg-blue-100 rounded-lg flex-shrink-0">
                           <Icons.Teachers className="w-4 h-4 text-blue-600" />
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-[0]">
                           <p className="text-sm font-semibold text-gray-900">
-                            {classData.teacher?.full_name || 'Chưa được giao'}
+                            {classData.teacher ? getDisplayName(classData.teacher) : 'Chưa được giao'}
                           </p>
                           {classData.teacher?.email && (
                             <p className="text-xs text-gray-500 mt-0.5 truncate">
@@ -565,7 +568,7 @@ export default function ClassesPageModern() {
               <h3 className="font-semibold text-blue-900 mb-2">Thông tin lớp học</h3>
               <div className="space-y-1 text-sm text-blue-800">
                 <p><strong>Mã lớp:</strong> {selectedClass?.code}</p>
-                <p><strong>Giáo viên:</strong> {selectedClass?.teacher?.full_name || 'Chưa được giao'}</p>
+                <p><strong>Giáo viên:</strong> {selectedClass?.teacher ? getDisplayName(selectedClass.teacher) : 'Chưa được giao'}</p>
                 {selectedClass?.schedule && (
                   <p><strong>Lịch học:</strong> {selectedClass.schedule}</p>
                 )}

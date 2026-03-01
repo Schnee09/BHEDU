@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Edit3, MapPin, Users, BookOpen, Clock, CalendarDays, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getDisplayName } from "@/lib/utils/names";
 
 interface MobileTimetableListProps {
     slots: any[];
@@ -117,7 +118,7 @@ export default function MobileTimetableList({
                                         isSelected ? "text-amber-50" : ""
                                     )}>{day}</span>
                                     <span className="text-xl font-black">{format(date, 'dd')}</span>
-                                    
+
                                     {/* Active Glow */}
                                     {isSelected && (
                                         <div className="absolute -bottom-1 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_10px_white]" />
@@ -127,14 +128,14 @@ export default function MobileTimetableList({
                         })}
                     </div>
                 </div>
-                
+
                 {/* Status Bar */}
                 <div className="px-6 py-2.5 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border-b border-stone-200/50 dark:border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                         <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,166,35,0.5)] animate-pulse" />
-                         <span className="text-xs font-black text-stone-900 dark:text-stone-100 uppercase tracking-widest leading-none">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,166,35,0.5)] animate-pulse" />
+                        <span className="text-xs font-black text-stone-900 dark:text-stone-100 uppercase tracking-widest leading-none">
                             {format(currentDate, "EEEE, dd/MM", { locale: vi })}
-                         </span>
+                        </span>
                     </div>
                     <span className="text-[10px] font-black tracking-widest text-amber-600 dark:text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full uppercase border border-amber-500/20">
                         {viewMode === 'room' && 'Hành lang'}
@@ -146,7 +147,7 @@ export default function MobileTimetableList({
             </div>
 
             {/* Slots List */}
-            <div 
+            <div
                 className="flex-1 overflow-y-auto overflow-x-hidden p-5 space-y-6 pb-24"
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
@@ -159,12 +160,12 @@ export default function MobileTimetableList({
                         ))}
                     </div>
                 ) : (
-                    <div 
+                    <div
                         key={currentDay}
                         className={cn(
                             "space-y-6",
-                            animationDirection === 'right' ? "animate-slide-left" : 
-                            animationDirection === 'left' ? "animate-slide-right" : "animate-fade-in"
+                            animationDirection === 'right' ? "animate-slide-left" :
+                                animationDirection === 'left' ? "animate-slide-right" : "animate-fade-in"
                         )}
                     >
                         {dailySlots.map(({ session, slots: currentSlots }, idx) => (
@@ -177,8 +178,8 @@ export default function MobileTimetableList({
                                 {/* Timeline Node */}
                                 <div className={cn(
                                     "absolute left-0 top-3 w-4 h-4 rounded-full border-2 z-10 transition-all duration-500",
-                                    currentSlots.length > 0 
-                                        ? "border-white dark:border-stone-900 bg-amber-500 shadow-[0_0_12px_rgba(245,166,35,0.4)]" 
+                                    currentSlots.length > 0
+                                        ? "border-white dark:border-stone-900 bg-amber-500 shadow-[0_0_12px_rgba(245,166,35,0.4)]"
                                         : "border-stone-100 dark:border-stone-800 bg-stone-300 dark:bg-stone-700"
                                 )} />
 
@@ -216,7 +217,7 @@ export default function MobileTimetableList({
                                                                 </div>
                                                             )}
                                                             <div className="font-black text-stone-900 dark:text-stone-100 text-lg leading-tight tracking-tight line-clamp-2">
-                                                                {slot.class?.name || slot.student?.full_name || "N/A"}
+                                                                {slot.class?.name || getDisplayName(slot.student) || "N/A"}
                                                             </div>
                                                         </div>
                                                         <button
@@ -241,7 +242,7 @@ export default function MobileTimetableList({
                                                                 <div className="w-7 h-7 rounded-xl bg-stone-500/10 dark:bg-white/10 flex items-center justify-center shrink-0">
                                                                     <Users className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
                                                                 </div>
-                                                                <span className="truncate font-bold text-[11px] text-stone-600 dark:text-stone-300">{slot.teacher.full_name.split(' ').pop()}</span>
+                                                                <span className="truncate font-bold text-[11px] text-stone-600 dark:text-stone-300">{getDisplayName(slot.teacher).split(' ').pop()}</span>
                                                             </div>
                                                         )}
                                                     </div>

@@ -16,7 +16,6 @@ import { hasPermission, UserRole } from "@/lib/auth/core";
 export interface Class {
   id: string;
   name: string;
-  course_id: string;
   teacher_id: string;
   academic_year_id: string;
   schedule: string | null;
@@ -28,11 +27,6 @@ export interface Class {
 }
 
 export interface ClassWithDetails extends Class {
-  courses: {
-    id: string;
-    name: string;
-    code: string;
-  };
   teacher: {
     id: string;
     first_name: string;
@@ -57,7 +51,6 @@ export interface ClassWithDetails extends Class {
 }
 
 export interface ClassFilters {
-  courseId?: string;
   teacherId?: string;
   academicYearId?: string;
   search?: string;
@@ -100,7 +93,6 @@ export class ClassService {
       .select(
         `
         *,
-        courses (id, name, code),
         teacher:profiles!teacher_id (id, first_name, last_name, email, subject_id, subjects (id, name, code)),
         academic_years (id, name, start_date, end_date)
       `,
@@ -134,9 +126,6 @@ export class ClassService {
       }
     }
 
-    if (filters?.courseId) {
-      query = query.eq("course_id", filters.courseId);
-    }
     if (filters?.teacherId) {
       query = query.eq("teacher_id", filters.teacherId);
     }
@@ -172,7 +161,6 @@ export class ClassService {
       .from("classes")
       .select(`
         *,
-        courses (id, name, code),
         teacher:profiles!teacher_id (id, first_name, last_name, email, subject_id, subjects (id, name, code)),
         academic_years (id, name, start_date, end_date)
       `)
@@ -199,17 +187,6 @@ export class ClassService {
    * Create a new class
    */
   async createClass(input: CreateClassInput) {
-    // Verify course exists
-    const { data: course } = await this.supabase
-      .from("courses")
-      .select("id")
-      .eq("id", input.course_id)
-      .single();
-
-    if (!course) {
-      throw new ValidationError("Course not found");
-    }
-
     // Verify teacher exists and has teacher role
     const { data: teacher } = await this.supabase
       .from("profiles")
@@ -240,7 +217,6 @@ export class ClassService {
       .from("classes")
       .insert({
         name: input.name,
-        course_id: input.course_id,
         teacher_id: input.teacher_id,
         academic_year_id: input.academic_year_id,
         schedule: input.schedule || null,
@@ -280,19 +256,6 @@ export class ClassService {
 
       if (teacher.role !== "teacher" && teacher.role !== "admin") {
         throw new ValidationError("User must have teacher or admin role");
-      }
-    }
-
-    // Validate course if provided
-    if (input.course_id) {
-      const { data: course } = await this.supabase
-        .from("courses")
-        .select("id")
-        .eq("id", input.course_id)
-        .single();
-
-      if (!course) {
-        throw new ValidationError("Course not found");
       }
     }
 
@@ -387,20 +350,10 @@ export class ClassService {
 
   /**
    * Get assignments for a class
+   * @deprecated Legacy functionality
    */
   async getClassAssignments(classId: string) {
-    const { data, error } = await this.supabase
-      .from("assignments")
-      .select("*")
-      .eq("class_id", classId)
-      .order("due_date", { ascending: false });
-
-    if (error) {
-      console.error("Failed to fetch assignments:", error);
-      throw new Error("Failed to fetch assignments");
-    }
-
-    return data;
+    return [];
   }
 
   /**
@@ -439,50 +392,42 @@ export class ClassService {
    * Get grade statistics for a class
    */
   async getClassGradeStats(classId: string) {
-    const { data: assignments } = await this.supabase
-      .from("assignments")
-      .select("id, max_points")
-      .eq("class_id", classId);
-
-    if (!assignments || assignments.length === 0) {
-      return {
-        averageGrade: 0,
-        highestGrade: 0,
-        lowestGrade: 0,
-        totalAssignments: 0,
-      };
-    }
-
-    const assignmentIds = assignments.map((a) => a.id);
     const { data: grades } = await this.supabase
       .from("grades")
-      .select("score, assignment_id")
-      .in("assignment_id", assignmentIds);
+      .select("score")
+      .eq("class_id", classId);
 
     if (!grades || grades.length === 0) {
       return {
         averageGrade: 0,
         highestGrade: 0,
         lowestGrade: 0,
-        totalAssignments: assignments.length,
+        totalEntries: 0,
       };
     }
 
-    const percentages = grades.map((grade) => {
-      const assignment = assignments.find((a) => a.id === grade.assignment_id);
-      if (!assignment || assignment.max_points === 0) return 0;
-      return (grade.score / assignment.max_points) * 100;
-    });
+    const scores = grades.map((g) => g.score).filter((s) =>
+      s != null && !isNaN(s)
+    );
 
-    const avg = percentages.reduce((sum, p) => sum + p, 0) / percentages.length;
-    const highest = Math.max(...percentages);
-    const lowest = Math.min(...percentages);
+    if (scores.length === 0) {
+      return {
+        averageGrade: 0,
+        highestGrade: 0,
+        lowestGrade: 0,
+        totalEntries: grades.length,
+      };
+    }
+
+    const avg = scores.reduce((sum, p) => sum + p, 0) / scores.length;
+    const highest = Math.max(...scores);
+    const lowest = Math.min(...scores);
 
     return {
       averageGrade: Math.round(avg * 10) / 10,
       highestGrade: Math.round(highest * 10) / 10,
       lowestGrade: Math.round(lowest * 10) / 10,
-      totalAssignments: assignments.length,
+      totalEntries: scores.length,
     };
   }
 

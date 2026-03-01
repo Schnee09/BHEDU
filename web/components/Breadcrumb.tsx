@@ -25,7 +25,7 @@ const routeLabels: Record<string, string> = {
   profile: "Hồ sơ",
   users: "Người dùng",
   admin: "Quản trị",
-  finance: "Tài chính",
+
   import: "Nhập dữ liệu",
   mark: "Đánh dấu điểm danh",
   qr: "Mã QR",

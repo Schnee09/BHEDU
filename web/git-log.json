@@ -1,0 +1,7 @@
+[
+  "87c652f fix: add semester filter to GradeRepository.findAll - fixes grades appearing in all semesters",
+  "2ebdf3e Finalize V5.0 Architecture: Include UI components, database migrations, and repository standardizations",
+  "5c4ac8b fix(web): resolve lint errors and encoding issues for deployment",
+  "1619654 fix: refactor Zod schema in timetable.ts to resolve .partial() on refinement error",
+  "ccb59b2 fix: rename Service files to lowercase in git index to resolve Vercel build error"
+]

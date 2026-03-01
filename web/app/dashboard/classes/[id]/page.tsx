@@ -11,6 +11,7 @@ import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { getDisplayName } from "@/lib/utils/names";
 
 interface ClassDetail {
   id: string;
@@ -23,12 +24,16 @@ interface ClassDetail {
   teacher?: {
     id: string;
     full_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
     email: string;
   };
   enrollment_count?: number;
   students?: Array<{
     id: string;
     full_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
     email: string;
     student_code?: string;
   }>;
@@ -200,9 +205,9 @@ export default function ClassDetailPage() {
                     <label className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Giáo viên phụ trách</label>
                     <div className="flex items-center gap-3 p-3 bg-stone-50 dark:bg-white/5 rounded-xl border border-stone-100 dark:border-white/5">
                       <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center font-bold text-white text-sm">
-                        {classData.teacher.full_name.charAt(0)}
+                        {getDisplayName(classData.teacher).charAt(0)}
                       </div>
-                      <span className="font-semibold text-stone-900 dark:text-white text-sm">{classData.teacher.full_name}</span>
+                      <span className="font-semibold text-stone-900 dark:text-white text-sm">{getDisplayName(classData.teacher)}</span>
                     </div>
                   </div>
                 )}
@@ -265,10 +270,10 @@ export default function ClassDetailPage() {
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="w-9 h-9 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center font-bold text-stone-500 text-sm">
-                                {student.full_name?.charAt(0)}
+                                {getDisplayName(student).charAt(0)}
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-bold text-stone-900 dark:text-white text-[13px]">{student.full_name}</span>
+                                <span className="font-bold text-stone-900 dark:text-white text-[13px]">{getDisplayName(student)}</span>
                                 <span className="text-[11px] text-stone-400">{student.email}</span>
                               </div>
                             </div>

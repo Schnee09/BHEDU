@@ -43,7 +43,7 @@ export default function DashboardPage() {
       // Role-based landing logic
       switch (profile.role) {
         case "owner":
-          router.replace("/dashboard/admin/finance");
+          router.replace("/dashboard/admin/students");
           break;
         case "tutor":
           router.replace("/dashboard/timetable");

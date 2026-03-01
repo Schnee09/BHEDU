@@ -135,8 +135,7 @@ export class AttendanceRepository extends BaseRepository<
         ),
         class:classes (
           id,
-          name,
-          code
+          name
         )
       `,
         { count: "exact" },
@@ -274,7 +273,7 @@ export class AttendanceRepository extends BaseRepository<
       class_id: data.class_id,
       date: data.date,
       status: record.status,
-      notes: record.notes || null,
+      remarks: record.notes || null,
       marked_by: data.marked_by || null,
     }));
 

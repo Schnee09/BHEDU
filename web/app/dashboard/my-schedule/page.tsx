@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useSwipe } from "@/hooks/useSwipe";
 import { apiFetch } from "@/lib/api/client";
 import { getStartOfWeek, isToday, getWeekDates, formatDateISO } from "@/lib/utils/date";
 import {
@@ -20,7 +21,9 @@ import {
     Layout,
     Plus,
     CalendarDays,
+    Link as LinkIcon
 } from "lucide-react";
+import Link from "next/link";
 import {
     Button,
     Card,
@@ -53,6 +56,19 @@ interface ClassInfo {
     name: string;
 }
 
+interface CalendarEvent {
+    id: string;
+    title: string;
+    description: string | null;
+    event_type: string;
+    start_date: string;
+    end_date: string | null;
+    start_time: string | null;
+    end_time: string | null;
+    is_all_day: boolean;
+    color: string;
+}
+
 const DAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"];
 const START_HOUR = 7;
 const END_HOUR = 22;
@@ -72,6 +88,7 @@ export default function MySchedulePage() {
     const { isAdmin, isStaff, isTeacher, isStudent } = usePermissions();
     const [slots, setSlots] = useState<TimetableSlot[]>([]);
     const [classes, setClasses] = useState<ClassInfo[]>([]);
+    const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentWeek, setCurrentWeek] = useState(new Date());
     const [error, setError] = useState<string | null>(null);
@@ -82,16 +99,26 @@ export default function MySchedulePage() {
         try {
             const weekStartStr = formatDateISO(getStartOfWeek(currentWeek));
 
+            // Fetch timetable
             const response = await apiFetch(`/api/timetable/my?week_start_date=${weekStartStr}`);
             const data = await response.json();
 
             if (!data.success) {
                 setError(data.error || 'Failed to fetch schedule');
-                return;
+            } else {
+                setSlots(data.slots || []);
+                setClasses(data.classes || []);
             }
 
-            setSlots(data.slots || []);
-            setClasses(data.classes || []);
+            // Fetch events for current month
+            const year = currentWeek.getFullYear();
+            const month = currentWeek.getMonth() + 1;
+            const eventsRes = await apiFetch(`/api/calendar?year=${year}&month=${month}`);
+            const eventsData = await eventsRes.json();
+            if (eventsData.events) {
+                setEvents(eventsData.events);
+            }
+
         } catch (err) {
             console.error("Failed to fetch schedule:", err);
             setError('Không thể kết nối đến máy chủ');
@@ -163,12 +190,29 @@ export default function MySchedulePage() {
         return slotMetadata;
     };
 
+    const handlePreviousWeek = () => {
+        const prev = new Date(currentWeek);
+        prev.setDate(prev.getDate() - 7);
+        setCurrentWeek(prev);
+    };
+
+    const handleNextWeek = () => {
+        const next = new Date(currentWeek);
+        next.setDate(next.getDate() + 7);
+        setCurrentWeek(next);
+    };
+
+    const swipeHandlers = useSwipe({
+        onSwipedRight: handlePreviousWeek,
+        onSwipedLeft: handleNextWeek
+    });
+
     if (profileLoading) return <LoadingState message="Xác thực quyền truy cập..." />;
 
     const titleText = (isAdmin || isStaff) ? "Lịch trình của tôi" : isStudent ? "Lịch học của tôi" : isTeacher ? "Lịch giảng dạy" : "Lịch trình";
 
     return (
-        <div className="min-h-screen bg-[#F8F7F6] dark:bg-stone-950 p-4 sm:p-8 font-sans transition-colors duration-500">
+        <div className="min-h-screen bg-[#F8F7F6] dark:bg-stone-950 p-4 sm:p-8 font-sans transition-colors duration-500" {...swipeHandlers}>
             <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* Header - BH EDU Pro Max Style */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 glass-card p-10 rounded-[40px] border border-white/20 dark:border-white/5 shadow-2xl relative overflow-hidden">
@@ -190,20 +234,31 @@ export default function MySchedulePage() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 bg-stone-100/50 dark:bg-white/5 p-2 rounded-[32px] border border-stone-200/50 dark:border-white/5 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 px-3">
+                            <Link href="/dashboard/calendar" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                                <LinkIcon className="w-3 h-3" />
+                                Lịch trường
+                            </Link>
+                            {isAdmin && (
+                                <>
+                                    <span className="text-stone-300 dark:text-stone-700">•</span>
+                                    <Link href="/dashboard/timetable" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                        <LinkIcon className="w-3 h-3" />
+                                        Xếp lịch
+                                    </Link>
+                                </>
+                            )}
+                        </div>
                         <Button
                             variant="primary"
-                            className="rounded-full px-8 h-12 bg-amber-500 hover:bg-amber-600 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
+                            className="rounded-full px-6 h-10 bg-amber-500 hover:bg-amber-600 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-amber-500/20 transition-all"
                             onClick={() => setCurrentWeek(new Date())}
                         >
                             Hôm nay
                         </Button>
                         <div className="flex items-center gap-4 px-4 py-2 bg-white dark:bg-stone-800 rounded-full shadow-sm border border-stone-100 dark:border-white/5">
                             <button
-                                onClick={() => {
-                                    const prev = new Date(currentWeek);
-                                    prev.setDate(prev.getDate() - 7);
-                                    setCurrentWeek(prev);
-                                }}
+                                onClick={handlePreviousWeek}
                                 className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-amber-500 hover:bg-amber-50 transition-all"
                             >
                                 <ChevronLeft className="w-5 h-5" />
@@ -212,11 +267,7 @@ export default function MySchedulePage() {
                                 Tháng {currentWeek.getMonth() + 1} / {currentWeek.getFullYear()}
                             </span>
                             <button
-                                onClick={() => {
-                                    const next = new Date(currentWeek);
-                                    next.setDate(next.getDate() + 7);
-                                    setCurrentWeek(next);
-                                }}
+                                onClick={handleNextWeek}
                                 className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-amber-500 hover:bg-amber-50 transition-all"
                             >
                                 <ChevronRight className="w-5 h-5" />
@@ -261,27 +312,53 @@ export default function MySchedulePage() {
                                 </div>
 
                                 {/* Header Days */}
-                                <div className="h-[80px] bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl border-b border-stone-200 dark:border-white/5 sticky top-0 z-30 flex items-center">
-                                    <div className="w-16 shrink-0" />
-                                    <div className="flex-1 grid grid-cols-7 h-full">
-                                        {DAYS.map((day, i) => (
-                                            <div
-                                                key={day}
-                                                className={cn(
-                                                    "flex flex-col items-center justify-center border-l border-stone-100 dark:border-white/5 transition-colors",
-                                                    isToday(weekDates[i]) ? "bg-amber-500/5" : ""
-                                                )}
-                                            >
-                                                <span className={cn(
-                                                    "text-[10px] font-black uppercase tracking-widest mb-1",
-                                                    isToday(weekDates[i]) ? "text-amber-600" : "text-stone-400"
-                                                )}>{day}</span>
-                                                <div className={cn(
-                                                    "text-lg font-black w-10 h-10 flex items-center justify-center rounded-2xl transition-all",
-                                                    isToday(weekDates[i]) ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30" : "text-stone-900 dark:text-stone-100"
-                                                )}>{weekDates[i].getDate()}</div>
-                                            </div>
-                                        ))}
+                                <div className="min-h-[80px] bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl border-b border-stone-200 dark:border-white/5 sticky top-0 z-30 flex items-stretch py-2">
+                                    <div className="w-16 shrink-0 flex items-center justify-center border-r border-stone-100 dark:border-white/5">
+                                        <Clock className="w-4 h-4 text-stone-300" />
+                                    </div>
+                                    <div className="flex-1 grid grid-cols-7">
+                                        {DAYS.map((day, i) => {
+                                            const currentDateStr = formatDateISO(weekDates[i]);
+                                            const allDayEvents = events.filter(e => {
+                                                const start = e.start_date;
+                                                const end = e.end_date || e.start_date;
+                                                return e.is_all_day && currentDateStr >= start && currentDateStr <= end;
+                                            });
+
+                                            return (
+                                                <div
+                                                    key={day}
+                                                    className={cn(
+                                                        "flex flex-col items-center justify-start border-l border-stone-100 dark:border-white/5 transition-colors px-1",
+                                                        isToday(weekDates[i]) ? "bg-amber-500/5" : ""
+                                                    )}
+                                                >
+                                                    <span className={cn(
+                                                        "text-[10px] font-black uppercase tracking-widest mb-1",
+                                                        isToday(weekDates[i]) ? "text-amber-600" : "text-stone-400"
+                                                    )}>{day}</span>
+                                                    <div className={cn(
+                                                        "text-lg font-black w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-2xl transition-all mb-2",
+                                                        isToday(weekDates[i]) ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30" : "text-stone-900 dark:text-stone-100"
+                                                    )}>{weekDates[i].getDate()}</div>
+
+                                                    {/* All Day Events */}
+                                                    <div className="w-full flex flex-col gap-1 px-1 max-h-16 overflow-y-auto scrollbar-hide">
+                                                        {allDayEvents.map(evt => (
+                                                            <div
+                                                                key={evt.id}
+                                                                className="text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 w-full truncate border bg-opacity-10 dark:bg-opacity-20"
+                                                                style={{ color: evt.color, borderColor: evt.color + '40', backgroundColor: evt.color + '15' }}
+                                                                title={evt.title}
+                                                            >
+                                                                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: evt.color }} />
+                                                                <span className="truncate">{evt.title}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
@@ -289,11 +366,60 @@ export default function MySchedulePage() {
                                 <div className="relative z-10 h-[calc(100px*16)]">
                                     <div className="flex pl-16 h-full">
                                         {DAYS.map((_, dayIndex) => {
+                                            const currentDateStr = formatDateISO(weekDates[dayIndex]);
+
+                                            // Regular Timetable Slots
                                             const daySlots = slots.filter(s => s.day_of_week === dayIndex);
                                             const overlapData = calculateOverlap(daySlots);
 
+                                            // Timed Academic Events
+                                            const timedEvents = events.filter(e => {
+                                                const start = e.start_date;
+                                                const end = e.end_date || e.start_date;
+                                                return !e.is_all_day && e.start_time && e.end_time && currentDateStr >= start && currentDateStr <= end;
+                                            });
+
                                             return (
                                                 <div key={dayIndex} className="flex-1 relative border-l border-stone-100 dark:border-white/5 min-h-full group hover:bg-stone-50/30 dark:hover:bg-white/2 transition-colors">
+
+                                                    {/* Timed Events (Calendar) */}
+                                                    {timedEvents.map(evt => {
+                                                        const top = getPosition(evt.start_time!);
+                                                        const height = Math.max(getDuration(evt.start_time!, evt.end_time!), 45); // minimum height
+
+                                                        return (
+                                                            <div
+                                                                key={evt.id}
+                                                                className="absolute transition-all duration-300 z-[5] w-[95%] left-[2.5%]"
+                                                                style={{
+                                                                    top: `${(top / 60) * 100}px`,
+                                                                    height: `${(height / 60) * 100}px`,
+                                                                }}
+                                                            >
+                                                                <div
+                                                                    className="w-full h-full p-2 rounded-[16px] border border-dashed flex flex-col justify-between overflow-hidden relative shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all bg-white dark:bg-stone-900"
+                                                                    style={{ borderColor: evt.color + '60', color: evt.color }}
+                                                                >
+                                                                    <div className="absolute top-0 right-0 w-16 h-16 opacity-10 rounded-full -mr-8 -mt-8" style={{ backgroundColor: evt.color }} />
+                                                                    <div>
+                                                                        <div className="flex items-center gap-1.5 mb-1">
+                                                                            <Calendar className="w-2.5 h-2.5" />
+                                                                            <span className="text-[9px] font-black uppercase tracking-wider">{evt.event_type}</span>
+                                                                        </div>
+                                                                        <div className="text-[10px] font-bold leading-tight line-clamp-2 text-stone-900 dark:text-white">
+                                                                            {evt.title}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-[8px] font-bold opacity-70 mt-1 flex items-center gap-1">
+                                                                        <Clock className="w-2.5 h-2.5" />
+                                                                        <span>{evt.start_time} - {evt.end_time}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+
+                                                    {/* Timetable Slots */}
                                                     {daySlots.map((slot) => {
                                                         const top = getPosition(slot.start_time);
                                                         const height = getDuration(slot.start_time, slot.end_time);

@@ -96,7 +96,7 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
   const appFeatures = useMemo(() => [
     { name: "Thời khóa biểu", href: routes.timetable.manage(), keywords: ["schedule", "lich hoc", "thoi khoa bieu"] },
     { name: "Điểm danh", href: routes.attendance.list(), keywords: ["attendance", "diem danh"] },
-    { name: "Tài chính & Học phí", href: routes.finance.root(), keywords: ["finance", "hoc phi", "tien hoc"] },
+
     { name: "Học sinh", href: routes.students.list(), keywords: ["students", "hoc sinh"] },
     { name: "Lớp học", href: routes.classes.list(), keywords: ["classes", "lop hoc"] },
     { name: "Nhập điểm", href: routes.grades.entry(), keywords: ["grades", "nhap diem"] },
@@ -590,7 +590,7 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
                         {[
                           { name: 'Thời khóa biểu', icon: Icons.Calendar, href: routes.timetable.manage() },
                           { name: 'Điểm danh', icon: Icons.Clipboard, href: routes.attendance.list() },
-                          { name: 'Tài chính', icon: Icons.Payment, href: routes.finance.root() },
+
                           { name: 'Học sinh', icon: Icons.User, href: routes.students.list() }
                         ].map((item, i) => (
                           <button

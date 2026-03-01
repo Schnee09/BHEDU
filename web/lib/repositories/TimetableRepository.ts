@@ -33,10 +33,10 @@ export class TimetableRepository extends BaseRepository<
      * Get timetable slots with optional filters
      */
     async getSlots(filters: {
-        class_id?: string;
-        student_id?: string;
-        teacher_id?: string;
-        week_start_date?: string;
+        class_id?: string | null;
+        student_id?: string | null;
+        teacher_id?: string | null;
+        week_start_date?: string | null;
     }) {
         let query = this.supabase
             .from("timetable_slots")

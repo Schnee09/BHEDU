@@ -1,0 +1,22 @@
+[
+  "* 87c652f fix: add semester filter to GradeRepository.findAll - fixes grades appearing in all semesters",
+  "* 2ebdf3e Finalize V5.0 Architecture: Include UI components, database migrations, and repository standardizations",
+  "* 5c4ac8b fix(web): resolve lint errors and encoding issues for deployment",
+  "* 1619654 fix: refactor Zod schema in timetable.ts to resolve .partial() on refinement error",
+  "* ccb59b2 fix: rename Service files to lowercase in git index to resolve Vercel build error",
+  "* 581cbb9 fix: finalize build resolution by standardizing service imports and repairing API routes",
+  "* e1644cd fix: resolve Table column property mismatch in students dashboard",
+  "* f395363 fix: resolve final Table props and index export issues",
+  "* 2b0eab0 fix: add type assertions to resolve never type error in verify-invite",
+  "* 61e5f50 fix: remove bodySchema from PUT handler to resolve type mismatch",
+  "* 409b0b3 fix: update API route imports to use capital case service files",
+  "* c587378 fix: resolve Vercel build failures",
+  "* 3237688 fix: resolve 97% of build errors (150 -> 4)",
+  "* 553f43d feat(db): Global Schema Optimization Phase 3 & Frontend Audit",
+  "* df9e9e7 diagnose: force push with atomic commands",
+  "* 7089e1a feat: Mobile UI/UX Pro Max Optimization - High-fidelity navigation, dashboard, and management modules with comprehensive bug fixes",
+  "* 30eaf63 fix: UI component variants and type safety improvements",
+  "* bd31d2a fix: add indigo and blue variants to Badge component to resolve build errors",
+  "* 569d22b fix: add style prop support to Badge component to resolve build error",
+  "* f7adf1a feat: Pro Max UI Overhaul - Premium Sidebar branding, digitized Header, and high-fidelity Dashboard refinements"
+]

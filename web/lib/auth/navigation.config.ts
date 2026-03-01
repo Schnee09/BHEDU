@@ -212,25 +212,7 @@ export const ALL_NAV_ITEMS: NavSection[] = [
           },
         ],
       },
-      {
-        label: "Tài chính",
-        icon: CreditCard,
-        permissions: ["finance.invoices"],
-        links: [
-          {
-            href: "/dashboard/admin/finance/invoices",
-            label: "Hóa đơn",
-            icon: FileText,
-            permissions: ["finance.invoices"],
-          },
-          {
-            href: "/dashboard/admin/finance/payments",
-            label: "Thanh toán",
-            icon: CreditCard,
-            permissions: ["finance.payments"],
-          },
-        ],
-      },
+
       {
         label: "Hệ thống",
         icon: Building,

@@ -15,8 +15,10 @@ export const GET = createGetHandler(
     const filters = {
       class_id: searchParams.get("classId") || undefined,
       student_id: searchParams.get("studentId") || undefined,
-      from_date: searchParams.get("startDate") || undefined,
-      to_date: searchParams.get("endDate") || undefined,
+      from_date: searchParams.get("from_date") ||
+        searchParams.get("startDate") || undefined,
+      to_date: searchParams.get("to_date") || searchParams.get("endDate") ||
+        undefined,
       status: searchParams.get("status") as any || undefined,
     };
 

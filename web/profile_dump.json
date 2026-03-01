@@ -1,0 +1,42 @@
+{
+  "error": null,
+  "data": [
+    {
+      "id": "1be48ae2-3e35-490b-9840-059330b85f1a",
+      "user_id": "1be48ae2-3e35-490b-9840-059330b85f1a",
+      "first_name": "Viên",
+      "last_name": "Quản Trị",
+      "full_name": "Viên Quản Trị",
+      "email": "admin@bhedu.vn",
+      "date_of_birth": "2026-02-05",
+      "phone": "09090909",
+      "address": "",
+      "emergency_contact": null,
+      "role": "admin",
+      "created_at": "2026-01-29T14:36:36.141084+00:00",
+      "updated_at": "2026-02-24T10:59:13.655536+00:00",
+      "student_id": null,
+      "grade_level": null,
+      "gender": null,
+      "enrollment_date": "2026-01-29",
+      "status": "active",
+      "photo_url": null,
+      "department": null,
+      "is_active": true,
+      "created_by": null,
+      "notes": null,
+      "student_code": null,
+      "subject_id": null,
+      "phone_verified": false,
+      "preferred_auth_method": "email",
+      "account_status": "active",
+      "status_changed_at": null,
+      "status_changed_by": null,
+      "status_note": null,
+      "is_managed": false,
+      "deleted_at": null,
+      "updated_by": null,
+      "personal_email": null
+    }
+  ]
+}

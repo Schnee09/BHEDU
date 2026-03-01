@@ -1,0 +1,25 @@
+1. Navigating to login page...
+   Title: BH-EDU | Hệ thống quản lý giáo dục
+2. Logging in as admin...
+   Redirected to: http://localhost:3000/dashboard
+3. Navigating to /dashboard/users...
+   Title: BH-EDU | Hệ thống quản lý giáo dục
+4. Waiting for content to load...
+   Found 43 user rows in the table.
+   ALERT found: 
+   Found 5 stat cards.
+   ✅ No encoding issues detected in visible text.
+   Screenshot saved to users-page-screenshot.png
+
+--- SUMMARY ---
+Users displayed: 43
+Stat cards: 5
+Console errors: 3
+Page errors: 0
+Encoding issues: 0
+
+Console errors:
+  [ERROR] Connecting to 'wss://mwncwhkdimnjovxzhtjm.supabase.co/realtime/v1/websocket?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bmN3aGtkaW1uam92eHpodGptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0Mzg1MzAsImV4cCI6MjA3NjAxNDUzMH0.ICXEl60X70V8T7vwieDGXskvH5LPxkL29jPwC77TBAM&vsn=1.0.0' violates the following Content Security Policy directive: "connect-src 'self' https://mwncwhkdimnjovxzhtjm.supabase.co". The action has been blocked.
+  [ERROR] Error fetching notifications: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch
+    at http://localhost…:3000/_next/static/chunks/_4a7d7010._.js:1794:41), hint: , code: }
+  [ERROR] Connecting to 'wss://mwncwhkdimnjovxzhtjm.supabase.co/realtime/v1/websocket?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bmN3aGtkaW1uam92eHpodGptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0Mzg1MzAsImV4cCI6MjA3NjAxNDUzMH0.ICXEl60X70V8T7vwieDGXskvH5LPxkL29jPwC77TBAM&vsn=1.0.0' violates the following Content Security Policy directive: "connect-src 'self' https://mwncwhkdimnjovxzhtjm.supabase.co". The action has been blocked.

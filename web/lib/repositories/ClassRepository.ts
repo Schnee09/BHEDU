@@ -19,7 +19,6 @@ import {
 export interface Class {
   id: string;
   name: string;
-  course_id: string | null;
   teacher_id: string | null;
   room: string | null;
   schedule: string | null;
@@ -37,11 +36,6 @@ export interface ClassWithDetails extends Class {
     last_name: string;
     full_name: string;
   } | null;
-  course?: {
-    id: string;
-    name: string;
-    code: string;
-  } | null;
   _count?: {
     enrollments: number;
   };
@@ -51,13 +45,11 @@ export interface ClassFilters extends PaginationParams {
   search?: string;
   status?: string;
   teacher_id?: string;
-  course_id?: string;
   academic_year_id?: string;
 }
 
 export interface CreateClassInput {
   name: string;
-  course_id?: string | null;
   teacher_id?: string | null;
   room?: string | null;
   schedule?: string | null;
@@ -68,7 +60,6 @@ export interface CreateClassInput {
 
 export interface UpdateClassInput {
   name?: string;
-  course_id?: string | null;
   teacher_id?: string | null;
   room?: string | null;
   schedule?: string | null;
@@ -158,26 +149,11 @@ export class ClassRepository
       promises.push(Promise.resolve({ data: null }));
     }
 
-    // Course promise
-    if (cls.course_id) {
-      promises.push(
-        this.supabase
-          .from("courses")
-          .select("id, name, code")
-          .eq("id", cls.course_id)
-          .single()
-          .then((res) => res) as Promise<any>,
-      );
-    } else {
-      promises.push(Promise.resolve({ data: null }));
-    }
-
-    const [teacherRes, courseRes] = await Promise.all(promises);
+    const [teacherRes] = await Promise.all(promises);
 
     return {
       ...cls,
       teacher: teacherRes.data || null,
-      course: courseRes.data || null,
       _count: { enrollments: countResult.count || 0 },
     } as ClassWithDetails;
   }
@@ -211,11 +187,6 @@ export class ClassRepository
             code
           )
         ),
-        course:courses (
-          id,
-          name,
-          code
-        ),
         enrollments (count)
       `,
         { count: "exact" },
@@ -232,10 +203,6 @@ export class ClassRepository
 
     if (filters.teacher_id) {
       query = query.eq("teacher_id", filters.teacher_id);
-    }
-
-    if (filters.course_id) {
-      query = query.eq("course_id", filters.course_id);
     }
 
     if (filters.academic_year_id) {

@@ -21,42 +21,6 @@ const RouteLoadingFallback = () => (
  * Admin Routes - Code Split
  */
 
-// Reports
-export const AdminFinanceReports = dynamic(
-  () => import('@/app/dashboard/admin/finance/reports/page').then(mod => mod.default),
-  {
-    loading: () => <RouteLoadingFallback />,
-    ssr: true,
-  }
-);
-
-// Payments
-export const AdminPayments = dynamic(
-  () => import('@/app/dashboard/admin/finance/payments/page').then(mod => mod.default),
-  {
-    loading: () => <RouteLoadingFallback />,
-    ssr: true,
-  }
-);
-
-// Invoices
-export const AdminInvoices = dynamic(
-  () => import('@/app/dashboard/admin/finance/invoices/page').then(mod => mod.default),
-  {
-    loading: () => <RouteLoadingFallback />,
-    ssr: true,
-  }
-);
-
-// Student Accounts
-export const AdminStudentAccounts = dynamic(
-  () => import('@/app/dashboard/admin/finance/student-accounts/page').then(mod => mod.default),
-  {
-    loading: () => <RouteLoadingFallback />,
-    ssr: true,
-  }
-);
-
 /**
  * Dashboard Routes - Code Split
  */
@@ -64,15 +28,6 @@ export const AdminStudentAccounts = dynamic(
 // Reports
 export const DashboardReports = dynamic(
   () => import('@/app/dashboard/reports/page').then(mod => mod.default),
-  {
-    loading: () => <RouteLoadingFallback />,
-    ssr: true,
-  }
-);
-
-// Finance Reports
-export const DashboardFinanceReports = dynamic(
-  () => import('@/app/dashboard/finance/reports/page').then(mod => mod.default),
   {
     loading: () => <RouteLoadingFallback />,
     ssr: true,
@@ -137,9 +92,6 @@ export function createDynamicRoute<P extends object>(
  */
 export const ROUTE_PRELOADS = {
   reports: () => import('@/app/dashboard/reports/page'),
-  financeReports: () => import('@/app/dashboard/admin/finance/reports/page'),
-  payments: () => import('@/app/dashboard/admin/finance/payments/page'),
-  invoices: () => import('@/app/dashboard/admin/finance/invoices/page'),
   analytics: () => import('@/app/dashboard/grades/analytics/page'),
   attendance: () => import('@/app/dashboard/attendance/reports/page'),
 } as const;

@@ -104,12 +104,13 @@ function UserManagementPageContent() {
       logger.info('Fetching users', { roleFilter, activeFilter, searchQuery, page });
 
       const params = new URLSearchParams({
-        role: roleFilter,
-        isActive: activeFilter,
         search: searchQuery,
         page: page.toString(),
-        limit: '20'
+        limit: '50'
       });
+
+      if (roleFilter !== 'all') params.append('role', roleFilter);
+      if (activeFilter !== 'all') params.append('is_active', activeFilter);
 
       const response = await apiFetch(`/api/admin/users?${params}`);
       const data = await response.json();
@@ -117,7 +118,7 @@ function UserManagementPageContent() {
       if (data.success) {
         setUsers(data.data || data.users || []);
         setStats(data.statistics || null);
-        setTotalPages(data.pagination?.pages || 1);
+        setTotalPages(data.pagination?.totalPages || 1); // Fixed: apiPaginated returns totalPages
         logger.info('Users fetched successfully', { count: data.data?.length || 0 });
       } else {
         throw new Error(data.error || 'Không thềEtải danh sách người dùng');

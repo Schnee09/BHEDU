@@ -1,0 +1,12 @@
+[
+  "web/app/dashboard/classes/[id]/edit/page.tsx",
+  "web/app/dashboard/classes/[id]/page.tsx",
+  "web/app/dashboard/classes/page.tsx",
+  "web/app/dashboard/timetable/page.tsx",
+  "web/components/Sidebar.tsx",
+  "web/components/timetable/MobileTimetableList.tsx",
+  "web/lib/repositories/TimetableRepository.ts",
+  "web/lib/repositories/UserRepository.ts",
+  "web/lib/schemas/requests/timetable.ts",
+  "web/lib/utils/names.ts"
+]

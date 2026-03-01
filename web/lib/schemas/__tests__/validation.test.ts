@@ -5,8 +5,6 @@
 import {
   bulkGradeEntrySchema,
   createGradeSchema,
-  createInvoiceSchema,
-  createPaymentSchema,
   createStudentSchema,
   loginSchema,
   signupSchema,
@@ -202,62 +200,6 @@ describe("Auth Schemas", () => {
         last_name: "Doe",
       };
       const result = signupSchema.safeParse(invalidData);
-      expect(result.success).toBe(false);
-    });
-  });
-});
-
-describe("Finance Schemas", () => {
-  describe("createPaymentSchema", () => {
-    it("should validate valid payment data", () => {
-      const validData = {
-        student_id: "550e8400-e29b-41d4-a716-446655440000",
-        student_account_id: "550e8400-e29b-41d4-a716-446655440002",
-        amount: 1000000,
-        payment_method_id: "550e8400-e29b-41d4-a716-446655440001",
-      };
-      const result = createPaymentSchema.safeParse(validData);
-      expect(result.success).toBe(true);
-    });
-
-    it("should reject negative amount", () => {
-      const invalidData = {
-        student_id: "550e8400-e29b-41d4-a716-446655440000",
-        amount: -100,
-        payment_method_id: "550e8400-e29b-41d4-a716-446655440001",
-      };
-      const result = createPaymentSchema.safeParse(invalidData);
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("createInvoiceSchema", () => {
-    it("should validate valid invoice data", () => {
-      const validData = {
-        student_id: "550e8400-e29b-41d4-a716-446655440000",
-        student_account_id: "550e8400-e29b-41d4-a716-446655440002",
-        academic_year_id: "550e8400-e29b-41d4-a716-446655440001",
-        due_date: "2024-12-31",
-        items: [
-          {
-            fee_type_id: "550e8400-e29b-41d4-a716-446655440002",
-            description: "Tuition Fee",
-            amount: 5000000,
-          },
-        ],
-      };
-      const result = createInvoiceSchema.safeParse(validData);
-      expect(result.success).toBe(true);
-    });
-
-    it("should require at least one item", () => {
-      const invalidData = {
-        student_id: "550e8400-e29b-41d4-a716-446655440000",
-        academic_year_id: "550e8400-e29b-41d4-a716-446655440001",
-        due_date: "2024-12-31",
-        items: [],
-      };
-      const result = createInvoiceSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
     });
   });

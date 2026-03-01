@@ -1,0 +1,9 @@
+Users in sidebar: 43
+Clicked first user
+Right panel content checks:
+  Has permission references: true
+  Still loading: false
+  Has errors: false
+  Text sample: Viên Quản Trịtest_admin_rls@example.comSuper AdminOwnerAdminStaffTeacherStudentQuản trị viên có tất cả quyền theo mặc địnhĐiểm Danh3 quyềnĐiểm danhAdminThực hiện điểm danhBáo cáo điểm danhAdminXem báo cáo điểm danhXem điểm danhAdminXem lịch sử điểm danhLớp Học5 quyềnTạo lớp họcAdminTạo lớp học mớiXó
+
+API errors: 0

@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-    Home, 
-    Users, 
-    BookOpen, 
-    CalendarCheck, 
+import {
+    Home,
+    Users,
+    BookOpen,
+    CalendarCheck,
     MoreHorizontal,
     X,
     DollarSign,
@@ -31,38 +31,38 @@ export default function MobileBottomNav() {
 
     // Define navigation items based on role
     const mainNavItems = [
-      { name: "Trang chủ", href: "/dashboard", icon: Home, color: "var(--color-primary)" },
+        { name: "Trang chủ", href: "/dashboard", icon: Home, color: "var(--color-primary)" },
     ];
 
     if (role === 'parent') {
-      mainNavItems.push(
-        { name: "Của tôi", href: "/dashboard/parent", icon: GraduationCap, color: "purple" },
-        { name: "Học phí", href: "/dashboard/finance", icon: DollarSign, color: "green" },
-        { name: "Lịch học", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" }
-      );
+        mainNavItems.push(
+            { name: "Của tôi", href: "/dashboard/parent", icon: GraduationCap, color: "purple" },
+
+            { name: "Lịch học", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" }
+        );
     } else if (role === 'student') {
-      mainNavItems.push(
-        { name: "Điểm số", href: "/dashboard/grades", icon: GraduationCap, color: "purple" },
-        { name: "Lịch học", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" },
-        { name: "Thông báo", href: "/dashboard/notifications", icon: Bell, color: "orange" }
-      );
+        mainNavItems.push(
+            { name: "Điểm số", href: "/dashboard/grades", icon: GraduationCap, color: "purple" },
+            { name: "Lịch học", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" },
+            { name: "Thông báo", href: "/dashboard/notifications", icon: Bell, color: "orange" }
+        );
     } else if (role === 'teacher' || role === 'tutor') {
-      mainNavItems.push(
-        { name: "Lịch dạy", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" },
-        { name: "Lớp học", href: "/dashboard/classes", icon: BookOpen, color: "purple" },
-        { name: "Điểm danh", href: "/dashboard/attendance", icon: Users, color: "green" }
-      );
+        mainNavItems.push(
+            { name: "Lịch dạy", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" },
+            { name: "Lớp học", href: "/dashboard/classes", icon: BookOpen, color: "purple" },
+            { name: "Điểm danh", href: "/dashboard/attendance", icon: Users, color: "green" }
+        );
     } else {
-      // Admin/Staff/Super_admin default
-      mainNavItems.push(
-        { name: "Lớp", href: "/dashboard/classes", icon: BookOpen, color: "blue" },
-        { name: "Học sinh", href: "/dashboard/students", icon: Users, color: "purple" },
-        { name: "Điểm danh", href: "/dashboard/attendance", icon: CalendarCheck, color: "green" }
-      );
+        // Admin/Staff/Super_admin default
+        mainNavItems.push(
+            { name: "Lớp", href: "/dashboard/classes", icon: BookOpen, color: "blue" },
+            { name: "Học sinh", href: "/dashboard/students", icon: Users, color: "purple" },
+            { name: "Điểm danh", href: "/dashboard/attendance", icon: CalendarCheck, color: "green" }
+        );
     }
 
     const moreMenuItems = [
-        { name: "Tài chính", href: "/dashboard/finance", icon: DollarSign, color: "green" },
+
         { name: "Điểm số", href: "/dashboard/grades", icon: GraduationCap, color: "purple" },
         { name: "Thời khóa biểu", href: "/dashboard/timetable", icon: ClipboardList, color: "blue" },
         { name: "Thông báo", href: "/dashboard/notifications", icon: Bell, color: "orange" },
@@ -79,7 +79,7 @@ export default function MobileBottomNav() {
         <div className="lg:hidden">
             {/* More Menu Overlay */}
             {showMoreMenu && (
-                <div 
+                <div
                     className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md animate-fade-in"
                     onClick={() => setShowMoreMenu(false)}
                 />
@@ -93,12 +93,12 @@ export default function MobileBottomNav() {
                 <div className="glass-premium rounded-t-[40px] rounded-b-[20px] shadow-2xl pb-safe overflow-hidden border border-white/20 dark:border-white/5 relative">
                     {/* Background Decorative Bloom */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[80px] rounded-full -translate-y-1/2 translate-x-1/2" />
-                    
+
                     <div className="flex justify-center pt-4 pb-2">
                         <div className="w-16 h-2 bg-stone-200 dark:bg-stone-800 rounded-full" />
                     </div>
 
-                    <button 
+                    <button
                         onClick={() => setShowMoreMenu(false)}
                         className="absolute top-6 right-6 p-2.5 rounded-2xl bg-stone-100 dark:bg-white/10 text-stone-500 press-effect shadow-sm"
                     >
@@ -124,17 +124,17 @@ export default function MobileBottomNav() {
                                 <div className={cn(
                                     "absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity blur-xl rounded-full",
                                     item.color === 'orange' ? 'bg-orange-500' :
-                                    item.color === 'blue' ? 'bg-blue-500' :
-                                    item.color === 'purple' ? 'bg-purple-500' :
-                                    item.color === 'green' ? 'bg-green-500' : 'bg-stone-500'
+                                        item.color === 'blue' ? 'bg-blue-500' :
+                                            item.color === 'purple' ? 'bg-purple-500' :
+                                                item.color === 'green' ? 'bg-green-500' : 'bg-stone-500'
                                 )} />
-                                
+
                                 <div className={cn(
                                     "p-3 rounded-2xl mb-2 transition-all group-hover:scale-110",
                                     item.color === 'orange' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
-                                    item.color === 'blue' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
-                                    item.color === 'purple' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' :
-                                    item.color === 'green' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-stone-500/10 text-stone-500'
+                                        item.color === 'blue' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                                            item.color === 'purple' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' :
+                                                item.color === 'green' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-stone-500/10 text-stone-500'
                                 )}>
                                     <item.icon className="w-6 h-6" strokeWidth={2} />
                                 </div>
@@ -164,10 +164,10 @@ export default function MobileBottomNav() {
                                     "p-2.5 rounded-[18px] transition-all duration-500",
                                     active ? "scale-110 mb-1" : "bg-transparent mb-0.5"
                                 )}
-                                style={active ? { backgroundColor: 'var(--color-primary-10)' } : {}}
+                                    style={active ? { backgroundColor: 'var(--color-primary-10)' } : {}}
                                 >
-                                    <item.icon 
-                                        className={cn("w-6 h-6", active ? "stroke-[2.5px]" : "stroke-[1.5px]")} 
+                                    <item.icon
+                                        className={cn("w-6 h-6", active ? "stroke-[2.5px]" : "stroke-[1.5px]")}
                                     />
                                 </div>
                                 <span className={cn(
@@ -176,7 +176,7 @@ export default function MobileBottomNav() {
                                 )}>
                                     {item.name}
                                 </span>
-                                
+
                                 {active && (
                                     <div className="absolute top-2 w-1 h-1 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,166,35,0.8)]" style={{ backgroundColor: 'var(--color-primary)', boxShadow: '0 0 10px var(--color-primary)' }} />
                                 )}
@@ -197,7 +197,7 @@ export default function MobileBottomNav() {
                             "p-2.5 rounded-[18px] transition-all duration-500",
                             showMoreMenu ? "scale-110 mb-1" : "bg-transparent mb-0.5"
                         )}
-                        style={showMoreMenu ? { backgroundColor: 'var(--color-primary-10)' } : {}}
+                            style={showMoreMenu ? { backgroundColor: 'var(--color-primary-10)' } : {}}
                         >
                             <MoreHorizontal className="w-6 h-6" strokeWidth={2.5} />
                         </div>

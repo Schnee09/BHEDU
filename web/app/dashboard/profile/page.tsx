@@ -38,7 +38,7 @@ export default function ProfilePage() {
         email: userProfile.email || "",
         phone: userProfile.phone || "",
         address: userProfile.address || "",
-        date_of_birth: userProfile.date_of_birth || "",
+        date_of_birth: userProfile.date_of_birth?.split('T')[0] || "",
         personal_email: userProfile.personal_email || "",
       });
       setHasInitialized(true);
@@ -86,7 +86,7 @@ export default function ProfilePage() {
           user_id: user.id, // Ensure user_id link is maintained
           updated_at: new Date().toISOString()
         })
-        .eq("id", user.id) // Use auth user ID (guaranteed correct after consolidation)
+        .eq("id", userProfile?.id) // exactly matching the context's primary key
         .select();
 
 
@@ -131,7 +131,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 animate-fade-in relative">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 animate-fade-in relative overflow-hidden">
       {/* Background Blobs */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
       <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-primary/5 blur-[100px] rounded-full pointer-events-none -z-10" />
@@ -143,9 +143,6 @@ export default function ProfilePage() {
             <div className="w-36 h-36 rounded-[48px] bg-gradient-to-tr from-amber-400 via-amber-600 to-amber-700 p-1.5 shadow-2xl relative z-10">
               <div className="w-full h-full rounded-[44px] bg-stone-900 flex items-center justify-center text-4xl font-black text-white overflow-hidden relative group">
                 {formData.full_name?.charAt(0) || userProfile?.email?.charAt(0).toUpperCase()}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center cursor-pointer">
-                  <Icons.Camera className="w-8 h-8 text-white scale-90 group-hover:scale-100 transition-transform" />
-                </div>
               </div>
             </div>
             <div className="absolute -inset-4 bg-amber-500/20 blur-3xl rounded-full animate-pulse" />
@@ -304,14 +301,14 @@ export default function ProfilePage() {
 
                 <div className="p-4 rounded-3xl bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700">
                   <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Cơ sở đào tạo</p>
-                  <p className="font-bold text-stone-900 dark:text-stone-100">Bùi Hoàng Education - Trụ sở chính</p>
+                  <p className="font-bold text-stone-900 dark:text-stone-100">Cơ sở chính</p>
                 </div>
 
                 <div className="p-4 rounded-3xl bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700">
                   <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Trạng thái tài khoản</p>
                   <div className="flex items-center gap-2 text-green-600 dark:text-green-500 font-black uppercase text-[10px] tracking-widest">
                     <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-                    Kích hoạt (Pro Max)
+                    Đang hoạt động
                   </div>
                 </div>
               </div>

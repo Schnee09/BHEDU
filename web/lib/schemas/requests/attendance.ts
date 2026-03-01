@@ -3,6 +3,7 @@ import {
     attendanceStatusSchema,
     createSortSchema,
     dateStringSchema,
+    optionalUuidSchema,
     paginationWithDefaults,
     uuidSchema,
 } from "../common";
@@ -17,8 +18,8 @@ import {
 export const attendanceQuerySchema = z.object({
     ...paginationWithDefaults(50).shape,
     ...createSortSchema(["date", "created_at"], "date").shape,
-    class_id: uuidSchema.optional(),
-    student_id: uuidSchema.optional(),
+    class_id: optionalUuidSchema,
+    student_id: optionalUuidSchema,
     date: dateStringSchema.optional(),
     start_date: dateStringSchema.optional(),
     end_date: dateStringSchema.optional(),

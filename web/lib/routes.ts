@@ -42,37 +42,12 @@ export const routes = {
     vietnameseEntry: () => "/dashboard/grades/entry", // Now unified with standard entry
   },
 
-  finance: {
-    root: () => "/dashboard/finance",
-    fees: () => "/dashboard/finance/fees",
-    payments: () => "/dashboard/finance/payments",
-    invoices: () => "/dashboard/finance/invoices",
-    invoiceDetail: (id: string) => `/dashboard/finance/invoices/${id}`,
-    accounts: () => "/dashboard/finance/accounts",
-    accountDetail: (id: string) => `/dashboard/finance/accounts/${id}`,
-    reports: () => "/dashboard/finance/reports",
-  },
-
   admin: {
     root: () => "/dashboard/admin",
 
     students: {
       list: () => "/dashboard/admin/students",
       detail: (id: string) => `/dashboard/admin/students/${id}`,
-    },
-
-    finance: {
-      studentAccounts: {
-        list: () => "/dashboard/admin/finance/student-accounts",
-        detail: (id: string) =>
-          `/dashboard/admin/finance/student-accounts/${id}`,
-      },
-      invoices: {
-        list: () => "/dashboard/admin/finance/invoices",
-        detail: (id: string) => `/dashboard/admin/finance/invoices/${id}`,
-      },
-      payments: () => "/dashboard/admin/finance/payments",
-      reports: () => "/dashboard/admin/finance/reports",
     },
   },
 

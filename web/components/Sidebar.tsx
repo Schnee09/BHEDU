@@ -10,6 +10,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { getNavigationForPermissions, getNavLabel, NavSection, NavGroup, NavLink } from "@/lib/auth/navigation.config";
 import { UserRole } from "@/lib/auth/core";
 import { createClient } from "@/lib/supabase/client";
+import { getDisplayName } from "@/lib/utils/names";
 import {
   ChevronDown,
   ChevronRight,
@@ -255,7 +256,7 @@ export default function Sidebar({
                   <div className="h-2 w-px bg-stone-200 dark:bg-stone-700"></div>
                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/10">
                     <span className="text-[7px] font-medium text-stone-400 dark:text-stone-500 uppercase tracking-tight">{greeting},</span>
-                    <span className="text-[8px] font-black text-stone-900 dark:text-white capitalize leading-none">{profile?.full_name?.split(' ').pop() || "Viên"}</span>
+                    <span className="text-[8px] font-black text-stone-900 dark:text-white capitalize leading-none">{getDisplayName(profile as any).split(' ').pop() || "Viên"}</span>
                   </div>
                 </div>
               </div>

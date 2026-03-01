@@ -1,10 +1,11 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { BaseRepository, PaginatedResult } from "./base";
-import { 
-  type User, 
-  type CreateUserInput, 
-  type UpdateUserInput, 
-  type UserQueryInput 
+import { getDisplayName } from "@/lib/utils/names";
+import {
+  type CreateUserInput,
+  type UpdateUserInput,
+  type User,
+  type UserQueryInput,
 } from "@/lib/schemas";
 
 export { type UserQueryInput };
@@ -25,7 +26,7 @@ export class UserRepository extends BaseRepository<
    * Find all users with advanced filtering
    */
   async findAll(
-    filters: Partial<UserQueryInput> = {}
+    filters: Partial<UserQueryInput> = {},
   ): Promise<PaginatedResult<User>> {
     const page = filters.page || 1;
     const pageSize = filters.limit || 20;
@@ -38,8 +39,8 @@ export class UserRepository extends BaseRepository<
 
     // Apply sorting
     if (filters.sort) {
-      query = query.order(filters.sort, { 
-        ascending: filters.order === "asc" 
+      query = query.order(filters.sort, {
+        ascending: filters.order === "asc",
       });
     } else {
       query = query.order("created_at", { ascending: false });
@@ -53,13 +54,13 @@ export class UserRepository extends BaseRepository<
     if (filters.status && filters.status !== "all") {
       query = query.eq("status", filters.status); // Check if 'status' column exists or mapped from is_active?
       // Note: profiles usually have 'is_active'. 'status' might be a derived field or new column?
-      // Based on common.ts, userRoleSchema etc. 
+      // Based on common.ts, userRoleSchema etc.
       // If status is 'active'/'inactive', we might need to map to is_active boolean if 'status' column doesn't exist.
     }
-    
+
     // If 'status' column doesn't exist, we might map logical status
     if (filters.is_active === true || filters.is_active === false) {
-         query = query.eq("is_active", filters.is_active);
+      query = query.eq("is_active", filters.is_active);
     }
 
     if (filters.department) {
@@ -68,7 +69,9 @@ export class UserRepository extends BaseRepository<
 
     if (filters.search) {
       // Search email or full_name
-      query = query.or(`email.ilike.%${filters.search}%,full_name.ilike.%${filters.search}%`);
+      query = query.or(
+        `email.ilike.%${filters.search}%,full_name.ilike.%${filters.search}%`,
+      );
     }
 
     const { data, error, count } = await query
@@ -79,7 +82,10 @@ export class UserRepository extends BaseRepository<
     }
 
     return {
-      data: (data || []) as User[],
+      data: (data || []).map((u) => ({
+        ...u,
+        full_name: getDisplayName(u),
+      })) as User[],
       total: count || 0,
       page,
       pageSize,
@@ -92,21 +98,29 @@ export class UserRepository extends BaseRepository<
    */
   async getStatistics() {
     // Try RPC first
-    const { data: rpcStats, error: rpcError } = await this.supabase.rpc("get_user_statistics").single();
-    
+    const { data: rpcStats, error: rpcError } = await this.supabase.rpc(
+      "get_user_statistics",
+    ).single();
+
     if (!rpcError && rpcStats) {
       return rpcStats;
     }
 
     // Fallback if RPC fails
-    const { count: total } = await this.supabase.from(this.tableName).select("*", { count: "exact", head: true });
-    const { count: active } = await this.supabase.from(this.tableName).select("*", { count: "exact", head: true }).eq("is_active", true);
-    
+    const { count: total } = await this.supabase.from(this.tableName).select(
+      "*",
+      { count: "exact", head: true },
+    );
+    const { count: active } = await this.supabase.from(this.tableName).select(
+      "*",
+      { count: "exact", head: true },
+    ).eq("is_active", true);
+
     return {
       total_users: total || 0,
       active_users: active || 0,
       inactive_users: (total || 0) - (active || 0),
-      recent_signups: 0
+      recent_signups: 0,
     };
   }
 }

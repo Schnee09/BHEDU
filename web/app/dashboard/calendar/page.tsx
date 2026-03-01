@@ -20,8 +20,10 @@ import {
     Edit,
     CalendarDays,
     Info,
-    CheckCircle2
+    CheckCircle2,
+    Link as LinkIcon
 } from "lucide-react";
+import Link from "next/link";
 import {
     Button,
     Card,
@@ -48,6 +50,15 @@ interface CalendarEvent {
     color: string;
 }
 
+interface TimetableSlot {
+    id: string;
+    subject: { id: string; name: string; code: string } | null;
+    start_time: string;
+    end_time: string;
+    day_of_week: number;
+    room: string | null;
+}
+
 const EVENT_TYPES = {
     general: { label: "Chung", icon: CalendarIcon, color: "#6366f1", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
     exam: { label: "Kiểm tra", icon: BookOpen, color: "#ef4444", bg: "bg-red-500/10", border: "border-red-500/20" },
@@ -60,6 +71,7 @@ export default function AcademicCalendarPage() {
     const { profile, loading: profileLoading } = useProfile();
     const { isAdmin, isStaff } = usePermissions();
     const [events, setEvents] = useState<CalendarEvent[]>([]);
+    const [slots, setSlots] = useState<TimetableSlot[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<"month" | "list">("month");
@@ -100,8 +112,23 @@ export default function AcademicCalendarPage() {
         }
     };
 
+    const fetchMySchedule = async () => {
+        try {
+            const response = await apiFetch(`/api/timetable/my`);
+            const data = await response.json();
+            if (data.success) {
+                setSlots(data.slots || []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch schedule slots:", error);
+        }
+    };
+
     useEffect(() => {
-        if (!profileLoading) fetchEvents();
+        if (!profileLoading) {
+            fetchEvents();
+            fetchMySchedule();
+        }
     }, [currentDate, profileLoading]);
 
     const getDaysInMonth = () => {
@@ -136,6 +163,13 @@ export default function AcademicCalendarPage() {
             const end = event.end_date || event.start_date;
             return dateStr >= start && dateStr <= end;
         }).filter((event) => filterType === "all" || event.event_type === filterType);
+    };
+
+    const getSlotsForDate = (date: Date) => {
+        if (filterType !== "all" && filterType !== "class") return [];
+        const jsDay = date.getDay(); // 0 is Sunday, 1 is Monday
+        const slotDayOfWeek = jsDay === 0 ? 6 : jsDay - 1; // Map to 0=Mon, 6=Sun
+        return slots.filter((slot) => slot.day_of_week === slotDayOfWeek);
     };
 
     const isToday = (date: Date) => {
@@ -255,17 +289,34 @@ export default function AcademicCalendarPage() {
                         <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-stone-900 dark:text-stone-100">Lịch Học Tập</h1>
                         <p className="text-sm font-medium text-stone-500 dark:text-stone-400 mt-3 max-w-lg leading-relaxed">Luôn cập nhật các kỳ thi, ngày nghỉ và sự kiện quan trọng trong hệ thống.</p>
                     </div>
-                    {canManageEvents && (
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            className="rounded-2xl h-14 px-8 font-black uppercase tracking-widest text-xs shadow-xl shadow-amber-500/20 press-effect"
-                            onClick={handleOpenAdd}
-                        >
-                            <Plus className="w-5 h-5 mr-3" />
-                            Tạo sự kiện
-                        </Button>
-                    )}
+
+                    <div className="flex flex-col sm:flex-row items-center gap-4 bg-stone-100/50 dark:bg-white/5 p-2 rounded-[32px] border border-stone-200/50 dark:border-white/5 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 px-3">
+                            <Link href="/dashboard/my-schedule" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                                <LinkIcon className="w-3 h-3" />
+                                Lịch học/dạy
+                            </Link>
+                            {canManageEvents && (
+                                <>
+                                    <span className="text-stone-300 dark:text-stone-700">•</span>
+                                    <Link href="/dashboard/timetable" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                        <LinkIcon className="w-3 h-3" />
+                                        Xếp lịch
+                                    </Link>
+                                </>
+                            )}
+                        </div>
+                        {canManageEvents && (
+                            <Button
+                                variant="primary"
+                                className="rounded-full px-6 h-10 bg-amber-500 hover:bg-amber-600 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-amber-500/20 transition-all"
+                                onClick={handleOpenAdd}
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Tạo sự kiện
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Controls & Toolbar */}
@@ -331,6 +382,7 @@ export default function AcademicCalendarPage() {
                                     className="bg-transparent text-sm font-medium outline-none cursor-pointer pr-2"
                                 >
                                     <option value="all">Tất cả sự kiện</option>
+                                    <option value="class">Lớp học</option>
                                     {Object.entries(EVENT_TYPES).map(([key, { label }]) => (
                                         <option key={key} value={key}>{label}</option>
                                     ))}
@@ -396,9 +448,25 @@ export default function AcademicCalendarPage() {
                                                         </div>
                                                     );
                                                 })}
-                                                {getEventsForDate(date).length > 3 && (
+
+                                                {/* Classes rendered as events */}
+                                                {getSlotsForDate(date).slice(0, 3).map(slot => (
+                                                    <div
+                                                        key={`slot-${slot.id}`}
+                                                        className="text-[10px] p-1.5 text-blue-600 bg-blue-500/10 border-blue-500/20 rounded-lg border flex items-center gap-1.5 transition-transform hover:scale-105"
+                                                        title={`${slot.subject?.name || "Lớp học"}\n${slot.start_time} - ${slot.end_time}`}
+                                                    >
+                                                        <div className="w-1 h-1 bg-blue-500 rounded-full shrink-0" />
+                                                        <div className="flex flex-col flex-1 min-w-0">
+                                                            <span className="font-bold truncate">{slot.subject?.code || "Lớp học"}</span>
+                                                            <span className="text-[8px] font-medium opacity-80">{slot.start_time}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+
+                                                {(getEventsForDate(date).length + getSlotsForDate(date).length) > 4 && (
                                                     <div className="text-[9px] text-center font-black text-muted uppercase tracking-tighter pt-1">
-                                                        +{getEventsForDate(date).length - 3} sự kiện
+                                                        +{(getEventsForDate(date).length + getSlotsForDate(date).length) - 3} sự kiện
                                                     </div>
                                                 )}
                                             </div>
@@ -490,6 +558,63 @@ export default function AcademicCalendarPage() {
                                     );
                                 })
                         )}
+
+                        {/* List slots in List View if in current month... this might be long, so limit or sort */}
+                        {/* To keep it simple, we might only list events in List Mode, or list recurring slots but that requires generating dates. For now, in list mode, we show classes if 'class' filter is active or all. We need to generate fake events for the classes for the current month */}
+                        {(() => {
+                            if (filterType !== 'all' && filterType !== 'class') return null;
+                            const slotEventsForCurrentMonth: any[] = [];
+                            const daysInMonth = getDaysInMonth().filter(d => d !== null) as Date[];
+
+                            daysInMonth.forEach(date => {
+                                const daySlots = getSlotsForDate(date);
+                                daySlots.forEach(slot => {
+                                    slotEventsForCurrentMonth.push({
+                                        ...slot,
+                                        is_class: true,
+                                        start_date: toDateString(date),
+                                        title: slot.subject?.name || "Lớp học",
+                                        event_type: "class"
+                                    });
+                                });
+                            });
+
+                            return slotEventsForCurrentMonth
+                                .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+                                .map((event, idx) => {
+                                    return (
+                                        <div
+                                            key={`slotlist-${event.id}-${idx}`}
+                                            className="group p-6 hover:bg-gray-50 dark:hover:bg-white/5 transition-all flex items-center gap-6"
+                                        >
+                                            <div className={cn("w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 border shadow-sm", "bg-blue-500/10", "border-blue-500/20")}>
+                                                <span className="text-lg font-black leading-none" style={{ color: "#3b82f6" }}>
+                                                    {new Date(event.start_date).getDate()}
+                                                </span>
+                                                <span className="text-[9px] font-bold uppercase tracking-widest mt-1 opacity-60" style={{ color: "#3b82f6" }}>
+                                                    T.{new Date(event.start_date).getMonth() + 1}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <h3 className="font-bold text-gray-900 dark:text-white truncate">{event.title}</h3>
+                                                    <Badge className={cn("text-[9px]", "bg-blue-500/10", "border-blue-500/20")} style={{ color: "#3b82f6" }}>
+                                                        Lớp học
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-sm text-muted mb-2 line-clamp-1">Phòng: {event.room || "Chưa xếp"}</p>
+                                                <div className="flex items-center gap-4 text-xs font-bold text-muted uppercase tracking-wider">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Clock className="w-3.5 h-3.5" />
+                                                        {event.start_time} - {event.end_time}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                        })()}
                     </Card>
                 )}
 
@@ -501,6 +626,10 @@ export default function AcademicCalendarPage() {
                                 <span className="text-[10px] font-bold text-muted uppercase tracking-widest">{label}</span>
                             </div>
                         ))}
+                        <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-blue-500" />
+                            <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Lớp học</span>
+                        </div>
                     </div>
                 </Card>
             </div>
@@ -612,6 +741,6 @@ export default function AcademicCalendarPage() {
                     </div>
                 </form>
             </Modal>
-        </div>
+        </div >
     );
 }

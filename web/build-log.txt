@@ -1,0 +1,32 @@
+app/api/attendance/route.ts(26,56): error TS2345: Argument of type '"attendance.manage"' is not assignable to parameter of type 'PermissionCode'.
+app/api/auth/verify-invite/route.ts(61,47): error TS2339: Property 'full_name' does not exist on type '{ full_name: any; }[]'.
+app/api/dashboard/stats/route.ts(24,37): error TS2345: Argument of type 'UserRole | null' is not assignable to parameter of type 'UserRole'.
+  Type 'null' is not assignable to type 'UserRole'.
+app/api/dashboard/stats/route.ts(25,21): error TS2345: Argument of type 'UserRole | null' is not assignable to parameter of type 'UserRole'.
+  Type 'null' is not assignable to type 'UserRole'.
+app/dashboard/admin/permissions/page.tsx(283,76): error TS18047: 'selectedUser' is possibly 'null'.
+app/dashboard/attendance/mark/page.tsx(16,35): error TS2307: Cannot find module '@/lib/attendance/services/AttendanceService' or its corresponding type declarations.
+app/dashboard/grades/analytics/page.tsx(5,62): error TS2307: Cannot find module '@/lib/gradeService' or its corresponding type declarations.
+app/dashboard/grades/assignments/page.tsx(4,48): error TS2307: Cannot find module '@/lib/gradeService' or its corresponding type declarations.
+app/dashboard/grades/entry/page.tsx(26,30): error TS2307: Cannot find module '@/lib/grades/services/GradeService' or its corresponding type declarations.
+app/dashboard/grades/reports/page.tsx(4,37): error TS2307: Cannot find module '@/lib/gradeService' or its corresponding type declarations.
+app/dashboard/students/page.tsx(148,43): error TS7006: Parameter 's' implicitly has an 'any' type.
+app/dashboard/students/page.tsx(267,25): error TS7006: Parameter 's' implicitly has an 'any' type.
+app/dashboard/students/page.tsx(272,39): error TS7006: Parameter 's' implicitly has an 'any' type.
+app/dashboard/students/page.tsx(285,19): error TS7006: Parameter 'row' implicitly has an 'any' type.
+app/dashboard/students/page.tsx(285,34): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+app/dashboard/students/page.tsx(630,58): error TS2339: Property 'id' does not exist on type '{ select: any; } & { full_name: any; } & { student_code: any; } & { email: any; } & { grade_level: any; } & { phone: any; } & { status: any; } & { created_at: any; } & { actions: any; }'.
+app/dashboard/students/page.tsx(646,64): error TS2339: Property 'id' does not exist on type '{ select: any; } & { full_name: any; } & { student_code: any; } & { email: any; } & { grade_level: any; } & { phone: any; } & { status: any; } & { created_at: any; } & { actions: any; }'.
+app/dashboard/students/page.tsx(647,71): error TS2339: Property 'id' does not exist on type '{ select: any; } & { full_name: any; } & { student_code: any; } & { email: any; } & { grade_level: any; } & { phone: any; } & { status: any; } & { created_at: any; } & { actions: any; }'.
+app/dashboard/students/page.tsx(657,68): error TS2339: Property 'id' does not exist on type '{ select: any; } & { full_name: any; } & { student_code: any; } & { email: any; } & { grade_level: any; } & { phone: any; } & { status: any; } & { created_at: any; } & { actions: any; }'.
+app/dashboard/students/page.tsx(725,66): error TS2345: Argument of type '{ select: any; } & { full_name: any; } & { student_code: any; } & { email: any; } & { grade_level: any; } & { phone: any; } & { status: any; } & { created_at: any; } & { actions: any; }' is not assignable to parameter of type 'SetStateAction<Student | null>'.
+  Type '{ select: any; } & { full_name: any; } & { student_code: any; } & { email: any; } & { grade_level: any; } & { phone: any; } & { status: any; } & { created_at: any; } & { actions: any; }' is missing the following properties from type 'Student': id, role, date_of_birth, address
+app/dashboard/students/page.tsx(734,67): error TS2345: Argument of type '{ select: any; } & { full_name: any; } & { student_code: any; } & { email: any; } & { grade_level: any; } & { phone: any; } & { status: any; } & { created_at: any; } & { actions: any; }' is not assignable to parameter of type 'Student'.
+  Type '{ select: any; } & { full_name: any; } & { student_code: any; } & { email: any; } & { grade_level: any; } & { phone: any; } & { status: any; } & { created_at: any; } & { actions: any; }' is missing the following properties from type 'Student': id, role, date_of_birth, address
+components/Header.tsx(170,98): error TS2345: Argument of type '"students.import"' is not assignable to parameter of type 'PermissionCode'.
+hooks/useAbility.tsx(45,34): error TS2339: Property 'role' does not exist on type 'ProfileContextType'.
+hooks/useAbility.tsx(45,64): error TS2339: Property 'role' does not exist on type 'ProfileContextType'.
+hooks/useAbility.tsx(50,29): error TS2339: Property 'id' does not exist on type 'ProfileContextType'.
+hooks/useAbility.tsx(51,27): error TS2339: Property 'role' does not exist on type 'ProfileContextType'.
+hooks/useAbility.tsx(54,32): error TS2339: Property 'email' does not exist on type 'ProfileContextType'.
+hooks/useAbility.tsx(55,35): error TS2339: Property 'full_name' does not exist on type 'ProfileContextType'.

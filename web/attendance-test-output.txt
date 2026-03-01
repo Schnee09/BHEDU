@@ -1,0 +1,26 @@
+Logged in successfully
+
+=== Attendance Main (/dashboard/attendance) ===
+  ⚠️ 404 NOT FOUND
+  Screenshot: attendance-attendance-screenshot.png
+
+=== Mark Attendance (/dashboard/attendance/mark) ===
+  ⚠️ 404 NOT FOUND
+  Screenshot: attendance-mark-screenshot.png
+
+=== Attendance History (/dashboard/attendance/history) ===
+  ⚠️ 404 NOT FOUND
+  Screenshot: attendance-history-screenshot.png
+
+=== Attendance Reports (/dashboard/attendance/reports) ===
+  ⚠️ 404 NOT FOUND
+  Screenshot: attendance-reports-screenshot.png
+
+=== OVERALL SUMMARY ===
+Console errors: 5
+  [ProfileProvider] Error fetching profile: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch
+    at http://localhost…st:3000/_n
+  Connecting to 'wss://mwncwhkdimnjovxzhtjm.supabase.co/realtime/v1/websocket?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
+  Connecting to 'wss://mwncwhkdimnjovxzhtjm.supabase.co/realtime/v1/websocket?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
+  Connecting to 'wss://mwncwhkdimnjovxzhtjm.supabase.co/realtime/v1/websocket?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
+  Connecting to 'wss://mwncwhkdimnjovxzhtjm.supabase.co/realtime/v1/websocket?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
