@@ -1,6 +1,6 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import Header from '@/components/Header';
+import { CustomizationProvider } from '@/contexts/CustomizationContext';
 import '@testing-library/jest-dom';
 
 // Mock next/navigation
@@ -23,7 +23,11 @@ describe('Header smoke', () => {
   it('renders header and displays brand and quick actions for admin', async () => {
     const profile = { full_name: 'Test Admin', first_name: 'Test', last_name: 'Admin', role: 'admin' };
 
-    render(<Header profile={profile} />);
+    render(
+      <CustomizationProvider>
+        <Header profile={profile} />
+      </CustomizationProvider>
+    );
 
     // Brand title should be present
     expect(screen.getByText(/Bui Hoang Education/i)).toBeInTheDocument();

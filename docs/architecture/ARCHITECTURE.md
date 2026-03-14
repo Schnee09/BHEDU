@@ -368,27 +368,6 @@ class SubjectService {
 }
 ```
 
-### TuitionService (`lib/services/tuitionService.ts`)
-
-```typescript
-class TuitionService {
-    async getTuitionRates(): Promise<TuitionRate[]>;
-    async getClassTuition(classId: string): Promise<number>;
-    async calculateStudentTuition(
-        studentId: string,
-    ): Promise<{ totalMonthly; classes }>;
-    async getTuitionRate(
-        classType: "group" | "tutoring",
-        sessionsPerWeek: number,
-    ): Promise<number>;
-    async updateTuitionRate(
-        classType,
-        sessionsPerWeek,
-        monthlyFee,
-    ): Promise<void>;
-}
-```
-
 ---
 
 ## 5. Repositories Layer

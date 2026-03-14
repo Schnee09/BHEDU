@@ -8,66 +8,62 @@ import AuthGuard from "@/components/AuthGuard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SkipToMainContent } from "@/lib/a11y";
 import { ReactNode, useState } from "react";
-import MobileBottomNav from "@/components/MobileBottomNav";
 import { useSwipe } from "@/hooks/useSwipe";
 
 function DashboardContent({ children }: { children: ReactNode }) {
   const { profile, loading } = useProfileContext();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Swipe to open sidebar
   const swipeHandlers = useSwipe({
     onSwipedRight: () => setIsMobileMenuOpen(true),
   });
 
   if (loading) return <LoadingScreen />;
-  if (!profile) return <div className="flex items-center justify-center min-h-screen bg-background text-foreground font-semibold text-xl">Profile not found.</div>;
+  if (!profile) return null;
 
   return (
-    <AuthGuard>
-      <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
-        {/* Skip Navigation Link */}
-        <SkipToMainContent />
+    <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
+      <SkipToMainContent />
 
+      <div
+        {...swipeHandlers}
+        className="flex h-screen overflow-hidden bg-stone-50 dark:bg-[#0e0c0a]"
+      >
+        <Sidebar
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          isCollapsed={isSidebarCollapsed}
+          setIsCollapsed={setIsSidebarCollapsed}
+        />
+
+        {/* Main Content — margin driven by CSS vars on desktop, 0 on mobile */}
         <div
-          {...swipeHandlers}
-          className="flex h-screen overflow-hidden bg-gray-50/50 dark:bg-transparent"
+          className={`flex-1 flex flex-col min-w-0 h-full overflow-hidden transition-[margin] duration-300 ease-in-out ${isSidebarCollapsed ? 'content-area-collapsed' : 'content-area'}`}
         >
-          {/* Sidebar - Dual Theme */}
-          <Sidebar
-            isMobileMenuOpen={isMobileMenuOpen}
-            setIsMobileMenuOpen={setIsMobileMenuOpen}
+          <Header
+            profile={profile}
+            onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            isMenuOpen={isMobileMenuOpen}
           />
 
-          {/* Main Content Area */}
-          <div className="flex-1 ml-0 lg:ml-80 flex flex-col h-full overflow-hidden transition-all duration-300">
-            {/* Header */}
-            <Header
-              profile={profile}
-              onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              isMenuOpen={isMobileMenuOpen}
-            />
-
-            {/* Content */}
-            <main
-              id="main-content"
-              className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 pb-safe" // Increased pb for bottom nav visibility
-              role="main"
-            >
-              <div className="w-full mx-auto max-w-[1600px] px-0 sm:px-2 md:px-0">
-                <ErrorBoundary
-                  showDetails={process.env.NODE_ENV === 'development'}
-                  pageName="page content"
-                >
-                  {children}
-                </ErrorBoundary>
-              </div>
-            </main>
-          </div>
-          <MobileBottomNav />
+          <main
+            id="main-content"
+            className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 lg:pt-6 pb-safe"
+            role="main"
+          >
+            <div className="w-full mx-auto max-w-[1600px]">
+              <ErrorBoundary
+                showDetails={process.env.NODE_ENV === 'development'}
+                pageName="page content"
+              >
+                {children}
+              </ErrorBoundary>
+            </div>
+          </main>
         </div>
-      </ErrorBoundary>
-    </AuthGuard>
+      </div>
+    </ErrorBoundary>
   );
 }
 
@@ -77,8 +73,10 @@ export default function DashboardLayout({
   children: ReactNode;
 }) {
   return (
-    <ProfileProvider>
-      <DashboardContent>{children}</DashboardContent>
-    </ProfileProvider>
+    <AuthGuard>
+      <ProfileProvider>
+        <DashboardContent>{children}</DashboardContent>
+      </ProfileProvider>
+    </AuthGuard>
   );
 }

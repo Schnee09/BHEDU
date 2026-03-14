@@ -56,7 +56,35 @@ export function CustomizationProvider({ children }: { children: React.ReactNode 
 
     // Apply CSS Variables to :root for global consumption
     const root = document.documentElement;
-    
+
+    // Theme Management - Unified Source of Truth
+    const applyTheme = (currentTheme: ThemeMode) => {
+      let isDark = false;
+      if (currentTheme === 'dark') {
+        isDark = true;
+      } else if (currentTheme === 'system') {
+        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+
+      if (isDark) {
+        root.classList.add('dark');
+        localStorage.setItem('theme', 'dark'); // Legacy compatibility
+      } else {
+        root.classList.remove('dark');
+        localStorage.setItem('theme', 'light'); // Legacy compatibility
+      }
+    };
+
+    applyTheme(theme);
+
+    // Listen for system theme changes if set to 'system'
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemChange = () => {
+      if (theme === 'system') applyTheme('system');
+    };
+
+    mediaQuery.addEventListener('change', handleSystemChange);
+
     // Accent Colors Mapping
     const colorMap: Record<AccentColor, string> = {
       amber: '#F5A623',
@@ -66,7 +94,7 @@ export function CustomizationProvider({ children }: { children: React.ReactNode 
       slate: '#64748B',
       indigo: '#6366F1'
     };
-    
+
     const colorHoverMap: Record<AccentColor, string> = {
       amber: '#D97706',
       blue: '#1D4ED8',
@@ -81,7 +109,7 @@ export function CustomizationProvider({ children }: { children: React.ReactNode 
     root.style.setProperty('--glass-blur', `${blurStrength}px`);
     root.style.setProperty('--glass-opacity', `${glassOpacity / 100}`);
     root.style.setProperty('--glass-texture', texture ? '1' : '0');
-    
+
     // Content density - can be used to adjust global spacing/paddings
     if (density === 'compact') {
       root.classList.add('ui-compact');
@@ -91,6 +119,7 @@ export function CustomizationProvider({ children }: { children: React.ReactNode 
       root.style.setProperty('--ui-spacing-multiplier', '1');
     }
 
+    return () => mediaQuery.removeEventListener('change', handleSystemChange);
   }, [accentColor, density, glassOpacity, blurStrength, texture, theme]);
 
   return (

@@ -25,7 +25,7 @@ const WorkingComponent = () => <div>Working component</div>;
 describe('ErrorBoundary', () => {
   // Suppress console errors during tests
   beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   afterEach(() => {
@@ -50,7 +50,7 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+      expect(screen.getByText(/sự cố xảy ra/i)).toBeInTheDocument();
     });
 
     it('displays error details in development mode', () => {
@@ -62,7 +62,7 @@ describe('ErrorBoundary', () => {
       );
 
       // ErrorBoundary should render with error message
-      expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+      expect(screen.getByText(/sự cố xảy ra/i)).toBeInTheDocument();
     });
 
     it('provides retry functionality', () => {
@@ -72,9 +72,9 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+      expect(screen.getByText(/sự cố xảy ra/i)).toBeInTheDocument();
 
-      const retryButton = screen.getByText(/try again/i);
+      const retryButton = screen.getByText(/thử lại/i);
       expect(retryButton).toBeInTheDocument();
       expect(retryButton).toBeEnabled();
     });
@@ -123,7 +123,7 @@ describe('ErrorBoundary', () => {
       );
 
       // PageErrorBoundary should show an inline error, not full page
-      expect(screen.getByText(/error/i)).toBeInTheDocument();
+      expect(screen.getByText(/không thể tải/i)).toBeInTheDocument();
     });
 
     it('allows reset on error', () => {
@@ -133,7 +133,7 @@ describe('ErrorBoundary', () => {
         </PageErrorBoundary>
       );
 
-      const resetButton = screen.queryByText(/reset|try again|dismiss/i);
+      const resetButton = screen.queryByText(/thử lại/i);
       if (resetButton) {
         expect(resetButton).toBeInTheDocument();
       }
@@ -154,7 +154,7 @@ describe('ErrorBoundary', () => {
 
       render(<WrappedComponent />);
 
-      expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+      expect(screen.getByText(/sự cố xảy ra/i)).toBeInTheDocument();
     });
 
     it('accepts ErrorBoundary props', () => {
@@ -205,9 +205,9 @@ describe('ErrorBoundary', () => {
       );
 
       // Inner error boundary should catch it
-        expect(screen.queryByText('Outer boundary')).toBeInTheDocument();
+      expect(screen.queryByText('Outer boundary')).toBeInTheDocument();
       // Should not see outer error message
-        expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/sự cố xảy ra/i)).not.toBeInTheDocument();
     });
 
     it('prevents errors from propagating to parent components', () => {
@@ -219,7 +219,7 @@ describe('ErrorBoundary', () => {
       );
 
       // Should show error UI
-      expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+      expect(screen.getByText(/sự cố xảy ra/i)).toBeInTheDocument();
     });
   });
 
@@ -231,7 +231,7 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      const errorContainer = screen.getByText(/something went wrong/i).closest('div');
+      const errorContainer = screen.getByText(/sự cố xảy ra/i).closest('div');
       expect(errorContainer).toBeInTheDocument();
     });
 
@@ -242,9 +242,9 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-  const retryButton = screen.getByText(/try again/i);
-  expect(retryButton).toBeInTheDocument();
-  expect(retryButton).toBeEnabled();
+      const retryButton = screen.getByText(/thử lại/i);
+      expect(retryButton).toBeInTheDocument();
+      expect(retryButton).toBeEnabled();
     });
 
     it('error message is readable by screen readers', () => {
@@ -254,7 +254,7 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      const errorMessage = screen.getByText(/something went wrong/i);
+      const errorMessage = screen.getByText(/sự cố xảy ra/i);
       expect(errorMessage).toBeVisible();
     });
   });

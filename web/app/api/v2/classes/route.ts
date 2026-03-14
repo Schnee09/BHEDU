@@ -83,8 +83,8 @@ export const GET = createGetHandler(
 
             // Students can see classes they're enrolled in
             if (user.role === "student") {
-                // TODO: Implement findByStudent in ClassRepository
-                const { data, ...pagination } = await repository.findAll(
+                const { data, ...pagination } = await repository.findByStudent(
+                    user.id,
                     validatedQuery,
                 );
                 return apiPaginated(data, pagination);

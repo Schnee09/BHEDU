@@ -1,180 +1,207 @@
 /**
  * Student Grades Overview API (Simplified)
  * GET /api/grades/student-overview
- * 
+ *
  * Get overall grades and subject breakdowns for students
  * Uses new schema: grades → subject_id + class_id
  */
 
-import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
-import { teacherAuth } from '@/lib/auth/adminAuth'
-import { logger } from '@/lib/logger'
+import { NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { teacherAuth } from "@/lib/auth/adminAuth";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: Request) {
   try {
-    const authResult = await teacherAuth(request)
+    const authResult = await teacherAuth(request);
     if (!authResult.authorized) {
       return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      )
+        { error: authResult.reason || "Unauthorized" },
+        { status: 401 },
+      );
     }
 
-    const supabase = createServiceClient()
-    const { searchParams } = new URL(request.url)
-    const classId = searchParams.get('classId')
-    const studentId = searchParams.get('studentId')
+    const supabase = createServiceClient();
+    const { searchParams } = new URL(request.url);
+    const classId = searchParams.get("classId");
+    const studentId = searchParams.get("studentId");
 
     if (!classId) {
       return NextResponse.json(
-        { error: 'classId is required' },
-        { status: 400 }
-      )
+        { error: "classId is required" },
+        { status: 400 },
+      );
     }
 
     // Verify teacher has access to this class
     const { data: classData } = await supabase
-      .from('classes')
-      .select('teacher_id')
-      .eq('id', classId)
-      .single()
+      .from("classes")
+      .select("teacher_id")
+      .eq("id", classId)
+      .single();
 
     // Allow access for: class teacher, admin, or staff
-    const isAdmin = authResult.userRole === 'admin'
-    const isStaff = authResult.userRole === 'staff'
-    const isClassTeacher = classData?.teacher_id === authResult.userId
+    const isAdmin = authResult.userRole === "admin";
+    const isStaff = authResult.userRole === "staff";
+    const isClassTeacher = classData?.teacher_id === authResult.userId;
 
     if (!classData || (!isClassTeacher && !isAdmin && !isStaff)) {
       return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      )
+        { error: "Access denied" },
+        { status: 403 },
+      );
     }
 
     // Get students to calculate grades for
-    let studentIds: string[] = []
+    let studentIds: string[] = [];
     if (studentId) {
-      studentIds = [studentId]
+      studentIds = [studentId];
     } else {
       const { data: enrollments } = await supabase
-        .from('enrollments')
-        .select('student_id')
-        .eq('class_id', classId)
+        .from("enrollments")
+        .select("student_id")
+        .eq("class_id", classId);
 
-      studentIds = enrollments?.map(e => e.student_id) || []
+      studentIds = enrollments?.map((e) => e.student_id) || [];
     }
 
     if (studentIds.length === 0) {
       return NextResponse.json({
         success: true,
-        student_grades: []
-      })
+        student_grades: [],
+      });
     }
 
     // Get all subjects
     const { data: subjects } = await supabase
-      .from('subjects')
-      .select('id, code, name')
+      .from("subjects")
+      .select("id, code, name");
 
     if (!subjects || subjects.length === 0) {
       return NextResponse.json({
         success: true,
-        student_grades: []
-      })
+        student_grades: [],
+      });
     }
 
-    // Get student grades
-    const studentGrades = await Promise.all(
-      studentIds.map(async (sid) => {
-        // Get student info
-        const { data: student } = await supabase
-          .from('profiles')
-          .select('id, email, full_name, student_code')
-          .eq('id', sid)
-          .single()
+    // Batch fetch student profiles and grades
+    const [profilesResponse, gradesResponse] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, email, full_name, student_code")
+        .in("id", studentIds),
+      supabase
+        .from("grades")
+        .select(`
+          score,
+          points_earned,
+          component_type,
+          subject_id,
+          student_id
+        `)
+        .in("student_id", studentIds)
+        .eq("class_id", classId),
+    ]);
 
-        if (!student) return null
+    const profiles = profilesResponse.data || [];
+    const allGrades = gradesResponse.data || [];
 
-        // Get grades for this student in this class
-        const { data: grades } = await supabase
-          .from('grades')
-          .select(`
-            score,
-            points_earned,
-            component_type,
-            subject_id
-          `)
-          .eq('student_id', sid)
-          .eq('class_id', classId)
+    const studentGrades = studentIds.map((sid) => {
+      // Get student info from batched data
+      const student = profiles.find((p) => p.id === sid);
+      if (!student) return null;
 
-        // Group by subject
-        const subjectGrades: Record<string, { name: string; scores: number[] }> = {}
-        
-        // Initialize all subjects
-        subjects.forEach(sub => {
-          subjectGrades[sub.id] = { name: sub.name || sub.code, scores: [] }
-        })
+      // Filter grades for this student from batched data
+      const studentSpecificGrades = allGrades.filter((g) =>
+        g.student_id === sid
+      );
 
-        // Add scores to subjects
-        grades?.forEach(g => {
-          const subId = g.subject_id
-          if (subId && subjectGrades[subId]) {
-            // Score is already 0-10 scale (normalized)
-            const score = g.points_earned ?? g.score ?? 0
-            subjectGrades[subId].scores.push(score)
-          }
-        })
+      // Group by subject
+      const subjectGrades: Record<string, { name: string; scores: number[] }> =
+        {};
 
-        // Calculate averages per subject (10-point scale → percentage)
-        const category_grades = Object.entries(subjectGrades).map(([subId, data]) => {
+      // Initialize all subjects
+      subjects.forEach((sub) => {
+        subjectGrades[sub.id] = { name: sub.name || sub.code, scores: [] };
+      });
+
+      // Add scores to subjects
+      studentSpecificGrades.forEach((g) => {
+        const subId = g.subject_id;
+        if (subId && subjectGrades[subId]) {
+          // Score is already 0-10 scale (normalized)
+          const score = g.points_earned ?? g.score ?? 0;
+          subjectGrades[subId].scores.push(score);
+        }
+      });
+
+      // Calculate averages per subject (10-point scale → percentage)
+      const category_grades = Object.entries(subjectGrades).map(
+        ([subId, data]) => {
           const avgScore = data.scores.length > 0
             ? data.scores.reduce((sum, s) => sum + s, 0) / data.scores.length
-            : 0
-          
+            : 0;
+
           // 10-point scale: multiply by 10 for percentage
-          const percentage = avgScore * 10
-          
+          const percentage = avgScore * 10;
+
           return {
             category_id: subId,
             category_name: data.name,
             percentage: Math.round(percentage * 10) / 10,
-            letter_grade: percentage >= 80 ? 'A' : percentage >= 65 ? 'B' : percentage >= 50 ? 'C' : percentage >= 35 ? 'D' : 'F',
+            letter_grade: percentage >= 80
+              ? "A"
+              : percentage >= 65
+              ? "B"
+              : percentage >= 50
+              ? "C"
+              : percentage >= 35
+              ? "D"
+              : "F",
             points_earned: Math.round(avgScore * 10) / 10,
-            total_points: 10
-          }
-        }).filter(c => c.points_earned > 0) // Only include subjects with grades
+            total_points: 10,
+          };
+        },
+      ).filter((c) => c.points_earned > 0); // Only include subjects with grades
 
-        // Overall: average of all subject percentages
-        const overall_percentage = category_grades.length > 0
-          ? category_grades.reduce((sum, c) => sum + c.percentage, 0) / category_grades.length
-          : 0
-        
-        const letter_grade = overall_percentage >= 80 ? 'A' : overall_percentage >= 65 ? 'B' : overall_percentage >= 50 ? 'C' : overall_percentage >= 35 ? 'D' : 'F'
+      // Overall: average of all subject percentages
+      const overall_percentage = category_grades.length > 0
+        ? category_grades.reduce((sum, c) => sum + c.percentage, 0) /
+          category_grades.length
+        : 0;
 
-        return {
-          student_id: sid,
-          student_name: student.full_name || student.email || '',
-          student_number: student.student_code || '',
-          overall_percentage: Math.round(overall_percentage * 10) / 10,
-          letter_grade,
-          category_grades
-        }
-      })
-    )
+      const letter_grade = overall_percentage >= 80
+        ? "A"
+        : overall_percentage >= 65
+        ? "B"
+        : overall_percentage >= 50
+        ? "C"
+        : overall_percentage >= 35
+        ? "D"
+        : "F";
 
-    const validGrades = studentGrades.filter(g => g !== null)
+      return {
+        student_id: sid,
+        student_name: student.full_name || student.email || "",
+        student_number: student.student_code || "",
+        overall_percentage: Math.round(overall_percentage * 10) / 10,
+        letter_grade,
+        category_grades,
+      };
+    });
+
+    const validGrades = studentGrades.filter((g) => g !== null);
 
     return NextResponse.json({
       success: true,
       data: validGrades,
-      student_grades: validGrades
-    })
+      student_grades: validGrades,
+    });
   } catch (error) {
-    logger.error('Student overview API error:', error)
+    logger.error("Student overview API error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

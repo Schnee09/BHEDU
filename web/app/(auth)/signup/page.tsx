@@ -4,10 +4,12 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import GuestGuard from "@/components/GuestGuard";
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Loader2, CheckCircle, Phone, ShieldCheck } from "lucide-react";
 import { UserRole } from "@/lib/role-utils";
 import { logger } from "@/lib/logger";
 import { usePerformanceMonitor } from "@/lib/performanceMonitor";
+import { Button, Input, LoadingSpinner } from "@/components/ui";
+import { Icons } from "@/components/ui/Icons";
+import { motion, AnimatePresence } from "framer-motion";
 
 function SignupPageContent() {
   const searchParams = useSearchParams();
@@ -137,247 +139,219 @@ function SignupPageContent() {
 
   return (
     <GuestGuard>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 px-4 py-12">
-        <div className="w-full max-w-md">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="w-full max-w-[480px] relative z-10"
+      >
+        <div className="glass-premium rounded-[40px] shadow-ultra border border-white/20 dark:border-white/5 p-8 sm:p-12 w-full">
           {/* Invitation Banner */}
-          {inviterName && (
-            <div className="mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
-              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-1 rounded-2xl shadow-lg ring-4 ring-purple-500/10">
-                <div className="bg-white dark:bg-gray-800 rounded-xl px-4 py-3 flex items-center gap-3">
-                  <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg">
-                    <ShieldCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          <AnimatePresence>
+            {inviterName && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-8"
+              >
+                <div className="glass-crystal rounded-3xl p-1 shadow-ultra border-primary/20">
+                  <div className="bg-primary/5 dark:bg-white/5 rounded-2xl px-5 py-4 flex items-center gap-4">
+                    <div className="bg-primary text-white p-2.5 rounded-xl shadow-lg">
+                      <Icons.Security className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Lời mời từ hệ thống</p>
+                      <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
+                        <span className="font-bold text-stone-900 dark:text-white">{inviterName}</span> đã mời bạn làm <span className="font-bold text-stone-900 dark:text-white capitalize">{role}</span>
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Lời mời từ hệ thống</p>
-                    <p className="text-sm font-medium text-slate-700 dark:text-gray-200">
-                      <span className="font-bold text-slate-900 dark:text-white">{inviterName}</span> đã mời bạn tham gia với vai trò <span className="font-bold text-slate-900 dark:text-white capitalize">{role}</span>
-                    </p>
-                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Logo and Header */}
+          <div className="text-center mb-10">
+            <div className="flex justify-center mb-6">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="bg-primary p-5 rounded-[28px] shadow-2xl shadow-primary/30"
+              >
+                <Icons.User className="w-12 h-12 text-white" />
+              </motion.div>
+            </div>
+            <h2 className="text-4xl font-serif font-bold text-stone-900 dark:text-white mb-2 italic tracking-tight uppercase">
+              Đăng ký
+            </h2>
+            <p className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-[0.4em] font-sans">
+              Join our Academic Community
+            </p>
+          </div>
+
+          {/* Google Sign Up Button */}
+          {!inviteToken && (
+            <div className="mb-10">
+              <Button
+                variant="secondary"
+                onClick={signUpWithGoogle}
+                disabled={googleLoading || loading}
+                fullWidth
+                className="bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 h-14"
+              >
+                {googleLoading ? (
+                  <LoadingSpinner size="sm" className="mr-2" />
+                ) : (
+                  <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                  </svg>
+                )}
+                <span className="text-sm font-bold uppercase tracking-wider">Đăng ký với Google</span>
+              </Button>
+
+              <div className="relative my-10">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-stone-200/50 dark:border-white/5"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="px-6 bg-transparent text-stone-400 dark:text-stone-500 font-bold uppercase tracking-widest leading-none">
+                    Hoặc sử dụng biểu mẫu
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="glass-premium rounded-[40px] shadow-2xl shadow-purple-500/10 dark:shadow-purple-500/10 border border-white/20 dark:border-white/5 p-8 sm:p-12 animate-card-entrance">
-            {/* Logo and Header */}
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-4 rounded-[24px] shadow-2xl shadow-purple-500/30 group-hover:scale-110 transition-transform duration-500">
-                  <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
-                </div>
-              </div>
-              <h2 className="text-3xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tighter">
-                Tạo tài khoản
-              </h2>
-              <p className="text-sm font-bold text-stone-500 dark:text-gray-400 uppercase tracking-widest">Đăng ký để bắt đầu hành trình</p>
+          <form onSubmit={signUp} className="space-y-6">
+            <Input
+              label="Họ và tên"
+              placeholder="Nguyễn Văn A"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              leftIcon={<Icons.User className="w-4 h-4" />}
+            />
+
+            <div className="space-y-6">
+              <Input
+                label="Địa chỉ Email"
+                type="email"
+                placeholder="ban@example.com"
+                required={!phone}
+                disabled={!!inviteToken && !!email}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                leftIcon={<Icons.Mail className="w-4 h-4" />}
+              />
+
+              {!email && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                  <Input
+                    label="Email cá nhân (Tùy chọn)"
+                    type="email"
+                    placeholder="gmail@example.com"
+                    value={personalEmail}
+                    onChange={(e) => setPersonalEmail(e.target.value)}
+                    leftIcon={<Icons.Mail className="w-4 h-4" />}
+                  />
+                </motion.div>
+              )}
+
+              <Input
+                label="Số điện thoại"
+                type="tel"
+                placeholder="0987xxx..."
+                required={!email}
+                disabled={!!inviteToken && !!phone}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                leftIcon={<Icons.Phone className="w-4 h-4" />}
+              />
             </div>
 
-            {/* Google Sign Up Button - Hidden if invite present */}
-            {!inviteToken && (
-              <>
-                <button
-                  type="button"
-                  onClick={signUpWithGoogle}
-                  disabled={googleLoading || loading}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                >
-                  {googleLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                    </svg>
-                  )}
-                  {googleLoading ? "Đang kết nối..." : "Đăng ký với Google"}
-                </button>
-
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-gray-600"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white dark:bg-gray-800 text-slate-500 dark:text-gray-400 font-medium">hoặc đăng ký bằng email/SĐT</span>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <form onSubmit={signUp} className="space-y-4">
-              {/* Name Field */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                  Họ và tên
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                  <input
-                    className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    type="text"
-                    placeholder="Nguyễn Văn A"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Email Field */}
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                    Địa chỉ Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                    <input
-                      className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      type="email"
-                      placeholder="ban@example.com"
-                      required={!phone}
-                      disabled={!!inviteToken && !!email}
-                    />
-                  </div>
-                </div>
-
-                {!email && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                      Email cá nhân (Tùy chọn)
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                      <input
-                        className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400"
-                        value={personalEmail}
-                        onChange={(e) => setPersonalEmail(e.target.value)}
-                        type="email"
-                        placeholder="gmail@example.com"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                    Số điện thoại
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                    <input
-                      className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      type="tel"
-                      placeholder="0987xxx..."
-                      required={!email}
-                      disabled={!!inviteToken && !!phone}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Password Field */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                  Mật khẩu
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                  <input
-                    className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-12 py-3 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Ít nhất 6 ký tự"
-                    required
-                    minLength={6}
-                  />
+            <div className="space-y-2">
+              <Input
+                label="Mật khẩu"
+                type={showPassword ? "text" : "password"}
+                placeholder="Ít nhất 6 ký tự"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                leftIcon={<Icons.Lock className="w-4 h-4" />}
+                rightIcon={
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 transition-colors"
+                    className="text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
                   </button>
-                </div>
-              </div>
+                }
+              />
+            </div>
 
-              {/* Role Display for Non-invitees */}
-              {!inviteToken && (
-                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-3 rounded-xl">
-                  <p className="text-xs text-amber-700 dark:text-amber-400">
-                    <span className="font-bold">Lưu ý:</span> Bạn đang đăng ký với vai trò <b>Phụ huynh</b>. Để đăng ký các vai trò khác, vui lòng liên hệ quản trị viên để nhận mã mời.
-                  </p>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading || googleLoading}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Đang tạo tài khoản...
-                  </>
-                ) : (
-                  <>
-                    Tạo tài khoản
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Error/Success Messages */}
-            {error && (
-              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl">
-                <p className="text-red-700 dark:text-red-300 text-sm font-medium flex items-center gap-2">
-                  <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  {error}
+            {!inviteToken && (
+              <div className="bg-stone-50 dark:bg-stone-900/40 border-l-4 border-primary p-4 rounded-xl">
+                <p className="text-[10px] font-bold text-stone-600 dark:text-stone-400 uppercase tracking-widest leading-relaxed">
+                  <span className="text-primary">Lưu ý:</span> Bạn đang đăng ký vai trò <b>Phụ huynh</b>. Liên hệ Quản trị viên để nhận mã mời cho các vai trò khác.
                 </p>
               </div>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={loading || googleLoading}
+              fullWidth
+              className="h-14 mt-4 shadow-xl shadow-primary/20"
+            >
+              <span className="text-sm font-bold uppercase tracking-widest">
+                {loading ? "Đang tạo tài khoản..." : "Hoàn tất đăng ký"}
+              </span>
+              {!loading && <Icons.ArrowRight className="w-5 h-5 ml-2" />}
+            </Button>
+          </form>
+
+          <AnimatePresence>
+            {error && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 p-5 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-xl">
+                <div className="text-red-800 dark:text-red-300 text-xs font-bold flex items-center gap-3">
+                  <Icons.Error className="w-5 h-5 flex-shrink-0" />
+                  {error}
+                </div>
+              </motion.div>
             )}
             {message && (
-              <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl">
-                <p className="text-green-700 dark:text-green-300 text-sm font-medium flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 p-5 bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 rounded-xl">
+                <p className="text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-3">
+                  <Icons.Success className="w-5 h-5 flex-shrink-0" />
                   {message}
                 </p>
-              </div>
+              </motion.div>
             )}
+          </AnimatePresence>
 
-            {/* Login Link */}
-            <p className="text-center text-sm mt-6 text-slate-600 dark:text-gray-300">
-              Đã có tài khoản?{" "}
-              <a href="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-semibold hover:underline transition-colors">
-                Đăng nhập
-              </a>
-            </p>
-          </div>
+          <p className="text-center text-[11px] font-bold mt-10 text-stone-500 dark:text-stone-400 uppercase tracking-widest">
+            Đã có tài khoản?{" "}
+            <a href="/login" className="text-primary dark:text-white hover:underline underline-offset-4">
+              Đăng nhập
+            </a>
+          </p>
         </div>
-      </div>
+      </motion.div>
     </GuestGuard>
   );
 }
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-purple-600" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center p-12"><LoadingSpinner size="lg" /></div>}>
       <SignupPageContent />
     </Suspense>
   );
 }
-
-

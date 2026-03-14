@@ -114,30 +114,38 @@ describe("StudentService", () => {
 
   describe("getStudentById", () => {
     it("should return student with enrollments", async () => {
-      const mockStudent = {
-        id: "1",
-        first_name: "John",
-        last_name: "Doe",
-        enrollments: [{ id: "e1", class_id: "c1" }],
-      };
-
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
+      mockSupabase.from
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: mockStudent,
-                error: null,
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: { id: "1", first_name: "John", last_name: "Doe" },
+                  error: null,
+                }),
               }),
             }),
           }),
-        }),
-      });
+        })
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({
+              data: [{
+                id: "e1",
+                class_id: "c1",
+                enrollment_date: "2023-01-01",
+                status: "active",
+                classes: { id: "c1", name: "Class", course_id: "crs1" },
+              }],
+              error: null,
+            }),
+          }),
+        });
 
       const service = new StudentService(mockSupabase);
       const student = await service.getStudentById("1");
 
-      expect(student).toEqual(mockStudent);
+      expect(student.first_name).toEqual("John");
       expect(student.enrollments).toHaveLength(1);
     });
 

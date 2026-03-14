@@ -1,88 +1,16 @@
 {
-    "name": "BH-EDU",
-    "short_name": "BH-EDU",
-    "description": "Hệ thống quản lý giáo dục BH-EDU - Education Management System",
-    "start_url": "/dashboard",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#6366f1",
-    "orientation": "any",
-    "icons": [
-        {
-            "src": "/icons/icon-72x72.png",
-            "sizes": "72x72",
-            "type": "image/png",
-            "purpose": "maskable any"
-        },
-        {
-            "src": "/icons/icon-96x96.png",
-            "sizes": "96x96",
-            "type": "image/png",
-            "purpose": "maskable any"
-        },
-        {
-            "src": "/icons/icon-128x128.png",
-            "sizes": "128x128",
-            "type": "image/png",
-            "purpose": "maskable any"
-        },
-        {
-            "src": "/icons/icon-144x144.png",
-            "sizes": "144x144",
-            "type": "image/png",
-            "purpose": "maskable any"
-        },
-        {
-            "src": "/icons/icon-152x152.png",
-            "sizes": "152x152",
-            "type": "image/png",
-            "purpose": "maskable any"
-        },
-        {
-            "src": "/icons/icon-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "maskable any"
-        },
-        {
-            "src": "/icons/icon-384x384.png",
-            "sizes": "384x384",
-            "type": "image/png",
-            "purpose": "maskable any"
-        },
-        {
-            "src": "/icons/icon-512x512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "maskable any"
-        }
-    ],
-    "categories": [
-        "education",
-        "productivity"
-    ],
-    "lang": "vi",
-    "dir": "ltr",
-    "scope": "/",
-    "prefer_related_applications": false,
-    "shortcuts": [
-        {
-            "name": "Nhập điểm",
-            "short_name": "Điểm",
-            "description": "Vào trang nhập điểm nhanh",
-            "url": "/dashboard/grades/entry"
-        },
-        {
-            "name": "Điểm danh",
-            "short_name": "Điểm danh",
-            "description": "Vào trang điểm danh",
-            "url": "/dashboard/attendance"
-        },
-        {
-            "name": "Học sinh",
-            "short_name": "HS",
-            "description": "Quản lý học sinh",
-            "url": "/dashboard/students"
-        }
-    ]
+  "name": "BH-EDU Hệ Thống Quản Lý Giáo Dục",
+  "short_name": "BH-EDU",
+  "description": "Nền tảng quản lý giáo dục thông minh và toàn diện.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
 }

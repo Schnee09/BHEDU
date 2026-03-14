@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
         const supabase = createClientFromRequest(req);
         const { data, error } = await supabase
           .from("subjects")
-          .select("id, name, code, description")
+          .select("id, name, code, description, is_active")
           .order("name");
 
         if (error) {
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
           if (!code || seenCodes.has(code)) return false;
           seenCodes.add(code);
           return true;
-        }).map((s) => ({ ...s, is_active: true }));
+        });
       },
       { ttl: CACHE_TTL.MEDIUM },
     );

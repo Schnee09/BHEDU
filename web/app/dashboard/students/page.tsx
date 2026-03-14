@@ -36,8 +36,9 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { logger } from "@/lib/logger";
 import { createAuditLog, AuditActions } from "@/lib/audit";
 import { routes } from "@/lib/routes";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, ChevronDown } from "lucide-react";
 import MobileStudentList from "@/components/students/MobileStudentList";
+import { cn } from "@/lib/utils";
 
 interface Student {
   id: string;
@@ -284,9 +285,9 @@ export default function StudentsPage() {
   const renderStatistics = () => {
     if (loading && !statistics) {
       return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 bg-stone-100 dark:bg-stone-800 rounded-2xl skeleton-shimmer" />
+            <div key={i} className="h-32 bg-stone-100 dark:bg-stone-800 rounded-3xl skeleton-shimmer" />
           ))}
         </div>
       );
@@ -295,101 +296,110 @@ export default function StudentsPage() {
     if (!statistics) return null;
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-fade-in">
-        <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
-          <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
-            <Icons.Students className="w-10 h-10 text-blue-600" />
-          </div>
-          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Học sinh</p>
-          <p className="text-2xl font-black text-stone-900 dark:text-stone-100">{statistics.total_students}</p>
-          <div className="h-1 w-6 bg-blue-500 rounded-full" />
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 stagger-children">
+        <StatCard
+          label="Tổng học sinh"
+          value={statistics.total_students}
+          icon={<Icons.Students className="w-5 h-5" />}
+          trend={{ value: 0, isPositive: true }}
+          subtitle="Toàn hệ thống"
+          color="blue"
+          className="shadow-md"
+        />
 
-        <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
-          <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
-            <Icons.Success className="w-10 h-10 text-green-600" />
-          </div>
-          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Đang học</p>
-          <p className="text-2xl font-black text-green-600">{statistics.active_students}</p>
-          <div className="h-1 w-6 bg-green-500 rounded-full" />
-        </div>
+        <StatCard
+          label="Đang học"
+          value={statistics.active_students}
+          icon={<Icons.Success className="w-5 h-5" />}
+          trend={{ value: Math.round((statistics.active_students / statistics.total_students) * 100), isPositive: true }}
+          subtitle="Tỉ lệ hiện diện"
+          color="green"
+          className="shadow-md"
+        />
 
-        <div className="bg-white dark:bg-[#1A1410] rounded-2xl p-4 border border-stone-100 dark:border-[#2C2420] shadow-sm flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
-          <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
-            <Icons.Error className="w-10 h-10 text-stone-400" />
-          </div>
-          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Nghỉ học</p>
-          <p className="text-2xl font-black text-stone-400">{statistics.inactive_students}</p>
-          <div className="h-1 w-6 bg-stone-300 rounded-full" />
-        </div>
+        <StatCard
+          label="Nghỉ học"
+          value={statistics.inactive_students}
+          icon={<Icons.Error className="w-5 h-5" />}
+          trend={{ value: 0, isPositive: false }}
+          subtitle="Hồ sơ lưu trữ"
+          color="slate"
+          className="shadow-md"
+        />
 
-        <div className="bg-white dark:bg-[#1C1814] rounded-2xl p-4 border border-amber-500/20 shadow-lg shadow-amber-500/5 flex flex-col justify-between h-28 relative overflow-hidden group press-effect">
-          <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:scale-110 transition-transform">
-            <Icons.Classes className="w-10 h-10 text-amber-500" />
-          </div>
-          <p className="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest">Khối lớp</p>
-          <p className="text-2xl font-black text-amber-500">{Object.keys(statistics.by_grade || {}).length}</p>
-          <div className="h-1 w-10 bg-amber-500 rounded-full" />
-        </div>
+        <StatCard
+          label="Khối đào tạo"
+          value={Object.keys(statistics.by_grade || {}).length}
+          icon={<Icons.Classes className="w-5 h-5" />}
+          trend={{ value: 0, isPositive: true }}
+          subtitle="Các khối lớp"
+          color="amber"
+          className="shadow-md"
+        />
       </div>
     );
   };
 
   if (loading && students.length === 0) {
     return (
-      <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <div className="h-10 w-48 bg-muted/20 dark:bg-white/10 rounded animate-pulse mb-2" />
-            <div className="h-6 w-96 bg-muted/20 dark:bg-white/10 rounded animate-pulse" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <SkeletonStatCard />
-            <SkeletonStatCard />
-            <SkeletonStatCard />
-            <SkeletonStatCard />
-          </div>
-
-          <Card className="mb-6">
-            <div className="h-12 bg-muted/20 dark:bg-white/10 rounded animate-pulse" />
-          </Card>
-
-          <Card>
-            <SkeletonTable rows={10} columns={6} />
-          </Card>
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8 relative z-10">
+        <div className="mb-6">
+          <div className="h-10 w-48 bg-muted/20 dark:bg-white/10 rounded animate-pulse mb-2" />
+          <div className="h-6 w-96 bg-muted/20 dark:bg-white/10 rounded animate-pulse" />
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+        </div>
+
+        <Card className="mb-6">
+          <div className="h-12 bg-muted/20 dark:bg-white/10 rounded animate-pulse" />
+        </Card>
+
+        <Card>
+          <SkeletonTable rows={10} columns={6} />
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-10 relative overflow-x-hidden">
+      <div className="max-w-[1600px] mx-auto relative z-10">
         {/* Toast Container */}
         <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
 
-        {/* Header with Breadcrumb */}
-        <PageHeader
-          title="Học sinh"
-          description="Quản lý hồ sơ và thông tin học sinh"
-          action={
-            <div className="flex gap-2">
-              <Link href="/dashboard/students/bulk">
-                <Button variant="outline" leftIcon={<Icons.Upload className="w-4 h-4" />}>
-                  Bulk Create
-                </Button>
-              </Link>
-              <Button
-                variant="primary"
-                onClick={() => setShowAddModal(true)}
-                leftIcon={<Icons.Add className="w-4 h-4" />}
-              >
-                Thêm Học sinh
-              </Button>
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-stone-200/50 dark:border-white/5 mb-8">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-amber-500 rounded-full shadow-accent-glow" />
+              <h1 className="text-3xl md:text-5xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+                Quản lý <span className="text-amber-500">Học sinh</span>
+              </h1>
             </div>
-          }
-        />
+            <p className="text-xs font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] pl-4">
+              Hệ thống lưu trữ và điều phối hồ sơ giáo dục
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Link href="/dashboard/students/bulk">
+              <Button variant="outline" size="md" className="font-black uppercase tracking-widest text-[10px]">
+                Tạo hàng loạt
+              </Button>
+            </Link>
+            <Button
+              variant="primary"
+              onClick={() => setShowAddModal(true)}
+              className="font-black uppercase tracking-widest text-[10px] shadow-amber-glow"
+            >
+              Thêm Học sinh mới
+            </Button>
+          </div>
+        </div>
 
         {/* Statistics */}
         {renderStatistics()}
@@ -398,121 +408,111 @@ export default function StudentsPage() {
         <div className="flex gap-6 mb-6">
           {/* Filter Sidebar */}
           {showFilters && (
-            <Card className="w-64 flex-shrink-0">
-              <CardHeader title="Bộ lọc" />
-              <div className="space-y-4">
-                {/* Grade Level Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Khối lớp
-                  </label>
-                  <select
-                    value={filters.gradeLevel}
-                    onChange={(e) => setFilters({ ...filters, gradeLevel: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Tất cả các lớp</option>
-                    <option value="Lớp 1">Lớp 1</option>
-                    <option value="Lớp 2">Lớp 2</option>
-                    <option value="Lớp 3">Lớp 3</option>
-                    <option value="Lớp 4">Lớp 4</option>
-                    <option value="Lớp 5">Lớp 5</option>
-                    <option value="Lớp 6">Lớp 6</option>
-                    <option value="Lớp 7">Lớp 7</option>
-                    <option value="Lớp 8">Lớp 8</option>
-                    <option value="Lớp 9">Lớp 9</option>
-                    <option value="Lớp 10">Lớp 10</option>
-                    <option value="Lớp 11">Lớp 11</option>
-                    <option value="Lớp 12">Lớp 12</option>
-                  </select>
-                </div>
+            <div className="w-72 flex-shrink-0 animate-in slide-in-from-left-4 duration-300">
+              <Card className="bg-stone-50/50 dark:bg-white/5 border-stone-200/50 dark:border-white/5">
+                <CardHeader title="Bộ lọc chuyên sâu" className="font-serif italic text-sm font-black uppercase tracking-widest text-stone-500" />
+                <div className="space-y-6 pt-2">
+                  {/* Grade Level Filter */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest ml-1">
+                      Khối đào tạo
+                    </label>
+                    <div className="relative group">
+                      <select
+                        value={filters.gradeLevel}
+                        onChange={(e) => setFilters({ ...filters, gradeLevel: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-sm font-bold text-stone-700 dark:text-stone-200 appearance-none transition-all shadow-sm"
+                      >
+                        <option value="">Tất cả các lớp</option>
+                        {[...Array(12)].map((_, i) => (
+                          <option key={i + 1} value={`Lớp ${i + 1}`}>{`Lớp ${i + 1}`}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none group-hover:text-amber-500 transition-colors" />
+                    </div>
+                  </div>
 
-                {/* Status Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Trạng thái
-                  </label>
-                  <select
-                    value={filters.status}
-                    onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Tất cả</option>
-                    <option value="active">Đang học</option>
-                    <option value="inactive">Nghỉ học</option>
-                    <option value="graduated">Đã tốt nghiệp</option>
-                    <option value="suspended">Đình chỉ</option>
-                  </select>
-                </div>
+                  {/* Status Filter */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest ml-1">
+                      Trạng thái hồ sơ
+                    </label>
+                    <div className="relative group">
+                      <select
+                        value={filters.status}
+                        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-sm font-bold text-stone-700 dark:text-stone-200 appearance-none transition-all shadow-sm"
+                      >
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="active">Đang học tập</option>
+                        <option value="inactive">Đã nghỉ học</option>
+                        <option value="graduated">Đã tốt nghiệp</option>
+                        <option value="suspended">Đang đình chỉ</option>
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none group-hover:text-amber-500 transition-colors" />
+                    </div>
+                  </div>
 
-                {/* Gender Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Giới tính
-                  </label>
-                  <select
-                    value={filters.gender}
-                    onChange={(e) => setFilters({ ...filters, gender: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  {/* Clear Filters */}
+                  <Button
+                    variant="outline"
+                    fullWidth
+                    onClick={() => setFilters({ gradeLevel: '', status: '', gender: '' })}
+                    className="font-black uppercase tracking-widest text-[10px] py-3 mt-4 border-stone-200 hover:border-amber-500/50 hover:bg-white dark:hover:bg-white/5"
                   >
-                    <option value="">Tất cả</option>
-                    <option value="male">Nam</option>
-                    <option value="female">Nữ</option>
-                    <option value="other">Khác</option>
-                  </select>
+                    Xóa tất cả bộ lọc
+                  </Button>
                 </div>
-
-                {/* Clear Filters */}
-                <Button
-                  variant="outline"
-                  fullWidth
-                  onClick={() => setFilters({ gradeLevel: '', status: '', gender: '' })}
-                >
-                  Xóa bộ lọc
-                </Button>
-              </div>
-            </Card>
+              </Card>
+            </div>
           )}
 
           {/* Main Content */}
           <div className="flex-1">
-            <Card className="mb-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <Input
+            <Card padding="p-2" className="mb-6 bg-stone-50/50 dark:bg-white/5 border-stone-200/50 dark:border-white/10 shadow-sm">
+              <div className="p-2 flex flex-col lg:flex-row gap-4">
+                <div className="relative flex-1 group">
+                  <Icons.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
+                  <input
                     type="text"
-                    placeholder="Tìm kiếm học sinh theo tên, email hoặc mã học sinh..."
+                    placeholder="Truy vấn học sinh theo tên, mã hoặc email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    leftIcon={<span>🔍</span>}
+                    className="w-full pl-12 pr-4 py-3 bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none font-bold text-stone-800 dark:text-white text-sm placeholder:text-stone-400 transition-all shadow-sm"
                   />
                 </div>
 
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 items-center flex-wrap">
                   <Button
                     variant="outline"
                     onClick={refetch}
-                    leftIcon={<Icons.Search className="w-4 h-4" />}
+                    className="h-11 px-6 font-black uppercase tracking-widest text-[10px] border-stone-200"
                     disabled={loading}
                   >
-                    Làm mới
+                    <Icons.Search className="w-3.5 h-3.5 mr-2" /> Làm mới
                   </Button>
 
                   <Button
                     variant="outline"
                     onClick={() => setShowFilters(!showFilters)}
-                    leftIcon={showFilters ? <Icons.Close className="w-4 h-4" /> : <Icons.Filter className="w-4 h-4" />}
+                    className={cn(
+                      "h-11 px-6 font-black uppercase tracking-widest text-[10px] border-stone-200",
+                      showFilters && "bg-amber-500/10 border-amber-500/30 text-amber-600"
+                    )}
                   >
-                    {showFilters ? 'Ẩn' : 'Bộ lọc'}
+                    {showFilters ? <Icons.Close className="w-3.5 h-3.5 mr-2" /> : <Icons.Filter className="w-3.5 h-3.5 mr-2" />}
+                    {showFilters ? 'Ẩn bộ lọc' : 'Lọc hồ sơ'}
                   </Button>
+
+                  <div className="h-8 w-px bg-stone-200 dark:bg-stone-800 mx-2 hidden lg:block" />
 
                   <Button
                     variant="success"
                     onClick={handleExportCSV}
-                    leftIcon={<Icons.Download className="w-4 h-4" />}
+                    className="h-11 px-6 font-black uppercase tracking-widest text-[10px] shadow-emerald-glow"
                     disabled={students.length === 0}
                   >
-                    Xuất dữ liệu
+                    <Icons.Download className="w-3.5 h-3.5 mr-2" /> Trích xuất CSV
                   </Button>
 
                   {hasAdminAccess && selectedIds.size > 0 && (
@@ -520,18 +520,10 @@ export default function StudentsPage() {
                       variant="danger"
                       onClick={handleBulkArchive}
                       isLoading={archiving}
-                      leftIcon={<Icons.Archive className="w-4 h-4" />}
+                      className="h-11 px-6 font-black uppercase tracking-widest text-[10px]"
                     >
-                      Lưu trữ ({selectedIds.size})
+                      <Icons.Archive className="w-3.5 h-3.5 mr-2" /> Lưu trữ ({selectedIds.size})
                     </Button>
-                  )}
-
-                  {hasAdminAccess && (
-                    <Link href={routes.students.import()}>
-                      <Button variant="outline" leftIcon={<span>📤</span>}>
-                        Nhập dữ liệu
-                      </Button>
-                    </Link>
                   )}
                 </div>
               </div>

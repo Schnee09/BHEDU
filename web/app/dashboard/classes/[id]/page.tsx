@@ -3,10 +3,29 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { apiFetch, getClassById } from "@/lib/api/client";
-import { LoadingState, Badge, Button } from "@/components/ui";
+import { apiFetch } from "@/lib/api/client";
+import { LoadingState, Badge, Button, Modal } from "@/components/ui";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
-import { Icons } from "@/components/ui/Icons";
+import {
+  GraduationCap,
+  Users,
+  Calendar,
+  MapPin,
+  Clock,
+  ChevronLeft,
+  Edit3,
+  MoreVertical,
+  FileText,
+  ClipboardCheck,
+  TrendingUp,
+  UserPlus,
+  Mail,
+  ExternalLink,
+  BookOpen,
+  Info,
+  Download,
+  AlertCircle
+} from "lucide-react";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -37,6 +56,15 @@ interface ClassDetail {
     email: string;
     student_code?: string;
   }>;
+  course?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  academic_year?: {
+    id: string;
+    name: string;
+  };
 }
 
 export default function ClassDetailPage() {
@@ -47,17 +75,20 @@ export default function ClassDetailPage() {
   const [classData, setClassData] = useState<ClassDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'students' | 'details' | 'actions'>('students');
 
   useEffect(() => {
     const fetchClassDetail = async () => {
       try {
         setLoading(true);
 
-        const [cls, studentsRes] = await Promise.all([
-          getClassById(classId),
-          apiFetch(`/api/classes/${classId}/students`) // Keep legacy student fetch for now
-        ]);
+        const response = await apiFetch(`/api/v2/classes/${classId}`);
+        if (!response.ok) throw new Error("Không thể tải thông tin lớp học");
 
+        const resJson = await response.json();
+        const cls = resJson.class;
+
+        const studentsRes = await apiFetch(`/api/v2/classes/${classId}/students`);
         let students: any[] = [];
         if (studentsRes.ok) {
           const studentsJson = await studentsRes.json();
@@ -84,32 +115,47 @@ export default function ClassDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
-        <p className="font-black text-stone-400 uppercase tracking-widest text-[10px]">Đang tải thông tin lớp học...</p>
+      <div className="flex flex-col items-center justify-center min-h-[600px] gap-8">
+        <div className="relative">
+          <div className="w-24 h-24 border-8 border-blue-500/20 border-t-blue-600 rounded-full animate-spin shadow-2xl shadow-blue-500/20" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <GraduationCap className="w-8 h-8 text-blue-600" />
+          </div>
+        </div>
+        <div className="text-center">
+          <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tighter">Đang trích xuất dữ liệu</h2>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Hệ thống đang tải thông tin lớp học...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !classData) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white dark:bg-stone-900 rounded-[48px] border border-stone-100 dark:border-white/5 shadow-2xl p-12 text-center">
-          <div className="w-20 h-20 bg-stone-100 dark:bg-stone-800 rounded-[32px] flex items-center justify-center mx-auto mb-6">
-            <Icons.Classes className="w-10 h-10 text-stone-400" />
+      <div className="max-w-4xl mx-auto p-12">
+        <div className="bg-white dark:bg-gray-800 rounded-[4rem] border border-gray-100 dark:border-gray-700 shadow-2xl p-20 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-red-500" />
+          <div className="w-24 h-24 bg-red-50 dark:bg-red-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 shadow-lg shadow-red-500/10">
+            <AlertCircle className="w-12 h-12 text-red-500" />
           </div>
-          <h1 className="text-2xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tight">
-            {error === "Class not found" ? "Không tìm thấy lớp học" : "Lỗi tải thông tin"}
+          <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-6 tracking-tight uppercase">
+            {error === "Class not found" ? "Không tìm thấy lớp học" : "Lỗi hệ thống"}
           </h1>
-          <p className="text-stone-500 dark:text-stone-400 mb-8 max-w-sm mx-auto">
-            {error || "Không thể tải thông tin lớp học. Vui lòng thử lại sau."}
+          <p className="text-lg text-gray-500 dark:text-gray-400 mb-12 max-w-md mx-auto leading-relaxed">
+            {error || "Không thể tải thông tin lớp học. Vui lòng xác nhận ID lớp học và thử lại."}
           </p>
           <div className="flex gap-4 justify-center">
-            <Button onClick={() => router.back()} variant="outline" className="rounded-2xl px-8 h-12">
+            <button
+              onClick={() => router.back()}
+              className="px-10 py-4 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 font-bold rounded-2xl hover:bg-gray-100 transition-all border border-gray-100 dark:border-gray-700 flex items-center gap-2"
+            >
+              <ChevronLeft className="w-5 h-5" />
               Quay lại
-            </Button>
+            </button>
             <Link href={routes.classes.list()}>
-              <Button variant="gold" className="rounded-2xl px-8 h-12">Xem tất cả lớp</Button>
+              <button className="px-10 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-gray-200 dark:shadow-none">
+                Về danh sách
+              </button>
             </Link>
           </div>
         </div>
@@ -118,253 +164,323 @@ export default function ClassDetailPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 animate-fade-in relative">
-      {/* Subtle Background Effects */}
-      <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-amber-500/5 blur-[100px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute bottom-0 left-0 w-[250px] h-[250px] bg-emerald-500/5 blur-[80px] rounded-full pointer-events-none -z-10" />
+    <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-10">
+      <div className="p-4 md:p-10 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-700 relative z-10">
+        {/* Premium Hero Header */}
+        <div className="relative group overflow-hidden bg-white dark:bg-gray-800 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-xl shadow-gray-200/50 dark:shadow-none">
+          <div className="absolute top-0 right-0 w-[400px] h-full bg-blue-500/5 dark:bg-blue-500/10 skew-x-12 translate-x-20 transition-transform group-hover:skew-x-6 duration-700" />
 
-      {/* Reworked Compact Hero Header */}
-      <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-white/10 shadow-sm overflow-hidden">
-        <div className="bg-stone-50/50 dark:bg-white/[0.02] p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8">
-          <div className="relative shrink-0">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 p-1 shadow-lg">
-              <div className="w-full h-full rounded-xl bg-stone-900 flex items-center justify-center text-2xl font-bold text-white uppercase">
-                {classData.name?.charAt(0) || "C"}
+          <div className="relative p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full animate-pulse" />
+              <div className="relative w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-blue-600 to-indigo-700 p-1 shadow-2xl overflow-hidden">
+                <div className="w-full h-full rounded-[2rem] bg-white dark:bg-gray-900 flex items-center justify-center">
+                  <GraduationCap className="w-16 h-16 text-blue-600" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex-1 text-center md:text-left min-w-0">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-stone-900 dark:text-white tracking-tight truncate">
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 dark:bg-blue-500/10 rounded-full mb-4">
+                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">{classData.code}</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight mb-4 leading-tight">
                 {classData.name}
               </h1>
-              <Badge variant="gold" className="px-3 py-1 rounded-lg text-[11px] font-bold tracking-wider">
-                {classData.code}
-              </Badge>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-stone-500 dark:text-stone-400">
-              <div className="flex items-center gap-1.5 text-sm font-medium">
-                <Icons.Users className="w-4 h-4 text-emerald-500" />
-                <span>{classData.enrollment_count || 0} học sinh</span>
-              </div>
-              {classData.room && (
-                <div className="flex items-center gap-1.5 text-sm font-medium">
-                  <Icons.Location className="w-4 h-4 text-amber-500" />
-                  <span>Phòng {classData.room}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-3 w-full md:w-auto shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl h-11 px-5 border-stone-200 dark:border-white/10 font-semibold"
-              onClick={() => router.back()}
-              leftIcon={<Icons.Back className="w-4 h-4" />}
-            >
-              Quay lại
-            </Button>
-            <Link href={routes.classes.edit(classId)} className="w-full md:w-auto">
-              <Button
-                variant="gold"
-                size="sm"
-                className="w-full rounded-xl h-11 px-5 font-semibold shadow-md shadow-amber-500/10"
-                leftIcon={<Icons.Edit className="w-4 h-4" />}
-              >
-                Chỉnh sửa
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Main Content Area */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Info Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="rounded-2xl border-stone-200 dark:border-white/10 shadow-sm glass-premium p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-amber-500/10 rounded-lg">
-                  <Icons.Info className="w-5 h-5 text-amber-500" />
-                </div>
-                <h2 className="font-bold text-stone-900 dark:text-white">Thông tin cơ bản</h2>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Mã lớp & Tên lớp</label>
-                  <p className="font-bold text-stone-900 dark:text-white">{classData.code} - {classData.name}</p>
-                </div>
-                {classData.teacher && (
-                  <div>
-                    <label className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Giáo viên phụ trách</label>
-                    <div className="flex items-center gap-3 p-3 bg-stone-50 dark:bg-white/5 rounded-xl border border-stone-100 dark:border-white/5">
-                      <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center font-bold text-white text-sm">
-                        {getDisplayName(classData.teacher).charAt(0)}
-                      </div>
-                      <span className="font-semibold text-stone-900 dark:text-white text-sm">{getDisplayName(classData.teacher)}</span>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-6">
+                {classData.course && (
+                  <div className="flex items-center gap-2.5 px-4 py-2 bg-purple-50 dark:bg-purple-500/10 rounded-2xl border border-purple-100 dark:border-purple-800/30">
+                    <BookOpen className="w-5 h-5 text-purple-600" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest leading-none mb-1">Khóa học</span>
+                      <span className="text-sm font-black text-purple-700 dark:text-purple-300">{classData.course.name}</span>
                     </div>
                   </div>
                 )}
+                {classData.academic_year && (
+                  <div className="flex items-center gap-2.5 px-4 py-2 bg-blue-50 dark:bg-blue-500/10 rounded-2xl border border-blue-100 dark:border-blue-800/30">
+                    <Calendar className="w-5 h-5 text-blue-600" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">Năm học</span>
+                      <span className="text-sm font-black text-blue-700 dark:text-blue-300">{classData.academic_year.name}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2.5 px-4 py-2 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-700">
+                  <Users className="w-5 h-5 text-green-500" />
+                  <span className="text-sm font-black text-gray-700 dark:text-gray-300">{classData.enrollment_count || 0} Học viên</span>
+                </div>
+                {classData.room && (
+                  <div className="flex items-center gap-2.5 px-4 py-2 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-700">
+                    <MapPin className="w-5 h-5 text-purple-500" />
+                    <span className="text-sm font-black text-gray-700 dark:text-gray-300">Phòng {classData.room}</span>
+                  </div>
+                )}
               </div>
-            </Card>
+            </div>
 
-            <Card className="rounded-2xl border-stone-200 dark:border-white/10 shadow-sm glass-premium p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                  <Icons.Calendar className="w-5 h-5 text-emerald-500" />
-                </div>
-                <h2 className="font-bold text-stone-900 dark:text-white">Lịch học & Phòng</h2>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Thời gian học</label>
-                  <p className="font-semibold text-stone-700 dark:text-stone-300 text-sm leading-relaxed">
-                    {classData.schedule || "Chưa cập nhật lịch học"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Vị trí</label>
-                  <p className="font-semibold text-stone-700 dark:text-stone-300 text-sm">
-                    {classData.room ? `Phòng ${classData.room}` : "Chưa chỉ định phòng"}
-                  </p>
-                </div>
-              </div>
-            </Card>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => router.back()}
+                className="px-8 py-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-2xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                Quay lại
+              </button>
+              <Link href={routes.classes.edit(classId)}>
+                <button className="w-full px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold rounded-2xl hover:scale-105 transition-all shadow-xl shadow-gray-200 dark:shadow-none flex items-center justify-center gap-2 active:scale-95">
+                  <Edit3 className="w-5 h-5" />
+                  Quản lý lớp
+                </button>
+              </Link>
+            </div>
           </div>
-
-          {/* Student List */}
-          <Card className="rounded-2xl border-stone-200 dark:border-white/10 shadow-sm glass-premium overflow-hidden">
-            <CardHeader className="p-6 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50/30 dark:bg-white/[0.01]">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-stone-200 dark:bg-stone-800 rounded-lg">
-                  <Icons.Users className="w-5 h-5 text-stone-600 dark:text-stone-400" />
-                </div>
-                <h2 className="font-bold text-stone-900 dark:text-white">Học sinh tham gia</h2>
-                <Badge variant="default" className="ml-2 font-bold px-2 py-0.5 rounded-md bg-stone-100 text-stone-600">{classData.students?.length || 0}</Badge>
-              </div>
-              <Button variant="ghost" size="sm" className="h-9 px-3 text-stone-500 hover:text-stone-900 dark:hover:text-white">
-                <Icons.Download className="w-4 h-4 mr-2" /> Xuất danh sách
-              </Button>
-            </CardHeader>
-            <CardBody className="p-0">
-              {classData.students && classData.students.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-stone-50/50 dark:bg-stone-900/50">
-                        <th className="px-6 py-4 text-left text-[11px] font-bold text-stone-400 uppercase tracking-wider">Học sinh</th>
-                        <th className="px-6 py-4 text-left text-[11px] font-bold text-stone-400 uppercase tracking-wider">MSSV</th>
-                        <th className="px-6 py-4 text-right text-[11px] font-bold text-stone-400 uppercase tracking-wider">Chi tiết</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800/50">
-                      {classData.students.map((student) => (
-                        <tr key={student.id} className="group hover:bg-stone-50/50 dark:hover:bg-white/[0.02] transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center font-bold text-stone-500 text-sm">
-                                {getDisplayName(student).charAt(0)}
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-bold text-stone-900 dark:text-white text-[13px]">{getDisplayName(student)}</span>
-                                <span className="text-[11px] text-stone-400">{student.email}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="font-mono text-[12px] font-semibold text-stone-600 dark:text-stone-400 bg-stone-100 dark:bg-stone-800/50 px-2.5 py-1 rounded-md">
-                              {student.student_code || "N/A"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <Link href={`/dashboard/students/${student.id}`}>
-                              <Button variant="ghost" size="sm" className="w-8 h-8 p-0 rounded-lg text-stone-400 group-hover:text-amber-600 group-hover:bg-amber-500/10 transition-all">
-                                <Icons.ChevronRight className="w-4 h-4" />
-                              </Button>
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="p-16 text-center">
-                  <Icons.Users className="w-10 h-10 text-stone-200 dark:text-stone-800 mx-auto mb-3" />
-                  <p className="text-stone-400 text-sm font-medium">Chưa có học sinh trong lớp này</p>
-                </div>
-              )}
-            </CardBody>
-          </Card>
         </div>
 
-        {/* Sidebar Actions */}
-        <div className="lg:col-span-4 space-y-6">
-          <Card className="rounded-2xl border-stone-200 dark:border-white/10 shadow-sm glass-premium p-6">
-            <h2 className="font-bold text-stone-900 dark:text-white mb-6 flex items-center gap-2">
-              <Icons.Magic className="w-5 h-5 text-amber-500" />
-              Thao tác nhanh
-            </h2>
-
-            <div className="space-y-3">
-              <Link href={`/dashboard/attendance/mark?class=${classId}`} className="flex items-center gap-4 p-4 rounded-xl bg-stone-50 dark:bg-white/5 border border-stone-100 dark:border-white/5 hover:border-emerald-500/50 hover:bg-emerald-50 dark:hover:bg-emerald-500/5 transition-all group">
-                <div className="p-2.5 bg-emerald-500/10 rounded-lg text-emerald-600">
-                  <Icons.Attendance className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-bold text-stone-900 dark:text-white">Điểm danh</h3>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400">Ghi nhận chuyên cần lớp học</p>
-                </div>
-                <Icons.ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-emerald-500" />
-              </Link>
-
-              <Link href={`/dashboard/grades/entry?class=${classId}`} className="flex items-center gap-4 p-4 rounded-xl bg-stone-50 dark:bg-white/5 border border-stone-100 dark:border-white/5 hover:border-orange-500/50 hover:bg-orange-50 dark:hover:bg-orange-500/5 transition-all group">
-                <div className="p-2.5 bg-orange-500/10 rounded-lg text-orange-600">
-                  <Icons.Grades className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-bold text-stone-900 dark:text-white">Nhập điểm</h3>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400">Cập nhật kết quả bài kiểm tra</p>
-                </div>
-                <Icons.ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-orange-500" />
-              </Link>
-
-              <Link href={`/dashboard/grades/assignments?class=${classId}`} className="flex items-center gap-4 p-4 rounded-xl bg-stone-50 dark:bg-white/5 border border-stone-100 dark:border-white/5 hover:border-teal-500/50 hover:bg-teal-50 dark:hover:bg-teal-500/5 transition-all group">
-                <div className="p-2.5 bg-teal-500/10 rounded-lg text-teal-600">
-                  <Icons.Assignments className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-bold text-stone-900 dark:text-white">Bài tập</h3>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400">Quản lý các cột điểm bài tập</p>
-                </div>
-                <Icons.ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-teal-500" />
-              </Link>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-8 space-y-8">
+            {/* Tabs Navigation */}
+            <div className="flex p-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl rounded-[2rem] border border-white dark:border-gray-700 shadow-sm">
+              <button
+                onClick={() => setActiveTab('students')}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-3xl font-black text-sm transition-all",
+                  activeTab === 'students' ? "bg-white dark:bg-gray-800 text-blue-600 shadow-xl" : "text-gray-400 hover:text-gray-600"
+                )}
+              >
+                <Users className="w-5 h-5" />
+                Danh sách học sinh
+              </button>
+              <button
+                onClick={() => setActiveTab('details')}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-3xl font-black text-sm transition-all",
+                  activeTab === 'details' ? "bg-white dark:bg-gray-800 text-blue-600 shadow-xl" : "text-gray-400 hover:text-gray-600"
+                )}
+              >
+                <Info className="w-5 h-5" />
+                Thông tin chi tiết
+              </button>
+              <button
+                onClick={() => setActiveTab('actions')}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-3xl font-black text-sm transition-all",
+                  activeTab === 'actions' ? "bg-white dark:bg-gray-800 text-blue-600 shadow-xl" : "text-gray-400 hover:text-gray-600"
+                )}
+              >
+                <TrendingUp className="w-5 h-5" />
+                Hoạt động
+              </button>
             </div>
-          </Card>
 
-          <Card className="rounded-2xl bg-stone-900 dark:bg-stone-950 p-6 border border-white/5 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-2xl rounded-full" />
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-amber-500/20 rounded-lg text-amber-500">
-                <Icons.Info className="w-4 h-4" />
+            {/* Tab Content: Students */}
+            {activeTab === 'students' && (
+              <div className="bg-white dark:bg-gray-800 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+                <div className="p-8 border-b border-gray-50 dark:border-gray-700 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white">Học sinh trong lớp</h2>
+                    <p className="text-sm text-gray-400">Tổng số {classData.students?.length || 0} học sinh đã ghi danh</p>
+                  </div>
+                  <button className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 font-bold text-xs rounded-xl hover:bg-gray-100 transition-all border border-gray-100 dark:border-gray-700">
+                    <Download className="w-4 h-4" />
+                    Xuất PDF
+                  </button>
+                </div>
+
+                {classData.students && classData.students.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-900/50">
+                          <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Học sinh</th>
+                          <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Mã số</th>
+                          <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Liên hệ</th>
+                          <th className="px-8 py-6 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                        {classData.students.map((student) => (
+                          <tr key={student.id} className="group hover:bg-gray-50 dark:hover:bg-gray-900/20 transition-colors">
+                            <td className="px-8 py-6">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-black text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                  {getDisplayName(student).charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black text-gray-900 dark:text-white">{getDisplayName(student)}</p>
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Học viên</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-8 py-6 font-mono text-xs font-bold text-gray-600 dark:text-gray-400">
+                              {student.student_code || '---'}
+                            </td>
+                            <td className="px-8 py-6">
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <Mail className="w-3.5 h-3.5" />
+                                {student.email || 'N/A'}
+                              </div>
+                            </td>
+                            <td className="px-8 py-6 text-right">
+                              <Link href={`/dashboard/students/${student.id}`}>
+                                <button className="p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-gray-400 hover:text-blue-600 hover:shadow-lg transition-all">
+                                  <ExternalLink className="w-5 h-5" />
+                                </button>
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-20 text-center">
+                    <div className="w-20 h-20 bg-gray-50 dark:bg-gray-900 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+                      <Users className="w-10 h-10 text-gray-200" />
+                    </div>
+                    <h3 className="text-lg font-black text-gray-900 dark:text-white mb-2">Chưa có học sinh</h3>
+                    <p className="text-sm text-gray-400 max-w-xs mx-auto">Lớp học này hiện đang trống. Hãy ghi danh học sinh từ trang quản lý lớp học.</p>
+                  </div>
+                )}
               </div>
-              <h3 className="font-bold text-white text-sm">Lưu ý quản lý</h3>
+            )}
+
+            {/* Tab Content: Details */}
+            {activeTab === 'details' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-white dark:bg-gray-800 p-10 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8">
+                    <BookOpen className="w-12 h-12 text-blue-500/5 group-hover:scale-125 transition-transform duration-500" />
+                  </div>
+                  <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 border-l-4 border-blue-500 pl-4">Giáo viên chủ nhiệm</h3>
+                  {classData.teacher ? (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-5">
+                        <div className="w-20 h-20 rounded-[2rem] bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+                          <span className="text-2xl font-black text-blue-600">{getDisplayName(classData.teacher).charAt(0)}</span>
+                        </div>
+                        <div>
+                          <p className="text-lg font-black text-gray-900 dark:text-white leading-none mb-1">{getDisplayName(classData.teacher)}</p>
+                          <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">Giáo viên phụ trách</p>
+                        </div>
+                      </div>
+                      <div className="p-6 bg-gray-50 dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-700 space-y-3">
+                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                          <Mail className="w-5 h-5 text-gray-400" />
+                          <span className="font-bold">{classData.teacher.email}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-6 bg-orange-50 dark:bg-orange-500/5 rounded-3xl border border-dashed border-orange-200 dark:border-orange-500/20 text-center">
+                      <p className="text-sm font-bold text-orange-600 italic">Chưa giao giáo viên chủ nhiệm</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 p-10 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8">
+                    <Calendar className="w-12 h-12 text-purple-500/5 group-hover:scale-125 transition-transform duration-500" />
+                  </div>
+                  <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 border-l-4 border-purple-500 pl-4">Lịch học & Phòng</h3>
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 rounded-3xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center">
+                        <Clock className="w-8 h-8 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Thời gian</p>
+                        <p className="text-sm font-black text-gray-700 dark:text-gray-300 leading-relaxed">{classData.schedule || 'Chưa cập nhật'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 rounded-3xl bg-pink-50 dark:bg-pink-500/10 flex items-center justify-center">
+                        <MapPin className="w-8 h-8 text-pink-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Địa điểm</p>
+                        <p className="text-sm font-black text-gray-700 dark:text-gray-300">Phòng {classData.room || 'Chưa cập nhật'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab Content: Actions */}
+            {activeTab === 'actions' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                <Link href={`/dashboard/attendance/mark?class=${classId}`} className="group relative bg-white dark:bg-gray-800 p-10 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-2xl transition-all overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8">
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl group-hover:rotate-12 transition-transform">
+                      <ClipboardCheck className="w-8 h-8 text-emerald-600" />
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Điểm danh</h3>
+                    <p className="text-sm text-gray-400 mb-8 max-w-xs">Ghi nhận sự vắng mặt và hiện diện của học sinh trong buổi học này.</p>
+                    <div className="flex items-center gap-2 text-emerald-600 font-black text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
+                      Bắt đầu ngay <MoreVertical className="w-4 h-4" />
+                    </div>
+                  </div>
+                </Link>
+
+                <Link href={`/dashboard/grades/entry?class=${classId}`} className="group relative bg-white dark:bg-gray-800 p-10 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-2xl transition-all overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8">
+                    <div className="p-4 bg-orange-50 dark:bg-orange-500/10 rounded-2xl group-hover:rotate-12 transition-transform">
+                      <FileText className="w-8 h-8 text-orange-600" />
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Sổ điểm</h3>
+                    <p className="text-sm text-gray-400 mb-8 max-w-xs">Nhập điểm định kỳ, điểm kiểm tra và theo dõi tiến độ học tập.</p>
+                    <div className="flex items-center gap-2 text-orange-600 font-black text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
+                      Vào sổ điểm <MoreVertical className="w-4 h-4" />
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-4 space-y-8">
+            <div className="bg-gray-900 dark:bg-black p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-[60px] rounded-full group-hover:bg-blue-500/20 transition-all duration-700" />
+              <h3 className="text-lg font-black text-white mb-6 uppercase tracking-widest flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-blue-500" />
+                Lưu ý hệ thống
+              </h3>
+              <p className="text-sm text-gray-400 leading-relaxed font-bold italic mb-10">
+                "Trái tim của quản lý lớp học nằm ở sự chính xác. Mọi dữ liệu bạn cập nhật sẽ được thông báo ngay lập tức cho phụ huynh qua ứng dụng Mobile."
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Đăng ký mới</span>
+                  <span className="text-xs font-black text-white">+0 hôm nay</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Ngày khởi tạo</span>
+                  <span className="text-xs font-black text-white">{classData.created_at ? format(new Date(classData.created_at), 'dd/MM/yyyy', { locale: vi }) : '---'}</span>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-stone-400 leading-relaxed font-medium">
-              Dữ liệu thay đổi sẽ được đồng bộ thời gian thực đến phụ huynh qua ứng dụng BH-EDU Mobile. Hãy đảm bảo thông tin chính xác.
-            </p>
-            <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between text-[11px] font-bold text-stone-500 uppercase tracking-wider">
-              <span>Ngày tạo</span>
-              <span className="text-stone-300">{classData.created_at ? format(new Date(classData.created_at), 'dd/MM/yyyy', { locale: vi }) : '---'}</span>
+
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-sm">
+              <h3 className="text-sm font-black text-gray-900 dark:text-white mb-6 uppercase tracking-widest">Lớp học liên quan</h3>
+              <div className="space-y-4">
+                <div className="p-5 bg-gray-50 dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-700 flex items-center gap-4 hover:border-blue-500 transition-all cursor-pointer">
+                  <div className="p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-blue-600">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-900 dark:text-white leading-tight">Lớp song hành</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Cùng khối 10</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

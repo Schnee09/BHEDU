@@ -15,7 +15,23 @@ import { useFetch, useToast } from "@/hooks";
 import { usePermissions, PermissionGuard } from "@/hooks/usePermissions";
 import { apiFetch, getClasses, createClass, enrollStudent, updateClass } from "@/lib/api/client";
 import { routes } from "@/lib/routes";
-// ... imports
+import {
+  X,
+  Plus,
+  Search,
+  LayoutGrid,
+  List as ListIcon,
+  MoreVertical,
+  GraduationCap,
+  Users,
+  Calendar,
+  MapPin,
+  Clock,
+  RefreshCw,
+  Save,
+  CheckCircle2,
+  AlertCircle
+} from "lucide-react";
 
 
 import { getDisplayName } from "@/lib/utils/names";
@@ -32,10 +48,17 @@ import { logger } from "@/lib/logger";
 
 
 interface Teacher {
+  id: string;
   full_name: string;
   first_name?: string | null;
   last_name?: string | null;
   email: string;
+}
+
+interface Course {
+  id: string;
+  name: string;
+  code: string;
 }
 
 interface ClassData {
@@ -44,7 +67,13 @@ interface ClassData {
   code: string;
   created_at: string;
   teacher_id: string;
+  course_id?: string | null;
   teacher?: Teacher;
+  course?: Course;
+  academic_year?: {
+    id: string;
+    name: string;
+  };
   enrollment_count?: number;
   description?: string;
   schedule?: string;
@@ -66,22 +95,28 @@ export default function ClassesPageModern() {
   const [availableStudents, setAvailableStudents] = useState<{ id: string; full_name: string; email: string }[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [enrolling, setEnrolling] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Data state
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [statistics, setStatistics] = useState<ClassStats | undefined>(undefined);
+  const [academicYears, setAcademicYears] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Create Class Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [teachers, setTeachers] = useState<{ id: string; full_name: string; email: string }[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [creating, setCreating] = useState(false);
   const [newClass, setNewClass] = useState({
     name: '',
     code: '',
     description: '',
     teacherId: '',
+    courseId: '',
+    academicYearId: '',
     room: '',
     schedule: ''
   });
@@ -90,22 +125,44 @@ export default function ClassesPageModern() {
   const canManageClasses = can('classes.create') || can('classes.edit');
   const canEnrollStudents = can('classes.enroll');
 
-  // Fetch classes
+  // Fetch classes, teachers, and courses
   const fetchClasses = async () => {
     if (permissionsLoading) return;
 
     setLoading(true);
     setError(null);
     try {
-      const res = await getClasses({ limit: 50 }) as any; // Cast to any since useFetch adds extra fields
+      const res = await getClasses({ limit: 50 }) as any;
 
-      // Extract classes data - handle both wrapped and unwrapped responses
+      // Extract classes data
       const classesData = (res.data || res.classes || []) as unknown as ClassData[];
       setClasses(classesData);
 
-      // Group by teacher and calculate stats
-      const byTeacher: Record<string, number> = {};
+      // Fetch teachers, courses, and academic years for the create modal
+      const [teachersRes, coursesRes, academicYearsRes] = await Promise.all([
+        apiFetch('/api/admin/users?role=teacher&limit=100'),
+        apiFetch('/api/admin/courses?limit=100'),
+        apiFetch('/api/academic-years')
+      ]);
+
+      if (teachersRes.ok) {
+        const teachersJson = await teachersRes.json();
+        setTeachers(teachersJson.users || teachersJson.data || []);
+      }
+
+      if (coursesRes.ok) {
+        const coursesJson = await coursesRes.json();
+        setCourses(coursesJson.courses || coursesJson.data || []);
+      }
+
+      if (academicYearsRes.ok) {
+        const ayJson = await academicYearsRes.json();
+        setAcademicYears(ayJson.data || ayJson.academicYears || []);
+      }
+
+      // Stats calculation
       let totalStudents = 0;
+      const byTeacher: Record<string, number> = {};
 
       classesData.forEach(cls => {
         if (cls.teacher_id) {
@@ -115,9 +172,9 @@ export default function ClassesPageModern() {
       });
 
       const totalClasses = res.pagination?.totalItems || classesData.length;
+      const totalTeachersCount = Object.keys(byTeacher).length;
       const avgEnrollment = totalClasses > 0 ? totalStudents / totalClasses : 0;
 
-      // Calculate statistics from the response or derive them
       if (res.statistics) {
         setStatistics(res.statistics);
       } else {
@@ -216,19 +273,35 @@ export default function ClassesPageModern() {
   // Create Class handlers
   const handleOpenCreateModal = async () => {
     setShowCreateModal(true);
-    setNewClass({ name: '', code: '', description: '', teacherId: '', room: '', schedule: '' });
+    setNewClass({ name: '', code: '', description: '', teacherId: '', courseId: '', academicYearId: '', room: '', schedule: '' });
 
-    // Fetch teachers for dropdown
+    // Fetch dependent data for dropdowns
     try {
-      const response = await apiFetch('/api/admin/users?role=teacher&limit=1000');
-      if (response.ok) {
-        const result = await response.json();
-        // Unwrap V2 response if needed
+      const [teachersRes, coursesRes, academicYearsRes] = await Promise.all([
+        apiFetch('/api/admin/users?role=teacher&limit=1000'),
+        apiFetch('/api/admin/courses?limit=1000'),
+        apiFetch('/api/academic-years')
+      ]);
+
+      if (teachersRes.ok) {
+        const result = await teachersRes.json();
         const teachersData = result.data?.data || result.data || result.users || [];
         setTeachers(teachersData);
       }
+
+      if (coursesRes.ok) {
+        const result = await coursesRes.json();
+        const coursesData = result.data?.data || result.data || result.courses || [];
+        setCourses(coursesData);
+      }
+
+      if (academicYearsRes.ok) {
+        const result = await academicYearsRes.json();
+        const ayData = result.data || result.academicYears || [];
+        setAcademicYears(ayData);
+      }
     } catch (err) {
-      console.error('Failed to fetch teachers:', err);
+      console.error('Failed to fetch modal data:', err);
     }
   };
 
@@ -244,14 +317,16 @@ export default function ClassesPageModern() {
         name: newClass.name.trim(),
         code: newClass.code.trim() || undefined,
         description: newClass.description.trim() || undefined,
-        teacher_id: newClass.teacherId || undefined, // Map camelCase to snake_case
+        teacher_id: newClass.teacherId || undefined,
+        course_id: newClass.courseId || undefined,
+        academic_year_id: newClass.academicYearId || undefined,
         room: newClass.room.trim() || undefined,
         schedule: newClass.schedule.trim() || undefined,
       });
 
       toast.success('Tạo thành công', 'Lớp học đã được tạo');
       setShowCreateModal(false);
-      setNewClass({ name: '', code: '', description: '', teacherId: '', room: '', schedule: '' });
+      setNewClass({ name: '', code: '', description: '', teacherId: '', courseId: '', academicYearId: '', room: '', schedule: '' });
       refetch();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Tạo lớp học thất bại';
@@ -264,30 +339,28 @@ export default function ClassesPageModern() {
   // Show loading while permissions or data is loading
   if (permissionsLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-transparent">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
           <div className="mb-6">
-            <div className="h-10 w-64 bg-gray-200 rounded animate-pulse mb-2" />
-            <div className="h-6 w-96 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-64 bg-stone-200 dark:bg-stone-800 rounded-3xl animate-pulse mb-2" />
+            <div className="h-6 w-96 bg-stone-200 dark:bg-stone-800 rounded-2xl animate-pulse" />
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-white p-6 rounded-xl border border-gray-200">
-                <div className="h-6 w-20 bg-gray-200 rounded animate-pulse mb-2" />
-                <div className="h-8 w-12 bg-gray-200 rounded animate-pulse" />
+              <div key={i} className="glass-crystal p-6 rounded-2xl">
+                <div className="h-4 w-20 bg-stone-200 dark:bg-stone-700 rounded-xl animate-pulse mb-3" />
+                <div className="h-8 w-12 bg-stone-200 dark:bg-stone-700 rounded-xl animate-pulse" />
               </div>
             ))}
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white p-6 rounded-xl border border-gray-200">
-                <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-4" />
+              <div key={i} className="glass-crystal p-6 rounded-2xl">
+                <div className="h-6 w-32 bg-stone-200 dark:bg-stone-700 rounded-xl animate-pulse mb-4" />
                 <div className="space-y-3">
-                  <div className="h-4 w-full bg-gray-200 rounded animate-pulse" />
-                  <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 w-full bg-stone-200 dark:bg-stone-700 rounded-xl animate-pulse" />
+                  <div className="h-4 w-3/4 bg-stone-200 dark:bg-stone-700 rounded-xl animate-pulse" />
+                  <div className="h-4 w-1/2 bg-stone-200 dark:bg-stone-700 rounded-xl animate-pulse" />
                 </div>
               </div>
             ))}
@@ -298,101 +371,104 @@ export default function ClassesPageModern() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-transparent relative overflow-x-hidden">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8 relative z-10">
         {/* Toast Container */}
         <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
 
-        {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {canManageClasses ? "Quản lý Lớp học" : isStudent ? "Lớp học của tôi" : "Lớp học được giao"}
-              </h1>
-              <p className="mt-2 text-gray-600">
-                {canManageClasses
-                  ? `Quản lý tất cả lớp học và đăng ký • Tổng số: ${classes.length}`
-                  : isStudent
-                    ? `Xem lớp học đã đăng ký và tiến độ • Tổng số: ${classes.length}`
-                    : `Xem và quản lý lớp học được giao • Tổng số: ${classes.length}`
-                }
-              </p>
+        {/* Control Bar: Search & View Toggle */}
+        <div className="flex flex-col md:flex-row gap-4 mb-8 bg-white/50 dark:bg-stone-900/50 backdrop-blur-md p-4 rounded-[2rem] border border-white/60 dark:border-white/10 shadow-sm">
+          <div className="relative flex-1 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên lớp..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3.5 bg-stone-50/80 dark:bg-stone-900/50 border border-stone-100 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-amber-500/30 outline-none transition-all text-stone-900 dark:text-stone-100 placeholder:text-stone-400"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center p-1.5 bg-stone-100/80 dark:bg-stone-900/50 rounded-2xl border border-stone-200/50 dark:border-white/10">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-stone-800 shadow-sm text-amber-600' : 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'}`}
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-2 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white dark:bg-stone-800 shadow-sm text-amber-600' : 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'}`}
+              >
+                <ListIcon className="w-5 h-5" />
+              </button>
             </div>
-            {canManageClasses && (
-              <div className="flex items-center space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={refetch}
-                  leftIcon={<Icons.Search className="w-4 h-4" />}
-                  disabled={loading}
-                >
-                  Làm mới
-                </Button>
-                <PermissionGuard permissions="classes.create">
-                  <Button
-                    variant="primary"
-                    leftIcon={<Icons.Add className="w-4 h-4" />}
-                    onClick={handleOpenCreateModal}
-                  >
-                    Tạo lớp học
-                  </Button>
-                </PermissionGuard>
-              </div>
-            )}
+            <button
+              onClick={refetch}
+              disabled={loading}
+              className="p-3.5 bg-white dark:bg-stone-800 border border-stone-100 dark:border-stone-700 rounded-2xl text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 transition-all shadow-sm disabled:opacity-50"
+            >
+              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            <PermissionGuard permissions="classes.create">
+              <button
+                onClick={handleOpenCreateModal}
+                className="flex items-center gap-2 px-6 py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-amber-500/20"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Tạo lớp học</span>
+              </button>
+            </PermissionGuard>
           </div>
         </div>
 
-        {/* Statistics */}
+        {/* Statistics Bar */}
         {statistics && (
-          <div className="mb-8">
-            <h2 className="sr-only">Thống kê lớp học</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Tổng số lớp học</p>
-                    <p className="text-3xl font-bold text-gray-900">{statistics.total_classes}</p>
-                  </div>
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <Icons.Classes className="w-6 h-6 text-blue-600" />
-                  </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            <div className="glass-crystal rounded-2xl p-5 hover:-translate-y-0.5 transition-all duration-300">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-500/10 rounded-xl text-blue-500 shrink-0">
+                  <ListIcon className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] mb-1 truncate">Tổng lớp học</p>
+                  <p className="text-3xl font-black text-stone-900 dark:text-stone-100 leading-none">{statistics.total_classes}</p>
                 </div>
               </div>
+            </div>
 
-              <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Tổng số học sinh</p>
-                    <p className="text-3xl font-bold text-green-600">{statistics.total_students}</p>
-                  </div>
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <Icons.Students className="w-6 h-6 text-green-600" />
-                  </div>
+            <div className="glass-crystal rounded-2xl p-5 hover:-translate-y-0.5 transition-all duration-300">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-500 shrink-0">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] mb-1 truncate">Tổng học sinh</p>
+                  <p className="text-3xl font-black text-stone-900 dark:text-stone-100 leading-none">{statistics.total_students}</p>
                 </div>
               </div>
+            </div>
 
-              <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Sĩ số trung bình</p>
-                    <p className="text-3xl font-bold text-purple-600">{statistics.average_enrollment.toFixed(1)}</p>
-                  </div>
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <Icons.Chart className="w-6 h-6 text-purple-600" />
-                  </div>
+            <div className="glass-crystal rounded-2xl p-5 hover:-translate-y-0.5 transition-all duration-300">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-500 shrink-0">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] mb-1 truncate">Sĩ số TB</p>
+                  <p className="text-3xl font-black text-stone-900 dark:text-stone-100 leading-none">{statistics.average_enrollment.toFixed(1)}</p>
                 </div>
               </div>
+            </div>
 
-              <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Giáo viên</p>
-                    <p className="text-3xl font-bold text-orange-600">{Object.keys(statistics.by_teacher || {}).length}</p>
-                  </div>
-                  <div className="p-3 bg-orange-100 rounded-lg">
-                    <Icons.Teachers className="w-6 h-6 text-orange-600" />
-                  </div>
+            <div className="glass-crystal rounded-2xl p-5 hover:-translate-y-0.5 transition-all duration-300">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500 shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] mb-1 truncate">Giáo viên</p>
+                  <p className="text-3xl font-black text-stone-900 dark:text-stone-100 leading-none">{Object.keys(statistics.by_teacher || {}).length}</p>
                 </div>
               </div>
             </div>
@@ -426,131 +502,189 @@ export default function ClassesPageModern() {
           />
         )}
 
-        {/* Classes Grid */}
+        {/* Classes Display */}
         {classes.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classes.map((classData) => (
-              <div
-                key={classData.id}
-                className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200 group"
-              >
-                <div className="p-6">
-                  <div className="flex flex-col h-full">
-                    {/* Class Header */}
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h2 className="font-bold text-xl text-gray-900 mb-2 leading-tight group-hover:text-blue-600 transition-colors duration-200">
-                          {classData.name}
-                        </h2>
-                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {classData.code}
-                        </div>
-                      </div>
-                      {classData.enrollment_count !== undefined && (
-                        <div className="flex items-center gap-1.5 bg-gray-100 text-gray-700 rounded-full px-3 py-1.5 text-sm font-semibold">
-                          <Icons.Students className="w-4 h-4" />
-                          {classData.enrollment_count}
-                        </div>
-                      )}
+          viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {classes.filter(c =>
+                c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                c.code.toLowerCase().includes(searchQuery.toLowerCase())
+              ).map((classData) => (
+                <div
+                  key={classData.id}
+                  className="group relative bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 p-8">
+                    <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-2xl text-blue-600 group-hover:rotate-12 transition-transform">
+                      <GraduationCap className="w-6 h-6" />
                     </div>
+                  </div>
 
-                    {/* Class Details */}
-                    <div className="space-y-3 mb-6 flex-grow">
-                      <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="p-1.5 bg-blue-100 rounded-lg flex-shrink-0">
-                          <Icons.Teachers className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div className="flex-1 min-w-[0]">
-                          <p className="text-sm font-semibold text-gray-900">
-                            {classData.teacher ? getDisplayName(classData.teacher) : 'Chưa được giao'}
-                          </p>
-                          {classData.teacher?.email && (
-                            <p className="text-xs text-gray-500 mt-0.5 truncate">
-                              {classData.teacher.email}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {classData.schedule && (
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="p-1.5 bg-green-100 rounded-lg">
-                            <Icons.Attendance className="w-4 h-4 text-green-600" />
-                          </div>
-                          <p className="text-sm text-gray-900 font-medium">{classData.schedule}</p>
+                  <div className="p-8">
+                    <div className="mb-6">
+                      <span className="inline-block px-4 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full mb-3">
+                        {classData.code}
+                      </span>
+                      <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-tight mb-2 group-hover:text-blue-600 transition-colors">
+                        {classData.name}
+                      </h2>
+                      {classData.course && (
+                        <div className="flex items-center gap-2 mb-3">
+                          <Icons.Classes className="w-4 h-4 text-purple-500" />
+                          <span className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">{classData.course.name}</span>
                         </div>
                       )}
-
-                      {classData.room && (
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="p-1.5 bg-purple-100 rounded-lg">
-                            <span className="text-purple-600 text-sm">📍</span>
-                          </div>
-                          <p className="text-sm text-gray-900 font-medium">{classData.room}</p>
-                        </div>
-                      )}
-
-                      {classData.description && (
-                        <p className="text-sm text-gray-600 mt-3 line-clamp-2 italic">
-                          {classData.description}
-                        </p>
-                      )}
-
-                      <p className="text-xs text-gray-500 mt-3 flex items-center gap-2">
-                        <Icons.Calendar className="w-4 h-4" />
-                        <span>Được tạo: {new Date(classData.created_at).toLocaleDateString('vi-VN')}</span>
+                      <p className="text-sm text-gray-400 line-clamp-2 italic">
+                        {classData.description || "Lớp học chưa có mô tả chi tiết."}
                       </p>
                     </div>
 
-                    {/* Class Actions */}
-                    <div className="flex flex-wrap gap-2 border-t border-gray-100 pt-5">
-                      <Link
-                        href={routes.classes.detail(classData.id)}
-                        className="flex-1 min-w-[100px]"
-                      >
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full rounded-lg border-gray-200 hover:bg-stone-50 hover:text-stone-900 transition-all duration-200"
-                          leftIcon={<Icons.Classes className="w-3.5 h-3.5" />}
-                        >
-                          Chi tiết
-                        </Button>
-                      </Link>
+                    <div className="space-y-4 mb-8">
+                      <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border border-gray-100 dark:border-gray-700/50">
+                        <div className="p-2.5 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
+                          <Users className="w-5 h-5 text-green-500" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Giáo viên</p>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">
+                            {classData.teacher ? getDisplayName(classData.teacher) : 'Chưa được giao'}
+                          </p>
+                        </div>
+                      </div>
 
-                      <PermissionGuard permissions="classes.enroll">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 min-w-[100px] rounded-lg border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all duration-200"
-                          onClick={() => handleEnrollClick(classData)}
-                          leftIcon={<Icons.Add className="w-3.5 h-3.5" />}
-                        >
-                          Ghi danh
-                        </Button>
-                      </PermissionGuard>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border border-gray-100 dark:border-gray-700/50">
+                          <MapPin className="w-4 h-4 text-purple-500" />
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{classData.room || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border border-gray-100 dark:border-gray-700/50 col-span-2">
+                          <Calendar className="w-4 h-4 text-blue-500" />
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{classData.academic_year?.name || 'N/A'}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                      <PermissionGuard permissions="classes.manage">
-                        <Link
-                          href={routes.classes.edit(classData.id)}
-                          className="flex-1 min-w-[100px]"
-                        >
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            className="w-full rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-                            leftIcon={<Icons.Edit className="w-3.5 h-3.5" />}
-                          >
-                            Chỉnh sửa
-                          </Button>
+                    <div className="flex items-center justify-between pt-6 border-t border-gray-50 dark:border-gray-700">
+                      <div className="flex -space-x-3">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="w-10 h-10 rounded-full border-4 border-white dark:border-gray-800 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-gray-400" />
+                          </div>
+                        ))}
+                        <div className="w-10 h-10 rounded-full border-4 border-white dark:border-gray-800 bg-blue-500 flex items-center justify-center">
+                          <span className="text-[10px] font-black text-white">+{classData.enrollment_count || 0}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Link href={routes.classes.detail(classData.id)}>
+                          <button className="p-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-2xl text-gray-600 dark:text-gray-300 transition-all">
+                            <MoreVertical className="w-5 h-5" />
+                          </button>
                         </Link>
-                      </PermissionGuard>
+                        <PermissionGuard permissions="classes.manage">
+                          <Link href={routes.classes.edit(classData.id)}>
+                            <button className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold rounded-2xl hover:scale-105 transition-all active:scale-95 shadow-lg">
+                              Quản lý
+                            </button>
+                          </Link>
+                        </PermissionGuard>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-gray-900/50">
+                    <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Lớp học</th>
+                    <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Khóa học</th>
+                    <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Giáo viên</th>
+                    <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Sĩ số</th>
+                    <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Phòng/Lịch</th>
+                    <th className="px-8 py-6 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                  {classes.filter(c =>
+                    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    c.code.toLowerCase().includes(searchQuery.toLowerCase())
+                  ).map((classData) => (
+                    <tr key={classData.id} className="group hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-2xl text-blue-600">
+                            <GraduationCap className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-gray-900 dark:text-white">{classData.name}</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{classData.code}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        {classData.course ? (
+                          <div className="flex items-center gap-2">
+                            <Icons.Classes className="w-4 h-4 text-purple-500" />
+                            <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{classData.course.name}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">N/A</span>
+                        )}
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold text-[10px] text-gray-500">
+                            {classData.teacher ? classData.teacher.full_name.charAt(0) : '?'}
+                          </div>
+                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                            {classData.teacher ? getDisplayName(classData.teacher) : 'Chưa giao'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-50 dark:bg-green-500/10 text-green-600 text-xs font-black rounded-full">
+                          <Users className="w-3.5 h-3.5" />
+                          {classData.enrollment_count || 0}
+                        </span>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {classData.room || 'N/A'}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {classData.schedule || 'N/A'}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Link href={routes.classes.detail(classData.id)}>
+                            <button className="p-2.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-gray-600 hover:text-blue-600 shadow-sm transition-all">
+                              <Search className="w-4 h-4" />
+                            </button>
+                          </Link>
+                          <PermissionGuard permissions="classes.manage">
+                            <Link href={routes.classes.edit(classData.id)}>
+                              <button className="p-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold shadow-lg transition-all">
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </Link>
+                          </PermissionGuard>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         )}
 
         {/* Enrollment Modal */}
@@ -561,68 +695,91 @@ export default function ClassesPageModern() {
             setSelectedClass(null);
             setSelectedStudentId("");
           }}
-          title={`Đăng ký vào ${selectedClass?.name || 'Lớp học'}`}
+          title=""
         >
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Thông tin lớp học</h3>
-              <div className="space-y-1 text-sm text-blue-800">
-                <p><strong>Mã lớp:</strong> {selectedClass?.code}</p>
-                <p><strong>Giáo viên:</strong> {selectedClass?.teacher ? getDisplayName(selectedClass.teacher) : 'Chưa được giao'}</p>
-                {selectedClass?.schedule && (
-                  <p><strong>Lịch học:</strong> {selectedClass.schedule}</p>
-                )}
-                {selectedClass?.room && (
-                  <p><strong>Phòng:</strong> {selectedClass.room}</p>
-                )}
-                {selectedClass?.enrollment_count !== undefined && (
-                  <p><strong>Sĩ số hiện tại:</strong> {selectedClass.enrollment_count}</p>
+          <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 animate-in fade-in zoom-in duration-200">
+            <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Ghi danh học sinh</h3>
+                <p className="text-sm text-gray-500">Đăng ký học sinh mới vào lớp {selectedClass?.name}</p>
+              </div>
+              <button
+                onClick={() => setShowEnrollModal(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                disabled={enrolling}
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div className="p-6 bg-blue-50 dark:bg-blue-500/10 rounded-[2rem] border border-blue-100 dark:border-blue-700/50">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-sm text-blue-600">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">{selectedClass?.code}</h4>
+                    <p className="text-xs text-blue-600 font-bold">{selectedClass?.name}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                  <div>
+                    <span>Giáo viên:</span>
+                    <p className="text-xs text-gray-700 dark:text-gray-300 mt-0.5">{selectedClass?.teacher ? getDisplayName(selectedClass.teacher) : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span>Sĩ số:</span>
+                    <p className="text-xs text-gray-700 dark:text-gray-300 mt-0.5">{selectedClass?.enrollment_count || 0} học sinh</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
+                  Chọn học sinh <span className="text-red-500">*</span>
+                </label>
+                <div className="relative group">
+                  <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                  <select
+                    value={selectedStudentId}
+                    onChange={(e) => setSelectedStudentId(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                  >
+                    <option value="">-- Danh sách học sinh khả dụng --</option>
+                    {availableStudents.map((student) => (
+                      <option key={student.id} value={student.id}>
+                        {student.full_name} ({student.email || 'No email'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {availableStudents.length === 0 && (
+                  <p className="text-xs text-orange-500 mt-2 ml-1 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Tất cả học sinh đã được ghi danh.
+                  </p>
                 )}
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chọn học sinh để đăng ký
-              </label>
-              <select
-                value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">-- Chọn học sinh --</option>
-                {availableStudents.map((student) => (
-                  <option key={student.id} value={student.id}>
-                    {student.full_name} ({student.email || 'Không có email'})
-                  </option>
-                ))}
-              </select>
-              {availableStudents.length === 0 && (
-                <p className="text-sm text-slate-600 mt-2">
-                  Không có học sinh khả dụng hoặc tất cả học sinh đã đăng ký.
-                </p>
-              )}
-            </div>
-
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowEnrollModal(false);
-                  setSelectedClass(null);
-                  setSelectedStudentId("");
-                }}
-              >
-                Hủy
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleEnrollStudent}
-                disabled={!selectedStudentId || enrolling}
-                isLoading={enrolling}
-              >
-                Đăng ký học sinh
-              </Button>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEnrollModal(false)}
+                  className="flex-1 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-2xl hover:bg-gray-50 transition-all"
+                  disabled={enrolling}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleEnrollStudent}
+                  disabled={!selectedStudentId || enrolling}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {enrolling ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                  Xác nhận
+                </button>
+              </div>
             </div>
           </div>
         </Modal>
@@ -632,113 +789,184 @@ export default function ClassesPageModern() {
           isOpen={showCreateModal}
           onClose={() => {
             setShowCreateModal(false);
-            setNewClass({ name: '', code: '', description: '', teacherId: '', room: '', schedule: '' });
+            setNewClass({ name: '', code: '', description: '', teacherId: '', courseId: '', academicYearId: '', room: '', schedule: '' });
           }}
-          title="Tạo lớp học mới"
+          title=""
         >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên lớp học <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={newClass.name}
-                onChange={(e) => setNewClass(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="VD: Lớp 10A1"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mã lớp
-              </label>
-              <input
-                type="text"
-                value={newClass.code}
-                onChange={(e) => setNewClass(prev => ({ ...prev, code: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="VD: 10A1"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Giáo viên chủ nhiệm
-              </label>
-              <select
-                value={newClass.teacherId}
-                onChange={(e) => setNewClass(prev => ({ ...prev, teacherId: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">-- Chọn giáo viên --</option>
-                {teachers.map((teacher) => (
-                  <option key={teacher.id} value={teacher.id}>
-                    {teacher.full_name} ({teacher.email || 'Không có email'})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mô tả
-              </label>
-              <textarea
-                value={newClass.description}
-                onChange={(e) => setNewClass(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
-                placeholder="Mô tả về lớp học..."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 animate-in fade-in zoom-in duration-200">
+            <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phòng học
-                </label>
-                <input
-                  type="text"
-                  value={newClass.room}
-                  onChange={(e) => setNewClass(prev => ({ ...prev, room: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="VD: A101"
-                />
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Thêm lớp học mới</h3>
+                <p className="text-sm text-gray-500">Khởi tạo một lớp học mới trong hệ thống</p>
               </div>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                disabled={creating}
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
+                    Tên lớp học <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newClass.name}
+                    onChange={(e) => setNewClass(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    placeholder="VD: Lớp 10A1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
+                    Mã lớp học <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newClass.code}
+                    onChange={(e) => setNewClass(prev => ({ ...prev, code: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all uppercase"
+                    placeholder="VD: 10A1"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
+                    Khóa học <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <Icons.Classes className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
+                    <select
+                      value={newClass.courseId}
+                      onChange={(e) => setNewClass(prev => ({ ...prev, courseId: e.target.value }))}
+                      className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                    >
+                      <option value="">-- Chọn khóa học --</option>
+                      {courses.map((course) => (
+                        <option key={course.id} value={course.id}>
+                          {course.name} ({course.code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
+                    Giáo viên chủ nhiệm
+                  </label>
+                  <div className="relative group">
+                    <Icons.Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                    <select
+                      value={newClass.teacherId}
+                      onChange={(e) => setNewClass(prev => ({ ...prev, teacherId: e.target.value }))}
+                      className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                    >
+                      <option value="">-- Chọn giáo viên --</option>
+                      {teachers.map((teacher) => (
+                        <option key={teacher.id} value={teacher.id}>
+                          {getDisplayName(teacher)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
+                    Năm học <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                    <select
+                      value={newClass.academicYearId}
+                      onChange={(e) => setNewClass(prev => ({ ...prev, academicYearId: e.target.value }))}
+                      className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                    >
+                      <option value="">-- Chọn năm học --</option>
+                      {academicYears.map((ay) => (
+                        <option key={ay.id} value={ay.id}>
+                          {ay.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
+                    Phòng học
+                  </label>
+                  <div className="relative group">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={newClass.room}
+                      onChange={(e) => setNewClass(prev => ({ ...prev, room: e.target.value }))}
+                      className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                      placeholder="VD: A101"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
                   Lịch học
                 </label>
-                <input
-                  type="text"
-                  value={newClass.schedule}
-                  onChange={(e) => setNewClass(prev => ({ ...prev, schedule: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="VD: Thứ 2-6, 7:00-11:30"
+                <div className="relative group">
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={newClass.schedule}
+                    onChange={(e) => setNewClass(prev => ({ ...prev, schedule: e.target.value }))}
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    placeholder="VD: Thứ 2-6, 7:00-11:30"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
+                  Mô tả lớp học
+                </label>
+                <textarea
+                  value={newClass.description}
+                  onChange={(e) => setNewClass(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
+                  rows={3}
+                  placeholder="Nhập mô tả ngắn gọn về lớp học..."
                 />
               </div>
-            </div>
 
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setNewClass({ name: '', code: '', description: '', teacherId: '', room: '', schedule: '' });
-                }}
-              >
-                Hủy
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleCreateClass}
-                disabled={!newClass.name.trim() || creating}
-                isLoading={creating}
-              >
-                Tạo lớp học
-              </Button>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-2xl hover:bg-gray-50 transition-all font-fredoka"
+                  disabled={creating}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleCreateClass}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-50 font-fredoka uppercase tracking-wider text-sm"
+                  disabled={!newClass.name.trim() || !newClass.courseId || !newClass.academicYearId || creating}
+                >
+                  {creating ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                  Tạo lớp
+                </button>
+              </div>
             </div>
           </div>
         </Modal>

@@ -717,8 +717,8 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950">
-      <div className="p-4 md:p-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-10 overflow-x-hidden">
+      <div className="p-4 md:p-10 max-w-[1600px] mx-auto space-y-8 relative z-10">
         <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4 flex-wrap">
             <Link

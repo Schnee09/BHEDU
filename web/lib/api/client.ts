@@ -130,8 +130,6 @@ export async function apiFetch(
 
       if (method === "GET") {
         // We deduplicate GET requests to save bandwidth and improve performance.
-        // However, we MUST NOT pass the user's AbortSignal to the shared fetcher,
-        // otherwise aborting one caller would abort the network request for ALL callers.
         const sharedResponsePromise = requestCache.getOrSetInFlight(
           url,
           options,
@@ -139,7 +137,6 @@ export async function apiFetch(
         );
 
         if (signal) {
-          // Wrap the shared promise to respect the local signal
           response = await Promise.race([
             sharedResponsePromise.then((r) => r.clone()),
             new Promise<Response>((_, reject) => {
@@ -158,12 +155,30 @@ export async function apiFetch(
       } else {
         // POST/PUT/DELETE are never deduplicated
         response = await fetch(url, {
-          ...options,
+          ...fetchOptions,
           credentials: "same-origin",
           headers: authorizationHeader
             ? { ...baseHeaders, Authorization: authorizationHeader }
             : baseHeaders,
         });
+      }
+
+      if (response.ok && method === "GET") {
+        const ttl = getTTL(url);
+        // ... cache setting logic if needed
+      } else if (
+        response.ok && ["POST", "PUT", "PATCH", "DELETE"].includes(method)
+      ) {
+        // Invalidate relevant cache on mutations
+        const baseUrl = url.split("?")[0];
+        requestCache.invalidate(baseUrl);
+
+        if (baseUrl.includes("/api/subjects")) {
+          requestCache.invalidate("/api/subjects");
+        }
+        if (baseUrl.includes("/api/v2/students")) {
+          requestCache.invalidate("/api/v2/students");
+        }
       }
 
       // Retry on 5xx errors or network failures

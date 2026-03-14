@@ -2,122 +2,169 @@
  * @jest-environment node
  */
 
-import { GET } from '../attendance/route'
+// Mock auth guard (used by createGetHandler)
+jest.mock("@/lib/auth/guard", () => ({
+  getAuthContext: jest.fn(async () => ({
+    authorized: true,
+    user: { id: "u1", email: "admin@test.com" },
+    profile: {
+      id: "p1",
+      email: "admin@test.com",
+      full_name: "Admin",
+      is_active: true,
+    },
+    role: "admin",
+  })),
+}));
 
-// Mock adminAuth, getDataClient, enforceRateLimit
-jest.mock('@/lib/auth/adminAuth', () => ({
-  adminAuth: jest.fn(async () => ({ authorized: true }))
-}))
+// Mock createServiceClient (used directly in the route, NOT getDataClient)
+jest.mock("@/lib/supabase/server", () => {
+  const makeBuilder = (result: any) => {
+    const builder: any = {
+      select: () => builder,
+      order: () => builder,
+      gte: () => builder,
+      lte: () => builder,
+      eq: () => builder,
+      in: () => builder,
+      limit: () => builder,
+      then: (resolve: any) => resolve({ data: result, error: null }),
+    };
+    return builder;
+  };
 
-jest.mock('@/lib/api/rateLimit', () => ({
-  enforceRateLimit: jest.fn(() => null)
-}))
+  const smallRows = [
+    {
+      id: "a1",
+      date: "2025-12-01",
+      status: "present",
+      notes: "ok",
+      class_id: "c1",
+      student_id: "s1",
+      student: { id: "s1", full_name: "Test Student" },
+      class: { id: "c1", name: "Class 1" },
+    },
+  ];
 
-jest.mock('@/lib/auth/dataClient', () => ({
-  getDataClient: jest.fn(async () => {
-    // We'll provide a supabase-like stubbed client tailored per-table
-    const makeBuilder = (result: any) => {
-      const builder: any = {
-        select: () => builder,
-        order: () => builder,
-        gte: () => builder,
-        lte: () => builder,
-        eq: () => builder,
-        in: () => builder,
-        limit: () => builder,
-        then: (resolve: any) => resolve({ data: result, error: null })
+  let currentAttendance = smallRows;
+
+  const storageMock = {
+    from: jest.fn(() => ({
+      upload: jest.fn(async () => ({ error: null })),
+      createSignedUrl: jest.fn(async () => ({
+        data: { signedUrl: "https://signed.test/url" },
+        error: null,
+      })),
+    })),
+  };
+
+  const mockClient = {
+    from: (table: string) => {
+      if (table === "attendance") return makeBuilder(currentAttendance);
+      if (table === "profiles") {
+        return makeBuilder([{ id: "s1", full_name: "Test Student" }]);
       }
-      return builder
-    }
+      if (table === "classes") {
+        return makeBuilder([{ id: "c1", name: "Class 1" }]);
+      }
+      if (table === "report_exports") {
+        return {
+          insert: (_obj: any) => ({
+            select: (_sel: any) => ({
+              single: async () => ({
+                data: { id: "test-job-id" },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      return makeBuilder([]);
+    },
+    storage: storageMock,
+  };
 
-    // default small rows for attendance
-    const smallRows = [
-      { id: 'a1', date: '2025-12-01', status: 'present', notes: 'ok', class_id: 'c1', student_id: 's1' }
-    ]
+  // Expose setter for tests
+  (global as any).__setAttendanceRows = (rows: any[]) => {
+    currentAttendance = rows;
+  };
 
-    const largeRows = Array.from({ length: 3000 }).map((_, i) => ({ id: `r${i}`, date: '2025-12-01', status: 'present', notes: '', class_id: 'c1', student_id: `s${i}` }))
+  return {
+    createServiceClient: jest.fn(() => mockClient),
+    createClientFromRequest: jest.fn(() => mockClient),
+    createClient: jest.fn(async () => mockClient),
+    createClientFromToken: jest.fn(() => mockClient),
+  };
+});
 
-  const _attendanceBuilderSmall = makeBuilder(smallRows)
-  const _attendanceBuilderLarge = makeBuilder(largeRows)
+// Mock apiVersion (used by createGetHandler response wrapper)
+jest.mock("@/lib/api/apiVersion", () => ({
+  API_VERSION: "1.0.0",
+  getVersionHeaders: jest.fn(() => ({})),
+  withVersionHeaders: jest.fn((response: any) => response),
+}));
 
-    const profilesBuilder = makeBuilder([{ id: 's1', full_name: 'Test Student' }])
-    const classesBuilder = makeBuilder([{ id: 'c1', name: 'Class 1' }])
+import { GET } from "../attendance/route";
 
-    const storageMock = {
-      from: jest.fn(() => ({
-        upload: jest.fn(async () => ({ error: null })),
-        createSignedUrl: jest.fn(async () => ({ data: { signedUrl: 'https://signed.test/url' }, error: null }))
-      }))
-    }
+describe("Attendance report CSV endpoint", () => {
+  it("returns inline CSV for small result sets", async () => {
+    (global as any).__setAttendanceRows?.([{
+      id: "a1",
+      date: "2025-12-01",
+      status: "present",
+      notes: "ok",
+      class_id: "c1",
+      student_id: "s1",
+      student: { id: "s1", full_name: "Test Student" },
+      class: { id: "c1", name: "Class 1" },
+    }]);
 
-    // We'll toggle which attendance rows to return via a simple flag in the test using process.env
-    let currentAttendance = smallRows
-    const client = {
-      from: (table: string) => {
-        if (table === 'attendance') return makeBuilder(currentAttendance)
-        if (table === 'profiles') return profilesBuilder
-        if (table === 'classes') return classesBuilder
-        if (table === 'report_exports') {
-          // support insert(...).select('id').single() used by the route
-          return {
-            insert: (_obj: any) => ({
-              select: (_sel: any) => ({
-                single: async () => ({ data: { id: 'test-job-id' }, error: null })
-              })
-            })
-          }
-        }
-        return makeBuilder([])
-      },
-      storage: storageMock
-    }
+    const req = new Request(
+      "http://localhost/api/reports/attendance?format=csv",
+    );
+    Object.defineProperty(req, "nextUrl", {
+      value: new URL("http://localhost/api/reports/attendance?format=csv"),
+    });
+    const res: any = await GET(req as any);
 
-    // Allow tests to flip the attendance result by setting global
-    ;(global as any).__setAttendanceRows = (rows: any[]) => { currentAttendance = rows }
+    expect(res.status).toBe(200);
+    const ct = res.headers.get("Content-Type");
+    expect(ct).toMatch(/text\/csv/);
+    const text = await res.text();
+    expect(text).toContain("student_id");
+    expect(text).toContain("Test Student");
+  });
 
-    return { supabase: client }
-  })
-}))
+  it("uploads large CSV to storage and returns a signed URL", async () => {
+    const largeRows = Array.from({ length: 3000 }).map((_, i) => ({
+      id: `r${i}`,
+      date: "2025-12-01",
+      status: "present",
+      notes: "",
+      class_id: "c1",
+      student_id: `s${i}`,
+      student: { id: `s${i}`, full_name: `Student ${i}` },
+      class: { id: "c1", name: "Class 1" },
+    }));
+    (global as any).__setAttendanceRows?.(largeRows);
 
-describe('Attendance report CSV endpoint', () => {
-  it('returns inline CSV for small result sets', async () => {
-    // Ensure small rows
-    ;(global as any).__setAttendanceRows?.([ { id: 'a1', date: '2025-12-01', status: 'present', notes: 'ok', class_id: 'c1', student_id: 's1' } ])
+    const req = new Request(
+      "http://localhost/api/reports/attendance?format=csv",
+    );
+    Object.defineProperty(req, "nextUrl", {
+      value: new URL("http://localhost/api/reports/attendance?format=csv"),
+    });
+    const res: any = await GET(req as any);
+    expect(res.status).toBe(200);
 
-    const req = new Request('http://localhost/api/reports/attendance?format=csv')
-    const res: any = await GET(req as any)
-
-    expect(res.status).toBe(200)
-    const ct = res.headers.get('Content-Type')
-    expect(ct).toMatch(/text\/csv/)
-    const text = await res.text()
-    expect(text).toContain('student_id')
-    expect(text).toContain('Test Student')
-  })
-
-  it('uploads large CSV to storage and returns a signed URL', async () => {
-    // Set large rows
-    const largeRows = Array.from({ length: 3000 }).map((_, i) => ({ id: `r${i}`, date: '2025-12-01', status: 'present', notes: '', class_id: 'c1', student_id: `s${i}` }))
-    ;(global as any).__setAttendanceRows?.(largeRows)
-    const req = new Request('http://localhost/api/reports/attendance?format=csv')
-    const res: any = await GET(req as any)
-    expect(res.status).toBe(200)
-
-    const ct = res.headers.get('Content-Type') || ''
-    if (ct.includes('application/json')) {
-      const json = await res.json()
-      // Either we returned a jobId for background enqueue or a downloadUrl if upload happened inline
-      expect(json).toHaveProperty('jobId')
-      expect(typeof json.jobId).toBe('string')
+    const ct = res.headers.get("Content-Type") || "";
+    if (ct.includes("application/json")) {
+      const json = await res.json();
+      expect(json).toHaveProperty("jobId");
+      expect(typeof json.jobId).toBe("string");
     } else {
-      // Fallback: server returned inline CSV — ensure it contains headers
-      const text = await res.text()
-      expect(text).toContain('student_id')
+      const text = await res.text();
+      expect(text).toContain("student_id");
     }
-
-    // Simulate worker completing the job by updating the DB row directly in the mock client
-    // Our mocked getDataClient returns a client where .from('report_exports') will be a builder;
-    // but in the test environment we didn't implement that; instead simply ensure jobId exists.
-    // This test ensures the API enqueues a job — worker behavior is covered by separate integration tests.
-  })
-})
+  });
+});

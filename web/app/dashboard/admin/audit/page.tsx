@@ -6,18 +6,21 @@ import { useProfile } from "@/hooks/useProfile";
 import { useRouter } from "next/navigation";
 import {
     Search,
-    Filter,
     RefreshCw,
     User,
     Clock,
     FileText,
     ChevronLeft,
     ChevronRight,
-    Download
+    Download,
+    ArrowLeft
 } from "lucide-react";
 import { exportToCSV } from "@/lib/export/exportUtils";
 import { usePermissions } from "@/hooks/usePermissions";
 import PageGuard from "@/components/PageGuard";
+import { AcademicBackground } from "@/components/Academic/AcademicBackground";
+import Link from "next/link";
+import { Icons } from "@/components/ui/Icons";
 
 interface AuditLog {
     id: string;
@@ -53,11 +56,11 @@ const resourceLabels: Record<string, string> = {
 };
 
 const actionColors: Record<string, string> = {
-    create: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-    update: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-    delete: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
-    login: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
-    logout: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
+    create: "bg-green-500/10 text-green-600 border border-green-500/20",
+    update: "bg-blue-500/10 text-blue-600 border border-blue-500/20",
+    delete: "bg-red-500/10 text-red-600 border border-red-500/20",
+    login: "bg-gold-accent/10 text-gold-accent border border-gold-accent/20",
+    logout: "bg-stone-500/10 text-stone-600 border border-stone-500/20",
 };
 
 export default function AuditLogsPage() {
@@ -138,142 +141,154 @@ function AuditLogsContent() {
 
     if (profileLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
+            <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-[#080808]">
+                <AcademicBackground />
+                <div className="animate-spin h-8 w-8 border-2 border-red-600 border-t-transparent rounded-sharp" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-['Be_Vietnam_Pro'] selection:bg-red-600/30 text-stone-900 dark:text-stone-100 p-4 md:p-12 lg:p-16">
+            <AcademicBackground />
+
+            <div className="max-w-7xl mx-auto relative z-10 space-y-12">
                 {/* Header */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                                Nhật ký hoạt động
-                            </h1>
-                            <p className="mt-2 text-gray-600 dark:text-gray-400">
-                                Theo dõi tất cả hoạt động trong hệ thống
-                            </p>
-                        </div>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={fetchLogs}
-                                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                            >
-                                <RefreshCw className="w-4 h-4" />
-                                Làm mới
-                            </button>
-                            <button
-                                onClick={handleExport}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
-                            >
-                                <Download className="w-4 h-4" />
-                                Xuất CSV
-                            </button>
-                        </div>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-b border-stone-200 dark:border-stone-800 pb-10">
+                    <div className="space-y-4">
+                        <Link
+                            href="/dashboard"
+                            className="inline-flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-red-600 transition-colors uppercase tracking-widest"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            <span>Quay lại Dashboard</span>
+                        </Link>
+                        <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
+                            Nhật ký <span className="text-red-600">Hệ thống</span>
+                        </h1>
+                        <p className="text-stone-500 font-mono text-xs tracking-widest uppercase">
+                            AUDIT LOGS • TRANSACTIONAL HYPER-CONSISTENCY
+                        </p>
+                    </div>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={fetchLogs}
+                            className="flex items-center gap-3 px-6 py-3 glass-crystal rounded-sharp text-xs font-bold uppercase tracking-widest hover:bg-white/5 transition-all"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                            Làm mới
+                        </button>
+                        <button
+                            onClick={handleExport}
+                            className="flex items-center gap-3 px-6 py-3 bg-red-600 text-white rounded-sharp text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-xl shadow-red-600/20"
+                        >
+                            <Download className="w-4 h-4" />
+                            Xuất CSV
+                        </button>
                     </div>
                 </div>
 
                 {/* Filters */}
-                <div className="mb-6 flex flex-wrap gap-4">
-                    <div className="flex-1 min-w-[200px]">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div className="md:col-span-6">
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500 group-focus-within:text-red-600 transition-colors" />
                             <input
                                 type="text"
-                                placeholder="Tìm kiếm..."
+                                placeholder="TÌM KIẾM TRUY XUẤT..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                                className="w-full pl-12 pr-4 py-4 glass-crystal rounded-sharp text-xs font-bold uppercase tracking-widest focus:ring-1 focus:ring-red-600 transition-all outline-none"
                             />
                         </div>
                     </div>
-                    <select
-                        value={actionFilter}
-                        onChange={(e) => setActionFilter(e.target.value)}
-                        className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    >
-                        <option value="">Tất cả hành động</option>
-                        {Object.entries(actionLabels).map(([key, label]) => (
-                            <option key={key} value={key}>{label}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={resourceFilter}
-                        onChange={(e) => setResourceFilter(e.target.value)}
-                        className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    >
-                        <option value="">Tất cả loại</option>
-                        {Object.entries(resourceLabels).map(([key, label]) => (
-                            <option key={key} value={key}>{label}</option>
-                        ))}
-                    </select>
+                    <div className="md:col-span-3">
+                        <select
+                            value={actionFilter}
+                            onChange={(e) => setActionFilter(e.target.value)}
+                            className="w-full px-6 py-4 glass-crystal rounded-sharp text-xs font-bold uppercase tracking-widest outline-none focus:ring-1 focus:ring-red-600 appearance-none bg-transparent"
+                        >
+                            <option value="">TẤT CẢ HÀNH ĐỘNG</option>
+                            {Object.entries(actionLabels).map(([key, label]) => (
+                                <option key={key} value={key}>{label.toUpperCase()}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="md:col-span-3">
+                        <select
+                            value={resourceFilter}
+                            onChange={(e) => setResourceFilter(e.target.value)}
+                            className="w-full px-6 py-4 glass-crystal rounded-sharp text-xs font-bold uppercase tracking-widest outline-none focus:ring-1 focus:ring-red-600 appearance-none bg-transparent"
+                        >
+                            <option value="">TẤT CẢ PHÂN LOẠI</option>
+                            {Object.entries(resourceLabels).map(([key, label]) => (
+                                <option key={key} value={key}>{label.toUpperCase()}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
                 {/* Table */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="glass-crystal rounded-sharp border-none shadow-2xl overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 dark:bg-gray-700/50">
-                                <tr>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Thời gian</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Người dùng</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Hành động</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Loại</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Chi tiết</th>
+                            <thead>
+                                <tr className="border-b border-stone-200 dark:border-stone-800 text-stone-500 uppercase tracking-widest text-[10px] font-bold">
+                                    <th className="px-6 py-5 text-left">Thời gian</th>
+                                    <th className="px-6 py-5 text-left">Tác nhân</th>
+                                    <th className="px-6 py-5 text-left">Hành động</th>
+                                    <th className="px-6 py-5 text-left">Đối tượng</th>
+                                    <th className="px-6 py-5 text-left">Mã định danh</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                            <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
                                 {loading ? (
                                     Array.from({ length: 5 }).map((_, i) => (
                                         <tr key={i}>
-                                            <td colSpan={5} className="px-6 py-4">
-                                                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                            <td colSpan={5} className="px-6 py-8">
+                                                <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded-sharp animate-pulse w-3/4 mx-auto" />
                                             </td>
                                         </tr>
                                     ))
                                 ) : filteredLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                                            Không có dữ liệu nhật ký
+                                        <td colSpan={5} className="px-6 py-20 text-center">
+                                            <p className="text-xs font-bold text-stone-500 uppercase tracking-[0.3em]">Không tìm thấy dữ liệu truy vấn</p>
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredLogs.map((log) => (
-                                        <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                                    <Clock className="w-4 h-4" />
+                                        <tr key={log.id} className="hover:bg-white/5 transition-colors group">
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-3 text-xs font-bold text-stone-500">
+                                                    <Clock className="w-3.5 h-3.5 text-red-600/50" />
                                                     {new Date(log.created_at).toLocaleString("vi-VN")}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-                                                        <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-sharp bg-stone-100 dark:bg-stone-800 flex items-center justify-center group-hover:bg-red-600 transition-colors">
+                                                        <User className="w-4 h-4 text-stone-500 group-hover:text-white transition-colors" />
                                                     </div>
-                                                    <span className="text-sm text-gray-900 dark:text-white truncate max-w-[200px]">
-                                                        {log.user_email || "Hệ thống"}
+                                                    <span className="text-sm font-bold truncate max-w-[200px]">
+                                                        {log.user_email || "HỆ THỐNG"}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium ${actionColors[log.action] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}`}>
+                                            <td className="px-6 py-5">
+                                                <span className={`px-3 py-1 rounded-sharp text-[10px] font-bold uppercase tracking-widest ${actionColors[log.action] || "bg-stone-100 dark:bg-stone-800 text-stone-500"}`}>
                                                     {actionLabels[log.action] || log.action}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                                    <FileText className="w-4 h-4" />
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-3 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                                                    <FileText className="w-3.5 h-3.5" />
                                                     {resourceLabels[log.resource_type] || log.resource_type}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                                                    {log.resource_id ? `#${log.resource_id.slice(0, 8)}` : "-"}
+                                            <td className="px-6 py-5">
+                                                <span className="text-xs font-mono text-stone-500 opacity-60">
+                                                    {log.resource_id ? `#${log.resource_id.slice(0, 8).toUpperCase()}` : "-"}
                                                 </span>
                                             </td>
                                         </tr>
@@ -285,25 +300,25 @@ function AuditLogsContent() {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Hiển thị {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, totalCount)} / {totalCount} mục
+                        <div className="px-8 py-6 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">
+                                BẢN GHI {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, totalCount)} / {totalCount}
                             </p>
-                            <div className="flex gap-2">
+                            <div className="flex items-center gap-6">
                                 <button
                                     onClick={() => setPage(Math.max(1, page - 1))}
                                     disabled={page === 1}
-                                    className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="p-3 glass-crystal rounded-sharp hover:bg-white/5 disabled:opacity-30 transition-all shadow-xl"
                                 >
                                     <ChevronLeft className="w-5 h-5" />
                                 </button>
-                                <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
-                                    Trang {page} / {totalPages}
+                                <span className="text-xs font-bold uppercase tracking-widest">
+                                    TRANG {page} / {totalPages}
                                 </span>
                                 <button
                                     onClick={() => setPage(Math.min(totalPages, page + 1))}
                                     disabled={page === totalPages}
-                                    className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="p-3 glass-crystal rounded-sharp hover:bg-white/5 disabled:opacity-30 transition-all shadow-xl"
                                 >
                                     <ChevronRight className="w-5 h-5" />
                                 </button>

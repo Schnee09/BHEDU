@@ -159,7 +159,7 @@ export class ReportsRepository {
             .from("attendance")
             .select(`
                 id, date, status, notes, class_id, student_id,
-                student:profiles(id, full_name),
+                student:profiles!student_id(id, full_name),
                 class:classes(id, name)
             `)
             .order("date", { ascending: false });

@@ -32,11 +32,11 @@ const eslintConfig = [
       "@typescript-eslint/no-explicit-any": "off",
 
       // Unused vars - enable to find dead code
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
 
       // React hooks - enable warnings
       "react-hooks/exhaustive-deps": "warn",
-      "react-hooks/rules-of-hooks": "warn",
+      "react-hooks/rules-of-hooks": "error",
 
       // React - turn off
       "react/no-unescaped-entities": "off",

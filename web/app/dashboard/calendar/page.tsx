@@ -672,7 +672,7 @@ export default function AcademicCalendarPage() {
                             <select
                                 value={formData.event_type}
                                 onChange={(e) => setFormData({ ...formData, event_type: e.target.value })}
-                                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border-3 border-black dark:border-white/20 rounded-xl font-medium shadow-[4px_4px_0px_#000] focus:shadow-[6px_6px_0px_#000] outline-none transition-all"
+                                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-stone-200 dark:border-white/10 rounded-xl font-medium shadow-sm outline-none transition-all focus:ring-2 focus:ring-primary/20"
                             >
                                 {Object.entries(EVENT_TYPES).map(([key, { label }]) => (
                                     <option key={key} value={key}>{label}</option>
@@ -736,7 +736,7 @@ export default function AcademicCalendarPage() {
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             rows={3}
                             placeholder="Thêm thông tin bổ sung..."
-                            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border-3 border-black dark:border-white/20 rounded-xl font-medium shadow-[4px_4px_0px_#000] focus:shadow-[6px_6px_0px_#000] outline-none transition-all placeholder:text-muted"
+                            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-stone-200 dark:border-white/10 rounded-xl font-medium shadow-sm outline-none transition-all focus:ring-2 focus:ring-primary/20 placeholder:text-muted"
                         />
                     </div>
                 </form>

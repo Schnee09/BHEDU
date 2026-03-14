@@ -171,18 +171,6 @@ describe("ClassService", () => {
         };
 
         it("should create a new class", async () => {
-            // Mock course check
-            mockSupabase.from.mockReturnValueOnce({
-                select: jest.fn().mockReturnValue({
-                    eq: jest.fn().mockReturnValue({
-                        single: jest.fn().mockResolvedValue({
-                            data: { id: "course-1" },
-                            error: null,
-                        }),
-                    }),
-                }),
-            });
-
             // Mock teacher check
             mockSupabase.from.mockReturnValueOnce({
                 select: jest.fn().mockReturnValue({
@@ -225,7 +213,7 @@ describe("ClassService", () => {
             expect(result).toMatchObject(validInput);
         });
 
-        it("should throw ValidationError when course does not exist", async () => {
+        it("should throw ValidationError when teacher is not found", async () => {
             mockSupabase.from.mockReturnValueOnce({
                 select: jest.fn().mockReturnValue({
                     eq: jest.fn().mockReturnValue({
@@ -244,18 +232,6 @@ describe("ClassService", () => {
         });
 
         it("should throw ValidationError when teacher has invalid role", async () => {
-            // Mock course check
-            mockSupabase.from.mockReturnValueOnce({
-                select: jest.fn().mockReturnValue({
-                    eq: jest.fn().mockReturnValue({
-                        single: jest.fn().mockResolvedValue({
-                            data: { id: "course-1" },
-                            error: null,
-                        }),
-                    }),
-                }),
-            });
-
             // Mock teacher check (invalid role)
             mockSupabase.from.mockReturnValueOnce({
                 select: jest.fn().mockReturnValue({

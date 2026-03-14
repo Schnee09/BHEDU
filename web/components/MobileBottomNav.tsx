@@ -85,7 +85,7 @@ export default function MobileBottomNav() {
                 />
             )}
 
-            {/* swipeable More Menu - Pro Max Refined */}
+            {/* swipeable More Menu - Academic Refined */}
             <div className={cn(
                 "fixed bottom-0 left-0 right-0 z-[110] transition-transform duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] px-4 pb-12",
                 showMoreMenu ? "translate-y-0" : "translate-y-full"
@@ -145,7 +145,7 @@ export default function MobileBottomNav() {
                 </div>
             </div>
 
-            {/* Main Bottom Navigation - Pro Max Floating Pill */}
+            {/* Main Bottom Navigation - Dashboard Floating Pill */}
             <div className="fixed bottom-6 left-6 right-6 h-20 z-[100] animate-fade-in-up">
                 <nav className="glass-premium h-full w-full rounded-[28px] shadow-2xl shadow-black/10 flex items-center justify-around px-2 border-t border-white/20 dark:border-white/5">
                     {mainNavItems.map((item) => {
@@ -184,7 +184,7 @@ export default function MobileBottomNav() {
                         );
                     })}
 
-                    {/* Pro Max More Button */}
+                    {/* Dashboard More Button */}
                     <button
                         onClick={() => setShowMoreMenu(true)}
                         className={cn(

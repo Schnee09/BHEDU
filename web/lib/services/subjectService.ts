@@ -8,7 +8,7 @@ export interface Subject {
   code: string;
   description?: string | null;
   credits?: number;
-  isActive?: boolean;
+  is_active?: boolean;
   createdAt: string;
   updatedAt?: string;
 }
@@ -18,7 +18,7 @@ export interface CreateSubjectInput {
   code: string;
   description?: string | null;
   credits?: number;
-  isActive?: boolean;
+  is_active?: boolean;
 }
 
 export interface UpdateSubjectInput {
@@ -26,12 +26,12 @@ export interface UpdateSubjectInput {
   code?: string;
   description?: string | null;
   credits?: number;
-  isActive?: boolean;
+  is_active?: boolean;
 }
 
 export interface SubjectListOptions {
   search?: string;
-  isActive?: boolean;
+  is_active?: boolean;
   page?: number;
   limit?: number;
 }
@@ -52,7 +52,7 @@ export class SubjectService {
   async getSubjects(
     options: SubjectListOptions = {},
   ): Promise<{ subjects: Subject[]; total: number }> {
-    const { search, isActive, page = 1, limit = 100 } = options;
+    const { search, is_active, page = 1, limit = 100 } = options;
 
     let query = this.supabase
       .from("subjects")
@@ -64,8 +64,8 @@ export class SubjectService {
     if (search) {
       query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%`);
     }
-    if (isActive !== undefined) {
-      query = query.eq("is_active", isActive);
+    if (is_active !== undefined) {
+      query = query.eq("is_active", is_active);
     }
 
     const offset = (page - 1) * limit;
@@ -83,7 +83,7 @@ export class SubjectService {
       code: s.code,
       description: s.description,
       credits: s.credits,
-      isActive: s.is_active,
+      is_active: s.is_active,
       createdAt: s.created_at,
       updatedAt: s.updated_at,
     }));
@@ -112,7 +112,7 @@ export class SubjectService {
       code: data.code,
       description: data.description,
       credits: data.credits,
-      isActive: data.is_active !== undefined ? data.is_active : true,
+      is_active: data.is_active !== undefined ? data.is_active : true,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -140,7 +140,7 @@ export class SubjectService {
         code: input.code.toUpperCase(),
         description: input.description,
         credits: input.credits,
-        is_active: input.isActive !== undefined ? input.isActive : true,
+        is_active: input.is_active !== undefined ? input.is_active : true,
       })
       .select("*")
       .single();
@@ -155,7 +155,7 @@ export class SubjectService {
       code: data.code,
       description: data.description,
       credits: data.credits,
-      isActive: data.is_active,
+      is_active: data.is_active,
       createdAt: data.created_at,
     };
   }
@@ -172,7 +172,7 @@ export class SubjectService {
       updateData.description = input.description;
     }
     if (input.credits !== undefined) updateData.credits = input.credits;
-    if (input.isActive !== undefined) updateData.is_active = input.isActive;
+    if (input.is_active !== undefined) updateData.is_active = input.is_active;
 
     const { data, error } = await this.supabase
       .from("subjects")
@@ -190,7 +190,7 @@ export class SubjectService {
       name: data.name,
       code: data.code,
       description: data.description,
-      isActive: input.isActive ?? true,
+      is_active: input.is_active ?? true,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -232,7 +232,7 @@ export class SubjectService {
       }
     } else {
       // Soft delete
-      await this.updateSubject(id, { isActive: false });
+      await this.updateSubject(id, { is_active: false });
     }
   }
 

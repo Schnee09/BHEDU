@@ -276,7 +276,7 @@ export const ROLE_MANAGEMENT_MATRIX: Record<UserRole, UserRole[]> = {
     ],
     owner: [], // Owner cannot create users
     admin: ["admin", "staff", "teacher", "tutor", "parent", "student"],
-    staff: ["parent", "student"], // Staff can approve parent signups and bulk import students
+    staff: ["teacher", "tutor", "parent", "student"], // Staff can manage subordinate roles
     teacher: [],
     tutor: [],
     parent: [],

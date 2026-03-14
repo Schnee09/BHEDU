@@ -4,7 +4,10 @@
  */
 
 import { NextRequest } from "next/server";
-import { createClientFromRequest } from "@/lib/supabase/server";
+import {
+    createClientFromRequest,
+    createServiceClient,
+} from "@/lib/supabase/server";
 import { hasPermission, PermissionCode, UserRole } from "./core";
 
 export interface AuthContext {
@@ -42,12 +45,27 @@ export async function getAuthContext(
             };
         }
 
-        // 2. Get user profile
-        const { data: profile, error: profileError } = await supabase
+        // 2. Get user profile securely bypassing RLS
+        const serviceClient = createServiceClient();
+
+        // Try user_id first
+        let { data: profile, error: profileError } = await serviceClient
             .from("profiles")
             .select("id, role, full_name, email, is_active")
             .eq("user_id", user.id)
             .maybeSingle();
+
+        // Fallback to id
+        if (!profile && !profileError) {
+            const result = await serviceClient
+                .from("profiles")
+                .select("id, role, full_name, email, is_active")
+                .eq("id", user.id)
+                .maybeSingle();
+
+            profile = result.data;
+            profileError = result.error;
+        }
 
         if (profileError || !profile) {
             return {

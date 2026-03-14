@@ -44,6 +44,39 @@ if (typeof window !== 'undefined') {
 process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key';
 
+// Minimal Headers polyfill for environments without Fetch API
+// ONLY applies if neither globalThis.Headers nor native Headers exist
+if (typeof globalThis.Headers === 'undefined') {
+  globalThis.Headers = class HeadersPolyfill {
+    constructor(init = {}) {
+      this._map = new Map();
+      if (init && typeof init === 'object') {
+        for (const [k, v] of Object.entries(init)) {
+          this._map.set(k.toLowerCase(), String(v));
+        }
+      }
+    }
+    get(name) { return this._map.get(name.toLowerCase()) || null; }
+    set(name, value) { this._map.set(name.toLowerCase(), String(value)); }
+    has(name) { return this._map.has(name.toLowerCase()); }
+    delete(name) { this._map.delete(name.toLowerCase()); }
+    forEach(cb) { this._map.forEach((v, k) => cb(v, k, this)); }
+  };
+}
+
+// Minimal Request polyfill — only if needed
+if (typeof globalThis.Request === 'undefined') {
+  globalThis.Request = class RequestPolyfill {
+    constructor(url, init = {}) {
+      this._url = typeof url === 'string' ? url : url.toString();
+      this.method = (init.method || 'GET').toUpperCase();
+      this.headers = new globalThis.Headers(init.headers || {});
+      this.body = init.body || null;
+    }
+    get url() { return this._url; }
+  };
+}
+
 // Minimal Response polyfill for Node/Jest environment where the Web
 // Response global might not be available. This satisfies tests that call
 // Response.json(...) or construct new Response(...).
@@ -52,7 +85,7 @@ if (typeof globalThis.Response === 'undefined') {
     constructor(body = null, init = {}) {
       this.body = body;
       this.status = init.status || 200;
-      this.headers = init.headers || {};
+      this.headers = new globalThis.Headers(init.headers || {});
     }
 
     async json() {

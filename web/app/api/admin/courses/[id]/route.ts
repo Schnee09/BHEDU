@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
 import { updateCourseSchema } from "@/lib/schemas";
 import { NotFoundError } from "@/lib/api/errors";
@@ -18,9 +18,9 @@ export const GET = createGetHandler(
     const id = params.id;
 
     const course = await cached(
-      CACHE_KEYS.CLASS(id), // Reusing CLASS key as a generic detail key
+      `course:detail:${id}`, // Specific key for course detail
       async () => {
-        const supabase = await createClient();
+        const supabase = createServiceClient();
         const { data, error } = await supabase
           .from("courses")
           .select(`
@@ -54,7 +54,7 @@ export const PUT = createApiHandler(
   },
   async ({ params, body }) => {
     const id = params.id;
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     const { data, error } = await supabase
       .from("courses")
@@ -78,7 +78,7 @@ export const PUT = createApiHandler(
 
     // Invalidate caches
     invalidateCache("courses");
-    invalidateCache(id);
+    invalidateCache(`course:detail:${id}`);
 
     return apiSuccess(data);
   },
@@ -89,7 +89,7 @@ export const DELETE = createGetHandler(
   { allowedRoles: ["admin"] },
   async ({ params }) => {
     const id = params.id;
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     const { error } = await supabase
       .from("courses")
@@ -105,7 +105,7 @@ export const DELETE = createGetHandler(
 
     // Invalidate caches
     invalidateCache("courses");
-    invalidateCache(id);
+    invalidateCache(`course:detail:${id}`);
 
     return apiSuccess(null, { message: "Course deleted" });
   },

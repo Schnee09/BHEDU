@@ -6,29 +6,31 @@ export class AppError extends Error {
   constructor(
     message: string,
     public statusCode: number = 500,
-    public code?: string
+    public code?: string,
   ) {
     super(message);
     this.name = this.constructor.name;
-    Error.captureStackTrace(this, this.constructor);
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
   }
 }
 
 export class ValidationError extends AppError {
   constructor(message: string) {
-    super(message, 400, 'VALIDATION_ERROR');
+    super(message, 400, "VALIDATION_ERROR");
   }
 }
 
 export class AuthenticationError extends AppError {
-  constructor(message: string = 'Authentication required') {
-    super(message, 401, 'AUTHENTICATION_ERROR');
+  constructor(message: string = "Authentication required") {
+    super(message, 401, "AUTHENTICATION_ERROR");
   }
 }
 
 export class AuthorizationError extends AppError {
-  constructor(message: string = 'Permission denied') {
-    super(message, 403, 'AUTHORIZATION_ERROR');
+  constructor(message: string = "Permission denied") {
+    super(message, 403, "AUTHORIZATION_ERROR");
   }
 }
 
@@ -36,20 +38,20 @@ export class AuthorizationError extends AppError {
 export const ForbiddenError = AuthorizationError;
 
 export class NotFoundError extends AppError {
-  constructor(message: string = 'Resource not found') {
-    super(message, 404, 'NOT_FOUND');
+  constructor(message: string = "Resource not found") {
+    super(message, 404, "NOT_FOUND");
   }
 }
 
 export class ConflictError extends AppError {
   constructor(message: string) {
-    super(message, 409, 'CONFLICT');
+    super(message, 409, "CONFLICT");
   }
 }
 
 export class RateLimitError extends AppError {
-  constructor(message: string = 'Too many requests') {
-    super(message, 429, 'RATE_LIMIT');
+  constructor(message: string = "Too many requests") {
+    super(message, 429, "RATE_LIMIT");
   }
 }
 
@@ -57,7 +59,7 @@ export class RateLimitError extends AppError {
  * Handle errors and return appropriate Response
  */
 export function handleApiError(error: unknown): Response {
-  console.error('API Error:', error);
+  console.error("API Error:", error);
 
   if (error instanceof AppError) {
     return Response.json(
@@ -66,19 +68,19 @@ export function handleApiError(error: unknown): Response {
         error: error.message,
         code: error.code,
       },
-      { status: error.statusCode }
+      { status: error.statusCode },
     );
   }
 
   // Handle Zod validation errors
-  if (error && typeof error === 'object' && 'issues' in error) {
+  if (error && typeof error === "object" && "issues" in error) {
     return Response.json(
       {
         success: false,
-        error: 'Validation failed',
+        error: "Validation failed",
         issues: (error as { issues: unknown[] }).issues,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -86,8 +88,8 @@ export function handleApiError(error: unknown): Response {
   return Response.json(
     {
       success: false,
-      error: 'Internal server error',
+      error: "Internal server error",
     },
-    { status: 500 }
+    { status: 500 },
   );
 }

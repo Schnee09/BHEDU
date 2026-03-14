@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
 import { createCourseSchema } from "@/lib/schemas";
 import { CACHE_KEYS, CACHE_TTL, cached, invalidateCache } from "@/lib/cache";
@@ -19,19 +19,19 @@ export const GET = createGetHandler(
     const subjectId = searchParams.get("subject_id");
 
     // Build unique cache key based on filters
-    const cacheKey = `${CACHE_KEYS.SUBJECTS_ALL}:filtered:${
+    const cacheKey = `${CACHE_KEYS.COURSES_ALL}:filtered:${
       gradeLevel || "all"
     }:${isActive || "all"}:${subjectId || "all"}`;
 
     const courses = await cached(
       cacheKey,
       async () => {
-        const supabase = await createClient();
+        const supabase = createServiceClient();
         let query = supabase
           .from("courses")
           .select(`
             *,
-            subjects (id, name)
+            subjects(id, name)
           `)
           .order("grade_level", { ascending: true })
           .order("name", { ascending: true });
@@ -73,7 +73,7 @@ export const POST = createApiHandler(
     bodySchema: createCourseSchema,
   },
   async ({ body }) => {
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     const { data, error } = await supabase
       .from("courses")

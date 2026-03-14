@@ -47,29 +47,24 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Try user_id first (preferred link to auth.users)
-      let { data, error } = await supabase
-        .from("profiles")
-        .select("id, user_id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, personal_email")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
+      const response = await fetch('/api/profile');
 
-      // Fallback to id (some legacy records might use id = user_id)
-      if (!data && !error) {
-        const result = await supabase
-          .from("profiles")
-          .select("id, user_id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, personal_email")
-          .eq("id", session.user.id)
-          .maybeSingle();
-
-        data = result.data;
-        error = result.error;
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.log('[ProfileProvider] Unauthorized, clearing session...');
+          await supabase.auth.signOut();
+          setProfile(null);
+          return;
+        }
+        const errorData = await response.json();
+        console.error('[ProfileProvider] Error fetching profile:', errorData);
+        return;
       }
+
+      const data = await response.json();
 
       if (data) {
         setProfile(data as Profile);
-      } else if (error) {
-        console.error('[ProfileProvider] Error fetching profile:', error);
       }
     } catch (err) {
       console.error('[ProfileProvider] Unexpected error:', err);

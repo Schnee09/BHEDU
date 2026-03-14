@@ -11,12 +11,12 @@ import StudentActions from '@/components/StudentActions'
 import GuardianManagement from '@/components/GuardianManagement'
 import EnrollmentManager from '@/components/EnrollmentManager'
 import StudentPhotoUpload from '@/components/StudentPhotoUpload'
+import { AcademicBackground } from '@/components/Academic/AcademicBackground'
+import { cn } from '@/lib/utils'
 
 /**
- * Admin Student Detail Page
- * Server component (protected by `dashboard/admin/layout.tsx` which runs `adminAuth`).
- * Uses the centralized `getDataClient()` so admin viewers receive a service-role client
- * and are not blocked by RLS.
+ * Admin Student Detail Page - Academic Refinement
+ * Localized and standardized for professional education management.
  */
 
 async function fetchStudentWithClient(supabase: any, id: string) {
@@ -114,294 +114,280 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
   const auditsList = (audits ?? []) as any[]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="p-4 md:p-6 max-w-7xl mx-auto">
-        <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4 flex-wrap">
+    <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-['Be_Vietnam_Pro'] selection:bg-red-600/30 text-stone-900 dark:text-stone-100 p-4 md:p-12 lg:p-16">
+      <AcademicBackground />
+
+      <div className="max-w-7xl mx-auto relative z-10 space-y-12">
+        <div className="flex items-center justify-between flex-wrap gap-6 border-b border-stone-200 dark:border-stone-800 pb-8">
+          <div className="flex flex-col gap-4">
             <Link
               href="/dashboard/students"
-              className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors"
+              className="inline-flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-red-600 transition-colors uppercase tracking-widest"
             >
-              <span>←</span>
-              <span>Back to Students</span>
+              <Icons.Back className="w-4 h-4" />
+              <span>Quay lại danh sách</span>
             </Link>
+            <div className="flex items-center gap-6 flex-wrap">
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
+                {profile.full_name}
+              </h1>
+              <Badge color="purple" className="px-5 py-1.5 rounded-sharp uppercase tracking-widest text-[10px] font-bold">Học sinh</Badge>
+            </div>
           </div>
           <StudentActions studentId={id} studentName={profile.full_name} isAdmin={viewerRole === 'admin'} />
         </div>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card padding="lg" className="lg:col-span-2">
-              <div className="flex items-start justify-between gap-6">
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-gray-900">{profile.full_name}</h3>
-                  <p className="text-gray-600 mt-1">{profile.email}</p>
-                  <div className="mt-4 space-y-2">
-                    {profile.phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <span className="text-gray-500">📱 Phone:</span>
-                        <span className="font-medium">{profile.phone}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          {/* Quick Stats Grid */}
+          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="lg:col-span-2">
+              <Card padding="lg" className="glass-crystal rounded-sharp border-none shadow-2xl relative overflow-hidden group">
+                <div className="flex flex-col md:flex-row items-start justify-between gap-12">
+                  <div className="space-y-6 flex-1">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-1 bg-red-600" />
+                      <h2 className="text-xl font-bold uppercase tracking-widest text-stone-500">Thông tin cá nhân</h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Email liên hệ</p>
+                        <p className="font-bold text-lg">{profile.email}</p>
                       </div>
-                    )}
-                    {profile.address && (
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <span className="text-gray-500">📍 Address:</span>
-                        <span className="font-medium">{profile.address}</span>
-                      </div>
-                    )}
-                    {profile.date_of_birth && (
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <CakeIcon className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-500">Date of Birth:</span>
-                        <span className="font-medium">{new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <Badge color="purple">{profile.role}</Badge>
-              </div>
-            </Card>
-
-            <div className="space-y-4">
-              {/* Photo Upload in sidebar for quick access */}
-              <Card padding="md" className="bg-white border-gray-100">
-                <StudentPhotoUpload studentId={id} currentPhotoUrl={profile.photo_url} />
-              </Card>
-
-              <Card padding="md" className="bg-green-50 border-green-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-green-700">Active Classes</p>
-                    <p className="text-3xl font-bold text-green-900 mt-1">{enrollments.length}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Icons.Classes className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-              </Card>
-
-              <Card padding="md" className="bg-emerald-50 border-emerald-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-emerald-700">Attendance</p>
-                    <p className="text-3xl font-bold text-emerald-900 mt-1">{attendance.length}</p>
-                    <p className="text-xs text-emerald-600 mt-1">Recent records</p>
-                  </div>
-                  <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                    <Icons.Attendance className="w-6 h-6 text-emerald-600" />
-                  </div>
-                </div>
-              </Card>
-
-              <Card padding="md" className="bg-orange-50 border-orange-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-orange-700">Recent Grades</p>
-                    <p className="text-3xl font-bold text-orange-900 mt-1">{grades.length}</p>
-                    <p className="text-xs text-orange-600 mt-1">Assignments</p>
-                  </div>
-                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <Icons.Grades className="w-6 h-6 text-orange-600" />
+                      {profile.phone && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Số điện thoại</p>
+                          <p className="font-bold text-lg">{profile.phone}</p>
+                        </div>
+                      )}
+                      {profile.address && (
+                        <div className="space-y-1 lg:col-span-2">
+                          <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Địa chỉ thường trú</p>
+                          <p className="font-bold text-lg">{profile.address}</p>
+                        </div>
+                      )}
+                      {profile.date_of_birth && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Ngày sinh nhật</p>
+                          <p className="font-bold text-lg">{new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
             </div>
+
+            <Card padding="lg" className="glass-crystal rounded-sharp border-none hover:bg-white/5 transition-colors border-l-4 border-l-lime-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Lớp học hiện tại</p>
+                  <p className="text-4xl font-bold mt-2">{enrollments.length}</p>
+                  <p className="text-[10px] text-lime-500 font-bold uppercase tracking-widest mt-2">Đang theo học</p>
+                </div>
+                <Icons.Classes className="w-12 h-12 text-lime-500/20" />
+              </div>
+            </Card>
+
+            <Card padding="lg" className="glass-crystal rounded-sharp border-none hover:bg-white/5 transition-colors border-l-4 border-l-red-600">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Chuyên cần</p>
+                  <p className="text-4xl font-bold mt-2">{attendance.length}</p>
+                  <p className="text-[10px] text-red-600 font-bold uppercase tracking-widest mt-2">Bản ghi gần nhất</p>
+                </div>
+                <Icons.Attendance className="w-12 h-12 text-red-600/20" />
+              </div>
+            </Card>
           </div>
 
-          {/* Tabs with sections */}
+          <div className="lg:col-span-4 space-y-8">
+            <Card padding="md" className="glass-crystal rounded-sharp border-none p-2 shadow-2xl">
+              <StudentPhotoUpload studentId={id} currentPhotoUrl={profile.photo_url} />
+            </Card>
+
+            <Card padding="lg" className="glass-crystal rounded-sharp border-none hover:bg-white/5 transition-colors border-l-4 border-l-gold-accent">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Điểm số & Đánh giá</p>
+                  <p className="text-4xl font-bold mt-2">{grades.length}</p>
+                  <p className="text-[10px] text-gold-accent font-bold uppercase tracking-widest mt-2">Bài kiểm tra</p>
+                </div>
+                <Icons.Grades className="w-12 h-12 text-gold-accent/20" />
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Action Tabs */}
+        <div className="pt-8">
           <Tabs
             tabs={[
-              { key: 'overview', label: 'Overview', content: (
-                <div className="space-y-6">
-                  <Card padding="lg">
-                    <h3 className="text-lg font-semibold mb-2">Contact & Basic Info</h3>
-                    <div className="text-sm text-gray-700 space-y-2">
-                      <div><strong>Email:</strong> {profile.email}</div>
-                      {profile.phone && <div><strong>Phone:</strong> {profile.phone}</div>}
-                      {profile.address && <div><strong>Address:</strong> {profile.address}</div>}
-                      {profile.date_of_birth && <div><strong>DOB:</strong> {new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}</div>}
+              { key: 'enrollments', label: 'Lớp học', content: <EnrollmentManager studentId={id} /> },
+              { key: 'guardians', label: 'Người giám hộ', content: <GuardianManagement studentId={id} /> },
+              {
+                key: 'attendance', label: 'Điểm danh', content: (
+                  <Card padding="lg" className="glass-crystal rounded-sharp border-none shadow-2xl">
+                    {attendance.length === 0 ? (
+                      <Empty title="Chưa có dữ liệu" description="Học sinh này chưa có bản ghi điểm danh nào." />
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-stone-200 dark:border-stone-800 text-stone-500 uppercase tracking-widest text-[10px] font-bold">
+                              <th className="text-left px-6 py-4">Ngày</th>
+                              <th className="text-left px-6 py-4">Lớp</th>
+                              <th className="text-left px-6 py-4">Trạng thái</th>
+                              <th className="text-left px-6 py-4">Ghi chú</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+                            {attendance.map((a: any) => (
+                              <tr key={a.id} className="hover:bg-white/5 transition-colors">
+                                <td className="px-6 py-4 font-bold">{new Date(a.date).toLocaleDateString('vi-VN')}</td>
+                                <td className="px-6 py-4">{a.class_id}</td>
+                                <td className="px-6 py-4">
+                                  <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'} className="rounded-sharp uppercase text-[9px] font-bold px-3">
+                                    {a.status === 'present' ? 'Có mặt' : a.status === 'absent' ? 'Vắng mặt' : 'Muộn'}
+                                  </Badge>
+                                </td>
+                                <td className="px-6 py-4 text-stone-500">{a.notes ?? '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </Card>
+                )
+              },
+              {
+                key: 'grades', label: 'Điểm số', content: (
+                  <Card padding="lg" className="glass-crystal rounded-sharp border-none shadow-2xl">
+                    {grades.length === 0 ? (
+                      <Empty title="Chưa có dữ liệu" description="Hiện chưa có bài kiểm tra nào được chấm điểm." />
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-stone-200 dark:border-stone-800 text-stone-500 uppercase tracking-widest text-[10px] font-bold">
+                              <th className="text-left px-6 py-4">Bài tập / Bài thi</th>
+                              <th className="text-left px-6 py-4">Điểm số</th>
+                              <th className="text-left px-6 py-4">Ngày chấm</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+                            {grades.map((g: any) => (
+                              <tr key={g.id} className="hover:bg-white/5 transition-colors">
+                                <td className="px-6 py-4 font-bold text-stone-900 dark:text-stone-100">{g.assignments?.title ?? g.assignment_id}</td>
+                                <td className="px-6 py-4">
+                                  <span className="font-bold text-red-600 text-lg">{g.points_earned ?? g.score ?? '—'}</span>
+                                  <span className="text-stone-500 text-xs">
+                                    {' '}
+                                    / {g.assignments?.total_points ?? g.assignments?.max_points ?? '-'}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-stone-500">{g.graded_at ? new Date(g.graded_at).toLocaleDateString('vi-VN') : '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </Card>
+                )
+              },
+              ...(showFinance ? [{
+                key: 'finance', label: 'Tài chính', content: (
+                  <Card padding="lg" className="glass-crystal rounded-sharp border-none shadow-2xl">
+                    {account ? (
+                      <div className="mb-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="p-8 glass-crystal rounded-sharp border-l-4 border-l-stone-500">
+                          <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-2 text-center">Trạng thái tài khoản</p>
+                          <p className="text-2xl font-bold text-center uppercase tracking-tight">{accountInfo?.status ?? '—'}</p>
+                        </div>
+                        <div className="p-8 glass-crystal rounded-sharp border-l-4 border-l-red-600">
+                          <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-2 text-center">Số dư hiện tại</p>
+                          <p className="text-3xl font-bold text-center text-red-600 tracking-tight">₫{accountInfo?.balance ? Number(accountInfo.balance).toLocaleString('vi-VN') : '0'}</p>
+                        </div>
+                        <div className="p-8 glass-crystal rounded-sharp border-l-4 border-l-gold-accent text-center">
+                          <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-2">Thanh toán gần nhất</p>
+                          <p className="text-sm font-bold mt-2 uppercase">{accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN') : 'Chưa có giao dịch'}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Empty title="Chưa kích hoạt" description="Tài khoản học phí cho học sinh này chưa được khởi tạo." />
+                    )}
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                      <div className="space-y-6">
+                        <h3 className="font-bold text-stone-500 uppercase tracking-widest text-[11px] px-6">Hóa đơn gần đây</h3>
+                        {invoicesList.length === 0 ? (
+                          <Empty title="Trống" />
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                              <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+                                {invoicesList.map((inv: any) => (
+                                  <tr key={inv.id} className="hover:bg-white/5 transition-colors">
+                                    <td className="px-6 py-4 font-bold">{inv.invoice_number}</td>
+                                    <td className="px-6 py-4"><Badge color={inv.status === 'paid' ? 'green' : inv.status === 'overdue' ? 'red' : 'yellow'} className="rounded-sharp uppercase text-[8px] font-bold">{inv.status}</Badge></td>
+                                    <td className="px-6 py-4 font-bold text-red-600">₫{Number(inv.balance).toLocaleString('vi-VN')}</td>
+                                    <td className="px-6 py-4 text-stone-500 text-[10px] font-bold">{inv.due_date ? new Date(inv.due_date).toLocaleDateString('vi-VN') : '—'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-6">
+                        <h3 className="font-bold text-stone-500 uppercase tracking-widest text-[11px] px-6">Giao dịch thanh toán</h3>
+                        {paymentsList.length === 0 ? (
+                          <Empty title="Trống" />
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                              <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+                                {paymentsList.map((p: any) => (
+                                  <tr key={p.id} className="hover:bg-white/5 transition-colors">
+                                    <td className="px-6 py-4 text-stone-500 text-[10px] font-bold">{p.payment_date ? new Date(p.payment_date).toLocaleDateString('vi-VN') : '—'}</td>
+                                    <td className="px-6 py-4 font-bold text-lime-500">₫{Number(p.amount).toLocaleString('vi-VN')}</td>
+                                    <td className="px-6 py-4 font-bold text-[10px] uppercase tracking-widest">{p.payment_methods?.name ?? '—'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </Card>
-                </div>
-              ) },
-              { key: 'enrollments', label: 'Enrollments', content: <EnrollmentManager studentId={id} /> },
-              { key: 'guardians', label: 'Guardians', content: <GuardianManagement studentId={id} /> },
-              { key: 'attendance', label: 'Attendance', content: (
-                <Card padding="lg">
-                  {attendance.length === 0 ? (
-                    <Empty title="No attendance" description="No attendance records found for this student." />
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full text-sm">
-                        <thead>
-                          <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                            <th className="text-left px-4 py-3 font-semibold text-gray-700">Date</th>
-                            <th className="text-left px-4 py-3 font-semibold text-gray-700">Class</th>
-                            <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
-                            <th className="text-left px-4 py-3 font-semibold text-gray-700">Notes</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {attendance.map((a: any) => (
-                            <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-4 py-3">{new Date(a.date).toLocaleDateString('vi-VN')}</td>
-                              <td className="px-4 py-3">{a.class_id}</td>
-                              <td className="px-4 py-3">
-                                <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'}>
-                                  {a.status}
-                                </Badge>
-                              </td>
-                              <td className="px-4 py-3 text-gray-600">{a.notes ?? '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </Card>
-              ) },
-              { key: 'grades', label: 'Grades', content: (
-                <Card padding="lg">
-                  {grades.length === 0 ? (
-                    <Empty title="No grades" description="No recent grades available." />
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full text-sm">
-                        <thead>
-                          <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                            <th className="text-left px-4 py-3 font-semibold text-gray-700">Assignment</th>
-                            <th className="text-left px-4 py-3 font-semibold text-gray-700">Points</th>
-                            <th className="text-left px-4 py-3 font-semibold text-gray-700">Graded At</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {grades.map((g: any) => (
-                            <tr key={g.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-4 py-3 font-medium text-gray-900">{g.assignments?.title ?? g.assignment_id}</td>
-                              <td className="px-4 py-3">
-                                <span className="font-semibold text-blue-600">{g.points_earned ?? g.score ?? '—'}</span>
-                                <span className="text-gray-500">
-                                  {' '}
-                                  / {g.assignments?.total_points ?? g.assignments?.max_points ?? '-'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString() : '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </Card>
-              ) },
-              ...(showFinance ? [{ key: 'finance', label: 'Finance', content: (
-                <Card padding="lg">
-                  {account ? (
-                    <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Card padding="md" className="bg-gradient-to-br from-slate-50 to-gray-100">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Account Status</p>
-                        <p className="text-xl font-bold text-gray-900 mt-2 capitalize">{accountInfo?.status ?? '—'}</p>
-                      </Card>
-                      <Card padding="md" className="bg-gradient-to-br from-emerald-50 to-green-50">
-                        <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Current Balance</p>
-                        <p className="text-xl font-bold text-emerald-900 mt-2">₫{accountInfo?.balance ?? '0'}</p>
-                      </Card>
-                      <Card padding="md" className="bg-gradient-to-br from-blue-50 to-indigo-50">
-                        <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Last Payment</p>
-                        <p className="text-sm font-semibold text-blue-900 mt-2">{accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN') : 'No payments yet'}</p>
-                      </Card>
-                    </div>
-                  ) : (
-                    <Empty title="No account" description="No student account found." />
-                  )}
-
-                  <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="font-semibold mb-3 text-gray-900">Recent Invoices</h3>
-                      {invoicesList.length === 0 ? (
-                        <Empty title="No invoices" />
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full text-sm">
-                            <thead>
-                              <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                                <th className="text-left px-4 py-3 font-semibold text-gray-700">#</th>
-                                <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
-                                <th className="text-left px-4 py-3 font-semibold text-gray-700">Total</th>
-                                <th className="text-left px-4 py-3 font-semibold text-gray-700">Balance</th>
-                                <th className="text-left px-4 py-3 font-semibold text-gray-700">Due</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                              {invoicesList.map((inv: any) => (
-                                <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                                  <td className="px-4 py-3 font-medium text-gray-900">{inv.invoice_number}</td>
-                                  <td className="px-4 py-3"><Badge color={inv.status === 'paid' ? 'green' : inv.status === 'overdue' ? 'red' : 'yellow'}>{inv.status}</Badge></td>
-                                  <td className="px-4 py-3 font-medium">₫{inv.total_amount}</td>
-                                  <td className="px-4 py-3 font-semibold text-red-600">₫{inv.balance}</td>
-                                  <td className="px-4 py-3 text-gray-600">{inv.due_date ? new Date(inv.due_date).toLocaleDateString('vi-VN') : '—'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold mb-3 text-gray-900">Recent Payments</h3>
-                      {paymentsList.length === 0 ? (
-                        <Empty title="No payments" />
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full text-sm">
-                            <thead>
-                              <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                                <th className="text-left px-4 py-3 font-semibold text-gray-700">Date</th>
-                                <th className="text-left px-4 py-3 font-semibold text-gray-700">Amount</th>
-                                <th className="text-left px-4 py-3 font-semibold text-gray-700">Method</th>
-                                <th className="text-left px-4 py-3 font-semibold text-gray-700">Ref</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                              {paymentsList.map((p: any) => (
-                                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                                  <td className="px-4 py-3 text-gray-600">{p.payment_date ? new Date(p.payment_date).toLocaleDateString('vi-VN') : '—'}</td>
-                                  <td className="px-4 py-3 font-semibold text-green-600">₫{p.amount}</td>
-                                  <td className="px-4 py-3">{p.payment_methods?.name ?? '—'}</td>
-                                  <td className="px-4 py-3 text-gray-600">{p.transaction_reference ?? '—'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ) }] : []),
-              ...(showActivity ? [{ key: 'activity', label: 'Activity', content: (
-                <Card padding="lg">
-                  {auditsList.length === 0 ? (
-                    <Empty title="No recent activity" />
-                  ) : (
-                    <ul className="space-y-4">
-                      {auditsList.map((a: any) => (
-                        <li key={a.id} className="flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                          <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 flex-shrink-0" />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge color="blue">{a.action}</Badge>
-                              <span className="text-sm text-gray-600">·</span>
-                              <span className="text-sm text-gray-500">{new Date(a.created_at).toLocaleString()}</span>
+                )
+              }] : []),
+              ...(showActivity ? [{
+                key: 'activity', label: 'Nhật ký', content: (
+                  <Card padding="lg" className="glass-crystal rounded-sharp border-none shadow-2xl">
+                    {auditsList.length === 0 ? (
+                      <Empty title="Không có hoạt động" />
+                    ) : (
+                      <ul className="space-y-6">
+                        {auditsList.map((a: any) => (
+                          <li key={a.id} className="flex items-start gap-6 p-6 rounded-sharp bg-white/5 hover:bg-white/10 transition-all">
+                            <div className="w-1.5 h-1.5 mt-2 rounded-full bg-red-600 animate-pulse flex-shrink-0" />
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-4 flex-wrap">
+                                <Badge color="blue" className="rounded-sharp uppercase text-[9px] font-bold px-3">{a.action}</Badge>
+                                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">{new Date(a.created_at).toLocaleString('vi-VN')}</span>
+                              </div>
+                              <p className="text-[10px] text-stone-600 uppercase tracking-widest">Mã định danh tác nhân: {a.actor_id}</p>
                             </div>
-                            <p className="text-xs text-gray-600 mt-1">Actor ID: {a.actor_id}</p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </Card>
-              ) }] : []),
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </Card>
+                )
+              }] : []),
             ]}
           />
         </div>

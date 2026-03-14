@@ -119,17 +119,16 @@ export default function AttendancePage() {
 
   if (isProfileLoading || (isStudent && loading)) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-transparent">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8 relative z-10">
           <div className="mb-6">
-            <div className="h-10 w-64 bg-gray-200 rounded animate-pulse mb-2" />
-            <div className="h-6 w-96 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-64 bg-stone-200 dark:bg-stone-800 rounded-3xl animate-pulse mb-2" />
+            <div className="h-6 w-96 bg-stone-200 dark:bg-stone-800 rounded-2xl animate-pulse" />
           </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="glass-crystal rounded-2xl p-6">
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
+                <div key={i} className="h-16 bg-stone-100 dark:bg-stone-800/60 rounded-xl animate-pulse" />
               ))}
             </div>
           </div>
@@ -141,28 +140,26 @@ export default function AttendancePage() {
   // Show rate limit error with retry option
   if (isRateLimited && isStudent) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-            <div className="p-4 bg-yellow-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-transparent">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8 relative z-10">
+          <div className="glass-crystal rounded-2xl p-8 text-center">
+            <div className="p-4 bg-amber-500/10 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight mb-2">
               Quá nhiều yêu cầu
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-stone-500 dark:text-stone-400 text-sm mb-4">
               Bạn đã thực hiện quá nhiều yêu cầu. Vui lòng đợi trước khi thử lại.
             </p>
             {retryCountdown !== null && retryCountdown > 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-stone-400 dark:text-stone-500">
                 Thử lại sau: {retryCountdown} giây
               </p>
             ) : (
-              <Button onClick={fetchAttendance} className="mt-4">
-                Thử lại ngay
-              </Button>
+              <Button onClick={fetchAttendance} className="mt-4">Thử lại ngay</Button>
             )}
           </div>
         </div>
@@ -173,11 +170,11 @@ export default function AttendancePage() {
   // Show error if present
   if (error && isStudent) {
     return (
-      <div className="bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            <p className="font-medium">Lỗi tải điểm danh</p>
-            <p className="text-sm mt-1">{error}</p>
+      <div className="bg-transparent min-h-screen">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-5 py-4 rounded-2xl">
+            <p className="font-black text-sm uppercase tracking-wider">Lỗi tải điểm danh</p>
+            <p className="text-sm mt-1 text-red-600 dark:text-red-400">{error}</p>
           </div>
         </div>
       </div>
@@ -188,7 +185,7 @@ export default function AttendancePage() {
   if (isStudent) {
     return (
       <div className="bg-gray-50 min-h-screen">
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="p-6 md:p-10 max-w-[1600px] mx-auto space-y-6 relative z-10">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
@@ -390,8 +387,8 @@ export default function AttendancePage() {
   ];
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="bg-transparent min-h-screen relative overflow-x-hidden">
+      <div className="p-6 md:p-10 max-w-[1600px] mx-auto space-y-6 relative z-10">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
@@ -432,14 +429,14 @@ export default function AttendancePage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {recentClasses.map(cls => (
-                <div key={cls.id} className="bg-white p-4 rounded-xl border border-stone-200 flex items-center justify-between hover:border-stone-400 transition-colors group">
+                <div key={cls.id} className="bg-white dark:bg-stone-900/60 p-4 rounded-xl border border-stone-200 dark:border-stone-800 flex items-center justify-between hover:border-stone-400 dark:hover:border-stone-600 transition-colors group">
                   <div>
-                    <p className="font-bold text-stone-900">{cls.name}</p>
-                    <p className="text-xs text-stone-500">{cls.subject_name || 'Học Phần'}</p>
+                    <p className="font-bold text-stone-900 dark:text-stone-100">{cls.name}</p>
+                    <p className="text-xs text-stone-500 dark:text-stone-400">{cls.subject_name || 'Học Phần'}</p>
                   </div>
                   <Link
                     href={`/dashboard/attendance/mark?classId=${cls.id}`}
-                    className="p-2 bg-stone-50 text-stone-600 rounded-lg group-hover:bg-stone-900 group-hover:text-white transition-all"
+                    className="p-2 bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded-lg group-hover:bg-stone-900 dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-stone-900 transition-all"
                   >
                     <Icons.Edit className="w-4 h-4" />
                   </Link>

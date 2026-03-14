@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiFetch, getClasses, getClassStudents, getAttendance, bulkCreateAttendance } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
+import { AcademicBackground } from '@/components/Academic/AcademicBackground'
 import {
   AttendanceStatus,
   AttendanceRecord
 } from '@/lib/attendance/types'
+import { Button } from '@/components/ui'
 
 // Types
 interface Class {
@@ -217,331 +219,198 @@ export default function AttendanceMarkingPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Điểm Danh</h1>
-        <p className="text-gray-600">
-          Điểm danh nhanh cho lớp học của bạn
-        </p>
-      </div>
+    <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-Be_Vietnam_Pro selection:bg-red-600/30 text-stone-900 dark:text-stone-100 p-4 md:p-12 lg:p-16">
+      <AcademicBackground />
 
-      {/* Class and Date Selection */}
-      <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Lớp học</label>
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            >
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.name}
-                </option>
-              ))}
-            </select>
+      <div className="max-w-[1400px] mx-auto relative z-10 space-y-10">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-b border-stone-200 dark:border-stone-800 pb-10">
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight uppercase">
+              Điểm danh <span className="text-red-600">sinh viên</span>
+            </h1>
+            <p className="text-stone-500 font-mono text-xs tracking-widest uppercase flex items-center gap-2">
+              ATTENDANCE • CLASS MANAGEMENT
+            </p>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Ngày</label>
-            <input
-              type="date"
-              value={date}
-              max={new Date().toISOString().split('T')[0]}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={loadAttendance}
-              disabled={loading || !selectedClass}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 w-full transition"
-            >
-              {loading ? 'Đang tải...' : 'Tải dữ liệu'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Summary with Progress */}
-      {summary && (
-        <div className="space-y-4 mb-6">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{summary.totalStudents}</div>
-              <div className="text-xs font-medium text-blue-800 dark:text-blue-300 uppercase tracking-wider">Tổng số</div>
-            </div>
-            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-900/30">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{summary.presentCount}</div>
-              <div className="text-xs font-medium text-green-800 dark:text-green-300 uppercase tracking-wider">Có mặt</div>
-            </div>
-            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{summary.absentCount}</div>
-              <div className="text-xs font-medium text-red-800 dark:text-red-300 uppercase tracking-wider">Vắng</div>
-            </div>
-            <div className="bg-gray-50 dark:bg-stone-800 p-4 rounded-xl border border-gray-100 dark:border-stone-700">
-              <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{summary.unmarkedCount}</div>
-              <div className="text-xs font-medium text-gray-800 dark:text-gray-300 uppercase tracking-wider">Chưa điểm danh</div>
-            </div>
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-              <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{summary.attendanceRate}%</div>
-              <div className="text-xs font-medium text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">Tỷ lệ</div>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
-            <div
-              className="bg-green-500 h-full transition-all duration-500"
-              style={{ width: `${((summary.totalStudents - summary.unmarkedCount) / summary.totalStudents) * 100}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Success Notification */}
-      {showSuccess && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl mb-6 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span className="font-medium">Đã lưu điểm danh thành công!</span>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Actions */}
-      {students.length > 0 && (
-        <div className="bg-white dark:bg-stone-900 border border-gray-200 dark:border-stone-700 rounded-xl p-4 mb-6 shadow-sm">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 italic">Đánh dấu nhanh:</span>
-            <button
-              onClick={() => markAll(AttendanceStatus.PRESENT)}
-              className="inline-flex items-center px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-600 hover:text-white transition-all text-sm font-medium border border-green-200 dark:border-green-800/50"
-            >
-              ✅ Tất cả có mặt
-            </button>
-            <button
-              onClick={() => markAll(AttendanceStatus.ABSENT)}
-              className="inline-flex items-center px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all text-sm font-medium border border-red-200 dark:border-red-800/50"
-            >
-              ❌ Tất cả vắng
-            </button>
-            {hasUnsavedChanges && (
-              <span className="ml-auto text-xs font-medium text-amber-600 flex items-center bg-amber-50 px-2 py-1 rounded">
-                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                Có thay đổi chưa lưu
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Student List */}
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="text-gray-500">Đang tải điểm danh...</div>
-        </div>
-      ) : students.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-500">Chọn lớp và ngày để xem điểm danh</div>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-stone-900 border border-gray-300 dark:border-stone-700 rounded-lg overflow-hidden mb-6">
-
-          {/* Mobile Card View */}
-          <div className="md:hidden p-4 space-y-3 mobile-card-list animate-fade-in pb-24">
-            {students.map((student) => {
-              const statusInfo = getStatusFormatted(student.status)
-              return (
-                <div
-                  key={student.studentId}
-                  className={cn(
-                    "glass-premium rounded-[32px] p-6 mb-4 border transition-all animate-fade-in-up press-effect relative overflow-hidden",
-                    student.status !== 'unmarked' ? 'border-amber-500/20' : 'border-stone-100 dark:border-white/5'
-                  )}
+          <div className="flex flex-col items-end gap-4 max-w-md w-full">
+            <div className="grid grid-cols-2 gap-4 w-full">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Lớp học</label>
+                <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="w-full h-10 bg-white dark:bg-white/5 border border-stone-200 dark:border-stone-800 rounded-sharp px-3 text-xs font-bold uppercase tracking-wider focus:border-red-600/50 outline-none transition-all appearance-none"
                 >
-                  {/* Status Bloom */}
-                  <div className={cn(
-                    "absolute -top-10 -right-10 w-24 h-24 blur-3xl opacity-10 rounded-full",
-                    student.status === AttendanceStatus.PRESENT ? "bg-green-500" :
-                      student.status === AttendanceStatus.ABSENT ? "bg-red-500" : "bg-stone-500"
-                  )} />
-
-                  <div className="flex justify-between items-start mb-4 relative z-10">
-                    <div className="flex-1">
-                      <h3 className="font-black text-stone-900 dark:text-stone-100 text-lg leading-tight mb-1">
-                        {student.studentName}
-                      </h3>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500 italic">
-                        {student.studentCode || 'Chưa có mã'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Status Selector - Pro Max Touch Buttons */}
-                  <div className="grid grid-cols-3 gap-3 mb-5 relative z-10">
-                    <button
-                      onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.PRESENT)}
-                      className={cn(
-                        "h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all press-effect flex flex-col items-center justify-center gap-1 shadow-sm",
-                        student.status === AttendanceStatus.PRESENT
-                          ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 border-none'
-                          : 'bg-green-500/5 text-green-600 dark:text-green-400 border border-green-500/10'
-                      )}
-                    >
-                      <span className="text-xl">✅</span>
-                      Có mặt
-                    </button>
-                    <button
-                      onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.ABSENT)}
-                      className={cn(
-                        "h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all press-effect flex flex-col items-center justify-center gap-1 shadow-sm",
-                        student.status === AttendanceStatus.ABSENT
-                          ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 border-none'
-                          : 'bg-red-500/5 text-red-600 dark:text-red-400 border border-red-500/10'
-                      )}
-                    >
-                      <span className="text-xl">❌</span>
-                      Vắng mặt
-                    </button>
-                    <button
-                      onClick={() => updateStudentStatus(student.studentId, 'unmarked')}
-                      className={cn(
-                        "h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all press-effect flex flex-col items-center justify-center gap-1 shadow-sm",
-                        student.status === 'unmarked'
-                          ? 'bg-stone-600 text-white shadow-lg shadow-stone-600/30 border-none'
-                          : 'bg-stone-500/5 text-stone-500 dark:text-stone-400 border border-stone-500/10'
-                      )}
-                    >
-                      <span className="text-xl opacity-40">➖</span>
-                      Chưa
-                    </button>
-                  </div>
-
-                  {/* Remarks - Premium Input Styling */}
-                  <div className="relative group z-10">
-                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                      <svg className="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                    </div>
-                    <input
-                      type="text"
-                      value={student.remarks || ''}
-                      placeholder="Thêm ghi chú riêng..."
-                      onChange={(e) => {
-                        const newVal = e.target.value;
-                        setStudents(prev => prev.map(s => s.studentId === student.studentId ? { ...s, remarks: newVal } : s))
-                        setHasUnsavedChanges(true)
-                      }}
-                      className="w-full text-[13px] bg-stone-500/5 dark:bg-white/5 border border-stone-100 dark:border-white/5 rounded-2xl pl-11 pr-4 py-4 focus:bg-stone-500/10 focus:border-amber-500/40 focus:outline-none transition-all placeholder:text-stone-400 font-bold"
-                    />
-                  </div>
-                </div>
-              )
-            })}
+                  {classes.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Ngày</label>
+                <input
+                  type="date"
+                  value={date}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full h-10 bg-white dark:bg-white/5 border border-stone-200 dark:border-stone-800 rounded-sharp px-3 text-xs font-bold uppercase tracking-wider focus:border-red-600/50 outline-none transition-all appearance-none"
+                />
+              </div>
+            </div>
           </div>
+        </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto table-scroll-container">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-stone-700">
-              <thead className="bg-gray-50 dark:bg-stone-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Học sinh
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Mã học sinh
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Trạng thái
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Ghi chú
-                  </th>
+        {/* Summary with Progress */}
+        {summary && (
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            {[
+              { label: 'Tổng số', value: summary.totalStudents, color: 'stone' },
+              { label: 'Có mặt', value: summary.presentCount, color: 'green' },
+              { label: 'Vắng', value: summary.absentCount, color: 'red' },
+              { label: 'Chưa đánh dấu', value: summary.unmarkedCount, color: 'stone' },
+              { label: 'Tỷ lệ', value: `${summary.attendanceRate}%`, color: 'red' }
+            ].map((stat, i) => (
+              <div key={i} className="bg-white/50 dark:bg-stone-900/50 p-6 rounded-sharp border border-stone-200 dark:border-stone-800 backdrop-blur-sm border-l-4 border-l-stone-200 dark:border-l-stone-800 hover:border-l-red-600 transition-all duration-300">
+                <div className="text-2xl font-bold tracking-tight mb-1">{stat.value}</div>
+                <div className="text-[9px] font-bold text-stone-500 uppercase tracking-[0.2em]">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Actions Bar */}
+        {students.length > 0 && (
+          <div className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200 dark:border-stone-800 p-4 rounded-sharp flex flex-wrap items-center justify-between gap-4 sticky top-4 z-20 shadow-xl shadow-stone-900/5">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mr-2">Đánh dấu nhanh:</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => markAll(AttendanceStatus.PRESENT)}
+                className="rounded-sharp border-stone-200 text-green-600 hover:bg-green-50 uppercase text-[10px] font-bold tracking-widest h-8"
+              >
+                ✅ Tất cả có mặt
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => markAll(AttendanceStatus.ABSENT)}
+                className="rounded-sharp border-stone-200 text-red-600 hover:bg-red-50 uppercase text-[10px] font-bold tracking-widest h-8"
+              >
+                ❌ Tất cả vắng
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-4">
+              {hasUnsavedChanges && (
+                <span className="text-[10px] font-bold text-red-600 animate-pulse italic uppercase tracking-widest">
+                  Chưa lưu thay đổi •
+                </span>
+              )}
+              <Button
+                onClick={saveAttendance}
+                disabled={saving}
+                className="rounded-sharp bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-[0.2em] text-[10px] h-9 px-8 shadow-lg shadow-red-600/20"
+              >
+                {saving ? 'Đang đồng bộ...' : 'Lưu dữ liệu'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Student List */}
+        {loading ? (
+          <div className="py-24 flex flex-col items-center gap-4">
+            <div className="animate-spin h-8 w-8 border-2 border-red-600 border-t-transparent rounded-sharp" />
+            <span className="text-xs font-bold tracking-widest uppercase text-stone-400">Đang tải danh sách...</span>
+          </div>
+        ) : students.length === 0 ? (
+          <div className="py-24 bg-white/30 rounded-sharp border-2 border-dashed border-stone-200 dark:border-stone-800 text-center">
+            <span className="text-sm font-medium text-stone-500 italic">Chọn lớp để bắt đầu điểm danh.</span>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-stone-900/50 rounded-sharp border border-stone-200 dark:border-stone-800 overflow-hidden shadow-2xl">
+            <table className="min-w-full divide-y divide-stone-200 dark:divide-stone-800">
+              <thead>
+                <tr className="bg-stone-50/50 dark:bg-stone-800/50">
+                  <th className="px-8 py-5 text-left text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">Sinh viên</th>
+                  <th className="px-8 py-5 text-left text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">Trạng thái</th>
+                  <th className="px-8 py-5 text-left text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">Ghi chú</th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
-                {students.map((student, idx) => {
-                  const statusInfo = getStatusFormatted(student.status)
-                  return (
-                    <tr key={student.studentId || idx} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900 dark:text-gray-100">
-                          {student.studentName}
-                          <span className="text-[8px] text-gray-300 ml-1">#{idx + 1}</span>
+              <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+                {students.map((student, idx) => (
+                  <tr key={student.studentId} className="hover:bg-stone-50/50 dark:hover:bg-red-600/5 transition-colors group">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-sharp bg-stone-100 dark:bg-stone-800 flex items-center justify-center font-bold text-stone-400 group-hover:bg-red-600 group-hover:text-white transition-all">
+                          {idx + 1}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{student.studentCode || student.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {student.studentCode || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={student.status}
-                          onChange={(e) => updateStudentStatus(student.studentId, e.target.value)}
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} ${statusInfo.bgColor} border-0 focus:ring-2 focus:ring-blue-500`}
-                        >
-                          <option value="unmarked">Chưa điểm danh</option>
-                          <option value={AttendanceStatus.PRESENT}>✅ Có mặt</option>
-                          <option value={AttendanceStatus.ABSENT}>❌ Vắng</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        <input
-                          type="text"
-                          value={student.remarks || ''}
-                          placeholder="Ghi chú..."
-                          onChange={(e) => {
-                            const newVal = e.target.value;
-                            setStudents(prev => prev.map(s => s.studentId === student.studentId ? { ...s, remarks: newVal } : s))
-                          }}
-                          className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none"
-                        />
-                      </td>
-                    </tr>
-                  )
-                })}
+                        <div>
+                          <div className="font-bold text-stone-900 dark:text-stone-100 uppercase tracking-tight">{student.studentName}</div>
+                          <div className="text-[10px] font-mono text-stone-400 uppercase tracking-widest mt-0.5">{student.studentCode || 'BH-STUDENT'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex gap-2">
+                        {[
+                          { val: AttendanceStatus.PRESENT, icon: '✅', label: 'Có mặt', color: 'green' },
+                          { val: AttendanceStatus.ABSENT, icon: '❌', label: 'Vắng', color: 'red' },
+                          { val: 'unmarked', icon: '➖', label: 'Chưa đánh', color: 'stone' }
+                        ].map(opt => (
+                          <button
+                            key={opt.val}
+                            onClick={() => updateStudentStatus(student.studentId, opt.val)}
+                            className={cn(
+                              "h-9 px-4 rounded-sharp text-[9px] font-bold uppercase tracking-widest transition-all border",
+                              student.status === opt.val
+                                ? `bg-${opt.color}-600 border-transparent text-white shadow-lg shadow-${opt.color}-500/20`
+                                : "bg-white dark:bg-white/5 border-stone-200 dark:border-stone-800 text-stone-400 hover:border-red-600/30"
+                            )}
+                          >
+                            {opt.icon} {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <input
+                        type="text"
+                        value={student.remarks || ''}
+                        placeholder="Thêm ghi chú..."
+                        onChange={(e) => {
+                          const newVal = e.target.value;
+                          setStudents(prev => prev.map(s => s.studentId === student.studentId ? { ...s, remarks: newVal } : s))
+                          setHasUnsavedChanges(true)
+                        }}
+                        className="w-full bg-transparent border-b border-stone-200 dark:border-stone-800 py-1 text-xs focus:border-red-600 outline-none transition-all placeholder:italic placeholder:text-stone-300"
+                      />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Sticky Mobile Save Button / Desktop Save Section - Pro Max Floating Control */}
-      {students.length > 0 && (
-        <div className="fixed md:relative bottom-6 md:bottom-auto left-6 right-6 md:left-auto md:right-auto z-[100] md:z-0">
-          <div className="max-w-xl mx-auto glass-premium rounded-[28px] p-2 md:p-0 shadow-2xl md:shadow-none border border-white/20 dark:border-white/5 flex gap-2">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="flex-1 md:hidden h-14 bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-400 px-6 rounded-2xl font-black uppercase tracking-widest text-[10px] press-effect transition-all"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={saveAttendance}
-              disabled={saving}
-              className="flex-[2] md:flex-none h-14 md:h-12 bg-amber-500 text-white px-10 rounded-2xl hover:bg-amber-600 disabled:bg-stone-300 font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-amber-500/20 transition-all press-effect"
-            >
-              {saving ? 'Đang lưu...' : 'Xác nhận điểm danh'}
-            </button>
-
-            {/* Desktop Cancel Button (Hidden on Mobile inside the pill) */}
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="hidden md:block h-12 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-8 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 font-bold transition-all active:scale-[0.98]"
-            >
-              Quay lại
-            </button>
-          </div>
+        <div className="flex justify-end pt-4">
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/dashboard')}
+            className="font-bold text-xs uppercase tracking-widest text-stone-400 hover:text-red-600"
+          >
+            ← Quay lại bảng điều khiển
+          </Button>
         </div>
-      )}
+      </div>
+
+      <style jsx global>{`
+        .rounded-sharp { border-radius: 4px; }
+      `}</style>
     </div>
   )
 }

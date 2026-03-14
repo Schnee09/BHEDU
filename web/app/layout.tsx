@@ -1,19 +1,25 @@
+import "../styles/tokens.css";
+import "../styles/animations.css";
+import "../styles/micro-animations.css";
+import "../styles/glass.css";
+import "../styles/mobile.css";
 import "./globals.css";
 import { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 import ClientProviders from "@/components/ClientProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { CustomizationProvider } from "@/contexts/CustomizationContext";
 
 export const metadata: Metadata = {
-  title: "BH-EDU | Hệ thống quản lý giáo dục",
-  description: "Hệ thống quản lý giáo dục BH-EDU - Education Management System",
+  title: "BH-EDU | Hệ thống quản lý giáo dục cao cấp",
+  description: "Giải pháp quản lý giáo dục toàn diện, hiện đại và bảo mật - Premium Education Management System",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "BH-EDU",
   },
   formatDetection: {
@@ -23,23 +29,25 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/icons/icon-192x192.png",
   },
+  keywords: ["giáo dục", "quản lý học sinh", "phần mềm trường học", "BH-EDU", "EMS"],
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6366f1",
+  themeColor: "#0F172A",
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="vi" suppressHydrationWarning data-scroll-behavior="smooth" className="h-full overflow-hidden">
-      <body className="antialiased bg-background text-foreground h-full overflow-hidden">
+    <html lang="vi" suppressHydrationWarning data-scroll-behavior="smooth">
+      <body className="antialiased bg-background text-foreground min-h-screen">
         <ErrorBoundary>
           <CustomizationProvider>
             <ClientProviders>
               {children}
               <ServiceWorkerRegister />
+              <SpeedInsights />
             </ClientProviders>
           </CustomizationProvider>
         </ErrorBoundary>

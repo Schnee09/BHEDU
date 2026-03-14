@@ -199,7 +199,7 @@ function TutorsContent() {
     }
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 md:p-10 max-w-[1600px] mx-auto space-y-8 relative z-10">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div>

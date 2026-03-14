@@ -80,7 +80,7 @@ const navCards: NavCard[] = [
     color: "amber",
   },
   {
-    href: "/dashboard/scores",
+    href: "/dashboard/students/me/transcript", // Placeholder that we'll handle in-component or update to real ID
     title: "Điểm của tôi",
     description: "Xem điểm và kết quả bài tập của bạn",
     icon: AcademicCapIcon,
@@ -179,7 +179,12 @@ export default function GradesPageModern() {
     return <LoadingState message="Đang tải..." />;
   }
 
-  const availableCards = navCards.filter(card => {
+  const availableCards = navCards.map(card => {
+    if (card.isStudentOnly && isStudent && profile?.id) {
+      return { ...card, href: `/dashboard/students/${profile.id}/transcript` };
+    }
+    return card;
+  }).filter(card => {
     if (card.isStudentOnly) return isStudent;
     if (card.permission) return can(card.permission as any);
     return false;
@@ -200,77 +205,76 @@ export default function GradesPageModern() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-transparent">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Điểm & Bài tập</h1>
-              <p className="mt-2 text-gray-600">
-                {isStudent
-                  ? "Xem điểm và tiến độ học tập của bạn"
-                  : "Quản lý điểm, bài tập và báo cáo"}
-              </p>
-            </div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1.5 h-8 bg-amber-500 rounded-full" />
+            <h1 className="text-3xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+              Điểm <span className="text-amber-500">&amp; Bài tập</span>
+            </h1>
           </div>
+          <p className="text-sm text-stone-500 dark:text-stone-400 pl-4">
+            {isStudent ? "Xem điểm và tiến độ học tập của bạn" : "Quản lý điểm, bài tập và báo cáo"}
+          </p>
         </div>
 
         {/* Quick Stats Cards for Teachers/Admins */}
         {canSeeStats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="glass-crystal rounded-2xl p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <UsersIcon className="w-5 h-5 text-blue-600" />
+                <div className="p-2 bg-blue-500/10 rounded-xl">
+                  <UsersIcon className="w-5 h-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
                     {loadingStats ? "-" : stats?.totalStudents || 0}
                   </p>
-                  <p className="text-sm text-gray-500">Học sinh</p>
+                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Học sinh</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="glass-crystal rounded-2xl p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                <div className="p-2 bg-emerald-500/10 rounded-xl">
+                  <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
                     {loadingStats ? "-" : stats?.totalGrades || 0}
                   </p>
-                  <p className="text-sm text-gray-500">Điểm đã nhập</p>
+                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Điểm đã nhập</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="glass-crystal rounded-2xl p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-100 rounded-lg">
-                  <ArrowTrendingUpIcon className="w-5 h-5 text-amber-600" />
+                <div className="p-2 bg-amber-500/10 rounded-xl">
+                  <ArrowTrendingUpIcon className="w-5 h-5 text-amber-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
                     {loadingStats ? "-" : stats?.averageScore || 0}
                   </p>
-                  <p className="text-sm text-gray-500">Điểm TB</p>
+                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Điểm TB</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="glass-crystal rounded-2xl p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <ClockIcon className="w-5 h-5 text-purple-600" />
+                <div className="p-2 bg-indigo-500/10 rounded-xl">
+                  <ClockIcon className="w-5 h-5 text-indigo-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
                     {loadingStats ? "-" : stats?.recentEntries || 0}
                   </p>
-                  <p className="text-sm text-gray-500">Tuần này</p>
+                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Tuần này</p>
                 </div>
               </div>
             </div>
@@ -280,29 +284,29 @@ export default function GradesPageModern() {
         {/* Navigation Cards */}
         {availableCards.length > 0 ? (
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Chức năng</h2>
+            <h2 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em] mb-4 pl-1">Chức năng</h2>
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {availableCards.map((card) => {
                 const colors = colorClasses[card.color];
                 return (
                   <Link key={card.href} href={card.href}>
-                    <div className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200 group cursor-pointer h-full">
+                    <div className="glass-crystal rounded-2xl hover:shadow-lg transition-all duration-300 group cursor-pointer h-full border-none">
                       <div className="p-6">
                         <div className="flex items-start gap-4">
-                          <div className={`p-3 ${colors.bg} rounded-lg ${colors.hover} transition-colors duration-200`}>
+                          <div className={`p-3 ${colors.bg} rounded-xl ${colors.hover} transition-colors duration-200`}>
                             <card.icon className={`w-6 h-6 ${colors.icon}`} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className={`text-xl font-semibold text-gray-900 mb-2 group-hover:${colors.text} transition-colors duration-200`}>
+                            <h3 className={`text-lg font-black text-stone-900 dark:text-stone-100 mb-1.5 group-hover:${colors.text} transition-colors duration-200 uppercase tracking-tight`}>
                               {card.title}
                             </h3>
-                            <p className="text-gray-600 leading-relaxed">
+                            <p className="text-stone-500 dark:text-stone-400 text-sm leading-relaxed">
                               {card.description}
                             </p>
-                            <div className={`mt-4 flex items-center text-sm font-medium ${colors.text} opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
+                            <div className={`mt-4 flex items-center text-xs font-black ${colors.text} opacity-0 group-hover:opacity-100 transition-opacity duration-200 uppercase tracking-wider`}>
                               <span>Mở chức năng</span>
-                              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              <svg className="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                               </svg>
                             </div>
                           </div>
@@ -315,16 +319,16 @@ export default function GradesPageModern() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="glass-crystal rounded-2xl p-12 text-center mb-8">
+            <div className="p-4 bg-stone-100 dark:bg-stone-800 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-8 h-8 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight mb-2">
               Quyền truy cập bị hạn chế
             </h3>
-            <p className="text-gray-600">
+            <p className="text-stone-500 dark:text-stone-400 text-sm">
               Bạn không có quyền truy cập các tính năng điểm.
             </p>
           </div>
@@ -334,19 +338,19 @@ export default function GradesPageModern() {
         {canSeeStats && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Recent Activity */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <ClockIcon className="w-5 h-5 text-gray-500" />
+            <div className="glass-crystal rounded-2xl p-6">
+              <h3 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                <ClockIcon className="w-4 h-4" />
                 Hoạt động gần đây
               </h3>
               {loadingStats ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="animate-pulse flex gap-3">
-                      <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                      <div className="w-8 h-8 bg-stone-200 dark:bg-stone-700 rounded-full" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                        <div className="h-4 bg-stone-200 dark:bg-stone-700 rounded w-3/4" />
+                        <div className="h-3 bg-stone-200 dark:bg-stone-700 rounded w-1/2" />
                       </div>
                     </div>
                   ))}
@@ -354,15 +358,15 @@ export default function GradesPageModern() {
               ) : recentActivity.length > 0 ? (
                 <div className="space-y-3">
                   {recentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="p-1.5 bg-green-100 rounded-full">
-                        <CheckCircleIcon className="w-4 h-4 text-green-600" />
+                    <div key={activity.id} className="flex items-start gap-3 p-3 bg-stone-50 dark:bg-stone-900/40 rounded-xl">
+                      <div className="p-1.5 bg-emerald-500/10 rounded-full">
+                        <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate">
                           {activity.description}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-stone-400 dark:text-stone-500">
                           {activity.className && `${activity.className} • `}
                           {formatRelativeTime(activity.timestamp)}
                         </p>
@@ -371,36 +375,36 @@ export default function GradesPageModern() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Icons.Grades className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p>Chưa có hoạt động gần đây</p>
+                <div className="text-center py-8">
+                  <Icons.Grades className="w-10 h-10 text-stone-300 mx-auto mb-2" />
+                  <p className="text-stone-400 dark:text-stone-500 text-sm">Chưa có hoạt động gần đây</p>
                 </div>
               )}
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Icons.Grades className="w-5 h-5 text-gray-500" />
+            <div className="glass-crystal rounded-2xl p-6">
+              <h3 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                <Icons.Grades className="w-4 h-4" />
                 Thao tác nhanh
               </h3>
               <div className="space-y-3">
                 <Link href="/dashboard/grades/entry">
-                  <div className="flex items-center gap-3 p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors cursor-pointer">
-                    <PencilSquareIcon className="w-5 h-5 text-indigo-600" />
-                    <span className="font-medium text-indigo-700">Nhập điểm mới</span>
+                  <div className="flex items-center gap-3 p-3 bg-indigo-500/8 dark:bg-indigo-500/10 hover:bg-indigo-500/15 rounded-xl transition-colors cursor-pointer group">
+                    <PencilSquareIcon className="w-5 h-5 text-indigo-500" />
+                    <span className="font-bold text-indigo-700 dark:text-indigo-400 text-sm group-hover:text-indigo-600">Nhập điểm mới</span>
                   </div>
                 </Link>
                 <Link href="/dashboard/grades/reports">
-                  <div className="flex items-center gap-3 p-3 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors cursor-pointer">
-                    <DocumentTextIcon className="w-5 h-5 text-amber-600" />
-                    <span className="font-medium text-amber-700">Xuất báo cáo</span>
+                  <div className="flex items-center gap-3 p-3 bg-amber-500/8 dark:bg-amber-500/10 hover:bg-amber-500/15 rounded-xl transition-colors cursor-pointer group">
+                    <DocumentTextIcon className="w-5 h-5 text-amber-500" />
+                    <span className="font-bold text-amber-700 dark:text-amber-400 text-sm group-hover:text-amber-600">Xuất báo cáo</span>
                   </div>
                 </Link>
                 <Link href="/dashboard/grades/analytics">
-                  <div className="flex items-center gap-3 p-3 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors cursor-pointer">
-                    <DocumentChartBarIcon className="w-5 h-5 text-emerald-600" />
-                    <span className="font-medium text-emerald-700">Xem phân tích</span>
+                  <div className="flex items-center gap-3 p-3 bg-emerald-500/8 dark:bg-emerald-500/10 hover:bg-emerald-500/15 rounded-xl transition-colors cursor-pointer group">
+                    <DocumentChartBarIcon className="w-5 h-5 text-emerald-500" />
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm group-hover:text-emerald-600">Xem phân tích</span>
                   </div>
                 </Link>
               </div>

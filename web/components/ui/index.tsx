@@ -7,6 +7,8 @@
 
 import React, { ReactNode } from 'react';
 
+import { cn } from '@/lib/utils';
+
 // Export skeleton components
 export * from './skeleton';
 
@@ -62,19 +64,19 @@ export const Button: React.FC<ButtonProps> = ({
   const baseStyles = `inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`;
 
   const variants = {
-    gold: 'bg-warning text-white hover:bg-warning/90 shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.4)] focus:ring-warning/50 dark:shadow-[0_0_20px_rgba(245,158,11,0.4)]',
-    primary: 'bg-primary text-white hover:bg-primary/90 shadow-[0_4px_12px_rgba(22,163,74,0.3)] hover:shadow-[0_6px_20px_rgba(22,163,74,0.4)] focus:ring-primary/50 dark:shadow-[0_0_20px_rgba(6,182,212,0.4)]',
-    secondary: 'bg-surface-secondary text-foreground hover:bg-surface border border-border shadow-neumorphic-xs hover:shadow-neumorphic-sm focus:ring-primary/30 dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10 dark:shadow-none',
-    danger: 'bg-error text-white hover:bg-error/90 shadow-[0_4px_12px_rgba(239,68,68,0.3)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.4)] focus:ring-error/50 dark:shadow-[0_0_20px_rgba(239,68,68,0.4)]',
-    success: 'bg-success text-white hover:bg-success/90 shadow-[0_4px_12px_rgba(34,197,94,0.3)] hover:shadow-[0_6px_20px_rgba(34,197,94,0.4)] focus:ring-success/50 dark:shadow-[0_0_20px_rgba(34,197,94,0.4)]',
-    outline: 'border-2 border-primary text-primary hover:bg-primary/10 focus:ring-primary/50 dark:border-primary/50 dark:hover:bg-primary/20 dark:hover:border-primary',
-    ghost: 'text-muted hover:text-foreground hover:bg-surface-secondary focus:ring-primary/30 dark:hover:bg-white/10',
+    gold: 'bg-amber-600 text-white hover:bg-amber-500 shadow-[0_4px_12px_rgba(217,119,6,0.2)] hover:shadow-[0_6px_20px_rgba(217,119,6,0.3)] hover:scale-[1.02] active:scale-[0.98] focus:ring-amber-500/50 dark:bg-amber-500 dark:hover:bg-amber-400 dark:shadow-[0_0_20px_rgba(217,119,6,0.2)]',
+    primary: 'bg-primary text-white hover:bg-stone-800 shadow-[0_4px_12px_rgba(24,24,27,0.15)] hover:shadow-[0_6px_20px_rgba(24,24,27,0.2)] hover:scale-[1.02] active:scale-[0.98] focus:ring-primary/50 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200 dark:shadow-[0_0_20px_rgba(255,255,255,0.1)]',
+    secondary: 'bg-transparent text-stone-900 hover:bg-stone-100 border border-stone-200 shadow-sm hover:scale-[1.02] active:scale-[0.98] focus:ring-primary/20 dark:text-white dark:hover:bg-white/5 dark:border-white/10 dark:shadow-none',
+    danger: 'bg-red-600 text-white hover:bg-red-500 shadow-[0_4px_12px_rgba(225,29,72,0.2)] hover:shadow-[0_6px_20px_rgba(225,29,72,0.3)] hover:scale-[1.02] active:scale-[0.98] focus:ring-red-500/50 dark:shadow-[0_0_20px_rgba(225,29,72,0.2)]',
+    success: 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-[0_4px_12px_rgba(5,150,105,0.2)] hover:shadow-[0_6px_20px_rgba(5,150,105,0.3)] hover:scale-[1.02] active:scale-[0.98] focus:ring-emerald-500/50 dark:shadow-[0_0_20px_rgba(5,150,105,0.2)]',
+    outline: 'border-2 border-stone-900 text-stone-900 hover:bg-stone-900 hover:text-white hover:scale-[1.02] active:scale-[0.98] focus:ring-primary/50 dark:border-white/50 dark:text-white dark:hover:bg-white dark:hover:text-stone-950',
+    ghost: 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5 hover:scale-[1.02] active:scale-[0.98] focus:ring-primary/10',
   };
 
   const sizes = {
-    sm: 'px-4 py-2 text-sm gap-2',
-    md: 'px-6 py-2.5 text-base gap-2',
-    lg: 'px-8 py-3.5 text-lg gap-3',
+    sm: 'h-10 px-4 py-2 text-sm gap-2 min-w-[40px]',
+    md: 'h-12 px-6 py-2.5 text-base gap-2 min-w-[44px]',
+    lg: 'h-14 px-8 py-3.5 text-lg gap-3 min-w-[48px]',
   };
 
   const widthClass = fullWidth ? 'w-full' : '';
@@ -136,7 +138,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         cy="12"
         r="10"
         stroke="currentColor"
-        strokeWidth="4"
+        strokeWidth="2"
       />
       <path
         className="opacity-75"
@@ -159,7 +161,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   return (
     <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
       <LoadingSpinner size="lg" />
-      <p className="mt-4 text-indigo-700 font-semibold" style={{ fontFamily: 'Fredoka, sans-serif' }}>{message}</p>
+      <p className="mt-4 text-stone-900 dark:text-stone-300 font-bold" style={{ fontFamily: 'var(--font-sans), sans-serif' }}>{message}</p>
     </div>
   );
 };
@@ -184,10 +186,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`flex flex-col items-center justify-center py-12 px-4 bg-indigo-50 border-3 border-dashed border-indigo-300 rounded-2xl ${className}`}>
-      {icon && <div className="mb-4 text-indigo-500 p-4 bg-white border-3 border-black rounded-xl shadow-[4px_4px_0px_#000]">{icon}</div>}
-      <h3 className="text-xl font-bold text-indigo-900 mb-2" style={{ fontFamily: 'Fredoka, sans-serif' }}>{title}</h3>
-      {description && <p className="text-indigo-700 text-center max-w-md mb-4 font-medium">{description}</p>}
+    <div className={`flex flex-col items-center justify-center py-12 px-4 bg-stone-50 dark:bg-white/5 border border-dashed border-stone-200 dark:border-white/10 rounded-2xl ${className}`}>
+      {icon && <div className="mb-4 text-stone-500 p-4 bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-xl shadow-sm">{icon}</div>}
+      <h3 className="text-xl font-serif font-bold text-stone-900 dark:text-white mb-2">{title}</h3>
+      {description && <p className="text-stone-500 dark:text-stone-400 text-center max-w-md mb-4 font-medium">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -218,38 +220,23 @@ export const Alert: React.FC<AlertProps> = ({
 }) => {
   const variants = {
     info: {
-      bg: 'bg-cyan-100',
-      border: 'border-black',
-      shadow: 'shadow-[4px_4px_0px_#0891B2]',
-      text: 'text-cyan-900',
-      icon: 'ℹ',
+      bg: 'bg-stone-50 dark:bg-stone-900/50 text-stone-900 dark:text-stone-300',
+      icon: 'ℹ️',
     },
     success: {
-      bg: 'bg-emerald-100',
-      border: 'border-black',
-      shadow: 'shadow-[4px_4px_0px_#059669]',
-      text: 'text-emerald-900',
+      bg: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300',
       icon: '✅',
     },
     warning: {
-      bg: 'bg-amber-100',
-      border: 'border-black',
-      shadow: 'shadow-[4px_4px_0px_#D97706]',
-      text: 'text-amber-900',
+      bg: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300',
       icon: '⚠️',
     },
-    error: {
-      bg: 'bg-red-100',
-      border: 'border-black',
-      shadow: 'shadow-[4px_4px_0px_#DC2626]',
-      text: 'text-red-900',
-      icon: '❌',
-    },
     danger: {
-      bg: 'bg-red-100',
-      border: 'border-black',
-      shadow: 'shadow-[4px_4px_0px_#DC2626]',
-      text: 'text-red-900',
+      bg: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300',
+      icon: '🚨',
+    },
+    error: {
+      bg: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300',
       icon: '❌',
     },
   };
@@ -258,17 +245,21 @@ export const Alert: React.FC<AlertProps> = ({
   const content = message || children;
 
   return (
-    <div className={`${style.bg} ${style.border} border-3 rounded-xl p-4 ${style.shadow} ${className}`}>
+    <div className={cn(
+      style.bg,
+      "border border-stone-200/50 dark:border-white/10 rounded-xl p-4 shadow-sm",
+      className
+    )}>
       <div className="flex items-start">
         <span className="text-2xl mr-3">{style.icon}</span>
         <div className="flex-1">
-          {title && <h4 className={`font-bold ${style.text} mb-1`} style={{ fontFamily: 'Fredoka, sans-serif' }}>{title}</h4>}
-          <div className={`${style.text} text-sm font-medium`}>{content}</div>
+          {title && <h4 className="font-serif font-bold mb-1">{title}</h4>}
+          <div className="text-sm font-medium">{content}</div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className={`ml-4 ${style.text} hover:opacity-70 font-bold text-lg cursor-pointer`}
+            className="ml-4 opacity-50 hover:opacity-100 transition-opacity font-bold text-lg cursor-pointer"
             aria-label="Close"
           >
             ✕
@@ -306,7 +297,7 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-bold text-indigo-900 mb-2" style={{ fontFamily: 'Fredoka, sans-serif' }}>
+        <label className="block text-sm font-bold text-stone-900 dark:text-stone-300 mb-2" style={{ fontFamily: 'var(--font-sans), sans-serif' }}>
           {label}
           {props.required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -320,17 +311,16 @@ export const Input: React.FC<InputProps> = ({
         )}
 
         <input
-          className={`
-            w-full px-4 py-3 border-3 border-black rounded-xl font-medium
-            ${leftIcon ? 'pl-12' : ''}
-            ${rightIcon ? 'pr-12' : ''}
-            ${hasError ? 'border-red-500 shadow-[4px_4px_0px_#DC2626] focus:shadow-[6px_6px_0px_#DC2626]' : 'shadow-[4px_4px_0px_#000] focus:shadow-[6px_6px_0px_#000]'}
-            focus:outline-none focus:translate-x-[-2px] focus:translate-y-[-2px]
-            disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60
-            placeholder:text-indigo-400 text-indigo-900
-            transition-all duration-150
-            ${className}
-          `}
+          className={cn(
+            "w-full px-4 py-3 border border-stone-200 dark:border-white/10 rounded-xl font-medium bg-white dark:bg-white/5",
+            "text-stone-900 dark:text-white placeholder:text-stone-500 dark:placeholder:text-stone-400",
+            "transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
+            !!leftIcon && "pl-12",
+            !!rightIcon && "pr-12",
+            hasError && "border-red-500 focus:ring-red-500/20",
+            className
+          )}
           {...props}
         />
 
@@ -342,7 +332,7 @@ export const Input: React.FC<InputProps> = ({
       </div>
 
       {hint && !error && (
-        <p className="mt-2 text-sm text-indigo-600 font-medium">{hint}</p>
+        <p className="mt-2 text-sm text-stone-600 dark:text-stone-400 font-medium">{hint}</p>
       )}
 
       {error && (
@@ -370,28 +360,26 @@ export const Textarea: React.FC<TextareaProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-bold text-indigo-900 mb-2" style={{ fontFamily: 'Fredoka, sans-serif' }}>
+        <label className="block text-sm font-bold text-stone-900 dark:text-stone-300 mb-2" style={{ fontFamily: 'var(--font-sans), sans-serif' }}>
           {label}
           {props.required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
 
       <textarea
-        className={`
-          w-full px-4 py-3 border-3 border-black rounded-xl font-medium
-          ${hasError ? 'border-red-500 shadow-[4px_4px_0px_#DC2626] focus:shadow-[6px_6px_0px_#DC2626]' : 'shadow-[4px_4px_0px_#000] focus:shadow-[6px_6px_0px_#000]'}
-          focus:outline-none focus:translate-x-[-2px] focus:translate-y-[-2px]
-          disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60
-          placeholder:text-indigo-400 text-indigo-900
-          transition-all duration-150
-          min-h-[120px] resize-y
-          ${className}
-        `}
+        className={cn(
+          "w-full px-4 py-3 border border-stone-200 dark:border-white/10 rounded-xl font-medium bg-white dark:bg-white/5",
+          "text-stone-900 dark:text-white placeholder:text-stone-500 dark:placeholder:text-stone-400",
+          "transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
+          "disabled:opacity-50 disabled:cursor-not-allowed min-h-[120px] resize-y",
+          hasError && "border-red-500 focus:ring-red-500/20",
+          className
+        )}
         {...props}
       />
 
       {hint && !error && (
-        <p className="mt-2 text-sm text-indigo-600 font-medium">{hint}</p>
+        <p className="mt-2 text-sm text-stone-600 dark:text-stone-400 font-medium">{hint}</p>
       )}
 
       {error && (
@@ -485,20 +473,15 @@ export const Modal: React.FC<ModalProps> = ({
       />
 
       {/* Modal Container */}
-      <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6 md:items-center items-end sm:items-center">
         <div
           className={`
             relative w-full ${sizes[size]}
             ${isClosing ? 'animate-modal-exit' : 'animate-modal-enter'}
             
-            /* Light mode - Neumorphic style */
-            bg-white border border-gray-200 rounded-2xl
-            shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]
-            
-            /* Dark mode - Glassmorphism style */
-            dark:bg-gray-900/95 dark:backdrop-blur-xl
-            dark:border-gray-700/50
-            dark:shadow-[0_0_50px_rgba(0,0,0,0.5),0_0_100px_rgba(6,182,212,0.1)]
+            /* Premium Academic Crystal Style */
+            glass-crystal rounded-3xl overflow-hidden
+            shadow-ultra
             ${className}
           `}
           role="dialog"
@@ -508,15 +491,14 @@ export const Modal: React.FC<ModalProps> = ({
         >
           {/* Header */}
           <div className="
-            flex items-center justify-between px-6 py-4
-            border-b border-gray-100 dark:border-gray-700/50
-            bg-gradient-to-r from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-900/50
-            rounded-t-2xl
+            flex items-center justify-between px-8 py-5
+            border-b border-stone-200/50 dark:border-white/5
+            bg-white/50 dark:bg-black/20
+            rounded-t-3xl
           ">
             <h3
               id="modal-title"
-              className="text-lg font-semibold text-gray-900 dark:text-white"
-              style={{ fontFamily: 'Fredoka, sans-serif' }}
+              className="text-xl font-serif font-bold text-stone-900 dark:text-white italic"
             >
               {title}
             </h3>
@@ -545,10 +527,10 @@ export const Modal: React.FC<ModalProps> = ({
           {/* Footer */}
           {footer && (
             <div className="
-              px-6 py-4 
-              border-t border-gray-100 dark:border-gray-700/50
-              bg-gray-50 dark:bg-gray-800/30
-              rounded-b-2xl 
+              px-8 py-5 
+              border-t border-stone-200/50 dark:border-white/5
+              bg-white/30 dark:bg-black/10
+              rounded-b-3xl 
               flex gap-3 justify-end
             ">
               {footer}

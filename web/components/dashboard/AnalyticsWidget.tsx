@@ -106,6 +106,7 @@ interface AnalyticsWidgetProps {
     showGrid?: boolean;
     color?: keyof typeof COLORS | string;
     secondaryColor?: string;
+    colorPalette?: 'gradient' | 'gradeScale';
     loading?: boolean;
     emptyMessage?: string;
     valueFormatter?: (value: number) => string;
@@ -126,6 +127,7 @@ export default function AnalyticsWidget({
     showGrid = true,
     color = 'primary',
     secondaryColor,
+    colorPalette = 'gradient',
     loading = false,
     emptyMessage = 'Không có dữ liệu',
     valueFormatter = (v) => v.toString(),
@@ -171,7 +173,7 @@ export default function AnalyticsWidget({
             case 'line':
                 return (
                     <ResponsiveContainer width="100%" height={height}>
-                        <LazyLineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <LazyLineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />}
                             <XAxis
                                 dataKey={xAxisKey}
@@ -215,7 +217,7 @@ export default function AnalyticsWidget({
             case 'bar':
                 return (
                     <ResponsiveContainer width="100%" height={height}>
-                        <LazyBarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <LazyBarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />}
                             <XAxis
                                 dataKey={xAxisKey}
@@ -253,25 +255,34 @@ export default function AnalyticsWidget({
                 );
 
             case 'pie':
+                const piePalette = colorPalette === 'gradeScale' ? COLORS.gradeScale : COLORS.gradient;
+                // Preserve original colors per item index
+                const pieDataWithColors = data.map((d, i) => ({
+                    ...d,
+                    _fill: piePalette[i % piePalette.length],
+                    _name: String(d[xAxisKey] || 'Unknown')
+                }));
+                // Filter 0-value items to prevent Recharts from drawing phantom padding gaps
+                const activePieData = pieDataWithColors.filter(d => Number((d as any)[dataKey]) > 0);
+                const finalPieData = activePieData.length > 0 ? activePieData : pieDataWithColors;
+
                 return (
                     <ResponsiveContainer width="100%" height={height}>
                         <LazyPieChart>
                             <Pie
-                                data={data}
+                                data={finalPieData}
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={60}
                                 outerRadius={80}
-                                paddingAngle={5}
+                                paddingAngle={finalPieData.length > 1 ? 5 : 0}
                                 dataKey={dataKey}
                                 nameKey={xAxisKey}
-                                label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
-                                labelLine={false}
                             >
-                                {data.map((_, index) => (
+                                {finalPieData.map((entry, index) => (
                                     <Cell
                                         key={`cell-${index}`}
-                                        fill={COLORS.gradient[index % COLORS.gradient.length]}
+                                        fill={entry._fill}
                                     />
                                 ))}
                             </Pie>
@@ -279,7 +290,18 @@ export default function AnalyticsWidget({
                                 contentStyle={tooltipStyle}
                                 formatter={(value: any) => [valueFormatter(Number(value)), '']}
                             />
-                            {showLegend && <Legend />}
+                            {showLegend && (
+                                <Legend
+                                    {...{
+                                        payload: pieDataWithColors.map(item => ({
+                                            value: item._name,
+                                            type: 'square',
+                                            id: item._name,
+                                            color: item._fill
+                                        }))
+                                    } as any}
+                                />
+                            )}
                         </LazyPieChart>
                     </ResponsiveContainer>
                 );
@@ -287,7 +309,7 @@ export default function AnalyticsWidget({
             case 'area':
                 return (
                     <ResponsiveContainer width="100%" height={height}>
-                        <LazyAreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <LazyAreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />}
                             <XAxis
                                 dataKey={xAxisKey}
@@ -369,9 +391,9 @@ export default function AnalyticsWidget({
             "overflow-hidden glass-premium rounded-[24px] sm:rounded-[32px] md:rounded-[40px] border border-white/20 dark:border-white/5 shadow-2xl shadow-stone-500/10 transition-all hover:scale-[1.01]",
             className
         )}>
-            <div className="p-4 sm:p-6 md:p-8">
-                <div className="flex items-center justify-between mb-6 md:mb-8">
-                    <div className="flex items-center gap-3 md:gap-4">
+            <div className="p-4 md:p-5 lg:p-6">
+                <div className="flex items-center justify-between mb-4 md:mb-6">
+                    <div className="flex items-center gap-3">
                         {icon && (
                             <div className="p-2 md:p-3 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                                 {icon}
@@ -385,7 +407,7 @@ export default function AnalyticsWidget({
                         </div>
                     </div>
                 </div>
-                <div style={{ height }} className="relative">
+                <div style={{ height }} className="relative w-full h-full min-w-0">
                     {renderChart()}
                 </div>
             </div>

@@ -10,11 +10,17 @@ import { apiFetch } from "@/lib/api/client";
 import { getTTL, requestCache } from "@/lib/api/requestCache";
 import { logger } from "@/lib/logger";
 
+import {
+  ApiErrorResponse,
+  ApiPaginatedResponse,
+  ApiResponse,
+} from "@/lib/api/types";
+
 type AnyRecord = Record<string, any>;
 
-interface UseFetchOptions {
+interface UseFetchOptions<T = any> {
   immediate?: boolean; // Fetch immediately on mount
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: T) => void;
   onError?: (error: string) => void;
   cancelPrevious?: boolean; // Cancel previous in-flight request when url/refetch changes (default true)
 }

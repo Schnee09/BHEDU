@@ -5,7 +5,10 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import GuestGuard from "@/components/GuestGuard";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, User, GraduationCap, Phone, CheckCircle } from "lucide-react";
+import { Button, Input, LoadingSpinner } from "@/components/ui";
+import { Icons } from "@/components/ui/Icons";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 type LoginMode = 'email' | 'student_code' | 'phone';
 
@@ -27,7 +30,7 @@ export default function LoginPage() {
   const handleRedirect = (role: string | null | undefined) => {
     switch (role) {
       case "owner":
-        router.replace("/dashboard/admin/finance");
+        router.replace("/dashboard");
         break;
       case "super_admin":
       case "admin":
@@ -168,268 +171,272 @@ export default function LoginPage() {
 
   return (
     <GuestGuard>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-white dark:from-stone-900 dark:via-stone-900 dark:to-black px-4 py-12">
-        <div className="w-full max-w-md">
-          {/* Card with glass effect */}
-          <div className="glass-premium rounded-[40px] shadow-2xl shadow-amber-500/10 dark:shadow-orange-500/10 border border-white/20 dark:border-white/5 p-8 sm:p-12 animate-card-entrance">
-            {/* Logo and Header */}
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <div className="relative w-24 h-24">
-                  <Image
-                    src="/logo.png"
-                    alt="Bùi Hoàng Logo"
-                    fill
-                    sizes="96px"
-                    className="object-contain"
-                    priority
-                  />
-                </div>
-              </div>
-              <h1 className="text-3xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tighter">
-                Bùi Hoàng Edu
-              </h1>
-              <p className="text-[11px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">Hệ thống quản lý giáo dục</p>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="w-full max-w-[480px] relative z-10"
+      >
+        {/* Card with premium glass effect */}
+        <div className="glass-premium rounded-[40px] shadow-ultra border border-white/20 dark:border-white/5 p-8 sm:p-12 w-full">
+          {/* Logo and Header */}
+          <div className="text-center mb-10">
+            <div className="flex justify-center mb-6">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="relative w-28 h-28 p-2 glass-crystal rounded-3xl"
+              >
+                <Image
+                  src="/logo.png"
+                  alt="Bùi Hoàng Logo"
+                  fill
+                  sizes="112px"
+                  className="object-contain p-2"
+                  priority
+                />
+              </motion.div>
             </div>
+            <h1 className="text-4xl font-serif font-bold text-stone-900 dark:text-white mb-2 italic tracking-tight uppercase">
+              BH-EDU
+            </h1>
+            <p className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-[0.4em] font-sans">
+              Academic Management System
+            </p>
+          </div>
 
-            {/* Login Mode Toggle */}
-            <div className="flex rounded-xl bg-slate-100 dark:bg-gray-700 p-1 mb-6">
+          {/* Login Mode Toggle - Standardized */}
+          <div className="flex rounded-xl bg-stone-100 dark:bg-stone-900/50 p-1.5 mb-8 border border-stone-200 dark:border-white/5 shadow-inner">
+            {(['email', 'phone', 'student_code'] as const).map((mode) => (
               <button
+                key={mode}
                 type="button"
-                onClick={() => { setLoginMode('email'); setOtpMode(false); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${loginMode === 'email'
-                  ? 'bg-white dark:bg-gray-600 text-amber-600 dark:text-amber-400 shadow-sm'
-                  : 'text-slate-600 dark:text-gray-300 hover:text-slate-800 dark:hover:text-white'
-                  }`}
+                title={mode === 'email' ? 'Đăng nhập bằng Email' : mode === 'phone' ? 'Đăng nhập bằng SĐT' : 'Đăng nhập bằng Mã học sinh'}
+                onClick={() => { setLoginMode(mode); setOtpMode(false); setError(null); setMessage(null); }}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300",
+                  loginMode === mode
+                    ? "bg-white dark:bg-stone-800 text-primary dark:text-white shadow-md scale-[1.02]"
+                    : "text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5"
+                )}
               >
-                <Mail className="w-4 h-4" />
-                Email
+                {mode === 'email' && <Icons.Mail className="w-3.5 h-3.5" />}
+                {mode === 'phone' && <Icons.Phone className="w-3.5 h-3.5" />}
+                {mode === 'student_code' && <Icons.Teachers className="w-3.5 h-3.5" />}
+                <span className="sm:inline-block">
+                  {mode === 'email' ? 'Email' : mode === 'phone' ? 'SĐT' : 'Mã số'}
+                </span>
               </button>
-              <button
-                type="button"
-                onClick={() => { setLoginMode('phone'); setOtpMode(false); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${loginMode === 'phone'
-                  ? 'bg-white dark:bg-gray-600 text-amber-600 dark:text-amber-400 shadow-sm'
-                  : 'text-slate-600 dark:text-gray-300 hover:text-slate-800 dark:hover:text-white'
-                  }`}
-              >
-                <Phone className="w-4 h-4" />
-                SĐT
-              </button>
-              <button
-                type="button"
-                onClick={() => { setLoginMode('student_code'); setOtpMode(false); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${loginMode === 'student_code'
-                  ? 'bg-white dark:bg-gray-600 text-amber-600 dark:text-amber-400 shadow-sm'
-                  : 'text-slate-600 dark:text-gray-300 hover:text-slate-800 dark:hover:text-white'
-                  }`}
-              >
-                <GraduationCap className="w-4 h-4" />
-                Mã số
-              </button>
-            </div>
+            ))}
+          </div>
 
-            {/* Google Sign In Button - only for email mode */}
-            {loginMode === 'email' && (
-              <>
-                <button
-                  type="button"
-                  onClick={signInWithGoogle}
-                  disabled={googleLoading || loading}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-amber-300 dark:hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-                >
-                  {googleLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                    </svg>
-                  )}
-                  {googleLoading ? "Đang kết nối..." : "Tiếp tục với Google"}
-                </button>
+          {/* Content Switcher */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={loginMode}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Google Sign In Button - only for email mode */}
+              {loginMode === 'email' && (
+                <div className="mb-8">
+                  <Button
+                    variant="secondary"
+                    onClick={signInWithGoogle}
+                    disabled={googleLoading || loading}
+                    fullWidth
+                    className="bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 h-14"
+                  >
+                    {googleLoading ? (
+                      <LoadingSpinner size="sm" className="mr-2" />
+                    ) : (
+                      <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                      </svg>
+                    )}
+                    <span className="text-sm font-bold uppercase tracking-wider">Tiếp tục với Google</span>
+                  </Button>
 
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-gray-600"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white dark:bg-gray-800 text-slate-500 dark:text-gray-400 font-medium">hoặc đăng nhập bằng email</span>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <form onSubmit={signInWithPassword} className="space-y-4">
-              {loginMode === 'email' ? (
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                    Địa chỉ Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                    <input
-                      className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      type="email"
-                      placeholder="ban@example.com"
-                      required
-                    />
-                  </div>
-                </div>
-              ) : loginMode === 'phone' ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                      Số điện thoại
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                      <input
-                        className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 font-mono"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        type="tel"
-                        placeholder="0987xxx..."
-                        required
-                        disabled={otpMode}
-                      />
+                  <div className="relative my-10">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-stone-200/50 dark:border-white/5"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="px-6 bg-transparent text-stone-400 dark:text-stone-500 font-bold uppercase tracking-widest leading-none">
+                        Hoặc sử dụng tài khoản
+                      </span>
                     </div>
                   </div>
-                  {otpMode && (
-                    <div className="animate-in slide-in-from-top-2 duration-300">
-                      <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                        Mã OTP
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                        <input
-                          className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 tracking-widest text-lg font-bold"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value)}
+                </div>
+              )}
+
+              <form onSubmit={signInWithPassword} className="space-y-6">
+                {loginMode === 'email' ? (
+                  <Input
+                    label="Địa chỉ Email"
+                    type="email"
+                    placeholder="ban@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    leftIcon={<Icons.Mail className="w-4 h-4" />}
+                  />
+                ) : loginMode === 'phone' ? (
+                  <div className="space-y-6">
+                    <Input
+                      label="Số điện thoại"
+                      type="tel"
+                      placeholder="0987xxx..."
+                      required
+                      disabled={otpMode}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      leftIcon={<Icons.Phone className="w-4 h-4" />}
+                    />
+                    {otpMode && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="space-y-2"
+                      >
+                        <Input
+                          label="Mã OTP"
                           type="text"
                           placeholder="123456"
                           required
                           maxLength={6}
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value)}
+                          leftIcon={<Icons.Lock className="w-4 h-4" />}
+                          className="tracking-[0.5em] text-center font-bold text-lg"
                         />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setOtpMode(false)}
-                        className="text-xs text-amber-600 mt-2 hover:underline"
-                      >
-                        Thay đổi số điện thoại
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                    Mã học sinh
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                    <input
-                      className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 uppercase"
-                      value={studentCode}
-                      onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
-                      type="text"
-                      placeholder="HS2025001"
-                      required
-                    />
+                        <button
+                          type="button"
+                          onClick={() => setOtpMode(false)}
+                          className="text-[10px] font-bold text-primary dark:text-stone-400 uppercase tracking-widest hover:underline"
+                        >
+                          Thay đổi số điện thoại
+                        </button>
+                      </motion.div>
+                    )}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <Input
+                    label="Mã học sinh"
+                    type="text"
+                    placeholder="HS2025001"
+                    required
+                    value={studentCode}
+                    onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
+                    leftIcon={<Icons.Teachers className="w-4 h-4" />}
+                    className="uppercase font-bold tracking-wider"
+                  />
+                )}
 
-              {/* Password Field - only for email and student_code modes */}
-              {loginMode !== 'phone' && (
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                    Mật khẩu
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                    <input
-                      className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-12 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                {/* Password Field - unified */}
+                {loginMode !== 'phone' && (
+                  <div className="space-y-2">
+                    <Input
+                      label="Mật khẩu"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      leftIcon={<Icons.Lock className="w-4 h-4" />}
+                      rightIcon={
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors"
+                        >
+                          {showPassword ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
+                        </button>
+                      }
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
+                    {loginMode === 'email' && (
+                      <div className="flex justify-end">
+                        <a href="/forgot-password" title="Quên mật khẩu" className="text-[10px] font-bold text-stone-500 hover:text-primary dark:hover:text-white uppercase tracking-widest transition-colors">
+                          Quên mật khẩu?
+                        </a>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-
-              {loginMode === 'email' && (
-                <div className="flex justify-end">
-                  <a href="/forgot-password" title="Quên mật khẩu" className="text-sm text-slate-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition-colors">
-                    Quên mật khẩu?
-                  </a>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading || googleLoading}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Đang xử lý...
-                  </>
-                ) : (
-                  <>
-                    {loginMode === 'student_code' ? 'Đăng nhập mã số' : loginMode === 'phone' ? (otpMode ? 'Xác nhận OTP' : 'Gửi mã OTP') : 'Đăng nhập'}
-                    <ArrowRight className="w-5 h-5" />
-                  </>
                 )}
-              </button>
-            </form>
 
-            {/* Error/Success Messages */}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isLoading={loading || googleLoading}
+                  fullWidth
+                  className="h-14 mt-4 shadow-xl shadow-primary/20"
+                >
+                  <span className="text-sm font-bold uppercase tracking-widest">
+                    {loading ? "Đang xử lý..." : (
+                      otpMode ? 'Xác nhận mã OTP' : loginMode === 'phone' ? 'Gửi mã OTP' : 'Đăng nhập hệ thống'
+                    )}
+                  </span>
+                  {!loading && <Icons.ArrowRight className="w-5 h-5 ml-2" />}
+                </Button>
+              </form>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Error/Success Messages - Redesigned */}
+          <AnimatePresence>
             {error && (
-              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl">
-                <p className="text-red-700 dark:text-red-300 text-sm font-medium flex items-center gap-2">
-                  <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="mt-8 p-5 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-xl"
+              >
+                <p className="text-red-800 dark:text-red-300 text-xs font-bold flex items-center gap-3">
+                  <Icons.Warning className="w-5 h-5 flex-shrink-0" />
                   {error}
                 </p>
-              </div>
+              </motion.div>
             )}
             {message && (
-              <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl">
-                <p className="text-green-700 dark:text-green-300 text-sm font-medium flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="mt-8 p-5 bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 rounded-xl"
+              >
+                <p className="text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-3">
+                  <Icons.Success className="w-5 h-5 flex-shrink-0" />
                   {message}
                 </p>
-              </div>
+              </motion.div>
             )}
+          </AnimatePresence>
 
-            {loginMode === 'email' && (
-              <p className="text-center text-sm mt-6 text-slate-600 dark:text-gray-300">
-                Chưa có tài khoản?{" "}
-                <a href="/signup" title="Đăng ký" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold hover:underline transition-colors">
-                  Tạo tài khoản
-                </a>
-              </p>
-            )}
+          {/* Footer Navigation */}
+          {loginMode === 'email' && (
+            <p className="text-center text-[11px] font-bold mt-10 text-stone-500 dark:text-stone-400 uppercase tracking-widest">
+              Chưa có tài khoản?{" "}
+              <a
+                href="/signup"
+                title="Tạo tài khoản"
+                className="text-primary dark:text-white hover:underline transition-all underline-offset-4"
+              >
+                Đăng ký ngay
+              </a>
+            </p>
+          )}
+
+          <div className="mt-12 pt-8 border-t border-stone-200 dark:border-white/5 flex justify-center gap-8">
+            <a href="/terms" className="text-[9px] font-black text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 uppercase tracking-widest transition-colors">Điều khoản</a>
+            <a href="/privacy" className="text-[9px] font-black text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 uppercase tracking-widest transition-colors">Bảo mật</a>
+            <a href="/support" className="text-[9px] font-black text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 uppercase tracking-widest transition-colors">Trợ giúp</a>
           </div>
         </div>
-      </div>
+      </motion.div>
     </GuestGuard>
   );
 }

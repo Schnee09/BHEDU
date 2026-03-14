@@ -8,6 +8,9 @@
 import { apiSuccess, createGetHandler } from "@/lib/api";
 import { DashboardService } from "@/lib/services/DashboardService";
 
+// Cache for 1 hour to prevent DB load (ISR)
+export const revalidate = 3600;
+
 export const GET = createGetHandler(
   { requireAuth: true },
   async ({ user }) => {

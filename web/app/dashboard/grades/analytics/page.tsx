@@ -148,8 +148,7 @@ export default function GradeAnalyticsPage() {
     if (grades.length === 0) return []
 
     const distribution: Record<string, number> = {
-      'A': 0, 'A-': 0, 'B+': 0, 'B': 0, 'B-': 0,
-      'C+': 0, 'C': 0, 'C-': 0, 'D+': 0, 'D': 0, 'D-': 0, 'F': 0
+      'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0
     }
 
     grades.forEach(g => {
@@ -361,12 +360,14 @@ export default function GradeAnalyticsPage() {
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
-                        data={[
-                          { year: '2021-2022', average: 72, highest: 95, lowest: 45 },
-                          { year: '2022-2023', average: 75, highest: 98, lowest: 48 },
-                          { year: '2023-2024', average: 78, highest: 96, lowest: 52 },
-                          { year: '2024-2025', average: classStats?.average || 80, highest: classStats?.highest || 100, lowest: classStats?.lowest || 55 },
-                        ]}
+                        data={classStats ? [
+                          {
+                            year: 'Học kỳ hiện tại',
+                            average: classStats.average,
+                            highest: classStats.highest,
+                            lowest: classStats.lowest
+                          },
+                        ] : []}
                         margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                       >
                         <defs>

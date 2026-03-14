@@ -42,30 +42,29 @@ function Button({
 
   const variantClasses = {
     primary: `
-      bg-primary text-white hover:bg-primary-hover focus:ring-primary/50
-      shadow-[var(--shadow-primary)] hover:shadow-[var(--shadow-primary-lg)] hover:-translate-y-0.5
-      dark:bg-primary dark:hover:bg-primary-hover
+      bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-500/50
+      shadow-md hover:shadow-lg hover:-translate-y-0.5
+      transition-all duration-300
     `,
     secondary: `
-      bg-surface text-foreground hover:bg-surface-hover border border-border-light
-      shadow-sm hover:shadow-md hover:-translate-y-0.5
-      dark:bg-surface-hover dark:hover:bg-surface-active dark:border-border-subtle
+      bg-white dark:bg-white/5 text-stone-900 dark:text-white hover:bg-stone-50 dark:hover:bg-white/10
+      border border-stone-200 dark:border-white/10
+      shadow-sm hover:shadow-md
     `,
     outline: `
-      border-2 border-primary text-primary hover:bg-primary-50 focus:ring-primary/50
-      dark:border-primary dark:text-primary-300 dark:hover:bg-primary-900/20
+      border border-stone-200 dark:border-white/10 bg-transparent
+      text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-white/5
     `,
     ghost: `
-      text-muted hover:text-foreground hover:bg-surface-secondary
-      dark:hover:bg-white/5
+      text-stone-500 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5
     `,
     danger: `
-      bg-error text-white hover:bg-red-600 focus:ring-error/50
-      shadow-lg shadow-red-500/20 hover:shadow-red-500/30 hover:-translate-y-0.5
+      bg-red-500 text-white hover:bg-red-600 focus:ring-red-500/50
+      shadow-md hover:shadow-red-500/30 hover:-translate-y-0.5
     `,
     success: `
-      bg-success text-white hover:bg-emerald-600 focus:ring-success/50
-      shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:-translate-y-0.5
+      bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-500/50
+      shadow-md hover:shadow-emerald-500/30 hover:-translate-y-0.5
     `,
   };
 

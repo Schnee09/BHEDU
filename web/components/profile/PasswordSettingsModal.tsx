@@ -142,7 +142,7 @@ export default function PasswordSettingsModal({ isOpen, onClose }: PasswordSetti
                     </div>
                 </div>
 
-                <p className="text-[10px] text-stone-400 font-medium italic text-center">
+                <p className="text-[10px] text-stone-500 font-medium italic text-center">
                     Sau khi lưu, phiên đăng nhập hiện tại của bạn vẫn được duy trì.
                 </p>
             </form>

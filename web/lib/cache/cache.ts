@@ -171,6 +171,7 @@ export const CACHE_KEYS = {
     SETTINGS: (category: string) => `settings:${category}`,
     CLASS: (id: string) => `class:${id}`,
     STUDENT: (id: string) => `student:${id}`,
+    COURSES_ALL: "courses:all",
 } as const;
 
 // Pre-defined TTL values (in seconds)

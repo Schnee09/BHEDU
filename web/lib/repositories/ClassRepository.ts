@@ -20,6 +20,7 @@ export interface Class {
   id: string;
   name: string;
   teacher_id: string | null;
+  course_id: string | null;
   room: string | null;
   schedule: string | null;
   capacity: number | null;
@@ -35,6 +36,16 @@ export interface ClassWithDetails extends Class {
     first_name: string;
     last_name: string;
     full_name: string;
+    email?: string;
+  } | null;
+  course?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
+  academic_year?: {
+    id: string;
+    name: string;
   } | null;
   _count?: {
     enrollments: number;
@@ -51,6 +62,7 @@ export interface ClassFilters extends PaginationParams {
 export interface CreateClassInput {
   name: string;
   teacher_id?: string | null;
+  course_id?: string | null;
   room?: string | null;
   schedule?: string | null;
   capacity?: number | null;
@@ -61,6 +73,7 @@ export interface CreateClassInput {
 export interface UpdateClassInput {
   name?: string;
   teacher_id?: string | null;
+  course_id?: string | null;
   room?: string | null;
   schedule?: string | null;
   capacity?: number | null;
@@ -77,6 +90,10 @@ export interface IClassRepository {
   findByIdWithDetails(id: string): Promise<ClassWithDetails | null>;
   findAll(filters?: ClassFilters): Promise<PaginatedResult<ClassWithDetails>>;
   findByTeacher(teacherId: string): Promise<Class[]>;
+  findByStudent(
+    studentId: string,
+    filters?: ClassFilters,
+  ): Promise<PaginatedResult<ClassWithDetails>>;
   create(data: CreateClassInput): Promise<Class>;
   update(id: string, data: UpdateClassInput): Promise<Class>;
   delete(id: string): Promise<void>;
@@ -149,11 +166,43 @@ export class ClassRepository
       promises.push(Promise.resolve({ data: null }));
     }
 
-    const [teacherRes] = await Promise.all(promises);
+    // Course promise
+    if (cls.course_id) {
+      promises.push(
+        this.supabase
+          .from("courses")
+          .select("id, name, code")
+          .eq("id", cls.course_id)
+          .single()
+          .then((res) => res) as Promise<any>,
+      );
+    } else {
+      promises.push(Promise.resolve({ data: null }));
+    }
+
+    // Academic Year promise
+    if (cls.academic_year_id) {
+      promises.push(
+        this.supabase
+          .from("academic_years")
+          .select("id, name")
+          .eq("id", cls.academic_year_id)
+          .single()
+          .then((res) => res) as Promise<any>,
+      );
+    } else {
+      promises.push(Promise.resolve({ data: null }));
+    }
+
+    const [teacherRes, courseRes, academicYearRes] = await Promise.all(
+      promises,
+    );
 
     return {
       ...cls,
       teacher: teacherRes.data || null,
+      course: courseRes.data || null,
+      academic_year: academicYearRes.data || null,
       _count: { enrollments: countResult.count || 0 },
     } as ClassWithDetails;
   }
@@ -186,6 +235,15 @@ export class ClassRepository
             name,
             code
           )
+        ),
+        course:courses!classes_course_id_fkey (
+          id,
+          name,
+          code
+        ),
+        academic_year:academic_years!classes_academic_year_id_fkey (
+          id,
+          name
         ),
         enrollments (count)
       `,
@@ -249,6 +307,106 @@ export class ClassRepository
     }
 
     return (data || []) as Class[];
+  }
+
+  /**
+   * Find all classes a student is enrolled in
+   */
+  async findByStudent(
+    studentId: string,
+    filters: ClassFilters = {},
+  ): Promise<PaginatedResult<ClassWithDetails>> {
+    const page = filters.page || 1;
+    const pageSize = filters.pageSize || 20;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize - 1;
+
+    // First, get the class IDs the student is enrolled in
+    const { data: enrollments } = await this.supabase
+      .from("enrollments")
+      .select("class_id")
+      .eq("student_id", studentId)
+      .in("status", ["enrolled", "active"]);
+
+    const classIds = enrollments?.map((e: any) => e.class_id) || [];
+
+    if (classIds.length === 0) {
+      return {
+        data: [],
+        total: 0,
+        page,
+        pageSize,
+        totalPages: 0,
+      };
+    }
+
+    let query = this.supabase
+      .from(this.tableName)
+      .select(
+        `
+        *,
+        teacher:profiles!classes_teacher_id_fkey (
+          id,
+          first_name,
+          last_name,
+          full_name,
+          email,
+          subject_id,
+          subjects!profiles_subject_id_fkey (
+            id,
+            name,
+            code
+          )
+        ),
+        course:courses!classes_course_id_fkey (
+          id,
+          name,
+          code
+        ),
+        enrollments (count)
+      `,
+        { count: "exact" },
+      )
+      .in("id", classIds);
+
+    // Apply filters matching findAll
+    if (filters.search) {
+      query = query.ilike("name", `%${filters.search}%`);
+    }
+
+    if (filters.status) {
+      query = query.eq("status", filters.status);
+    }
+
+    if (filters.teacher_id) {
+      query = query.eq("teacher_id", filters.teacher_id);
+    }
+
+    if (filters.academic_year_id) {
+      query = query.eq("academic_year_id", filters.academic_year_id);
+    }
+
+    const { data, error, count } = await query
+      .range(start, end)
+      .order("name", { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch student classes: ${error.message}`);
+    }
+
+    const resultData = (data || []).map((item: any) => ({
+      ...item,
+      // Flatten enrollment count
+      enrollment_count: item.enrollments?.[0]?.count || 0,
+    }));
+
+    return {
+      data: resultData as ClassWithDetails[],
+      total: count || 0,
+      page,
+      pageSize,
+      totalPages: Math.ceil((count || 0) / pageSize),
+    };
   }
 
   /**

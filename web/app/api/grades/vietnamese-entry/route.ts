@@ -3,6 +3,7 @@ import {
   createApiHandler,
   createGetHandler,
 } from "@/lib/api/apiHandler";
+import { ValidationError } from "@/lib/api/errors";
 import { gradeService } from "@/lib/services/gradeService";
 import { EvaluationType } from "@/lib/grades/types";
 import { logger } from "@/lib/logger";
@@ -17,10 +18,7 @@ export const GET = createGetHandler(
     const semester: any = searchParams.get("semester");
 
     if (!classId || !semester) {
-      return apiSuccess({
-        success: false,
-        error: "Missing classId or semester",
-      });
+      throw new ValidationError("Missing classId or semester");
     }
 
     // Default subjectCode to classId if not provided (common pattern in this project)
@@ -57,14 +55,12 @@ export const POST = createApiHandler(
   {
     permission: "grades.entry",
   },
-  async ({ body }) => {
+  async ({ request }) => {
+    const body = await request.json();
     const { class_id, subject_code, semester, students } = body as any;
 
     if (!class_id || !semester || !Array.isArray(students)) {
-      return apiSuccess({
-        success: false,
-        error: "Invalid request data",
-      }, { _status: 400 });
+      throw new ValidationError("Invalid request data");
     }
 
     const targetSubjectCode = subject_code || class_id;

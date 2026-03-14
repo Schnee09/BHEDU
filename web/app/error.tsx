@@ -19,7 +19,7 @@ export default function GlobalError({
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-stone-50 dark:bg-stone-950">
-            <div className="max-w-md w-full text-center space-y-8">
+            <div className="max-w-md w-full text-center space-y-8 min-w-0">
                 <div className="flex justify-center">
                     <div className="relative">
                         <div className="absolute inset-0 bg-red-500/20 blur-2xl rounded-full" />

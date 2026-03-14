@@ -69,18 +69,20 @@ interface CalendarEvent {
     color: string;
 }
 
+
+
 const DAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"];
 const START_HOUR = 7;
 const END_HOUR = 22;
 const HOUR_SLOTS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 
 const SUBJECT_THEMES: Record<string, { bg: string; border: string; text: string; dot: string; shadow: string }> = {
-    MATH: { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-600", dot: "bg-blue-500", shadow: "shadow-blue-500/10" },
-    LIT: { bg: "bg-purple-500/10", border: "border-purple-500/20", text: "text-purple-600", dot: "bg-purple-500", shadow: "shadow-purple-500/10" },
-    ENG: { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-600", dot: "bg-emerald-500", shadow: "shadow-emerald-500/10" },
-    PHY: { bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-600", dot: "bg-orange-500", shadow: "shadow-orange-500/10" },
-    CHEM: { bg: "bg-pink-500/10", border: "border-pink-500/20", text: "text-pink-600", dot: "bg-pink-500", shadow: "shadow-pink-500/10" },
-    default: { bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-600", dot: "bg-indigo-500", shadow: "shadow-indigo-500/10" },
+    MATH: { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-600", dot: "bg-blue-500", shadow: "shadow-blue-500/5" },
+    LIT: { bg: "bg-purple-500/10", border: "border-purple-500/20", text: "text-purple-600", dot: "bg-purple-500", shadow: "shadow-purple-500/5" },
+    ENG: { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-600", dot: "bg-emerald-500", shadow: "shadow-emerald-500/5" },
+    PHY: { bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-600", dot: "bg-orange-500", shadow: "shadow-orange-500/5" },
+    CHEM: { bg: "bg-pink-500/10", border: "border-pink-500/20", text: "text-pink-600", dot: "bg-pink-500", shadow: "shadow-pink-500/5" },
+    default: { bg: "bg-stone-500/10", border: "border-stone-500/20", text: "text-stone-600", dot: "bg-stone-500", shadow: "shadow-stone-500/5" },
 };
 
 export default function MySchedulePage() {
@@ -207,39 +209,38 @@ export default function MySchedulePage() {
         onSwipedLeft: handleNextWeek
     });
 
-    if (profileLoading) return <LoadingState message="Xác thực quyền truy cập..." />;
+    if (profileLoading) return <LoadingState message="Đang tải dữ liệu..." />;
+
 
     const titleText = (isAdmin || isStaff) ? "Lịch trình của tôi" : isStudent ? "Lịch học của tôi" : isTeacher ? "Lịch giảng dạy" : "Lịch trình";
 
     return (
-        <div className="min-h-screen bg-[#F8F7F6] dark:bg-stone-950 p-4 sm:p-8 font-sans transition-colors duration-500" {...swipeHandlers}>
-            <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* Header - BH EDU Pro Max Style */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 glass-card p-10 rounded-[40px] border border-white/20 dark:border-white/5 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/50 p-4 sm:p-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 glass-premium p-6 md:p-10 rounded-[40px] border border-white/20 dark:border-white/5 shadow-2xl relative overflow-hidden animate-fade-in">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
 
                     <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                                <CalendarDays className="w-6 h-6 text-white" />
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2.5 bg-red-500/10 rounded-2xl">
+                                <CalendarDays className="w-6 h-6 text-red-600 dark:text-red-500" />
                             </div>
-                            <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 px-4 py-1.5 font-black tracking-widest text-[10px] uppercase">Học vụ / Cá nhân</Badge>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-600 dark:text-red-500 bg-red-500/10 px-3 py-1.5 rounded-full border border-red-500/20 shadow-sm">Lịch trình & Giảng dạy</span>
                         </div>
-                        <h1 className="text-4xl font-black tracking-tighter text-stone-900 dark:text-white uppercase leading-none">
-                            {titleText}
-                        </h1>
-                        <p className="text-stone-500 dark:text-stone-400 mt-4 max-w-lg font-medium text-lg leading-relaxed">
+                        <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-stone-900 dark:text-stone-100">{titleText}</h1>
+                        <p className="text-sm font-medium text-stone-500 dark:text-stone-400 mt-3 max-w-lg leading-relaxed">
                             {isStudent ? "Theo dõi lịch học, lịch thi và các tiết học kèm của bạn." : "Quản lý lịch giảng dạy, các lớp phụ trách và ghi chú hằng tuần."}
                         </p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 bg-stone-100/50 dark:bg-white/5 p-2 rounded-[32px] border border-stone-200/50 dark:border-white/5 backdrop-blur-sm">
                         <div className="flex items-center gap-2 px-3">
-                            <Link href="/dashboard/calendar" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                            <Link href="/dashboard/calendar" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-red-600 dark:hover:text-red-400 transition-colors">
                                 <LinkIcon className="w-3 h-3" />
-                                Lịch trường
+                                Lịch học tập
                             </Link>
-                            {isAdmin && (
+                            {(isAdmin || isStaff) && (
                                 <>
                                     <span className="text-stone-300 dark:text-stone-700">•</span>
                                     <Link href="/dashboard/timetable" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
@@ -249,188 +250,117 @@ export default function MySchedulePage() {
                                 </>
                             )}
                         </div>
-                        <Button
-                            variant="primary"
-                            className="rounded-full px-6 h-10 bg-amber-500 hover:bg-amber-600 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-amber-500/20 transition-all"
-                            onClick={() => setCurrentWeek(new Date())}
-                        >
-                            Hôm nay
-                        </Button>
-                        <div className="flex items-center gap-4 px-4 py-2 bg-white dark:bg-stone-800 rounded-full shadow-sm border border-stone-100 dark:border-white/5">
-                            <button
-                                onClick={handlePreviousWeek}
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-amber-500 hover:bg-amber-50 transition-all"
+                        <div className="flex items-center gap-2 bg-white dark:bg-white/5 p-1 rounded-2xl border border-stone-200 dark:border-white/10 shadow-sm">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-xl h-8 px-4 font-bold uppercase tracking-widest text-[10px]"
+                                onClick={() => setCurrentWeek(new Date())}
                             >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <span className="text-sm font-black text-stone-700 dark:text-stone-200 min-w-[120px] text-center uppercase tracking-tighter">
-                                Tháng {currentWeek.getMonth() + 1} / {currentWeek.getFullYear()}
-                            </span>
-                            <button
-                                onClick={handleNextWeek}
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-amber-500 hover:bg-amber-50 transition-all"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
+                                Hôm nay
+                            </Button>
+                            <div className="flex items-center gap-2 border-l border-stone-200 dark:border-stone-800 pl-2 pr-1">
+                                <button
+                                    onClick={handlePreviousWeek}
+                                    className="p-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/10 transition-colors"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <span className="text-xs font-bold text-stone-700 dark:text-stone-300 min-w-[120px] text-center uppercase tracking-widest">
+                                    Tháng {currentWeek.getMonth() + 1} / {currentWeek.getFullYear()}
+                                </span>
+                                <button
+                                    onClick={handleNextWeek}
+                                    className="p-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-white/10 transition-colors"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+
                 {loading ? (
-                    <div className="h-[600px] flex flex-col items-center justify-center gap-4 bg-white/50 dark:bg-stone-900/50 rounded-[48px] border-4 border-dashed border-stone-200 dark:border-white/5">
-                        <LoadingState message="Đang đồng bộ dữ liệu..." />
+                    <div className="h-[600px] flex flex-col items-center justify-center gap-4 bg-white/10 dark:bg-white/5 rounded-[32px] border-2 border-dashed border-stone-200 dark:border-stone-800">
+                        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                        <span className="text-xs font-bold tracking-widest uppercase text-stone-400">Đang đồng bộ...</span>
                     </div>
                 ) : error ? (
-                    <Alert variant="danger" title="Lỗi hệ thống" className="rounded-[32px] p-8 shadow-xl">
+                    <Alert variant="danger" title="Lỗi hệ thống" className="rounded-2xl p-8 shadow-xl">
                         {error}
                         <Button variant="ghost" className="mt-4 underline" onClick={fetchMySchedule}>Thử lại ngay</Button>
                     </Alert>
                 ) : slots.length === 0 ? (
-                    <div className="bg-white dark:bg-[#1C1917] rounded-[48px] border border-dashed border-stone-300 dark:border-white/10 p-20 shadow-xl overflow-hidden relative">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-30" />
+                    <div className="bg-white/50 dark:bg-stone-900/50 rounded-[32px] border-2 border-dashed border-stone-200 dark:border-stone-800 p-20 shadow-sm text-center">
                         <EmptyState
                             title="Lịch trình tuần này trống"
-                            description={isStudent ? "Tuyệt quá! Bạn chưa có lịch học nào trong tuần này. Hãy dành thời gian này để nghỉ ngơi hoặc tự ôn tập nhé." : "Hiện chưa có tiết dạy nào được xếp cho bạn trong tuần này. Nếu thấy sai sót, vui lòng liên hệ admin."}
-                            icon={<Calendar className="w-16 h-16 text-amber-200 mb-6" />}
-                            className="py-10"
+                            description={isStudent ? "Bạn chưa có lịch học nào trong tuần này." : "Hiện chưa có tiết dạy nào được xếp cho bạn trong tuần này."}
+                            icon={<Calendar className="w-12 h-12 text-stone-300 mb-6" />}
                         />
                     </div>
                 ) : (
-                    <div className="glass-card rounded-[48px] shadow-2xl border border-white/20 dark:border-white/5 overflow-hidden transition-all duration-700">
-                        <div className="overflow-x-auto scrollbar-hide">
-                            <div className="min-w-[1100px] relative">
-                                {/* Timeline Background Grid */}
+                    <div className="bg-white dark:bg-gray-800 rounded-[32px] shadow-premium-lg border border-gray-100 dark:border-white/5 overflow-hidden">
+                        <div className="overflow-x-auto custom-scrollbar">
+                            <div className="min-w-[1000px] relative">
+                                {/* Timeline Grid */}
                                 <div className="absolute inset-0 pt-[80px]">
                                     {HOUR_SLOTS.map((hour) => (
-                                        <div key={hour} className="h-[100px] border-t border-stone-100 dark:border-white/5 flex items-start group">
-                                            <span className="w-16 text-right pr-4 py-2 text-[10px] font-black text-stone-300 dark:text-stone-600 group-hover:text-amber-500 transition-colors">
+                                        <div key={hour} className="h-[100px] border-t border-gray-100 dark:border-white/5 flex items-start">
+                                            <span className="w-16 text-right pr-4 py-2 text-[10px] font-mono text-muted">
                                                 {hour}:00
                                             </span>
-                                            <div className="flex-1 h-full border-l border-stone-100 dark:border-white/5" />
+                                            <div className="flex-1 h-full border-l border-gray-100 dark:border-white/5" />
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Header Days */}
-                                <div className="min-h-[80px] bg-stone-50/80 dark:bg-stone-900/80 backdrop-blur-xl border-b border-stone-200 dark:border-white/5 sticky top-0 z-30 flex items-stretch py-2">
-                                    <div className="w-16 shrink-0 flex items-center justify-center border-r border-stone-100 dark:border-white/5">
-                                        <Clock className="w-4 h-4 text-stone-300" />
+                                {/* Days Header */}
+                                <div className="min-h-[80px] bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-100 dark:border-white/5 sticky top-0 z-30 flex items-stretch py-2">
+                                    <div className="w-16 shrink-0 flex items-center justify-center border-r border-gray-100 dark:border-white/5">
+                                        <Clock className="w-4 h-4 text-muted" />
                                     </div>
                                     <div className="flex-1 grid grid-cols-7">
-                                        {DAYS.map((day, i) => {
-                                            const currentDateStr = formatDateISO(weekDates[i]);
-                                            const allDayEvents = events.filter(e => {
-                                                const start = e.start_date;
-                                                const end = e.end_date || e.start_date;
-                                                return e.is_all_day && currentDateStr >= start && currentDateStr <= end;
-                                            });
-
-                                            return (
-                                                <div
-                                                    key={day}
-                                                    className={cn(
-                                                        "flex flex-col items-center justify-start border-l border-stone-100 dark:border-white/5 transition-colors px-1",
-                                                        isToday(weekDates[i]) ? "bg-amber-500/5" : ""
-                                                    )}
-                                                >
-                                                    <span className={cn(
-                                                        "text-[10px] font-black uppercase tracking-widest mb-1",
-                                                        isToday(weekDates[i]) ? "text-amber-600" : "text-stone-400"
-                                                    )}>{day}</span>
-                                                    <div className={cn(
-                                                        "text-lg font-black w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-2xl transition-all mb-2",
-                                                        isToday(weekDates[i]) ? "bg-amber-500 text-white shadow-lg shadow-amber-500/30" : "text-stone-900 dark:text-stone-100"
-                                                    )}>{weekDates[i].getDate()}</div>
-
-                                                    {/* All Day Events */}
-                                                    <div className="w-full flex flex-col gap-1 px-1 max-h-16 overflow-y-auto scrollbar-hide">
-                                                        {allDayEvents.map(evt => (
-                                                            <div
-                                                                key={evt.id}
-                                                                className="text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 w-full truncate border bg-opacity-10 dark:bg-opacity-20"
-                                                                style={{ color: evt.color, borderColor: evt.color + '40', backgroundColor: evt.color + '15' }}
-                                                                title={evt.title}
-                                                            >
-                                                                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: evt.color }} />
-                                                                <span className="truncate">{evt.title}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                        {DAYS.map((day, i) => (
+                                            <div
+                                                key={day}
+                                                className={cn(
+                                                    "flex flex-col items-center justify-center border-l border-gray-100 dark:border-white/5 transition-colors",
+                                                    isToday(weekDates[i]) ? "bg-primary/5 shadow-inner" : ""
+                                                )}
+                                            >
+                                                <span className={cn(
+                                                    "text-[10px] font-bold uppercase tracking-widest mb-1",
+                                                    isToday(weekDates[i]) ? "text-primary" : "text-muted"
+                                                )}>{day}</span>
+                                                <div className={cn(
+                                                    "text-lg font-bold w-10 h-10 flex items-center justify-center rounded-xl transition-all",
+                                                    isToday(weekDates[i]) ? "bg-primary text-white shadow-lg shadow-primary/30" : "text-stone-900 dark:text-stone-100"
+                                                )}>{weekDates[i].getDate()}</div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
-                                {/* Slots Container */}
+                                {/* Slots Body */}
                                 <div className="relative z-10 h-[calc(100px*16)]">
                                     <div className="flex pl-16 h-full">
                                         {DAYS.map((_, dayIndex) => {
-                                            const currentDateStr = formatDateISO(weekDates[dayIndex]);
-
-                                            // Regular Timetable Slots
                                             const daySlots = slots.filter(s => s.day_of_week === dayIndex);
                                             const overlapData = calculateOverlap(daySlots);
 
-                                            // Timed Academic Events
-                                            const timedEvents = events.filter(e => {
-                                                const start = e.start_date;
-                                                const end = e.end_date || e.start_date;
-                                                return !e.is_all_day && e.start_time && e.end_time && currentDateStr >= start && currentDateStr <= end;
-                                            });
-
                                             return (
-                                                <div key={dayIndex} className="flex-1 relative border-l border-stone-100 dark:border-white/5 min-h-full group hover:bg-stone-50/30 dark:hover:bg-white/2 transition-colors">
-
-                                                    {/* Timed Events (Calendar) */}
-                                                    {timedEvents.map(evt => {
-                                                        const top = getPosition(evt.start_time!);
-                                                        const height = Math.max(getDuration(evt.start_time!, evt.end_time!), 45); // minimum height
-
-                                                        return (
-                                                            <div
-                                                                key={evt.id}
-                                                                className="absolute transition-all duration-300 z-[5] w-[95%] left-[2.5%]"
-                                                                style={{
-                                                                    top: `${(top / 60) * 100}px`,
-                                                                    height: `${(height / 60) * 100}px`,
-                                                                }}
-                                                            >
-                                                                <div
-                                                                    className="w-full h-full p-2 rounded-[16px] border border-dashed flex flex-col justify-between overflow-hidden relative shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all bg-white dark:bg-stone-900"
-                                                                    style={{ borderColor: evt.color + '60', color: evt.color }}
-                                                                >
-                                                                    <div className="absolute top-0 right-0 w-16 h-16 opacity-10 rounded-full -mr-8 -mt-8" style={{ backgroundColor: evt.color }} />
-                                                                    <div>
-                                                                        <div className="flex items-center gap-1.5 mb-1">
-                                                                            <Calendar className="w-2.5 h-2.5" />
-                                                                            <span className="text-[9px] font-black uppercase tracking-wider">{evt.event_type}</span>
-                                                                        </div>
-                                                                        <div className="text-[10px] font-bold leading-tight line-clamp-2 text-stone-900 dark:text-white">
-                                                                            {evt.title}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="text-[8px] font-bold opacity-70 mt-1 flex items-center gap-1">
-                                                                        <Clock className="w-2.5 h-2.5" />
-                                                                        <span>{evt.start_time} - {evt.end_time}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-
-                                                    {/* Timetable Slots */}
+                                                <div key={dayIndex} className="flex-1 relative border-l border-gray-100 dark:border-white/5 group hover:bg-gray-50/30 dark:hover:bg-white/2 transition-colors">
                                                     {daySlots.map((slot) => {
                                                         const top = getPosition(slot.start_time);
                                                         const height = getDuration(slot.start_time, slot.end_time);
                                                         const theme = getTheme(slot.subject?.code);
-                                                        const isTutoring = !!slot.student_id;
                                                         const meta = overlapData.get(slot.id) || { width: 100, offset: 0 };
 
                                                         return (
                                                             <div
                                                                 key={slot.id}
-                                                                className="absolute transition-all duration-300 z-10 group/slot"
+                                                                className="absolute transition-all duration-300 z-10 p-1 group/slot"
                                                                 style={{
                                                                     top: `${(top / 60) * 100}px`,
                                                                     height: `${(height / 60) * 100}px`,
@@ -440,51 +370,35 @@ export default function MySchedulePage() {
                                                                 }}
                                                             >
                                                                 <div className={cn(
-                                                                    "w-full h-full p-3 rounded-[24px] border-2 bg-white dark:bg-stone-900 shadow-sm group-hover/slot:shadow-xl group-hover/slot:-translate-y-1 transition-all duration-300 overflow-hidden relative",
-                                                                    theme.border, theme.shadow
+                                                                    "w-full h-full p-3 rounded-2xl border bg-white dark:bg-gray-700/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all group-hover/slot:scale-[1.02]",
+                                                                    theme.bg, theme.border
                                                                 )}>
-                                                                    <div className={cn("absolute top-0 right-0 w-16 h-16 opacity-10 rounded-full -mr-8 -mt-8", theme.dot)} />
-
-                                                                    <div className="flex items-center gap-2 mb-2">
-                                                                        <div className={cn("w-2 h-2 rounded-full", theme.dot)} />
-                                                                        <span className={cn("text-[9px] font-black uppercase tracking-[0.2em]", theme.text)}>
+                                                                    <div className="flex items-center gap-2 mb-1.5">
+                                                                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", theme.dot)} />
+                                                                        <span className={cn("text-[9px] font-black uppercase tracking-[0.15em]", theme.text)}>
                                                                             {slot.subject?.code || "BH-EDU"}
                                                                         </span>
-                                                                        {isTutoring && (
-                                                                            <Badge className="h-4 p-0 px-1.5 text-[7px] bg-amber-500 text-white border-none shadow-sm">KÈM</Badge>
+                                                                        {slot.student_id && (
+                                                                            <Badge variant="danger" className="h-4 px-1 text-[7px] uppercase font-black">KÈM</Badge>
                                                                         )}
                                                                     </div>
 
-                                                                    <div className="text-xs font-black text-stone-900 dark:text-white leading-tight mb-2 line-clamp-2">
+                                                                    <div className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-tight mb-2 line-clamp-2">
                                                                         {slot.subject?.name}
                                                                     </div>
 
-                                                                    <div className="grid grid-cols-1 gap-1.5 opacity-80">
-                                                                        <div className="flex items-center gap-2 text-[9px] font-bold text-stone-500">
-                                                                            <Clock className="w-3 h-3 text-stone-400" />
+                                                                    <div className="space-y-1.5">
+                                                                        <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted uppercase tracking-wider">
+                                                                            <Clock className="w-3 h-3" />
                                                                             <span>{slot.start_time} - {slot.end_time}</span>
                                                                         </div>
                                                                         {slot.room && (
-                                                                            <div className="flex items-center gap-2 text-[9px] font-bold text-stone-500">
-                                                                                <MapPin className="w-3 h-3 text-red-400" />
-                                                                                <span className="text-stone-900 dark:text-stone-300">{slot.room}</span>
+                                                                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted uppercase tracking-wider">
+                                                                                <MapPin className="w-3 h-3" />
+                                                                                <span className="truncate">{slot.room}</span>
                                                                             </div>
                                                                         )}
-                                                                        <div className="flex items-center gap-2 text-[9px] font-bold text-stone-500">
-                                                                            <Users className="w-3 h-3 text-emerald-400" />
-                                                                            <span className="truncate">{isStudent ? `GV: ${slot.teacher?.full_name}` : (slot.student?.full_name || slot.class?.name || "Lớp học")}</span>
-                                                                        </div>
                                                                     </div>
-
-                                                                    {(slot.weekly_note || slot.notes) && (
-                                                                        <div className="absolute bottom-2 right-2 group/note">
-                                                                            <AlertCircle className="w-4 h-4 text-amber-400 opacity-50 group-hover/note:opacity-100 transition-opacity" />
-                                                                            <div className="absolute bottom-full right-0 mb-2 w-48 p-3 bg-stone-900 text-white text-[10px] rounded-2xl opacity-0 group-hover/note:opacity-100 pointer-events-none transition-all shadow-2xl z-50">
-                                                                                <p className="font-bold mb-1 text-amber-400">Ghi chú tiết học:</p>
-                                                                                {slot.weekly_note || slot.notes}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                         );
@@ -498,43 +412,33 @@ export default function MySchedulePage() {
                         </div>
                     </div>
                 )}
-
-                {/* Footer Legend */}
-                {!loading && slots.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-center gap-10 py-6">
-                        {Object.entries(SUBJECT_THEMES).filter(([k]) => k !== 'default').map(([key, theme]) => (
-                            <div key={key} className="flex items-center gap-3">
-                                <div className={cn("w-3 h-3 rounded-full shadow-lg", theme.dot)} />
-                                <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{key}</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
             </div>
 
-            <style jsx global>{`
-                .glass-card {
-                    background: rgba(255, 255, 255, 0.7);
-                    backdrop-filter: blur(20px);
-                }
-                .dark .glass-card {
-                    background: rgba(28, 25, 23, 0.7);
-                }
-                .scrollbar-hide::-webkit-scrollbar {
-                    display: none;
-                }
-                .scrollbar-hide {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
-                @keyframes fade-in {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .animate-in {
-                    animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-            `}</style>
+            <div className="flex flex-wrap items-center justify-center gap-6 mt-8 p-4 glass-premium rounded-3xl border border-white/10">
+                <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-blue-500" />
+                    <span className="text-[10px] font-black text-muted uppercase tracking-widest">Toán học</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-purple-500" />
+                    <span className="text-[10px] font-black text-muted uppercase tracking-widest">Ngữ văn</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-emerald-500" />
+                    <span className="text-[10px] font-black text-muted uppercase tracking-widest">Tiếng Anh</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full shadow-sm bg-red-500" />
+                    <span className="text-[10px] font-black text-muted uppercase tracking-widest">Học kèm</span>
+                </div>
+            </div>
         </div>
     );
 }
+
+const SUBJECT_STYLES = {
+    glass: "glass-premium rounded-[32px] border border-white/20 dark:border-white/5 shadow-xl",
+    text_soft: "text-stone-500 dark:text-stone-400 font-medium",
+    heading: "text-stone-900 dark:text-white font-black uppercase tracking-tighter"
+};
+

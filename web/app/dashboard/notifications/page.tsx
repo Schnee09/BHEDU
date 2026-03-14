@@ -2,14 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card, CardBody } from "@/components/ui/Card";
+import { Card, CardHeader, CardBody } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/badge";
 import { Icons } from "@/components/ui/Icons";
+import { Bell, Calendar, Check, Mail, Info, AlertTriangle, ChevronRight, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Notification {
   id: string;
   title: string;
   message: string;
   is_read: boolean;
+  type?: 'info' | 'success' | 'warning' | 'error';
   created_at: string;
 }
 
@@ -66,72 +70,120 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-4xl mx-auto flex justify-center items-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-3 text-stone-500">
-          <Icons.Progress className="w-8 h-8 animate-spin text-stone-600" />
-          <p>Đang tải thông báo...</p>
-        </div>
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin text-amber-500 mx-auto" />
+        <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.3em]">Hệ thống đang đồng bộ thông báo...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
-            <Icons.Notifications className="w-8 h-8 text-stone-600" />
-            Thông báo
-          </h1>
-          <p className="text-stone-500 mt-1">Cập nhật với các cảnh báo mới nhất của bạn</p>
+    <div className="max-w-4xl mx-auto px-4 py-8 md:py-12 space-y-10">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-stone-200/50 dark:border-white/5">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-8 bg-amber-500 rounded-full shadow-accent-glow" />
+            <h1 className="text-3xl md:text-5xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+              Trung tâm <span className="text-amber-500">Thông báo</span>
+            </h1>
+          </div>
+          <p className="text-xs font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] pl-4">
+            Cập nhật những diễn biến quan trọng nhất từ hệ thống
+          </p>
+        </div>
+        <div className="hidden md:block">
+          <Badge variant="default" className="px-3 py-1 bg-stone-100 dark:bg-white/5 text-stone-500 font-bold uppercase tracking-widest text-[9px]">
+            {notifications.filter(n => !n.is_read).length} thông báo mới
+          </Badge>
         </div>
       </div>
 
       {notifications.length === 0 ? (
-        <Card>
-          <CardBody className="text-center py-12 text-stone-500">
-            <Icons.Notifications className="w-12 h-12 mx-auto mb-3 text-stone-400" />
-            <p>Chưa có thông báo nào</p>
-          </CardBody>
-        </Card>
+        <div className="py-24 text-center space-y-6">
+          <div className="w-20 h-20 bg-stone-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto border border-dashed border-stone-200 dark:border-white/10">
+            <Bell className="w-10 h-10 text-stone-300" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-2xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight">Hộp thư trống</p>
+            <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">Hiện tại không có thông báo nào cần xử lý</p>
+          </div>
+        </div>
       ) : (
-        <div className="space-y-4">
-          {notifications.map((notification) => (
-            <Card 
-              key={notification.id}
-              className={`transition-colors cursor-pointer hover:shadow-md ${
-                notification.is_read ? "bg-white" : "bg-stone-50 border-stone-200"
-              }`}
-              onClick={() => !notification.is_read && markAsRead(notification.id)}
-            >
-              <CardBody className="flex gap-4">
-                <div className={`mt-1 p-2 rounded-full flex-shrink-0 ${
-                  notification.is_read ? "bg-stone-100 text-stone-500" : "bg-stone-200 text-stone-700"
-                }`}>
-                  <Icons.Notifications className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start gap-4">
-                    <h3 className={`font-semibold text-lg mb-1 ${
-                      notification.is_read ? "text-stone-900" : "text-stone-900"
-                    }`}>
-                      {notification.title}
-                    </h3>
-                    {!notification.is_read && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-200 text-stone-800">
-                        Mới
-                      </span>
-                    )}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-2 mb-4">
+            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest pl-3 border-l-4 border-amber-500">DANH SÁCH THÔNG BÁO GẦN ĐÂY</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 stagger-children">
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                onClick={() => !notification.is_read && markAsRead(notification.id)}
+                className={cn(
+                  "group relative overflow-hidden transition-all duration-300 cursor-pointer rounded-2xl border",
+                  notification.is_read
+                    ? "bg-white/40 dark:bg-stone-900/40 border-stone-100 dark:border-white/5 opacity-80"
+                    : "bg-white dark:bg-stone-900 border-stone-200 dark:border-white/10 shadow-sm hover:border-amber-500/40 hover:shadow-md"
+                )}
+              >
+                <div className="p-5 flex items-start gap-4 relative z-10">
+                  <div className={cn(
+                    "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:rotate-3",
+                    notification.is_read
+                      ? "bg-stone-50 dark:bg-white/5 text-stone-400"
+                      : "bg-amber-500/10 text-amber-500 shadow-sm"
+                  )}>
+                    {notification.is_read ? <Mail className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
                   </div>
-                  <p className="text-stone-600 mb-3 leading-relaxed">{notification.message}</p>
-                  <div className="flex items-center gap-2 text-xs text-stone-500">
-                    <Icons.Calendar className="w-4 h-4" />
-                    {new Date(notification.created_at).toLocaleString('vi-VN')}
+
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center justify-between gap-4">
+                      <h3 className={cn(
+                        "font-black uppercase tracking-tight truncate transition-colors",
+                        notification.is_read ? "text-stone-500 dark:text-stone-400 text-sm" : "text-stone-900 dark:text-white text-base group-hover:text-amber-600"
+                      )}>
+                        {notification.title}
+                      </h3>
+                      {!notification.is_read && (
+                        <Badge variant="warning" className="text-[8px] px-1.5 py-0 shadow-amber-glow animate-pulse">NEW</Badge>
+                      )}
+                    </div>
+
+                    <p className={cn(
+                      "text-xs leading-relaxed transition-colors",
+                      notification.is_read ? "text-stone-400 dark:text-stone-500 font-medium" : "text-stone-600 dark:text-stone-300 font-bold"
+                    )}>
+                      {notification.message}
+                    </p>
+
+                    <div className="flex items-center gap-3 pt-2">
+                      <div className="flex items-center gap-1.5 text-[9px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {new Date(notification.created_at).toLocaleString('vi-VN', {
+                          day: '2-digit', month: '2-digit', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </div>
+                      {notification.is_read && (
+                        <div className="flex items-center gap-1 text-[9px] font-black text-emerald-500 uppercase tracking-widest">
+                          <Check className="w-3 h-3" /> Đã đọc
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="self-center flex-shrink-0 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                    <ChevronRight className="w-5 h-5 text-stone-300" />
                   </div>
                 </div>
-              </CardBody>
-            </Card>
-          ))}
+
+                {/* Visual indicator for unread */}
+                {!notification.is_read && (
+                  <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

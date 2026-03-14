@@ -1,15 +1,6 @@
-'use client';
-
-/**
- * School Metrics Component
- * 
- * Displays overall school statistics with beautiful stat cards
- * and trend indicators.
- */
-
 import { useMemo } from 'react';
 import { Card, StatCard } from '@/components/ui/Card';
-import { Icons } from '@/components/ui/Icons';
+import { Users, BookOpen, GraduationCap, BarChart3, Clock, CheckCircle2 } from 'lucide-react';
 
 interface SchoolMetricsProps {
     totalStudents: number;
@@ -40,46 +31,46 @@ export default function SchoolMetrics({
         {
             label: 'Tổng số học sinh',
             value: totalStudents,
-            icon: <Icons.Students className="w-6 h-6" />,
+            icon: <Users className="w-5 h-5" />,
             color: 'blue' as const,
             trend: trends?.students,
             suffix: '',
         },
         {
-            label: 'Giáo viên',
+            label: 'Đội ngũ giáo viên',
             value: totalTeachers,
-            icon: <Icons.Teachers className="w-6 h-6" />,
+            icon: <BookOpen className="w-5 h-5" />,
             color: 'purple' as const,
             suffix: '',
         },
         {
-            label: 'Lớp học',
+            label: 'Số lượng lớp học',
             value: totalClasses,
-            icon: <Icons.Classes className="w-6 h-6" />,
-            color: 'green' as const,
+            icon: <LayersIcon className="w-5 h-5" />,
+            color: 'slate' as const,
             suffix: '',
         },
         {
-            label: 'Điểm TB toàn trường',
+            label: 'Điểm trung bình (GPA)',
             value: averageGPA.toFixed(2),
-            icon: <Icons.Grades className="w-6 h-6" />,
-            color: 'orange' as const,
+            icon: <GraduationCap className="w-5 h-5" />,
+            color: 'amber' as const,
             trend: trends?.gpa,
-            suffix: '/10',
+            suffix: '',
         },
         {
-            label: 'Tỷ lệ đi học',
+            label: 'Tỷ lệ chuyên cần',
             value: attendanceRate.toFixed(1),
-            icon: <Icons.Attendance className="w-6 h-6" />,
-            color: 'slate' as const,
+            icon: <Clock className="w-5 h-5" />,
+            color: 'blue' as const,
             trend: trends?.attendance,
             suffix: '%',
         },
         {
             label: 'Tỷ lệ đạt yêu cầu',
             value: passRate.toFixed(1),
-            icon: <Icons.Success className="w-6 h-6" />,
-            color: 'blue' as const,
+            icon: <CheckCircle2 className="w-5 h-5" />,
+            color: 'green' as const,
             suffix: '%',
         },
     ], [totalStudents, totalTeachers, totalClasses, averageGPA, attendanceRate, passRate, trends]);
@@ -88,22 +79,14 @@ export default function SchoolMetrics({
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                 {[...Array(6)].map((_, i) => (
-                    <Card key={i} className="p-6 animate-pulse">
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <div className="h-4 bg-muted/20 rounded w-24 mb-2" />
-                                <div className="h-8 bg-muted/20 rounded w-16" />
-                            </div>
-                            <div className="w-12 h-12 bg-muted/20 rounded-lg" />
-                        </div>
-                    </Card>
+                    <div key={i} className="h-32 bg-stone-100 dark:bg-white/5 rounded-2xl animate-pulse border border-stone-200/50 dark:border-white/5" />
                 ))}
             </div>
         );
     }
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 stagger-children">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 animate-in fade-in slide-in-from-top-4 duration-700">
             {metrics.map((metric, index) => (
                 <StatCard
                     key={index}
@@ -118,6 +101,16 @@ export default function SchoolMetrics({
                 />
             ))}
         </div>
+    );
+}
+
+function LayersIcon({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <polygon points="12 2 2 7 12 12 22 7 12 2" />
+            <polyline points="2 17 12 22 22 17" />
+            <polyline points="2 12 12 17 22 12" />
+        </svg>
     );
 }
 

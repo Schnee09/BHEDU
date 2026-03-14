@@ -31,7 +31,7 @@ describe('Card Components', () => {
       );
 
       const card = container.firstChild;
-      expect(card).toHaveClass('rounded-2xl', 'glass-card', 'text-foreground');
+      expect(card).toHaveClass('rounded-3xl', 'glass-premium', 'text-foreground');
     });
 
     it('applies hover class when hover is true', () => {
@@ -40,7 +40,7 @@ describe('Card Components', () => {
       );
 
       const card = container.firstChild;
-      expect(card).toHaveClass('hover:shadow-lg', 'hover:-translate-y-0.5');
+      expect(card).toHaveClass('hover:shadow-ultra', 'hover:-translate-y-1');
     });
 
     it('handles click events', () => {
@@ -417,7 +417,7 @@ describe('Card Components', () => {
       );
 
       const card = container.firstChild;
-      expect(card).toHaveClass('glass-card', 'text-foreground');
+      expect(card).toHaveClass('glass-premium', 'text-foreground');
     });
 
     it('applies transition classes for smooth interactions', () => {
@@ -426,7 +426,7 @@ describe('Card Components', () => {
       );
 
       const card = container.firstChild;
-      expect(card).toHaveClass('transition-all', 'duration-200');
+      expect(card).toHaveClass('transition-all', 'duration-500');
     });
 
     it('maintains consistent spacing', () => {

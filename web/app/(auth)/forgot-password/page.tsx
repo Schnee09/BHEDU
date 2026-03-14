@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import GuestGuard from "@/components/GuestGuard";
-import { Mail, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { Button, Input, LoadingSpinner } from "@/components/ui";
+import { Icons } from "@/components/ui/Icons";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -29,100 +31,92 @@ export default function ForgotPasswordPage() {
 
   return (
     <GuestGuard>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 px-4 py-12">
-        <div className="w-full max-w-md">
-          {/* Card with glass effect */}
-          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-2xl shadow-2xl shadow-amber-500/10 dark:shadow-amber-500/10 border border-amber-100/50 dark:border-gray-700 p-8">
-            {/* Back Link */}
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors mb-6"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Quay lại đăng nhập
-            </Link>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="w-full max-w-[480px] relative z-10"
+      >
+        <div className="glass-premium rounded-[40px] shadow-ultra border border-white/20 dark:border-white/5 p-8 sm:p-12 w-full">
+          {/* Back Link */}
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 text-[11px] font-bold text-stone-500 dark:text-stone-400 hover:text-primary dark:hover:text-white uppercase tracking-widest transition-all mb-10 group"
+          >
+            <Icons.Back className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Quay lại đăng nhập
+          </Link>
 
-            {/* Header */}
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-3 rounded-2xl shadow-lg shadow-amber-500/30">
-                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                  </svg>
-                </div>
-              </div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Quên mật khẩu?
-              </h2>
-              <p className="text-slate-600 dark:text-gray-300">Nhập email của bạn để nhận hướng dẫn đặt lại mật khẩu</p>
-            </div>
-
-            <form onSubmit={handleReset} className="space-y-5">
-              {/* Email Field */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">
-                  Địa chỉ Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-500" />
-                  <input
-                    className="w-full border-2 border-slate-200 dark:border-gray-600 pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white dark:bg-gray-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    type="email"
-                    placeholder="ban@example.com"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="flex justify-center mb-6">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="bg-primary p-5 rounded-[28px] shadow-2xl shadow-primary/30"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Đang gửi...
-                  </>
-                ) : (
-                  "Gửi liên kết đặt lại"
-                )}
-              </button>
-            </form>
-
-            {/* Error/Success Messages */}
-            {error && (
-              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl">
-                <p className="text-red-700 dark:text-red-300 text-sm font-medium flex items-center gap-2">
-                  <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  {error}
-                </p>
-              </div>
-            )}
-            {message && (
-              <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl">
-                <p className="text-green-700 dark:text-green-300 text-sm font-medium flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                  {message}
-                </p>
-              </div>
-            )}
-
-            {/* Sign Up Link */}
-            <p className="text-center text-sm mt-6 text-slate-600 dark:text-gray-300">
-              Chưa có tài khoản?{" "}
-              <a href="/signup" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold hover:underline transition-colors">
-                Tạo tài khoản
-              </a>
+                <Icons.Lock className="w-12 h-12 text-white" />
+              </motion.div>
+            </div>
+            <h2 className="text-4xl font-serif font-bold text-stone-900 dark:text-white mb-2 italic tracking-tight uppercase">
+              Quên mật khẩu?
+            </h2>
+            <p className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-[0.4em] font-sans">
+              Reset your Access Security
             </p>
           </div>
+
+          <form onSubmit={handleReset} className="space-y-6">
+            <Input
+              label="Địa chỉ Email"
+              type="email"
+              placeholder="ban@example.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              leftIcon={<Icons.Mail className="w-4 h-4" />}
+            />
+
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={loading}
+              fullWidth
+              className="h-14 mt-4 shadow-xl shadow-primary/20"
+            >
+              <span className="text-sm font-bold uppercase tracking-widest">
+                {loading ? "Đang gửi yêu cầu..." : "Gửi liên kết đặt lại"}
+              </span>
+              {!loading && <Icons.ArrowRight className="w-5 h-5 ml-2" />}
+            </Button>
+          </form>
+
+          <AnimatePresence>
+            {error && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 p-5 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-xl">
+                <div className="text-red-800 dark:text-red-300 text-xs font-bold flex items-center gap-3">
+                  <Icons.Error className="w-5 h-5 flex-shrink-0" />
+                  {error}
+                </div>
+              </motion.div>
+            )}
+            {message && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 p-5 bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 rounded-xl">
+                <p className="text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-3">
+                  <Icons.Success className="w-5 h-5 flex-shrink-0" />
+                  {message}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <p className="text-center text-[11px] font-bold mt-10 text-stone-500 dark:text-stone-400 uppercase tracking-widest">
+            Chưa có tài khoản?{" "}
+            <Link href="/signup" className="text-primary dark:text-white hover:underline underline-offset-4">
+              Tạo tài khoản
+            </Link>
+          </p>
         </div>
-      </div>
+      </motion.div>
     </GuestGuard>
   );
 }

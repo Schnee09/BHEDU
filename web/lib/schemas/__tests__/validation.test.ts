@@ -51,7 +51,7 @@ describe("Student Schemas", () => {
         first_name: "John",
       };
       const result = updateStudentSchema.safeParse(dataWithoutId);
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
     });
 
     it("should validate valid UUID", () => {

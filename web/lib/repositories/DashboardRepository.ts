@@ -8,6 +8,9 @@ export interface DashboardStats {
     totalClasses: number;
     totalAssignments: number;
     attendanceToday: number;
+    averageGPA?: number;
+    attendanceRate?: number;
+    passRate?: number;
 }
 
 export interface ActivityLog {
@@ -41,6 +44,17 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
         // Determine visibility
         const isStaff = role === "super_admin" || role === "admin" ||
             role === "staff";
+        const isStudent = role === "student";
+
+        let studentClassIds: string[] = [];
+        if (isStudent) {
+            const { data } = await this.supabase
+                .from("enrollments")
+                .select("class_id")
+                .eq("student_id", profileId)
+                .in("status", ["enrolled", "active"]);
+            studentClassIds = data?.map((e: any) => e.class_id) || [];
+        }
 
         const [
             studentsCount,
@@ -48,6 +62,7 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
             classesCount,
             assignmentsCount,
             attendanceCount,
+            schoolMetricsRpc,
         ] = await Promise.all([
             // 1. Total Students
             this.supabase
@@ -67,27 +82,65 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
                     count: "exact",
                     head: true,
                 })
+                : isStudent
+                ? (studentClassIds.length > 0
+                    ? this.supabase.from("classes").select("id", {
+                        count: "exact",
+                        head: true,
+                    }).in("id", studentClassIds)
+                    : Promise.resolve({ count: 0 }))
                 : this.supabase.from("classes").select("id", {
                     count: "exact",
                     head: true,
                 }).eq("teacher_id", profileId),
 
             // 4. Assignments (role-based)
-            this.getAssignmentCount(isStaff, profileId),
+            this.getAssignmentCount(
+                isStaff,
+                isStudent,
+                profileId,
+                studentClassIds,
+            ),
 
             // 5. Attendance Today
-            this.supabase
-                .from("attendance")
-                .select("id", { count: "exact", head: true })
-                .eq("date", today),
+            isStudent
+                ? this.supabase
+                    .from("attendance")
+                    .select("id", { count: "exact", head: true })
+                    .eq("date", today)
+                    .eq("student_id", profileId)
+                : this.supabase
+                    .from("attendance")
+                    .select("id", { count: "exact", head: true })
+                    .eq("date", today),
+
+            // 6. Global Analytics from RPC (only needed for Staff/Teachers)
+            (isStaff || role === "teacher")
+                ? this.supabase.rpc("get_school_metrics")
+                : Promise.resolve({ data: null }),
         ]);
 
+        const schoolMetrics =
+            (schoolMetricsRpc && Array.isArray(schoolMetricsRpc?.data) &&
+                    schoolMetricsRpc.data.length > 0)
+                ? schoolMetricsRpc.data[0]
+                : null;
+
         return {
-            totalStudents: studentsCount.count || 0,
-            totalTeachers: teachersCount.count || 0,
-            totalClasses: classesCount.count || 0,
-            totalAssignments: assignmentsCount.count || 0,
-            attendanceToday: attendanceCount.count || 0,
+            totalStudents: studentsCount?.count || 0,
+            totalTeachers: teachersCount?.count || 0,
+            totalClasses: classesCount?.count || 0,
+            totalAssignments: assignmentsCount?.count || 0,
+            attendanceToday: attendanceCount?.count || 0,
+            averageGPA: schoolMetrics
+                ? parseFloat(schoolMetrics.average_gpa)
+                : undefined,
+            attendanceRate: schoolMetrics
+                ? parseFloat(schoolMetrics.attendance_rate)
+                : undefined,
+            passRate: schoolMetrics
+                ? parseFloat(schoolMetrics.pass_rate)
+                : undefined,
         };
     }
 
@@ -133,12 +186,23 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
 
     private async getAssignmentCount(
         isStaff: boolean,
+        isStudent: boolean,
         profileId: string,
+        studentClassIds: string[] = [],
     ): Promise<{ count: number }> {
         if (isStaff) {
             const { count } = await this.supabase
                 .from("assignments")
                 .select("id", { count: "exact", head: true });
+            return { count: count || 0 };
+        }
+
+        if (isStudent) {
+            if (studentClassIds.length === 0) return { count: 0 };
+            const { count } = await this.supabase
+                .from("assignments")
+                .select("id", { count: "exact", head: true })
+                .in("class_id", studentClassIds);
             return { count: count || 0 };
         }
 

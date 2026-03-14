@@ -1,0 +1,102 @@
+/* ============================================
+   PREMIUM UI UTILITIES (Glassmorphism & Motion)
+   ============================================ */
+
+/* Glass Effects - Refined for Light Mode visibility */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  /* Stronger border for light mode */
+}
+
+.dark .glass {
+  background: rgba(30, 41, 59, 0.4);
+  /* Slate/Gray tint */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .glass-card {
+  background: rgba(20, 20, 25, 0.6);
+  /* Warm dark tint */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-color: rgba(245, 166, 35, 0.4);
+  /* Golden Amber Border on Hover */
+}
+
+.dark .glass-card:hover {
+  box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.4);
+  border-color: rgba(245, 166, 35, 0.3);
+}
+
+/* Premium Glassmorphism - Reactive to Customization Context */
+.glass-premium {
+  background: rgba(255, 255, 255, calc(var(--glass-opacity, 0.9)));
+  backdrop-filter: blur(var(--glass-blur, 24px)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 24px)) saturate(160%);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  /* Visible border on light backgrounds */
+  box-shadow:
+    0 10px 40px -10px rgba(0, 0, 0, 0.05),
+    0 4px 12px -2px rgba(0, 0, 0, 0.02);
+  position: relative;
+}
+
+.glass-premium::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--glass-texture-url);
+  opacity: calc(0.03 * var(--glass-texture, 1));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dark .glass-premium {
+  background: rgba(26, 20, 16, calc(var(--glass-opacity, 0.9)));
+  backdrop-filter: blur(var(--glass-blur, 24px)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 24px)) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.dark .glass-premium::before {
+  opacity: calc(0.05 * var(--glass-texture, 1));
+}
+
+
+/* Golden Shell Accents */
+.shell-glow {
+  box-shadow: 0 0 30px rgba(245, 166, 35, 0.15);
+}
+
+.dark .shell-glow {
+  box-shadow: 0 0 40px rgba(245, 166, 35, 0.25);
+}
+
+.shell-border-gold {
+  border-color: rgba(245, 166, 35, 0.3);
+}
+
+.dark .shell-border-gold {
+  border-color: rgba(245, 166, 35, 0.2);
+}

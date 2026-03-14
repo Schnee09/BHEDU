@@ -6,7 +6,7 @@ import { ShieldX, Home, ArrowLeft } from "lucide-react";
 export default function UnauthorizedPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="max-w-md w-full text-center space-y-6">
+      <div className="max-w-md w-full text-center space-y-6 min-w-0">
         {/* Icon */}
         <div className="flex justify-center">
           <div className="w-24 h-24 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">

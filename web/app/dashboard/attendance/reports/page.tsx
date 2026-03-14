@@ -216,7 +216,7 @@ export default function AttendanceReportsPage() {
       // Create CSV content
       const headers = ['Date', 'Student Name', 'Student ID', 'Class', 'Status', 'Remarks']
       const rows = records.map(record => [
-        new Date(record.date).toLocaleDateString('vi-VN'),
+        format(parseISO(record.date), 'dd/MM/yyyy'),
         record.student?.full_name || record.student?.email || '',
         record.student?.student_code || record.student?.id || '',
         record.class?.name || '',
@@ -270,8 +270,8 @@ export default function AttendanceReportsPage() {
   const bottomPerformers = studentStats.slice(-5).reverse()
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-10">
+      <div className="max-w-[1600px] mx-auto space-y-8 relative z-10">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -716,7 +716,7 @@ export default function AttendanceReportsPage() {
                           <div>
                             <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-0.5">Ngày</p>
                             <p className="text-sm font-bold text-stone-700 dark:text-stone-300">
-                              {new Date(record.date).toLocaleDateString('vi-VN')}
+                              {record.date ? format(parseISO(record.date), 'dd/MM/yyyy') : 'N/A'}
                             </p>
                           </div>
                           <div>
@@ -766,7 +766,7 @@ export default function AttendanceReportsPage() {
                       ).map((record) => (
                         <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                            {new Date(record.date).toLocaleDateString('vi-VN')}
+                            {record.date ? format(parseISO(record.date), 'dd/MM/yyyy') : 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>

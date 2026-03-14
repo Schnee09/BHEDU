@@ -57,6 +57,7 @@ import {
   EyeSlashIcon,
   CheckIcon,
   SparklesIcon,
+  ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 
 import {
@@ -119,6 +120,7 @@ export const Icons = {
   Copy: DocumentDuplicateIcon,
   EyeOff: EyeSlashIcon,
   Check: CheckIcon,
+  ArrowRight: ArrowRightIcon,
 
   // Status
   Success: CheckCircleIcon,

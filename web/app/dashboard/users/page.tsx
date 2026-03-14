@@ -23,6 +23,7 @@ import MobileUserList from "@/components/users/MobileUserList";
 import UserFormModal from "@/components/users/UserFormModal";
 import ResetPasswordModal from "@/components/users/ResetPasswordModal";
 import DeleteUserModal from "@/components/users/DeleteUserModal";
+import { AcademicBackground } from '@/components/Academic/AcademicBackground';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
 import { getRoleLabel } from '@/lib/role-utils';
@@ -121,7 +122,7 @@ function UserManagementPageContent() {
         setTotalPages(data.pagination?.totalPages || 1); // Fixed: apiPaginated returns totalPages
         logger.info('Users fetched successfully', { count: data.data?.length || 0 });
       } else {
-        throw new Error(data.error || 'Không thềEtải danh sách người dùng');
+        throw new Error(data.error || 'Không thể tải danh sách người dùng');
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to fetch users';
@@ -169,7 +170,7 @@ function UserManagementPageContent() {
         throw new Error(data.error || 'Failed to toggle user status');
       }
     } catch (err: any) {
-      toast.error('Lỗi', err.message || 'Không thềEthay đổi trạng thái');
+      toast.error('Lỗi', err.message || 'Không thể thay đổi trạng thái');
     } finally {
       setLoading(false);
     }
@@ -267,24 +268,22 @@ function UserManagementPageContent() {
   }
 
   return (
-    <div className="bg-[#f8f9fa] dark:bg-stone-950 min-h-screen">
-      <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-8 animate-fade-in relative">
-        {/* Background Blobs */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/5 blur-[100px] rounded-full pointer-events-none -z-10" />
+    <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-['Be_Vietnam_Pro'] selection:bg-red-600/30 text-stone-900 dark:text-stone-100 p-4 md:p-12 lg:p-16">
+      <AcademicBackground />
+      <div className="max-w-[1600px] mx-auto space-y-12 relative z-10 animate-fade-in">
 
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-1">
-            <h1 className="text-4xl font-black text-stone-900 dark:text-white tracking-tight flex items-center gap-4">
-              <div className="p-3 bg-amber-500/10 rounded-[24px]">
-                <Icons.Users className="w-10 h-10 text-amber-600" />
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-stone-200 dark:border-stone-800 pb-10">
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight flex items-center gap-6">
+              <div className="p-4 glass-crystal rounded-sharp">
+                <Icons.Users className="w-10 h-10 text-red-600" />
               </div>
-              Quản lý tài khoản
+              Quản lý <span className="text-red-600">Thành viên</span>
             </h1>
-            <p className="text-stone-500 font-bold ml-1 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-bubble" />
-              HềEthống quản trềEngười dùng thông minh V2 Pro Max
+            <p className="text-stone-500 font-mono text-xs tracking-widest uppercase flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-600 rounded-full animate-bubble" />
+              Hệ thống quản trị cơ sở dữ liệu nhân sự chuyên sâu
             </p>
           </div>
 
@@ -292,7 +291,7 @@ function UserManagementPageContent() {
             <Button
               variant="gold"
               onClick={() => setShowCreateModal(true)}
-              className="h-14 px-8 rounded-[24px] shadow-xl shadow-amber-500/20"
+              className="h-14 px-10 rounded-sharp text-xs font-bold uppercase tracking-widest shadow-xl shadow-gold-accent/20"
               leftIcon={<Icons.Add className="w-5 h-5" />}
             >
               Thêm người dùng mới
@@ -306,15 +305,15 @@ function UserManagementPageContent() {
         {/* Filters and Table Section */}
         <div className="space-y-6">
           {/* Controls Bar */}
-          <div className="glass-premium p-6 rounded-[40px] border border-stone-200/50 dark:border-white/5 flex flex-col lg:flex-row gap-4 items-center shadow-xl shadow-stone-200/50 dark:shadow-none">
-            <div className="flex-1 w-full relative">
+          <div className="glass-crystal p-8 rounded-sharp border-none flex flex-col lg:flex-row gap-6 items-center shadow-2xl">
+            <div className="flex-1 w-full relative group">
+              <Icons.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500 group-focus-within:text-red-600 transition-colors" />
               <Input
                 type="text"
-                placeholder="Tìm tên, email, sềEđiện thoại..."
+                placeholder="TỔ CHỨC TRUY VẤN: TÊN, EMAIL, SĐT..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-14 rounded-2xl bg-white/50 border-stone-100 hover:border-amber-500/30 transition-all font-bold group"
-                leftIcon={<Icons.Search className="w-5 h-5 text-stone-300 group-focus-within:text-amber-500 transition-colors" />}
+                className="h-14 pl-12 pr-4 bg-transparent rounded-sharp border-none text-xs font-bold uppercase tracking-widest focus:ring-1 focus:ring-red-600 transition-all outline-none"
               />
             </div>
 
@@ -323,7 +322,7 @@ function UserManagementPageContent() {
                 <Select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
-                  className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest"
+                  className="h-14 rounded-sharp font-bold text-[10px] uppercase tracking-widest glass-crystal border-none"
                   options={[
                     {
                       value: 'all', label: 'TẤT CẢ VAI TRÒ'
@@ -337,7 +336,7 @@ function UserManagementPageContent() {
                 <Select
                   value={activeFilter}
                   onChange={(e) => setActiveFilter(e.target.value)}
-                  className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest"
+                  className="h-14 rounded-sharp font-bold text-[10px] uppercase tracking-widest glass-crystal border-none"
                   options={[
                     { value: 'all', label: 'TRẠNG THÁI: TẤT CẢ' },
                     { value: 'true', label: 'HOẠT ĐỘNG' },
@@ -348,7 +347,7 @@ function UserManagementPageContent() {
 
               <Button
                 variant="outline"
-                className="h-14 w-14 p-0 rounded-2xl shrink-0 border-stone-200"
+                className="h-14 w-14 p-0 rounded-sharp border-none glass-crystal hover:bg-white/10"
                 onClick={() => {
                   setSearchQuery('');
                   setRoleFilter('all');
@@ -361,7 +360,7 @@ function UserManagementPageContent() {
           </div>
 
           {/* Table Container */}
-          <Card className="rounded-[40px] overflow-hidden border-stone-100 dark:border-white/5 shadow-2xl shadow-stone-200/30 dark:shadow-none glass-premium p-0">
+          <Card className="rounded-sharp overflow-hidden border-none shadow-2xl glass-crystal p-0">
             {users.length === 0 ? (
               <div className="py-24 text-center">
                 <div className="w-20 h-20 bg-stone-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -398,7 +397,7 @@ function UserManagementPageContent() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-black text-stone-900 dark:text-white tracking-tight">{user.full_name}</p>
+                              <p className="font-bold text-stone-900 dark:text-white tracking-tight">{user.full_name}</p>
                               {user.is_managed && (
                                 <Badge variant="info" className="text-[8px] px-1.5 py-0 rounded-md font-black uppercase">Managed</Badge>
                               )}
@@ -477,7 +476,7 @@ function UserManagementPageContent() {
                             >
                               {user.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                             </DropdownItem>
-                            <div className="h-px bg-stone-100 dark:bg-white/5 my-1" />
+                            <div className="h-px bg-stone-200 dark:bg-stone-800 my-1" />
                             <DropdownItem
                               onClick={() => {
                                 setSelectedUser(user);
@@ -487,7 +486,7 @@ function UserManagementPageContent() {
                               icon={<Icons.Trash className="w-4 h-4" />}
                               className="font-bold py-3"
                             >
-                              Xóa vĩnh viềE
+                              Xóa vĩnh viễn
                             </DropdownItem>
                           </DropdownMenu>
                         </div>
