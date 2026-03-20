@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useFetch } from "@/hooks/useFetch";
-import { useProfile } from "@/hooks/useProfile";
-import { usePermissions } from "@/hooks/usePermissions";
-import { apiFetch } from "@/lib/api/client";
-import { StatCard } from "@/components/ui/Card";
-import { SkeletonStatCard, SkeletonCard } from "@/components/ui/skeleton";
-import { Icons } from "@/components/ui/Icons";
-import { logger } from "@/lib/logger";
-import Link from "next/link";
-import { routes } from "@/lib/routes";
-import { AnalyticsWidget } from "@/components/dashboard/AnalyticsWidget";
-import ActivityFeed from "@/components/dashboard/ActivityFeed";
-import RankingWidget from "@/components/dashboard/RankingWidget";
-import { QuickActionsWidget } from "@/components/dashboard/QuickActionsWidget";
-import { SystemStatusWidget } from "@/components/dashboard/SystemStatusWidget";
-import { ClassComparison } from "@/components/dashboard/ClassComparison";
-import { SchoolMetrics } from "@/components/dashboard/SchoolMetrics";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useFetch } from '@/hooks/useFetch';
+import { useProfile } from '@/hooks/useProfile';
+import { usePermissions } from '@/hooks/usePermissions';
+import { apiFetch } from '@/lib/api/client';
+import { StatCard } from '@/components/ui/Card';
+import { SkeletonStatCard, SkeletonCard } from '@/components/ui/skeleton';
+import { Icons } from '@/components/ui/Icons';
+import { logger } from '@/lib/logger';
+import Link from 'next/link';
+import { routes } from '@/lib/routes';
+import { AnalyticsWidget } from '@/components/dashboard/AnalyticsWidget';
+import ActivityFeed from '@/components/dashboard/ActivityFeed';
+import RankingWidget from '@/components/dashboard/RankingWidget';
+import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
+import { SystemStatusWidget } from '@/components/dashboard/SystemStatusWidget';
+import { ClassComparison } from '@/components/dashboard/ClassComparison';
+import { SchoolMetrics } from '@/components/dashboard/SchoolMetrics';
+import { cn } from '@/lib/utils';
 
 interface DashboardStats {
   totalStudents: number;
@@ -60,13 +60,13 @@ export default function DashboardPage() {
   const { profile, loading: profileLoading } = useProfile();
   const { isAdmin, isStaff, isTeacher, isStudent } = usePermissions();
 
-  const { data: stats, loading: statsLoading, error: statsError } = useFetch<DashboardStats>(
+  const { data: stats, loading: statsLoading } = useFetch<DashboardStats>(
     profile ? '/api/dashboard/stats' : null
   );
 
-  const { data: classComparisonData, loading: classComparisonLoading } = useFetch<{ classes: ClassComparisonItem[] }>(
-    (isAdmin || isTeacher) && profile ? '/api/classes/comparison' : null
-  );
+  const { data: classComparisonData, loading: classComparisonLoading } = useFetch<{
+    classes: ClassComparisonItem[];
+  }>((isAdmin || isTeacher) && profile ? '/api/classes/comparison' : null);
 
   // Real analytics data
   const { data: gradeDistData } = useFetch<{ distribution: { name: string; value: number }[] }>(
@@ -77,22 +77,23 @@ export default function DashboardPage() {
   );
 
   // Student personal stats
-  const { data: studentRankData } = useFetch<{ topStudents: StudentRankItem[]; atRiskStudents: StudentRankItem[] }>(
-    isStudent && profile ? '/api/grades/rankings?limit=100' : null
-  );
+  const { data: studentRankData } = useFetch<{
+    topStudents: StudentRankItem[];
+    atRiskStudents: StudentRankItem[];
+  }>(isStudent && profile ? '/api/grades/rankings?limit=100' : null);
 
   useEffect(() => {
     if (profile && !profileLoading && !statsLoading) {
       // Role-based landing logic
       switch (profile.role) {
-        case "owner":
-          router.replace("/dashboard/admin/students");
+        case 'owner':
+          router.replace('/dashboard/admin/students');
           break;
-        case "tutor":
-          router.replace("/dashboard/timetable");
+        case 'tutor':
+          router.replace('/dashboard/timetable');
           break;
-        case "parent":
-          router.replace("/dashboard/parent");
+        case 'parent':
+          router.replace('/dashboard/parent');
           break;
       }
     }
@@ -127,11 +128,11 @@ export default function DashboardPage() {
   }
 
   const getRoleTitle = () => {
-    if (profile?.role === "super_admin") return "Siêu Quản Trị";
-    if (isAdmin) return "Quản trị viên";
-    if (isTeacher) return "Giáo viên";
-    if (isStudent) return "Học sinh";
-    return "Thành viên";
+    if (profile?.role === 'super_admin') return 'Siêu Quản Trị';
+    if (isAdmin) return 'Quản trị viên';
+    if (isTeacher) return 'Giáo viên';
+    if (isStudent) return 'Học sinh';
+    return 'Thành viên';
   };
 
   const displayStats = stats || {
@@ -142,7 +143,7 @@ export default function DashboardPage() {
     attendanceToday: 0,
     averageGPA: 0,
     attendanceRate: 0,
-    passRate: 0
+    passRate: 0,
   };
 
   const classData = classComparisonData?.classes || [];
@@ -153,13 +154,14 @@ export default function DashboardPage() {
     : [{ name: 'Chưa có phân loại', value: 1 }];
 
   const weeklyAttendance = weeklyAttData?.weeklyData?.length
-    ? weeklyAttData.weeklyData.map(d => ({ ...d, 'Có mặt': d.present }))
+    ? weeklyAttData.weeklyData.map((d) => ({ ...d, 'Có mặt': d.present }))
     : [];
 
   // Find current student's own stats from rankings
-  const myRanking = isStudent && studentRankData?.topStudents
-    ? studentRankData.topStudents.find((s: any) => s.studentId === profile?.id)
-    : null;
+  const myRanking =
+    isStudent && studentRankData?.topStudents
+      ? studentRankData.topStudents.find((s: any) => s.studentId === profile?.id)
+      : null;
   const totalRankedStudents = studentRankData?.topStudents?.length || 0;
 
   return (
@@ -176,21 +178,32 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-2 pl-4">
               <span className="text-xs font-black text-stone-500 dark:text-stone-400 uppercase tracking-[0.2em] break-words">
-                Chào mừng trở lại, <span className="text-stone-900 dark:text-stone-100">{profile?.full_name ?? "User"}</span>
+                Chào mừng trở lại,{' '}
+                <span className="text-stone-900 dark:text-stone-100">
+                  {profile?.full_name ?? 'User'}
+                </span>
               </span>
             </div>
           </div>
 
           <div className="hidden md:flex items-center gap-4 bg-white/40 dark:bg-stone-900/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-stone-200/50 dark:border-white/5 shadow-sm">
             <div className="flex flex-col items-end">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Hôm nay</span>
-              <span className="text-sm font-black text-stone-800 dark:text-white uppercase tracking-tight">{new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                Hôm nay
+              </span>
+              <span className="text-sm font-black text-stone-800 dark:text-white uppercase tracking-tight">
+                {new Date().toLocaleDateString('vi-VN', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                })}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Top Stats Cards - Optimized for Cross-Device Density */}
-        {(isAdmin || isTeacher) ? (
+        {isAdmin || isTeacher ? (
           <SchoolMetrics
             totalStudents={displayStats.totalStudents}
             totalTeachers={displayStats.totalTeachers}
@@ -235,10 +248,30 @@ export default function DashboardPage() {
         ) : (
           /* Fallback for other roles */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <StatCard label="Lớp học" value={displayStats.totalClasses} color="blue" icon={<Icons.Classes className="w-5 h-5" />} />
-            <StatCard label="Bài tập" value={displayStats.totalAssignments} color="purple" icon={<Icons.Assignments className="w-5 h-5" />} />
-            <StatCard label="Điểm danh" value={displayStats.attendanceToday} color="amber" icon={<Icons.Attendance className="w-5 h-5" />} />
-            <StatCard label="Học sinh" value={displayStats.totalStudents} color="slate" icon={<Icons.Students className="w-5 h-5" />} />
+            <StatCard
+              label="Lớp học"
+              value={displayStats.totalClasses}
+              color="blue"
+              icon={<Icons.Classes className="w-5 h-5" />}
+            />
+            <StatCard
+              label="Bài tập"
+              value={displayStats.totalAssignments}
+              color="purple"
+              icon={<Icons.Assignments className="w-5 h-5" />}
+            />
+            <StatCard
+              label="Điểm danh"
+              value={displayStats.attendanceToday}
+              color="amber"
+              icon={<Icons.Attendance className="w-5 h-5" />}
+            />
+            <StatCard
+              label="Học sinh"
+              value={displayStats.totalStudents}
+              color="slate"
+              icon={<Icons.Students className="w-5 h-5" />}
+            />
           </div>
         )}
 
@@ -250,9 +283,15 @@ export default function DashboardPage() {
             {(isAdmin || isTeacher) && (
               <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
                 <div className="flex items-center justify-between px-2">
-                  <h2 className="text-xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight pl-3 border-l-4 border-amber-500">Thống kê đào tạo</h2>
-                  <Link href="/dashboard/grades/analytics" className="text-[10px] md:text-xs font-black text-amber-600 hover:text-amber-500 uppercase tracking-tighter flex items-center gap-1 transition-all group">
-                    Xem báo cáo toàn diện <Icons.ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  <h2 className="text-xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight pl-3 border-l-4 border-amber-500">
+                    Thống kê đào tạo
+                  </h2>
+                  <Link
+                    href="/dashboard/grades/analytics"
+                    className="text-[10px] md:text-xs font-black text-amber-600 hover:text-amber-500 uppercase tracking-tighter flex items-center gap-1 transition-all group"
+                  >
+                    Xem báo cáo toàn diện{' '}
+                    <Icons.ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
 
@@ -292,26 +331,50 @@ export default function DashboardPage() {
             {isStudent && (
               <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
                 <div className="flex items-center justify-between px-2">
-                  <h2 className="text-xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight pl-3 border-l-4 border-amber-500">Kết quả học tập</h2>
-                  <Link href={routes.grades.list()} className="text-[10px] md:text-xs font-black text-amber-600 hover:text-amber-500 uppercase tracking-tighter flex items-center gap-1 transition-all group">
-                    Xem chi tiết <Icons.ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  <h2 className="text-xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight pl-3 border-l-4 border-amber-500">
+                    Kết quả học tập
+                  </h2>
+                  <Link
+                    href={routes.grades.list()}
+                    className="text-[10px] md:text-xs font-black text-amber-600 hover:text-amber-500 uppercase tracking-tighter flex items-center gap-1 transition-all group"
+                  >
+                    Xem chi tiết{' '}
+                    <Icons.ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div className="bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-2xl p-8 border border-stone-200/50 dark:border-white/5 text-center shadow-sm">
-                    <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-3">Điểm TB</p>
-                    <p className="text-5xl font-black text-amber-500 tabular-nums">{myRanking ? myRanking.average.toFixed(1) : '—'}</p>
-                    <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 mt-2 uppercase tracking-tight">Thang điểm 10</p>
+                    <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-3">
+                      Điểm TB
+                    </p>
+                    <p className="text-5xl font-black text-amber-500 tabular-nums">
+                      {myRanking ? myRanking.average.toFixed(1) : '—'}
+                    </p>
+                    <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 mt-2 uppercase tracking-tight">
+                      Thang điểm 10
+                    </p>
                   </div>
                   <div className="bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-2xl p-8 border border-stone-200/50 dark:border-white/5 text-center shadow-sm">
-                    <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-3">Xếp hạng</p>
-                    <p className="text-5xl font-black text-blue-500 tabular-nums">#{myRanking ? myRanking.rank : '—'}</p>
-                    <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 mt-2 uppercase tracking-tight">/{totalRankedStudents} học sinh</p>
+                    <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-3">
+                      Xếp hạng
+                    </p>
+                    <p className="text-5xl font-black text-blue-500 tabular-nums">
+                      #{myRanking ? myRanking.rank : '—'}
+                    </p>
+                    <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 mt-2 uppercase tracking-tight">
+                      /{totalRankedStudents} học sinh
+                    </p>
                   </div>
                   <div className="bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-2xl p-8 border border-stone-200/50 dark:border-white/5 text-center shadow-sm">
-                    <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-3">Điểm danh</p>
-                    <p className="text-5xl font-black text-emerald-500">{displayStats.attendanceToday > 0 ? '✓' : '—'}</p>
-                    <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 mt-2 uppercase tracking-tight">{displayStats.attendanceToday > 0 ? 'Hợp lệ hôm nay' : 'Chưa ghi nhận'}</p>
+                    <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mb-3">
+                      Điểm danh
+                    </p>
+                    <p className="text-5xl font-black text-emerald-500">
+                      {displayStats.attendanceToday > 0 ? '✓' : '—'}
+                    </p>
+                    <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 mt-2 uppercase tracking-tight">
+                      {displayStats.attendanceToday > 0 ? 'Hợp lệ hôm nay' : 'Chưa ghi nhận'}
+                    </p>
                   </div>
                 </div>
               </section>
@@ -330,17 +393,18 @@ export default function DashboardPage() {
 
             <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-3xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm">
               <div className="px-8 py-5 border-b border-stone-100 dark:border-white/5 bg-stone-50/50 dark:bg-white/5">
-                <h3 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">Hoạt động hệ thống</h3>
+                <h3 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">
+                  Hoạt động hệ thống
+                </h3>
               </div>
               <ActivityFeed limit={8} />
             </div>
 
-            {/* System Status Card - Admin only */}
-            {isAdmin && <SystemStatusWidget />}
+            {/* System Status Card - Admin & Staff */}
+            {isStaff && <SystemStatusWidget />}
           </div>
         </div>
       </div>
     </div>
   );
 }
-
