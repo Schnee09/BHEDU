@@ -59,7 +59,12 @@ export function Table<T = any>({
 
   if (loading) {
     return (
-      <div className={cn("bg-white dark:bg-stone-900/40 rounded-[32px] p-6 border border-stone-200 dark:border-white/10 shadow-xl overflow-hidden", className)}>
+      <div
+        className={cn(
+          'bg-white dark:bg-stone-900/40 rounded-[32px] p-6 border border-stone-200 dark:border-white/10 shadow-xl overflow-hidden',
+          className
+        )}
+      >
         <SkeletonTable rows={5} columns={columns.length} />
       </div>
     );
@@ -79,10 +84,10 @@ export function Table<T = any>({
     );
   }
 
-  const primaryCol = columns.find(c => c.mobilePrimary) || columns[0];
+  const primaryCol = columns.find((c) => c.mobilePrimary) || columns[0];
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn('relative', className)}>
       {/* Mobile view - Cards */}
       {mobileCards && (
         <div className="md:hidden space-y-4">
@@ -91,22 +96,27 @@ export function Table<T = any>({
               key={keyExtractor(row)}
               onClick={() => onRowClick?.(row)}
               className={cn(
-                "bg-white dark:bg-stone-900/60 p-6 rounded-[24px] border border-stone-100 dark:border-white/5 shadow-md active:scale-[0.98] transition-all",
-                hoverable && "hover:border-amber-500/30 cursor-pointer"
+                'bg-white dark:bg-stone-900/60 p-6 rounded-[24px] border border-stone-100 dark:border-white/5 shadow-md active:scale-[0.98] transition-all',
+                hoverable && 'hover:border-amber-500/30 cursor-pointer'
               )}
             >
               <div className="font-black text-stone-900 dark:text-white mb-4 text-base uppercase tracking-tight">
-                {primaryCol.render ? primaryCol.render(row) : (row as any)[primaryCol.key]}
+                {primaryCol &&
+                  (primaryCol.render ? primaryCol.render(row) : (row as any)[primaryCol.key])}
               </div>
               <div className="space-y-3">
-                {columns.filter(c => c.key !== primaryCol.key && !c.mobileHidden).map((col) => (
-                  <div key={col.key} className="flex justify-between items-center">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500">{col.header}</span>
-                    <span className="text-sm font-bold text-stone-700 dark:text-stone-200">
-                      {col.render ? col.render(row) : (row as any)[col.key]}
-                    </span>
-                  </div>
-                ))}
+                {columns
+                  .filter((c) => c.key !== (primaryCol?.key || '') && !c.mobileHidden)
+                  .map((col) => (
+                    <div key={col.key} className="flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500">
+                        {col.header}
+                      </span>
+                      <span className="text-sm font-bold text-stone-700 dark:text-stone-200">
+                        {col.render ? col.render(row) : (row as any)[col.key]}
+                      </span>
+                    </div>
+                  ))}
               </div>
             </div>
           ))}
@@ -114,10 +124,12 @@ export function Table<T = any>({
       )}
 
       {/* Desktop view - Table */}
-      <div className={cn(
-        "overflow-hidden rounded-[32px] bg-white dark:bg-stone-900/40 border border-stone-200 dark:border-white/10 shadow-xl",
-        mobileCards ? "hidden md:block" : "block"
-      )}>
+      <div
+        className={cn(
+          'overflow-hidden rounded-[32px] bg-white dark:bg-stone-900/40 border border-stone-200 dark:border-white/10 shadow-xl',
+          mobileCards ? 'hidden md:block' : 'block'
+        )}
+      >
         <table className="min-w-full border-collapse">
           <thead className="bg-stone-50/50 dark:bg-stone-800/20">
             <tr>
@@ -127,9 +139,9 @@ export function Table<T = any>({
                   scope="col"
                   className={cn(
                     paddingClass,
-                    "text-left text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 border-b border-stone-100 dark:border-white/5",
+                    'text-left text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 border-b border-stone-100 dark:border-white/5',
                     column.width || '',
-                    column.mobileHidden && "hidden md:table-cell"
+                    column.mobileHidden && 'hidden md:table-cell'
                   )}
                 >
                   {column.header}
@@ -143,9 +155,9 @@ export function Table<T = any>({
                 key={keyExtractor(row)}
                 onClick={() => onRowClick?.(row)}
                 className={cn(
-                  "group transition-all duration-300",
-                  hoverable && "hover:bg-amber-50/30 dark:hover:bg-amber-500/5 cursor-pointer",
-                  striped && index % 2 === 1 && "bg-stone-50/30 dark:bg-white/[0.02]"
+                  'group transition-all duration-300',
+                  hoverable && 'hover:bg-amber-50/30 dark:hover:bg-amber-500/5 cursor-pointer',
+                  striped && index % 2 === 1 && 'bg-stone-50/30 dark:bg-white/[0.02]'
                 )}
               >
                 {columns.map((column) => (
@@ -153,13 +165,11 @@ export function Table<T = any>({
                     key={column.key}
                     className={cn(
                       paddingClass,
-                      "text-sm font-bold text-stone-700 dark:text-stone-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors",
-                      column.mobileHidden && "hidden md:table-cell"
+                      'text-sm font-bold text-stone-700 dark:text-stone-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors',
+                      column.mobileHidden && 'hidden md:table-cell'
                     )}
                   >
-                    {column.render
-                      ? column.render(row)
-                      : (row as any)[column.key]}
+                    {column.render ? column.render(row) : (row as any)[column.key]}
                   </td>
                 ))}
               </tr>
@@ -181,13 +191,11 @@ interface SimpleTableProps {
   className?: string;
 }
 
-export const SimpleTable: React.FC<SimpleTableProps> = ({
-  headers,
-  rows,
-  className = '',
-}) => {
+export const SimpleTable: React.FC<SimpleTableProps> = ({ headers, rows, className = '' }) => {
   return (
-    <div className={`overflow-x-auto rounded-xl border border-gray-200 dark:border-[#4A4A4A] ${className}`}>
+    <div
+      className={`overflow-x-auto rounded-xl border border-gray-200 dark:border-[#4A4A4A] ${className}`}
+    >
       <table className="min-w-full divide-y divide-gray-200 dark:divide-[#4A4A4A]">
         <thead className="bg-gray-50 dark:bg-[#252525]">
           <tr>
@@ -204,12 +212,12 @@ export const SimpleTable: React.FC<SimpleTableProps> = ({
         </thead>
         <tbody className="bg-white dark:bg-[#2D2D2D] divide-y divide-gray-200 dark:divide-[#3A3A3A]">
           {rows.map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-gray-50 dark:hover:bg-[#3A3A3A] transition-colors">
+            <tr
+              key={rowIndex}
+              className="hover:bg-gray-50 dark:hover:bg-[#3A3A3A] transition-colors"
+            >
               {row.map((cell, cellIndex) => (
-                <td
-                  key={cellIndex}
-                  className="px-6 py-4 text-sm text-gray-800 dark:text-[#E8E8E8]"
-                >
+                <td key={cellIndex} className="px-6 py-4 text-sm text-gray-800 dark:text-[#E8E8E8]">
                   {cell}
                 </td>
               ))}
@@ -231,15 +239,13 @@ interface TableHeaderProps {
   action?: ReactNode;
 }
 
-export const TableHeader: React.FC<TableHeaderProps> = ({
-  title,
-  subtitle,
-  action,
-}) => {
+export const TableHeader: React.FC<TableHeaderProps> = ({ title, subtitle, action }) => {
   return (
     <div className="flex items-center justify-between mb-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-[#E8E8E8] font-heading">{title}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-[#E8E8E8] font-heading">
+          {title}
+        </h2>
         {subtitle && <p className="text-gray-600 dark:text-[#9A9A9A] mt-1">{subtitle}</p>}
       </div>
       {action && <div>{action}</div>}
@@ -275,15 +281,7 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
       return [1, '...', ...pages.slice(totalPages - 5)];
     }
 
-    return [
-      1,
-      '...',
-      currentPage - 1,
-      currentPage,
-      currentPage + 1,
-      '...',
-      totalPages,
-    ];
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
   };
 
   return (
@@ -304,7 +302,12 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
           className="p-2 rounded-lg border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
 
@@ -312,15 +315,18 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
           {showPages().map((page, index) => (
             <React.Fragment key={index}>
               {page === '...' ? (
-                <span className="w-8 text-center text-stone-700 dark:text-stone-300 hidden sm:inline">...</span>
+                <span className="w-8 text-center text-stone-700 dark:text-stone-300 hidden sm:inline">
+                  ...
+                </span>
               ) : (
                 <button
                   onClick={() => onPageChange(page as number)}
                   className={`
                     min-w-[32px] sm:min-w-[40px] h-8 sm:h-10 rounded-lg font-medium transition-all text-sm
-                    ${page === currentPage
-                      ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 shadow-md'
-                      : 'border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700'
+                    ${
+                      page === currentPage
+                        ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 shadow-md'
+                        : 'border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700'
                     }
                     ${typeof page === 'number' && Math.abs(page - currentPage) > 1 && page !== 1 && page !== totalPages ? 'hidden sm:flex items-center justify-center' : 'flex items-center justify-center'}
                   `}
@@ -366,8 +372,18 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-6">
       <div className="flex-1 relative">
-        <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-500 dark:text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <svg
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-500 dark:text-stone-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
         </svg>
         <input
           type="text"
@@ -387,3 +403,8 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
 // ============================================================================
 
 export default Table;
+
+SimpleTable.displayName = 'SimpleTable';
+TableHeader.displayName = 'TableHeader';
+TablePagination.displayName = 'TablePagination';
+TableFilters.displayName = 'TableFilters';

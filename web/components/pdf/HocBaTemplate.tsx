@@ -4,14 +4,7 @@
  */
 
 import React from 'react';
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  Font,
-} from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
 
 // Register fonts for Vietnamese support
 Font.register({
@@ -290,9 +283,7 @@ export const HocBaDocument: React.FC<{ data: TranscriptData }> = ({ data }) => {
             <Text style={[styles.tableCell, styles.col5]}>1 tiết</Text>
             <Text style={[styles.tableCell, styles.col6]}>Giữa kỳ</Text>
             <Text style={[styles.tableCell, styles.col7]}>Cuối kỳ</Text>
-            <Text style={[styles.tableCell, styles.col8, { borderRightWidth: 0 }]}>
-              TB môn
-            </Text>
+            <Text style={[styles.tableCell, styles.col8, { borderRightWidth: 0 }]}>TB môn</Text>
           </View>
 
           {/* Table Rows */}
@@ -316,11 +307,7 @@ export const HocBaDocument: React.FC<{ data: TranscriptData }> = ({ data }) => {
                 {subject.component_grades?.final?.toFixed(1) || '-'}
               </Text>
               <Text
-                style={[
-                  styles.tableCell,
-                  styles.col8,
-                  { borderRightWidth: 0, fontWeight: 700 },
-                ]}
+                style={[styles.tableCell, styles.col8, { borderRightWidth: 0, fontWeight: 700 }]}
               >
                 {subject.final_grade.toFixed(1)}
               </Text>
@@ -394,5 +381,6 @@ export const HocBaDocument: React.FC<{ data: TranscriptData }> = ({ data }) => {
     </Document>
   );
 };
+HocBaDocument.displayName = 'HocBaDocument';
 
 export default HocBaDocument;

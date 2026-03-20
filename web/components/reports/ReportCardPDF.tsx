@@ -153,7 +153,9 @@ const ReportCardPDF: React.FC<ReportCardPDFProps> = ({ data }) => (
         <Text style={styles.schoolName}>{data.school_name}</Text>
         <Text style={styles.schoolAddress}>{data.school_address}</Text>
         <Text style={styles.title}>BẢNG ĐIỂM HỌC KỲ</Text>
-        <Text style={styles.title}>{data.semester} - {data.academic_year}</Text>
+        <Text style={styles.title}>
+          {data.semester} - {data.academic_year}
+        </Text>
       </View>
 
       {/* Student Information */}
@@ -254,5 +256,6 @@ const ReportCardPDF: React.FC<ReportCardPDFProps> = ({ data }) => (
     </Page>
   </Document>
 );
+ReportCardPDF.displayName = 'ReportCardPDF';
 
 export default ReportCardPDF;
