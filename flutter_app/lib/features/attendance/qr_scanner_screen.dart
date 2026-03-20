@@ -4,8 +4,11 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:intl/intl.dart';
 import '../../config/theme.dart';
-// import '../../data/repositories/attendance_repository.dart'; // Unused
+import '../../core/constants/app_constants.dart';
+import '../../shared/providers/auth_provider.dart';
+import 'attendance_screen.dart';
 
 class QRScannerScreen extends ConsumerStatefulWidget {
   final String? classId;
@@ -38,37 +41,64 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
     });
 
     try {
-      // Parse QR code (expected format: student_id or attendance data)
-      // final repo = AttendanceRepository(); // Unused
+      final repo = ref.read(attendanceRepositoryProvider);
+      final profile = ref.read(authNotifierProvider).value;
+      
+      if (widget.classId == null) {
+        throw 'Vui lòng chọn lớp học trước khi quét QR';
+      }
 
-      // For now, show the scanned result
-      // In production, this would call the attendance API
+      // code is expected to be student_id
+      await repo.markAttendance(
+        studentId: code,
+        classId: widget.classId!,
+        date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        status: AttendanceStatus.present.value, // Default to present for QR scan
+        isQrCheckIn: true,
+        markedBy: profile?.id,
+      );
+
       setState(() {
-        _resultMessage = 'Scanned: $code';
+        _resultMessage = 'Điểm danh thành công học sinh: $code';
         _isSuccess = true;
       });
 
-      // Show success feedback
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Check-in successful: $code'),
+            content: Text('Đã điểm danh: $code'),
             backgroundColor: AppColors.success,
           ),
         );
       }
 
-      // Wait before allowing next scan
-      await Future.delayed(const Duration(seconds: 2));
+      // Wait before allowing next scan to avoid duplicates
+      await Future.delayed(const Duration(seconds: 3));
+      
+      if (mounted) {
+        setState(() {
+          _lastScannedCode = null;
+        });
+      }
     } catch (e) {
       setState(() {
-        _resultMessage = 'Error: $e';
+        _resultMessage = 'Lỗi: $e';
         _isSuccess = false;
       });
+      
+      // Allow re-scanning after an error
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) {
+        setState(() {
+          _lastScannedCode = null;
+        });
+      }
     } finally {
-      setState(() {
-        _isProcessing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
 
@@ -76,7 +106,7 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QR Check-in'),
+        title: const Text('Điểm danh QR'),
         actions: [
           IconButton(
             icon: ValueListenableBuilder(
@@ -158,8 +188,8 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
                       color: AppColors.textMuted,
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'Point camera at student QR code',
+                    const Text(
+                      'Hướng camera vào mã QR của học sinh',
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
                   ],

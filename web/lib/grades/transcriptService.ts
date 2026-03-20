@@ -1,6 +1,6 @@
 /**
  * Transcript Service
- * 
+ *
  * Generates comprehensive student transcripts with:
  * - Academic history by semester
  * - GPA calculations
@@ -9,9 +9,9 @@
  * - Class rankings
  */
 
-import { 
-  SubjectGrade, 
-  SemesterGPA, 
+import {
+  SubjectGrade,
+  SemesterGPA,
   CumulativeGPA,
   calculateSubjectAverage,
   calculateSemesterGPA,
@@ -78,7 +78,7 @@ export interface TranscriptGenerationOptions {
 export function buildTranscriptCourse(grade: SubjectGrade): TranscriptCourse {
   const averageScore = calculateSubjectAverage(grade);
   const letterGrade = averageScore !== null ? getLetterGradeFromScore(averageScore) : 'N/A';
-  
+
   let status: 'passed' | 'failed' | 'in_progress' = 'in_progress';
   if (averageScore !== null) {
     status = averageScore >= 5.0 ? 'passed' : 'failed';
@@ -122,9 +122,12 @@ export function generateTranscript(
     classRank?: number;
     classSize?: number;
   }>,
-  options: TranscriptGenerationOptions = { includePending: false, includeRanking: true, language: 'vi' }
+  options: TranscriptGenerationOptions = {
+    includePending: false,
+    includeRanking: true,
+    language: 'vi',
+  }
 ): StudentTranscript {
-  
   const transcriptSemesters: TranscriptSemester[] = [];
   const allSemesterGPAs: SemesterGPA[] = [];
   let totalCredits = 0;
@@ -134,15 +137,15 @@ export function generateTranscript(
     // Filter grades if not including pending
     let grades = semester.grades;
     if (!options.includePending) {
-      grades = grades.filter(g => {
+      grades = grades.filter((g) => {
         const avg = calculateSubjectAverage(g);
         return avg !== null;
       });
     }
 
     // Build transcript courses
-    const courses = grades.map(g => buildTranscriptCourse(g));
-    
+    const courses = grades.map((g) => buildTranscriptCourse(g));
+
     // Calculate semester stats
     const semesterGPA = calculateSemesterGPA(
       grades,
@@ -154,7 +157,7 @@ export function generateTranscript(
 
     const semesterCredits = courses.reduce((sum, c) => sum + c.credits, 0);
     const semesterCreditsEarned = courses
-      .filter(c => c.status === 'passed')
+      .filter((c) => c.status === 'passed')
       .reduce((sum, c) => sum + c.credits, 0);
 
     totalCredits += semesterCredits;
@@ -202,7 +205,7 @@ export function calculateClassRankings(
   studentGPAs: Array<{ studentId: string; gpa: number }>
 ): Map<string, { rank: number; percentile: number }> {
   const rankings = new Map<string, { rank: number; percentile: number }>();
-  
+
   // Sort by GPA descending
   const sorted = [...studentGPAs].sort((a, b) => b.gpa - a.gpa);
   const total = sorted.length;
@@ -213,7 +216,8 @@ export function calculateClassRankings(
 
   for (let i = 0; i < sorted.length; i++) {
     const student = sorted[i];
-    
+    if (!student) continue;
+
     if (student.gpa !== prevGpa) {
       currentRank = i + 1;
       sameRankCount = 1;
@@ -222,7 +226,7 @@ export function calculateClassRankings(
     }
 
     const percentile = Math.round(((total - i) / total) * 100);
-    
+
     rankings.set(student.studentId, {
       rank: currentRank,
       percentile,
@@ -258,11 +262,9 @@ export function formatTranscriptSummary(transcript: StudentTranscript): string {
     if (semester.classRank && semester.classSize) {
       lines.push(`Xếp hạng: ${semester.classRank}/${semester.classSize}`);
     }
-    
+
     for (const course of semester.courses) {
-      const scoreStr = course.averageScore !== null 
-        ? course.averageScore.toFixed(1) 
-        : 'Chưa có';
+      const scoreStr = course.averageScore !== null ? course.averageScore.toFixed(1) : 'Chưa có';
       lines.push(`  • ${course.courseName}: ${scoreStr} (${course.letterGrade})`);
     }
   }
@@ -302,10 +304,10 @@ export function getTranscriptForExport(transcript: StudentTranscript): {
       creditsEarned: transcript.totalCreditsEarned,
       academicStanding: transcript.academicStanding,
     },
-    semesters: transcript.semesters.map(sem => ({
+    semesters: transcript.semesters.map((sem) => ({
       name: `${sem.semesterName} - ${sem.academicYear}`,
       gpa: sem.semesterGPA,
-      courses: sem.courses.map(c => ({
+      courses: sem.courses.map((c) => ({
         name: c.courseName,
         credits: c.credits,
         score: c.averageScore,

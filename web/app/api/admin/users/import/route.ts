@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { apiSuccess, createApiHandler } from "@/lib/api";
-import { importUsersSchema } from "@/lib/schemas/requests/user";
-import { userService } from "@/lib/services/userService";
-import { createAbility } from "@/lib/auth/permissions";
+import { NextResponse } from 'next/server';
+import { apiSuccess, createApiHandler } from '@/lib/api';
+import { importUsersSchema } from '@/lib/schemas/requests/user';
+import { userService } from '@/lib/services/userService';
+import { createAbility } from '@/lib/auth/permissions';
 
 /**
  * POST /api/admin/users/import
@@ -19,10 +19,10 @@ export const POST = createApiHandler(
       role: user.role,
     });
 
-    if (ability.cannot("create", "User")) {
+    if (ability.cannot('create', 'User')) {
       return NextResponse.json(
-        { success: false, error: "Bạn không có quyền nhập người dùng" },
-        { status: 403 },
+        { success: false, error: 'Bạn không có quyền nhập người dùng' },
+        { status: 403 }
       );
     }
 
@@ -39,6 +39,7 @@ export const POST = createApiHandler(
     // Process each user
     for (let i = 0; i < users.length; i++) {
       const userData = users[i];
+      if (!userData) continue;
       const rowNumber = i + 1;
 
       try {
@@ -52,23 +53,22 @@ export const POST = createApiHandler(
         // createUserSchema has first_name, last_name, full_name (optional/ignored?).
         // We need to split full_name if first/last are missing?
 
-        let first_name = "";
-        let last_name = "";
+        let first_name = '';
+        let last_name = '';
 
         if (userData.full_name) {
-          const parts = userData.full_name.trim().split(" ");
+          const parts = userData.full_name.trim().split(' ');
           if (parts.length > 1) {
-            last_name = parts.pop() || "";
-            first_name = parts.join(" ");
+            last_name = parts.pop() || '';
+            first_name = parts.join(' ');
           } else {
-            first_name = parts[0];
-            last_name = ""; // or duplicate?
+            first_name = parts[0] ?? '';
+            last_name = '';
           }
         }
 
         // Generate password if missing
-        const password = userData.password ||
-          Math.random().toString(36).slice(-8) + "A1!";
+        const password = userData.password || Math.random().toString(36).slice(-8) + 'A1!';
 
         await userService.createUser(
           {
@@ -78,7 +78,7 @@ export const POST = createApiHandler(
             last_name: last_name,
             role: userData.role,
             phone: userData.phone,
-            status: "active", // Default to active
+            status: 'active', // Default to active
             notes: userData.notes,
             // Role specific mapping
             student_code: userData.student_id, // CSV often uses student_id col for code
@@ -88,7 +88,7 @@ export const POST = createApiHandler(
             is_managed: true,
           },
           user.role,
-          user.id,
+          user.id
         ); // Pass current user role/id for auditing
 
         results.successful++;
@@ -96,15 +96,14 @@ export const POST = createApiHandler(
         results.failed++;
         results.errors.push({
           row: rowNumber,
-          email: userData.email || "N/A",
-          error: error.message || "Unknown error",
+          email: userData.email || 'N/A',
+          error: error.message || 'Unknown error',
         });
       }
     }
 
     return apiSuccess(results, {
-      message:
-        `Import completed. ${results.successful} successful, ${results.failed} failed`,
+      message: `Import completed. ${results.successful} successful, ${results.failed} failed`,
     });
-  },
+  }
 );

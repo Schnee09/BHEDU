@@ -1,6 +1,6 @@
 /**
  * Grade Predictor Service
- * 
+ *
  * Provides grade predictions and early warning indicators:
  * - Linear regression for grade trend prediction
  * - Early warning for at-risk students
@@ -11,15 +11,15 @@
 import { SubjectGrade, calculateSubjectAverage, getAcademicStanding } from './gpaCalculator';
 
 export interface GradeTrend {
-  slope: number;           // Rate of change per time unit
+  slope: number; // Rate of change per time unit
   direction: 'improving' | 'stable' | 'declining';
   predictedNextGrade: number;
-  confidence: number;      // 0-100%
+  confidence: number; // 0-100%
 }
 
 export interface RiskAssessment {
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
-  riskScore: number;       // 0-100
+  riskScore: number; // 0-100
   factors: RiskFactor[];
   recommendations: string[];
 }
@@ -55,16 +55,16 @@ export function calculateGradeTrend(grades: Array<{ date: Date; score: number }>
     return {
       slope: 0,
       direction: 'stable',
-      predictedNextGrade: grades.length > 0 ? grades[grades.length - 1].score : 0,
+      predictedNextGrade: grades[grades.length - 1]?.score ?? 0,
       confidence: 0,
     };
   }
 
   // Sort by date
   const sorted = [...grades].sort((a, b) => a.date.getTime() - b.date.getTime());
-  
+
   // Convert dates to numeric x values (days from first date)
-  const firstDate = sorted[0].date.getTime();
+  const firstDate = sorted[0]?.date.getTime() ?? 0;
   const points = sorted.map((g, i) => ({
     x: (g.date.getTime() - firstDate) / (1000 * 60 * 60 * 24), // days
     y: g.score,
@@ -81,7 +81,7 @@ export function calculateGradeTrend(grades: Array<{ date: Date; score: number }>
   const intercept = (sumY - slope * sumX) / n;
 
   // Predict next grade (30 days from last)
-  const lastX = points[points.length - 1].x;
+  const lastX = points[points.length - 1]?.x ?? 0;
   const predictedNextGrade = Math.max(0, Math.min(10, intercept + slope * (lastX + 30)));
 
   // Calculate R² for confidence
@@ -91,7 +91,7 @@ export function calculateGradeTrend(grades: Array<{ date: Date; score: number }>
     const predicted = intercept + slope * p.x;
     return sum + Math.pow(p.y - predicted, 2);
   }, 0);
-  const r2 = ssTotal > 0 ? 1 - (ssResidual / ssTotal) : 0;
+  const r2 = ssTotal > 0 ? 1 - ssResidual / ssTotal : 0;
   const confidence = Math.round(Math.max(0, r2) * 100);
 
   // Determine direction (per week)
@@ -254,7 +254,7 @@ export function predictFinalGrade(
   trend: GradeTrend
 ): PredictionResult {
   // Calculate current average
-  const validGrades = currentScores.filter(g => calculateSubjectAverage(g) !== null);
+  const validGrades = currentScores.filter((g) => calculateSubjectAverage(g) !== null);
   if (validGrades.length === 0) {
     return {
       predictedGrade: 0,
@@ -265,18 +265,19 @@ export function predictFinalGrade(
     };
   }
 
-  const currentAvg = validGrades.reduce((sum, g) => sum + (calculateSubjectAverage(g) || 0), 0) / validGrades.length;
-  
+  const currentAvg =
+    validGrades.reduce((sum, g) => sum + (calculateSubjectAverage(g) || 0), 0) / validGrades.length;
+
   // Apply trend adjustment
   const trendAdjustment = trend.slope * 30 * ((100 - completedWeight) / 100);
   const predictedGrade = Math.max(0, Math.min(10, currentAvg + trendAdjustment));
 
   // Calculate confidence based on completion and trend confidence
   const completionConfidence = Math.min(100, completedWeight);
-  const confidence = Math.round((completionConfidence * 0.6) + (trend.confidence * 0.4));
+  const confidence = Math.round(completionConfidence * 0.6 + trend.confidence * 0.4);
 
   // Best and worst case scenarios
-  const variance = (100 - confidence) / 100 * 2; // Max 2 points variance
+  const variance = ((100 - confidence) / 100) * 2; // Max 2 points variance
   const bestCase = Math.min(10, predictedGrade + variance);
   const worstCase = Math.max(0, predictedGrade - variance);
 
@@ -322,9 +323,12 @@ export function calculateRequiredFinalScore(
   // Calculate current weighted sum
   let currentSum = 0;
   if (currentComponentScores.oral !== undefined) currentSum += currentComponentScores.oral * 1;
-  if (currentComponentScores.fifteenMin !== undefined) currentSum += currentComponentScores.fifteenMin * 1;
-  if (currentComponentScores.fortyFiveMin !== undefined) currentSum += currentComponentScores.fortyFiveMin * 2;
-  if (currentComponentScores.midterm !== undefined) currentSum += currentComponentScores.midterm * 2;
+  if (currentComponentScores.fifteenMin !== undefined)
+    currentSum += currentComponentScores.fifteenMin * 1;
+  if (currentComponentScores.fortyFiveMin !== undefined)
+    currentSum += currentComponentScores.fortyFiveMin * 2;
+  if (currentComponentScores.midterm !== undefined)
+    currentSum += currentComponentScores.midterm * 2;
 
   // Calculate required final score
   const requiredSum = targetGPA * totalWeight;
@@ -363,10 +367,12 @@ export function getPerformanceMetrics(
   missingAssignments: number = 0
 ): PerformanceMetrics {
   // Calculate current average
-  const validGrades = studentGrades.filter(g => calculateSubjectAverage(g) !== null);
-  const currentAverage = validGrades.length > 0
-    ? validGrades.reduce((sum, g) => sum + (calculateSubjectAverage(g) || 0), 0) / validGrades.length
-    : 0;
+  const validGrades = studentGrades.filter((g) => calculateSubjectAverage(g) !== null);
+  const currentAverage =
+    validGrades.length > 0
+      ? validGrades.reduce((sum, g) => sum + (calculateSubjectAverage(g) || 0), 0) /
+        validGrades.length
+      : 0;
 
   // Create grade history for trend (mock dates for now)
   const gradeHistory = validGrades.map((g, i) => ({

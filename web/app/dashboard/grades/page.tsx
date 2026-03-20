@@ -1,6 +1,6 @@
 /**
  * Grades Navigation Page - Enhanced with Real Statistics
- * 
+ *
  * Features:
  * - Real statistics from API
  * - Recent activity feed
@@ -8,15 +8,15 @@
  * - Role-based navigation cards
  */
 
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useProfile } from "@/hooks/useProfile";
-import { usePermissions } from "@/hooks/usePermissions";
-import { apiFetch, getGrades, getClasses } from "@/lib/api/client";
-import { LoadingState } from "@/components/ui";
-import { Icons } from "@/components/ui/Icons";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useProfile } from '@/hooks/useProfile';
+import { usePermissions } from '@/hooks/usePermissions';
+import { apiFetch, getGrades, getClasses } from '@/lib/api/client';
+import { LoadingState } from '@/components/ui';
+import { Icons } from '@/components/ui/Icons';
 import {
   PencilSquareIcon,
   DocumentChartBarIcon,
@@ -25,8 +25,8 @@ import {
   ClockIcon,
   ArrowTrendingUpIcon,
   UsersIcon,
-  CheckCircleIcon
-} from "@heroicons/react/24/outline";
+  CheckCircleIcon,
+} from '@heroicons/react/24/outline';
 
 interface NavCard {
   href: string;
@@ -56,44 +56,64 @@ interface RecentActivity {
 
 const navCards: NavCard[] = [
   {
-    href: "/dashboard/grades/entry",
-    title: "Nhập điểm",
-    description: "Nhập điểm sử dụng thang điểm Việt Nam",
+    href: '/dashboard/grades/entry',
+    title: 'Nhập điểm',
+    description: 'Nhập điểm sử dụng thang điểm Việt Nam',
     icon: PencilSquareIcon,
-    permission: "grades.entry",
-    color: "indigo",
+    permission: 'grades.entry',
+    color: 'indigo',
   },
   {
-    href: "/dashboard/grades/analytics",
-    title: "Phân tích điểm",
-    description: "Xem hiệu suất lớp học và phân bố điểm",
+    href: '/dashboard/grades/analytics',
+    title: 'Phân tích điểm',
+    description: 'Xem hiệu suất lớp học và phân bố điểm',
     icon: DocumentChartBarIcon,
-    permission: "grades.analytics",
-    color: "emerald",
+    permission: 'grades.analytics',
+    color: 'emerald',
   },
   {
-    href: "/dashboard/grades/reports",
-    title: "Báo cáo điểm",
-    description: "Tạo và xuất báo cáo điểm chi tiết",
+    href: '/dashboard/grades/reports',
+    title: 'Báo cáo điểm',
+    description: 'Tạo và xuất báo cáo điểm chi tiết',
     icon: DocumentTextIcon,
-    permission: "reports.view",
-    color: "amber",
+    permission: 'reports.view',
+    color: 'amber',
   },
   {
-    href: "/dashboard/students/me/transcript", // Placeholder that we'll handle in-component or update to real ID
-    title: "Điểm của tôi",
-    description: "Xem điểm và kết quả bài tập của bạn",
+    href: '/dashboard/students/me/transcript', // Placeholder that we'll handle in-component or update to real ID
+    title: 'Điểm của tôi',
+    description: 'Xem điểm và kết quả bài tập của bạn',
     icon: AcademicCapIcon,
     isStudentOnly: true,
-    color: "blue",
+    color: 'blue',
   },
 ];
 
 const colorClasses: Record<string, { bg: string; hover: string; text: string; icon: string }> = {
-  indigo: { bg: "bg-indigo-50", hover: "group-hover:bg-indigo-100", text: "text-indigo-600", icon: "text-indigo-600" },
-  emerald: { bg: "bg-emerald-50", hover: "group-hover:bg-emerald-100", text: "text-emerald-600", icon: "text-emerald-600" },
-  amber: { bg: "bg-amber-50", hover: "group-hover:bg-amber-100", text: "text-amber-600", icon: "text-amber-600" },
-  blue: { bg: "bg-blue-50", hover: "group-hover:bg-blue-100", text: "text-blue-600", icon: "text-blue-600" },
+  indigo: {
+    bg: 'bg-indigo-50',
+    hover: 'group-hover:bg-indigo-100',
+    text: 'text-indigo-600',
+    icon: 'text-indigo-600',
+  },
+  emerald: {
+    bg: 'bg-emerald-50',
+    hover: 'group-hover:bg-emerald-100',
+    text: 'text-emerald-600',
+    icon: 'text-emerald-600',
+  },
+  amber: {
+    bg: 'bg-amber-50',
+    hover: 'group-hover:bg-amber-100',
+    text: 'text-amber-600',
+    icon: 'text-amber-600',
+  },
+  blue: {
+    bg: 'bg-blue-50',
+    hover: 'group-hover:bg-blue-100',
+    text: 'text-blue-600',
+    icon: 'text-blue-600',
+  },
 };
 
 export default function GradesPageModern() {
@@ -116,10 +136,7 @@ export default function GradesPageModern() {
   const fetchStats = async () => {
     try {
       // Fetch grade statistics
-      const [gradesRes, classesRes] = await Promise.all([
-        getGrades({ limit: 100 }),
-        getClasses()
-      ]);
+      const [gradesRes, classesRes] = await Promise.all([getGrades({ limit: 100 }), getClasses()]);
 
       // Calculate stats from grades data
       const grades = gradesRes.data || [];
@@ -130,15 +147,14 @@ export default function GradesPageModern() {
 
       // Calculate average score
       const scores = grades.map((g: any) => g.score).filter((s: number) => s != null);
-      const avgScore = scores.length > 0
-        ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length
-        : 0;
+      const avgScore =
+        scores.length > 0 ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length : 0;
 
       // Recent entries (last 7 days)
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      const recentGrades = grades.filter((g: any) =>
-        new Date(g.created_at || g.graded_at || new Date().toISOString()) > oneWeekAgo
+      const recentGrades = grades.filter(
+        (g: any) => new Date(g.created_at || g.graded_at || new Date().toISOString()) > oneWeekAgo
       );
 
       setStats({
@@ -150,19 +166,17 @@ export default function GradesPageModern() {
       });
 
       // Generate recent activity from grades
-      const activities: RecentActivity[] = grades
-        .slice(0, 5)
-        .map((g: any) => ({
-          id: g.id,
-          action: "Nhập điểm",
-          description: `${g.student?.full_name || 'Học sinh'} - ${g.score} điểm`,
-          timestamp: g.created_at || g.graded_at || new Date().toISOString(),
-          className: g.class?.name || (classes.find((c: any) => c.id === g.class_id)?.name),
-        }));
+      const activities: RecentActivity[] = grades.slice(0, 5).map((g: any) => ({
+        id: g.id,
+        action: 'Nhập điểm',
+        description: `${g.student?.full_name || 'Học sinh'} - ${g.score} điểm`,
+        timestamp: g.created_at || g.graded_at || new Date().toISOString(),
+        className: g.class?.name || classes.find((c: any) => c.id === g.class_id)?.name,
+      }));
 
       setRecentActivity(activities);
     } catch (error) {
-      console.error("Failed to fetch stats:", error);
+      console.error('Failed to fetch stats:', error);
       setStats({
         totalStudents: 0,
         totalGrades: 0,
@@ -179,16 +193,18 @@ export default function GradesPageModern() {
     return <LoadingState message="Đang tải..." />;
   }
 
-  const availableCards = navCards.map(card => {
-    if (card.isStudentOnly && isStudent && profile?.id) {
-      return { ...card, href: `/dashboard/students/${profile.id}/transcript` };
-    }
-    return card;
-  }).filter(card => {
-    if (card.isStudentOnly) return isStudent;
-    if (card.permission) return can(card.permission as any);
-    return false;
-  });
+  const availableCards = navCards
+    .map((card) => {
+      if (card.isStudentOnly && isStudent && profile?.id) {
+        return { ...card, href: `/dashboard/students/${profile.id}/transcript` };
+      }
+      return card;
+    })
+    .filter((card) => {
+      if (card.isStudentOnly) return isStudent;
+      if (card.permission) return can(card.permission as any);
+      return false;
+    });
 
   // Format relative time
   const formatRelativeTime = (timestamp: string) => {
@@ -216,7 +232,7 @@ export default function GradesPageModern() {
             </h1>
           </div>
           <p className="text-sm text-stone-500 dark:text-stone-400 pl-4">
-            {isStudent ? "Xem điểm và tiến độ học tập của bạn" : "Quản lý điểm, bài tập và báo cáo"}
+            {isStudent ? 'Xem điểm và tiến độ học tập của bạn' : 'Quản lý điểm, bài tập và báo cáo'}
           </p>
         </div>
 
@@ -230,9 +246,11 @@ export default function GradesPageModern() {
                 </div>
                 <div>
                   <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
-                    {loadingStats ? "-" : stats?.totalStudents || 0}
+                    {loadingStats ? '-' : stats?.totalStudents || 0}
                   </p>
-                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Học sinh</p>
+                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                    Học sinh
+                  </p>
                 </div>
               </div>
             </div>
@@ -244,9 +262,11 @@ export default function GradesPageModern() {
                 </div>
                 <div>
                   <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
-                    {loadingStats ? "-" : stats?.totalGrades || 0}
+                    {loadingStats ? '-' : stats?.totalGrades || 0}
                   </p>
-                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Điểm đã nhập</p>
+                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                    Điểm đã nhập
+                  </p>
                 </div>
               </div>
             </div>
@@ -258,9 +278,11 @@ export default function GradesPageModern() {
                 </div>
                 <div>
                   <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
-                    {loadingStats ? "-" : stats?.averageScore || 0}
+                    {loadingStats ? '-' : stats?.averageScore || 0}
                   </p>
-                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Điểm TB</p>
+                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                    Điểm TB
+                  </p>
                 </div>
               </div>
             </div>
@@ -272,9 +294,11 @@ export default function GradesPageModern() {
                 </div>
                 <div>
                   <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
-                    {loadingStats ? "-" : stats?.recentEntries || 0}
+                    {loadingStats ? '-' : stats?.recentEntries || 0}
                   </p>
-                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Tuần này</p>
+                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                    Tuần này
+                  </p>
                 </div>
               </div>
             </div>
@@ -284,7 +308,9 @@ export default function GradesPageModern() {
         {/* Navigation Cards */}
         {availableCards.length > 0 ? (
           <div className="mb-8">
-            <h2 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em] mb-4 pl-1">Chức năng</h2>
+            <h2 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em] mb-4 pl-1">
+              Chức năng
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {availableCards.map((card) => {
                 const colors = colorClasses[card.color];
@@ -293,20 +319,38 @@ export default function GradesPageModern() {
                     <div className="glass-crystal rounded-2xl hover:shadow-lg transition-all duration-300 group cursor-pointer h-full border-none">
                       <div className="p-6">
                         <div className="flex items-start gap-4">
-                          <div className={`p-3 ${colors.bg} rounded-xl ${colors.hover} transition-colors duration-200`}>
-                            <card.icon className={`w-6 h-6 ${colors.icon}`} />
-                          </div>
+                          {colors && (
+                            <div
+                              className={`p-3 ${colors.bg} rounded-xl ${colors.hover} transition-colors duration-200`}
+                            >
+                              <card.icon className={`w-6 h-6 ${colors.icon}`} />
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
-                            <h3 className={`text-lg font-black text-stone-900 dark:text-stone-100 mb-1.5 group-hover:${colors.text} transition-colors duration-200 uppercase tracking-tight`}>
+                            <h3
+                              className={`text-lg font-black text-stone-900 dark:text-stone-100 mb-1.5 group-hover:${colors?.text ?? ''} transition-colors duration-200 uppercase tracking-tight`}
+                            >
                               {card.title}
                             </h3>
                             <p className="text-stone-500 dark:text-stone-400 text-sm leading-relaxed">
                               {card.description}
                             </p>
-                            <div className={`mt-4 flex items-center text-xs font-black ${colors.text} opacity-0 group-hover:opacity-100 transition-opacity duration-200 uppercase tracking-wider`}>
+                            <div
+                              className={`mt-4 flex items-center text-xs font-black ${colors?.text ?? ''} opacity-0 group-hover:opacity-100 transition-opacity duration-200 uppercase tracking-wider`}
+                            >
                               <span>Mở chức năng</span>
-                              <svg className="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                              <svg
+                                className="w-4 h-4 ml-1.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2.5}
+                                  d="M9 5l7 7-7 7"
+                                />
                               </svg>
                             </div>
                           </div>
@@ -321,8 +365,18 @@ export default function GradesPageModern() {
         ) : (
           <div className="glass-crystal rounded-2xl p-12 text-center mb-8">
             <div className="p-4 bg-stone-100 dark:bg-stone-800 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <svg className="w-8 h-8 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <svg
+                className="w-8 h-8 text-stone-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
               </svg>
             </div>
             <h3 className="text-lg font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight mb-2">
@@ -358,7 +412,10 @@ export default function GradesPageModern() {
               ) : recentActivity.length > 0 ? (
                 <div className="space-y-3">
                   {recentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-start gap-3 p-3 bg-stone-50 dark:bg-stone-900/40 rounded-xl">
+                    <div
+                      key={activity.id}
+                      className="flex items-start gap-3 p-3 bg-stone-50 dark:bg-stone-900/40 rounded-xl"
+                    >
                       <div className="p-1.5 bg-emerald-500/10 rounded-full">
                         <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
                       </div>
@@ -377,7 +434,9 @@ export default function GradesPageModern() {
               ) : (
                 <div className="text-center py-8">
                   <Icons.Grades className="w-10 h-10 text-stone-300 mx-auto mb-2" />
-                  <p className="text-stone-400 dark:text-stone-500 text-sm">Chưa có hoạt động gần đây</p>
+                  <p className="text-stone-400 dark:text-stone-500 text-sm">
+                    Chưa có hoạt động gần đây
+                  </p>
                 </div>
               )}
             </div>
@@ -392,19 +451,25 @@ export default function GradesPageModern() {
                 <Link href="/dashboard/grades/entry">
                   <div className="flex items-center gap-3 p-3 bg-indigo-500/8 dark:bg-indigo-500/10 hover:bg-indigo-500/15 rounded-xl transition-colors cursor-pointer group">
                     <PencilSquareIcon className="w-5 h-5 text-indigo-500" />
-                    <span className="font-bold text-indigo-700 dark:text-indigo-400 text-sm group-hover:text-indigo-600">Nhập điểm mới</span>
+                    <span className="font-bold text-indigo-700 dark:text-indigo-400 text-sm group-hover:text-indigo-600">
+                      Nhập điểm mới
+                    </span>
                   </div>
                 </Link>
                 <Link href="/dashboard/grades/reports">
                   <div className="flex items-center gap-3 p-3 bg-amber-500/8 dark:bg-amber-500/10 hover:bg-amber-500/15 rounded-xl transition-colors cursor-pointer group">
                     <DocumentTextIcon className="w-5 h-5 text-amber-500" />
-                    <span className="font-bold text-amber-700 dark:text-amber-400 text-sm group-hover:text-amber-600">Xuất báo cáo</span>
+                    <span className="font-bold text-amber-700 dark:text-amber-400 text-sm group-hover:text-amber-600">
+                      Xuất báo cáo
+                    </span>
                   </div>
                 </Link>
                 <Link href="/dashboard/grades/analytics">
                   <div className="flex items-center gap-3 p-3 bg-emerald-500/8 dark:bg-emerald-500/10 hover:bg-emerald-500/15 rounded-xl transition-colors cursor-pointer group">
                     <DocumentChartBarIcon className="w-5 h-5 text-emerald-500" />
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm group-hover:text-emerald-600">Xem phân tích</span>
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm group-hover:text-emerald-600">
+                      Xem phân tích
+                    </span>
                   </div>
                 </Link>
               </div>

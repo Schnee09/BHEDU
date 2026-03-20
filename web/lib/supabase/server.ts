@@ -1,9 +1,9 @@
 // web/lib/supabase/server.ts
 // Updated: 2025-01-20 - Force Vercel rebuild with clean cache
-import { cookies } from "next/headers";
-import { type CookieOptions, createServerClient } from "@supabase/ssr";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import type { NextRequest } from "next/server";
+import { cookies } from 'next/headers';
+import { type CookieOptions, createServerClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import type { NextRequest } from 'next/server';
 
 /**
  * Cookie-aware Supabase server client for SSR/server actions.
@@ -23,7 +23,7 @@ export async function createClient() {
         cookieStore.set({ name, value, ...options });
       },
       remove(name: string, options: CookieOptions) {
-        cookieStore.set({ name, value: "", ...options });
+        cookieStore.set({ name, value: '', ...options });
       },
     },
   });
@@ -37,26 +37,26 @@ export function createClientFromRequest(request: NextRequest | Request) {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   // 1. Check for Authorization header first (often used by apiFetch)
-  const authHeader = request.headers.get("authorization");
-  if (authHeader?.startsWith("Bearer ")) {
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
     return createClientFromToken(token);
   }
 
   // 2. Fallback to cookies
-  const cookieStore = "cookies" in request ? request.cookies : undefined;
+  const cookieStore = 'cookies' in request ? request.cookies : undefined;
 
   return createServerClient(url, anon, {
     cookies: {
       get(name: string) {
-        if (cookieStore && "get" in cookieStore) {
+        if (cookieStore && 'get' in cookieStore) {
           return cookieStore.get(name)?.value;
         }
         // Fallback for standard Request
-        const cookies = request.headers.get("cookie");
+        const cookies = request.headers.get('cookie');
         if (!cookies) return undefined;
         const match = cookies.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
-        return match ? decodeURIComponent(match[2]) : undefined;
+        return match && match[2] ? decodeURIComponent(match[2]) : undefined;
       },
       set() {
         // No-op for request-based client (response handling done elsewhere)
@@ -77,7 +77,7 @@ export function createServiceClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
   if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for service client");
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for service client');
   }
 
   return createSupabaseClient(url, serviceRoleKey, {

@@ -1,6 +1,6 @@
 /**
  * Student Code Generation Utility
- * 
+ *
  * Provides unified functions for generating and validating student codes.
  * Format: HS{YEAR}{4-DIGIT-SEQ} e.g., HS20260001
  */
@@ -33,7 +33,7 @@ export function isValidStudentCode(code: string): boolean {
   const newFormat = /^HS\d{4}\d{4}$/;
   // Legacy format: STU-2026-0001
   const legacyFormat = /^STU-\d{4}-\d{4}$/;
-  
+
   return newFormat.test(code) || legacyFormat.test(code);
 }
 
@@ -45,20 +45,20 @@ export function parseStudentCode(code: string): { year: number; sequence: number
   const newMatch = code.match(/^HS(\d{4})(\d{4})$/);
   if (newMatch) {
     return {
-      year: parseInt(newMatch[1]),
-      sequence: parseInt(newMatch[2])
+      year: parseInt(newMatch[1] ?? '0'),
+      sequence: parseInt(newMatch[2] ?? '0'),
     };
   }
-  
+
   // Legacy format: STU-2026-0001
   const legacyMatch = code.match(/^STU-(\d{4})-(\d{4})$/);
   if (legacyMatch) {
     return {
-      year: parseInt(legacyMatch[1]),
-      sequence: parseInt(legacyMatch[2])
+      year: parseInt(legacyMatch[1] ?? '0'),
+      sequence: parseInt(legacyMatch[2] ?? '0'),
     };
   }
-  
+
   return null;
 }
 
@@ -67,7 +67,7 @@ export function parseStudentCode(code: string): { year: number; sequence: number
  */
 export async function getNextSequenceNumber(supabase: SupabaseClient): Promise<number> {
   const year = getCurrentYear();
-  
+
   // Query existing student codes for current year
   const { data: students, error } = await supabase
     .from('profiles')
@@ -109,16 +109,16 @@ export async function generateStudentCode(supabase: SupabaseClient): Promise<str
  * Returns an array of codes starting from the next available sequence
  */
 export async function generateBulkStudentCodes(
-  supabase: SupabaseClient, 
+  supabase: SupabaseClient,
   count: number
 ): Promise<string[]> {
   const year = getCurrentYear();
   const startSeq = await getNextSequenceNumber(supabase);
-  
+
   const codes: string[] = [];
   for (let i = 0; i < count; i++) {
     codes.push(formatStudentCode(year, startSeq + i));
   }
-  
+
   return codes;
 }

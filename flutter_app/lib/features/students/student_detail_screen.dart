@@ -192,15 +192,13 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen>
           actions: [
             IconButton(
               icon: const Icon(Icons.edit, color: Colors.white),
-              onPressed: () {
-                // TODO: Edit student
-              },
+              onPressed: () => _showEditDialog(student),
+              tooltip: 'Chỉnh sửa hồ sơ',
             ),
             IconButton(
-              icon: const Icon(Icons.more_vert, color: Colors.white),
-              onPressed: () {
-                // TODO: More options
-              },
+              icon: const Icon(Icons.delete_outline, color: Colors.white),
+              onPressed: () => _deleteStudent(student),
+              tooltip: 'Xóa học sinh',
             ),
           ],
         ),
@@ -233,6 +231,75 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen>
     );
   }
 
+  Future<void> _showEditDialog(ProfileModel student) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => _EditProfileDialog(student: student),
+    );
+
+    if (result == true) {
+      ref.invalidate(selectedStudentProvider(widget.studentId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã cập nhật hồ sơ thành công'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteStudent(ProfileModel student) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận xóa'),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa học sinh ${student.fullName}? '
+          'Hành động này sẽ xóa vĩnh viễn tài khoản và dữ liệu liên quan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Xóa vĩnh viễn', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        final repo = ref.read(studentsRepoProvider);
+        await repo.deleteStudent(student.id);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã xóa học sinh thành công'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          Navigator.of(context).pop(); // Go back to student list
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi khi xóa: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Color _getStatusColor(StudentStatus status) {
     switch (status) {
       case StudentStatus.active:
@@ -246,6 +313,157 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen>
       case StudentStatus.transferred:
         return AppColors.textMuted;
     }
+  }
+}
+
+class _EditProfileDialog extends ConsumerStatefulWidget {
+  final ProfileModel student;
+
+  const _EditProfileDialog({required this.student});
+
+  @override
+  ConsumerState<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
+  late TextEditingController _phoneController;
+  late TextEditingController _addressController;
+  DateTime? _dateOfBirth;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstNameController = TextEditingController(text: widget.student.firstName);
+    _lastNameController = TextEditingController(text: widget.student.lastName);
+    _phoneController = TextEditingController(text: widget.student.phone);
+    _addressController = TextEditingController(text: widget.student.address);
+    _dateOfBirth = widget.student.dateOfBirth;
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 18)),
+      firstDate: DateTime(1960),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() => _dateOfBirth = picked);
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    
+    try {
+      final repo = ref.read(studentsRepoProvider);
+      await repo.updateStudent(widget.student.id, {
+        'first_name': _firstNameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'address': _addressController.text.trim(),
+        'date_of_birth': _dateOfBirth?.toIso8601String().split('T')[0],
+      });
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Chỉnh sửa hồ sơ'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _lastNameController,
+                decoration: const InputDecoration(labelText: 'Họ & Tên đệm'),
+                validator: (v) => v?.isEmpty == true ? 'Bắt buộc' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _firstNameController,
+                decoration: const InputDecoration(labelText: 'Tên'),
+                validator: (v) => v?.isEmpty == true ? 'Bắt buộc' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(labelText: 'Số điện thoại'),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _addressController,
+                decoration: const InputDecoration(labelText: 'Địa chỉ'),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: _selectDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Ngày sinh',
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  child: Text(
+                    _dateOfBirth == null
+                        ? 'Chọn ngày sinh'
+                        : _dateOfBirth!.toIso8601String().split('T')[0],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        ElevatedButton(
+          onPressed: _isSaving ? null : _submit,
+          child: _isSaving
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Lưu thay đổi'),
+        ),
+      ],
+    );
   }
 }
 

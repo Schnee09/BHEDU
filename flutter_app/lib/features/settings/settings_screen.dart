@@ -362,28 +362,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Consumer(
               builder: (context, ref, child) {
                 final currentLang = ref.watch(languageProvider);
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioListTile<String>(
-                      title: const Text('Tiếng Việt'),
-                      value: 'vi',
-                      groupValue: currentLang,
-                      onChanged: (value) {
-                        ref.read(languageProvider.notifier).state = value!;
-                        Navigator.pop(context);
-                      },
-                    ),
-                    RadioListTile<String>(
-                      title: const Text('English'),
-                      value: 'en',
-                      groupValue: currentLang,
-                      onChanged: (value) {
-                        ref.read(languageProvider.notifier).state = value!;
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
+                return RadioGroup<String>(
+                  groupValue: currentLang,
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(languageProvider.notifier).state = value;
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RadioListTile<String>(
+                        title: Text('Tiếng Việt'),
+                        value: 'vi',
+                      ),
+                      RadioListTile<String>(
+                        title: Text('English'),
+                        value: 'en',
+                      ),
+                    ],
+                  ),
                 );
               },
             ),

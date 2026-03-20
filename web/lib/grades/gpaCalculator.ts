@@ -34,11 +34,11 @@ export interface CumulativeGPA {
   totalCredits: number;
   semesters: SemesterGPA[];
   standing: AcademicStanding;
-  trend: "improving" | "stable" | "declining";
+  trend: 'improving' | 'stable' | 'declining';
 }
 
 export interface AcademicStanding {
-  code: "excellent" | "good" | "fair" | "average" | "weak" | "failing";
+  code: 'excellent' | 'good' | 'fair' | 'average' | 'weak' | 'failing';
   labelVi: string;
   labelEn: string;
   color: string;
@@ -48,39 +48,39 @@ export interface AcademicStanding {
 // Vietnamese Academic Standing definitions
 export const ACADEMIC_STANDINGS: AcademicStanding[] = [
   {
-    code: "excellent",
-    labelVi: "Xuất sắc",
-    labelEn: "Excellent",
-    color: "emerald",
+    code: 'excellent',
+    labelVi: 'Xuất sắc',
+    labelEn: 'Excellent',
+    color: 'emerald',
     minGpa: 9.0,
   },
   {
-    code: "good",
-    labelVi: "Giỏi",
-    labelEn: "Good",
-    color: "blue",
+    code: 'good',
+    labelVi: 'Giỏi',
+    labelEn: 'Good',
+    color: 'blue',
     minGpa: 8.0,
   },
-  { code: "fair", labelVi: "Khá", labelEn: "Fair", color: "cyan", minGpa: 6.5 },
+  { code: 'fair', labelVi: 'Khá', labelEn: 'Fair', color: 'cyan', minGpa: 6.5 },
   {
-    code: "average",
-    labelVi: "Trung bình",
-    labelEn: "Average",
-    color: "amber",
+    code: 'average',
+    labelVi: 'Trung bình',
+    labelEn: 'Average',
+    color: 'amber',
     minGpa: 5.0,
   },
   {
-    code: "weak",
-    labelVi: "Yếu",
-    labelEn: "Weak",
-    color: "orange",
+    code: 'weak',
+    labelVi: 'Yếu',
+    labelEn: 'Weak',
+    color: 'orange',
     minGpa: 3.5,
   },
   {
-    code: "failing",
-    labelVi: "Kém",
-    labelEn: "Failing",
-    color: "red",
+    code: 'failing',
+    labelVi: 'Kém',
+    labelEn: 'Failing',
+    color: 'red',
     minGpa: 0,
   },
 ];
@@ -112,9 +112,7 @@ export function calculateSubjectAverage(grade: SubjectGrade): number | null {
       coefficient: GRADE_COEFFICIENTS.fifteenMin,
     });
   }
-  if (
-    grade.fortyFiveMinScore !== undefined && grade.fortyFiveMinScore !== null
-  ) {
+  if (grade.fortyFiveMinScore !== undefined && grade.fortyFiveMinScore !== null) {
     scores.push({
       value: grade.fortyFiveMinScore,
       coefficient: GRADE_COEFFICIENTS.fortyFiveMin,
@@ -136,10 +134,7 @@ export function calculateSubjectAverage(grade: SubjectGrade): number | null {
   if (scores.length === 0) return null;
 
   const totalWeight = scores.reduce((sum, s) => sum + s.coefficient, 0);
-  const weightedSum = scores.reduce(
-    (sum, s) => sum + s.value * s.coefficient,
-    0,
-  );
+  const weightedSum = scores.reduce((sum, s) => sum + s.value * s.coefficient, 0);
 
   return Math.round((weightedSum / totalWeight) * 100) / 100;
 }
@@ -151,7 +146,7 @@ export function calculateSemesterGPA(
   grades: SubjectGrade[],
   semesterId: string,
   semesterName: string,
-  academicYear: string,
+  academicYear: string
 ): SemesterGPA {
   const validGrades = grades
     .map((g) => ({ ...g, average: calculateSubjectAverage(g) }))
@@ -170,10 +165,7 @@ export function calculateSemesterGPA(
   }
 
   const totalCredits = validGrades.reduce((sum, g) => sum + g.credits, 0);
-  const weightedSum = validGrades.reduce(
-    (sum, g) => sum + (g.average! * g.credits),
-    0,
-  );
+  const weightedSum = validGrades.reduce((sum, g) => sum + g.average! * g.credits, 0);
   const gpa = Math.round((weightedSum / totalCredits) * 100) / 100;
 
   return {
@@ -190,27 +182,20 @@ export function calculateSemesterGPA(
 /**
  * Calculate cumulative GPA from multiple semesters
  */
-export function calculateCumulativeGPA(
-  semesters: SemesterGPA[],
-): CumulativeGPA {
+export function calculateCumulativeGPA(semesters: SemesterGPA[]): CumulativeGPA {
   if (semesters.length === 0) {
     return {
       gpa: 0,
       totalCredits: 0,
       semesters: [],
       standing: getAcademicStanding(0),
-      trend: "stable",
+      trend: 'stable',
     };
   }
 
   const totalCredits = semesters.reduce((sum, s) => sum + s.totalCredits, 0);
-  const weightedSum = semesters.reduce(
-    (sum, s) => sum + (s.gpa * s.totalCredits),
-    0,
-  );
-  const gpa = totalCredits > 0
-    ? Math.round((weightedSum / totalCredits) * 100) / 100
-    : 0;
+  const weightedSum = semesters.reduce((sum, s) => sum + s.gpa * s.totalCredits, 0);
+  const gpa = totalCredits > 0 ? Math.round((weightedSum / totalCredits) * 100) / 100 : 0;
 
   // Calculate trend based on last 3 semesters
   const trend = calculateTrend(semesters);
@@ -233,27 +218,31 @@ export function getAcademicStanding(gpa: number): AcademicStanding {
       return standing;
     }
   }
-  return ACADEMIC_STANDINGS[ACADEMIC_STANDINGS.length - 1];
+  const defaultStanding = ACADEMIC_STANDINGS[ACADEMIC_STANDINGS.length - 1];
+  if (!defaultStanding) throw new Error('No academic standings defined');
+  return defaultStanding;
 }
 
 /**
  * Calculate GPA trend from semesters
  */
-export function calculateTrend(
-  semesters: SemesterGPA[],
-): "improving" | "stable" | "declining" {
-  if (semesters.length < 2) return "stable";
+export function calculateTrend(semesters: SemesterGPA[]): 'improving' | 'stable' | 'declining' {
+  if (semesters.length < 2) return 'stable';
 
   const recentSemesters = semesters.slice(-3);
-  if (recentSemesters.length < 2) return "stable";
+  if (recentSemesters.length < 2) return 'stable';
 
-  const firstGPA = recentSemesters[0].gpa;
-  const lastGPA = recentSemesters[recentSemesters.length - 1].gpa;
+  const startSemester = recentSemesters[0];
+  const endSemester = recentSemesters[recentSemesters.length - 1];
+  if (!startSemester || !endSemester) return 'stable';
+
+  const firstGPA = startSemester.gpa;
+  const lastGPA = endSemester.gpa;
   const difference = lastGPA - firstGPA;
 
-  if (difference > 0.3) return "improving";
-  if (difference < -0.3) return "declining";
-  return "stable";
+  if (difference > 0.3) return 'improving';
+  if (difference < -0.3) return 'declining';
+  return 'stable';
 }
 
 /**
@@ -275,17 +264,17 @@ export function convertTo4PointScale(vietnameseGPA: number): number {
  * Get letter grade from Vietnamese score (0-10)
  */
 export function getLetterGradeFromScore(score: number): string {
-  if (score >= 9.0) return "A+";
-  if (score >= 8.5) return "A";
-  if (score >= 8.0) return "A-";
-  if (score >= 7.0) return "B+";
-  if (score >= 6.5) return "B";
-  if (score >= 5.5) return "B-";
-  if (score >= 5.0) return "C+";
-  if (score >= 4.5) return "C";
-  if (score >= 4.0) return "C-";
-  if (score >= 3.0) return "D";
-  return "F";
+  if (score >= 9.0) return 'A+';
+  if (score >= 8.5) return 'A';
+  if (score >= 8.0) return 'A-';
+  if (score >= 7.0) return 'B+';
+  if (score >= 6.5) return 'B';
+  if (score >= 5.5) return 'B-';
+  if (score >= 5.0) return 'C+';
+  if (score >= 4.5) return 'C';
+  if (score >= 4.0) return 'C-';
+  if (score >= 3.0) return 'D';
+  return 'F';
 }
 
 /**
@@ -304,9 +293,7 @@ export function getProgressToNextStanding(gpa: number): {
   progressPercent: number;
 } {
   const currentStanding = getAcademicStanding(gpa);
-  const currentIndex = ACADEMIC_STANDINGS.findIndex((s) =>
-    s.code === currentStanding.code
-  );
+  const currentIndex = ACADEMIC_STANDINGS.findIndex((s) => s.code === currentStanding.code);
 
   if (currentIndex === 0) {
     // Already at highest standing
@@ -318,6 +305,13 @@ export function getProgressToNextStanding(gpa: number): {
   }
 
   const nextStanding = ACADEMIC_STANDINGS[currentIndex - 1];
+  if (!nextStanding) {
+    return {
+      nextStanding: null,
+      pointsNeeded: 0,
+      progressPercent: 100,
+    };
+  }
   const pointsNeeded = Math.round((nextStanding.minGpa - gpa) * 100) / 100;
 
   // Calculate progress within current standing range
@@ -328,7 +322,7 @@ export function getProgressToNextStanding(gpa: number): {
   const progressPercent = Math.min(100, Math.round((progress / range) * 100));
 
   return {
-    nextStanding,
+    nextStanding: nextStanding || null,
     pointsNeeded,
     progressPercent,
   };
@@ -341,7 +335,7 @@ export function calculateRequiredGrade(
   currentAverage: number,
   currentWeight: number,
   targetGPA: number,
-  remainingWeight: number,
+  remainingWeight: number
 ): number | null {
   if (remainingWeight <= 0) return null;
 

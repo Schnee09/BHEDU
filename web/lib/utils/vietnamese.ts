@@ -10,7 +10,7 @@ export const VIETNAMESE_LOCALE = {
     return d.toLocaleDateString('vi-VN', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
   },
 
@@ -19,7 +19,7 @@ export const VIETNAMESE_LOCALE = {
     return d.toLocaleDateString('vi-VN', {
       year: '2-digit',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
     });
   },
 
@@ -68,11 +68,11 @@ export const VIETNAMESE_LOCALE = {
   // Conduct grade descriptions
   getConductDescription: (grade: string): string => {
     const descriptions: Record<string, string> = {
-      'excellent': 'Xuất sắc - Tham gia đầy đủ các hoạt động, có ý thức kỷ luật cao',
-      'good': 'Tốt - Tích cực tham gia hoạt động, có ý thức kỷ luật tốt',
-      'fair': 'Khá - Tham gia các hoạt động, có ý thức kỷ luật',
-      'average': 'Trung bình - Tham gia một số hoạt động, ý thức kỷ luật cơ bản',
-      'weak': 'Yếu - Tham gia ít hoạt động, thường vi phạm kỷ luật'
+      excellent: 'Xuất sắc - Tham gia đầy đủ các hoạt động, có ý thức kỷ luật cao',
+      good: 'Tốt - Tích cực tham gia hoạt động, có ý thức kỷ luật tốt',
+      fair: 'Khá - Tham gia các hoạt động, có ý thức kỷ luật',
+      average: 'Trung bình - Tham gia một số hoạt động, ý thức kỷ luật cơ bản',
+      weak: 'Yếu - Tham gia ít hoạt động, thường vi phạm kỷ luật',
     };
     return descriptions[grade] || grade;
   },
@@ -81,10 +81,10 @@ export const VIETNAMESE_LOCALE = {
   getClassificationDescription: (classification: string): string => {
     const descriptions: Record<string, string> = {
       'Xuất sắc': 'Thành tích học tập xuất sắc, hạnh kiểm tốt',
-      'Giỏi': 'Thành tích học tập tốt, có khả năng phát triển',
-      'Khá': 'Thành tích học tập khá, cần cố gắng hơn',
+      Giỏi: 'Thành tích học tập tốt, có khả năng phát triển',
+      Khá: 'Thành tích học tập khá, cần cố gắng hơn',
       'Trung bình': 'Thành tích học tập trung bình, cần cải thiện',
-      'Yếu': 'Thành tích học tập yếu, cần hỗ trợ đặc biệt'
+      Yếu: 'Thành tích học tập yếu, cần hỗ trợ đặc biệt',
     };
     return descriptions[classification] || classification;
   },
@@ -108,16 +108,40 @@ export const VIETNAMESE_LOCALE = {
   numberToWords: (num: number): string => {
     // Simple implementation for common numbers
     const units = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
-    const teens = ['mười', 'mười một', 'mười hai', 'mười ba', 'mười bốn', 'mười lăm', 'mười sáu', 'mười bảy', 'mười tám', 'mười chín'];
-    const tens = ['', '', 'hai mươi', 'ba mươi', 'bốn mươi', 'năm mươi', 'sáu mươi', 'bảy mươi', 'tám mươi', 'chín mươi'];
+    const teens = [
+      'mười',
+      'mười một',
+      'mười hai',
+      'mười ba',
+      'mười bốn',
+      'mười lăm',
+      'mười sáu',
+      'mười bảy',
+      'mười tám',
+      'mười chín',
+    ];
+    const tens = [
+      '',
+      '',
+      'hai mươi',
+      'ba mươi',
+      'bốn mươi',
+      'năm mươi',
+      'sáu mươi',
+      'bảy mươi',
+      'tám mươi',
+      'chín mươi',
+    ];
 
     if (num === 0) return 'không';
-    if (num < 10) return units[num];
-    if (num < 20) return teens[num - 10];
+    if (num < 10) return units[num] ?? '';
+    if (num < 20) return teens[num - 10] ?? '';
     if (num < 100) {
       const ten = Math.floor(num / 10);
       const unit = num % 10;
-      return tens[ten] + (unit > 0 ? ' ' + units[unit] : '');
+      const tenWord = tens[ten] ?? '';
+      const unitWord = unit > 0 ? ' ' + (units[unit] ?? '') : '';
+      return tenWord + unitWord;
     }
     return num.toString(); // Fallback for larger numbers
   },
@@ -126,7 +150,7 @@ export const VIETNAMESE_LOCALE = {
   formatCurrency: (amount: number): string => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
-      currency: 'VND'
+      currency: 'VND',
     }).format(amount);
   },
 
@@ -135,7 +159,7 @@ export const VIETNAMESE_LOCALE = {
     const d = new Date(date);
     return d.toLocaleTimeString('vi-VN', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   },
 
@@ -147,26 +171,34 @@ export const VIETNAMESE_LOCALE = {
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   },
 
   // Vietnamese month names
   getMonthName: (month: number): string => {
     const months = [
-      'Tháng Một', 'Tháng Hai', 'Tháng Ba', 'Tháng Tư', 'Tháng Năm', 'Tháng Sáu',
-      'Tháng Bảy', 'Tháng Tám', 'Tháng Chín', 'Tháng Mười', 'Tháng Mười Một', 'Tháng Mười Hai'
+      'Tháng Một',
+      'Tháng Hai',
+      'Tháng Ba',
+      'Tháng Tư',
+      'Tháng Năm',
+      'Tháng Sáu',
+      'Tháng Bảy',
+      'Tháng Tám',
+      'Tháng Chín',
+      'Tháng Mười',
+      'Tháng Mười Một',
+      'Tháng Mười Hai',
     ];
     return months[month - 1] || '';
   },
 
   // Vietnamese day names
   getDayName: (day: number): string => {
-    const days = [
-      'Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'
-    ];
+    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
     return days[day] || '';
-  }
+  },
 };
 
 export default VIETNAMESE_LOCALE;

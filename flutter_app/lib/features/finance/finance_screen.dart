@@ -1,37 +1,107 @@
-/// Finance Screen - Tuition and Payment History
-library;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../core/ui/ui_components.dart';
+import '../../data/models/finance_models.dart';
+import '../../data/repositories/finance_repository.dart';
+import '../../shared/providers/auth_provider.dart';
+
+final financeRepoProvider = Provider((ref) => FinanceRepository());
+
+final studentAccountProvider = FutureProvider.autoDispose<StudentAccountModel?>((ref) async {
+  final user = ref.watch(authNotifierProvider).value;
+  if (user == null) return null;
+  return ref.watch(financeRepoProvider).getStudentAccount(user.id);
+});
+
+final studentInvoicesProvider = FutureProvider.autoDispose<List<InvoiceModel>>((ref) async {
+  final user = ref.watch(authNotifierProvider).value;
+  if (user == null) return [];
+  return ref.watch(financeRepoProvider).getInvoices(user.id);
+});
+
+final studentPaymentsProvider = FutureProvider.autoDispose<List<PaymentModel>>((ref) async {
+  final user = ref.watch(authNotifierProvider).value;
+  if (user == null) return [];
+  return ref.watch(financeRepoProvider).getPayments(user.id);
+});
 
 class FinanceScreen extends ConsumerWidget {
   const FinanceScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final accountAsync = ref.watch(studentAccountProvider);
+    final paymentsAsync = ref.watch(studentPaymentsProvider);
+
+    final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Tài chính & Học phí')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Outstanding Balance Card
-            _BalanceCard(),
-            const SizedBox(height: 24),
+      appBar: AppBar(
+        title: const Text('Tài chính & Học phí'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              ref.invalidate(studentAccountProvider);
+              ref.invalidate(studentPaymentsProvider);
+            },
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(studentAccountProvider);
+          ref.invalidate(studentPaymentsProvider);
+          await ref.read(studentAccountProvider.future);
+        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Outstanding Balance Card
+              accountAsync.when(
+                data: (account) => _BalanceCard(
+                  balance: account?.balance ?? 0,
+                  currencyFormat: currencyFormat,
+                ),
+                loading: () => const _LoadingCard(height: 180),
+                error: (e, _) => Center(child: Text('Lỗi tải số dư: $e')),
+              ),
+              const SizedBox(height: 24),
 
-            // Recent Transactions
-            SectionHeader(title: 'Lịch sử giao dịch'),
-            _TransactionList(),
+              // Recent Transactions
+              const SectionHeader(title: 'Lịch sử giao dịch'),
+              paymentsAsync.when(
+                data: (payments) => payments.isEmpty
+                    ? const _EmptyFinanceState(message: 'Không có giao dịch nào')
+                    : _TransactionList(payments: payments, currencyFormat: currencyFormat),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Lỗi tải giao dịch: $e')),
+              ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Upcoming Fees
-            SectionHeader(title: 'Khoản thu sắp tới'),
-            _UpcomingFeesList(),
-          ],
+              // Future Improvements placeholder or summary
+              const AppCard(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: AppColors.info),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Dữ liệu thanh toán được cập nhật sau khi bộ phận kế toán xác minh.',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -39,47 +109,57 @@ class FinanceScreen extends ConsumerWidget {
 }
 
 class _BalanceCard extends StatelessWidget {
+  final double balance;
+  final NumberFormat currencyFormat;
+
+  const _BalanceCard({required this.balance, required this.currencyFormat});
+
   @override
   Widget build(BuildContext context) {
     return GradientContainer(
-      colors: const [AppColors.warning, Colors.orange],
+      colors: balance > 0
+          ? const [AppColors.warning, Colors.orange]
+          : const [AppColors.success, Colors.teal],
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          const Text(
-            'Số dư cần thanh toán',
-            style: TextStyle(
+          Text(
+            balance > 0 ? 'Số dư cần thanh toán' : 'Số dư hiện tại',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            '2,500,000 ₫',
-            style: TextStyle(
+          Text(
+            currencyFormat.format(balance),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 32,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: Payment integration
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppColors.warning,
+          if (balance > 0)
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Tính năng thanh toán trực tuyến đang được phát triển')),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.warning,
+                    ),
+                    child: const Text('Thanh toán ngay'),
                   ),
-                  child: const Text('Thanh toán ngay'),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );
@@ -87,89 +167,128 @@ class _BalanceCard extends StatelessWidget {
 }
 
 class _TransactionList extends StatelessWidget {
+  final List<PaymentModel> payments;
+  final NumberFormat currencyFormat;
+
+  const _TransactionList({required this.payments, required this.currencyFormat});
+
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      itemCount: 3,
+      itemCount: payments.length,
       itemBuilder: (context, index) {
-        return AppCard(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withAlpha(30),
-                  shape: BoxShape.circle,
+        final payment = payments[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(payment.status).withAlpha(30),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _getStatusIcon(payment.status),
+                    color: _getStatusColor(payment.status),
+                    size: 20,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.check,
-                  color: AppColors.success,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Học phí Tháng 12',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '15/12/2025',
-                      style: TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 12,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        payment.paymentMethodName ?? 'Thanh toán học phí',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  ],
+                      Text(
+                        DateFormat('dd/MM/yyyy').format(payment.paymentDate),
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const Text(
-                '-1,200,000 ₫',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
+                Text(
+                  '-${currencyFormat.format(payment.amount)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
           ),
-        ); // TODO: Add spacing between items
+        );
       },
+    );
+  }
+
+  Color _getStatusColor(PaymentStatus status) {
+    switch (status) {
+      case PaymentStatus.verified:
+        return AppColors.success;
+      case PaymentStatus.received:
+        return AppColors.info;
+      case PaymentStatus.pending:
+        return AppColors.warning;
+      case PaymentStatus.cancelled:
+        return AppColors.error;
+    }
+  }
+
+  IconData _getStatusIcon(PaymentStatus status) {
+    switch (status) {
+      case PaymentStatus.verified:
+        return Icons.verified;
+      case PaymentStatus.received:
+        return Icons.check_circle;
+      case PaymentStatus.pending:
+        return Icons.hourglass_empty;
+      case PaymentStatus.cancelled:
+        return Icons.cancel;
+    }
+  }
+}
+
+class _LoadingCard extends StatelessWidget {
+  final double height;
+  const _LoadingCard({required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
 }
 
-class _UpcomingFeesList extends StatelessWidget {
+class _EmptyFinanceState extends StatelessWidget {
+  final String message;
+  const _EmptyFinanceState({required this.message});
+
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.school, color: AppColors.primary),
-            title: const Text('Học phí Học kỳ 2'),
-            subtitle: const Text('Hạn: 15/02/2026'),
-            trailing: const Text(
-              '2,500,000 ₫',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.error,
-              ),
-            ),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.book, color: AppColors.info),
-            title: const Text('Phí tài liệu'),
-            subtitle: const Text('Hạn: 01/02/2026'),
-            trailing: const Text(
-              '300,000 ₫',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(
+          children: [
+            const Icon(Icons.receipt_long_outlined, size: 48, color: AppColors.textMuted),
+            const SizedBox(height: 12),
+            Text(message, style: const TextStyle(color: AppColors.textSecondary)),
+          ],
+        ),
       ),
     );
   }

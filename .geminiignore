@@ -1,0 +1,33 @@
+# Gemini CLI Filter
+
+# Dependency directories
+node_modules/
+.venv/
+dist/
+build/
+.next/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Version control
+.git/
+
+# AI Tooling files (recursive avoid loops)
+.gemini/
+.claude/
+.cursor/
+.trae/
+.roo/
+.windsurf/
+
+# Media and Logs
+*.log
+*.mp4
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf

@@ -6,35 +6,37 @@
 // CSV Export
 export function exportToCSV(data: Record<string, unknown>[], filename: string): void {
   if (!data.length) {
-    console.warn("No data to export");
+    console.warn('No data to export');
     return;
   }
 
   // Get headers from first row
-  const headers = Object.keys(data[0]);
-  
+  const firstRow = data[0];
+  if (!firstRow) return;
+  const headers = Object.keys(firstRow);
+
   // Build CSV content
   const csvRows: string[] = [];
-  
+
   // Add header row
-  csvRows.push(headers.join(","));
-  
+  csvRows.push(headers.join(','));
+
   // Add data rows
   for (const row of data) {
     const values = headers.map((header) => {
       const value = row[header];
       // Handle strings with commas/quotes
-      if (typeof value === "string") {
+      if (typeof value === 'string') {
         return `"${value.replace(/"/g, '""')}"`;
       }
-      return value ?? "";
+      return value ?? '';
     });
-    csvRows.push(values.join(","));
+    csvRows.push(values.join(','));
   }
-  
+
   // Create blob and download
-  const csvContent = csvRows.join("\n");
-  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+  const csvContent = csvRows.join('\n');
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   downloadBlob(blob, `${filename}.csv`);
 }
 
@@ -52,7 +54,7 @@ export function exportToExcel(
 // JSON Export
 export function exportToJSON(data: unknown, filename: string): void {
   const jsonContent = JSON.stringify(data, null, 2);
-  const blob = new Blob([jsonContent], { type: "application/json" });
+  const blob = new Blob([jsonContent], { type: 'application/json' });
   downloadBlob(blob, `${filename}.json`);
 }
 
@@ -61,13 +63,13 @@ export function exportToPDF(
   title: string,
   content: string,
   options?: {
-    orientation?: "portrait" | "landscape";
+    orientation?: 'portrait' | 'landscape';
     filename?: string;
   }
 ): void {
-  const printWindow = window.open("", "_blank");
+  const printWindow = window.open('', '_blank');
   if (!printWindow) {
-    alert("Please allow popups for PDF export");
+    alert('Please allow popups for PDF export');
     return;
   }
 
@@ -78,7 +80,7 @@ export function exportToPDF(
         <title>${title}</title>
         <style>
           @page {
-            size: A4 ${options?.orientation || "portrait"};
+            size: A4 ${options?.orientation || 'portrait'};
             margin: 1cm;
           }
           body {
@@ -122,7 +124,7 @@ export function exportToPDF(
         <h1>${title}</h1>
         ${content}
         <div class="footer">
-          <p>Exported from BH-EDU on ${new Date().toLocaleDateString("vi-VN")}</p>
+          <p>Exported from BH-EDU on ${new Date().toLocaleDateString('vi-VN')}</p>
         </div>
       </body>
     </html>
@@ -130,7 +132,7 @@ export function exportToPDF(
 
   printWindow.document.write(html);
   printWindow.document.close();
-  
+
   // Wait for content to load then print
   printWindow.onload = () => {
     printWindow.print();
@@ -144,27 +146,29 @@ export function dataToHTMLTable(
     headers?: Record<string, string>; // Map of key to display name
   }
 ): string {
-  if (!data.length) return "<p>No data available</p>";
+  if (!data.length) return '<p>No data available</p>';
 
-  const keys = Object.keys(data[0]);
+  const firstRow = data[0];
+  if (!firstRow) return '<p>No data available</p>';
+  const keys = Object.keys(firstRow);
   const headers = options?.headers || {};
 
-  let html = "<table><thead><tr>";
+  let html = '<table><thead><tr>';
   for (const key of keys) {
     html += `<th>${headers[key] || key}</th>`;
   }
-  html += "</tr></thead><tbody>";
+  html += '</tr></thead><tbody>';
 
   for (const row of data) {
-    html += "<tr>";
+    html += '<tr>';
     for (const key of keys) {
       const value = row[key];
-      html += `<td>${value ?? "-"}</td>`;
+      html += `<td>${value ?? '-'}</td>`;
     }
-    html += "</tr>";
+    html += '</tr>';
   }
 
-  html += "</tbody></table>";
+  html += '</tbody></table>';
   return html;
 }
 
@@ -174,7 +178,7 @@ export function exportTableToPDF(
   title: string,
   options?: {
     headers?: Record<string, string>;
-    orientation?: "portrait" | "landscape";
+    orientation?: 'portrait' | 'landscape';
   }
 ): void {
   const tableHTML = dataToHTMLTable(data, { headers: options?.headers });
@@ -184,7 +188,7 @@ export function exportTableToPDF(
 // Helper function to download blob
 function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  const link = document.createElement('a');
   link.href = url;
   link.download = filename;
   document.body.appendChild(link);
@@ -194,38 +198,42 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 // Format data for grade report export
-export function formatGradeReport(grades: {
-  studentName: string;
-  subject: string;
-  score: number;
-  date: string;
-}[]): Record<string, unknown>[] {
+export function formatGradeReport(
+  grades: {
+    studentName: string;
+    subject: string;
+    score: number;
+    date: string;
+  }[]
+): Record<string, unknown>[] {
   return grades.map((g) => ({
-    "Học sinh": g.studentName,
-    "Môn học": g.subject,
-    "Điểm": g.score,
-    "Ngày": new Date(g.date).toLocaleDateString("vi-VN"),
+    'Học sinh': g.studentName,
+    'Môn học': g.subject,
+    Điểm: g.score,
+    Ngày: new Date(g.date).toLocaleDateString('vi-VN'),
   }));
 }
 
 // Format data for attendance report export
-export function formatAttendanceReport(attendance: {
-  studentName: string;
-  date: string;
-  status: string;
-  className: string;
-}[]): Record<string, unknown>[] {
+export function formatAttendanceReport(
+  attendance: {
+    studentName: string;
+    date: string;
+    status: string;
+    className: string;
+  }[]
+): Record<string, unknown>[] {
   const statusLabels: Record<string, string> = {
-    present: "Có mặt",
-    absent: "Vắng",
-    late: "Muộn",
-    excused: "Có phép",
+    present: 'Có mặt',
+    absent: 'Vắng',
+    late: 'Muộn',
+    excused: 'Có phép',
   };
 
   return attendance.map((a) => ({
-    "Học sinh": a.studentName,
-    "Lớp": a.className,
-    "Ngày": new Date(a.date).toLocaleDateString("vi-VN"),
-    "Trạng thái": statusLabels[a.status] || a.status,
+    'Học sinh': a.studentName,
+    Lớp: a.className,
+    Ngày: new Date(a.date).toLocaleDateString('vi-VN'),
+    'Trạng thái': statusLabels[a.status] || a.status,
   }));
 }

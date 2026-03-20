@@ -1,6 +1,6 @@
 /**
  * Accessibility Utilities
- * 
+ *
  * Provides helpers for implementing WCAG 2.1 AA compliance
  * including ARIA labels, keyboard navigation, and focus management.
  */
@@ -8,7 +8,7 @@
 /**
  * Skip Navigation Link Component
  * Allows keyboard users to skip repetitive content (nav, sidebar, etc.)
- * 
+ *
  * @example
  * ```tsx
  * <SkipToMainContent />
@@ -38,7 +38,7 @@ export function SkipToMainContent() {
 /**
  * Keyboard navigation handler
  * Useful for menus, tabs, and other interactive components
- * 
+ *
  * @example
  * ```tsx
  * const handleKeyDown = useKeyboardNavigation({
@@ -47,7 +47,7 @@ export function SkipToMainContent() {
  *   onArrowUp: () => moveToPrev(),
  *   onEscape: () => closeMenu(),
  * });
- * 
+ *
  * <div onKeyDown={handleKeyDown} role="listbox">
  *   ...
  * </div>
@@ -68,13 +68,13 @@ interface KeyboardNavigationOptions {
 export function useKeyboardNavigation(options: KeyboardNavigationOptions) {
   return (event: React.KeyboardEvent) => {
     const handlers: Record<string, (() => void) | undefined> = {
-      'Enter': options.onEnter,
-      'Escape': options.onEscape,
-      'ArrowUp': options.onArrowUp,
-      'ArrowDown': options.onArrowDown,
-      'ArrowLeft': options.onArrowLeft,
-      'ArrowRight': options.onArrowRight,
-      'Tab': options.onTab,
+      Enter: options.onEnter,
+      Escape: options.onEscape,
+      ArrowUp: options.onArrowUp,
+      ArrowDown: options.onArrowDown,
+      ArrowLeft: options.onArrowLeft,
+      ArrowRight: options.onArrowRight,
+      Tab: options.onTab,
       ' ': options.onSpace,
     };
 
@@ -91,12 +91,12 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions) {
 /**
  * Focus trap utility
  * Keeps focus within a container (useful for modals, dialogs)
- * 
+ *
  * @example
  * ```tsx
  * const ref = useRef<HTMLDivElement>(null);
  * useFocusTrap(ref);
- * 
+ *
  * <div ref={ref} role="dialog">
  *   <button>First</button>
  *   <button>Last</button>
@@ -132,13 +132,13 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement>) {
         // Shift + Tab
         if (activeElement === firstElement) {
           event.preventDefault();
-          lastElement.focus();
+          lastElement?.focus();
         }
       } else {
         // Tab
         if (activeElement === lastElement) {
           event.preventDefault();
-          firstElement.focus();
+          firstElement?.focus();
         }
       }
     };
@@ -156,11 +156,11 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement>) {
 /**
  * Announce messages to screen readers
  * Useful for dynamic updates, form submissions, etc.
- * 
+ *
  * @example
  * ```tsx
  * const announce = useAnnounce();
- * 
+ *
  * const handleSave = async () => {
  *   await save();
  *   announce('Changes saved successfully', 'polite');
@@ -202,12 +202,12 @@ export function useAnnounce() {
 /**
  * ARIA label builder
  * Helps create consistent, descriptive ARIA labels
- * 
+ *
  * @example
  * ```tsx
  * const label = buildAriaLabel('Edit', 'John Doe', 'student');
  * // "Edit student John Doe"
- * 
+ *
  * <button aria-label={label}>✎</button>
  * ```
  */
@@ -259,7 +259,7 @@ export const A11Y = {
 
 /**
  * Get accessible button attributes
- * 
+ *
  * @example
  * ```tsx
  * <button {...getAccessibleButtonAttrs('Save changes')}>
@@ -277,7 +277,7 @@ export function getAccessibleButtonAttrs(label: string, disabled = false) {
 
 /**
  * Get accessible form field attributes
- * 
+ *
  * @example
  * ```tsx
  * <input
@@ -286,11 +286,7 @@ export function getAccessibleButtonAttrs(label: string, disabled = false) {
  * />
  * ```
  */
-export function getAccessibleFormAttrs(
-  label: string,
-  errorId?: string,
-  required = false
-) {
+export function getAccessibleFormAttrs(label: string, errorId?: string, required = false) {
   return {
     'aria-label': label,
     'aria-required': required,
@@ -302,7 +298,7 @@ export function getAccessibleFormAttrs(
 /**
  * Screen reader only text
  * Text that's hidden visually but visible to screen readers
- * 
+ *
  * @example
  * ```tsx
  * <button>
@@ -312,17 +308,13 @@ export function getAccessibleFormAttrs(
  * ```
  */
 export function SROnly({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="sr-only">
-      {children}
-    </span>
-  );
+  return <span className="sr-only">{children}</span>;
 }
 
 /**
  * Accessible tooltip
  * Better than title attribute for accessibility
- * 
+ *
  * @example
  * ```tsx
  * <AccessibleTooltip content="Save changes" side="bottom">
@@ -336,19 +328,13 @@ interface AccessibleTooltipProps {
   side?: 'top' | 'right' | 'bottom' | 'left';
 }
 
-export function AccessibleTooltip({
-  children,
-  content,
-  side = 'top',
-}: AccessibleTooltipProps) {
+export function AccessibleTooltip({ children, content, side = 'top' }: AccessibleTooltipProps) {
   const id = `tooltip-${Math.random().toString(36).substr(2, 9)}`;
 
   return (
     <div className="relative inline-block group">
       {/* Visually clone children and add aria-describedby */}
-      <div aria-describedby={id}>
-        {children}
-      </div>
+      <div aria-describedby={id}>{children}</div>
 
       {/* Tooltip */}
       <div

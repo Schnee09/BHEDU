@@ -3,56 +3,56 @@
  * Handles validation, parsing, and bulk import of student data
  */
 
-import Papa from 'papaparse'
+import Papa from 'papaparse';
 
 export interface StudentImportRow {
   // Required fields
-  firstName: string
-  lastName: string
-  email: string
-  
+  firstName: string;
+  lastName: string;
+  email: string;
+
   // Optional student fields
-  phone?: string
-  address?: string
-  dateOfBirth?: string // YYYY-MM-DD format
-  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say'
-  studentId?: string
-  enrollmentDate?: string // YYYY-MM-DD format
-  gradeLevel?: string
-  status?: 'active' | 'inactive' | 'graduated' | 'transferred' | 'suspended'
-  
+  phone?: string;
+  address?: string;
+  dateOfBirth?: string; // YYYY-MM-DD format
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  studentId?: string;
+  enrollmentDate?: string; // YYYY-MM-DD format
+  gradeLevel?: string;
+  status?: 'active' | 'inactive' | 'graduated' | 'transferred' | 'suspended';
+
   // Guardian fields
-  guardianName?: string
-  guardianRelationship?: 'father' | 'mother' | 'guardian' | 'grandparent' | 'sibling' | 'other'
-  guardianPhone?: string
-  guardianEmail?: string
-  guardianAddress?: string
-  isPrimaryContact?: boolean
-  isEmergencyContact?: boolean
+  guardianName?: string;
+  guardianRelationship?: 'father' | 'mother' | 'guardian' | 'grandparent' | 'sibling' | 'other';
+  guardianPhone?: string;
+  guardianEmail?: string;
+  guardianAddress?: string;
+  isPrimaryContact?: boolean;
+  isEmergencyContact?: boolean;
 }
 
 export interface ValidationError {
-  row: number
-  field: string
-  value: unknown
-  message: string
-  severity: 'error' | 'warning'
+  row: number;
+  field: string;
+  value: unknown;
+  message: string;
+  severity: 'error' | 'warning';
 }
 
 export interface ImportPreview {
-  valid: StudentImportRow[]
-  errors: ValidationError[]
-  warnings: ValidationError[]
-  totalRows: number
-  validRows: number
-  errorRows: number
+  valid: StudentImportRow[];
+  errors: ValidationError[];
+  warnings: ValidationError[];
+  totalRows: number;
+  validRows: number;
+  errorRows: number;
 }
 
 /**
  * Parse CSV file to structured data
  */
 export async function parseCSV(file: File): Promise<StudentImportRow[]> {
-  return new Promise((resolve, reject) => {
+  return new Promise<StudentImportRow[]>((resolve, reject) => {
     Papa.parse<StudentImportRow>(file, {
       header: true,
       skipEmptyLines: true,
@@ -60,92 +60,92 @@ export async function parseCSV(file: File): Promise<StudentImportRow[]> {
         // Convert various header formats to camelCase
         const headerMap: Record<string, string> = {
           'first name': 'firstName',
-          'firstname': 'firstName',
-          'first_name': 'firstName',
+          firstname: 'firstName',
+          first_name: 'firstName',
           'last name': 'lastName',
-          'lastname': 'lastName',
-          'last_name': 'lastName',
-          'email': 'email',
+          lastname: 'lastName',
+          last_name: 'lastName',
+          email: 'email',
           'e-mail': 'email',
-          'phone': 'phone',
+          phone: 'phone',
           'phone number': 'phone',
-          'address': 'address',
+          address: 'address',
           'date of birth': 'dateOfBirth',
-          'dob': 'dateOfBirth',
+          dob: 'dateOfBirth',
           'birth date': 'dateOfBirth',
-          'gender': 'gender',
-          'sex': 'gender',
+          gender: 'gender',
+          sex: 'gender',
           'student id': 'studentId',
-          'student_id': 'studentId',
-          'id': 'studentId',
+          student_id: 'studentId',
+          id: 'studentId',
           'enrollment date': 'enrollmentDate',
-          'enrollment_date': 'enrollmentDate',
-          'grade': 'gradeLevel',
+          enrollment_date: 'enrollmentDate',
+          grade: 'gradeLevel',
           'grade level': 'gradeLevel',
-          'class': 'gradeLevel',
-          'status': 'status',
+          class: 'gradeLevel',
+          status: 'status',
           'guardian name': 'guardianName',
-          'guardian_name': 'guardianName',
+          guardian_name: 'guardianName',
           'parent name': 'guardianName',
           'guardian relationship': 'guardianRelationship',
-          'relationship': 'guardianRelationship',
+          relationship: 'guardianRelationship',
           'guardian phone': 'guardianPhone',
-          'guardian_phone': 'guardianPhone',
+          guardian_phone: 'guardianPhone',
           'parent phone': 'guardianPhone',
           'guardian email': 'guardianEmail',
-          'guardian_email': 'guardianEmail',
+          guardian_email: 'guardianEmail',
           'parent email': 'guardianEmail',
           'guardian address': 'guardianAddress',
           'primary contact': 'isPrimaryContact',
           'emergency contact': 'isEmergencyContact',
-        }
-        
-        const normalized = header.toLowerCase().trim()
-        return headerMap[normalized] || header
+        };
+
+        const normalized = header.toLowerCase().trim();
+        return headerMap[normalized] || header;
       },
       complete: (results: Papa.ParseResult<StudentImportRow>) => {
-        resolve(results.data)
+        resolve(results.data);
       },
       error: (error: Error) => {
-        reject(error)
-      }
-    })
-  })
+        reject(error);
+      },
+    });
+  });
 }
 
 /**
  * Validate email format
  */
 function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
 }
 
 /**
  * Validate date format (YYYY-MM-DD or common formats)
  */
 function parseDate(dateString: string): Date | null {
-  if (!dateString) return null
-  
+  if (!dateString) return null;
+
   // Try ISO format first (YYYY-MM-DD)
-  const isoDate = new Date(dateString)
+  const isoDate = new Date(dateString);
   if (!isNaN(isoDate.getTime())) {
-    return isoDate
+    return isoDate;
   }
-  
+
   // Try common formats: MM/DD/YYYY, DD/MM/YYYY, etc.
-  const parts = dateString.split(/[-\/]/)
+  const parts = dateString.split(/[-\/]/);
   if (parts.length === 3) {
     // Try MM/DD/YYYY
-    const date1 = new Date(`${parts[2]}-${parts[0]}-${parts[1]}`)
-    if (!isNaN(date1.getTime())) return date1
-    
+    const date1 = new Date(`${parts[2]}-${parts[0]}-${parts[1]}`);
+    if (!isNaN(date1.getTime())) return date1;
+
     // Try DD/MM/YYYY
-    const date2 = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`)
-    if (!isNaN(date2.getTime())) return date2
+    const date2 = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    if (!isNaN(date2.getTime())) return date2;
   }
-  
-  return null
+
+  return null;
 }
 
 /**
@@ -153,26 +153,24 @@ function parseDate(dateString: string): Date | null {
  */
 function isValidPhone(phone: string): boolean {
   // Remove common formatting characters
-  const cleaned = phone.replace(/[\s\-\(\)\.]/g, '')
+  const cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
   // Check if it's between 10-15 digits
-  return /^\d{10,15}$/.test(cleaned)
+  return /^\d{10,15}$/.test(cleaned);
 }
 
 /**
  * Validate student import data
  */
-export async function validateImportData(
-  rows: StudentImportRow[]
-): Promise<ImportPreview> {
-  const errors: ValidationError[] = []
-  const warnings: ValidationError[] = []
-  const valid: StudentImportRow[] = []
-  const seenEmails = new Set<string>()
-  const seenStudentIds = new Set<string>()
+export async function validateImportData(rows: StudentImportRow[]): Promise<ImportPreview> {
+  const errors: ValidationError[] = [];
+  const warnings: ValidationError[] = [];
+  const valid: StudentImportRow[] = [];
+  const seenEmails = new Set<string>();
+  const seenStudentIds = new Set<string>();
 
   rows.forEach((row, index) => {
-    const rowNumber = index + 2 // +2 because row 1 is header, arrays are 0-indexed
-    let hasError = false
+    const rowNumber = index + 2; // +2 because row 1 is header, arrays are 0-indexed
+    let hasError = false;
 
     // Required field validations
     if (!row.firstName || row.firstName.trim() === '') {
@@ -181,9 +179,9 @@ export async function validateImportData(
         field: 'firstName',
         value: row.firstName,
         message: 'First name is required',
-        severity: 'error'
-      })
-      hasError = true
+        severity: 'error',
+      });
+      hasError = true;
     }
 
     if (!row.lastName || row.lastName.trim() === '') {
@@ -192,9 +190,9 @@ export async function validateImportData(
         field: 'lastName',
         value: row.lastName,
         message: 'Last name is required',
-        severity: 'error'
-      })
-      hasError = true
+        severity: 'error',
+      });
+      hasError = true;
     }
 
     if (!row.email || row.email.trim() === '') {
@@ -203,29 +201,29 @@ export async function validateImportData(
         field: 'email',
         value: row.email,
         message: 'Email is required',
-        severity: 'error'
-      })
-      hasError = true
+        severity: 'error',
+      });
+      hasError = true;
     } else if (!isValidEmail(row.email)) {
       errors.push({
         row: rowNumber,
         field: 'email',
         value: row.email,
         message: 'Invalid email format',
-        severity: 'error'
-      })
-      hasError = true
+        severity: 'error',
+      });
+      hasError = true;
     } else if (seenEmails.has(row.email.toLowerCase())) {
       errors.push({
         row: rowNumber,
         field: 'email',
         value: row.email,
         message: 'Duplicate email in import file',
-        severity: 'error'
-      })
-      hasError = true
+        severity: 'error',
+      });
+      hasError = true;
     } else {
-      seenEmails.add(row.email.toLowerCase())
+      seenEmails.add(row.email.toLowerCase());
     }
 
     // Optional field validations
@@ -235,23 +233,23 @@ export async function validateImportData(
         field: 'phone',
         value: row.phone,
         message: 'Invalid phone number format',
-        severity: 'warning'
-      })
+        severity: 'warning',
+      });
     }
 
     if (row.dateOfBirth) {
-      const dob = parseDate(row.dateOfBirth)
+      const dob = parseDate(row.dateOfBirth);
       if (!dob) {
         warnings.push({
           row: rowNumber,
           field: 'dateOfBirth',
           value: row.dateOfBirth,
           message: 'Invalid date format (use YYYY-MM-DD)',
-          severity: 'warning'
-        })
+          severity: 'warning',
+        });
       } else {
         // Convert to ISO format
-        row.dateOfBirth = dob.toISOString().split('T')[0]
+        row.dateOfBirth = dob.toISOString().split('T')[0] ?? '';
       }
     }
 
@@ -261,8 +259,8 @@ export async function validateImportData(
         field: 'gender',
         value: row.gender,
         message: 'Invalid gender value (use: male, female, other, prefer_not_to_say)',
-        severity: 'warning'
-      })
+        severity: 'warning',
+      });
     }
 
     if (row.studentId) {
@@ -272,38 +270,41 @@ export async function validateImportData(
           field: 'studentId',
           value: row.studentId,
           message: 'Duplicate student ID in import file',
-          severity: 'error'
-        })
-        hasError = true
+          severity: 'error',
+        });
+        hasError = true;
       } else {
-        seenStudentIds.add(row.studentId)
+        seenStudentIds.add(row.studentId);
       }
     }
 
     if (row.enrollmentDate) {
-      const enrollDate = parseDate(row.enrollmentDate)
+      const enrollDate = parseDate(row.enrollmentDate);
       if (!enrollDate) {
         warnings.push({
           row: rowNumber,
           field: 'enrollmentDate',
           value: row.enrollmentDate,
           message: 'Invalid enrollment date format (use YYYY-MM-DD)',
-          severity: 'warning'
-        })
+          severity: 'warning',
+        });
       } else {
-        row.enrollmentDate = enrollDate.toISOString().split('T')[0]
+        row.enrollmentDate = enrollDate.toISOString().split('T')[0] ?? '';
       }
     }
 
-    if (row.status && !['active', 'inactive', 'graduated', 'transferred', 'suspended'].includes(row.status)) {
+    if (
+      row.status &&
+      !['active', 'inactive', 'graduated', 'transferred', 'suspended'].includes(row.status)
+    ) {
       warnings.push({
         row: rowNumber,
         field: 'status',
         value: row.status,
         message: 'Invalid status (use: active, inactive, graduated, transferred, suspended)',
-        severity: 'warning'
-      })
-      row.status = 'active' // Default to active
+        severity: 'warning',
+      });
+      row.status = 'active'; // Default to active
     }
 
     // Guardian validations
@@ -313,8 +314,8 @@ export async function validateImportData(
         field: 'guardianEmail',
         value: row.guardianEmail,
         message: 'Invalid guardian email format',
-        severity: 'warning'
-      })
+        severity: 'warning',
+      });
     }
 
     if (row.guardianPhone && !isValidPhone(row.guardianPhone)) {
@@ -323,32 +324,42 @@ export async function validateImportData(
         field: 'guardianPhone',
         value: row.guardianPhone,
         message: 'Invalid guardian phone number format',
-        severity: 'warning'
-      })
+        severity: 'warning',
+      });
     }
 
-    if (row.guardianRelationship && !['father', 'mother', 'guardian', 'grandparent', 'sibling', 'other'].includes(row.guardianRelationship)) {
+    if (
+      row.guardianRelationship &&
+      !['father', 'mother', 'guardian', 'grandparent', 'sibling', 'other'].includes(
+        row.guardianRelationship
+      )
+    ) {
       warnings.push({
         row: rowNumber,
         field: 'guardianRelationship',
         value: row.guardianRelationship,
-        message: 'Invalid relationship (use: father, mother, guardian, grandparent, sibling, other)',
-        severity: 'warning'
-      })
+        message:
+          'Invalid relationship (use: father, mother, guardian, grandparent, sibling, other)',
+        severity: 'warning',
+      });
     }
 
     // Convert boolean strings to actual booleans
     if (row.isPrimaryContact !== undefined) {
-      row.isPrimaryContact = ['true', '1', 'yes', 'y'].includes(String(row.isPrimaryContact).toLowerCase())
+      row.isPrimaryContact = ['true', '1', 'yes', 'y'].includes(
+        String(row.isPrimaryContact).toLowerCase()
+      );
     }
     if (row.isEmergencyContact !== undefined) {
-      row.isEmergencyContact = ['true', '1', 'yes', 'y'].includes(String(row.isEmergencyContact).toLowerCase())
+      row.isEmergencyContact = ['true', '1', 'yes', 'y'].includes(
+        String(row.isEmergencyContact).toLowerCase()
+      );
     }
 
     if (!hasError) {
-      valid.push(row)
+      valid.push(row);
     }
-  })
+  });
 
   return {
     valid,
@@ -356,8 +367,8 @@ export async function validateImportData(
     warnings,
     totalRows: rows.length,
     validRows: valid.length,
-    errorRows: rows.length - valid.length
-  }
+    errorRows: rows.length - valid.length,
+  };
 }
 
 /**
@@ -382,8 +393,8 @@ export function generateCSVTemplate(): string {
     'guardianEmail',
     'guardianAddress',
     'isPrimaryContact',
-    'isEmergencyContact'
-  ]
+    'isEmergencyContact',
+  ];
 
   const sampleData = [
     [
@@ -404,7 +415,7 @@ export function generateCSVTemplate(): string {
       'jane.doe@example.com',
       '123 Main St, City, State 12345',
       'true',
-      'true'
+      'true',
     ],
     [
       'Alice',
@@ -424,14 +435,14 @@ export function generateCSVTemplate(): string {
       'bob.smith@example.com',
       '456 Oak Ave, City, State 12345',
       'true',
-      'false'
-    ]
-  ]
+      'false',
+    ],
+  ];
 
   const csv = Papa.unparse({
     fields: headers,
-    data: sampleData
-  })
+    data: sampleData,
+  });
 
-  return csv
+  return csv;
 }

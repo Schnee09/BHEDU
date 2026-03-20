@@ -1,12 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useProfile } from "@/hooks/useProfile";
-import { usePermissions } from "@/hooks/usePermissions";
-import { supabase } from "@/lib/supabase/client";
-import { StatCard } from "@/components/ui/Card";
-import Link from "next/link";
-import { Loader2, UserPlus, GraduationCap, ChevronRight, AlertCircle } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { useProfile } from '@/hooks/useProfile';
+import { usePermissions } from '@/hooks/usePermissions';
+import { supabase } from '@/lib/supabase/client';
+import { StatCard } from '@/components/ui/Card';
+import Link from 'next/link';
+import { Loader2, UserPlus, GraduationCap, ChevronRight, AlertCircle } from 'lucide-react';
+import EmptyState from '@/components/EmptyState';
 
 interface LinkedStudent {
   student_id: string;
@@ -26,7 +27,7 @@ export default function ParentDashboardPage() {
     if (!profile?.id) return;
     try {
       setLoading(true);
-      const { apiFetch } = await import("@/lib/api/client");
+      const { apiFetch } = await import('@/lib/api/client');
       const res = await apiFetch('/api/parent/links');
       const data = await res.json();
 
@@ -37,13 +38,13 @@ export default function ParentDashboardPage() {
         student_id: link.student.id,
         student_name: link.student.full_name,
         student_code: link.student.student_code,
-        relationship: link.relationship
+        relationship: link.relationship,
       }));
 
       setStudents(transformed);
     } catch (err: any) {
-      console.error("Error fetching linked students:", err);
-      setError("Không thể tải danh sách học sinh. Vui lòng thử lại sau.");
+      console.error('Error fetching linked students:', err);
+      setError('Không thể tải danh sách học sinh. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
@@ -54,7 +55,7 @@ export default function ParentDashboardPage() {
       if (isParent || isAdmin) {
         fetchLinkedStudents();
       } else {
-        setError("Vui lòng đăng nhập với tài khoản phụ huynh");
+        setError('Vui lòng đăng nhập với tài khoản phụ huynh');
         setLoading(false);
       }
     }
@@ -75,6 +76,21 @@ export default function ParentDashboardPage() {
           <AlertCircle className="w-6 h-6 flex-shrink-0" />
           <p className="font-medium">{error}</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!students || students.length === 0) {
+    return (
+      <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-[60vh] flex flex-col items-center justify-center">
+        <EmptyState
+          title="Chưa có học sinh liên kết"
+          description="Bạn chưa có học sinh nào được liên kết với tài khoản này. Vui lòng thêm học sinh để bắt đầu theo dõi kết quả học tập."
+          action={{
+            label: 'Kết nối học sinh ngay',
+            href: '/dashboard/parent/link-student',
+          }}
+        />
       </div>
     );
   }
@@ -121,9 +137,12 @@ export default function ParentDashboardPage() {
             <div className="bg-purple-100 dark:bg-purple-900/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
               <GraduationCap className="w-10 h-10 text-purple-600 dark:text-purple-400" />
             </div>
-            <h3 className="text-xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">Chưa kết nối học sinh</h3>
+            <h3 className="text-xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+              Chưa kết nối học sinh
+            </h3>
             <p className="text-stone-500 dark:text-stone-400 mt-3 max-w-sm mx-auto font-medium">
-              Bạn cần kết nối với tài khoản của học sinh bằng mã số học sinh để theo dõi kết quả học tập.
+              Bạn cần kết nối với tài khoản của học sinh bằng mã số học sinh để theo dõi kết quả học
+              tập.
             </p>
             <Link
               href="/dashboard/parent/link-student"
@@ -137,7 +156,7 @@ export default function ParentDashboardPage() {
             {students.map((student) => (
               <Link
                 key={student.student_id}
-                href={`/dashboard/parent/student/${student.student_id}`}
+                href={`/dashboard/students/${student.student_id}`}
                 className="group relative bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-[32px] p-6 border border-white/20 dark:border-white/5 hover:border-purple-500/50 shadow-xl hover:shadow-purple-500/10 transition-all duration-500 press-effect overflow-hidden block"
               >
                 <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full group-hover:bg-purple-500/10 transition-colors" />

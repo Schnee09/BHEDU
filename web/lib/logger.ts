@@ -10,7 +10,7 @@
  * - Color-coded console output
  */
 
-type LogLevel = "debug" | "info" | "warn" | "error" | "audit";
+type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'audit';
 
 interface LogContext {
   userId?: string;
@@ -32,31 +32,31 @@ interface PerformanceMetrics {
   endTime: number;
 }
 
-const isDev = process.env.NODE_ENV === "development";
-const isBrowser = typeof window !== "undefined";
+const isDev = process.env.NODE_ENV === 'development';
+const isBrowser = typeof window !== 'undefined';
 
 // ANSI color codes for terminal output
 const colors = {
-  reset: "\x1b[0m",
-  bright: "\x1b[1m",
-  dim: "\x1b[2m",
-  red: "\x1b[31m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  blue: "\x1b[34m",
-  magenta: "\x1b[35m",
-  cyan: "\x1b[36m",
-  white: "\x1b[37m",
-  gray: "\x1b[90m",
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
+  white: '\x1b[37m',
+  gray: '\x1b[90m',
 };
 
 // Browser console colors
 const browserColors = {
-  debug: "color: #6B7280; font-weight: normal",
-  info: "color: #3B82F6; font-weight: bold",
-  warn: "color: #F59E0B; font-weight: bold",
-  error: "color: #EF4444; font-weight: bold",
-  audit: "color: #8B5CF6; font-weight: bold",
+  debug: 'color: #6B7280; font-weight: normal',
+  info: 'color: #3B82F6; font-weight: bold',
+  warn: 'color: #F59E0B; font-weight: bold',
+  error: 'color: #EF4444; font-weight: bold',
+  audit: 'color: #8B5CF6; font-weight: bold',
 };
 
 // Global context that persists across logs
@@ -77,27 +77,25 @@ function safeStringify(value: unknown): string {
     return String(value);
   }
 
-  if (
-    typeof value === "string" || typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
   }
 
   if (value instanceof Error) {
-    return `${value.name}: ${value.message}\n${value.stack || ""}`;
+    return `${value.name}: ${value.message}\n${value.stack || ''}`;
   }
 
-  if (typeof value === "object") {
+  if (typeof value === 'object') {
     // Special handling for Error-like objects that aren't instances of Error
     // but have name/message/stack (like DOMException / AbortError)
     const obj = value as Record<string, unknown>;
     if (
-      obj.name && obj.message &&
-      (obj.stack || obj.name === "AbortError" || obj.name === "DOMException")
+      obj.name &&
+      obj.message &&
+      (obj.stack || obj.name === 'AbortError' || obj.name === 'DOMException')
     ) {
       return `${String(obj.name)}: ${String(obj.message)}${
-        obj.stack ? `\n${String(obj.stack)}` : ""
+        obj.stack ? `\n${String(obj.stack)}` : ''
       }`;
     }
 
@@ -115,11 +113,7 @@ function safeStringify(value: unknown): string {
 /**
  * Format log output based on environment
  */
-function formatLog(
-  level: LogLevel,
-  msg: string,
-  meta?: Record<string, unknown>,
-): any[] {
+function formatLog(level: LogLevel, msg: string, meta?: Record<string, unknown>): any[] {
   const timestamp = new Date().toISOString();
   const correlationId = globalContext.correlationId || generateCorrelationId();
 
@@ -144,44 +138,43 @@ function formatLog(
     if (isBrowser) {
       // Browser formatted output
       const color = browserColors[level] || browserColors.info;
-      const metaOutput = Object.keys(safeMeta).length > 0 ? safeMeta : "";
+      const metaOutput = Object.keys(safeMeta).length > 0 ? safeMeta : '';
 
       // For errors in browser, we also append a string version of meta to the main message
       // so it shows up in log aggregators/terminals that only take the first argument
-      const msgWithMeta = level === "error" && Object.keys(safeMeta).length > 0
-        ? `${msg} ${JSON.stringify(safeMeta)}`
-        : msg;
+      const msgWithMeta =
+        level === 'error' && Object.keys(safeMeta).length > 0
+          ? `${msg} ${JSON.stringify(safeMeta)}`
+          : msg;
 
       return [
-        `%c[${level.toUpperCase()}]%c ${timestamp} %c[${
-          correlationId.slice(-6)
-        }]%c ${msgWithMeta}`,
+        `%c[${level.toUpperCase()}]%c ${timestamp} %c[${correlationId.slice(-6)}]%c ${msgWithMeta}`,
         color,
-        "color: #9CA3AF",
-        "color: #8B5CF6; font-weight: bold",
-        "color: inherit",
+        'color: #9CA3AF',
+        'color: #8B5CF6; font-weight: bold',
+        'color: inherit',
         metaOutput,
       ].filter(Boolean);
     } else {
       // Terminal formatted output
-      const levelColor = level === "error"
-        ? colors.red
-        : level === "warn"
-        ? colors.yellow
-        : level === "audit"
-        ? colors.magenta
-        : colors.blue;
+      const levelColor =
+        level === 'error'
+          ? colors.red
+          : level === 'warn'
+            ? colors.yellow
+            : level === 'audit'
+              ? colors.magenta
+              : colors.blue;
 
-      const metaStr = Object.keys(safeMeta).length > 0
-        ? `${colors.gray}${JSON.stringify(safeMeta, null, 2)}${colors.reset}`
-        : "";
+      const metaStr =
+        Object.keys(safeMeta).length > 0
+          ? `${colors.gray}${JSON.stringify(safeMeta, null, 2)}${colors.reset}`
+          : '';
 
       return [
-        `${levelColor}${colors.bright}[${level.toUpperCase()}]${colors.reset} ${colors.gray}${timestamp}${colors.reset} ${colors.cyan}[${
-          correlationId.slice(
-            -6,
-          )
-        }]${colors.reset} ${msg}\n${metaStr}`,
+        `${levelColor}${colors.bright}[${level.toUpperCase()}]${colors.reset} ${colors.gray}${timestamp}${colors.reset} ${colors.cyan}[${correlationId.slice(
+          -6
+        )}]${colors.reset} ${msg}\n${metaStr}`,
       ];
     }
   } else {
@@ -213,7 +206,7 @@ export const logger = {
    */
   debug: (msg: string, meta?: Record<string, unknown>) => {
     if (!isDev) return;
-    const args = formatLog("debug", msg, meta);
+    const args = formatLog('debug', msg, meta);
     console.debug(...args);
   },
 
@@ -221,7 +214,7 @@ export const logger = {
    * INFO level - General information
    */
   info: (msg: string, meta?: Record<string, unknown>) => {
-    const args = formatLog("info", msg, meta);
+    const args = formatLog('info', msg, meta);
     console.log(...args);
   },
 
@@ -229,18 +222,14 @@ export const logger = {
    * WARN level - Warnings
    */
   warn: (msg: string, meta?: Record<string, unknown>) => {
-    const args = formatLog("warn", msg, meta);
+    const args = formatLog('warn', msg, meta);
     console.warn(...args);
   },
 
   /**
    * ERROR level - Errors with stack traces
    */
-  error: (
-    msg: string,
-    error?: Error | unknown,
-    meta?: Record<string, unknown>,
-  ) => {
+  error: (msg: string, error?: Error | unknown, meta?: Record<string, unknown>) => {
     let errorData: Record<string, unknown> = {};
 
     if (error instanceof Error) {
@@ -253,23 +242,29 @@ export const logger = {
       errorData = { error: safeStringify(error) };
     }
 
-    const errorMessage = (errorData.errorMessage as string) ||
-      (errorData.error as string) || "";
-    if (errorMessage.includes("Rate limit exceeded")) return;
+    const errorMessage = (errorData.errorMessage as string) || (errorData.error as string) || '';
+    if (errorMessage.includes('Rate limit exceeded')) return;
 
-    const args = formatLog("error", msg, { ...errorData, ...meta });
+    const args = formatLog('error', msg, { ...errorData, ...meta });
     console.error(...args);
+
+    // Report to Sentry
+    import('@sentry/nextjs').then((Sentry) => {
+      Sentry.captureException(error || new Error(msg), {
+        extra: meta,
+        tags: {
+          correlationId: globalContext.correlationId,
+          requestId: (meta?.requestId as string) || (globalContext.requestId as string),
+        },
+      });
+    });
   },
 
   /**
    * AUDIT level - Security and compliance audit trail
    */
-  audit: (
-    action: string,
-    context: LogContext,
-    details?: Record<string, unknown>,
-  ) => {
-    const args = formatLog("audit", `AUDIT: ${action}`, {
+  audit: (action: string, context: LogContext, details?: Record<string, unknown>) => {
+    const args = formatLog('audit', `AUDIT: ${action}`, {
       ...context,
       ...details,
       auditTimestamp: Date.now(),
@@ -281,11 +276,7 @@ export const logger = {
   /**
    * Measure and log performance
    */
-  async performance<T>(
-    operation: string,
-    fn: () => Promise<T>,
-    context?: LogContext,
-  ): Promise<T> {
+  async performance<T>(operation: string, fn: () => Promise<T>, context?: LogContext): Promise<T> {
     const startTime = Date.now();
 
     try {
@@ -313,11 +304,7 @@ export const logger = {
       const endTime = Date.now();
       const duration = endTime - startTime;
 
-      logger.error(
-        `${operation} FAILED after ${duration}ms`,
-        error as Error,
-        context,
-      );
+      logger.error(`${operation} FAILED after ${duration}ms`, error as Error, context);
 
       throw error;
     }
@@ -328,11 +315,7 @@ export const logger = {
  * Convenience functions for common logging scenarios
  */
 
-export const logRequest = (
-  method: string,
-  path: string,
-  context?: LogContext,
-) => {
+export const logRequest = (method: string, path: string, context?: LogContext) => {
   logger.info(`${method} ${path}`, { method, path, ...context });
 };
 
@@ -341,13 +324,9 @@ export const logResponse = (
   path: string,
   statusCode: number,
   duration: number,
-  context?: LogContext,
+  context?: LogContext
 ) => {
-  const level = statusCode >= 500
-    ? "error"
-    : statusCode >= 400
-    ? "warn"
-    : "info";
+  const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
   logger[level](`${method} ${path} - ${statusCode} (${duration}ms)`, {
     method,
     path,
@@ -361,7 +340,7 @@ export const logDatabaseQuery = (
   table: string,
   operation: string,
   recordCount?: number,
-  duration?: number,
+  duration?: number
 ) => {
   if (isDev) {
     logger.debug(`DB Query: ${operation} on ${table}`, {
@@ -374,8 +353,8 @@ export const logDatabaseQuery = (
 };
 
 export const logAuthEvent = (
-  event: "login" | "logout" | "signup" | "password_reset" | "failed_login",
-  context: LogContext,
+  event: 'login' | 'logout' | 'signup' | 'password_reset' | 'failed_login',
+  context: LogContext
 ) => {
   logger.info(`Auth: ${event}`, context);
   logger.audit(`User ${event}`, context, { event });
@@ -383,13 +362,11 @@ export const logAuthEvent = (
 
 export const logSecurityEvent = (
   event: string,
-  severity: "low" | "medium" | "high" | "critical",
+  severity: 'low' | 'medium' | 'high' | 'critical',
   details: Record<string, unknown>,
-  context?: LogContext,
+  context?: LogContext
 ) => {
-  const level = severity === "critical" || severity === "high"
-    ? "error"
-    : "warn";
+  const level = severity === 'critical' || severity === 'high' ? 'error' : 'warn';
   logger[level](`SECURITY [${severity.toUpperCase()}]: ${event}`, {
     ...details,
     ...context,
@@ -402,7 +379,7 @@ export const logAdminAction = (
   resourceType: string,
   resourceId: string,
   context: LogContext,
-  changes?: Record<string, unknown>,
+  changes?: Record<string, unknown>
 ) => {
   logger.audit(`Admin action: ${action}`, context, {
     action,

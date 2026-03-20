@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api/client';
-import { Card, CardHeader, CardBody } from "@/components/ui/Card";
-import { Icons } from "@/components/ui/Icons";
+import { Card, CardHeader, CardBody } from '@/components/ui/Card';
+import { Icons } from '@/components/ui/Icons';
 
 interface GradeEntry {
   letter: string;
@@ -32,10 +32,10 @@ const DEFAULT_SCALE: GradeEntry[] = [
 
 const VIETNAMESE_SCALE: GradeEntry[] = [
   { letter: 'XS', min: 9.5, max: 10.0, gpa: 4.0 }, // Xuất sắc
-  { letter: 'G', min: 8.5, max: 9.4, gpa: 3.7 },   // Giỏi
-  { letter: 'K', min: 7.0, max: 8.4, gpa: 3.0 },   // Khá
-  { letter: 'TB', min: 5.0, max: 6.9, gpa: 2.0 },  // Trung bình
-  { letter: 'Y', min: 0.0, max: 4.9, gpa: 1.0 },   // Yếu
+  { letter: 'G', min: 8.5, max: 9.4, gpa: 3.7 }, // Giỏi
+  { letter: 'K', min: 7.0, max: 8.4, gpa: 3.0 }, // Khá
+  { letter: 'TB', min: 5.0, max: 6.9, gpa: 2.0 }, // Trung bình
+  { letter: 'Y', min: 0.0, max: 4.9, gpa: 1.0 }, // Yếu
 ];
 
 export default function GradingScalesPage() {
@@ -74,7 +74,7 @@ export default function GradingScalesPage() {
 
     // Validate scale
     const sortedScale = [...formData.scale].sort((a, b) => b.min - a.min);
-    
+
     try {
       if (editingScale) {
         const response = await apiFetch(`/api/admin/grading-scales/${editingScale.id}`, {
@@ -150,14 +150,17 @@ export default function GradingScalesPage() {
       fetchScales();
     } catch (error) {
       console.error('Error setting default scale:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Không thể đặt thang điểm mặc định';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Không thể đặt thang điểm mặc định';
       alert(errorMessage);
     }
   };
 
   const updateGradeEntry = (index: number, field: keyof GradeEntry, value: string | number) => {
     const newScale = [...formData.scale];
-    newScale[index] = { ...newScale[index], [field]: value };
+    const entry = newScale[index];
+    if (!entry) return;
+    newScale[index] = { ...entry, [field]: value };
     setFormData({ ...formData, scale: newScale });
   };
 
@@ -228,7 +231,9 @@ export default function GradingScalesPage() {
             <CardBody>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Scale Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Scale Name *
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g., Standard 10-Point Scale"
@@ -239,23 +244,41 @@ export default function GradingScalesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Predefined Scales</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Predefined Scales
+                  </label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, scale: VIETNAMESE_SCALE, name: formData.name || 'Vietnamese Scale' })}
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          scale: VIETNAMESE_SCALE,
+                          name: formData.name || 'Vietnamese Scale',
+                        })
+                      }
                       className="p-3 border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
                     >
                       <div className="font-medium text-gray-900">Vietnamese Scale</div>
-                      <div className="text-sm text-gray-600">Xuất sắc (9.5-10.0), Giỏi (8.5-9.4), Khá (7.0-8.4), etc.</div>
+                      <div className="text-sm text-gray-600">
+                        Xuất sắc (9.5-10.0), Giỏi (8.5-9.4), Khá (7.0-8.4), etc.
+                      </div>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, scale: DEFAULT_SCALE, name: formData.name || 'Standard Scale' })}
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          scale: DEFAULT_SCALE,
+                          name: formData.name || 'Standard Scale',
+                        })
+                      }
                       className="p-3 border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
                     >
                       <div className="font-medium text-gray-900">Standard Scale</div>
-                      <div className="text-sm text-gray-600">A+ (90-100), A (80-89), B (70-79), etc.</div>
+                      <div className="text-sm text-gray-600">
+                        A+ (90-100), A (80-89), B (70-79), etc.
+                      </div>
                     </button>
                   </div>
                 </div>
@@ -267,14 +290,18 @@ export default function GradingScalesPage() {
                       onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                     />
-                    <span className="text-sm font-medium text-gray-700">Set as default grading scale</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Set as default grading scale
+                    </span>
                   </label>
                 </div>
 
                 {/* Grade Boundaries Editor */}
                 <div className="border-t border-gray-100 pt-4">
                   <div className="flex justify-between items-center mb-3">
-                    <label className="block text-sm font-medium text-gray-700">Grade Boundaries *</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Grade Boundaries *
+                    </label>
                     <button
                       type="button"
                       onClick={addGradeEntry}
@@ -285,59 +312,69 @@ export default function GradingScalesPage() {
                     </button>
                   </div>
                   <div className="space-y-2">
-                    {Array.isArray(formData.scale) && formData.scale.map((grade, index) => (
-                      <div key={index} className="flex gap-2 items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-                        <input
-                          type="text"
-                          placeholder="Letter"
-                          value={grade.letter}
-                          onChange={(e) => updateGradeEntry(index, 'letter', e.target.value)}
-                          className="w-24 px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                          required
-                        />
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            placeholder="Min %"
-                            value={grade.min}
-                            onChange={(e) => updateGradeEntry(index, 'min', parseFloat(e.target.value))}
-                            className="w-24 px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                            min="0"
-                            max="100"
-                            required
-                          />
-                          <span className="text-gray-500 text-sm">to</span>
-                          <input
-                            type="number"
-                            placeholder="Max %"
-                            value={grade.max}
-                            onChange={(e) => updateGradeEntry(index, 'max', parseFloat(e.target.value))}
-                            className="w-24 px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                            min="0"
-                            max="100"
-                            required
-                          />
-                        </div>
-                        <input
-                          type="number"
-                          placeholder="GPA"
-                          value={grade.gpa || 0}
-                          onChange={(e) => updateGradeEntry(index, 'gpa', parseFloat(e.target.value))}
-                          className="w-24 px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                          step="0.1"
-                          min="0"
-                          max="4.0"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeGradeEntry(index)}
-                          className="text-red-600 hover:text-red-800 ml-auto p-1 hover:bg-red-50 rounded"
-                          title="Remove"
+                    {Array.isArray(formData.scale) &&
+                      formData.scale.map((grade, index) => (
+                        <div
+                          key={index}
+                          className="flex gap-2 items-center p-3 bg-gray-50 rounded-lg border border-gray-100"
                         >
-                          <Icons.Delete className="w-5 h-5" />
-                        </button>
-                      </div>
-                    ))}
+                          <input
+                            type="text"
+                            placeholder="Letter"
+                            value={grade.letter}
+                            onChange={(e) => updateGradeEntry(index, 'letter', e.target.value)}
+                            className="w-24 px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                            required
+                          />
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              placeholder="Min %"
+                              value={grade.min}
+                              onChange={(e) =>
+                                updateGradeEntry(index, 'min', parseFloat(e.target.value))
+                              }
+                              className="w-24 px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                              min="0"
+                              max="100"
+                              required
+                            />
+                            <span className="text-gray-500 text-sm">to</span>
+                            <input
+                              type="number"
+                              placeholder="Max %"
+                              value={grade.max}
+                              onChange={(e) =>
+                                updateGradeEntry(index, 'max', parseFloat(e.target.value))
+                              }
+                              className="w-24 px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                              min="0"
+                              max="100"
+                              required
+                            />
+                          </div>
+                          <input
+                            type="number"
+                            placeholder="GPA"
+                            value={grade.gpa || 0}
+                            onChange={(e) =>
+                              updateGradeEntry(index, 'gpa', parseFloat(e.target.value))
+                            }
+                            className="w-24 px-3 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                            step="0.1"
+                            min="0"
+                            max="4.0"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeGradeEntry(index)}
+                            className="text-red-600 hover:text-red-800 ml-auto p-1 hover:bg-red-50 rounded"
+                            title="Remove"
+                          >
+                            <Icons.Delete className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ))}
                   </div>
                 </div>
 
@@ -421,17 +458,23 @@ export default function GradingScalesPage() {
 
                 {/* Grade Scale Display */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {Array.isArray(scale.scale) && scale.scale.map((grade, index) => (
-                    <div key={index} className="border border-stone-200 rounded-lg p-4 text-center bg-stone-50/50">
-                      <div className="text-2xl font-bold text-stone-900">{grade.letter}</div>
-                      <div className="text-sm text-stone-600 mt-1 font-medium">
-                        {grade.min}% - {grade.max}%
+                  {Array.isArray(scale.scale) &&
+                    scale.scale.map((grade, index) => (
+                      <div
+                        key={index}
+                        className="border border-stone-200 rounded-lg p-4 text-center bg-stone-50/50"
+                      >
+                        <div className="text-2xl font-bold text-stone-900">{grade.letter}</div>
+                        <div className="text-sm text-stone-600 mt-1 font-medium">
+                          {grade.min}% - {grade.max}%
+                        </div>
+                        {grade.gpa !== undefined && (
+                          <div className="text-xs text-stone-500 mt-1">
+                            GPA: {grade.gpa.toFixed(1)}
+                          </div>
+                        )}
                       </div>
-                      {grade.gpa !== undefined && (
-                        <div className="text-xs text-stone-500 mt-1">GPA: {grade.gpa.toFixed(1)}</div>
-                      )}
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </CardBody>
             </Card>

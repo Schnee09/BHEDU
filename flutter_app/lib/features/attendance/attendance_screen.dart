@@ -6,24 +6,58 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/attendance_model.dart';
+import '../../data/models/class_model.dart';
+import '../../data/models/profile_model.dart';
 import '../../data/repositories/attendance_repository.dart';
+import '../../data/repositories/classes_repository.dart';
 import '../../shared/providers/auth_provider.dart';
+import 'attendance_marking_screen.dart';
+import 'qr_scanner_screen.dart'; // QR integration is now complete
 
 /// Attendance repository provider
 final attendanceRepositoryProvider = Provider<AttendanceRepository>((ref) {
   return AttendanceRepository();
 });
 
-/// Attendance list provider
+/// Selected date range provider
+final attendanceDateRangeProvider = StateProvider<DateTimeRange?>((ref) => null);
+
+/// Attendance list provider - now with optional date range
 final attendanceListProvider = FutureProvider.family<List<AttendanceModel>, String>((ref, studentId) async {
   final repo = ref.watch(attendanceRepositoryProvider);
-  return repo.getStudentAttendance(studentId: studentId);
+  final dateRange = ref.watch(attendanceDateRangeProvider);
+  
+  // NOTE: Repository needs updating to handle date range, or we filter client-side for now
+  // For now, client-side filtering since repo getStudentAttendance is simple
+  final records = await repo.getStudentAttendance(studentId: studentId);
+  
+  if (dateRange == null) return records;
+  
+  return records.where((r) {
+    try {
+      final recordDate = DateTime.parse(r.date);
+      // Normalized dates to avoid time comparison issues
+      final start = DateTime(dateRange.start.year, dateRange.start.month, dateRange.start.day);
+      final end = DateTime(dateRange.end.year, dateRange.end.month, dateRange.end.day).add(const Duration(days: 1));
+      return recordDate.isAfter(start.subtract(const Duration(seconds: 1))) && 
+             recordDate.isBefore(end);
+    } catch (_) {
+      return true;
+    }
+  }).toList();
 });
 
 /// Attendance summary provider
 final attendanceSummaryProvider = FutureProvider.family<Map<String, int>, String>((ref, studentId) async {
   final repo = ref.watch(attendanceRepositoryProvider);
+  // Summary is usually for all time or a specific period
   return repo.getAttendanceSummary(studentId: studentId);
+});
+
+/// Classes provider for teacher
+final teacherClassesProvider = FutureProvider.family<List<ClassModel>, String>((ref, teacherId) async {
+  final repo = ClassesRepository();
+  return repo.getTeacherClasses(teacherId);
 });
 
 class AttendanceScreen extends ConsumerWidget {
@@ -40,16 +74,115 @@ class AttendanceScreen extends ConsumerWidget {
         title: Text(isStudent ? 'My Attendance' : 'Attendance'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.calendar_month),
-            onPressed: () {
-              // TODO: Date range picker
+            icon: Icon(
+              ref.watch(attendanceDateRangeProvider) != null 
+                  ? Icons.filter_alt_off 
+                  : Icons.calendar_month,
+            ),
+            onPressed: () async {
+              if (ref.read(attendanceDateRangeProvider) != null) {
+                ref.read(attendanceDateRangeProvider.notifier).state = null;
+                return;
+              }
+              
+              final picked = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                lastDate: DateTime.now(),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: ColorScheme.fromSeed(
+                        seedColor: AppColors.primary,
+                        primary: AppColors.primary,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              
+              if (picked != null) {
+                ref.read(attendanceDateRangeProvider.notifier).state = picked;
+              }
             },
           ),
         ],
       ),
       body: isStudent
           ? _StudentAttendanceView(studentId: profile?.id ?? '')
-          : const _TeacherAttendanceView(),
+          : _TeacherAttendanceView(profile: profile, ref: ref),
+    );
+  }
+
+  static void showClassSelection(BuildContext context, WidgetRef ref, String teacherId, {required void Function(ClassModel) onClassSelected}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final classesAsync = ref.watch(teacherClassesProvider(teacherId));
+
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.borderDefault,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Chọn lớp học',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: classesAsync.when(
+                    data: (classes) => classes.isEmpty
+                        ? const Center(child: Text('Bạn không có lớp nào'))
+                        : ListView.builder(
+                            itemCount: classes.length,
+                            itemBuilder: (context, index) {
+                              final cls = classes[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: ListTile(
+                                  title: Text(cls.name),
+                                  subtitle: Text(cls.subjectName ?? 'Môn học'),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    onClassSelected(cls);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text('Error: $e')),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -115,7 +248,10 @@ class _StudentAttendanceView extends ConsumerWidget {
 
 /// Teacher's attendance view - Mark attendance
 class _TeacherAttendanceView extends StatelessWidget {
-  const _TeacherAttendanceView();
+  final ProfileModel? profile;
+  final WidgetRef ref;
+
+  const _TeacherAttendanceView({required this.profile, required this.ref});
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +276,18 @@ class _TeacherAttendanceView extends StatelessWidget {
                   label: 'QR Scan',
                   color: AppColors.primary,
                   onTap: () {
-                    // TODO: QR Scanner
+                    AttendanceScreen.showClassSelection(context, ref, profile?.id ?? '', 
+                      onClassSelected: (cls) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => QRScannerScreen(
+                              classId: cls.id,
+                            ),
+                          ),
+                        );
+                      }
+                    );
                   },
                 ),
               ),
@@ -151,7 +298,19 @@ class _TeacherAttendanceView extends StatelessWidget {
                   label: 'Manual Entry',
                   color: AppColors.info,
                   onTap: () {
-                    // TODO: Manual attendance
+                    AttendanceScreen.showClassSelection(context, ref, profile?.id ?? '', 
+                      onClassSelected: (cls) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AttendanceMarkingScreen(
+                              classId: cls.id,
+                              className: cls.name,
+                            ),
+                          ),
+                        );
+                      }
+                    );
                   },
                 ),
               ),

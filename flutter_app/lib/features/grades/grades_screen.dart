@@ -7,23 +7,31 @@ import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/grade_model.dart';
 import '../../data/repositories/grades_repository.dart';
+import '../../data/models/profile_model.dart';
 import '../../shared/providers/auth_provider.dart';
+import '../attendance/attendance_screen.dart';
+import 'grade_entry_screen.dart';
 
 /// Grades repository provider
 final gradesRepositoryProvider = Provider<GradesRepository>((ref) {
   return GradesRepository();
 });
 
+/// Current semester filter
+final semesterFilterProvider = StateProvider<String?>((ref) => 'Học kỳ 1');
+
 /// Student grades provider
 final studentGradesProvider = FutureProvider.family<Map<String, List<GradeModel>>, String>((ref, studentId) async {
   final repo = ref.watch(gradesRepositoryProvider);
-  return repo.getGradesGroupedBySubject(studentId: studentId);
+  final semester = ref.watch(semesterFilterProvider);
+  return repo.getGradesGroupedBySubject(studentId: studentId, semester: semester);
 });
 
 /// Average grade provider
 final averageGradeProvider = FutureProvider.family<double, String>((ref, studentId) async {
   final repo = ref.watch(gradesRepositoryProvider);
-  return repo.calculateAverage(studentId: studentId);
+  final semester = ref.watch(semesterFilterProvider);
+  return repo.calculateAverage(studentId: studentId, semester: semester);
 });
 
 class GradesScreen extends ConsumerWidget {
@@ -41,24 +49,74 @@ class GradesScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              // TODO: Filter by semester/subject
-            },
+            onPressed: () => _showFilterOptions(context, ref),
           ),
         ],
       ),
       body: isStudent
           ? _StudentGradesView(studentId: profile?.id ?? '')
-          : const _TeacherGradesView(),
+          : _TeacherGradesView(profile: profile),
       floatingActionButton: isStudent
           ? null
           : FloatingActionButton.extended(
-              onPressed: () {
-                // TODO: Enter grade
-              },
+              onPressed: () => _showClassSelection(context, ref, profile?.id ?? ''),
               icon: const Icon(Icons.add),
-              label: const Text('Enter Grade'),
+              label: const Text('Nhập điểm'),
             ),
+    );
+  }
+
+  void _showFilterOptions(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.background,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Chọn học kỳ',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              children: ['Học kỳ 1', 'Học kỳ 2', 'Cả năm'].map((s) {
+                final isSelected = ref.watch(semesterFilterProvider) == s;
+                return ChoiceChip(
+                  label: Text(s),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (selected) {
+                      ref.read(semesterFilterProvider.notifier).state = s;
+                      Navigator.pop(context);
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showClassSelection(BuildContext context, WidgetRef ref, String teacherId) {
+    AttendanceScreen.showClassSelection(context, ref, teacherId, 
+      onClassSelected: (cls) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GradeEntryScreen(
+              classId: cls.id,
+              className: cls.name,
+              subjectId: cls.subjectId,
+            ),
+          ),
+        );
+      }
     );
   }
 }
@@ -126,25 +184,97 @@ class _StudentGradesView extends ConsumerWidget {
 }
 
 /// Teacher grades view
-class _TeacherGradesView extends StatelessWidget {
-  const _TeacherGradesView();
+class _TeacherGradesView extends ConsumerWidget {
+  final ProfileModel? profile;
+
+  const _TeacherGradesView({required this.profile});
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Grade Entry',
+            'Quản lý điểm số',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
-          const _EmptyState(message: 'Select a class to enter grades'),
+          const SizedBox(height: 16),
+          _TeacherActionCard(
+            title: 'Nhập điểm theo lớp',
+            icon: Icons.add_chart,
+            description: 'Chọn lớp để nhập điểm cho tất cả học sinh',
+            onTap: () {
+              AttendanceScreen.showClassSelection(context, ref, profile?.id ?? '', 
+                onClassSelected: (cls) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GradeEntryScreen(
+                        classId: cls.id,
+                        className: cls.name,
+                        subjectId: cls.subjectId,
+                      ),
+                    ),
+                  );
+                }
+              );
+            },
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _TeacherActionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final String description;
+  final VoidCallback onTap;
+
+  const _TeacherActionCard({
+    required this.title,
+    required this.icon,
+    required this.description,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withAlpha(20),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: AppColors.primary),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(description, style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            ],
+          ),
+        ),
       ),
     );
   }

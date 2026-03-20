@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../core/providers/customization_provider.dart';
 import '../../shared/widgets/glass_container.dart';
+import '../classes/class_detail_screen.dart';
 
 /// Current week offset provider
 final weekOffsetProvider = StateProvider<int>((ref) => 0);
@@ -233,24 +234,28 @@ class _ScheduleContent extends StatelessWidget {
     // Sample schedule data - in production, fetch from API
     final sampleClasses = [
       _ScheduleItem(
+        id: '1',
         time: '08:00 - 09:30',
         subject: 'Toán',
         room: 'A101',
         teacher: 'Nguyễn Văn A',
       ),
       _ScheduleItem(
+        id: '2',
         time: '09:45 - 11:15',
         subject: 'Văn',
         room: 'A102',
         teacher: 'Trần Thị B',
       ),
       _ScheduleItem(
+        id: '3',
         time: '13:00 - 14:30',
         subject: 'Anh',
         room: 'A103',
         teacher: 'Lê Văn C',
       ),
       _ScheduleItem(
+        id: '4',
         time: '14:45 - 16:15',
         subject: 'Vật lý',
         room: 'Lab 1',
@@ -270,12 +275,14 @@ class _ScheduleContent extends StatelessWidget {
 }
 
 class _ScheduleItem {
+  final String id;
   final String time;
   final String subject;
   final String room;
   final String teacher;
 
   _ScheduleItem({
+    required this.id,
     required this.time,
     required this.subject,
     required this.room,
@@ -307,7 +314,12 @@ class _ScheduleCard extends ConsumerWidget {
         showGlow: false,
         child: InkWell(
           onTap: () {
-            // TODO: Navigate to class detail
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ClassDetailScreen(classId: item.id),
+              ),
+            );
           },
           borderRadius: BorderRadius.circular(12),
           child: Row(

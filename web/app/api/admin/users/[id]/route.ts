@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
-import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
-import { userService } from "@/lib/services/userService";
-import { updateUserSchema } from "@/lib/schemas";
-import { createServiceClient } from "@/lib/supabase/server";
-import { createAbility } from "@/lib/auth/permissions";
-import { UserRepository } from "@/lib/repositories/UserRepository";
-import { NotFoundError } from "@/lib/api/errors";
+import { NextResponse } from 'next/server';
+import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
+import { userService } from '@/lib/services/userService';
+import { updateUserSchema } from '@/lib/schemas';
+import { createServiceClient } from '@/lib/supabase/server';
+import { createAbility } from '@/lib/auth/permissions';
+import { UserRepository } from '@/lib/repositories/UserRepository';
+import { NotFoundError } from '@/lib/api/errors';
 
 /**
  * GET /api/admin/users/[id]
@@ -20,11 +20,9 @@ export const GET = createGetHandler<{ id: string }>(
       role: contextUser.role,
     });
 
-    if (ability.cannot("read", "User")) { // TODO: Check specific user resource
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 },
-      );
+    if (ability.cannot('read', 'User')) {
+      // TODO: Check specific user resource
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();
@@ -32,7 +30,7 @@ export const GET = createGetHandler<{ id: string }>(
     const userProfile = await repository.findById(params.id);
 
     if (!userProfile) {
-      throw new NotFoundError("Không tìm thấy người dùng");
+      throw new NotFoundError('Không tìm thấy người dùng');
     }
 
     // Explicitly allow reading this user?
@@ -40,7 +38,7 @@ export const GET = createGetHandler<{ id: string }>(
     // For Admin API, 'read' 'User' implies list/detail access.
 
     return apiSuccess(userProfile);
-  },
+  }
 );
 
 /**
@@ -62,19 +60,17 @@ export const PUT = createApiHandler<{ id: string }>(
     // params.id is the target.
 
     // Simplistic check for now
-    if (ability.cannot("update", "User")) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 },
-      );
+    if (ability.cannot('update', 'User')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
+    const id = params.id as string;
     // Use UserService for complex update (syncs with other tables)
-    const updatedUser = await userService.updateUser(params.id, body);
+    const updatedUser = await userService.updateUser(id, body);
     return apiSuccess(updatedUser, {
-      message: "Cập nhật người dùng thành công",
+      message: 'Cập nhật người dùng thành công',
     });
-  },
+  }
 );
 
 /**
@@ -89,30 +85,28 @@ export const DELETE = createApiHandler<{ id: string }>(
       role: user.role,
     });
 
-    if (ability.cannot("delete", "User")) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 },
-      );
+    if (ability.cannot('delete', 'User')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
-    const permanent = searchParams.get("permanent") === "true";
+    const permanent = searchParams.get('permanent') === 'true';
 
+    const id = params.id as string;
     if (permanent) {
-      await userService.deleteUser(params.id);
-      return apiSuccess(null, { message: "Người dùng đã bị xóa vĩnh viễn" });
+      await userService.deleteUser(id);
+      return apiSuccess(null, { message: 'Người dùng đã bị xóa vĩnh viễn' });
     } else {
       // Soft delete
       const supabase = createServiceClient();
       const repository = new UserRepository(supabase);
 
       // We use base update for simple status change
-      await repository.update(params.id, { is_active: false } as any);
+      await repository.update(id, { is_active: false } as any);
       // Cast as any because UpdateUserInput might not strictly match just {is_active} if strict?
       // Actually UpdateUserInput has is_active: boolean optional. So it should match.
 
-      return apiSuccess(null, { message: "Người dùng đã bị tạm khóa" });
+      return apiSuccess(null, { message: 'Người dùng đã bị tạm khóa' });
     }
-  },
+  }
 );

@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 
-# Run lint-staged to lint and fix staged files
-npx lint-staged
+# Run lint-staged in the web directory
+cd web && npx lint-staged

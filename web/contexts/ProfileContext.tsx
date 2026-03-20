@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { createContext, useContext, ReactNode, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
-import { UserRole } from "@/lib/auth/core";
+import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
+import { UserRole } from '@/lib/auth/core';
 
 export type Profile = {
   id: string;
@@ -29,7 +29,7 @@ interface ProfileContextType {
 const ProfileContext = createContext<ProfileContextType>({
   profile: null,
   loading: true,
-  refreshProfile: async () => { }
+  refreshProfile: async () => {},
 });
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
@@ -38,7 +38,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!session?.user) {
         console.log('[ProfileProvider] No session found');
@@ -56,8 +58,18 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           return;
         }
-        const errorData = await response.json();
-        console.error('[ProfileProvider] Error fetching profile:', errorData);
+
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { message: 'Could not parse error JSON' };
+        }
+
+        console.error(
+          `[ProfileProvider] Error fetching profile (Status ${response.status}):`,
+          errorData
+        );
         return;
       }
 

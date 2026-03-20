@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { getBrowserSupabase } from '@/lib/supabase/browser';
@@ -29,13 +29,13 @@ const API_TESTS: ApiTest[] = [
     name: 'My Classes',
     endpoint: '/api/classes/my-classes',
     description: 'Get classes for current teacher/admin',
-    category: 'Classes'
+    category: 'Classes',
   },
   {
     name: 'All Classes',
     endpoint: '/api/classes',
     description: 'Get all classes',
-    category: 'Classes'
+    category: 'Classes',
   },
 
   // Grades APIs
@@ -43,19 +43,19 @@ const API_TESTS: ApiTest[] = [
     name: 'Grades (All)',
     endpoint: '/api/grades',
     description: 'Get all grades',
-    category: 'Grades'
+    category: 'Grades',
   },
   {
     name: 'Grade Assignments',
     endpoint: '/api/grades/assignments',
     description: 'Get assignments for grading',
-    category: 'Grades'
+    category: 'Grades',
   },
   {
     name: 'Grade Categories',
     endpoint: '/api/grades/categories',
     description: 'Get grade categories/weights',
-    category: 'Grades'
+    category: 'Grades',
   },
 
   // Students APIs
@@ -63,7 +63,7 @@ const API_TESTS: ApiTest[] = [
     name: 'Students List',
     endpoint: '/api/students?page=1&limit=10',
     description: 'Get paginated student list',
-    category: 'Students'
+    category: 'Students',
   },
 
   // Users APIs
@@ -71,13 +71,13 @@ const API_TESTS: ApiTest[] = [
     name: 'Users List',
     endpoint: '/api/admin/users?page=1&limit=10',
     description: 'Get all users',
-    category: 'Users'
+    category: 'Users',
   },
   {
     name: 'User Stats',
     endpoint: '/api/admin/users/stats',
     description: 'Get user statistics',
-    category: 'Users'
+    category: 'Users',
   },
 
   // Settings APIs
@@ -85,13 +85,13 @@ const API_TESTS: ApiTest[] = [
     name: 'Settings',
     endpoint: '/api/admin/settings',
     description: 'Get system settings',
-    category: 'Settings'
+    category: 'Settings',
   },
   {
     name: 'Academic Years',
     endpoint: '/api/admin/academic-years',
     description: 'Get academic years',
-    category: 'Settings'
+    category: 'Settings',
   },
 
   // Attendance APIs
@@ -99,7 +99,7 @@ const API_TESTS: ApiTest[] = [
     name: 'Attendance',
     endpoint: '/api/attendance',
     description: 'Get attendance records',
-    category: 'Attendance'
+    category: 'Attendance',
   },
 
   // Finance APIs
@@ -107,7 +107,7 @@ const API_TESTS: ApiTest[] = [
     name: 'Student Accounts',
     endpoint: '/api/admin/finance/student-accounts',
     description: 'Get student financial accounts',
-    category: 'Finance'
+    category: 'Finance',
   },
 
   // Courses/Lessons APIs
@@ -116,13 +116,13 @@ const API_TESTS: ApiTest[] = [
     endpoint: '/api/courses',
     description: 'Get all courses (requires HMAC signature)',
     category: 'Courses',
-    expectedStatus: 401 // Expected to fail without signature
+    expectedStatus: 401, // Expected to fail without signature
   },
   {
     name: 'Admin Courses',
     endpoint: '/api/admin/courses',
     description: 'Get all courses (admin/teacher access)',
-    category: 'Courses'
+    category: 'Courses',
   },
 
   // Dashboard Stats
@@ -130,7 +130,7 @@ const API_TESTS: ApiTest[] = [
     name: 'Dashboard Stats',
     endpoint: '/api/dashboard/stats',
     description: 'Get dashboard statistics',
-    category: 'Dashboard'
+    category: 'Dashboard',
   },
 ];
 
@@ -149,7 +149,7 @@ export default function DebugAllApisPage() {
 
   async function checkAuth() {
     const supabase = getBrowserSupabase();
-    
+
     // Check session
     const { data: sessionData } = await supabase.auth.getSession();
     setAuthState({
@@ -165,7 +165,7 @@ export default function DebugAllApisPage() {
         .select('*')
         .eq('id', sessionData.session.user.id)
         .single();
-      
+
       setProfile(profileData);
     }
 
@@ -175,27 +175,27 @@ export default function DebugAllApisPage() {
   async function runAllTests() {
     setTesting(true);
     const results: TestResult[] = [];
-    
+
     const supabase = getBrowserSupabase();
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
 
     for (const test of API_TESTS) {
       const startTime = Date.now();
-      
+
       try {
         const res = await fetch(test.endpoint, {
           method: test.method || 'GET',
           credentials: 'same-origin',
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         });
-        
+
         const duration = Date.now() - startTime;
         let data;
-        
+
         try {
           data = await res.json();
         } catch {
@@ -208,7 +208,7 @@ export default function DebugAllApisPage() {
           status: res.status,
           ok: test.expectedStatus ? res.status === test.expectedStatus : res.ok,
           data: data,
-          duration
+          duration,
         });
       } catch (error: any) {
         results.push({
@@ -217,7 +217,7 @@ export default function DebugAllApisPage() {
           status: 'error',
           ok: false,
           error: error.message,
-          duration: Date.now() - startTime
+          duration: Date.now() - startTime,
         });
       }
     }
@@ -228,13 +228,13 @@ export default function DebugAllApisPage() {
 
   function copyAllErrors() {
     const errorReport: string[] = [];
-    
+
     errorReport.push('='.repeat(80));
     errorReport.push('API DEBUGGING REPORT - ALL ENDPOINTS');
     errorReport.push('Generated: ' + new Date().toLocaleString());
     errorReport.push('='.repeat(80));
     errorReport.push('');
-    
+
     // Session info
     errorReport.push('SESSION STATUS:');
     errorReport.push(`  Has Session: ${authState?.hasSession ? 'Yes' : 'No'}`);
@@ -248,36 +248,41 @@ export default function DebugAllApisPage() {
       errorReport.push(`  Name: ${profile.full_name}`);
     }
     errorReport.push('');
-    
+
     // Summary
-    const passedTests = testResults.filter(r => r.ok).length;
-    const failedTests = testResults.filter(r => !r.ok).length;
-    
+    const passedTests = testResults.filter((r) => r.ok).length;
+    const failedTests = testResults.filter((r) => !r.ok).length;
+
     errorReport.push('TEST SUMMARY:');
     errorReport.push(`  Total Tests: ${testResults.length}`);
     errorReport.push(`  Passed: ${passedTests} ✅`);
     errorReport.push(`  Failed: ${failedTests} ❌`);
-    errorReport.push(`  Success Rate: ${testResults.length > 0 ? Math.round((passedTests / testResults.length) * 100) : 0}%`);
+    errorReport.push(
+      `  Success Rate: ${testResults.length > 0 ? Math.round((passedTests / testResults.length) * 100) : 0}%`
+    );
     errorReport.push('');
-    
+
     // Group by category
-    const byCategory = testResults.reduce((acc, result) => {
-      const test = API_TESTS.find(t => t.name === result.name);
-      const category = test?.category || 'Other';
-      if (!acc[category]) acc[category] = [];
-      acc[category].push({ result, test });
-      return acc;
-    }, {} as Record<string, Array<{ result: TestResult; test?: ApiTest }>>);
-    
+    const byCategory = testResults.reduce(
+      (acc, result) => {
+        const test = API_TESTS.find((t) => t.name === result.name);
+        const category = test?.category || 'Other';
+        if (!acc[category]) acc[category] = [];
+        acc[category].push({ result, test });
+        return acc;
+      },
+      {} as Record<string, Array<{ result: TestResult; test?: ApiTest }>>
+    );
+
     errorReport.push('API TEST RESULTS (BY CATEGORY):');
     errorReport.push('');
-    
+
     Object.entries(byCategory).forEach(([category, tests]) => {
       errorReport.push(`${'='.repeat(80)}`);
       errorReport.push(`CATEGORY: ${category.toUpperCase()}`);
       errorReport.push(`${'='.repeat(80)}`);
       errorReport.push('');
-      
+
       tests.forEach(({ result, test }, idx) => {
         errorReport.push(`${idx + 1}. ${result.name} ${result.ok ? '✅' : '❌'}`);
         errorReport.push(`   Endpoint: ${result.endpoint}`);
@@ -288,31 +293,31 @@ export default function DebugAllApisPage() {
         if (result.duration) {
           errorReport.push(`   Duration: ${result.duration}ms`);
         }
-        
+
         // Only show response details for failed tests or errors
         if (!result.ok || result.error) {
           errorReport.push('   Response:');
           const response = JSON.stringify(result.data || result.error, null, 2);
-          response.split('\n').forEach(line => {
+          response.split('\n').forEach((line) => {
             errorReport.push('      ' + line);
           });
         }
         errorReport.push('');
       });
     });
-    
+
     // Failed tests summary
-    const failedResults = testResults.filter(r => !r.ok);
+    const failedResults = testResults.filter((r) => !r.ok);
     if (failedResults.length > 0) {
       errorReport.push('='.repeat(80));
       errorReport.push('FAILED TESTS SUMMARY');
       errorReport.push('='.repeat(80));
       errorReport.push('');
-      
+
       failedResults.forEach((result, idx) => {
         errorReport.push(`${idx + 1}. ${result.name} - Status ${result.status}`);
         errorReport.push(`   ${result.endpoint}`);
-        
+
         // Try to extract meaningful error info
         if (result.data) {
           if (result.data.message) errorReport.push(`   Message: ${result.data.message}`);
@@ -326,21 +331,24 @@ export default function DebugAllApisPage() {
         errorReport.push('');
       });
     }
-    
+
     errorReport.push('='.repeat(80));
     errorReport.push('END OF REPORT');
     errorReport.push('='.repeat(80));
-    
+
     const reportText = errorReport.join('\n');
-    
+
     // Copy to clipboard
-    navigator.clipboard.writeText(reportText).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch((err) => {
-      console.error('Failed to copy:', err);
-      alert('Failed to copy to clipboard. Please check browser permissions.');
-    });
+    navigator.clipboard
+      .writeText(reportText)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch((err) => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard. Please check browser permissions.');
+      });
   }
 
   if (loading) {
@@ -352,16 +360,17 @@ export default function DebugAllApisPage() {
     );
   }
 
-  const categories = ['all', ...new Set(API_TESTS.map(t => t.category))];
-  const filteredResults = filter === 'all' 
-    ? testResults 
-    : testResults.filter(r => {
-        const test = API_TESTS.find(t => t.name === r.name);
-        return test?.category === filter;
-      });
+  const categories = ['all', ...new Set(API_TESTS.map((t) => t.category))];
+  const filteredResults =
+    filter === 'all'
+      ? testResults
+      : testResults.filter((r) => {
+          const test = API_TESTS.find((t) => t.name === r.name);
+          return test?.category === filter;
+        });
 
-  const passedTests = testResults.filter(r => r.ok).length;
-  const failedTests = testResults.filter(r => !r.ok).length;
+  const passedTests = testResults.filter((r) => r.ok).length;
+  const failedTests = testResults.filter((r) => !r.ok).length;
   const totalTests = testResults.length;
 
   return (
@@ -401,13 +410,23 @@ export default function DebugAllApisPage() {
       <Card>
         <h2 className="text-xl font-semibold mb-2">Session Status</h2>
         <div className="space-y-2">
-          <p><strong>Has Session:</strong> {authState?.hasSession ? '✅ Yes' : '❌ No'}</p>
-          <p><strong>Access Token:</strong> {authState?.accessToken}</p>
+          <p>
+            <strong>Has Session:</strong> {authState?.hasSession ? '✅ Yes' : '❌ No'}
+          </p>
+          <p>
+            <strong>Access Token:</strong> {authState?.accessToken}
+          </p>
           {authState?.user && (
             <>
-              <p><strong>User ID:</strong> {authState.user.id}</p>
-              <p><strong>Email:</strong> {authState.user.email}</p>
-              <p><strong>Role:</strong> {profile?.role || 'Unknown'}</p>
+              <p>
+                <strong>User ID:</strong> {authState.user.id}
+              </p>
+              <p>
+                <strong>Email:</strong> {authState.user.email}
+              </p>
+              <p>
+                <strong>Role:</strong> {profile?.role || 'Unknown'}
+              </p>
             </>
           )}
         </div>
@@ -440,13 +459,13 @@ export default function DebugAllApisPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">API Test Results</h2>
             <div className="flex gap-2">
-              {categories.map(cat => (
+              {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setFilter(cat)}
                   className={`px-3 py-1 text-sm rounded ${
-                    filter === cat 
-                      ? 'bg-blue-600 text-white' 
+                    filter === cat
+                      ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
@@ -458,16 +477,18 @@ export default function DebugAllApisPage() {
 
           <div className="space-y-4">
             {filteredResults.map((test, idx) => {
-              const apiTest = API_TESTS.find(t => t.name === test.name);
+              const apiTest = API_TESTS.find((t) => t.name === test.name);
               return (
                 <div key={idx} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <h3 className="font-semibold flex items-center gap-2">
                         {test.name}
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          test.ok ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`text-xs px-2 py-1 rounded ${
+                            test.ok ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}
+                        >
                           {test.status} {test.ok ? '✅' : '❌'}
                         </span>
                         {test.duration && (
@@ -476,12 +497,8 @@ export default function DebugAllApisPage() {
                           </span>
                         )}
                       </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {apiTest?.description}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1 font-mono">
-                        {test.endpoint}
-                      </p>
+                      <p className="text-sm text-gray-600 mt-1">{apiTest?.description}</p>
+                      <p className="text-xs text-gray-500 mt-1 font-mono">{test.endpoint}</p>
                     </div>
                   </div>
 
@@ -528,11 +545,15 @@ export default function DebugAllApisPage() {
         <h2 className="text-xl font-semibold mb-4">API Endpoints Reference</h2>
         <div className="space-y-4">
           {Object.entries(
-            API_TESTS.reduce((acc, test) => {
-              if (!acc[test.category]) acc[test.category] = [];
-              acc[test.category].push(test);
-              return acc;
-            }, {} as Record<string, ApiTest[]>)
+            API_TESTS.reduce(
+              (acc, test) => {
+                const cat = test.category;
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(test);
+                return acc;
+              },
+              {} as Record<string, ApiTest[]>
+            )
           ).map(([category, tests]) => (
             <div key={category}>
               <h3 className="font-semibold text-lg mb-2">{category}</h3>
@@ -557,22 +578,37 @@ export default function DebugAllApisPage() {
           <div className="space-y-2 text-sm">
             <p className="font-semibold">Common Issues:</p>
             <ul className="list-disc list-inside space-y-1 ml-4">
-              <li><strong>401 Unauthorized:</strong> Authentication failed - check if logged in</li>
-              <li><strong>403 Forbidden:</strong> User doesn't have required role/permissions</li>
-              <li><strong>404 Not Found:</strong> API endpoint doesn't exist</li>
-              <li><strong>500 Internal Error:</strong> Check response details for:
+              <li>
+                <strong>401 Unauthorized:</strong> Authentication failed - check if logged in
+              </li>
+              <li>
+                <strong>403 Forbidden:</strong> User doesn't have required role/permissions
+              </li>
+              <li>
+                <strong>404 Not Found:</strong> API endpoint doesn't exist
+              </li>
+              <li>
+                <strong>500 Internal Error:</strong> Check response details for:
                 <ul className="list-circle list-inside ml-6 mt-1">
-                  <li><code>column does not exist</code> - Schema mismatch</li>
-                  <li><code>table does not exist</code> - Missing table or RLS blocking access</li>
-                  <li><code>relationship was found</code> - Ambiguous foreign key</li>
+                  <li>
+                    <code>column does not exist</code> - Schema mismatch
+                  </li>
+                  <li>
+                    <code>table does not exist</code> - Missing table or RLS blocking access
+                  </li>
+                  <li>
+                    <code>relationship was found</code> - Ambiguous foreign key
+                  </li>
                 </ul>
               </li>
             </ul>
-            
+
             <p className="font-semibold mt-4">Next Steps:</p>
             <ul className="list-disc list-inside space-y-1 ml-4">
               <li>Expand failed test responses to see error details</li>
-              <li>Check error <code>code</code> and <code>hint</code> fields</li>
+              <li>
+                Check error <code>code</code> and <code>hint</code> fields
+              </li>
               <li>Verify database schema matches API queries</li>
               <li>Check RLS policies allow access for your role</li>
             </ul>

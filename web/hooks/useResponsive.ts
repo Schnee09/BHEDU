@@ -2,9 +2,9 @@
  * Responsive utility hooks for adaptive UI
  */
 
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 // Breakpoints matching Tailwind defaults
 const BREAKPOINTS = {
@@ -12,7 +12,7 @@ const BREAKPOINTS = {
   md: 768,
   lg: 1024,
   xl: 1280,
-  "2xl": 1536,
+  '2xl': 1536,
 } as const;
 
 type Breakpoint = keyof typeof BREAKPOINTS;
@@ -30,8 +30,8 @@ export function useMediaQuery(query: string): boolean {
     }
 
     const listener = () => setMatches(media.matches);
-    media.addEventListener("change", listener);
-    return () => media.removeEventListener("change", listener);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
   }, [matches, query]);
 
   return matches;
@@ -49,17 +49,17 @@ export function useBreakpoint(breakpoint: Breakpoint): boolean {
  * Hook to get current breakpoint
  */
 export function useCurrentBreakpoint(): Breakpoint | null {
-  const is2xl = useMediaQuery(`(min-width: ${BREAKPOINTS["2xl"]}px)`);
+  const is2xl = useMediaQuery(`(min-width: ${BREAKPOINTS['2xl']}px)`);
   const isXl = useMediaQuery(`(min-width: ${BREAKPOINTS.xl}px)`);
   const isLg = useMediaQuery(`(min-width: ${BREAKPOINTS.lg}px)`);
   const isMd = useMediaQuery(`(min-width: ${BREAKPOINTS.md}px)`);
   const isSm = useMediaQuery(`(min-width: ${BREAKPOINTS.sm}px)`);
 
-  if (is2xl) return "2xl";
-  if (isXl) return "xl";
-  if (isLg) return "lg";
-  if (isMd) return "md";
-  if (isSm) return "sm";
+  if (is2xl) return '2xl';
+  if (isXl) return 'xl';
+  if (isLg) return 'lg';
+  if (isMd) return 'md';
+  if (isSm) return 'sm';
   return null; // Mobile (xs)
 }
 
@@ -67,15 +67,15 @@ export function useCurrentBreakpoint(): Breakpoint | null {
  * Hook to detect mobile devices
  */
 export function useIsMobile(): boolean {
-  return !useBreakpoint("md");
+  return !useBreakpoint('md');
 }
 
 /**
  * Hook to detect tablet devices
  */
 export function useIsTablet(): boolean {
-  const isMd = useBreakpoint("md");
-  const isLg = useBreakpoint("lg");
+  const isMd = useBreakpoint('md');
+  const isLg = useBreakpoint('lg');
   return isMd && !isLg;
 }
 
@@ -83,7 +83,7 @@ export function useIsTablet(): boolean {
  * Hook to detect desktop devices
  */
 export function useIsDesktop(): boolean {
-  return useBreakpoint("lg");
+  return useBreakpoint('lg');
 }
 
 /**
@@ -93,10 +93,7 @@ export function useIsTouchDevice(): boolean {
   const [isTouch, setIsTouch] = useState(false);
 
   useEffect(() => {
-    setIsTouch(
-      "ontouchstart" in window ||
-      navigator.maxTouchPoints > 0
-    );
+    setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }, []);
 
   return isTouch;
@@ -117,8 +114,8 @@ export function useWindowSize(): { width: number; height: number } {
     };
 
     updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, []);
 
   return size;
@@ -127,9 +124,9 @@ export function useWindowSize(): { width: number; height: number } {
 /**
  * Hook to detect orientation
  */
-export function useOrientation(): "portrait" | "landscape" {
+export function useOrientation(): 'portrait' | 'landscape' {
   const { width, height } = useWindowSize();
-  return height > width ? "portrait" : "landscape";
+  return height > width ? 'portrait' : 'landscape';
 }
 
 /**
@@ -143,7 +140,10 @@ export function useInViewport(ref: React.RefObject<HTMLElement>): boolean {
     if (!element) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => setIsInViewport(entry.isIntersecting),
+      (entries) => {
+        const entry = entries[0];
+        if (entry) setIsInViewport(entry.isIntersecting);
+      },
       { threshold: 0.1 }
     );
 

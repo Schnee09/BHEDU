@@ -11,15 +11,19 @@ require('@testing-library/jest-dom');
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 // Mock Next.js headers and cookies
-jest.mock('next/headers', () => ({
-  cookies: jest.fn(() => ({
+jest.mock('next/headers', () => {
+  const cookieStore = {
     get: jest.fn(),
     set: jest.fn(),
-  })),
-  headers: jest.fn(() => ({
-    get: jest.fn(),
-  })),
-}));
+    getAll: jest.fn(() => []),
+    delete: jest.fn(),
+    has: jest.fn(),
+  };
+  return {
+    cookies: jest.fn(async () => cookieStore),
+    headers: jest.fn(async () => new Map()),
+  };
+});
 
 // Mock window.matchMedia
 // Some test runners/workers may execute setup in a different global context.

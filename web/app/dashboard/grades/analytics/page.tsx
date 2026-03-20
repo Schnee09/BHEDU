@@ -1,59 +1,79 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { apiFetch } from '@/lib/api/client'
-import { percentageToLetterGrade, getLetterGradeColor } from '@/lib/gradeService'
-import { ExclamationTriangleIcon, SparklesIcon, ChartBarSquareIcon } from '@heroicons/react/24/outline'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
-import { PageErrorBoundary } from '@/components/ErrorBoundary'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { SkeletonStatCard } from '@/components/ui/skeleton'
-import { Card } from '@/components/ui/Card'
-import { Icons } from '@/components/ui/Icons'
+import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api/client';
+import { percentageToLetterGrade, getLetterGradeColor } from '@/lib/gradeService';
+import {
+  ExclamationTriangleIcon,
+  SparklesIcon,
+  ChartBarSquareIcon,
+} from '@heroicons/react/24/outline';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+} from 'recharts';
+import { PageErrorBoundary } from '@/components/ErrorBoundary';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { SkeletonStatCard } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/Card';
+import { Icons } from '@/components/ui/Icons';
 
 interface Class {
-  id: string
-  name: string
-  code: string
+  id: string;
+  name: string;
+  code: string;
 }
 
 interface CategoryGrade {
-  category_id: string
-  category_name: string
-  percentage: number
-  letter_grade: string
+  category_id: string;
+  category_name: string;
+  percentage: number;
+  letter_grade: string;
 }
 
 interface StudentGrade {
-  student_id: string
-  student_name: string
-  student_number: string
-  overall_percentage: number
-  letter_grade: string
-  category_grades: CategoryGrade[]
+  student_id: string;
+  student_name: string;
+  student_number: string;
+  overall_percentage: number;
+  letter_grade: string;
+  category_grades: CategoryGrade[];
 }
 
 interface GradeDistribution {
-  grade: string
-  count: number
-  percentage: number
-  [key: string]: any
+  grade: string;
+  count: number;
+  percentage: number;
+  [key: string]: any;
 }
 
 interface CategoryStats {
-  category_name: string
-  average: number
-  highest: number
-  lowest: number
-  median: number
+  category_name: string;
+  average: number;
+  highest: number;
+  lowest: number;
+  median: number;
 }
 
 // Year-over-year trend data type
 interface YearTrendData {
-  year: string
-  average: number
-  highest: number
-  lowest: number
+  year: string;
+  average: number;
+  highest: number;
+  lowest: number;
 }
 
 // Chart color palette for beautiful gradients
@@ -64,160 +84,184 @@ const CHART_COLORS = {
   success: '#10b981',
   warning: '#f59e0b',
   danger: '#ef4444',
-}
+};
 
 export default function GradeAnalyticsPage() {
-  const [classes, setClasses] = useState<Class[]>([])
-  const [selectedClass, setSelectedClass] = useState<string>('')
-  const [grades, setGrades] = useState<StudentGrade[]>([])
-  const [loading, setLoading] = useState(false)
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string>('');
+  const [grades, setGrades] = useState<StudentGrade[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadClasses()
-  }, [])
+    loadClasses();
+  }, []);
 
   useEffect(() => {
     if (selectedClass) {
-      loadGrades()
+      loadGrades();
     } else {
-      setGrades([])
+      setGrades([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedClass])
+  }, [selectedClass]);
 
   const loadClasses = async () => {
     try {
-      const response = await apiFetch('/api/classes/my-classes')
-      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
+      const response = await apiFetch('/api/classes/my-classes');
+      const safeParseJson = async (r: Response) => {
+        try {
+          return await r.json();
+        } catch {
+          return { error: r.statusText || `HTTP ${r.status}` };
+        }
+      };
 
       if (!response.ok) {
-        const err = await safeParseJson(response)
-        console.error('Failed to load classes:', err)
-        return
+        const err = await safeParseJson(response);
+        console.error('Failed to load classes:', err);
+        return;
       }
 
-      const data = await safeParseJson(response)
-      setClasses(data.data || data.classes || data)
+      const data = await safeParseJson(response);
+      setClasses(data.data || data.classes || data);
     } catch (error) {
-      console.error('Failed to load classes:', error)
+      console.error('Failed to load classes:', error);
     }
-  }
+  };
 
   const loadGrades = async () => {
     try {
-      setLoading(true)
-      const response = await apiFetch(`/api/grades/student-overview?classId=${selectedClass}`)
-      const safeParseJson = async (r: Response) => { try { return await r.json() } catch { return { error: r.statusText || `HTTP ${r.status}` } } }
+      setLoading(true);
+      const response = await apiFetch(`/api/grades/student-overview?classId=${selectedClass}`);
+      const safeParseJson = async (r: Response) => {
+        try {
+          return await r.json();
+        } catch {
+          return { error: r.statusText || `HTTP ${r.status}` };
+        }
+      };
 
       if (!response.ok) {
-        const err = await safeParseJson(response)
-        console.error('Failed to load grades:', err)
-        setGrades([])
-        return
+        const err = await safeParseJson(response);
+        console.error('Failed to load grades:', err);
+        setGrades([]);
+        return;
       }
 
-      const data = await safeParseJson(response)
-      setGrades(data.data || data.student_grades || data.grades || data)
+      const data = await safeParseJson(response);
+      setGrades(data.data || data.student_grades || data.grades || data);
     } catch (error) {
-      console.error('Failed to load grades:', error)
+      console.error('Failed to load grades:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Calculate class statistics
   const getClassStats = () => {
-    if (grades.length === 0) return null
+    if (grades.length === 0) return null;
 
-    const percentages = grades.map(g => g.overall_percentage).filter(p => !isNaN(p))
-    if (percentages.length === 0) return null
+    const percentages = grades.map((g) => g.overall_percentage).filter((p) => !isNaN(p));
+    if (percentages.length === 0) return null;
 
-    const average = percentages.reduce((a, b) => a + b, 0) / percentages.length
-    const highest = Math.max(...percentages)
-    const lowest = Math.min(...percentages)
-    const sorted = [...percentages].sort((a, b) => a - b)
-    const median = sorted.length % 2 === 0
-      ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
-      : sorted[Math.floor(sorted.length / 2)]
+    const average = percentages.reduce((a, b) => a + b, 0) / percentages.length;
+    const highest = Math.max(...percentages);
+    const lowest = Math.min(...percentages);
+    const sorted = [...percentages].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const median =
+      sorted.length % 2 === 0
+        ? ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2
+        : (sorted[mid] ?? 0);
 
-    return { average, highest, lowest, median, total: percentages.length }
-  }
+    return { average, highest, lowest, median, total: percentages.length };
+  };
 
   // Calculate grade distribution
   const getGradeDistribution = (): GradeDistribution[] => {
-    if (grades.length === 0) return []
+    if (grades.length === 0) return [];
 
     const distribution: Record<string, number> = {
-      'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0
-    }
+      A: 0,
+      B: 0,
+      C: 0,
+      D: 0,
+      F: 0,
+    };
 
-    grades.forEach(g => {
-      if (g.letter_grade && distribution.hasOwnProperty(g.letter_grade)) {
-        distribution[g.letter_grade]++
+    grades.forEach((g) => {
+      if (g.letter_grade) {
+        const current = distribution[g.letter_grade];
+        if (current !== undefined) {
+          distribution[g.letter_grade] = current + 1;
+        }
       }
-    })
+    });
 
     return Object.entries(distribution).map(([grade, count]) => ({
       grade,
       count,
-      percentage: grades.length > 0 ? (count / grades.length) * 100 : 0
-    }))
-  }
+      percentage: grades.length > 0 ? (count / grades.length) * 100 : 0,
+    }));
+  };
 
   // Calculate category statistics
   const getCategoryStats = (): CategoryStats[] => {
-    if (grades.length === 0) return []
+    if (grades.length === 0) return [];
 
-    const categoryData: Record<string, number[]> = {}
+    const categoryData: Record<string, number[]> = {};
 
-    grades.forEach(student => {
-      student.category_grades.forEach(cat => {
+    grades.forEach((student) => {
+      student.category_grades.forEach((cat) => {
         if (!categoryData[cat.category_name]) {
-          categoryData[cat.category_name] = []
+          categoryData[cat.category_name] = [];
         }
-        if (!isNaN(cat.percentage)) {
-          categoryData[cat.category_name].push(cat.percentage)
+        const data = categoryData[cat.category_name];
+        if (data && !isNaN(cat.percentage)) {
+          data.push(cat.percentage);
         }
-      })
-    })
+      });
+    });
 
     return Object.entries(categoryData).map(([category_name, percentages]) => {
       if (percentages.length === 0) {
-        return { category_name, average: 0, highest: 0, lowest: 0, median: 0 }
+        return { category_name, average: 0, highest: 0, lowest: 0, median: 0 };
       }
 
-      const average = percentages.reduce((a, b) => a + b, 0) / percentages.length
-      const highest = Math.max(...percentages)
-      const lowest = Math.min(...percentages)
-      const sorted = [...percentages].sort((a, b) => a - b)
-      const median = sorted.length % 2 === 0
-        ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
-        : sorted[Math.floor(sorted.length / 2)]
+      const average = percentages.reduce((a, b) => a + b, 0) / percentages.length;
+      const highest = Math.max(...percentages);
+      const lowest = Math.min(...percentages);
+      const sorted = [...percentages].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median =
+        sorted.length % 2 === 0
+          ? ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2
+          : (sorted[mid] ?? 0);
 
-      return { category_name, average, highest, lowest, median }
-    })
-  }
+      return { category_name, average, highest, lowest, median };
+    });
+  };
 
   // Identify struggling students
   const getStrugglingStudents = () => {
     return grades
-      .filter(g => g.overall_percentage < 70)
-      .sort((a, b) => a.overall_percentage - b.overall_percentage)
-  }
+      .filter((g) => g.overall_percentage < 70)
+      .sort((a, b) => a.overall_percentage - b.overall_percentage);
+  };
 
   // Identify top performers
   const getTopPerformers = () => {
     return grades
-      .filter(g => g.overall_percentage >= 90)
-      .sort((a, b) => b.overall_percentage - a.overall_percentage)
-  }
+      .filter((g) => g.overall_percentage >= 90)
+      .sort((a, b) => b.overall_percentage - a.overall_percentage);
+  };
 
-  const classStats = getClassStats()
-  const gradeDistribution = getGradeDistribution()
-  const categoryStats = getCategoryStats()
-  const strugglingStudents = getStrugglingStudents()
-  const topPerformers = getTopPerformers()
-  const selectedClassData = classes.find(c => c.id === selectedClass)
+  const classStats = getClassStats();
+  const gradeDistribution = getGradeDistribution();
+  const categoryStats = getCategoryStats();
+  const strugglingStudents = getStrugglingStudents();
+  const topPerformers = getTopPerformers();
+  const selectedClassData = classes.find((c) => c.id === selectedClass);
 
   return (
     <PageErrorBoundary pageName="Phân tích điểm số">
@@ -230,7 +274,9 @@ export default function GradeAnalyticsPage() {
                 Phân Tích Điểm Số
               </h1>
             </div>
-            <p className="text-stone-500 font-medium pl-4 uppercase tracking-[0.2em] text-[10px]">Thống kê và xu hướng học tập</p>
+            <p className="text-stone-500 font-medium pl-4 uppercase tracking-[0.2em] text-[10px]">
+              Thống kê và xu hướng học tập
+            </p>
           </div>
         </div>
 
@@ -248,7 +294,7 @@ export default function GradeAnalyticsPage() {
               className="w-full px-6 py-4 bg-white/80 dark:bg-stone-900/80 border border-stone-200 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all text-stone-900 dark:text-white appearance-none pr-12 font-bold"
             >
               <option value="">-- Tất cả các lớp --</option>
-              {classes.map(cls => (
+              {classes.map((cls) => (
                 <option key={cls.id} value={cls.id}>
                   {cls.name} ({cls.code})
                 </option>
@@ -283,7 +329,9 @@ export default function GradeAnalyticsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl shadow-sm border border-indigo-100 p-6 hover:shadow-md transition-shadow">
                       <div className="text-sm font-medium text-indigo-700 mb-2">Điểm TB Lớp</div>
-                      <div className={`text-3xl font-bold ${getLetterGradeColor(percentageToLetterGrade(classStats.average))}`}>
+                      <div
+                        className={`text-3xl font-bold ${getLetterGradeColor(percentageToLetterGrade(classStats.average))}`}
+                      >
                         {classStats.average.toFixed(1)}%
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
@@ -313,7 +361,9 @@ export default function GradeAnalyticsPage() {
 
                     <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl shadow-sm border border-purple-100 p-6 hover:shadow-md transition-shadow">
                       <div className="text-sm font-medium text-purple-700 mb-2">Điểm Trung Vị</div>
-                      <div className={`text-3xl font-bold ${getLetterGradeColor(percentageToLetterGrade(classStats.median))}`}>
+                      <div
+                        className={`text-3xl font-bold ${getLetterGradeColor(percentageToLetterGrade(classStats.median))}`}
+                      >
                         {classStats.median.toFixed(1)}%
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
@@ -327,47 +377,62 @@ export default function GradeAnalyticsPage() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">Phân Bố Điểm</h2>
                   <div className="space-y-3">
-                    {gradeDistribution.filter(d => d.count > 0).map(dist => (
-                      <div key={dist.grade}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className={`font-semibold ${getLetterGradeColor(dist.grade)}`}>
-                            {dist.grade}
-                          </span>
-                          <span className="text-gray-600">
-                            {dist.count} học sinh ({dist.percentage.toFixed(1)}%)
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                          <div
-                            className={`h-full transition-all duration-500 ${dist.grade.startsWith('A') ? 'bg-green-500' :
-                              dist.grade.startsWith('B') ? 'bg-green-400' :
-                                dist.grade.startsWith('C') ? 'bg-yellow-500' :
-                                  dist.grade.startsWith('D') ? 'bg-orange-500' :
-                                    'bg-red-500'
+                    {gradeDistribution
+                      .filter((d) => d.count > 0)
+                      .map((dist) => (
+                        <div key={dist.grade}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className={`font-semibold ${getLetterGradeColor(dist.grade)}`}>
+                              {dist.grade}
+                            </span>
+                            <span className="text-gray-600">
+                              {dist.count} học sinh ({dist.percentage.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                            <div
+                              className={`h-full transition-all duration-500 ${
+                                dist.grade.startsWith('A')
+                                  ? 'bg-green-500'
+                                  : dist.grade.startsWith('B')
+                                    ? 'bg-green-400'
+                                    : dist.grade.startsWith('C')
+                                      ? 'bg-yellow-500'
+                                      : dist.grade.startsWith('D')
+                                        ? 'bg-orange-500'
+                                        : 'bg-red-500'
                               }`}
-                            style={{ width: `${dist.percentage}%` }}
-                          />
+                              style={{ width: `${dist.percentage}%` }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
 
                 {/* Year-over-Year Trend Chart - Enhanced with Area + Line */}
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6 hover:shadow-xl transition-shadow duration-300">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-2">📈 Xu Hướng Điểm Theo Năm</h2>
-                  <p className="text-sm text-gray-500 mb-4">So sánh điểm trung bình qua các năm học</p>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                    📈 Xu Hướng Điểm Theo Năm
+                  </h2>
+                  <p className="text-sm text-gray-500 mb-4">
+                    So sánh điểm trung bình qua các năm học
+                  </p>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
-                        data={classStats ? [
-                          {
-                            year: 'Học kỳ hiện tại',
-                            average: classStats.average,
-                            highest: classStats.highest,
-                            lowest: classStats.lowest
-                          },
-                        ] : []}
+                        data={
+                          classStats
+                            ? [
+                                {
+                                  year: 'Học kỳ hiện tại',
+                                  average: classStats.average,
+                                  highest: classStats.highest,
+                                  lowest: classStats.lowest,
+                                },
+                              ]
+                            : []
+                        }
                         margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                       >
                         <defs>
@@ -388,7 +453,7 @@ export default function GradeAnalyticsPage() {
                             backgroundColor: 'rgba(255, 255, 255, 0.95)',
                             border: 'none',
                             borderRadius: '12px',
-                            boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
+                            boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
                           }}
                           formatter={(value: any) => [`${Number(value).toFixed(1)}%`, '']}
                         />
@@ -434,13 +499,15 @@ export default function GradeAnalyticsPage() {
                 {/* NEW: Donut Pie Chart for Grade Distribution */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow duration-300">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">🥧 Phân Bố Điểm (Biểu đồ tròn)</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                      🥧 Phân Bố Điểm (Biểu đồ tròn)
+                    </h2>
                     <p className="text-sm text-gray-500 mb-4">Tỷ lệ học sinh theo loại điểm</p>
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={gradeDistribution.filter(d => d.count > 0)}
+                            data={gradeDistribution.filter((d) => d.count > 0)}
                             cx="50%"
                             cy="50%"
                             innerRadius={60}
@@ -452,27 +519,33 @@ export default function GradeAnalyticsPage() {
                             animationDuration={1200}
                             animationEasing="ease-out"
                           >
-                            {gradeDistribution.filter(d => d.count > 0).map((entry, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={
-                                  entry.grade.startsWith('A') ? '#10b981' :
-                                    entry.grade.startsWith('B') ? '#22c55e' :
-                                      entry.grade.startsWith('C') ? '#eab308' :
-                                        entry.grade.startsWith('D') ? '#f97316' :
-                                          '#ef4444'
-                                }
-                                stroke="white"
-                                strokeWidth={2}
-                              />
-                            ))}
+                            {gradeDistribution
+                              .filter((d) => d.count > 0)
+                              .map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={
+                                    entry.grade.startsWith('A')
+                                      ? '#10b981'
+                                      : entry.grade.startsWith('B')
+                                        ? '#22c55e'
+                                        : entry.grade.startsWith('C')
+                                          ? '#eab308'
+                                          : entry.grade.startsWith('D')
+                                            ? '#f97316'
+                                            : '#ef4444'
+                                  }
+                                  stroke="white"
+                                  strokeWidth={2}
+                                />
+                              ))}
                           </Pie>
                           <Tooltip
                             contentStyle={{
                               backgroundColor: 'rgba(255, 255, 255, 0.95)',
                               border: 'none',
                               borderRadius: '12px',
-                              boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
+                              boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
                             }}
                             formatter={(value: any, name: any) => [`${value} học sinh`, name]}
                           />
@@ -489,12 +562,14 @@ export default function GradeAnalyticsPage() {
 
                   {/* Enhanced Bar Chart */}
                   <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow duration-300">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">📊 Biểu Đồ Cột Phân Bố</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                      📊 Biểu Đồ Cột Phân Bố
+                    </h2>
                     <p className="text-sm text-gray-500 mb-4">Số lượng học sinh theo điểm</p>
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
-                          data={gradeDistribution.filter(d => d.count > 0)}
+                          data={gradeDistribution.filter((d) => d.count > 0)}
                           margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
                         >
                           <defs>
@@ -518,7 +593,7 @@ export default function GradeAnalyticsPage() {
                               backgroundColor: 'rgba(255, 255, 255, 0.95)',
                               border: 'none',
                               borderRadius: '12px',
-                              boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
+                              boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
                             }}
                             cursor={{ fill: 'rgba(99, 102, 241, 0.1)' }}
                             formatter={(value: any) => [`${value} học sinh`, 'Số lượng']}
@@ -541,7 +616,9 @@ export default function GradeAnalyticsPage() {
                 {/* Category Performance */}
                 {categoryStats.length > 0 && (
                   <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-gray-200 dark:border-stone-700 p-4 sm:p-6 mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Thống Kê Theo Loại Điểm</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                      Thống Kê Theo Loại Điểm
+                    </h2>
 
                     {/* Mobile Card View */}
                     <div className="md:hidden space-y-3 mobile-card-list">
@@ -554,22 +631,30 @@ export default function GradeAnalyticsPage() {
                             <p className="font-semibold text-gray-900 dark:text-gray-100">
                               {cat.category_name}
                             </p>
-                            <span className={`text-lg font-bold ${getLetterGradeColor(percentageToLetterGrade(cat.average))}`}>
+                            <span
+                              className={`text-lg font-bold ${getLetterGradeColor(percentageToLetterGrade(cat.average))}`}
+                            >
                               {cat.average.toFixed(1)}%
                             </span>
                           </div>
                           <div className="grid grid-cols-3 gap-2 text-center text-sm">
                             <div className="bg-white dark:bg-stone-900 rounded-lg p-2">
                               <p className="text-xs text-gray-500 dark:text-gray-400">Trung vị</p>
-                              <p className="font-medium text-gray-800 dark:text-gray-200">{cat.median.toFixed(1)}%</p>
+                              <p className="font-medium text-gray-800 dark:text-gray-200">
+                                {cat.median.toFixed(1)}%
+                              </p>
                             </div>
                             <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-2">
                               <p className="text-xs text-green-600 dark:text-green-400">Cao nhất</p>
-                              <p className="font-semibold text-green-600 dark:text-green-400">{cat.highest.toFixed(1)}%</p>
+                              <p className="font-semibold text-green-600 dark:text-green-400">
+                                {cat.highest.toFixed(1)}%
+                              </p>
                             </div>
                             <div className="bg-red-50 dark:bg-red-900/30 rounded-lg p-2">
                               <p className="text-xs text-red-600 dark:text-red-400">Thấp nhất</p>
-                              <p className="font-semibold text-red-600 dark:text-red-400">{cat.lowest.toFixed(1)}%</p>
+                              <p className="font-semibold text-red-600 dark:text-red-400">
+                                {cat.lowest.toFixed(1)}%
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -600,12 +685,17 @@ export default function GradeAnalyticsPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-200 dark:divide-stone-700">
                           {categoryStats.map((cat, idx) => (
-                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
+                            <tr
+                              key={idx}
+                              className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors"
+                            >
                               <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                                 {cat.category_name}
                               </td>
                               <td className="px-4 py-3 text-center">
-                                <span className={`font-semibold ${getLetterGradeColor(percentageToLetterGrade(cat.average))}`}>
+                                <span
+                                  className={`font-semibold ${getLetterGradeColor(percentageToLetterGrade(cat.average))}`}
+                                >
                                   {cat.average.toFixed(1)}%
                                 </span>
                               </td>
@@ -633,16 +723,15 @@ export default function GradeAnalyticsPage() {
                     <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl shadow-sm border border-red-200 p-6">
                       <div className="flex items-center gap-2 mb-4">
                         <ExclamationTriangleIcon className="w-6 h-6 text-red-500" />
-                        <h2 className="text-lg font-semibold text-red-900">
-                          Học Sinh Cần Hỗ Trợ
-                        </h2>
+                        <h2 className="text-lg font-semibold text-red-900">Học Sinh Cần Hỗ Trợ</h2>
                       </div>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Học sinh có điểm dưới 70%
-                      </p>
+                      <p className="text-sm text-gray-600 mb-4">Học sinh có điểm dưới 70%</p>
                       <div className="space-y-3">
-                        {strugglingStudents.slice(0, 10).map(student => (
-                          <div key={student.student_id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-100">
+                        {strugglingStudents.slice(0, 10).map((student) => (
+                          <div
+                            key={student.student_id}
+                            className="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-100"
+                          >
                             <div>
                               <div className="font-medium text-gray-900">
                                 {student.student_name}
@@ -652,7 +741,9 @@ export default function GradeAnalyticsPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className={`text-xl font-bold ${getLetterGradeColor(student.letter_grade)}`}>
+                              <div
+                                className={`text-xl font-bold ${getLetterGradeColor(student.letter_grade)}`}
+                              >
                                 {student.letter_grade}
                               </div>
                               <div className="text-sm text-gray-600">
@@ -675,16 +766,15 @@ export default function GradeAnalyticsPage() {
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6">
                       <div className="flex items-center gap-2 mb-4">
                         <SparklesIcon className="w-6 h-6 text-green-500" />
-                        <h2 className="text-lg font-semibold text-green-900">
-                          Học Sinh Xuất Sắc
-                        </h2>
+                        <h2 className="text-lg font-semibold text-green-900">Học Sinh Xuất Sắc</h2>
                       </div>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Học sinh có điểm từ 90% trở lên
-                      </p>
+                      <p className="text-sm text-gray-600 mb-4">Học sinh có điểm từ 90% trở lên</p>
                       <div className="space-y-3">
-                        {topPerformers.slice(0, 10).map(student => (
-                          <div key={student.student_id} className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-100">
+                        {topPerformers.slice(0, 10).map((student) => (
+                          <div
+                            key={student.student_id}
+                            className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-100"
+                          >
                             <div>
                               <div className="font-medium text-gray-900">
                                 {student.student_name}
@@ -694,7 +784,9 @@ export default function GradeAnalyticsPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className={`text-xl font-bold ${getLetterGradeColor(student.letter_grade)}`}>
+                              <div
+                                className={`text-xl font-bold ${getLetterGradeColor(student.letter_grade)}`}
+                              >
                                 {student.letter_grade}
                               </div>
                               <div className="text-sm text-gray-600">
@@ -730,5 +822,5 @@ export default function GradeAnalyticsPage() {
         )}
       </div>
     </PageErrorBoundary>
-  )
+  );
 }

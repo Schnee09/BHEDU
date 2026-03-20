@@ -1,46 +1,73 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export async function GET() {
-  try {
-    const start = Date.now();
-    const res = await fetch("https://www.google.com", { method: "HEAD" });
-    const duration = Date.now() - start;
+  const start = Date.now();
+  const checks: Record<string, any> = {
+    timestamp: new Date().toISOString(),
+  };
 
-    let supabaseRes = null;
+  try {
+    // 1. Check External Connectivity (Ping Google)
+    const googleStart = Date.now();
     try {
-      const sStart = Date.now();
-      const sURL = (process.env.NEXT_PUBLIC_SUPABASE_URL || "missing") +
-        "/rest/v1/";
-      const sRes = await fetch(sURL, {
-        method: "GET",
-        headers: { "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "" },
+      const googleRes = await fetch('https://www.google.com', {
+        method: 'HEAD',
+        signal: AbortSignal.timeout(2000),
       });
-      supabaseRes = {
-        status: sRes.status,
-        durationMs: Date.now() - sStart,
-        url: sURL,
+      checks.external = {
+        status: googleRes.ok ? 'healthy' : 'degraded',
+        latency_ms: Date.now() - googleStart,
       };
-    } catch (sErr: any) {
-      supabaseRes = {
-        error: sErr.message,
-        url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    } catch {
+      checks.external = { status: 'unreachable', latency_ms: Date.now() - googleStart };
+    }
+
+    // 2. Check Database Connectivity (Supabase)
+    const dbStart = Date.now();
+    try {
+      const supabase = createServiceClient();
+      const { data, error } = await supabase.from('profiles').select('count').limit(1);
+
+      if (error) throw error;
+
+      checks.database = {
+        status: 'healthy',
+        latency_ms: Date.now() - dbStart,
+        connected: true,
+      };
+    } catch (dbErr: any) {
+      checks.database = {
+        status: 'unhealthy',
+        error: dbErr.message,
+        latency_ms: Date.now() - dbStart,
+        connected: false,
       };
     }
 
-    return NextResponse.json({
-      status: "ok",
-      googleStatus: res.status,
-      googleDurationMs: duration,
-      supabase: supabaseRes,
+    // 3. System Info
+    checks.system = {
       nodeVersion: process.version,
       env: process.env.NODE_ENV,
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+    };
+
+    const overallStatus = checks.database.status === 'healthy' ? 'ok' : 'degraded';
+
+    return NextResponse.json({
+      status: overallStatus,
+      duration_total_ms: Date.now() - start,
+      ...checks,
     });
   } catch (err: any) {
-    return NextResponse.json({
-      status: "error",
-      message: err.message,
-      stack: err.stack,
-      nodeVersion: process.version,
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        status: 'error',
+        message: err.message,
+        timestamp: checks.timestamp,
+      },
+      { status: 500 }
+    );
   }
 }

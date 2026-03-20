@@ -5,12 +5,8 @@
  * Follows Single Responsibility Principle - only data access, no business logic.
  */
 
-import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  BaseRepository,
-  type PaginatedResult,
-  type PaginationParams,
-} from "./base";
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { BaseRepository, type PaginatedResult, type PaginationParams } from './base';
 
 // ============================================
 // Types
@@ -21,11 +17,11 @@ import type {
   BulkAttendanceInput,
   CreateAttendanceInput,
   UpdateAttendanceInput,
-} from "@/lib/schemas";
+} from '@/lib/schemas';
 
 export type AttendanceFilters = AttendanceQueryInput;
 
-import type { AttendanceResponse } from "@/lib/schemas/responses/attendance";
+import type { AttendanceResponse } from '@/lib/schemas/responses/attendance';
 
 // Alias for backwards compatibility if needed, or prefer using the imported types directly
 export type Attendance = AttendanceResponse;
@@ -39,21 +35,18 @@ export interface IAttendanceRepository {
   findById(id: string): Promise<Attendance | null>;
   findByIdWithDetails(id: string): Promise<AttendanceWithDetails | null>;
   findAll(filters?: AttendanceFilters): Promise<PaginatedResult<Attendance>>;
-  findByStudent(
-    studentId: string,
-    filters?: AttendanceFilters,
-  ): Promise<Attendance[]>;
+  findByStudent(studentId: string, filters?: AttendanceFilters): Promise<Attendance[]>;
   findByClass(classId: string, date?: string): Promise<AttendanceWithDetails[]>;
-  findByClassAndDate(
-    classId: string,
-    date: string,
-  ): Promise<AttendanceWithDetails[]>;
+  findByClassAndDate(classId: string, date: string): Promise<AttendanceWithDetails[]>;
   create(data: CreateAttendanceInput): Promise<Attendance>;
   createBulk(data: BulkAttendanceInput): Promise<Attendance[]>;
   update(id: string, data: UpdateAttendanceInput): Promise<Attendance>;
   delete(id: string): Promise<void>;
   getAttendanceRate(studentId: string, classId?: string): Promise<number>;
-  getClassAttendanceStats(classId: string, date: string): Promise<{
+  getClassAttendanceStats(
+    classId: string,
+    date: string
+  ): Promise<{
     total: number;
     present: number;
     absent: number;
@@ -66,13 +59,12 @@ export interface IAttendanceRepository {
 // Repository Implementation
 // ============================================
 
-export class AttendanceRepository extends BaseRepository<
-  Attendance,
-  CreateAttendanceInput,
-  UpdateAttendanceInput
-> implements IAttendanceRepository {
-  protected readonly tableName = "attendance";
-  protected readonly primaryKey = "id";
+export class AttendanceRepository
+  extends BaseRepository<Attendance, CreateAttendanceInput, UpdateAttendanceInput>
+  implements IAttendanceRepository
+{
+  protected readonly tableName = 'attendance';
+  protected readonly primaryKey = 'id';
 
   constructor(supabase: SupabaseClient) {
     super(supabase);
@@ -84,7 +76,8 @@ export class AttendanceRepository extends BaseRepository<
   async findByIdWithDetails(id: string): Promise<AttendanceWithDetails | null> {
     const { data, error } = await this.supabase
       .from(this.tableName)
-      .select(`
+      .select(
+        `
         *,
         student:profiles!student_id (
           id,
@@ -96,12 +89,13 @@ export class AttendanceRepository extends BaseRepository<
           id,
           name
         )
-      `)
-      .eq("id", id)
+      `
+      )
+      .eq('id', id)
       .single();
 
     if (error) {
-      if (error.code === "PGRST116") return null;
+      if (error.code === 'PGRST116') return null;
       throw new Error(`Failed to find attendance: ${error.message}`);
     }
 
@@ -111,18 +105,14 @@ export class AttendanceRepository extends BaseRepository<
   /**
    * Find all attendance with filters and pagination
    */
-  async findAll(
-    filters: Partial<AttendanceFilters> = {},
-  ): Promise<PaginatedResult<Attendance>> {
+  async findAll(filters: Partial<AttendanceFilters> = {}): Promise<PaginatedResult<Attendance>> {
     const page = filters.page || 1;
     const pageSize = filters.limit || 50;
     const start = (page - 1) * pageSize;
     const end = start + pageSize - 1;
 
-    let query = this.supabase
-      .from(this.tableName)
-      .select(
-        `
+    let query = this.supabase.from(this.tableName).select(
+      `
         *,
         student:profiles!student_id (
           id,
@@ -138,37 +128,37 @@ export class AttendanceRepository extends BaseRepository<
           name
         )
       `,
-        { count: "exact" },
-      );
+      { count: 'exact' }
+    );
 
     // Apply filters
     if (filters.student_id) {
-      query = query.eq("student_id", filters.student_id);
+      query = query.eq('student_id', filters.student_id);
     }
 
     if (filters.class_id) {
-      query = query.eq("class_id", filters.class_id);
+      query = query.eq('class_id', filters.class_id);
     }
 
     if (filters.date) {
-      query = query.eq("date", filters.date);
+      query = query.eq('date', filters.date);
     }
 
     if (filters.from_date) {
-      query = query.gte("date", filters.from_date);
+      query = query.gte('date', filters.from_date);
     }
 
     if (filters.to_date) {
-      query = query.lte("date", filters.to_date);
+      query = query.lte('date', filters.to_date);
     }
 
     if (filters.status) {
-      query = query.eq("status", filters.status);
+      query = query.eq('status', filters.status);
     }
 
     const { data, error, count } = await query
       .range(start, end)
-      .order("date", { ascending: false });
+      .order('date', { ascending: false });
 
     if (error) {
       throw new Error(`Failed to fetch attendance: ${error.message}`);
@@ -188,27 +178,23 @@ export class AttendanceRepository extends BaseRepository<
    */
   async findByStudent(
     studentId: string,
-    filters: Partial<AttendanceFilters> = {},
+    filters: Partial<AttendanceFilters> = {}
   ): Promise<Attendance[]> {
-    let query = this.supabase
-      .from(this.tableName)
-      .select("*")
-      .eq("student_id", studentId);
+    let query = this.supabase.from(this.tableName).select('*').eq('student_id', studentId);
 
     if (filters.class_id) {
-      query = query.eq("class_id", filters.class_id);
+      query = query.eq('class_id', filters.class_id);
     }
 
     if (filters.from_date) {
-      query = query.gte("date", filters.from_date);
+      query = query.gte('date', filters.from_date);
     }
 
     if (filters.to_date) {
-      query = query.lte("date", filters.to_date);
+      query = query.lte('date', filters.to_date);
     }
 
-    const { data, error } = await query
-      .order("date", { ascending: false });
+    const { data, error } = await query.order('date', { ascending: false });
 
     if (error) {
       throw new Error(`Failed to fetch student attendance: ${error.message}`);
@@ -220,13 +206,11 @@ export class AttendanceRepository extends BaseRepository<
   /**
    * Find all attendance for a class (optionally on a specific date)
    */
-  async findByClass(
-    classId: string,
-    date?: string,
-  ): Promise<AttendanceWithDetails[]> {
+  async findByClass(classId: string, date?: string): Promise<AttendanceWithDetails[]> {
     let query = this.supabase
       .from(this.tableName)
-      .select(`
+      .select(
+        `
         *,
         student:profiles!student_id (
           id,
@@ -237,15 +221,15 @@ export class AttendanceRepository extends BaseRepository<
             student_code
           )
         )
-      `)
-      .eq("class_id", classId);
+      `
+      )
+      .eq('class_id', classId);
 
     if (date) {
-      query = query.eq("date", date);
+      query = query.eq('date', date);
     }
 
-    const { data, error } = await query
-      .order("date", { ascending: false });
+    const { data, error } = await query.order('date', { ascending: false });
 
     if (error) {
       throw new Error(`Failed to fetch class attendance: ${error.message}`);
@@ -257,10 +241,7 @@ export class AttendanceRepository extends BaseRepository<
   /**
    * Find attendance for a class on a specific date
    */
-  async findByClassAndDate(
-    classId: string,
-    date: string,
-  ): Promise<AttendanceWithDetails[]> {
+  async findByClassAndDate(classId: string, date: string): Promise<AttendanceWithDetails[]> {
     return this.findByClass(classId, date);
   }
 
@@ -280,7 +261,7 @@ export class AttendanceRepository extends BaseRepository<
     const { data: created, error } = await this.supabase
       .from(this.tableName)
       .upsert(records, {
-        onConflict: "student_id,class_id,date",
+        onConflict: 'student_id,class_id,date',
         ignoreDuplicates: false,
       })
       .select();
@@ -295,50 +276,71 @@ export class AttendanceRepository extends BaseRepository<
   /**
    * Calculate attendance rate for a student
    */
-  async getAttendanceRate(
-    studentId: string,
-    classId?: string,
-  ): Promise<number> {
-    let query = this.supabase
-      .from(this.tableName)
-      .select("status")
-      .eq("student_id", studentId);
+  async getAttendanceRate(studentId: string, classId?: string): Promise<number> {
+    // Optimization: Use SQL function for calculation
+    const { data: rate, error } = await (this.supabase as any).rpc('get_attendance_rate', {
+      p_student_id: studentId,
+      p_class_id: classId || null,
+    });
 
-    if (classId) {
-      query = query.eq("class_id", classId);
+    if (!error && rate !== null) {
+      return rate;
     }
 
-    const { data, error } = await query;
+    // Fallback if RPC fails
+    let query = this.supabase.from(this.tableName).select('status').eq('student_id', studentId);
 
-    if (error) {
-      throw new Error(`Failed to calculate attendance rate: ${error.message}`);
+    if (classId) {
+      query = query.eq('class_id', classId);
+    }
+
+    const { data, error: queryError } = await query;
+
+    if (queryError) {
+      throw new Error(`Failed to calculate attendance rate: ${queryError.message}`);
     }
 
     if (!data || data.length === 0) return 0;
 
-    const present =
-      data.filter((r) => r.status === "present" || r.status === "late").length;
+    const present = data.filter((r) => r.status === 'present' || r.status === 'late').length;
     return (present / data.length) * 100;
   }
 
   /**
    * Get attendance statistics for a class on a date
    */
-  async getClassAttendanceStats(classId: string, date: string): Promise<{
+  async getClassAttendanceStats(
+    classId: string,
+    date: string
+  ): Promise<{
     total: number;
     present: number;
     absent: number;
     late: number;
     excused: number;
   }> {
-    const { data, error } = await this.supabase
-      .from(this.tableName)
-      .select("status")
-      .eq("class_id", classId)
-      .eq("date", date);
+    // Optimization: Use SQL count to avoid fetching large datasets
+    const { data: statsData, error } = await (this.supabase as any).rpc(
+      'get_class_attendance_stats',
+      {
+        p_class_id: classId,
+        p_date: date,
+      }
+    );
 
-    if (error) {
-      throw new Error(`Failed to get attendance stats: ${error.message}`);
+    if (!error && statsData) {
+      return statsData;
+    }
+
+    // Fallback to optimized select if RPC fails or is not yet deployed
+    const { data, error: queryError } = await this.supabase
+      .from(this.tableName)
+      .select('status')
+      .eq('class_id', classId)
+      .eq('date', date);
+
+    if (queryError) {
+      throw new Error(`Failed to get attendance stats: ${queryError.message}`);
     }
 
     const stats = {

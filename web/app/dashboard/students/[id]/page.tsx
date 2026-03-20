@@ -1,21 +1,21 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { getDataClient } from '@/lib/auth/dataClient';
-import Tabs from "@/components/ui/tabs";
-import Badge from "@/components/ui/badge";
-import Empty from "@/components/ui/empty";
-import { Card } from "@/components/ui";
-import { Icons } from "@/components/ui/Icons";
-import { CakeIcon } from "@heroicons/react/24/outline";
-import StudentActions from "@/components/StudentActions";
-import GuardianManagement from "@/components/GuardianManagement";
-import EnrollmentManager from "@/components/EnrollmentManager";
-import StudentPhotoUpload from "@/components/StudentPhotoUpload";
-import StudentNotes from "@/components/StudentNotes";
-import StudentDocuments from "@/components/StudentDocuments";
+import Tabs from '@/components/ui/tabs';
+import Badge from '@/components/ui/badge';
+import Empty from '@/components/ui/empty';
+import { Card } from '@/components/ui';
+import { Icons } from '@/components/ui/Icons';
+import { CakeIcon } from '@heroicons/react/24/outline';
+import StudentActions from '@/components/StudentActions';
+import GuardianManagement from '@/components/GuardianManagement';
+import EnrollmentManager from '@/components/EnrollmentManager';
+import StudentPhotoUpload from '@/components/StudentPhotoUpload';
+import StudentNotes from '@/components/StudentNotes';
+import StudentDocuments from '@/components/StudentDocuments';
 
-import StudentStatusPanel from "../../../../components/StudentStatusPanel";
-import ImportHistoryPanel from "../../../../components/ImportHistoryPanel";
+import StudentStatusPanel from '../../../../components/StudentStatusPanel';
+import ImportHistoryPanel from '../../../../components/ImportHistoryPanel';
 
 /**
  * Fetch student data using the provided Supabase client.
@@ -24,14 +24,21 @@ import ImportHistoryPanel from "../../../../components/ImportHistoryPanel";
  */
 async function fetchStudentWithClient(supabase: any, id: string) {
   const { data: profile, error: pErr } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, phone, address, date_of_birth, photo_url, created_at, role")
-    .eq("id", id)
+    .from('profiles')
+    .select('id, full_name, email, phone, address, date_of_birth, photo_url, created_at, role')
+    .eq('id', id)
     .maybeSingle();
 
   if (pErr) {
     // RLS or other error
-    return { profile: null, enrollments: [], classes: [], attendance: [], grades: [], error: pErr.message };
+    return {
+      profile: null,
+      enrollments: [],
+      classes: [],
+      attendance: [],
+      grades: [],
+      error: pErr.message,
+    };
   }
   if (!profile) return { profile: null, enrollments: [], classes: [], attendance: [], grades: [] };
 
@@ -45,45 +52,49 @@ async function fetchStudentWithClient(supabase: any, id: string) {
     { data: audits },
   ] = await Promise.all([
     supabase
-      .from("enrollments")
-      .select("id, class_id, enrollment_date, status, classes(id, name)")
-      .eq("student_id", id)
-      .order("enrollment_date", { ascending: false }),
+      .from('enrollments')
+      .select('id, class_id, enrollment_date, status, classes(id, name)')
+      .eq('student_id', id)
+      .order('enrollment_date', { ascending: false }),
     supabase
-      .from("attendance")
-      .select("id, class_id, date, status, notes, classes(id, name)")
-      .eq("student_id", id)
-      .order("date", { ascending: false })
+      .from('attendance')
+      .select('id, class_id, date, status, notes, classes(id, name)')
+      .eq('student_id', id)
+      .order('date', { ascending: false })
       .limit(20),
     supabase
-      .from("grades")
-      .select("id, score, points_earned, component_type, semester, graded_at, subjects(code, name), classes(name)")
-      .eq("student_id", id)
-      .order("graded_at", { ascending: false })
+      .from('grades')
+      .select(
+        'id, score, points_earned, component_type, semester, graded_at, subjects(code, name), classes(name)'
+      )
+      .eq('student_id', id)
+      .order('graded_at', { ascending: false })
       .limit(20),
     supabase
-      .from("student_accounts")
-      .select("id, student_id, balance, status, last_payment_date")
-      .eq("student_id", id)
+      .from('student_accounts')
+      .select('id, student_id, balance, status, last_payment_date')
+      .eq('student_id', id)
       .maybeSingle(),
     supabase
-      .from("invoices")
-      .select("id, invoice_number, status, total_amount, paid_amount, balance, issue_date, due_date")
-      .eq("student_id", id)
-      .order("issue_date", { ascending: false })
+      .from('invoices')
+      .select(
+        'id, invoice_number, status, total_amount, paid_amount, balance, issue_date, due_date'
+      )
+      .eq('student_id', id)
+      .order('issue_date', { ascending: false })
       .limit(10),
     supabase
-      .from("payments")
-      .select("id, amount, payment_date, transaction_reference, invoice_id, payment_methods(name)")
-      .eq("student_id", id)
-      .order("payment_date", { ascending: false })
+      .from('payments')
+      .select('id, amount, payment_date, transaction_reference, invoice_id, payment_methods(name)')
+      .eq('student_id', id)
+      .order('payment_date', { ascending: false })
       .limit(10),
     supabase
-      .from("audit_logs")
-      .select("id, actor_id, action, resource_type, resource_id, created_at")
-      .eq("resource_type", "student")
-      .eq("resource_id", id)
-      .order("created_at", { ascending: false })
+      .from('audit_logs')
+      .select('id, actor_id, action, resource_type, resource_id, created_at')
+      .eq('resource_type', 'student')
+      .eq('resource_id', id)
+      .order('created_at', { ascending: false })
       .limit(20),
   ]);
 
@@ -107,13 +118,11 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
   // so pages can adapt what they show.
   const { supabase: dataClient, viewerRole, user } = await getDataClient();
 
-  const { profile, enrollments, attendance, grades, account, invoices, payments, audits } = await fetchStudentWithClient(
-    dataClient,
-    id
-  );
+  const { profile, enrollments, attendance, grades, account, invoices, payments, audits } =
+    await fetchStudentWithClient(dataClient, id);
 
-  const showFinance = viewerRole === "admin" || (user?.id === id);
-  const showActivity = viewerRole === "admin";
+  const showFinance = viewerRole === 'admin' || user?.id === id || viewerRole === 'parent';
+  const showActivity = viewerRole === 'admin';
 
   type StudentAccount = {
     id: string;
@@ -163,14 +172,18 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
     late: attendance.filter((a: any) => a.status === 'late').length,
     absent: attendance.filter((a: any) => a.status === 'absent').length,
   };
-  const attendanceRate = attendanceStats.total > 0
-    ? Math.round(((attendanceStats.present + attendanceStats.late) / attendanceStats.total) * 100)
-    : 100;
+  const attendanceRate =
+    attendanceStats.total > 0
+      ? Math.round(((attendanceStats.present + attendanceStats.late) / attendanceStats.total) * 100)
+      : 100;
 
-  const gradeScores = grades.map((g: any) => g.score ?? g.points_earned).filter((s: any) => s != null);
-  const averageGrade = gradeScores.length > 0
-    ? (gradeScores.reduce((a: number, b: number) => a + b, 0) / gradeScores.length).toFixed(1)
-    : '—';
+  const gradeScores = grades
+    .map((g: any) => g.score ?? g.points_earned)
+    .filter((s: any) => s != null);
+  const averageGrade =
+    gradeScores.length > 0
+      ? (gradeScores.reduce((a: number, b: number) => a + b, 0) / gradeScores.length).toFixed(1)
+      : '—';
 
   const overview = (
     <div className="space-y-6">
@@ -203,19 +216,29 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
             {/* Quick Stats Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:ml-auto">
               <div className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/30 dark:to-green-900/20 rounded-xl p-4 text-center border border-emerald-200/50 dark:border-emerald-700/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{attendanceRate}%</p>
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Chuyên cần</p>
+                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {attendanceRate}%
+                </p>
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                  Chuyên cần
+                </p>
               </div>
               <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/20 rounded-xl p-4 text-center border border-blue-200/50 dark:border-blue-700/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{averageGrade}</p>
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  {averageGrade}
+                </p>
                 <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Điểm TB</p>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/20 rounded-xl p-4 text-center border border-purple-200/50 dark:border-purple-700/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{enrollments.length}</p>
+                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  {enrollments.length}
+                </p>
                 <p className="text-xs font-medium text-purple-700 dark:text-purple-300">Lớp học</p>
               </div>
               <div className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/20 rounded-xl p-4 text-center border border-orange-200/50 dark:border-orange-700/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{grades.length}</p>
+                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                  {grades.length}
+                </p>
                 <p className="text-xs font-medium text-orange-700 dark:text-orange-300">Điểm số</p>
               </div>
             </div>
@@ -257,7 +280,9 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 <CakeIcon className="w-5 h-5 text-pink-500" />
                 <div>
                   <p className="text-xs text-gray-500">Ngày sinh</p>
-                  <p className="font-medium text-gray-900">{new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}</p>
+                  <p className="font-medium text-gray-900">
+                    {new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}
+                  </p>
                 </div>
               </div>
             )}
@@ -265,7 +290,9 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
               <Icons.Calendar className="w-5 h-5 text-blue-500" />
               <div>
                 <p className="text-xs text-gray-500">Ngày tham gia</p>
-                <p className="font-medium text-gray-900">{new Date(profile.created_at).toLocaleDateString('vi-VN')}</p>
+                <p className="font-medium text-gray-900">
+                  {new Date(profile.created_at).toLocaleDateString('vi-VN')}
+                </p>
               </div>
             </div>
           </div>
@@ -280,7 +307,9 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
             Tổng quan điểm danh
           </h3>
           {attendanceStats.total === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Chưa có dữ liệu điểm danh</div>
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              Chưa có dữ liệu điểm danh
+            </div>
           ) : (
             <>
               <div className="flex items-center gap-4 mb-4">
@@ -288,8 +317,16 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                   <svg className="w-20 h-20 transform -rotate-90">
                     <circle cx="40" cy="40" r="35" stroke="#e5e7eb" strokeWidth="6" fill="none" />
                     <circle
-                      cx="40" cy="40" r="35"
-                      stroke={attendanceRate >= 80 ? '#22c55e' : attendanceRate >= 60 ? '#f59e0b' : '#ef4444'}
+                      cx="40"
+                      cy="40"
+                      r="35"
+                      stroke={
+                        attendanceRate >= 80
+                          ? '#22c55e'
+                          : attendanceRate >= 60
+                            ? '#f59e0b'
+                            : '#ef4444'
+                      }
                       strokeWidth="6"
                       fill="none"
                       strokeDasharray={`${attendanceRate * 2.2} 220`}
@@ -316,9 +353,18 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 </div>
               </div>
               <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
-                <div className="bg-green-500 transition-all" style={{ width: `${(attendanceStats.present / attendanceStats.total) * 100}%` }} />
-                <div className="bg-yellow-500 transition-all" style={{ width: `${(attendanceStats.late / attendanceStats.total) * 100}%` }} />
-                <div className="bg-red-500 transition-all" style={{ width: `${(attendanceStats.absent / attendanceStats.total) * 100}%` }} />
+                <div
+                  className="bg-green-500 transition-all"
+                  style={{ width: `${(attendanceStats.present / attendanceStats.total) * 100}%` }}
+                />
+                <div
+                  className="bg-yellow-500 transition-all"
+                  style={{ width: `${(attendanceStats.late / attendanceStats.total) * 100}%` }}
+                />
+                <div
+                  className="bg-red-500 transition-all"
+                  style={{ width: `${(attendanceStats.absent / attendanceStats.total) * 100}%` }}
+                />
               </div>
             </>
           )}
@@ -336,9 +382,16 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {grades.slice(0, 6).map((g: any) => (
-              <div key={g.id} className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-600 rounded-xl p-3 text-center hover:shadow-md transition-all hover:scale-[1.02]">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{g.score ?? g.points_earned}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{g.subjects?.name ?? 'N/A'}</p>
+              <div
+                key={g.id}
+                className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-600 rounded-xl p-3 text-center hover:shadow-md transition-all hover:scale-[1.02]"
+              >
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {g.score ?? g.points_earned}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-300 truncate">
+                  {g.subjects?.name ?? 'N/A'}
+                </p>
               </div>
             ))}
           </div>
@@ -360,7 +413,9 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
             {accountInfo.last_payment_date && (
               <div className="text-right">
                 <p className="text-xs text-teal-600">Thanh toán gần nhất</p>
-                <p className="font-medium text-teal-900">{new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN')}</p>
+                <p className="font-medium text-teal-900">
+                  {new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN')}
+                </p>
               </div>
             )}
           </div>
@@ -379,7 +434,10 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
     <Card padding="lg">
       <h2 className="text-lg font-semibold mb-4 text-gray-900">Bản ghi điểm danh</h2>
       {attendance.length === 0 ? (
-        <Empty title="Không có điểm danh" description="Không tìm thấy bản ghi điểm danh nào cho học sinh này." />
+        <Empty
+          title="Không có điểm danh"
+          description="Không tìm thấy bản ghi điểm danh nào cho học sinh này."
+        />
       ) : (
         <>
           {/* Mobile Card View */}
@@ -390,14 +448,20 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                   <div className="font-medium text-gray-900">
                     {new Date(a.date).toLocaleDateString('vi-VN')}
                   </div>
-                  <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'}>
+                  <Badge
+                    color={
+                      a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'
+                    }
+                  >
                     {a.status}
                   </Badge>
                 </div>
                 <div className="space-y-1 text-sm text-gray-600">
                   <div className="flex justify-between">
                     <span>Lớp:</span>
-                    <span className="font-medium text-gray-900">{a.classes?.name ?? a.class_id}</span>
+                    <span className="font-medium text-gray-900">
+                      {a.classes?.name ?? a.class_id}
+                    </span>
                   </div>
                   {a.notes && (
                     <div className="pt-2 mt-2 border-t border-gray-100">
@@ -427,7 +491,15 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                     <td className="px-4 py-3">{new Date(a.date).toLocaleDateString('vi-VN')}</td>
                     <td className="px-4 py-3">{a.classes?.name ?? a.class_id}</td>
                     <td className="px-4 py-3">
-                      <Badge color={a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'}>
+                      <Badge
+                        color={
+                          a.status === 'present'
+                            ? 'green'
+                            : a.status === 'absent'
+                              ? 'red'
+                              : 'yellow'
+                        }
+                      >
                         {a.status}
                       </Badge>
                     </td>
@@ -460,21 +532,30 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 final: 'Cuối kỳ',
               };
               return (
-                <div key={g.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
+                <div
+                  key={g.id}
+                  className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden"
+                >
                   <div className="absolute top-0 right-0 p-2 opacity-10">
                     <Icons.Grades className="w-12 h-12" />
                   </div>
                   <div className="flex justify-between items-start mb-3 relative z-10">
                     <div>
-                      <h4 className="font-semibold text-gray-900 text-lg">{g.subjects?.name ?? 'N/A'}</h4>
-                      <div className="text-xs text-gray-500 mt-1">{g.graded_at ? new Date(g.graded_at).toLocaleString('vi-VN') : '-'}</div>
+                      <h4 className="font-semibold text-gray-900 text-lg">
+                        {g.subjects?.name ?? 'N/A'}
+                      </h4>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {g.graded_at ? new Date(g.graded_at).toLocaleString('vi-VN') : '-'}
+                      </div>
                     </div>
                     <div className="text-2xl font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">
                       {g.score ?? g.points_earned ?? '—'}
                     </div>
                   </div>
                   <div className="flex gap-2 relative z-10">
-                    <Badge color="gray">{componentLabels[g.component_type] ?? g.component_type}</Badge>
+                    <Badge color="gray">
+                      {componentLabels[g.component_type] ?? g.component_type}
+                    </Badge>
                   </div>
                 </div>
               );
@@ -503,13 +584,21 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                   };
                   return (
                     <tr key={g.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900">{g.subjects?.name ?? 'N/A'}</td>
-                      <td className="px-4 py-3 text-gray-700">{componentLabels[g.component_type] ?? g.component_type}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {g.subjects?.name ?? 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {componentLabels[g.component_type] ?? g.component_type}
+                      </td>
                       <td className="px-4 py-3">
-                        <span className="font-semibold text-blue-600">{g.score ?? g.points_earned ?? '—'}</span>
+                        <span className="font-semibold text-blue-600">
+                          {g.score ?? g.points_earned ?? '—'}
+                        </span>
                         <span className="text-gray-500"> / 10</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{g.graded_at ? new Date(g.graded_at).toLocaleString('vi-VN') : '-'}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {g.graded_at ? new Date(g.graded_at).toLocaleString('vi-VN') : '-'}
+                      </td>
                     </tr>
                   );
                 })}
@@ -527,17 +616,29 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       {accountInfo ? (
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card padding="md" className="bg-gradient-to-br from-slate-50 to-gray-100">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Trạng thái tài khoản</p>
-            <p className="text-xl font-bold text-gray-900 mt-2 capitalize">{accountInfo?.status ?? '—'}</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              Trạng thái tài khoản
+            </p>
+            <p className="text-xl font-bold text-gray-900 mt-2 capitalize">
+              {accountInfo?.status ?? '—'}
+            </p>
           </Card>
           <Card padding="md" className="bg-gradient-to-br from-emerald-50 to-green-50">
-            <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Số dư hiện tại</p>
-            <p className="text-xl font-bold text-emerald-900 mt-2">₫{accountInfo?.balance ?? '0'}</p>
+            <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">
+              Số dư hiện tại
+            </p>
+            <p className="text-xl font-bold text-emerald-900 mt-2">
+              ₫{accountInfo?.balance ?? '0'}
+            </p>
           </Card>
           <Card padding="md" className="bg-gradient-to-br from-blue-50 to-indigo-50">
-            <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Thanh toán gần nhất</p>
+            <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">
+              Thanh toán gần nhất
+            </p>
             <p className="text-sm font-semibold text-blue-900 mt-2">
-              {accountInfo?.last_payment_date ? new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN') : 'Chưa có thanh toán'}
+              {accountInfo?.last_payment_date
+                ? new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN')
+                : 'Chưa có thanh toán'}
             </p>
           </Card>
         </div>
@@ -555,10 +656,21 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
               {/* Mobile Card View */}
               <div className="md:hidden space-y-3">
                 {invoiceRows.map((inv) => (
-                  <div key={inv.id} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                  <div
+                    key={inv.id}
+                    className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm"
+                  >
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium text-gray-900">{inv.invoice_number}</span>
-                      <Badge color={inv.status === 'paid' ? 'green' : inv.status === 'overdue' ? 'red' : 'yellow'}>
+                      <Badge
+                        color={
+                          inv.status === 'paid'
+                            ? 'green'
+                            : inv.status === 'overdue'
+                              ? 'red'
+                              : 'yellow'
+                        }
+                      >
                         {inv.status}
                       </Badge>
                     </div>
@@ -594,15 +706,27 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                   <tbody className="divide-y divide-gray-100">
                     {invoiceRows.map((inv) => (
                       <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 font-medium text-gray-900">{inv.invoice_number}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">
+                          {inv.invoice_number}
+                        </td>
                         <td className="px-4 py-3">
-                          <Badge color={inv.status === 'paid' ? 'green' : inv.status === 'overdue' ? 'red' : 'yellow'}>
+                          <Badge
+                            color={
+                              inv.status === 'paid'
+                                ? 'green'
+                                : inv.status === 'overdue'
+                                  ? 'red'
+                                  : 'yellow'
+                            }
+                          >
                             {inv.status}
                           </Badge>
                         </td>
                         <td className="px-4 py-3 font-medium">₫{inv.total_amount}</td>
                         <td className="px-4 py-3 font-semibold text-red-600">₫{inv.balance}</td>
-                        <td className="px-4 py-3 text-gray-600">{inv.due_date ? new Date(inv.due_date).toLocaleDateString('vi-VN') : '—'}</td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {inv.due_date ? new Date(inv.due_date).toLocaleDateString('vi-VN') : '—'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -620,13 +744,24 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
               {/* Mobile Card View */}
               <div className="md:hidden space-y-3">
                 {paymentRows.map((p) => (
-                  <div key={p.id} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                  <div
+                    key={p.id}
+                    className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm"
+                  >
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-bold text-green-600 text-lg">₫{p.amount}</span>
-                      <span className="text-xs text-gray-500">{p.payment_date ? new Date(p.payment_date).toLocaleDateString('vi-VN') : '-'}</span>
+                      <span className="text-xs text-gray-500">
+                        {p.payment_date
+                          ? new Date(p.payment_date).toLocaleDateString('vi-VN')
+                          : '-'}
+                      </span>
                     </div>
-                    <div className="text-sm text-gray-700 mb-1">{p.payment_methods?.name ?? '—'}</div>
-                    <div className="text-xs text-gray-400 truncate">Ref: {p.transaction_reference ?? '—'}</div>
+                    <div className="text-sm text-gray-700 mb-1">
+                      {p.payment_methods?.name ?? '—'}
+                    </div>
+                    <div className="text-xs text-gray-400 truncate">
+                      Ref: {p.transaction_reference ?? '—'}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -638,17 +773,25 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                     <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                       <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày</th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-700">Số tiền</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Phương thức</th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-700">
+                        Phương thức
+                      </th>
                       <th className="text-left px-4 py-3 font-semibold text-gray-700">Ref</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {paymentRows.map((p) => (
                       <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-gray-600">{p.payment_date ? new Date(p.payment_date).toLocaleDateString('vi-VN') : '—'}</td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {p.payment_date
+                            ? new Date(p.payment_date).toLocaleDateString('vi-VN')
+                            : '—'}
+                        </td>
                         <td className="px-4 py-3 font-semibold text-green-600">₫{p.amount}</td>
                         <td className="px-4 py-3">{p.payment_methods?.name ?? '—'}</td>
-                        <td className="px-4 py-3 text-gray-600">{p.transaction_reference ?? '—'}</td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {p.transaction_reference ?? '—'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -681,7 +824,11 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
   const statusSection = (
     <Card padding="lg">
-      <StudentStatusPanel studentId={id} currentStatus={(profile as any).status ?? 'active'} isAdmin={viewerRole === 'admin'} />
+      <StudentStatusPanel
+        studentId={id}
+        currentStatus={(profile as any).status ?? 'active'}
+        isAdmin={viewerRole === 'admin'}
+      />
     </Card>
   );
 
@@ -699,13 +846,18 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       ) : (
         <ul className="space-y-4">
           {auditRows.map((a) => (
-            <li key={a.id} className="flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <li
+              key={a.id}
+              className="flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 flex-shrink-0" />
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge color="blue">{a.action}</Badge>
                   <span className="text-sm text-gray-600">·</span>
-                  <span className="text-sm text-gray-500">{new Date(a.created_at).toLocaleString()}</span>
+                  <span className="text-sm text-gray-500">
+                    {new Date(a.created_at).toLocaleString()}
+                  </span>
                 </div>
                 <p className="text-xs text-gray-600 mt-1">Actor ID: {a.actor_id}</p>
               </div>
@@ -745,18 +897,20 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
 
         {(() => {
           const tabs: { key: string; label: string; content: React.ReactNode }[] = [
-            { key: "overview", label: "Tổng quan", content: overview },
-            { key: "status", label: "Trạng thái", content: statusSection },
-            { key: "enrollments", label: "Ghi danh", content: enrollmentsSection },
-            { key: "guardians", label: "Phụ huynh", content: guardiansSection },
-            { key: "attendance", label: "Điểm danh", content: attendanceSection },
-            { key: "grades", label: "Điểm", content: gradesSection },
-            { key: "imports", label: "Nhập", content: importSection },
-            { key: "documents", label: "Tài liệu", content: documentsSection },
-            { key: "notes", label: "Ghi chú", content: notesSection },
+            { key: 'overview', label: 'Tổng quan', content: overview },
+            { key: 'status', label: 'Trạng thái', content: statusSection },
+            { key: 'enrollments', label: 'Ghi danh', content: enrollmentsSection },
+            { key: 'guardians', label: 'Phụ huynh', content: guardiansSection },
+            { key: 'attendance', label: 'Điểm danh', content: attendanceSection },
+            { key: 'grades', label: 'Điểm', content: gradesSection },
+            { key: 'imports', label: 'Nhập', content: importSection },
+            { key: 'documents', label: 'Tài liệu', content: documentsSection },
+            { key: 'notes', label: 'Ghi chú', content: notesSection },
           ];
-          if (showFinance) tabs.splice(5, 0, { key: "finance", label: "Tài chính", content: financeSection });
-          if (showActivity) tabs.push({ key: "activity", label: "Hoạt động", content: activitySection });
+          if (showFinance)
+            tabs.splice(5, 0, { key: 'finance', label: 'Tài chính', content: financeSection });
+          if (showActivity)
+            tabs.push({ key: 'activity', label: 'Hoạt động', content: activitySection });
           return <Tabs tabs={tabs} />;
         })()}
       </div>

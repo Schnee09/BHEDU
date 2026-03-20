@@ -67,12 +67,12 @@ jobs:
           export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-public-anon-key}"
           npm ci
 
-      # - name: Lint web (ESLint, no warnings allowed)
-      #   working-directory: ./web
-      #   run: |
-      #     export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://example.com}"
-      #     export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-public-anon-key}"
-      #     npm run lint
+      - name: Lint web (ESLint, no warnings allowed)
+        working-directory: ./web
+        run: |
+          export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://example.com}"
+          export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-public-anon-key}"
+          npm run lint
 
       - name: Typecheck web (TS noEmit)
         working-directory: ./web
@@ -91,7 +91,7 @@ jobs:
       # Production deploy on push to main
       - name: Vercel Deploy (production)
         if: (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
-        uses: amondnet/vercel-action@v25
+        uses: amondnet/vercel-action@v25.2.0
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
@@ -102,7 +102,7 @@ jobs:
       # Preview deploy on pull requests
       - name: Vercel Deploy (preview)
         if: github.event_name == 'pull_request' || (github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/main')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == '' || github.event.inputs.environment == 'preview'))
-        uses: amondnet/vercel-action@v25
+        uses: amondnet/vercel-action@v25.2.0
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}

@@ -1,32 +1,33 @@
-'use client'
-import { Component, type ReactNode, type ErrorInfo } from 'react'
-import { Card } from '@/components/ui/Card'
-import { Icons } from '@/components/ui/Icons'
-import { Button } from '@/components/ui'
-import { logger } from '@/lib/logger'
+'use client';
+import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { Card } from '@/components/ui/Card';
+import { Icons } from '@/components/ui/Icons';
+import { Button } from '@/components/ui';
+import { logger } from '@/lib/logger';
+import * as Sentry from '@sentry/nextjs';
 
 interface Props {
-  children: ReactNode
-  fallback?: ReactNode
-  onError?: (error: Error, errorInfo: ErrorInfo) => void
-  showDetails?: boolean
-  pageName?: string
+  children: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  showDetails?: boolean;
+  pageName?: string;
 }
 
 interface State {
-  hasError: boolean
-  error?: Error
-  errorInfo?: ErrorInfo
+  hasError: boolean;
+  error?: Error;
+  errorInfo?: ErrorInfo;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
-    super(props)
-    this.state = { hasError: false }
+    super(props);
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error }
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -34,23 +35,31 @@ export class ErrorBoundary extends Component<Props, State> {
     logger.error('ErrorBoundary caught an error', error, {
       componentStack: errorInfo.componentStack,
       pageName: this.props.pageName,
-    })
+    });
+
+    // Report to Sentry
+    Sentry.captureException(error, {
+      extra: {
+        componentStack: errorInfo.componentStack,
+        pageName: this.props.pageName,
+      },
+    });
 
     // Call custom error handler if provided
-    this.props.onError?.(error, errorInfo)
+    this.props.onError?.(error, errorInfo);
 
-    this.setState({ errorInfo })
+    this.setState({ errorInfo });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined })
-  }
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  };
 
   render() {
     if (this.state.hasError) {
       // Use custom fallback if provided
       if (this.props.fallback) {
-        return this.props.fallback
+        return this.props.fallback;
       }
 
       // Default fallback UI with improved design
@@ -74,10 +83,13 @@ export class ErrorBoundary extends Component<Props, State> {
               {/* Error Message */}
               <div className="space-y-4">
                 <h1 className="text-3xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                  {this.props.pageName ? `Lỗi khi tải ${this.props.pageName}` : 'Đã có sự cố xảy ra'}
+                  {this.props.pageName
+                    ? `Lỗi khi tải ${this.props.pageName}`
+                    : 'Đã có sự cố xảy ra'}
                 </h1>
                 <p className="text-stone-600 dark:text-stone-400 font-medium leading-relaxed max-w-md mx-auto">
-                  Hệ thống gặp lỗi không mong muốn. Đừng lo lắng, dữ liệu của bạn vẫn an toàn. Hãy thử tải lại trang hoặc quay lại sau.
+                  Hệ thống gặp lỗi không mong muốn. Đừng lo lắng, dữ liệu của bạn vẫn an toàn. Hãy
+                  thử tải lại trang hoặc quay lại sau.
                 </p>
               </div>
 
@@ -128,10 +140,10 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
           </Card>
         </div>
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }
 
@@ -141,24 +153,32 @@ export class ErrorBoundary extends Component<Props, State> {
  */
 export class PageErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
-    super(props)
-    this.state = { hasError: false }
+    super(props);
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error }
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     logger.error(`Page section error: ${this.props.pageName || 'unknown'}`, error, {
       componentStack: errorInfo.componentStack,
-    })
-    this.setState({ errorInfo })
+    });
+
+    // Report to Sentry
+    Sentry.captureException(error, {
+      extra: {
+        componentStack: errorInfo.componentStack,
+        sectionName: this.props.pageName,
+      },
+    });
+    this.setState({ errorInfo });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined })
-  }
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  };
 
   render() {
     if (this.state.hasError) {
@@ -187,19 +207,19 @@ export class PageErrorBoundary extends Component<Props, State> {
             </Button>
           </div>
         </Card>
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }
 
 /**
  * Higher-order component to wrap any component with error boundary
- * 
+ *
  * @example
  * ```tsx
- * export default withErrorBoundary(MyComponent, { 
+ * export default withErrorBoundary(MyComponent, {
  *   showDetails: process.env.NODE_ENV === 'development',
  *   pageName: 'My Page'
  * });
@@ -213,9 +233,9 @@ export function withErrorBoundary<P extends object>(
     <ErrorBoundary {...errorBoundaryProps}>
       <Component {...props} />
     </ErrorBoundary>
-  )
+  );
 
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
 
-  return WrappedComponent
+  return WrappedComponent;
 }

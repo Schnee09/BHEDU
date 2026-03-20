@@ -1,140 +1,156 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useMemo } from 'react'
-import { apiFetch, getClasses, getAttendance } from '@/lib/api/client'
-import { ChartBarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline'
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts'
-import { parseISO, format, subDays, startOfWeek, endOfWeek, subMonths } from 'date-fns'
-import { vi } from 'date-fns/locale'
+import { useState, useEffect, useMemo } from 'react';
+import { apiFetch, getClasses, getAttendance } from '@/lib/api/client';
+import { ChartBarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from 'recharts';
+import { parseISO, format, subDays, startOfWeek, endOfWeek, subMonths } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 // Types matching V2 API response with joined relations
 interface AttendanceRecord {
-  id: string
-  student_id: string
-  class_id: string
-  date: string
-  status: 'present' | 'absent' | 'late' | 'excused'
-  remarks: string | null
+  id: string;
+  student_id: string;
+  class_id: string;
+  date: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+  remarks: string | null;
   student?: {
-    id: string
-    email?: string
-    full_name?: string
-    first_name?: string
-    last_name?: string
-    student_code?: string
-  }
+    id: string;
+    email?: string;
+    full_name?: string;
+    first_name?: string;
+    last_name?: string;
+    student_code?: string;
+  };
   class?: {
-    id: string
-    name: string
-    code?: string
-  }
+    id: string;
+    name: string;
+    code?: string;
+  };
 }
 
 interface Analytics {
-  totalRecords: number
-  totalPresent: number
-  totalAbsent: number
-  attendanceRate: number
-  byStatus: Record<string, number>
-  byClass: Record<string, { name: string; count: number; present: number; rate: number }>
-  byStudent: Record<string, { name: string; studentId: string; count: number; present: number; rate: number }>
+  totalRecords: number;
+  totalPresent: number;
+  totalAbsent: number;
+  attendanceRate: number;
+  byStatus: Record<string, number>;
+  byClass: Record<string, { name: string; count: number; present: number; rate: number }>;
+  byStudent: Record<
+    string,
+    { name: string; studentId: string; count: number; present: number; rate: number }
+  >;
 }
 
 interface ClassOption {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 export default function AttendanceReportsPage() {
-  const [records, setRecords] = useState<AttendanceRecord[]>([])
-  const [analytics, setAnalytics] = useState<Analytics | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [exporting, setExporting] = useState(false)
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   // Filters
-  const [classes, setClasses] = useState<ClassOption[]>([])
-  const [selectedClass, setSelectedClass] = useState<string>('')
-  const [dateRange, setDateRange] = useState<string>('week')
-  const [startDate, setStartDate] = useState<string>('')
-  const [endDate, setEndDate] = useState<string>('')
-  const [statusFilter, setStatusFilter] = useState<string>('')
-  const [viewMode, setViewMode] = useState<'overview' | 'details'>('overview')
-  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string>('');
+  const [dateRange, setDateRange] = useState<string>('week');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'overview' | 'details'>('overview');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
-    loadClasses()
-  }, [])
+    loadClasses();
+  }, []);
 
   useEffect(() => {
-    loadReports()
+    loadReports();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedClass, dateRange, startDate, endDate, statusFilter])
+  }, [selectedClass, dateRange, startDate, endDate, statusFilter]);
 
   const loadClasses = async () => {
     try {
       const res = await getClasses({ limit: 100 });
       const classList = (res.data || []) as any[];
-      setClasses(classList.map(c => ({ id: c.id, name: c.name })));
+      setClasses(classList.map((c) => ({ id: c.id, name: c.name })));
     } catch (error) {
-      console.error('Failed to load classes:', error)
+      console.error('Failed to load classes:', error);
     }
-  }
+  };
 
   const setQuickRange = (range: string) => {
-    setDateRange(range)
+    setDateRange(range);
     // Actual dates will be calculated in loadReports or verify here?
     // Better to let loadReports handle logic or set explicit dates here.
     // For now, loadReports logic is preserved.
-  }
+  };
 
   const loadReports = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
 
       // Calculate date range
-      const today = new Date()
-      let start = ''
-      let end = today.toISOString().split('T')[0]
+      const today = new Date();
+      let start = '';
+      let end = today.toISOString().split('T')[0] ?? '';
 
       if (dateRange === 'today') {
-        start = end
+        start = end;
       } else if (dateRange === 'week') {
-        const weekAgo = subDays(today, 7)
-        start = weekAgo.toISOString().split('T')[0]
+        const weekAgo = subDays(today, 7);
+        start = weekAgo.toISOString().split('T')[0] ?? '';
       } else if (dateRange === 'month') {
-        const monthAgo = subMonths(today, 1)
-        start = monthAgo.toISOString().split('T')[0]
+        const monthAgo = subMonths(today, 1);
+        start = monthAgo.toISOString().split('T')[0] ?? '';
       } else if (dateRange === 'term') {
-        const termStart = subMonths(today, 3)
-        start = termStart.toISOString().split('T')[0]
+        const termStart = subMonths(today, 3);
+        start = format(termStart, 'yyyy-MM-dd');
       } else if (dateRange === 'custom') {
-        start = startDate
-        end = endDate
+        start = startDate;
+        end = endDate;
       }
 
       // Prepare V2 Params
       const params: any = {
         limit: 1000, // Fetch large batch for reports
         startDate: start,
-        endDate: end
-      }
-      if (selectedClass) params.class_id = selectedClass
-      if (statusFilter && statusFilter !== 'all') params.status = statusFilter
+        endDate: end,
+      };
+      if (selectedClass) params.class_id = selectedClass;
+      if (statusFilter && statusFilter !== 'all') params.status = statusFilter;
 
-      const res = await getAttendance(params)
-      const data = (res.data || []) as AttendanceRecord[]
-      setRecords(data)
+      const res = await getAttendance(params);
+      const data = (res.data || []) as AttendanceRecord[];
+      setRecords(data);
 
       // Calculate Analytics on Client
-      computeAnalytics(data)
-
+      computeAnalytics(data);
     } catch (error) {
-      console.error('Failed to load reports:', error)
+      console.error('Failed to load reports:', error);
       //   alert('Không thể tải báo cáo') // Silently fail or show toast
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const computeAnalytics = (data: AttendanceRecord[]) => {
     const totalRecords = data.length;
@@ -143,21 +159,21 @@ export default function AttendanceReportsPage() {
       return;
     }
 
-    const totalPresent = data.filter(r => r.status === 'present').length;
-    const totalAbsent = data.filter(r => r.status === 'absent').length;
+    const totalPresent = data.filter((r) => r.status === 'present').length;
+    const totalAbsent = data.filter((r) => r.status === 'absent').length;
 
     // Attendance Rate: Present / Total * 100
     const attendanceRate = Math.round((totalPresent / totalRecords) * 100);
 
     const byStatus: Record<string, number> = {};
-    data.forEach(r => {
+    data.forEach((r) => {
       byStatus[r.status] = (byStatus[r.status] || 0) + 1;
     });
 
     const byClass: Record<string, any> = {};
     const byStudent: Record<string, any> = {};
 
-    data.forEach(r => {
+    data.forEach((r) => {
       // By Class
       const clsId = r.class_id;
       if (!byClass[clsId]) {
@@ -165,7 +181,7 @@ export default function AttendanceReportsPage() {
           name: r.class?.name || 'Unknown Class',
           count: 0,
           present: 0,
-          rate: 0
+          rate: 0,
         };
       }
       byClass[clsId].count++;
@@ -179,7 +195,7 @@ export default function AttendanceReportsPage() {
           studentId: r.student?.student_code || r.student?.id || stuId,
           count: 0,
           present: 0,
-          rate: 0
+          rate: 0,
         };
       }
       byStudent[stuId].count++;
@@ -201,73 +217,75 @@ export default function AttendanceReportsPage() {
       attendanceRate,
       byStatus,
       byClass,
-      byStudent
+      byStudent,
     });
-  }
+  };
 
   const handleExport = () => {
     if (records.length === 0) {
-      alert('No data to export')
-      return
+      alert('No data to export');
+      return;
     }
 
-    setExporting(true)
+    setExporting(true);
     try {
       // Create CSV content
-      const headers = ['Date', 'Student Name', 'Student ID', 'Class', 'Status', 'Remarks']
-      const rows = records.map(record => [
+      const headers = ['Date', 'Student Name', 'Student ID', 'Class', 'Status', 'Remarks'];
+      const rows = records.map((record) => [
         format(parseISO(record.date), 'dd/MM/yyyy'),
         record.student?.full_name || record.student?.email || '',
         record.student?.student_code || record.student?.id || '',
         record.class?.name || '',
         record.status === 'present' ? 'Có mặt' : 'Vắng',
-        record.remarks || ''
-      ])
+        record.remarks || '',
+      ]);
 
       const csvContent = [
         headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-      ].join('\n')
+        ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+      ].join('\n');
 
       // Download
-      const blob = new Blob([csvContent], { type: 'text/csv' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `attendance-report-${new Date().toISOString().split('T')[0]}.csv`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `attendance-report-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Export failed:', error)
-      alert('Không thể xuất dữ liệu')
+      console.error('Export failed:', error);
+      alert('Không thể xuất dữ liệu');
     } finally {
-      setExporting(false)
+      setExporting(false);
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     const colors = {
       present: 'bg-green-100 text-green-800',
       absent: 'bg-red-100 text-red-800',
       late: 'bg-yellow-100 text-yellow-800',
-      excused: 'bg-blue-100 text-blue-800'
-    }
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
-  }
+      excused: 'bg-blue-100 text-blue-800',
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
 
   const getRateColor = (rate: number) => {
-    if (rate >= 95) return 'text-green-600'
-    if (rate >= 85) return 'text-blue-600'
-    if (rate >= 75) return 'text-yellow-600'
-    return 'text-red-600'
-  }
+    if (rate >= 95) return 'text-green-600';
+    if (rate >= 85) return 'text-blue-600';
+    if (rate >= 75) return 'text-yellow-600';
+    return 'text-red-600';
+  };
 
   // Get top and bottom performers
-  const studentStats = analytics ? Object.values(analytics.byStudent).sort((a: any, b: any) => b.rate - a.rate) : []
-  const topPerformers = studentStats.slice(0, 5)
-  const bottomPerformers = studentStats.slice(-5).reverse()
+  const studentStats = analytics
+    ? Object.values(analytics.byStudent).sort((a: any, b: any) => b.rate - a.rate)
+    : [];
+  const topPerformers = studentStats.slice(0, 5);
+  const bottomPerformers = studentStats.slice(-5).reverse();
 
   return (
     <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-10">
@@ -290,9 +308,7 @@ export default function AttendanceReportsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Class Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Lớp học
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Lớp học</label>
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
@@ -327,9 +343,7 @@ export default function AttendanceReportsPage() {
 
             {/* Status Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Trạng thái
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -343,9 +357,7 @@ export default function AttendanceReportsPage() {
 
             {/* View Mode */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chế độ xem
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Chế độ xem</label>
               <select
                 value={viewMode}
                 onChange={(e) => setViewMode(e.target.value as 'overview' | 'details')}
@@ -419,7 +431,9 @@ export default function AttendanceReportsPage() {
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <p className="text-sm font-medium text-green-700">Tỉ lệ điểm danh</p>
-                        <p className={`text-3xl font-bold mt-2 ${getRateColor(analytics.attendanceRate)}`}>
+                        <p
+                          className={`text-3xl font-bold mt-2 ${getRateColor(analytics.attendanceRate)}`}
+                        >
                           {analytics.attendanceRate}%
                         </p>
                       </div>
@@ -478,21 +492,25 @@ export default function AttendanceReportsPage() {
                             data={[
                               { name: 'Có mặt', value: analytics.totalPresent, color: '#22c55e' },
                               { name: 'Vắng', value: analytics.totalAbsent, color: '#ef4444' },
-                            ].filter(d => d.value > 0)}
+                            ].filter((d) => d.value > 0)}
                             cx="50%"
                             cy="50%"
                             innerRadius={60}
                             outerRadius={80}
                             paddingAngle={5}
                             dataKey="value"
-                            label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                            label={({ name, percent }) =>
+                              `${name} ${((percent || 0) * 100).toFixed(0)}%`
+                            }
                           >
                             {[
                               { name: 'Có mặt', value: analytics.totalPresent, color: '#22c55e' },
                               { name: 'Vắng', value: analytics.totalAbsent, color: '#ef4444' },
-                            ].filter(d => d.value > 0).map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
+                            ]
+                              .filter((d) => d.value > 0)
+                              .map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
                           </Pie>
                           <Tooltip formatter={(value: any) => [value, 'Số lượng']} />
                         </PieChart>
@@ -506,21 +524,32 @@ export default function AttendanceReportsPage() {
                     <div className="h-64" style={{ minHeight: '256px' }}>
                       <ResponsiveContainer width="100%" height={256}>
                         <BarChart
-                          data={Object.values(analytics.byClass).slice(0, 6).map((c: any) => ({
-                            name: c.name.length > 10 ? c.name.substring(0, 10) + '...' : c.name,
-                            rate: c.rate,
-                            present: c.present,
-                          }))}
+                          data={Object.values(analytics.byClass)
+                            .slice(0, 6)
+                            .map((c: any) => ({
+                              name: c.name.length > 10 ? c.name.substring(0, 10) + '...' : c.name,
+                              rate: c.rate,
+                              present: c.present,
+                            }))}
                           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                           <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 11 }} />
                           <YAxis domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 12 }} />
                           <Tooltip
-                            contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px',
+                            }}
                             formatter={(value: any) => [`${Number(value).toFixed(1)}%`, 'Tỉ lệ']}
                           />
-                          <Bar dataKey="rate" fill="#6366f1" radius={[4, 4, 0, 0]} name="Tỉ lệ điểm danh" />
+                          <Bar
+                            dataKey="rate"
+                            fill="#6366f1"
+                            radius={[4, 4, 0, 0]}
+                            name="Tỉ lệ điểm danh"
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -530,7 +559,9 @@ export default function AttendanceReportsPage() {
                 {/* Class Performance */}
                 {Object.keys(analytics.byClass).length > 0 && (
                   <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm p-4 sm:p-6 mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Thống Kê Theo Lớp</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                      Thống Kê Theo Lớp
+                    </h2>
 
                     {/* Mobile Card View */}
                     <div className="md:hidden space-y-3 mobile-card-list animate-fade-in">
@@ -549,16 +580,24 @@ export default function AttendanceReportsPage() {
                                 <span className={`text-xl font-black ${getRateColor(stats.rate)}`}>
                                   {stats.rate}%
                                 </span>
-                                <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest leading-none">Tỉ lệ</p>
+                                <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest leading-none">
+                                  Tỉ lệ
+                                </p>
                               </div>
                             </div>
                             <div className="flex gap-6 pt-3 border-t border-stone-50 dark:border-white/5">
                               <div>
-                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Tổng số</p>
-                                <p className="text-sm font-bold text-stone-700 dark:text-stone-300">{stats.count}</p>
+                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">
+                                  Tổng số
+                                </p>
+                                <p className="text-sm font-bold text-stone-700 dark:text-stone-300">
+                                  {stats.count}
+                                </p>
                               </div>
                               <div>
-                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Có mặt</p>
+                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">
+                                  Có mặt
+                                </p>
                                 <p className="text-sm font-bold text-green-600">{stats.present}</p>
                               </div>
                             </div>
@@ -589,7 +628,10 @@ export default function AttendanceReportsPage() {
                           {Object.entries(analytics.byClass)
                             .sort((a: any, b: any) => b[1].rate - a[1].rate)
                             .map(([classId, stats]: [string, any]) => (
-                              <tr key={classId} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
+                              <tr
+                                key={classId}
+                                className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors"
+                              >
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                                   {stats.name}
                                 </td>
@@ -617,10 +659,15 @@ export default function AttendanceReportsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Top Performers */}
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm p-6">
-                      <h2 className="text-lg font-semibold text-gray-900 mb-4">🏆 Điểm Danh Tốt Nhất</h2>
+                      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                        🏆 Điểm Danh Tốt Nhất
+                      </h2>
                       <div className="space-y-3">
                         {topPerformers.map((student: any, index: number) => (
-                          <div key={`top-${student.studentId || index}-${student.name}`} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                          <div
+                            key={`top-${student.studentId || index}-${student.name}`}
+                            className="flex items-center justify-between p-3 bg-white rounded-lg"
+                          >
                             <div className="flex items-center space-x-3">
                               <span className="text-lg font-bold text-gray-500">#{index + 1}</span>
                               <div>
@@ -641,7 +688,10 @@ export default function AttendanceReportsPage() {
                       <h2 className="text-lg font-semibold text-gray-900 mb-4">⚠️ Cần Chú Ý</h2>
                       <div className="space-y-3">
                         {bottomPerformers.map((student: any, index: number) => (
-                          <div key={`bottom-${student.studentId || index}-${student.name}`} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                          <div
+                            key={`bottom-${student.studentId || index}-${student.name}`}
+                            className="flex items-center justify-between p-3 bg-white rounded-lg"
+                          >
                             <div>
                               <p className="font-medium text-gray-900">{student.name}</p>
                               <p className="text-xs text-gray-600">{student.studentId}</p>
@@ -672,69 +722,97 @@ export default function AttendanceReportsPage() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-stone-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-stone-800"
                     />
-                    <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg
+                      className="absolute left-3 top-2.5 w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
                     </svg>
                   </div>
                 </div>
 
                 {/* Mobile Card View */}
                 <div className="md:hidden p-4 space-y-3 mobile-card-list animate-fade-in pb-20">
-                  {records.filter(r =>
-                    (r.student?.full_name || r.student?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+                  {records.filter((r) =>
+                    (r.student?.full_name || r.student?.email || '')
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase())
                   ).length === 0 ? (
                     <div className="text-center py-12 text-stone-500 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
                       Không tìm thấy bản ghi nào khớp với tìm kiếm
                     </div>
                   ) : (
-                    records.filter(r =>
-                      (r.student?.full_name || r.student?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-                    ).map((record) => (
-                      <div
-                        key={record.id}
-                        className="bg-white dark:bg-[#1A1410] rounded-2xl p-5 border border-stone-100 dark:border-[#2C2420] shadow-sm press-effect relative overflow-hidden"
-                      >
-                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${record.status === 'present' ? 'bg-green-500' : 'bg-red-500'}`} />
+                    records
+                      .filter((r) =>
+                        (r.student?.full_name || r.student?.email || '')
+                          .toLowerCase()
+                          .includes(searchTerm.toLowerCase())
+                      )
+                      .map((record) => (
+                        <div
+                          key={record.id}
+                          className="bg-white dark:bg-[#1A1410] rounded-2xl p-5 border border-stone-100 dark:border-[#2C2420] shadow-sm press-effect relative overflow-hidden"
+                        >
+                          <div
+                            className={`absolute left-0 top-0 bottom-0 w-1 ${record.status === 'present' ? 'bg-green-500' : 'bg-red-500'}`}
+                          />
 
-                        {/* Header with status */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-stone-900 dark:text-stone-100 text-lg leading-tight truncate">
-                              {record.student?.full_name || record.student?.email}
-                            </p>
-                            <p className="text-xs text-stone-500 dark:text-stone-400 font-mono mt-1">
-                              {record.student?.student_code || record.student?.id || 'ID-XXXX'}
-                            </p>
+                          {/* Header with status */}
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-stone-900 dark:text-stone-100 text-lg leading-tight truncate">
+                                {record.student?.full_name || record.student?.email}
+                              </p>
+                              <p className="text-xs text-stone-500 dark:text-stone-400 font-mono mt-1">
+                                {record.student?.student_code || record.student?.id || 'ID-XXXX'}
+                              </p>
+                            </div>
+                            <span
+                              className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${getStatusColor(record.status)}`}
+                            >
+                              {record.status === 'present' ? 'Có mặt' : 'Vắng'}
+                            </span>
                           </div>
-                          <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${getStatusColor(record.status)}`}>
-                            {record.status === 'present' ? 'Có mặt' : 'Vắng'}
-                          </span>
+
+                          {/* Details Grid */}
+                          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-stone-50 dark:border-white/5">
+                            <div>
+                              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-0.5">
+                                Ngày
+                              </p>
+                              <p className="text-sm font-bold text-stone-700 dark:text-stone-300">
+                                {record.date ? format(parseISO(record.date), 'dd/MM/yyyy') : 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-0.5">
+                                Lớp
+                              </p>
+                              <p className="text-sm font-bold text-stone-700 dark:text-stone-300 truncate">
+                                {record.class?.name || record.class?.code || 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {record.remarks && (
+                            <div className="mt-3 p-3 bg-stone-50 dark:bg-white/5 rounded-xl">
+                              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">
+                                Ghi chú
+                              </p>
+                              <p className="text-xs text-stone-600 dark:text-stone-400 italic">
+                                "{record.remarks}"
+                              </p>
+                            </div>
+                          )}
                         </div>
-
-                        {/* Details Grid */}
-                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-stone-50 dark:border-white/5">
-                          <div>
-                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-0.5">Ngày</p>
-                            <p className="text-sm font-bold text-stone-700 dark:text-stone-300">
-                              {record.date ? format(parseISO(record.date), 'dd/MM/yyyy') : 'N/A'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-0.5">Lớp</p>
-                            <p className="text-sm font-bold text-stone-700 dark:text-stone-300 truncate">
-                              {record.class?.name || record.class?.code || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {record.remarks && (
-                          <div className="mt-3 p-3 bg-stone-50 dark:bg-white/5 rounded-xl">
-                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Ghi chú</p>
-                            <p className="text-xs text-stone-600 dark:text-stone-400 italic">"{record.remarks}"</p>
-                          </div>
-                        )}
-                      </div>
-                    ))
+                      ))
                   )}
                 </div>
 
@@ -761,36 +839,45 @@ export default function AttendanceReportsPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-stone-900 divide-y divide-gray-200 dark:divide-stone-700">
-                      {records.filter(r =>
-                        (r.student?.full_name || r.student?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-                      ).map((record) => (
-                        <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                            {record.date ? format(parseISO(record.date), 'dd/MM/yyyy') : 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {record.student?.full_name || record.student?.email}
+                      {records
+                        .filter((r) =>
+                          (r.student?.full_name || r.student?.email || '')
+                            .toLowerCase()
+                            .includes(searchTerm.toLowerCase())
+                        )
+                        .map((record) => (
+                          <tr
+                            key={record.id}
+                            className="hover:bg-gray-50 dark:hover:bg-stone-800/50 transition-colors"
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                              {record.date ? format(parseISO(record.date), 'dd/MM/yyyy') : 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                  {record.student?.full_name || record.student?.email}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {record.student?.student_code || record.student?.id}
+                                </div>
                               </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {record.student?.student_code || record.student?.id}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                            {record.class?.name || record.class?.code}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>
-                              {record.status === 'present' ? 'CÓ MẶT' : 'VẮNG'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                            {record.remarks || '-'}
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                              {record.class?.name || record.class?.code}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span
+                                className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}
+                              >
+                                {record.status === 'present' ? 'CÓ MẶT' : 'VẮNG'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                              {record.remarks || '-'}
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                   {records.length === 0 && (
@@ -805,5 +892,5 @@ export default function AttendanceReportsPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

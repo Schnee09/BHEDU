@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -14,18 +14,24 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { apiFetch, getClasses, getClassStudents, getGrades, bulkCreateGrades } from "@/lib/api/client";
-import { useToast } from "@/hooks";
+import {
+  apiFetch,
+  getClasses,
+  getClassStudents,
+  getGrades,
+  bulkCreateGrades,
+} from '@/lib/api/client';
+import { useToast } from '@/hooks';
 import {
   EvaluationType,
   GradeRow,
   Semester,
   calculateAverageGrade,
-  GRADE_LABELS
-} from "@/lib/grades/types";
-import { validateGrade } from "@/lib/grades/validation";
-import PageGuard from "@/components/PageGuard";
-import BulkGradeImport from "@/components/grades/BulkGradeImport";
+  GRADE_LABELS,
+} from '@/lib/grades/types';
+import { validateGrade } from '@/lib/grades/validation';
+import PageGuard from '@/components/PageGuard';
+import BulkGradeImport from '@/components/grades/BulkGradeImport';
 
 // Types
 interface Student {
@@ -72,6 +78,7 @@ function GradeEntryPageContent() {
   const [semesters, setSemesters] = useState<any[]>([]);
   const [classSubjects, setClassSubjects] = useState<any[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+  const [currentAcademicYearId, setCurrentAcademicYearId] = useState<string>('');
 
   // State - UI
   const [loading, setLoading] = useState(false);
@@ -80,14 +87,16 @@ function GradeEntryPageContent() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExcelImport, setShowExcelImport] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
-  const [importPreview, setImportPreview] = useState<{ name: string, midterm: number | null, final: number | null }[]>([]);
+  const [importPreview, setImportPreview] = useState<
+    { name: string; midterm: number | null; final: number | null }[]
+  >([]);
 
   // Helper: Handle grade input change
   const handleGradeChange = (studentId: string, field: EvaluationType, value: string) => {
     const numValue = value === '' ? null : Number(value);
 
     // Update grade and calculate average
-    setGrades(prev => {
+    setGrades((prev) => {
       const studentGrades = { ...prev[studentId], [field]: numValue };
       const average = calculateAverageGrade(
         studentGrades[EvaluationType.MIDTERM],
@@ -95,24 +104,24 @@ function GradeEntryPageContent() {
       );
       return {
         ...prev,
-        [studentId]: { ...studentGrades, average }
+        [studentId]: { ...studentGrades, average },
       };
     });
 
     // Validate and update errors
     const validation = validateGrade(numValue);
-    setErrors(prev => {
+    setErrors((prev) => {
       const studentErrors = prev[studentId] || [];
       if (validation.valid) {
         return {
           ...prev,
-          [studentId]: studentErrors.filter(e => e.field !== field)
+          [studentId]: studentErrors.filter((e) => e.field !== field),
         };
       } else {
-        const filtered = studentErrors.filter(e => e.field !== field);
+        const filtered = studentErrors.filter((e) => e.field !== field);
         return {
           ...prev,
-          [studentId]: [...filtered, { field, message: validation.error || 'Invalid' }]
+          [studentId]: [...filtered, { field, message: validation.error || 'Invalid' }],
         };
       }
     });
@@ -123,27 +132,32 @@ function GradeEntryPageContent() {
     const loadInitialData = async () => {
       setLoading(true);
       try {
-        console.log('🔄 Loading initial data (classes & semesters)...');
-        const [classesRes, semestersRes] = await Promise.all([
+        console.log('🔄 Loading initial data (classes, semesters, academic years)...');
+        const [classesRes, semestersRes, ayRes] = await Promise.all([
           getClasses({ limit: 100 }),
-          apiFetch('/api/semesters').then(res => res.json())
+          apiFetch('/api/semesters').then((res) => res.json()),
+          apiFetch('/api/admin/academic-years').then((res) => res.json()),
         ]);
 
         const classList = (classesRes.data || []) as ClassOption[];
         setClasses(classList);
         if (classList.length > 0) {
-          setSelectedClassId(classList[0].id);
+          setSelectedClassId(classList[0]?.id ?? '');
         }
 
-        const semesterList = semestersRes.semesters || [];
+        const semesterList = semestersRes.data || semestersRes.semesters || [];
         setSemesters(semesterList);
+
+        const ayList = ayRes.data || ayRes.academic_years || [];
+        const currentYear = ayList.find((y: any) => y.is_active || y.is_current);
+        if (currentYear) setCurrentAcademicYearId(currentYear.id);
 
         const activeSemester = semesterList.find((s: any) => s.is_active);
         if (activeSemester) {
           setSelectedSemester(activeSemester.code as Semester);
         }
       } catch (err) {
-        console.error("Failed to load initial data", err);
+        console.error('Failed to load initial data', err);
         toast.error('Không thể tải các thông tin cơ bản');
       } finally {
         setLoading(false);
@@ -164,7 +178,9 @@ function GradeEntryPageContent() {
 
     const loadSubjects = async () => {
       try {
-        const res = await apiFetch(`/api/classes/${selectedClassId}/subjects`).then(r => r.json());
+        const res = await apiFetch(`/api/classes/${selectedClassId}/subjects`).then((r) =>
+          r.json()
+        );
         const subjects = res.data?.subjects || [];
         setClassSubjects(subjects);
         if (subjects.length > 0) {
@@ -176,7 +192,7 @@ function GradeEntryPageContent() {
           setSelectedSubjectId(null);
         }
       } catch (err) {
-        console.error("Failed to load subjects", err);
+        console.error('Failed to load subjects', err);
       }
     };
 
@@ -201,15 +217,20 @@ function GradeEntryPageContent() {
         const [studentsData, gradesRes] = await Promise.all([
           getClassStudents(selectedClassId),
           selectedSubjectId
-            ? getGrades({ class_id: selectedClassId, subject_id: selectedSubjectId, semester: selectedSemester, limit: 1000 })
-            : Promise.resolve({ data: [] })
+            ? getGrades({
+                class_id: selectedClassId,
+                subject_id: selectedSubjectId,
+                semester: selectedSemester,
+                limit: 1000,
+              })
+            : Promise.resolve({ data: [] }),
         ]);
 
         // Students might be raw array (from my client.ts)
         const studentList = studentsData.map((s: any) => ({
           id: s.id,
           name: s.full_name || s.name,
-          full_name: s.full_name || s.name
+          full_name: s.full_name || s.name,
         }));
         setStudents(studentList);
 
@@ -220,8 +241,12 @@ function GradeEntryPageContent() {
         studentList.forEach((s: Student) => {
           const studentGradesList = fetchedGrades.filter((g: any) => g.student_id === s.id);
 
-          const midtermGrade = studentGradesList.find((g: any) => g.component_type === EvaluationType.MIDTERM);
-          const finalGrade = studentGradesList.find((g: any) => g.component_type === EvaluationType.FINAL);
+          const midtermGrade = studentGradesList.find(
+            (g: any) => g.component_type === EvaluationType.MIDTERM
+          );
+          const finalGrade = studentGradesList.find(
+            (g: any) => g.component_type === EvaluationType.FINAL
+          );
 
           if (midtermGrade || finalGrade) {
             const mScore = midtermGrade?.score ?? null;
@@ -230,7 +255,7 @@ function GradeEntryPageContent() {
             initialGrades[s.id] = {
               [EvaluationType.MIDTERM]: mScore,
               [EvaluationType.FINAL]: fScore,
-              average: calculateAverageGrade(mScore, fScore)
+              average: calculateAverageGrade(mScore, fScore),
             };
           }
         });
@@ -260,7 +285,7 @@ function GradeEntryPageContent() {
       const subjectId = selectedSubjectId;
 
       if (!subjectId) {
-        toast.error("Vui lòng chọn môn học");
+        toast.error('Vui lòng chọn môn học');
         return;
       }
 
@@ -270,12 +295,12 @@ function GradeEntryPageContent() {
 
       for (const component of components) {
         const gradesToSave = students
-          .map(student => ({
+          .map((student) => ({
             student_id: student.id,
             score: grades[student.id]?.[component] ?? null,
-            notes: null
+            notes: null,
           }))
-          .filter(g => g.score !== null && g.score !== undefined); // Only save if score exists
+          .filter((g) => g.score !== null && g.score !== undefined); // Only save if score exists
 
         if (gradesToSave.length > 0) {
           await bulkCreateGrades({
@@ -283,16 +308,8 @@ function GradeEntryPageContent() {
             subject_id: subjectId,
             component_type: component,
             semester: selectedSemester,
-            academic_year_id: "current", // Backend handles this logic? Or we need ID. Current implementation requires UUID?
-            // Schema says UUID. `lib/schemas/requests/grade.ts`. 
-            // If we don't have academic_year_id, we might fail validation.
-            // For now, let's try to fetch it or omit if optional? Schema says required.
-            // I'll hardcode a known ID or fetch it? 
-            // Or rely on backend defaulting?
-            // NOTE: I will use a placeholder or omit if the API allows it. 
-            // If V2 requires it, I'm in trouble without context.
-            // Let's assume the API handles "current" or I fetch it.
-            grades: gradesToSave
+            academic_year_id: currentAcademicYearId,
+            grades: gradesToSave,
           });
           successCount += gradesToSave.length;
         }
@@ -301,9 +318,8 @@ function GradeEntryPageContent() {
       if (successCount > 0) {
         toast.success(`Đã lưu điểm thành công`);
       } else {
-        toast.info("Không có thay đổi nào để lưu");
+        toast.info('Không có thay đổi nào để lưu');
       }
-
     } catch (err: any) {
       console.error('❌ Save failed:', err);
       toast.error(err.message || 'Không thể lưu điểm');
@@ -312,20 +328,26 @@ function GradeEntryPageContent() {
     }
   };
 
-  const hasGrades = students.length > 0 && Object.values(grades).some(g =>
-    g[EvaluationType.MIDTERM] !== null && g[EvaluationType.MIDTERM] !== undefined ||
-    g[EvaluationType.FINAL] !== null && g[EvaluationType.FINAL] !== undefined
-  );
+  const hasGrades =
+    students.length > 0 &&
+    Object.values(grades).some(
+      (g) =>
+        (g[EvaluationType.MIDTERM] !== null && g[EvaluationType.MIDTERM] !== undefined) ||
+        (g[EvaluationType.FINAL] !== null && g[EvaluationType.FINAL] !== undefined)
+    );
 
-  const hasErrors = Object.values(errors).some(e => e.length > 0);
-  const selectedClass = classes.find(c => c.id === selectedClassId);
+  const hasErrors = Object.values(errors).some((e) => e.length > 0);
+  const selectedClass = classes.find((c) => c.id === selectedClassId);
 
   // Download CSV template
   const downloadTemplate = () => {
     const headers = 'Họ tên,Điểm giữa kỳ,Điểm cuối kỳ';
-    const sampleRows = students.map(s =>
-      `"${s.full_name || s.name || ''}",${grades[s.id]?.[EvaluationType.MIDTERM] ?? ''},${grades[s.id]?.[EvaluationType.FINAL] ?? ''}`
-    ).join('\n');
+    const sampleRows = students
+      .map(
+        (s) =>
+          `"${s.full_name || s.name || ''}",${grades[s.id]?.[EvaluationType.MIDTERM] ?? ''},${grades[s.id]?.[EvaluationType.FINAL] ?? ''}`
+      )
+      .join('\n');
 
     const csvContent = `${headers}\n${sampleRows}`;
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8' });
@@ -349,7 +371,7 @@ function GradeEntryPageContent() {
     reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
-        const lines = text.split('\n').filter(line => line.trim());
+        const lines = text.split('\n').filter((line) => line.trim());
 
         if (lines.length < 2) {
           setImportError('File phải có ít nhất 1 dòng dữ liệu');
@@ -358,12 +380,13 @@ function GradeEntryPageContent() {
 
         // Skip header row
         const dataRows = lines.slice(1);
-        const preview: { name: string, midterm: number | null, final: number | null }[] = [];
+        const preview: { name: string; midterm: number | null; final: number | null }[] = [];
         const newGrades = { ...grades };
 
         for (const row of dataRows) {
           // Parse CSV row (handle quoted values)
-          const values = row.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim()) || [];
+          const values =
+            row.match(/("[^"]*"|[^,]+)/g)?.map((v) => v.replace(/^"|"$/g, '').trim()) || [];
           if (values.length < 1) continue;
 
           const name = values[0];
@@ -371,8 +394,8 @@ function GradeEntryPageContent() {
           const final = values[2] ? parseFloat(values[2]) : null;
 
           // Find matching student
-          const student = students.find(s =>
-            (s.full_name || s.name || '').toLowerCase() === name.toLowerCase()
+          const student = students.find(
+            (s) => (s.full_name || s.name || '').toLowerCase() === (name?.toLowerCase() ?? '')
           );
 
           if (student) {
@@ -390,14 +413,13 @@ function GradeEntryPageContent() {
             newGrades[student.id] = { ...grades[student.id], ...studentGrades };
           }
 
-          preview.push({ name, midterm, final });
+          preview.push({ name: name ?? '', midterm, final });
         }
 
         setImportPreview(preview);
         setGrades(newGrades);
         toast.success(`Đã import ${preview.length} dòng dữ liệu`);
         setShowImportModal(false);
-
       } catch (err) {
         console.error('Import error:', err);
         setImportError('Không thể đọc file. Vui lòng kiểm tra định dạng CSV.');
@@ -428,7 +450,7 @@ function GradeEntryPageContent() {
                 onChange={(e) => setSelectedClassId(e.target.value || null)}
               >
                 <option value="">Chọn lớp...</option>
-                {classes.map(c => (
+                {classes.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name || c.id}
                   </option>
@@ -443,7 +465,7 @@ function GradeEntryPageContent() {
                 onChange={(e) => setSelectedSemester(e.target.value as Semester)}
               >
                 {semesters.length > 0 ? (
-                  semesters.map(s => (
+                  semesters.map((s) => (
                     <option key={s.id} value={s.code}>
                       {s.name} {s.is_active ? '(Hiện tại)' : ''}
                     </option>
@@ -465,7 +487,7 @@ function GradeEntryPageContent() {
                 disabled={classSubjects.length === 0}
               >
                 <option value="">Chọn môn học...</option>
-                {classSubjects.map(s => (
+                {classSubjects.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name} ({s.code})
                   </option>
@@ -477,7 +499,9 @@ function GradeEntryPageContent() {
 
         {/* Grades Table - Simplified with only Midterm, Final, and Average */}
         {loading ? (
-          <div className="text-center py-12 text-muted-foreground">Đang tải danh sách học sinh...</div>
+          <div className="text-center py-12 text-muted-foreground">
+            Đang tải danh sách học sinh...
+          </div>
         ) : students.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Chọn lớp để xem danh sách học sinh</p>
@@ -486,7 +510,8 @@ function GradeEntryPageContent() {
           <>
             <div className="mb-4 flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                <strong>{students.length}</strong> học sinh trong lớp <strong>{selectedClass?.name}</strong>
+                <strong>{students.length}</strong> học sinh trong lớp{' '}
+                <strong>{selectedClass?.name}</strong>
               </div>
               <div className="flex items-center gap-2">
                 {hasErrors && (
@@ -524,8 +549,12 @@ function GradeEntryPageContent() {
                 <table className="w-full">
                   <thead className="bg-surface-secondary border-b border-border">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-foreground w-12">#</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Học sinh</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-foreground w-12">
+                        #
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">
+                        Học sinh
+                      </th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-foreground w-28">
                         {GRADE_LABELS[EvaluationType.MIDTERM]}
                         <span className="text-muted-foreground font-normal"> (50%)</span>
@@ -546,23 +575,41 @@ function GradeEntryPageContent() {
                       const hasStudentErrors = studentErrors.length > 0;
 
                       return (
-                        <tr key={student.id} className={hasStudentErrors ? 'bg-danger/10' : 'hover:bg-surface-secondary/50 transition-colors'}>
-                          <td className="px-4 py-3 text-sm font-medium text-foreground">{idx + 1}</td>
+                        <tr
+                          key={student.id}
+                          className={
+                            hasStudentErrors
+                              ? 'bg-danger/10'
+                              : 'hover:bg-surface-secondary/50 transition-colors'
+                          }
+                        >
+                          <td className="px-4 py-3 text-sm font-medium text-foreground">
+                            {idx + 1}
+                          </td>
                           <td className="px-4 py-3 text-sm text-foreground">
                             {student.full_name || student.name || '—'}
                           </td>
                           <td className="px-4 py-3">
                             <GradeInput
                               value={studentGrades[EvaluationType.MIDTERM] ?? ''}
-                              onChange={(val) => handleGradeChange(student.id, EvaluationType.MIDTERM, val)}
-                              error={studentErrors.find(e => e.field === EvaluationType.MIDTERM)?.message}
+                              onChange={(val) =>
+                                handleGradeChange(student.id, EvaluationType.MIDTERM, val)
+                              }
+                              error={
+                                studentErrors.find((e) => e.field === EvaluationType.MIDTERM)
+                                  ?.message
+                              }
                             />
                           </td>
                           <td className="px-4 py-3">
                             <GradeInput
                               value={studentGrades[EvaluationType.FINAL] ?? ''}
-                              onChange={(val) => handleGradeChange(student.id, EvaluationType.FINAL, val)}
-                              error={studentErrors.find(e => e.field === EvaluationType.FINAL)?.message}
+                              onChange={(val) =>
+                                handleGradeChange(student.id, EvaluationType.FINAL, val)
+                              }
+                              error={
+                                studentErrors.find((e) => e.field === EvaluationType.FINAL)?.message
+                              }
                             />
                           </td>
                           <td className="px-4 py-3 text-center bg-blue-50 dark:bg-blue-900/20">
@@ -597,7 +644,8 @@ function GradeEntryPageContent() {
             <AlertDialogHeader>
               <AlertDialogTitle>Lưu điểm?</AlertDialogTitle>
               <AlertDialogDescription>
-                Điều này sẽ lưu điểm Giữa kỳ và Cuối kỳ cho {students.length} học sinh trong lớp {selectedClass?.name}.
+                Điều này sẽ lưu điểm Giữa kỳ và Cuối kỳ cho {students.length} học sinh trong lớp{' '}
+                {selectedClass?.name}.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -630,7 +678,15 @@ function GradeEntryPageContent() {
   );
 }
 
-function GradeInput({ value, onChange, error }: { value: string | number; onChange: (val: string) => void; error?: string }) {
+function GradeInput({
+  value,
+  onChange,
+  error,
+}: {
+  value: string | number;
+  onChange: (val: string) => void;
+  error?: string;
+}) {
   return (
     <div className="flex flex-col items-center gap-1">
       <Input

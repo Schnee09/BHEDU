@@ -1,17 +1,17 @@
-import { apiSuccess, createApiHandler, noContent } from "@/lib/api";
-import { createServiceClient } from "@/lib/supabase/server";
-import { TimetableRepository } from "@/lib/repositories/TimetableRepository";
-import { updateTimetableSlotSchema } from "@/lib/schemas";
-import { ConflictError } from "@/lib/api/errors";
+import { apiSuccess, createApiHandler, noContent } from '@/lib/api';
+import { createServiceClient } from '@/lib/supabase/server';
+import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
+import { updateTimetableSlotSchema } from '@/lib/schemas';
+import { ConflictError } from '@/lib/api/errors';
 
 export const PUT = createApiHandler(
   {
-    permission: "classes.manage",
-    allowedRoles: ["admin", "staff", "owner"],
+    permission: 'classes.manage',
+    allowedRoles: ['admin', 'staff', 'owner'],
     bodySchema: updateTimetableSlotSchema,
   },
   async ({ body, params }) => {
-    const { id } = await params;
+    const id = params.id as string;
     const supabase = createServiceClient();
     const repository = new TimetableRepository(supabase);
 
@@ -33,21 +33,21 @@ export const PUT = createApiHandler(
     };
 
     return apiSuccess({ slot: transformedSlot });
-  },
+  }
 );
 
 export const DELETE = createApiHandler(
   {
-    permission: "classes.manage",
-    allowedRoles: ["admin", "staff", "owner"],
+    permission: 'classes.manage',
+    allowedRoles: ['admin', 'staff', 'owner'],
   },
   async ({ params }) => {
-    const { id } = await params;
+    const id = params.id as string;
     const supabase = createServiceClient();
     const repository = new TimetableRepository(supabase);
 
     await repository.delete(id);
 
     return apiSuccess({ success: true });
-  },
+  }
 );

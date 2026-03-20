@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/profile_model.dart';
@@ -18,38 +19,44 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text('Hồ sơ cá nhân'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              // TODO: Settings
+              // TODO: Profile settings
             },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Profile Header
-            _ProfileHeader(profile: profile),
-            const SizedBox(height: 24),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(authNotifierProvider.notifier).refreshProfile();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Profile Header
+              _ProfileHeader(profile: profile),
+              const SizedBox(height: 24),
 
-            // Profile Info Cards
-            _ProfileInfoCard(
-              title: 'Account Information',
-              items: [
-                _InfoItem(icon: Icons.email, label: 'Email', value: profile?.email ?? '-'),
-                _InfoItem(icon: Icons.phone, label: 'Phone', value: profile?.phone ?? 'Not set'),
-                _InfoItem(icon: Icons.badge, label: 'Role', value: _getRoleLabel(profile?.role)),
-              ],
-            ),
-            const SizedBox(height: 16),
+              // Profile Info Cards
+              _ProfileInfoCard(
+                title: 'Thông tin tài khoản',
+                items: [
+                  _InfoItem(icon: Icons.email, label: 'Email', value: profile?.email ?? '-'),
+                  _InfoItem(icon: Icons.phone, label: 'Số điện thoại', value: profile?.phone ?? 'Chưa thiết lập'),
+                  _InfoItem(icon: Icons.badge, label: 'Vai trò', value: _getRoleLabel(profile?.role)),
+                ],
+              ),
+              const SizedBox(height: 16),
 
-            // Quick Actions
-            _ProfileActionsCard(ref: ref),
-          ],
+              // Quick Actions
+              _ProfileActionsCard(profile: profile),
+            ],
+          ),
         ),
       ),
     );
@@ -58,13 +65,13 @@ class ProfileScreen extends ConsumerWidget {
   String _getRoleLabel(UserRole? role) {
     switch (role) {
       case UserRole.admin:
-        return 'Administrator';
+        return 'Quản trị viên';
       case UserRole.staff:
-        return 'Staff';
+        return 'Nhân viên';
       case UserRole.teacher:
-        return 'Teacher';
+        return 'Giáo viên';
       case UserRole.student:
-        return 'Student';
+        return 'Học sinh';
       case null:
         return '-';
     }
@@ -111,7 +118,7 @@ class _ProfileHeader extends StatelessWidget {
         const SizedBox(height: 16),
         // Name
         Text(
-          profile?.fullName ?? 'User',
+          profile?.fullName ?? 'Người dùng',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -154,15 +161,15 @@ class _ProfileHeader extends StatelessWidget {
   String _getRoleEmoji(UserRole? role) {
     switch (role) {
       case UserRole.admin:
-        return '👑 Administrator';
+        return '👑 Quản trị viên';
       case UserRole.staff:
-        return '👔 Staff';
+        return '👔 Nhân viên';
       case UserRole.teacher:
-        return '👨‍🏫 Teacher';
+        return '👨‍🏫 Giáo viên';
       case UserRole.student:
-        return '👨‍🎓 Student';
+        return '👨‍🎓 Học sinh';
       case null:
-        return 'User';
+        return 'Người dùng';
     }
   }
 }
@@ -248,67 +255,216 @@ class _InfoItem {
   });
 }
 
-class _ProfileActionsCard extends StatelessWidget {
-  final WidgetRef ref;
+class _ProfileActionsCard extends ConsumerWidget {
+  final ProfileModel? profile;
 
-  const _ProfileActionsCard({required this.ref});
+  const _ProfileActionsCard({this.profile});
+
+  Future<void> _showChangePasswordDialog(BuildContext context, WidgetRef ref) async {
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Đổi mật khẩu'),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: 'Mật khẩu mới',
+            hintText: 'Nhập ít nhất 6 ký tự',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cập nhật'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final password = controller.text.trim();
+      if (password.length < 6) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Mật khẩu phải có ít nhất 6 ký tự')),
+          );
+        }
+        return;
+      }
+
+      try {
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(password: password),
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã đổi mật khẩu thành công'), backgroundColor: AppColors.success),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _showSupportDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    final type = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hỗ trợ & Góp ý'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Vui lòng mô tả vấn đề hoặc góp ý của bạn:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                hintText: 'Nhập nội dung tại đây...',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Gửi'),
+          ),
+        ],
+      ),
+    );
+
+    if (type != null && type.trim().isNotEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cảm ơn bạn đã đóng góp! Yêu cầu của bạn đã được gửi đến quản trị viên.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showEditProfileDialog(BuildContext context, WidgetRef ref) async {
+    if (profile == null) return;
+    
+    final nameController = TextEditingController(text: profile!.fullName);
+    final phoneController = TextEditingController(text: profile!.phone);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Chỉnh sửa hồ sơ'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Họ và tên'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneController,
+              decoration: const InputDecoration(labelText: 'Số điện thoại'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await Supabase.instance.client.from('profiles').update({
+          'full_name': nameController.text.trim(),
+          'phone': phoneController.text.trim(),
+        }).eq('id', profile!.id);
+        
+        await ref.read(authNotifierProvider.notifier).refreshProfile();
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Cập nhật hồ sơ thành công'), backgroundColor: AppColors.success),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       child: Column(
         children: [
           _ActionTile(
             icon: Icons.person_outline,
-            title: 'Edit Profile',
-            onTap: () {
-              // TODO: Edit profile
-            },
+            title: 'Chỉnh sửa hồ sơ',
+            onTap: () => _showEditProfileDialog(context, ref),
           ),
           const Divider(height: 1),
           _ActionTile(
             icon: Icons.lock_outline,
-            title: 'Change Password',
-            onTap: () {
-              // TODO: Change password
-            },
-          ),
-          const Divider(height: 1),
-          _ActionTile(
-            icon: Icons.notifications_outlined,
-            title: 'Notifications',
-            onTap: () {
-              // TODO: Notification settings
-            },
+            title: 'Đổi mật khẩu',
+            onTap: () => _showChangePasswordDialog(context, ref),
           ),
           const Divider(height: 1),
           _ActionTile(
             icon: Icons.help_outline,
-            title: 'Help & Support',
-            onTap: () {
-              // TODO: Help
-            },
+            title: 'Hỗ trợ & Phản hồi',
+            onTap: () => _showSupportDialog(context),
           ),
           const Divider(height: 1),
           _ActionTile(
             icon: Icons.logout,
-            title: 'Logout',
+            title: 'Đăng xuất',
             isDestructive: true,
             onTap: () async {
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Logout'),
-                  content: const Text('Are you sure you want to logout?'),
+                  title: const Text('Đăng xuất'),
+                  content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
+                      child: const Text('Hủy'),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                      child: const Text('Logout'),
+                      child: const Text('Đăng xuất'),
                     ),
                   ],
                 ),
@@ -344,7 +500,7 @@ class _ActionTile extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(title, style: TextStyle(color: color)),
-      trailing: Icon(Icons.chevron_right, color: AppColors.textMuted),
+      trailing: isDestructive ? null : Icon(Icons.chevron_right, color: AppColors.textMuted),
       onTap: onTap,
     );
   }

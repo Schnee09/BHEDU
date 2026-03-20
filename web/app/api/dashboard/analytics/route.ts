@@ -9,10 +9,10 @@
  * - Revenue summary
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { handleApiError, ValidationError } from "@/lib/api/errors";
-import { analyticsQuerySchema } from "@/lib/schemas";
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { handleApiError, ValidationError } from '@/lib/api/errors';
+import { analyticsQuerySchema } from '@/lib/schemas';
 
 export interface DashboardAnalytics {
   overview: {
@@ -55,10 +55,10 @@ export interface DashboardAnalytics {
     studentName: string;
     className: string;
     gpa: number;
-    riskLevel: "medium" | "high" | "critical";
+    riskLevel: 'medium' | 'high' | 'critical';
   }>;
   recentActivity: Array<{
-    type: "grade" | "attendance" | "enrollment" | "payment";
+    type: 'grade' | 'attendance' | 'enrollment' | 'payment';
     description: string;
     timestamp: string;
   }>;
@@ -69,9 +69,12 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
 
     // Verify authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get query params and validate
@@ -79,51 +82,37 @@ export async function GET(request: NextRequest) {
     const validatedParams = analyticsQuerySchema.safeParse(searchParams);
 
     if (!validatedParams.success) {
-      throw new ValidationError(validatedParams.error.issues[0].message);
+      throw new ValidationError(validatedParams.error.issues[0]?.message ?? 'Dữ liệu không hợp lệ');
     }
 
-    const scholasticYear = validatedParams.data.academicYear ||
-      getCurrentAcademicYear();
+    const scholasticYear = validatedParams.data.academicYear || getCurrentAcademicYear();
     const scholasticSemester = validatedParams.data.semester || null;
 
     // Fetch overview stats
-    const overview = await getOverviewStats(
-      supabase,
-      scholasticYear,
-      scholasticSemester,
-    );
+    const overview = await getOverviewStats(supabase, scholasticYear, scholasticSemester);
 
     // Fetch grade distribution
     const gradeDistribution = await getGradeDistribution(
       supabase,
       scholasticYear,
-      scholasticSemester,
+      scholasticSemester
     );
 
     // Fetch class comparison
-    const classComparison = await getClassComparison(
-      supabase,
-      scholasticYear,
-      scholasticSemester,
-    );
+    const classComparison = await getClassComparison(supabase, scholasticYear, scholasticSemester);
 
     // Fetch trends
     const trends = await getTrends(supabase, scholasticYear);
 
     // Fetch top performers
-    const topPerformers = await getTopPerformers(
-      supabase,
-      scholasticYear,
-      scholasticSemester,
-      5,
-    );
+    const topPerformers = await getTopPerformers(supabase, scholasticYear, scholasticSemester, 5);
 
     // Fetch at-risk students
     const atRiskStudents = await getAtRiskStudents(
       supabase,
       scholasticYear,
       scholasticSemester,
-      10,
+      10
     );
 
     // Fetch recent activity
@@ -150,66 +139,52 @@ function getCurrentAcademicYear(): string {
   const year = now.getFullYear();
   const month = now.getMonth();
   // Academic year starts in September
-  if (month >= 8) { // September or later
+  if (month >= 8) {
+    // September or later
     return `${year}-${year + 1}`;
   }
   return `${year - 1}-${year}`;
 }
 
-async function getOverviewStats(
-  supabase: any,
-  academicYear: string,
-  semester: string | null,
-) {
+async function getOverviewStats(supabase: any, academicYear: string, semester: string | null) {
   // Count students
   const { count: totalStudents } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .eq("role", "student");
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('role', 'student');
 
   // Count teachers
   const { count: totalTeachers } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .eq("role", "teacher");
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('role', 'teacher');
 
   // Count classes
   const { count: totalClasses } = await supabase
-    .from("classes")
-    .select("*", { count: "exact", head: true });
+    .from('classes')
+    .select('*', { count: 'exact', head: true });
 
   // Calculate average GPA (from grades table)
-  const { data: gradeData } = await supabase
-    .from("grades")
-    .select("score");
+  const { data: gradeData } = await supabase.from('grades').select('score');
 
-  const averageGPA = gradeData && gradeData.length > 0
-    ? gradeData.reduce(
-      (sum: number, g: { score: number }) => sum + (g.score || 0),
-      0,
-    ) / gradeData.length
-    : 0;
+  const averageGPA =
+    gradeData && gradeData.length > 0
+      ? gradeData.reduce((sum: number, g: { score: number }) => sum + (g.score || 0), 0) /
+        gradeData.length
+      : 0;
 
   // Calculate attendance rate
-  const { data: attendanceData } = await supabase
-    .from("attendance")
-    .select("status");
+  const { data: attendanceData } = await supabase.from('attendance').select('status');
 
   const totalAttendance = attendanceData?.length || 0;
   const presentCount =
-    attendanceData?.filter((a: { status: string }) =>
-      a.status === "present" || a.status === "late"
-    ).length || 0;
-  const attendanceRate = totalAttendance > 0
-    ? (presentCount / totalAttendance) * 100
-    : 0;
+    attendanceData?.filter((a: { status: string }) => a.status === 'present' || a.status === 'late')
+      .length || 0;
+  const attendanceRate = totalAttendance > 0 ? (presentCount / totalAttendance) * 100 : 0;
 
   // Calculate pass rate
-  const passCount =
-    gradeData?.filter((g: { score: number }) => g.score >= 5.0).length || 0;
-  const passRate = gradeData && gradeData.length > 0
-    ? (passCount / gradeData.length) * 100
-    : 0;
+  const passCount = gradeData?.filter((g: { score: number }) => g.score >= 5.0).length || 0;
+  const passRate = gradeData && gradeData.length > 0 ? (passCount / gradeData.length) * 100 : 0;
 
   return {
     totalStudents: totalStudents || 0,
@@ -221,14 +196,8 @@ async function getOverviewStats(
   };
 }
 
-async function getGradeDistribution(
-  supabase: any,
-  academicYear: string,
-  semester: string | null,
-) {
-  const { data: grades } = await supabase
-    .from("grades")
-    .select("score");
+async function getGradeDistribution(supabase: any, academicYear: string, semester: string | null) {
+  const { data: grades } = await supabase.from('grades').select('score');
 
   const distribution = {
     excellent: 0,
@@ -252,18 +221,16 @@ async function getGradeDistribution(
   return distribution;
 }
 
-async function getClassComparison(
-  supabase: any,
-  academicYear: string,
-  semester: string | null,
-) {
+async function getClassComparison(supabase: any, academicYear: string, semester: string | null) {
   const { data: classes } = await supabase
-    .from("classes")
-    .select(`
+    .from('classes')
+    .select(
+      `
       id,
       name,
       teacher:teacher_id(full_name)
-    `)
+    `
+    )
     .limit(20);
 
   if (!classes || classes.length === 0) return [];
@@ -272,57 +239,50 @@ async function getClassComparison(
 
   // Batch fetch enrollments
   const { data: allEnrollments } = await supabase
-    .from("enrollments")
-    .select("class_id")
-    .in("class_id", classIds);
+    .from('enrollments')
+    .select('class_id')
+    .in('class_id', classIds);
 
   // Batch fetch grades
   const { data: allGrades } = await supabase
-    .from("grades")
-    .select("class_id, score")
-    .in("class_id", classIds);
+    .from('grades')
+    .select('class_id, score')
+    .in('class_id', classIds);
 
   // Batch fetch attendance
   const { data: allAttendance } = await supabase
-    .from("attendance")
-    .select("class_id, status")
-    .in("class_id", classIds);
+    .from('attendance')
+    .select('class_id, status')
+    .in('class_id', classIds);
 
   const comparisons = classes.map((cls: any) => {
     const classId = cls.id;
 
     // Aggregate enrollments
-    const studentCount = allEnrollments?.filter((e: any) =>
-      e.class_id === classId
-    ).length || 0;
+    const studentCount = allEnrollments?.filter((e: any) => e.class_id === classId).length || 0;
 
     // Aggregate grades
-    const classGrades = allGrades?.filter((g: any) => g.class_id === classId) ||
-      [];
-    const avgGPA = classGrades.length > 0
-      ? classGrades.reduce((sum: number, g: any) => sum + (g.score || 0), 0) /
-        classGrades.length
-      : 0;
+    const classGrades = allGrades?.filter((g: any) => g.class_id === classId) || [];
+    const avgGPA =
+      classGrades.length > 0
+        ? classGrades.reduce((sum: number, g: any) => sum + (g.score || 0), 0) / classGrades.length
+        : 0;
 
     const passCount = classGrades.filter((g: any) => g.score >= 5.0).length;
-    const passRate = classGrades.length > 0
-      ? (passCount / classGrades.length) * 100
-      : 0;
+    const passRate = classGrades.length > 0 ? (passCount / classGrades.length) * 100 : 0;
 
     // Aggregate attendance
-    const classAttendance =
-      allAttendance?.filter((a: any) => a.class_id === classId) || [];
-    const presentCount = classAttendance.filter((a: any) =>
-      a.status === "present" || a.status === "late"
+    const classAttendance = allAttendance?.filter((a: any) => a.class_id === classId) || [];
+    const presentCount = classAttendance.filter(
+      (a: any) => a.status === 'present' || a.status === 'late'
     ).length;
-    const attendanceRate = classAttendance.length > 0
-      ? (presentCount / classAttendance.length) * 100
-      : 0;
+    const attendanceRate =
+      classAttendance.length > 0 ? (presentCount / classAttendance.length) * 100 : 0;
 
     return {
       classId,
       className: cls.name,
-      teacherName: cls.teacher?.full_name || "Chưa phân công",
+      teacherName: cls.teacher?.full_name || 'Chưa phân công',
       studentCount,
       averageGPA: Math.round(avgGPA * 100) / 100,
       attendanceRate: Math.round(attendanceRate * 100) / 100,
@@ -337,18 +297,18 @@ async function getTrends(supabase: any, academicYear: string) {
   // This would typically aggregate data by month
   // For now, return placeholder structure
   const months = [
-    "Th1",
-    "Th2",
-    "Th3",
-    "Th4",
-    "Th5",
-    "Th6",
-    "Th7",
-    "Th8",
-    "Th9",
-    "Th10",
-    "Th11",
-    "Th12",
+    'Th1',
+    'Th2',
+    'Th3',
+    'Th4',
+    'Th5',
+    'Th6',
+    'Th7',
+    'Th8',
+    'Th9',
+    'Th10',
+    'Th11',
+    'Th12',
   ];
   const currentYear = new Date().getFullYear();
 
@@ -375,34 +335,33 @@ async function getTopPerformers(
   supabase: any,
   academicYear: string,
   semester: string | null,
-  limit: number,
+  limit: number
 ) {
   // Get students with highest averages
   const { data: students } = await supabase
-    .from("profiles")
-    .select("id, full_name")
-    .eq("role", "student")
+    .from('profiles')
+    .select('id, full_name')
+    .eq('role', 'student')
     .limit(limit);
 
   // For each student, calculate GPA (simplified)
   const performers = [];
   for (const student of students || []) {
     const { data: grades } = await supabase
-      .from("grades")
-      .select("score")
-      .eq("student_id", student.id);
+      .from('grades')
+      .select('score')
+      .eq('student_id', student.id);
 
-    const gpa = grades && grades.length > 0
-      ? grades.reduce(
-        (sum: number, g: { score: number }) => sum + (g.score || 0),
-        0,
-      ) / grades.length
-      : 0;
+    const gpa =
+      grades && grades.length > 0
+        ? grades.reduce((sum: number, g: { score: number }) => sum + (g.score || 0), 0) /
+          grades.length
+        : 0;
 
     performers.push({
       studentId: student.id,
       studentName: student.full_name,
-      className: "N/A", // Would need to join with enrollments
+      className: 'N/A', // Would need to join with enrollments
       gpa: Math.round(gpa * 100) / 100,
     });
   }
@@ -414,38 +373,37 @@ async function getAtRiskStudents(
   supabase: any,
   academicYear: string,
   semester: string | null,
-  limit: number,
+  limit: number
 ) {
   const { data: students } = await supabase
-    .from("profiles")
-    .select("id, full_name")
-    .eq("role", "student")
+    .from('profiles')
+    .select('id, full_name')
+    .eq('role', 'student')
     .limit(50);
 
   const atRisk = [];
   for (const student of students || []) {
     const { data: grades } = await supabase
-      .from("grades")
-      .select("score")
-      .eq("student_id", student.id);
+      .from('grades')
+      .select('score')
+      .eq('student_id', student.id);
 
-    const gpa = grades && grades.length > 0
-      ? grades.reduce(
-        (sum: number, g: { score: number }) => sum + (g.score || 0),
-        0,
-      ) / grades.length
-      : 0;
+    const gpa =
+      grades && grades.length > 0
+        ? grades.reduce((sum: number, g: { score: number }) => sum + (g.score || 0), 0) /
+          grades.length
+        : 0;
 
     if (gpa < 6.5 && gpa > 0) {
-      let riskLevel: "medium" | "high" | "critical";
-      if (gpa < 4.0) riskLevel = "critical";
-      else if (gpa < 5.0) riskLevel = "high";
-      else riskLevel = "medium";
+      let riskLevel: 'medium' | 'high' | 'critical';
+      if (gpa < 4.0) riskLevel = 'critical';
+      else if (gpa < 5.0) riskLevel = 'high';
+      else riskLevel = 'medium';
 
       atRisk.push({
         studentId: student.id,
         studentName: student.full_name,
-        className: "N/A",
+        className: 'N/A',
         gpa: Math.round(gpa * 100) / 100,
         riskLevel,
       });
@@ -457,54 +415,45 @@ async function getAtRiskStudents(
 
 async function getRecentActivity(supabase: any, limit: number) {
   const activities: Array<{
-    type: "grade" | "attendance" | "enrollment" | "payment";
+    type: 'grade' | 'attendance' | 'enrollment' | 'payment';
     description: string;
     timestamp: string;
   }> = [];
 
   // Get recent grades
   const { data: recentGrades } = await supabase
-    .from("grades")
-    .select("created_at, score, student:student_id(full_name)")
-    .order("created_at", { ascending: false })
+    .from('grades')
+    .select('created_at, score, student:student_id(full_name)')
+    .order('created_at', { ascending: false })
     .limit(5);
 
   for (const grade of recentGrades || []) {
     activities.push({
-      type: "grade",
-      description: `Điểm ${grade.score} được nhập cho ${
-        grade.student?.full_name || "học sinh"
-      }`,
+      type: 'grade',
+      description: `Điểm ${grade.score} được nhập cho ${grade.student?.full_name || 'học sinh'}`,
       timestamp: grade.created_at,
     });
   }
 
   // Get recent attendance
   const { data: recentAttendance } = await supabase
-    .from("attendance")
-    .select("created_at, status, student:student_id(full_name)")
-    .order("created_at", { ascending: false })
+    .from('attendance')
+    .select('created_at, status, student:student_id(full_name)')
+    .order('created_at', { ascending: false })
     .limit(5);
 
   for (const att of recentAttendance || []) {
-    const statusVi = att.status === "present"
-      ? "có mặt"
-      : att.status === "absent"
-      ? "vắng"
-      : "đi muộn";
+    const statusVi =
+      att.status === 'present' ? 'có mặt' : att.status === 'absent' ? 'vắng' : 'đi muộn';
     activities.push({
-      type: "attendance",
-      description: `${
-        att.student?.full_name || "Học sinh"
-      } được điểm danh ${statusVi}`,
+      type: 'attendance',
+      description: `${att.student?.full_name || 'Học sinh'} được điểm danh ${statusVi}`,
       timestamp: att.created_at,
     });
   }
 
   // Sort by timestamp and return
   return activities
-    .sort((a, b) =>
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    )
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, limit);
 }

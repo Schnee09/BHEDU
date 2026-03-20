@@ -7,6 +7,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../config/theme.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/services/notification_service.dart';
+import '../../data/models/notification_model.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -42,7 +43,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             ),
         ],
       ),
-      body: state.isLoading
+      body: state.isLoading && state.notifications.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : state.notifications.isEmpty
               ? _EmptyState()
@@ -59,7 +60,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         notification: notification,
                         onTap: () {
                           ref.read(notificationsProvider.notifier).markAsRead(notification.id);
-                          // TODO: Navigate based on notification type
+                          // TODO: Navigate based on notification link or category
                         },
                       );
                     },
@@ -70,7 +71,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 }
 
 class _NotificationCard extends StatelessWidget {
-  final AppNotification notification;
+  final NotificationModel notification;
   final VoidCallback onTap;
 
   const _NotificationCard({
@@ -130,7 +131,7 @@ class _NotificationCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      notification.body ?? '',
+                      notification.message ?? '',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 13,

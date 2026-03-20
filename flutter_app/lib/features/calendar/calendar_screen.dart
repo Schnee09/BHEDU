@@ -6,35 +6,63 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
+import '../../core/constants/app_constants.dart';
+import '../../shared/providers/auth_provider.dart';
+import '../attendance/attendance_screen.dart';
+import '../classes/class_detail_screen.dart';
 
 /// Selected day provider
 final selectedDayProvider = StateProvider<DateTime>((ref) => DateTime.now());
 
 /// Calendar events provider (attendance records)
 final calendarEventsProvider = FutureProvider<Map<DateTime, List<CalendarEvent>>>((ref) async {
-  // TODO: Fetch from Supabase
-  await Future.delayed(const Duration(milliseconds: 300));
+  final authState = ref.watch(authNotifierProvider);
+  final studentId = authState.value?.id;
   
-  // Sample data
-  final now = DateTime.now();
-  return {
-    DateTime(now.year, now.month, now.day - 2): [
-      CalendarEvent(type: EventType.present, label: 'Có mặt'),
-    ],
-    DateTime(now.year, now.month, now.day - 1): [
-      CalendarEvent(type: EventType.present, label: 'Có mặt'),
-    ],
-    DateTime(now.year, now.month, now.day): [
-      CalendarEvent(type: EventType.present, label: 'Có mặt'),
-    ],
-    DateTime(now.year, now.month, now.day - 5): [
-      CalendarEvent(type: EventType.absent, label: 'Vắng'),
-    ],
-    DateTime(now.year, now.month, now.day - 7): [
-      CalendarEvent(type: EventType.late, label: 'Trễ'),
-    ],
-  };
+  if (studentId == null) return {};
+
+  final repo = ref.watch(attendanceRepositoryProvider);
+  final records = await repo.getStudentAttendance(studentId: studentId);
+  
+  final Map<DateTime, List<CalendarEvent>> events = {};
+  
+  for (final record in records) {
+    try {
+      final date = DateTime.parse(record.date);
+      final normalizedDate = DateTime(date.year, date.month, date.day);
+      
+      final event = CalendarEvent(
+        type: _mapStatusToEventType(record.status),
+        label: record.status.labelVi,
+        description: record.className ?? 'Điểm danh',
+        classId: record.classId,
+      );
+      
+      if (events.containsKey(normalizedDate)) {
+        events[normalizedDate]!.add(event);
+      } else {
+        events[normalizedDate] = [event];
+      }
+    } catch (_) {
+      // Ignore invalid dates
+    }
+  }
+  
+  return events;
 });
+
+EventType _mapStatusToEventType(AttendanceStatus status) {
+  switch (status) {
+    case AttendanceStatus.present:
+      return EventType.present;
+    case AttendanceStatus.absent:
+      return EventType.absent;
+    case AttendanceStatus.late:
+      return EventType.late;
+    case AttendanceStatus.excused:
+      return EventType.excused;
+  }
+}
 
 enum EventType { present, absent, late, excused, holiday, exam }
 
@@ -42,8 +70,14 @@ class CalendarEvent {
   final EventType type;
   final String label;
   final String? description;
+  final String? classId;
 
-  CalendarEvent({required this.type, required this.label, this.description});
+  CalendarEvent({
+    required this.type,
+    required this.label,
+    this.description,
+    this.classId,
+  });
 
   Color get color {
     switch (type) {
@@ -262,8 +296,15 @@ class _DayEventsPanel extends StatelessWidget {
                         child: Icon(event.icon, color: event.color),
                       ),
                       title: Text(event.label),
-                      subtitle: event.description != null
-                          ? Text(event.description!)
+                      subtitle: event.description != null ? Text(event.description!) : null,
+                      trailing: event.classId != null ? const Icon(Icons.chevron_right, size: 20) : null,
+                      onTap: event.classId != null
+                          ? () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ClassDetailScreen(classId: event.classId!),
+                                ),
+                              )
                           : null,
                     ),
                   );

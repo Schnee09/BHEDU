@@ -95,4 +95,56 @@ class StudentsRepository extends BaseRepository {
   Future<List<ProfileModel>> searchStudents(String query) async {
     return getStudents(search: query, limit: 20);
   }
+
+  /// Create a new student with auth account (Admin only)
+  /// Uses security-definer RPC for privileged operations
+  Future<String> createStudent({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+    DateTime? dateOfBirth,
+    String? address,
+    String? phone,
+  }) async {
+    return handleAsyncErrors(() async {
+      developer.log('[StudentsRepository] Creating student: $email');
+      
+      final response = await supabase.rpc('create_student_with_auth', params: {
+        'p_email': email,
+        'p_password': password,
+        'p_first_name': firstName,
+        'p_last_name': lastName,
+        'p_date_of_birth': dateOfBirth?.toIso8601String().split('T')[0],
+        'p_address': address,
+        'p_phone': phone,
+      });
+
+      return response as String; // Returns profile ID
+    });
+  }
+
+  /// Update student profile
+  Future<void> updateStudent(String id, Map<String, dynamic> data) async {
+    return handleAsyncErrors(() async {
+      developer.log('[StudentsRepository] Updating student: $id');
+      
+      await supabase
+          .from(tableName)
+          .update(data)
+          .eq('id', id);
+    });
+  }
+
+  /// Delete student and auth account (Admin only)
+  /// Uses security-definer RPC
+  Future<void> deleteStudent(String profileId) async {
+    return handleAsyncErrors(() async {
+      developer.log('[StudentsRepository] Deleting student: $profileId');
+      
+      await supabase.rpc('delete_student_with_auth', params: {
+        'p_profile_id': profileId,
+      });
+    });
+  }
 }

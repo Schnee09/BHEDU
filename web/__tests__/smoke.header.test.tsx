@@ -10,18 +10,38 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock supabase client used in Header
+const mockSupabase = {
+  auth: {
+    getUser: jest.fn(async () => ({ data: { user: { id: 'user-1' } } })),
+    signOut: jest.fn(async () => ({ error: null })),
+  },
+  channel: jest.fn(() => ({
+    on: jest.fn().mockReturnThis(),
+    subscribe: jest.fn().mockReturnThis(),
+  })),
+  removeChannel: jest.fn(),
+  from: jest.fn(() => ({
+    select: jest.fn(() => ({
+      eq: jest.fn(() => ({
+        order: jest.fn(() => ({
+          limit: jest.fn(() => Promise.resolve({ data: [], error: null })),
+        })),
+      })),
+    })),
+  })),
+};
 jest.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    auth: {
-      getUser: jest.fn(async () => ({ data: { user: { id: 'user-1' } } })),
-      signOut: jest.fn(async () => ({ error: null })),
-    },
-  }),
+  createClient: () => mockSupabase,
 }));
 
 describe('Header smoke', () => {
   it('renders header and displays brand and quick actions for admin', async () => {
-    const profile = { full_name: 'Test Admin', first_name: 'Test', last_name: 'Admin', role: 'admin' };
+    const profile = {
+      full_name: 'Test Admin',
+      first_name: 'Test',
+      last_name: 'Admin',
+      role: 'admin',
+    };
 
     render(
       <CustomizationProvider>
@@ -29,8 +49,8 @@ describe('Header smoke', () => {
       </CustomizationProvider>
     );
 
-    // Brand title should be present
-    expect(screen.getByText(/Bui Hoang Education/i)).toBeInTheDocument();
+    // Brand title should be present (for admin it is 'Hệ thống')
+    expect(screen.getByText(/Hệ thống/i)).toBeInTheDocument();
 
     // Quick actions button exists (toggled content loads on click normally) - ensure Search/Quick Actions present
     expect(screen.getAllByRole('button').length).toBeGreaterThan(0);

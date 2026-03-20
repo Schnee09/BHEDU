@@ -2,8 +2,8 @@
  * API client utilities for making authenticated requests
  */
 
-import { getTTL, requestCache } from "@/lib/api/requestCache";
-import { logger, logRequest, logResponse } from "@/lib/logger";
+import { getTTL, requestCache } from '@/lib/api/requestCache';
+import { logger, logRequest, logResponse } from '@/lib/logger';
 
 // Types
 export interface PaginationParams {
@@ -65,16 +65,12 @@ export interface StudentWithEnrollments extends Student {
 /**
  * Fetch wrapper with retry logic and token attachment
  */
-export async function apiFetch(
-  url: string,
-  options?: RequestInit,
-  maxRetries = 2,
-) {
+export async function apiFetch(url: string, options?: RequestInit, maxRetries = 2) {
   const startTime = performance.now();
-  const method = options?.method || "GET";
+  const method = options?.method || 'GET';
 
   // Try to get from cache first for GET requests
-  if (method === "GET") {
+  if (method === 'GET') {
     const cached = requestCache.get(url, options);
     if (cached) {
       if ((cached as any) instanceof Response) {
@@ -82,7 +78,7 @@ export async function apiFetch(
       }
       return new Response(JSON.stringify(cached), {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
   }
@@ -90,9 +86,7 @@ export async function apiFetch(
   const incomingHeaders = (options?.headers ?? {}) as Record<string, string>;
   const baseHeaders: Record<string, string> = {
     ...(incomingHeaders || {}),
-    ...(!("Content-Type" in (incomingHeaders || {}))
-      ? { "Content-Type": "application/json" }
-      : {}),
+    ...(!('Content-Type' in (incomingHeaders || {})) ? { 'Content-Type': 'application/json' } : {}),
   };
 
   logRequest(method, url);
@@ -102,11 +96,11 @@ export async function apiFetch(
   const executeFetch = async (): Promise<Response> => {
     let authorizationHeader: string | undefined;
 
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       try {
-        const { getAccessToken } = await import("@/lib/supabase/browser");
+        const { getAccessToken } = await import('@/lib/supabase/browser');
         const token = await getAccessToken();
-        if (token && !("Authorization" in baseHeaders)) {
+        if (token && !('Authorization' in baseHeaders)) {
           authorizationHeader = `Bearer ${token}`;
         }
       } catch {
@@ -120,7 +114,7 @@ export async function apiFetch(
       const fetcher = () =>
         fetch(url, {
           ...fetchOptions,
-          credentials: "same-origin",
+          credentials: 'same-origin',
           headers: authorizationHeader
             ? { ...baseHeaders, Authorization: authorizationHeader }
             : baseHeaders,
@@ -128,24 +122,24 @@ export async function apiFetch(
 
       let response: Response;
 
-      if (method === "GET") {
+      if (method === 'GET') {
         // We deduplicate GET requests to save bandwidth and improve performance.
-        const sharedResponsePromise = requestCache.getOrSetInFlight(
-          url,
-          options,
-          fetcher,
-        );
+        const sharedResponsePromise = requestCache.getOrSetInFlight(url, options, fetcher);
 
         if (signal) {
           response = await Promise.race([
             sharedResponsePromise.then((r) => r.clone()),
             new Promise<Response>((_, reject) => {
               if (signal.aborted) {
-                return reject(new DOMException("Aborted", "AbortError"));
+                return reject(new DOMException('Aborted', 'AbortError'));
               }
-              signal.addEventListener("abort", () => {
-                reject(new DOMException("Aborted", "AbortError"));
-              }, { once: true });
+              signal.addEventListener(
+                'abort',
+                () => {
+                  reject(new DOMException('Aborted', 'AbortError'));
+                },
+                { once: true }
+              );
             }),
           ]);
         } else {
@@ -156,28 +150,26 @@ export async function apiFetch(
         // POST/PUT/DELETE are never deduplicated
         response = await fetch(url, {
           ...fetchOptions,
-          credentials: "same-origin",
+          credentials: 'same-origin',
           headers: authorizationHeader
             ? { ...baseHeaders, Authorization: authorizationHeader }
             : baseHeaders,
         });
       }
 
-      if (response.ok && method === "GET") {
+      if (response.ok && method === 'GET') {
         const ttl = getTTL(url);
         // ... cache setting logic if needed
-      } else if (
-        response.ok && ["POST", "PUT", "PATCH", "DELETE"].includes(method)
-      ) {
+      } else if (response.ok && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
         // Invalidate relevant cache on mutations
-        const baseUrl = url.split("?")[0];
+        const baseUrl = url.split('?')[0] ?? url;
         requestCache.invalidate(baseUrl);
 
-        if (baseUrl.includes("/api/subjects")) {
-          requestCache.invalidate("/api/subjects");
+        if (baseUrl.includes('/api/subjects')) {
+          requestCache.invalidate('/api/subjects');
         }
-        if (baseUrl.includes("/api/v2/students")) {
-          requestCache.invalidate("/api/v2/students");
+        if (baseUrl.includes('/api/v2/students')) {
+          requestCache.invalidate('/api/v2/students');
         }
       }
 
@@ -185,10 +177,7 @@ export async function apiFetch(
       if (!response.ok && response.status >= 500 && retries < maxRetries) {
         retries++;
         const delay = Math.pow(2, retries) * 1000; // Exponential backoff
-        logger.warn(
-          `Retrying request ${method} ${url} (${retries}/${maxRetries})`,
-          { delay },
-        );
+        logger.warn(`Retrying request ${method} ${url} (${retries}/${maxRetries})`, { delay });
         await new Promise((resolve) => setTimeout(resolve, delay));
         return executeFetch();
       }
@@ -197,7 +186,7 @@ export async function apiFetch(
       logResponse(method, url, response.status, duration);
 
       // Cache successful GET responses if configured
-      if (response.ok && method === "GET") {
+      if (response.ok && method === 'GET') {
         const ttl = getTTL(url);
         if (ttl) {
           // Clone again for caching
@@ -215,10 +204,7 @@ export async function apiFetch(
       if (retries < maxRetries) {
         retries++;
         const delay = Math.pow(2, retries) * 1000;
-        logger.warn(
-          `Fetch error, retrying ${method} ${url} (${retries}/${maxRetries})`,
-          { error },
-        );
+        logger.warn(`Fetch error, retrying ${method} ${url} (${retries}/${maxRetries})`, { error });
         await new Promise((resolve) => setTimeout(resolve, delay));
         return executeFetch();
       }
@@ -226,8 +212,7 @@ export async function apiFetch(
       const duration = performance.now() - startTime;
 
       // Don't log AbortError as an error - it's normal behavior for useFetch/cancelled requests
-      const isAbortError = error instanceof DOMException &&
-        error.name === "AbortError";
+      const isAbortError = error instanceof DOMException && error.name === 'AbortError';
 
       if (isAbortError) {
         logger.debug(`Request aborted: ${method} ${url}`, { duration });
@@ -260,20 +245,18 @@ export async function getStudents(params?: StudentListParams): Promise<{
   };
 }> {
   const searchParams = new URLSearchParams();
-  if (params?.page) searchParams.set("page", params.page.toString());
+  if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.limit) {
-    searchParams.set("limit", params.limit.toString());
+    searchParams.set('limit', params.limit.toString());
   }
-  if (params?.search) searchParams.set("search", params.search);
+  if (params?.search) searchParams.set('search', params.search);
 
-  const url = `/api/v2/students${
-    searchParams.toString() ? `?${searchParams}` : ""
-  }`;
+  const url = `/api/v2/students${searchParams.toString() ? `?${searchParams}` : ''}`;
   const response = await apiFetch(url);
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch students");
+    throw new Error(error.error || 'Failed to fetch students');
   }
 
   // V2 returns standard ApiResponse structure
@@ -281,26 +264,25 @@ export async function getStudents(params?: StudentListParams): Promise<{
 
   // Handle case where result.data contains { data, total, ... } (double wrapped)
   // or result.data is the array (standard)
-  const listData = Array.isArray(result.data)
-    ? result.data
-    : (result.data?.data || []);
-  const pagination = result.pagination || (result.data?.total !== undefined
-    ? {
-      page: result.data.page || params?.page || 1,
-      pageSize: result.data.limit || result.data.pageSize || params?.limit ||
-        10,
-      limit: result.data.limit || result.data.pageSize || params?.limit || 10,
-      totalItems: result.data.total,
-      totalPages: result.data.totalPages ||
-        Math.ceil(result.data.total / (params?.limit || 10)),
-    }
-    : {
-      page: params?.page || 1,
-      pageSize: params?.limit || 10,
-      limit: params?.limit || 10,
-      totalItems: 0,
-      totalPages: 0,
-    });
+  const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
+  const pagination =
+    result.pagination ||
+    (result.data?.total !== undefined
+      ? {
+          page: result.data.page || params?.page || 1,
+          pageSize: result.data.limit || result.data.pageSize || params?.limit || 10,
+          limit: result.data.limit || result.data.pageSize || params?.limit || 10,
+          totalItems: result.data.total,
+          totalPages:
+            result.data.totalPages || Math.ceil(result.data.total / (params?.limit || 10)),
+        }
+      : {
+          page: params?.page || 1,
+          pageSize: params?.limit || 10,
+          limit: params?.limit || 10,
+          totalItems: 0,
+          totalPages: 0,
+        });
 
   return {
     data: listData,
@@ -311,14 +293,12 @@ export async function getStudents(params?: StudentListParams): Promise<{
 /**
  * Get student by ID with enrollments
  */
-export async function getStudentById(
-  id: string,
-): Promise<StudentWithEnrollments> {
+export async function getStudentById(id: string): Promise<StudentWithEnrollments> {
   const response = await apiFetch(`/api/v2/students/${id}`);
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch student");
+    throw new Error(error.error || 'Failed to fetch student');
   }
 
   const result = await response.json();
@@ -328,17 +308,15 @@ export async function getStudentById(
 /**
  * Create a new student
  */
-export async function createStudent(
-  data: CreateStudentInput,
-): Promise<Student> {
-  const response = await apiFetch("/api/v2/students", {
-    method: "POST",
+export async function createStudent(data: CreateStudentInput): Promise<Student> {
+  const response = await apiFetch('/api/v2/students', {
+    method: 'POST',
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to create student");
+    throw new Error(error.error || 'Failed to create student');
   }
 
   const result = await response.json();
@@ -348,12 +326,9 @@ export async function createStudent(
 /**
  * Update student information
  */
-export async function updateStudent(
-  id: string,
-  data: UpdateStudentInput,
-): Promise<Student> {
+export async function updateStudent(id: string, data: UpdateStudentInput): Promise<Student> {
   const response = await apiFetch(`/api/v2/students/${id}`, {
-    method: "PUT", // V2 prefers PUT or PATCH? Usually PUT in our V2 handlers if full replace, but PATCH often safer. Let's check handler.
+    method: 'PUT', // V2 prefers PUT or PATCH? Usually PUT in our V2 handlers if full replace, but PATCH often safer. Let's check handler.
     // Checking V2 handler... usually supports both or specifically one.
     // I'll stick to PATCH if supported or leave as was if unsure, but usually V2 implies standardization.
     // Re-checking V2 routes... `app/api/v2/students/[id]/route.ts` likely exists.
@@ -362,7 +337,7 @@ export async function updateStudent(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to update student");
+    throw new Error(error.error || 'Failed to update student');
   }
 
   const result = await response.json();
@@ -374,12 +349,12 @@ export async function updateStudent(
  */
 export async function deleteStudent(id: string): Promise<void> {
   const response = await apiFetch(`/api/v2/students/${id}`, {
-    method: "DELETE",
+    method: 'DELETE',
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to delete student");
+    throw new Error(error.error || 'Failed to delete student');
   }
 }
 
@@ -387,32 +362,29 @@ export async function deleteStudent(id: string): Promise<void> {
  * Bulk archive students
  */
 export async function bulkArchiveStudents(studentIds: string[]): Promise<void> {
-  const response = await apiFetch("/api/v2/students/bulk-archive", {
-    method: "POST",
+  const response = await apiFetch('/api/v2/students/bulk-archive', {
+    method: 'POST',
     body: JSON.stringify({ studentIds }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to archive students");
+    throw new Error(error.error || 'Failed to archive students');
   }
 }
 
 /**
  * Enroll student in a class
  */
-export async function enrollStudent(
-  studentId: string,
-  classId: string,
-): Promise<any> {
-  const response = await apiFetch("/api/v2/enrollments", {
-    method: "POST",
+export async function enrollStudent(studentId: string, classId: string): Promise<any> {
+  const response = await apiFetch('/api/v2/enrollments', {
+    method: 'POST',
     body: JSON.stringify({ student_id: studentId, class_id: classId }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to enroll student");
+    throw new Error(error.error || 'Failed to enroll student');
   }
 
   const result = await response.json();
@@ -424,30 +396,23 @@ export async function enrollStudent(
  */
 export async function deleteEnrollment(enrollmentId: string): Promise<void> {
   const response = await apiFetch(`/api/v2/enrollments/${enrollmentId}`, {
-    method: "DELETE",
+    method: 'DELETE',
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to delete enrollment");
+    throw new Error(error.error || 'Failed to delete enrollment');
   }
 }
 
 /**
  * @deprecated Use deleteEnrollment instead
  */
-export async function unenrollStudent(
-  studentId: string,
-  classId: string,
-): Promise<void> {
+export async function unenrollStudent(studentId: string, classId: string): Promise<void> {
   // Legacy support or throw error?
   // Ideally we should find the enrollment ID first, but for now let's error or warn
-  console.warn(
-    "unenrollStudent is deprecated. Use deleteEnrollment(enrollmentId).",
-  );
-  throw new Error(
-    "unenrollStudent is deprecated. Use deleteEnrollment(enrollmentId).",
-  );
+  console.warn('unenrollStudent is deprecated. Use deleteEnrollment(enrollmentId).');
+  throw new Error('unenrollStudent is deprecated. Use deleteEnrollment(enrollmentId).');
 }
 
 /**
@@ -458,7 +423,7 @@ export async function getStudentGrades(studentId: string): Promise<any[]> {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch grades");
+    throw new Error(error.error || 'Failed to fetch grades');
   }
 
   const result = await response.json();
@@ -473,7 +438,7 @@ export async function getStudentAttendance(studentId: string): Promise<any[]> {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch attendance");
+    throw new Error(error.error || 'Failed to fetch attendance');
   }
 
   const result = await response.json();
@@ -501,44 +466,43 @@ export async function getClasses(params?: ClassListParams): Promise<{
   };
 }> {
   const searchParams = new URLSearchParams();
-  if (params?.page) searchParams.set("page", params.page.toString());
+  if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.limit) {
-    searchParams.set("limit", params.limit.toString());
+    searchParams.set('limit', params.limit.toString());
   }
-  if (params?.search) searchParams.set("search", params.search);
-  if (params?.teacher_id) searchParams.set("teacher_id", params.teacher_id);
-  if (params?.status) searchParams.set("status", params.status);
+  if (params?.search) searchParams.set('search', params.search);
+  if (params?.teacher_id) searchParams.set('teacher_id', params.teacher_id);
+  if (params?.status) searchParams.set('status', params.status);
 
   const response = await apiFetch(`/api/v2/classes?${searchParams.toString()}`);
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch classes");
+    throw new Error(error.error || 'Failed to fetch classes');
   }
 
   const result = await response.json();
 
   // Handle double-wrapping or standard V2
-  const listData = Array.isArray(result.data)
-    ? result.data
-    : (result.data?.data || []);
-  const pagination = result.pagination || (result.data?.total !== undefined
-    ? {
-      page: result.data.page || params?.page || 1,
-      pageSize: result.data.limit || result.data.pageSize || params?.limit ||
-        10,
-      limit: result.data.limit || result.data.pageSize || params?.limit || 10,
-      totalItems: result.data.total,
-      totalPages: result.data.totalPages ||
-        Math.ceil(result.data.total / (params?.limit || 10)),
-    }
-    : {
-      page: params?.page || 1,
-      pageSize: params?.limit || 10,
-      limit: params?.limit || 10,
-      totalItems: 0,
-      totalPages: 0,
-    });
+  const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
+  const pagination =
+    result.pagination ||
+    (result.data?.total !== undefined
+      ? {
+          page: result.data.page || params?.page || 1,
+          pageSize: result.data.limit || result.data.pageSize || params?.limit || 10,
+          limit: result.data.limit || result.data.pageSize || params?.limit || 10,
+          totalItems: result.data.total,
+          totalPages:
+            result.data.totalPages || Math.ceil(result.data.total / (params?.limit || 10)),
+        }
+      : {
+          page: params?.page || 1,
+          pageSize: params?.limit || 10,
+          limit: params?.limit || 10,
+          totalItems: 0,
+          totalPages: 0,
+        });
 
   return {
     data: listData,
@@ -550,20 +514,20 @@ export async function getClassById(id: string): Promise<any> {
   const response = await apiFetch(`/api/v2/classes/${id}`);
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch class");
+    throw new Error(error.error || 'Failed to fetch class');
   }
   const result = await response.json();
   return result.data;
 }
 
 export async function createClass(data: any): Promise<any> {
-  const response = await apiFetch("/api/v2/classes", {
-    method: "POST",
+  const response = await apiFetch('/api/v2/classes', {
+    method: 'POST',
     body: JSON.stringify(data),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to create class");
+    throw new Error(error.error || 'Failed to create class');
   }
   const result = await response.json();
   return result.data;
@@ -571,12 +535,12 @@ export async function createClass(data: any): Promise<any> {
 
 export async function updateClass(id: string, data: any): Promise<any> {
   const response = await apiFetch(`/api/v2/classes/${id}`, {
-    method: "PATCH",
+    method: 'PATCH',
     body: JSON.stringify(data),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to update class");
+    throw new Error(error.error || 'Failed to update class');
   }
   const result = await response.json();
   return result.data;
@@ -584,11 +548,11 @@ export async function updateClass(id: string, data: any): Promise<any> {
 
 export async function deleteClass(id: string): Promise<void> {
   const response = await apiFetch(`/api/v2/classes/${id}`, {
-    method: "DELETE",
+    method: 'DELETE',
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to delete class");
+    throw new Error(error.error || 'Failed to delete class');
   }
 }
 
@@ -629,50 +593,49 @@ export async function getGrades(params?: GradeListParams): Promise<{
   };
 }> {
   const searchParams = new URLSearchParams();
-  if (params?.page) searchParams.set("page", params.page.toString());
+  if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.limit) {
-    searchParams.set("limit", params.limit.toString());
+    searchParams.set('limit', params.limit.toString());
   }
-  if (params?.student_id) searchParams.set("student_id", params.student_id);
-  if (params?.class_id) searchParams.set("class_id", params.class_id);
-  if (params?.subject_id) searchParams.set("subject_id", params.subject_id);
+  if (params?.student_id) searchParams.set('student_id', params.student_id);
+  if (params?.class_id) searchParams.set('class_id', params.class_id);
+  if (params?.subject_id) searchParams.set('subject_id', params.subject_id);
   if (params?.component_type) {
-    searchParams.set("component_type", params.component_type);
+    searchParams.set('component_type', params.component_type);
   }
-  if (params?.semester) searchParams.set("semester", params.semester);
+  if (params?.semester) searchParams.set('semester', params.semester);
   if (params?.academic_year_id) {
-    searchParams.set("academic_year_id", params.academic_year_id);
+    searchParams.set('academic_year_id', params.academic_year_id);
   }
 
   const response = await apiFetch(`/api/v2/grades?${searchParams.toString()}`);
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch grades");
+    throw new Error(error.error || 'Failed to fetch grades');
   }
 
   const result = await response.json();
 
-  const listData = Array.isArray(result.data)
-    ? result.data
-    : (result.data?.data || []);
-  const pagination = result.pagination || (result.data?.total !== undefined
-    ? {
-      page: result.data.page || params?.page || 1,
-      pageSize: result.data.limit || result.data.pageSize || params?.limit ||
-        10,
-      limit: result.data.limit || result.data.pageSize || params?.limit || 10,
-      totalItems: result.data.total,
-      totalPages: result.data.totalPages ||
-        Math.ceil(result.data.total / (params?.limit || 10)),
-    }
-    : {
-      page: params?.page || 1,
-      pageSize: params?.limit || 10,
-      limit: params?.limit || 10,
-      totalItems: 0,
-      totalPages: 0,
-    });
+  const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
+  const pagination =
+    result.pagination ||
+    (result.data?.total !== undefined
+      ? {
+          page: result.data.page || params?.page || 1,
+          pageSize: result.data.limit || result.data.pageSize || params?.limit || 10,
+          limit: result.data.limit || result.data.pageSize || params?.limit || 10,
+          totalItems: result.data.total,
+          totalPages:
+            result.data.totalPages || Math.ceil(result.data.total / (params?.limit || 10)),
+        }
+      : {
+          page: params?.page || 1,
+          pageSize: params?.limit || 10,
+          limit: params?.limit || 10,
+          totalItems: 0,
+          totalPages: 0,
+        });
 
   return {
     data: listData,
@@ -681,13 +644,13 @@ export async function getGrades(params?: GradeListParams): Promise<{
 }
 
 export async function bulkCreateGrades(data: any): Promise<any> {
-  const response = await apiFetch("/api/v2/grades", {
-    method: "POST",
+  const response = await apiFetch('/api/v2/grades', {
+    method: 'POST',
     body: JSON.stringify(data),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to create grades");
+    throw new Error(error.error || 'Failed to create grades');
   }
   const result = await response.json();
   return result.data;
@@ -695,12 +658,12 @@ export async function bulkCreateGrades(data: any): Promise<any> {
 
 export async function updateGrade(id: string, data: any): Promise<any> {
   const response = await apiFetch(`/api/v2/grades/${id}`, {
-    method: "PATCH",
+    method: 'PATCH',
     body: JSON.stringify(data),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to update grade");
+    throw new Error(error.error || 'Failed to update grade');
   }
   const result = await response.json();
   return result.data;
@@ -708,11 +671,11 @@ export async function updateGrade(id: string, data: any): Promise<any> {
 
 export async function deleteGrade(id: string): Promise<void> {
   const response = await apiFetch(`/api/v2/grades/${id}`, {
-    method: "DELETE",
+    method: 'DELETE',
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to delete grade");
+    throw new Error(error.error || 'Failed to delete grade');
   }
 }
 
@@ -742,52 +705,49 @@ export async function getAttendance(params?: AttendanceListParams): Promise<{
   };
 }> {
   const searchParams = new URLSearchParams();
-  if (params?.page) searchParams.set("page", params.page.toString());
+  if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.limit) {
-    searchParams.set("limit", params.limit.toString());
+    searchParams.set('limit', params.limit.toString());
   }
-  if (params?.class_id) searchParams.set("class_id", params.class_id);
-  if (params?.student_id) searchParams.set("student_id", params.student_id);
-  if (params?.date) searchParams.set("date", params.date);
-  if (params?.startDate) searchParams.set("from_date", params.startDate);
-  if (params?.endDate) searchParams.set("to_date", params.endDate);
-  if (params?.from_date) searchParams.set("from_date", params.from_date);
-  if (params?.to_date) searchParams.set("to_date", params.to_date);
-  if (params?.status && params.status !== "all") {
-    searchParams.set("status", params.status);
+  if (params?.class_id) searchParams.set('class_id', params.class_id);
+  if (params?.student_id) searchParams.set('student_id', params.student_id);
+  if (params?.date) searchParams.set('date', params.date);
+  if (params?.startDate) searchParams.set('from_date', params.startDate);
+  if (params?.endDate) searchParams.set('to_date', params.endDate);
+  if (params?.from_date) searchParams.set('from_date', params.from_date);
+  if (params?.to_date) searchParams.set('to_date', params.to_date);
+  if (params?.status && params.status !== 'all') {
+    searchParams.set('status', params.status);
   }
 
-  const response = await apiFetch(
-    `/api/v2/attendance?${searchParams.toString()}`,
-  );
+  const response = await apiFetch(`/api/v2/attendance?${searchParams.toString()}`);
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch attendance");
+    throw new Error(error.error || 'Failed to fetch attendance');
   }
 
   const result = await response.json();
 
-  const listData = Array.isArray(result.data)
-    ? result.data
-    : (result.data?.data || []);
-  const pagination = result.pagination || (result.data?.total !== undefined
-    ? {
-      page: result.data.page || params?.page || 1,
-      pageSize: result.data.limit || result.data.pageSize || params?.limit ||
-        10,
-      limit: result.data.limit || result.data.pageSize || params?.limit || 10,
-      totalItems: result.data.total,
-      totalPages: result.data.totalPages ||
-        Math.ceil(result.data.total / (params?.limit || 10)),
-    }
-    : {
-      page: params?.page || 1,
-      pageSize: params?.limit || 10,
-      limit: params?.limit || 10,
-      totalItems: 0,
-      totalPages: 0,
-    });
+  const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
+  const pagination =
+    result.pagination ||
+    (result.data?.total !== undefined
+      ? {
+          page: result.data.page || params?.page || 1,
+          pageSize: result.data.limit || result.data.pageSize || params?.limit || 10,
+          limit: result.data.limit || result.data.pageSize || params?.limit || 10,
+          totalItems: result.data.total,
+          totalPages:
+            result.data.totalPages || Math.ceil(result.data.total / (params?.limit || 10)),
+        }
+      : {
+          page: params?.page || 1,
+          pageSize: params?.limit || 10,
+          limit: params?.limit || 10,
+          totalItems: 0,
+          totalPages: 0,
+        });
 
   return {
     data: listData,
@@ -796,26 +756,26 @@ export async function getAttendance(params?: AttendanceListParams): Promise<{
 }
 
 export async function createAttendance(data: any): Promise<any> {
-  const response = await apiFetch("/api/v2/attendance", {
-    method: "POST",
+  const response = await apiFetch('/api/v2/attendance', {
+    method: 'POST',
     body: JSON.stringify(data),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to mark attendance");
+    throw new Error(error.error || 'Failed to mark attendance');
   }
   const result = await response.json();
   return result.data;
 }
 
 export async function bulkCreateAttendance(data: any): Promise<any> {
-  const response = await apiFetch("/api/v2/attendance/bulk", {
-    method: "POST",
+  const response = await apiFetch('/api/v2/attendance/bulk', {
+    method: 'POST',
     body: JSON.stringify(data),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to bulk mark attendance");
+    throw new Error(error.error || 'Failed to bulk mark attendance');
   }
   const result = await response.json();
   return result.data;
@@ -827,20 +787,18 @@ export async function bulkCreateAttendance(data: any): Promise<any> {
 
 export async function getFinanceReports(
   type: string,
-  params?: { startDate?: string; endDate?: string },
+  params?: { startDate?: string; endDate?: string }
 ): Promise<any> {
   const searchParams = new URLSearchParams();
-  searchParams.set("type", type);
-  if (params?.startDate) searchParams.set("start_date", params.startDate);
-  if (params?.endDate) searchParams.set("end_date", params.endDate);
+  searchParams.set('type', type);
+  if (params?.startDate) searchParams.set('start_date', params.startDate);
+  if (params?.endDate) searchParams.set('end_date', params.endDate);
 
-  const response = await apiFetch(
-    `/api/v2/finance/reports?${searchParams.toString()}`,
-  );
+  const response = await apiFetch(`/api/v2/finance/reports?${searchParams.toString()}`);
   if (!response.ok) {
     // Fallback for non-200, though apiFetch might handle auth errors
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch reports");
+    throw new Error(error.error || 'Failed to fetch reports');
   }
   const result = await response.json();
   return result.data;
@@ -857,46 +815,43 @@ export async function getInvoices(params?: any): Promise<{
   };
 }> {
   const searchParams = new URLSearchParams();
-  if (params?.page) searchParams.set("page", params.page.toString());
+  if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.limit || params?.pageSize) {
-    searchParams.set("limit", (params.limit || params.pageSize).toString());
+    searchParams.set('limit', (params.limit || params.pageSize).toString());
   }
-  if (params?.student_id) searchParams.set("student_id", params.student_id);
-  if (params?.status && params.status !== "all") {
-    searchParams.set("status", params.status);
+  if (params?.student_id) searchParams.set('student_id', params.student_id);
+  if (params?.status && params.status !== 'all') {
+    searchParams.set('status', params.status);
   }
 
-  const response = await apiFetch(
-    `/api/v2/finance/invoices?${searchParams.toString()}`,
-  );
+  const response = await apiFetch(`/api/v2/finance/invoices?${searchParams.toString()}`);
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch invoices");
+    throw new Error(error.error || 'Failed to fetch invoices');
   }
   const result = await response.json();
 
-  const listData = Array.isArray(result.data)
-    ? result.data
-    : (result.data?.data || []);
-  const pagination = result.pagination || (result.data?.total !== undefined
-    ? {
-      pageSize: result.data.limit || result.data.pageSize || params?.limit ||
-        params?.pageSize || 10,
-      limit: result.data.limit || result.data.pageSize || params?.limit ||
-        params?.pageSize || 10,
-      totalItems: result.data.total,
-      totalPages: result.data.totalPages ||
-        Math.ceil(
-          result.data.total / (params?.limit || params?.pageSize || 10),
-        ),
-    }
-    : {
-      page: params?.page || 1,
-      pageSize: params?.limit || params?.pageSize || 10,
-      limit: params?.limit || params?.pageSize || 10,
-      totalItems: 0,
-      totalPages: 0,
-    });
+  const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
+  const pagination =
+    result.pagination ||
+    (result.data?.total !== undefined
+      ? {
+          pageSize:
+            result.data.limit || result.data.pageSize || params?.limit || params?.pageSize || 10,
+          limit:
+            result.data.limit || result.data.pageSize || params?.limit || params?.pageSize || 10,
+          totalItems: result.data.total,
+          totalPages:
+            result.data.totalPages ||
+            Math.ceil(result.data.total / (params?.limit || params?.pageSize || 10)),
+        }
+      : {
+          page: params?.page || 1,
+          pageSize: params?.limit || params?.pageSize || 10,
+          limit: params?.limit || params?.pageSize || 10,
+          totalItems: 0,
+          totalPages: 0,
+        });
 
   return {
     data: listData,
@@ -905,13 +860,13 @@ export async function getInvoices(params?: any): Promise<{
 }
 
 export async function createInvoice(data: any): Promise<any> {
-  const response = await apiFetch("/api/v2/finance/invoices", {
-    method: "POST",
+  const response = await apiFetch('/api/v2/finance/invoices', {
+    method: 'POST',
     body: JSON.stringify(data),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to create invoice");
+    throw new Error(error.error || 'Failed to create invoice');
   }
   const result = await response.json();
   return result.data;
@@ -928,45 +883,42 @@ export async function getPayments(params?: any): Promise<{
   };
 }> {
   const searchParams = new URLSearchParams();
-  if (params?.page) searchParams.set("page", params.page.toString());
+  if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.limit || params?.pageSize) {
-    searchParams.set("limit", (params.limit || params.pageSize).toString());
+    searchParams.set('limit', (params.limit || params.pageSize).toString());
   }
-  if (params?.student_id) searchParams.set("student_id", params.student_id);
-  if (params?.startDate) searchParams.set("start_date", params.startDate);
-  if (params?.endDate) searchParams.set("end_date", params.endDate);
+  if (params?.student_id) searchParams.set('student_id', params.student_id);
+  if (params?.startDate) searchParams.set('start_date', params.startDate);
+  if (params?.endDate) searchParams.set('end_date', params.endDate);
 
-  const response = await apiFetch(
-    `/api/v2/finance/payments?${searchParams.toString()}`,
-  );
+  const response = await apiFetch(`/api/v2/finance/payments?${searchParams.toString()}`);
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to fetch payments");
+    throw new Error(error.error || 'Failed to fetch payments');
   }
   const result = await response.json();
 
-  const listData = Array.isArray(result.data)
-    ? result.data
-    : (result.data?.data || []);
-  const pagination = result.pagination || (result.data?.total !== undefined
-    ? {
-      pageSize: result.data.limit || result.data.pageSize || params?.limit ||
-        params?.pageSize || 10,
-      limit: result.data.limit || result.data.pageSize || params?.limit ||
-        params?.pageSize || 10,
-      totalItems: result.data.total,
-      totalPages: result.data.totalPages ||
-        Math.ceil(
-          result.data.total / (params?.limit || params?.pageSize || 10),
-        ),
-    }
-    : {
-      page: params?.page || 1,
-      pageSize: params?.limit || params?.pageSize || 10,
-      limit: params?.limit || params?.pageSize || 10,
-      totalItems: 0,
-      totalPages: 0,
-    });
+  const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
+  const pagination =
+    result.pagination ||
+    (result.data?.total !== undefined
+      ? {
+          pageSize:
+            result.data.limit || result.data.pageSize || params?.limit || params?.pageSize || 10,
+          limit:
+            result.data.limit || result.data.pageSize || params?.limit || params?.pageSize || 10,
+          totalItems: result.data.total,
+          totalPages:
+            result.data.totalPages ||
+            Math.ceil(result.data.total / (params?.limit || params?.pageSize || 10)),
+        }
+      : {
+          page: params?.page || 1,
+          pageSize: params?.limit || params?.pageSize || 10,
+          limit: params?.limit || params?.pageSize || 10,
+          totalItems: 0,
+          totalPages: 0,
+        });
 
   return {
     data: listData,
@@ -975,13 +927,13 @@ export async function getPayments(params?: any): Promise<{
 }
 
 export async function createPayment(data: any): Promise<any> {
-  const response = await apiFetch("/api/v2/finance/payments", {
-    method: "POST",
+  const response = await apiFetch('/api/v2/finance/payments', {
+    method: 'POST',
     body: JSON.stringify(data),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to create payment");
+    throw new Error(error.error || 'Failed to create payment');
   }
   const result = await response.json();
   return result.data;

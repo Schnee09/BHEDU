@@ -52,13 +52,24 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
     super.dispose();
   }
 
+  Future<void> _showAddStudentDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => const _AddStudentDialog(),
+    );
+
+    if (result == true) {
+      ref.invalidate(filteredStudentsProvider);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final studentsAsync = ref.watch(filteredStudentsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Students'),
+        title: const Text('Học sinh'),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -76,7 +87,7 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search students...',
+                hintText: 'Tìm kiếm học sinh...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -87,6 +98,7 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                         },
                       )
                     : null,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               ),
               onChanged: (value) {
                 ref.read(searchQueryProvider.notifier).state = value;
@@ -99,6 +111,7 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
             child: RefreshIndicator(
               onRefresh: () async {
                 ref.invalidate(filteredStudentsProvider);
+                await ref.read(filteredStudentsProvider.future);
               },
               child: studentsAsync.when(
                 data: (students) => students.isEmpty
@@ -111,19 +124,200 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
                         },
                       ),
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Error: $e')),
+                error: (e, _) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                      const SizedBox(height: 16),
+                      Text('Lỗi: $e'),
+                      TextButton(
+                        onPressed: () => ref.invalidate(filteredStudentsProvider),
+                        child: const Text('Thử lại'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Add student
-        },
+        onPressed: _showAddStudentDialog,
         icon: const Icon(Icons.person_add),
-        label: const Text('Add Student'),
+        label: const Text('Thêm học sinh'),
       ),
+    );
+  }
+}
+
+class _AddStudentDialog extends ConsumerStatefulWidget {
+  const _AddStudentDialog();
+
+  @override
+  ConsumerState<_AddStudentDialog> createState() => _AddStudentDialogState();
+}
+
+class _AddStudentDialogState extends ConsumerState<_AddStudentDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _phoneController = TextEditingController();
+  DateTime? _dateOfBirth;
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+      firstDate: DateTime(1960),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() => _dateOfBirth = picked);
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    
+    try {
+      final repo = ref.read(studentsRepositoryProvider);
+      await repo.createStudent(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        dateOfBirth: _dateOfBirth,
+        phone: _phoneController.text.trim(),
+      );
+
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã tạo học sinh thành công'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Thêm học sinh mới'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _lastNameController,
+                      decoration: const InputDecoration(labelText: 'Họ & Tên đệm'),
+                      validator: (v) => v?.isEmpty == true ? 'Bắt buộc' : null,
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _firstNameController,
+                      decoration: const InputDecoration(labelText: 'Tên'),
+                      validator: (v) => v?.isEmpty == true ? 'Bắt buộc' : null,
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'Để trống nếu muốn tự động tạo',
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Mật khẩu',
+                  hintText: 'Để trống nếu muốn tự động tạo',
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(labelText: 'Số điện thoại'),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: _selectDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Ngày sinh',
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  child: Text(
+                    _dateOfBirth == null
+                        ? 'Chọn ngày sinh'
+                        : _dateOfBirth!.toIso8601String().split('T')[0],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        ElevatedButton(
+          onPressed: _isSaving ? null : _submit,
+          child: _isSaving
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Tạo mới'),
+        ),
+      ],
     );
   }
 }
@@ -137,9 +331,14 @@ class _StudentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.surfaceVariant),
+      ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: AppColors.primary.withAlpha(30),
+          backgroundColor: AppColors.primary.withAlpha(20),
           child: Text(
             student.initial,
             style: const TextStyle(
@@ -150,7 +349,7 @@ class _StudentCard extends StatelessWidget {
         ),
         title: Text(
           student.fullName,
-          style: const TextStyle(fontWeight: FontWeight.w500),
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Row(
           children: [
@@ -214,7 +413,7 @@ class _EmptyState extends StatelessWidget {
           Icon(Icons.people_outline, size: 64, color: AppColors.textMuted),
           const SizedBox(height: 16),
           Text(
-            'No students found',
+            'Không tìm thấy học sinh nào',
             style: TextStyle(color: AppColors.textSecondary),
           ),
         ],

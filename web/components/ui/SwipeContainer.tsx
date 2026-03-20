@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React, { useRef, useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useRef, useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface SwipeContainerProps {
   children: React.ReactNode;
@@ -40,36 +40,37 @@ export function SwipeContainer({
     checkScrollability();
     const container = containerRef.current;
     if (container) {
-      container.addEventListener("scroll", checkScrollability);
-      window.addEventListener("resize", checkScrollability);
+      container.addEventListener('scroll', checkScrollability);
+      window.addEventListener('resize', checkScrollability);
     }
     return () => {
       if (container) {
-        container.removeEventListener("scroll", checkScrollability);
+        container.removeEventListener('scroll', checkScrollability);
       }
-      window.removeEventListener("resize", checkScrollability);
+      window.removeEventListener('resize', checkScrollability);
     };
   }, []);
 
-  const scrollTo = (direction: "left" | "right") => {
+  const scrollTo = (direction: 'left' | 'right') => {
     if (containerRef.current) {
       const scrollAmount = containerRef.current.clientWidth * 0.8;
       containerRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
       });
     }
   };
 
   // Touch gesture handlers
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX);
+    setTouchStart(e.touches[0]?.clientX ?? null);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStart === null) return;
-    
-    const touchEnd = e.changedTouches[0].clientX;
+
+    const touchEnd = e.changedTouches[0]?.clientX;
+    if (touchEnd === undefined) return;
     const diff = touchStart - touchEnd;
     const threshold = 50; // Minimum swipe distance
 
@@ -88,13 +89,13 @@ export function SwipeContainer({
       {/* Left Arrow */}
       {showArrows && canScrollLeft && (
         <button
-          onClick={() => scrollTo("left")}
+          onClick={() => scrollTo('left')}
           className={cn(
-            "absolute left-0 top-1/2 -translate-y-1/2 z-10",
-            "w-10 h-10 rounded-full glass-premium",
-            "flex items-center justify-center",
-            "opacity-0 group-hover:opacity-100 transition-opacity",
-            "hide-mobile"
+            'absolute left-0 top-1/2 -translate-y-1/2 z-10',
+            'w-10 h-10 rounded-full glass-premium',
+            'flex items-center justify-center',
+            'opacity-0 group-hover:opacity-100 transition-opacity',
+            'hide-mobile'
           )}
           aria-label="Scroll left"
         >
@@ -107,10 +108,7 @@ export function SwipeContainer({
         ref={containerRef}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className={cn(
-          "swipe-container flex gap-4",
-          className
-        )}
+        className={cn('swipe-container flex gap-4', className)}
       >
         {children}
       </div>
@@ -118,13 +116,13 @@ export function SwipeContainer({
       {/* Right Arrow */}
       {showArrows && canScrollRight && (
         <button
-          onClick={() => scrollTo("right")}
+          onClick={() => scrollTo('right')}
           className={cn(
-            "absolute right-0 top-1/2 -translate-y-1/2 z-10",
-            "w-10 h-10 rounded-full glass-premium",
-            "flex items-center justify-center",
-            "opacity-0 group-hover:opacity-100 transition-opacity",
-            "hide-mobile"
+            'absolute right-0 top-1/2 -translate-y-1/2 z-10',
+            'w-10 h-10 rounded-full glass-premium',
+            'flex items-center justify-center',
+            'opacity-0 group-hover:opacity-100 transition-opacity',
+            'hide-mobile'
           )}
           aria-label="Scroll right"
         >
@@ -145,22 +143,18 @@ interface SwipeViewProps {
 /**
  * Swipeable view controller for mobile page/tab navigation
  */
-export function SwipeView({
-  children,
-  currentIndex,
-  onIndexChange,
-  className,
-}: SwipeViewProps) {
+export function SwipeView({ children, currentIndex, onIndexChange, className }: SwipeViewProps) {
   const [touchStart, setTouchStart] = useState<number | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX);
+    setTouchStart(e.touches[0]?.clientX ?? null);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStart === null) return;
-    
-    const touchEnd = e.changedTouches[0].clientX;
+
+    const touchEnd = e.changedTouches[0]?.clientX;
+    if (touchEnd === undefined) return;
     const diff = touchStart - touchEnd;
     const threshold = 80;
 
@@ -176,7 +170,7 @@ export function SwipeView({
     <div
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className={cn("overflow-hidden", className)}
+      className={cn('overflow-hidden', className)}
     >
       <div
         className="flex transition-transform duration-300 ease-out"

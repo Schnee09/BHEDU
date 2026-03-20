@@ -8,6 +8,7 @@ import '../../core/constants/app_constants.dart';
 import '../../data/models/class_model.dart';
 import '../../data/repositories/classes_repository.dart';
 import '../../shared/providers/auth_provider.dart';
+import 'class_detail_screen.dart';
 
 /// Classes repository provider
 final classesRepositoryProvider = Provider<ClassesRepository>((ref) {
@@ -90,7 +91,12 @@ class _ClassCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to class detail
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ClassDetailScreen(classId: classModel.id),
+            ),
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
