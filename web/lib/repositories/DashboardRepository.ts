@@ -21,7 +21,7 @@ export interface ActivityLog {
   metadata: any;
   created_at: string;
   full_name: string | null;
-  avatar_url: string | null;
+  photo_url: string | null;
 }
 
 export class DashboardRepository extends BaseRepository<any, any, any> {
@@ -153,7 +153,7 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
         entity_id,
         metadata,
         created_at,
-        profiles (full_name, avatar_url)
+        profiles (full_name, photo_url)
       `,
         { count: 'exact' }
       )
@@ -185,7 +185,7 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
     const items = (data || []).map((item: any) => ({
       ...item,
       full_name: item.profiles?.full_name || null,
-      avatar_url: item.profiles?.avatar_url || null,
+      photo_url: item.profiles?.photo_url || null,
     }));
 
     return { items, total: count || 0 };

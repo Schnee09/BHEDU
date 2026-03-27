@@ -1,14 +1,13 @@
-
-import { z } from "zod";
-import { 
-  userRoleSchema, 
-  uuidSchema, 
-  timestampSchema, 
+import { z } from 'zod';
+import {
+  userRoleSchema,
+  uuidSchema,
+  timestampSchema,
   emailSchema,
-  phoneSchema, 
-  notesSchema, 
-  booleanStringSchema 
-} from "../common";
+  phoneSchema,
+  notesSchema,
+  booleanStringSchema,
+} from '../common';
 
 /**
  * User response schema (maps to profiles table)
@@ -23,21 +22,21 @@ export const userSchema = z.object({
   phone: phoneSchema.optional().nullable(),
   address: z.string().optional().nullable(),
   date_of_birth: z.string().nullable().optional(),
-  avatar_url: z.string().url().nullable().optional(),
-  
+  photo_url: z.string().url().nullable().optional(),
+
   // Status flags
   is_active: z.boolean(),
   is_managed: z.boolean().default(false),
-  status: z.enum(["active", "inactive", "suspended"]).optional(),
-  
+  status: z.enum(['active', 'inactive', 'suspended']).optional(),
+
   // Academic info
   student_code: z.string().nullable().optional(),
   grade_level: z.string().nullable().optional(),
   department: z.string().nullable().optional(),
-  teacher_type: z.enum(["full_time", "part_time", "tutor"]).nullable().optional(),
+  teacher_type: z.enum(['full_time', 'part_time', 'tutor']).nullable().optional(),
   specialization: z.string().nullable().optional(),
   hourly_rate: z.number().nullable().optional(),
-  
+
   notes: notesSchema,
   created_at: timestampSchema,
   updated_at: timestampSchema,

@@ -12,9 +12,11 @@ interface GradeDistributionRow {
 export const GET = createGetHandler({ requireAuth: true }, async ({ user }) => {
   const supabase = createServiceClient();
 
-  const { data, error } = await supabase.rpc('get_grade_distribution', {
-    p_teacher_id: user.id,
-  });
+  // Determine if we should filter by teacher
+  const isStaff = user.role === 'super_admin' || user.role === 'admin' || user.role === 'staff';
+  const rpcParams = isStaff ? {} : { p_teacher_id: user.id };
+
+  const { data, error } = await supabase.rpc('get_grade_distribution', rpcParams);
 
   if (error) {
     console.error('Error fetching grade distribution:', error);

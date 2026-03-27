@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     let { data: profile, error } = await serviceSupabase
       .from('profiles')
       .select(
-        'id, user_id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, personal_email'
+        'id, user_id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, personal_email, photo_url'
       )
       .eq('user_id', user.id)
       .maybeSingle();
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       const result = await serviceSupabase
         .from('profiles')
         .select(
-          'id, user_id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, personal_email'
+          'id, user_id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, personal_email, photo_url'
         )
         .eq('id', user.id)
         .maybeSingle();
@@ -88,8 +88,16 @@ export async function PATCH(request: Request) {
 
     // 2. Parse body
     const body = await request.json();
-    const { full_name, first_name, last_name, phone, address, date_of_birth, personal_email } =
-      body;
+    const {
+      full_name,
+      first_name,
+      last_name,
+      phone,
+      address,
+      date_of_birth,
+      personal_email,
+      photo_url,
+    } = body;
 
     if (!full_name || typeof full_name !== 'string' || full_name.trim().length === 0) {
       return NextResponse.json({ error: 'Họ và tên không được để trống' }, { status: 400 });
@@ -104,6 +112,7 @@ export async function PATCH(request: Request) {
       address: address?.trim() || null,
       date_of_birth: date_of_birth || null,
       personal_email: personal_email?.trim() || null,
+      photo_url: photo_url || null,
       updated_at: new Date().toISOString(),
     };
 
@@ -115,7 +124,9 @@ export async function PATCH(request: Request) {
       .from('profiles')
       .update(updatePayload)
       .eq('user_id', user.id)
-      .select('id, full_name, first_name, last_name, phone, address, date_of_birth, personal_email')
+      .select(
+        'id, full_name, first_name, last_name, phone, address, date_of_birth, personal_email, photo_url'
+      )
       .maybeSingle();
 
     if (!updated && !error) {
@@ -125,7 +136,7 @@ export async function PATCH(request: Request) {
         .update(updatePayload)
         .eq('id', user.id)
         .select(
-          'id, full_name, first_name, last_name, phone, address, date_of_birth, personal_email'
+          'id, full_name, first_name, last_name, phone, address, date_of_birth, personal_email, photo_url'
         )
         .maybeSingle();
       updated = result.data;

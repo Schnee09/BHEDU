@@ -11,7 +11,7 @@ export type Profile = {
   first_name: string | null;
   last_name: string | null;
   role: UserRole;
-  avatar_url?: string | null;
+  photo_url?: string | null;
   email?: string | null;
   phone?: string | null;
   address?: string | null;

@@ -5,10 +5,10 @@
  * Eliminates duplicate user fetching code
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { logger } from "@/lib/logger";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { logger } from '@/lib/logger';
 
-import { UserRole } from "@/lib/role-utils";
+import { UserRole } from '@/lib/role-utils';
 
 export interface User {
   id: string;
@@ -16,7 +16,7 @@ export interface User {
   full_name: string;
   role: UserRole;
   is_active: boolean;
-  avatar_url?: string;
+  photo_url?: string;
   phone?: string;
   department?: string;
   student_id?: string;
@@ -65,21 +65,19 @@ export function useUser(): UseUserResult {
 
       // This would need to be adapted for client-side
       // For now, we'll use a client-side approach
-      const response = await fetch("/api/auth/me");
+      const response = await fetch('/api/auth/me');
       const data = await response.json();
 
       if (data.success && data.user) {
         setUser(data.user);
-        logger.info("User fetched", { userId: data.user.id });
+        logger.info('User fetched', { userId: data.user.id });
       } else {
-        throw new Error(data.error || "Failed to fetch user");
+        throw new Error(data.error || 'Failed to fetch user');
       }
     } catch (err) {
-      const errorMsg = err instanceof Error
-        ? err.message
-        : "Failed to fetch user";
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch user';
       setError(errorMsg);
-      logger.error("Error fetching user", new Error(errorMsg));
+      logger.error('Error fetching user', new Error(errorMsg));
       setUser(null);
     } finally {
       setLoading(false);
@@ -94,12 +92,12 @@ export function useUser(): UseUserResult {
     }
   }, [fetchUser]);
 
-  const isSuperAdmin = user?.role === "super_admin";
-  const isOwner = user?.role === "owner";
-  const isAdmin = user?.role === "admin";
-  const isStaff = user?.role === "staff";
-  const isTeacher = user?.role === "teacher";
-  const isStudent = user?.role === "student";
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isOwner = user?.role === 'owner';
+  const isAdmin = user?.role === 'admin';
+  const isStaff = user?.role === 'staff';
+  const isTeacher = user?.role === 'teacher';
+  const isStudent = user?.role === 'student';
   const hasAdminAccess = isSuperAdmin || isOwner || isAdmin || isStaff;
   /** Returns true if user can perform teacher functions (admin, staff, teacher, or higher) */
   const hasTeacherCapabilities = hasAdminAccess || isTeacher;

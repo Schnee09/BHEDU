@@ -6,15 +6,15 @@ Complete guide to using custom hooks in BH-EDU for cleaner, more maintainable co
 
 ## 📚 Available Hooks
 
-| Hook | Purpose | Status |
-|------|---------|--------|
-| `useFetch` | Data fetching with loading states | ✅ Ready |
-| `useMutation` | POST/PUT/DELETE requests | ✅ Ready |
-| `useForm` | Form state management | ✅ Ready |
-| `usePagination` | Pagination logic | ✅ Ready |
-| `useDebounce` | Debounce values (search) | ✅ Ready |
-| `useToast` | Toast notifications | ✅ Ready |
-| `useUser` | Current user state | ✅ Ready |
+| Hook            | Purpose                           | Status   |
+| --------------- | --------------------------------- | -------- |
+| `useFetch`      | Data fetching with loading states | ✅ Ready |
+| `useMutation`   | POST/PUT/DELETE requests          | ✅ Ready |
+| `useForm`       | Form state management             | ✅ Ready |
+| `usePagination` | Pagination logic                  | ✅ Ready |
+| `useDebounce`   | Debounce values (search)          | ✅ Ready |
+| `useToast`      | Toast notifications               | ✅ Ready |
+| `useUser`       | Current user state                | ✅ Ready |
 
 ---
 
@@ -46,7 +46,7 @@ function UsersList() {
 
 ```typescript
 const { data, loading } = useFetch('/api/students', {
-  immediate: true,  // Fetch on mount (default: true)
+  immediate: true, // Fetch on mount (default: true)
   onSuccess: (data) => {
     toast.success(`Loaded ${data.length} students`);
   },
@@ -156,19 +156,19 @@ function LoginForm() {
 ### Form Methods
 
 ```typescript
-form.values           // Current form values
-form.errors           // Validation errors
-form.touched          // Fields that have been touched
-form.isSubmitting     // Is form being submitted?
-form.isDirty          // Has form been modified?
+form.values; // Current form values
+form.errors; // Validation errors
+form.touched; // Fields that have been touched
+form.isSubmitting; // Is form being submitted?
+form.isDirty; // Has form been modified?
 
-form.handleChange     // Handle input changes
-form.handleBlur       // Handle field blur (validation)
-form.handleSubmit     // Submit form
-form.setFieldValue    // Set specific field value
-form.setFieldError    // Set specific field error
-form.reset()          // Reset to initial values
-form.resetForm(newValues) // Reset with new values
+form.handleChange; // Handle input changes
+form.handleBlur; // Handle field blur (validation)
+form.handleSubmit; // Submit form
+form.setFieldValue; // Set specific field value
+form.setFieldError; // Set specific field error
+form.reset(); // Reset to initial values
+form.resetForm(newValues); // Reset with new values
 ```
 
 ---
@@ -204,19 +204,19 @@ function StudentsList() {
   return (
     <div>
       {/* Your content */}
-      
+
       <div className="pagination">
-        <button 
-          onClick={pagination.prevPage} 
+        <button
+          onClick={pagination.prevPage}
           disabled={!pagination.hasPrevPage}
         >
           Previous
         </button>
-        
+
         <span>Page {pagination.page} of {pagination.totalPages}</span>
-        
-        <button 
-          onClick={pagination.nextPage} 
+
+        <button
+          onClick={pagination.nextPage}
           disabled={!pagination.hasNextPage}
         >
           Next
@@ -230,20 +230,20 @@ function StudentsList() {
 ### Pagination Methods
 
 ```typescript
-pagination.page           // Current page number
-pagination.limit          // Items per page
-pagination.offset         // Offset for SQL queries
-pagination.totalPages     // Total number of pages
-pagination.hasNextPage    // Can go to next page?
-pagination.hasPrevPage    // Can go to previous page?
+pagination.page; // Current page number
+pagination.limit; // Items per page
+pagination.offset; // Offset for SQL queries
+pagination.totalPages; // Total number of pages
+pagination.hasNextPage; // Can go to next page?
+pagination.hasPrevPage; // Can go to previous page?
 
-pagination.nextPage()     // Go to next page
-pagination.prevPage()     // Go to previous page
-pagination.goToFirstPage() // Jump to first page
-pagination.goToLastPage()  // Jump to last page
-pagination.setPage(5)     // Go to specific page
-pagination.setLimit(50)   // Change items per page
-pagination.reset()        // Reset pagination
+pagination.nextPage(); // Go to next page
+pagination.prevPage(); // Go to previous page
+pagination.goToFirstPage(); // Jump to first page
+pagination.goToLastPage(); // Jump to last page
+pagination.setPage(5); // Go to specific page
+pagination.setLimit(50); // Change items per page
+pagination.reset(); // Reset pagination
 ```
 
 ---
@@ -310,7 +310,7 @@ function MyApp() {
   return (
     <>
       <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
-      
+
       <button onClick={() => toast.success('Saved!', 'Your changes were saved')}>
         Save
       </button>
@@ -369,7 +369,7 @@ function Dashboard() {
   return (
     <div>
       <h1>Welcome, {user.full_name}!</h1>
-      
+
       {isAdmin && <AdminPanel />}
       {isTeacher && <TeacherPanel />}
       {isStudent && <StudentPanel />}
@@ -381,16 +381,16 @@ function Dashboard() {
 ### User Properties
 
 ```typescript
-user.id           // User ID
-user.email        // User email
-user.full_name    // Full name
-user.role         // 'admin' | 'teacher' | 'student'
-user.is_active    // Active status
-user.avatar_url   // Profile picture
-user.phone        // Phone number
-user.department   // Department (teachers)
-user.student_id   // Student ID (students)
-user.grade_level  // Grade level (students)
+user.id; // User ID
+user.email; // User email
+user.full_name; // Full name
+user.role; // 'admin' | 'teacher' | 'student'
+user.is_active; // Active status
+user.photo_url; // Profile picture
+user.phone; // Phone number
+user.department; // Department (teachers)
+user.student_id; // Student ID (students)
+user.grade_level; // Grade level (students)
 ```
 
 ---
@@ -403,25 +403,25 @@ Here's how to use multiple hooks together:
 "use client"
 
 import { useEffect } from 'react';
-import { 
-  useFetch, 
-  useMutation, 
-  useForm, 
-  usePagination, 
-  useDebounce, 
+import {
+  useFetch,
+  useMutation,
+  useForm,
+  usePagination,
+  useDebounce,
   useToast,
-  useUser 
+  useUser
 } from '@/hooks';
 
 export default function StudentsPage() {
   const toast = useToast();
   const { user, isAdmin } = useUser();
   const pagination = usePagination({ initialPage: 1, initialLimit: 20 });
-  
+
   // Search with debounce
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 500);
-  
+
   // Fetch students
   const { data, loading, refetch } = useFetch(
     `/api/students?page=${pagination.page}&limit=${pagination.limit}&search=${debouncedSearch}`,
@@ -429,10 +429,10 @@ export default function StudentsPage() {
       onSuccess: (data) => pagination.setTotalItems(data.total),
     }
   );
-  
+
   // Create student mutation
   const { mutate: createStudent } = useMutation('/api/students', 'POST');
-  
+
   // Form for creating student
   const form = useForm({
     initialValues: { name: '', email: '' },
@@ -452,26 +452,26 @@ export default function StudentsPage() {
       }
     },
   });
-  
+
   return (
     <div>
       <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
-      
+
       {/* Search */}
-      <input 
-        value={search} 
-        onChange={(e) => setSearch(e.target.value)} 
-        placeholder="Search..." 
+      <input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search..."
       />
-      
+
       {/* Student list */}
       {loading ? <LoadingState /> : (
         <StudentTable data={data?.students} />
       )}
-      
+
       {/* Pagination */}
       <Pagination {...pagination} />
-      
+
       {/* Create form (admin only) */}
       {isAdmin && (
         <form onSubmit={form.handleSubmit}>
