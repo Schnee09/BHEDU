@@ -1,8 +1,8 @@
 import { apiSuccess, createGetHandler, serverError } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
 
-// Cache for 1 hour
-export const revalidate = 3600;
+// Disable static caching for authenticated route
+export const dynamic = 'force-dynamic';
 
 export const GET = createGetHandler({ requireAuth: true }, async ({ user }) => {
   const supabase = createServiceClient();

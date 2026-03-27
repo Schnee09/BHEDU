@@ -13,46 +13,39 @@ interface SkeletonProps {
   count?: number;
 }
 
-export const Skeleton: React.FC<SkeletonProps> = React.memo(({
-  className = '',
-  width,
-  height = '1rem',
-  circle = false,
-  count = 1,
-}) => {
-  const skeletons = Array.from({ length: count }, (_, i) => i);
+export const Skeleton: React.FC<SkeletonProps> = React.memo(
+  ({ className = '', width, height = '1rem', circle = false, count = 1 }) => {
+    const skeletons = Array.from({ length: count }, (_, i) => i);
 
-  const baseStyles = 'animate-pulse bg-gradient-to-r from-surface-secondary via-border to-surface-secondary dark:from-white/5 dark:via-white/10 dark:to-white/5 bg-[length:200%_100%]';
-  const shapeStyles = circle ? 'rounded-full' : 'rounded-lg';
+    const baseStyles =
+      'animate-[pulse_4s_cubic-bezier(0.4,0,0.6,1)_infinite] bg-stone-100 dark:bg-white/5';
+    const shapeStyles = circle ? 'rounded-full' : 'rounded-lg';
 
-  const style: React.CSSProperties = {
-    width: width || '100%',
-    height: height,
-  };
+    const style: React.CSSProperties = {
+      width: width || '100%',
+      height: height,
+    };
 
-  if (count === 1) {
-    return (
-      <div
-        className={`${baseStyles} ${shapeStyles} ${className}`}
-        style={style}
-        role="status"
-        aria-label="Loading..."
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-2" role="status" aria-label="Loading...">
-      {skeletons.map(i => (
+    if (count === 1) {
+      return (
         <div
-          key={i}
           className={`${baseStyles} ${shapeStyles} ${className}`}
           style={style}
+          role="status"
+          aria-label="Loading..."
         />
-      ))}
-    </div>
-  );
-});
+      );
+    }
+
+    return (
+      <div className="space-y-2" role="status" aria-label="Loading...">
+        {skeletons.map((i) => (
+          <div key={i} className={`${baseStyles} ${shapeStyles} ${className}`} style={style} />
+        ))}
+      </div>
+    );
+  }
+);
 Skeleton.displayName = 'Skeleton';
 
 // Specialized skeleton components for common patterns
@@ -73,40 +66,39 @@ export const SkeletonCard: React.FC = React.memo(() => {
 });
 SkeletonCard.displayName = 'SkeletonCard';
 
-export const SkeletonTable: React.FC<{ rows?: number; columns?: number }> = React.memo(({
-  rows = 5,
-  columns = 4,
-}) => {
-  const rowArray = Array.from({ length: rows }, (_, i) => i);
-  const colArray = Array.from({ length: columns }, (_, i) => i);
+export const SkeletonTable: React.FC<{ rows?: number; columns?: number }> = React.memo(
+  ({ rows = 5, columns = 4 }) => {
+    const rowArray = Array.from({ length: rows }, (_, i) => i);
+    const colArray = Array.from({ length: columns }, (_, i) => i);
 
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-stone-200">
-        <thead className="bg-stone-50">
-          <tr>
-            {colArray.map(i => (
-              <th key={i} className="px-6 py-3">
-                <Skeleton height="1rem" width="80%" />
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-stone-200">
-          {rowArray.map(rowIdx => (
-            <tr key={rowIdx}>
-              {colArray.map(colIdx => (
-                <td key={colIdx} className="px-6 py-4">
-                  <Skeleton height="1rem" width="90%" />
-                </td>
+    return (
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-stone-200">
+          <thead className="bg-stone-50">
+            <tr>
+              {colArray.map((i) => (
+                <th key={i} className="px-6 py-3">
+                  <Skeleton height="1rem" width="80%" />
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-});
+          </thead>
+          <tbody className="bg-white divide-y divide-stone-200">
+            {rowArray.map((rowIdx) => (
+              <tr key={rowIdx}>
+                {colArray.map((colIdx) => (
+                  <td key={colIdx} className="px-6 py-4">
+                    <Skeleton height="1rem" width="90%" />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+);
 SkeletonTable.displayName = 'SkeletonTable';
 
 export const SkeletonStatCard: React.FC = React.memo(() => {
@@ -126,8 +118,11 @@ export const SkeletonList: React.FC<{ items?: number }> = React.memo(({ items = 
 
   return (
     <div className="space-y-3">
-      {itemArray.map(i => (
-        <div key={i} className="flex items-center gap-4 p-4 bg-white rounded-xl border border-stone-200 hover:border-stone-300 transition-colors">
+      {itemArray.map((i) => (
+        <div
+          key={i}
+          className="flex items-center gap-4 p-4 bg-white rounded-xl border border-stone-200 hover:border-stone-300 transition-colors"
+        >
           <Skeleton circle width="3rem" height="3rem" />
           <div className="flex-1 space-y-2">
             <Skeleton height="1rem" width="40%" />

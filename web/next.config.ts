@@ -57,8 +57,10 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https:",
               "font-src 'self' data: https://fonts.gstatic.com",
               `connect-src 'self' https://vitals.vercel-insights.com https://va.vercel-scripts.com https://*.sentry.io ${
-                process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', 'wss://') || ''
-              } ${process.env.NEXT_PUBLIC_SUPABASE_URL || '*'}`,
+                process.env.NEXT_PUBLIC_SUPABASE_URL
+                  ? `${process.env.NEXT_PUBLIC_SUPABASE_URL.replace('https://', 'wss://')}/realtime/v1/* ${process.env.NEXT_PUBLIC_SUPABASE_URL}`
+                  : ''
+              }`.trim(),
               "frame-ancestors 'self'",
             ].join('; '),
           },

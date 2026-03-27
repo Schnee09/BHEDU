@@ -208,7 +208,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   const isSelected = selectedIndex === idx;
 
                   return (
-                    <React.Fragment key={idx}>
+                    <React.Fragment key={`${result.type}-${result.href}-${idx}`}>
                       {showHeader && (
                         <div className={cn('px-4 py-3', idx > 0 && 'mt-4')}>
                           <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em]">
@@ -261,7 +261,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             </p>
                           ) : (
                             <p className="text-[10px] font-bold text-stone-500 dark:text-stone-400 mt-0.5">
-                              Mô-đun hệ thống
+                              {appFeatures.find((f) => f.href === result.href)?.name ||
+                                'Mô-đun hệ thống'}
                             </p>
                           )}
                         </div>

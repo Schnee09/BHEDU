@@ -6,7 +6,7 @@
 -- 1. Grade Distribution RPC
 -- Groups students by their average grade into Vietnamese education bands:
 --   Giỏi (≥8), Khá (≥6.5), Trung bình (≥5), Yếu (<5)
-CREATE OR REPLACE FUNCTION get_grade_distribution()
+CREATE OR REPLACE FUNCTION get_grade_distribution(p_teacher_id UUID DEFAULT NULL)
 RETURNS TABLE (
     band TEXT,
     student_count BIGINT
@@ -23,7 +23,9 @@ BEGIN
             AVG(g.score) AS avg_score
         FROM grades g
         INNER JOIN profiles p ON p.id = g.student_id
+        INNER JOIN classes c ON c.id = g.class_id
         WHERE p.role = 'student'
+          AND (p_teacher_id IS NULL OR c.teacher_id = p_teacher_id)
         GROUP BY g.student_id
         HAVING COUNT(g.score) > 0
     )
@@ -46,7 +48,7 @@ $$;
 
 -- 2. Weekly Attendance RPC
 -- Returns attendance rates for each day of the current week (Mon-Sat)
-CREATE OR REPLACE FUNCTION get_weekly_attendance()
+CREATE OR REPLACE FUNCTION get_weekly_attendance(p_teacher_id UUID DEFAULT NULL)
 RETURNS TABLE (
     day_name TEXT,
     day_date DATE,
@@ -78,6 +80,8 @@ BEGIN
             COUNT(a.id) AS t_count
         FROM week_days wd
         LEFT JOIN attendance a ON a.date = wd.d
+        LEFT JOIN classes c ON c.id = a.class_id
+        WHERE (p_teacher_id IS NULL OR c.teacher_id = p_teacher_id)
         GROUP BY wd.d
     )
     SELECT

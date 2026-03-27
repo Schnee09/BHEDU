@@ -30,6 +30,7 @@ export async function GET(request: Request) {
       .maybeSingle();
 
     if (!profile && !error) {
+      // TODO: Remove legacy ID fallback once migration is fully verified
       logger.info('Profile not found by user_id, trying id fallback', { userId: user.id });
       const result = await serviceSupabase
         .from('profiles')

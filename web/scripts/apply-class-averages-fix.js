@@ -66,33 +66,11 @@ $$;
 async function apply() {
     console.log('Applying get_class_averages fix...');
 
-    // Use the Supabase SQL query endpoint
-    const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL
-        .replace('https://', '')
-        .replace('.supabase.co', '');
-
-    const res = await fetch(
-        `https://${projectRef}.supabase.co/rest/v1/rpc/exec_sql`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
-                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
-            },
-            body: JSON.stringify({ sql_string: sql })
-        }
-    );
-
-    if (!res.ok) {
-        console.log('exec_sql RPC not available (status:', res.status, ')');
-        console.log('Please run the SQL in the Supabase SQL Editor manually.');
-        console.log('File: supabase/migrations/20260304101900_fix_class_averages_scoping.sql');
-        console.log('');
-        console.log('Or use: npx supabase db push');
-    } else {
-        console.log('✅ Migration applied successfully!');
-    }
+    console.log('NOTE: Automatically running SQL via Supabase REST API is restricted.');
+    console.log('To apply the SQL function above, you must use the Supabase SQL Editor manually.');
+    console.log('File: supabase/migrations/20260303114651_global_optimization_dashboards.sql');
+    console.log('');
+    console.log('Or use the CLI: npx supabase db push');
 
     // Test the RPC
     console.log('\n--- Testing get_class_averages ---');

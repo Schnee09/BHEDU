@@ -86,6 +86,14 @@ const CHART_COLORS = {
   danger: '#ef4444',
 };
 
+const safeParseJson = async (r: Response) => {
+  try {
+    return await r.json();
+  } catch {
+    return { error: r.statusText || `HTTP ${r.status}` };
+  }
+};
+
 export default function GradeAnalyticsPage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('');
@@ -108,13 +116,6 @@ export default function GradeAnalyticsPage() {
   const loadClasses = async () => {
     try {
       const response = await apiFetch('/api/classes/my-classes');
-      const safeParseJson = async (r: Response) => {
-        try {
-          return await r.json();
-        } catch {
-          return { error: r.statusText || `HTTP ${r.status}` };
-        }
-      };
 
       if (!response.ok) {
         const err = await safeParseJson(response);
@@ -133,13 +134,6 @@ export default function GradeAnalyticsPage() {
     try {
       setLoading(true);
       const response = await apiFetch(`/api/grades/student-overview?classId=${selectedClass}`);
-      const safeParseJson = async (r: Response) => {
-        try {
-          return await r.json();
-        } catch {
-          return { error: r.statusText || `HTTP ${r.status}` };
-        }
-      };
 
       if (!response.ok) {
         const err = await safeParseJson(response);
@@ -410,13 +404,13 @@ export default function GradeAnalyticsPage() {
                   </div>
                 </div>
 
-                {/* Year-over-Year Trend Chart - Enhanced with Area + Line */}
+                {/* Snapshot Chart - Enhanced with Area + Line */}
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6 hover:shadow-xl transition-shadow duration-300">
                   <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                    📈 Xu Hướng Điểm Theo Năm
+                    📈 Tổng Quan Học Kỳ Hiện Tại
                   </h2>
                   <p className="text-sm text-gray-500 mb-4">
-                    So sánh điểm trung bình qua các năm học
+                    Thống kê điểm trung bình, cao nhất và thấp nhất
                   </p>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">

@@ -26,6 +26,16 @@ interface Notification {
   created_at: string;
 }
 
+function getRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return 'Vừa xong';
+  if (mins < 60) return `${mins} phút trước`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} giờ trước`;
+  return new Date(dateStr).toLocaleDateString('vi-VN');
+}
+
 interface NotificationsPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -183,7 +193,7 @@ export function NotificationsPanel({
                           {notif.title}
                         </p>
                         <span className="text-[9px] font-bold text-stone-400 absolute right-4 top-4">
-                          {new Date(notif.created_at).toLocaleDateString('vi-VN')}
+                          {getRelativeTime(notif.created_at)}
                         </span>
                       </div>
                       <p

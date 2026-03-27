@@ -2,7 +2,7 @@ require('dotenv').config({ path: '.env.local' });
 const { Client } = require('pg');
 
 async function run() {
-    const connectionString = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+    const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
     const client = new Client({ connectionString });
 
     try {

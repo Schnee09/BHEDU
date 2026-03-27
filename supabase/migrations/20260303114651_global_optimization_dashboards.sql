@@ -102,8 +102,8 @@ BEGIN
         FROM classes c
         LEFT JOIN profiles t ON t.id = c.teacher_id
         LEFT JOIN enrollments e ON e.class_id = c.id
-        LEFT JOIN grades g ON g.student_id = e.student_id
-        LEFT JOIN attendance a ON a.student_id = e.student_id
+        LEFT JOIN grades g ON g.student_id = e.student_id AND g.class_id = c.id
+        LEFT JOIN attendance a ON a.student_id = e.student_id AND a.class_id = c.id
         GROUP BY c.id, c.name, t.full_name
     )
     SELECT 
@@ -140,13 +140,14 @@ BEGIN
         (SELECT COUNT(*) FROM profiles WHERE role = 'student') AS total_students,
         (SELECT COUNT(*) FROM profiles WHERE role = 'teacher') AS total_teachers,
         (SELECT COUNT(*) FROM classes) AS total_classes,
-        COALESCE(ROUND(AVG(score)::numeric, 2), 0) AS average_gpa,
-        COALESCE(ROUND((SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END)::numeric / NULLIF(COUNT(id), 0) * 100)::numeric, 1), 0) AS attendance_rate,
-        COALESCE(ROUND((SUM(CASE WHEN score >= 5.0 THEN 1 ELSE 0 END)::numeric / NULLIF(COUNT(score), 0) * 100)::numeric, 1), 0) AS pass_rate
-    FROM (
-        SELECT score, NULL AS status, NULL AS id FROM grades
-        UNION ALL
-        SELECT NULL, status, id FROM attendance
-    ) combined_stats;
+        COALESCE(ROUND((SELECT AVG(score) FROM grades)::numeric, 2), 0) AS average_gpa,
+        COALESCE(ROUND((
+            (SELECT COUNT(*) FROM attendance WHERE status = 'present')::numeric / 
+            NULLIF((SELECT COUNT(*) FROM attendance), 0) * 100
+        )::numeric, 1), 0) AS attendance_rate,
+        COALESCE(ROUND((
+            (SELECT COUNT(*) FROM grades WHERE score >= 5.0)::numeric / 
+            NULLIF((SELECT COUNT(*) FROM grades), 0) * 100
+        )::numeric, 1), 0) AS pass_rate;
 END;
 $$;

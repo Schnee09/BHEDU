@@ -51,10 +51,16 @@ export function SystemStatusWidget() {
     }
   }, []);
 
-  // Initial fetch + 30-second polling
+  // Initial fetch + 30-second polling (respects visibility)
   useEffect(() => {
     fetchHealth();
-    const interval = setInterval(() => fetchHealth(), 30_000);
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchHealth();
+      }
+    }, 30_000);
+
     return () => clearInterval(interval);
   }, [fetchHealth]);
 

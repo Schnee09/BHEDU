@@ -122,35 +122,33 @@ export async function GET(request: Request) {
       });
 
       // Calculate averages per subject (10-point scale → percentage)
-      const category_grades = Object.entries(subjectGrades)
-        .map(([subId, data]) => {
-          const avgScore =
-            data.scores.length > 0
-              ? data.scores.reduce((sum, s) => sum + s, 0) / data.scores.length
-              : 0;
+      const category_grades = Object.entries(subjectGrades).map(([subId, data]) => {
+        const avgScore =
+          data.scores.length > 0
+            ? data.scores.reduce((sum, s) => sum + s, 0) / data.scores.length
+            : 0;
 
-          // 10-point scale: multiply by 10 for percentage
-          const percentage = avgScore * 10;
+        // 10-point scale: multiply by 10 for percentage
+        const percentage = avgScore * 10;
 
-          return {
-            category_id: subId,
-            category_name: data.name,
-            percentage: Math.round(percentage * 10) / 10,
-            letter_grade:
-              percentage >= 80
-                ? 'A'
-                : percentage >= 65
-                  ? 'B'
-                  : percentage >= 50
-                    ? 'C'
-                    : percentage >= 35
-                      ? 'D'
-                      : 'F',
-            points_earned: Math.round(avgScore * 10) / 10,
-            total_points: 10,
-          };
-        })
-        .filter((c) => c.points_earned > 0); // Only include subjects with grades
+        return {
+          category_id: subId,
+          category_name: data.name,
+          percentage: Math.round(percentage * 10) / 10,
+          letter_grade:
+            percentage >= 80
+              ? 'A'
+              : percentage >= 65
+                ? 'B'
+                : percentage >= 50
+                  ? 'C'
+                  : percentage >= 35
+                    ? 'D'
+                    : 'F',
+          points_earned: Math.round(avgScore * 10) / 10,
+          total_points: 10,
+        };
+      });
 
       // Overall: average of all subject percentages
       const overall_percentage =

@@ -46,10 +46,13 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
   const { notifications, unreadCount, markAllAsRead, markAsRead, deleteNotification } =
     useNotifications(profile?.id);
 
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
+  const [openPanel, setOpenPanel] = useState<
+    'notifications' | 'quickActions' | 'userMenu' | 'search' | null
+  >(null);
+  const showNotifications = openPanel === 'notifications';
+  const showQuickActions = openPanel === 'quickActions';
+  const showUserMenu = openPanel === 'userMenu';
+  const showSearch = openPanel === 'search';
 
   // Dynamic Portal Title & Greetings
   const portalTitle = useMemo(() => {
@@ -64,14 +67,11 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setShowSearch(false);
-        setShowNotifications(false);
-        setShowQuickActions(false);
-        setShowUserMenu(false);
+        setOpenPanel(null);
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        setShowSearch((prev) => !prev);
+        setOpenPanel((prev) => (prev === 'search' ? null : 'search'));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -83,11 +83,7 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
     router.push('/login');
   };
 
-  const getInitials = () => {
-    if (profile?.email?.startsWith('bulktest') || profile?.full_name === 'Bulk Test') {
-      return 'BU';
-    }
-
+  const initials = useMemo(() => {
     if (profile?.last_name && profile?.first_name) {
       // Vietnamese initials: Surname[0] + GivenName[0]
       return `${profile.last_name[0]}${profile.first_name[0]}`.toUpperCase();
@@ -104,42 +100,46 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
       return profile.full_name.substring(0, 2).toUpperCase();
     }
     return 'U';
-  };
+  }, [profile]);
 
-  const quickActions = [
-    { label: 'Điểm danh', icon: CheckIcon, href: routes.attendance.list(), show: true },
-    { label: 'Điểm của tôi', icon: ChartBarIcon, href: routes.grades.list(), show: isStudent },
-    {
-      label: 'Thêm học sinh',
-      icon: UserPlusIcon,
-      href: `${routes.students.list()}?action=add`,
-      show: can('students.create'),
-    },
-    {
-      label: 'Tạo bài tập',
-      icon: ClipboardDocumentListIcon,
-      href: `${routes.grades.assignments()}?action=add`,
-      show: can('grades.entry'),
-    },
-    {
-      label: 'Xem phân tích',
-      icon: ChartBarIcon,
-      href: routes.grades.analytics(),
-      show: can('reports.view'),
-    },
-    {
-      label: 'Nhập học sinh',
-      icon: ArrowDownTrayIcon,
-      href: routes.students.import(),
-      show: can('users.bulk_import'),
-    },
-    {
-      label: 'Kết nối con em',
-      icon: UserPlusIcon,
-      href: routes.parent.linkStudent(),
-      show: isParent,
-    },
-  ].filter((action) => action.show);
+  const quickActions = useMemo(
+    () =>
+      [
+        { label: 'Điểm danh', icon: CheckIcon, href: routes.attendance.list(), show: true },
+        { label: 'Điểm của tôi', icon: ChartBarIcon, href: routes.grades.list(), show: isStudent },
+        {
+          label: 'Thêm học sinh',
+          icon: UserPlusIcon,
+          href: `${routes.students.list()}?action=add`,
+          show: can('students.create'),
+        },
+        {
+          label: 'Tạo bài tập',
+          icon: ClipboardDocumentListIcon,
+          href: `${routes.grades.assignments()}?action=add`,
+          show: can('grades.entry'),
+        },
+        {
+          label: 'Xem phân tích',
+          icon: ChartBarIcon,
+          href: routes.grades.analytics(),
+          show: can('reports.view'),
+        },
+        {
+          label: 'Nhập học sinh',
+          icon: ArrowDownTrayIcon,
+          href: routes.students.import(),
+          show: can('users.bulk_import'),
+        },
+        {
+          label: 'Kết nối con em',
+          icon: UserPlusIcon,
+          href: routes.parent.linkStudent(),
+          show: isParent,
+        },
+      ].filter((action) => action.show),
+    [isStudent, can, isParent]
+  );
 
   return (
     <header className="sticky top-0 h-16 z-[100] overflow-visible shrink-0">
@@ -182,7 +182,7 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
         <div className="hidden lg:flex flex-1 justify-center px-8">
           <div className="relative group w-full max-w-[520px]">
             <button
-              onClick={() => setShowSearch(true)}
+              onClick={() => setOpenPanel('search')}
               className="flex items-center gap-4 px-6 h-12 w-full rounded-2xl transition-all duration-300 cursor-pointer relative overflow-hidden
               bg-stone-50/50 dark:bg-white/5 border border-stone-200/50 dark:border-white/5
               hover:border-amber-500/40 hover:bg-white dark:hover:bg-white/10 hover:shadow-md hover:scale-[1.01]
@@ -203,7 +203,7 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
 
         <div className="flex items-center justify-end gap-3 md:gap-4 flex-1 min-w-0">
           <button
-            onClick={() => setShowSearch(true)}
+            onClick={() => setOpenPanel('search')}
             className="lg:hidden p-3 rounded-full bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-300 active:scale-95 hover:scale-105 transition-all border border-transparent hover:border-amber-500/20"
           >
             <MagnifyingGlassIcon className="w-5 h-5" strokeWidth={2.5} />
@@ -211,14 +211,14 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
 
           <QuickActions
             isOpen={showQuickActions}
-            onToggle={() => setShowQuickActions(!showQuickActions)}
-            onClose={() => setShowQuickActions(false)}
+            onToggle={() => setOpenPanel(openPanel === 'quickActions' ? null : 'quickActions')}
+            onClose={() => setOpenPanel(null)}
             actions={quickActions}
           />
 
           <div className="relative group">
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={() => setOpenPanel(openPanel === 'notifications' ? null : 'notifications')}
               className={cn(
                 'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer relative border',
                 showNotifications
@@ -241,7 +241,7 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
 
             <NotificationsPanel
               isOpen={showNotifications}
-              onClose={() => setShowNotifications(false)}
+              onClose={() => setOpenPanel(null)}
               notifications={notifications}
               unreadCount={unreadCount}
               markAllAsRead={markAllAsRead}
@@ -258,15 +258,15 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
 
           <UserMenu
             isOpen={showUserMenu}
-            onToggle={() => setShowUserMenu(!showUserMenu)}
-            onClose={() => setShowUserMenu(false)}
+            onToggle={() => setOpenPanel(openPanel === 'userMenu' ? null : 'userMenu')}
+            onClose={() => setOpenPanel(null)}
             onLogout={handleLogout}
             profile={profile}
-            initials={getInitials()}
+            initials={initials}
           />
         </div>
 
-        <SearchModal isOpen={showSearch} onClose={() => setShowSearch(false)} />
+        <SearchModal isOpen={showSearch} onClose={() => setOpenPanel(null)} />
       </div>
     </header>
   );

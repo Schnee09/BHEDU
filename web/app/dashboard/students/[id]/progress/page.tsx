@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api/client';
 import { routes } from '@/lib/routes';
@@ -72,18 +72,16 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
   const router = useRouter();
   const [progress, setProgress] = useState<StudentProgress | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedYear] = useState<string>('all');
 
   useEffect(() => {
     fetchProgress();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolvedParams.id, selectedYear]);
+  }, [resolvedParams.id]);
 
   const fetchProgress = async () => {
     try {
       setLoading(true);
-      const yearParam = selectedYear !== 'all' ? `?academic_year=${selectedYear}` : '';
-      const res = await apiFetch(`/api/v2/students/${resolvedParams.id}/progress${yearParam}`);
+      const res = await apiFetch(`/api/v2/students/${resolvedParams.id}/progress`);
       const data = await res.json();
 
       if (data.success) {
@@ -121,6 +119,25 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
       percentage: ((Math.abs(trend) / firstGpa) * 100).toFixed(1),
     };
   };
+
+  const pieChartData = useMemo(() => {
+    if (!progress || progress.semesters.length === 0) return [];
+    const subjects = progress.semesters[progress.semesters.length - 1]?.subjects || [];
+    const gioi = subjects.filter((s) => (s.final_grade || 0) >= 8).length;
+    const kha = subjects.filter(
+      (s) => (s.final_grade || 0) >= 6.5 && (s.final_grade || 0) < 8
+    ).length;
+    const tb = subjects.filter(
+      (s) => (s.final_grade || 0) >= 5 && (s.final_grade || 0) < 6.5
+    ).length;
+    const yeu = subjects.filter((s) => (s.final_grade || 0) > 0 && (s.final_grade || 0) < 5).length;
+    return [
+      { name: 'Giỏi (≥8)', value: gioi, fill: 'url(#pieGreenGrad)' },
+      { name: 'Khá (6.5-8)', value: kha, fill: 'url(#pieBlueGrad)' },
+      { name: 'TB (5-6.5)', value: tb, fill: 'url(#pieYellowGrad)' },
+      { name: 'Yếu (<5)', value: yeu, fill: 'url(#pieRedGrad)' },
+    ].filter((d) => d.value > 0);
+  }, [progress]);
 
   if (loading) {
     return (
@@ -667,26 +684,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                     </linearGradient>
                   </defs>
                   <Pie
-                    data={(() => {
-                      const subjects =
-                        progress.semesters[progress.semesters.length - 1]?.subjects || [];
-                      const gioi = subjects.filter((s) => (s.final_grade || 0) >= 8).length;
-                      const kha = subjects.filter(
-                        (s) => (s.final_grade || 0) >= 6.5 && (s.final_grade || 0) < 8
-                      ).length;
-                      const tb = subjects.filter(
-                        (s) => (s.final_grade || 0) >= 5 && (s.final_grade || 0) < 6.5
-                      ).length;
-                      const yeu = subjects.filter(
-                        (s) => (s.final_grade || 0) > 0 && (s.final_grade || 0) < 5
-                      ).length;
-                      return [
-                        { name: 'Giỏi (≥8)', value: gioi, fill: 'url(#pieGreenGrad)' },
-                        { name: 'Khá (6.5-8)', value: kha, fill: 'url(#pieBlueGrad)' },
-                        { name: 'TB (5-6.5)', value: tb, fill: 'url(#pieYellowGrad)' },
-                        { name: 'Yếu (<5)', value: yeu, fill: 'url(#pieRedGrad)' },
-                      ].filter((d) => d.value > 0);
-                    })()}
+                    data={pieChartData}
                     cx="50%"
                     cy="50%"
                     innerRadius={70}
@@ -697,25 +695,9 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                     animationDuration={1200}
                     animationEasing="ease-out"
                   >
-                    {(() => {
-                      const subjects =
-                        progress.semesters[progress.semesters.length - 1]?.subjects || [];
-                      const gioi = subjects.filter((s) => (s.final_grade || 0) >= 8).length;
-                      const kha = subjects.filter(
-                        (s) => (s.final_grade || 0) >= 6.5 && (s.final_grade || 0) < 8
-                      ).length;
-                      const tb = subjects.filter(
-                        (s) => (s.final_grade || 0) >= 5 && (s.final_grade || 0) < 6.5
-                      ).length;
-                      const yeu = subjects.filter(
-                        (s) => (s.final_grade || 0) > 0 && (s.final_grade || 0) < 5
-                      ).length;
-                      const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
-                      return [gioi, kha, tb, yeu]
-                        .map((val, idx) => ({ val, idx }))
-                        .filter((d) => d.val > 0)
-                        .map((d) => <Cell key={`cell-${d.idx}`} stroke="white" strokeWidth={3} />);
-                    })()}
+                    {pieChartData.map((d, index) => (
+                      <Cell key={`cell-${index}`} stroke="white" strokeWidth={3} />
+                    ))}
                   </Pie>
                   <Tooltip
                     contentStyle={{
@@ -749,7 +731,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
               data={progress.semesters.map((s) => ({
                 name: `${s.semester}`,
                 'Chuyên cần (%)': s.attendance_rate,
-                GPA: s.gpa * 10, // Scale to fit on same axis
+                GPA: s.gpa,
               }))}
               margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
             >
@@ -765,7 +747,13 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 12 }} />
-              <YAxis domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 11 }} />
+              <YAxis yAxisId="left" domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 11 }} />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                domain={[0, 10]}
+                tick={{ fill: '#6b7280', fontSize: 11 }}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -774,12 +762,13 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                   boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
                 }}
                 formatter={(value: any, name: any) => [
-                  name === 'GPA' ? `${(Number(value) / 10).toFixed(1)}` : `${value}%`,
+                  name === 'GPA' ? `${Number(value).toFixed(2)}` : `${value}%`,
                   name === 'GPA' ? 'Điểm TB' : name,
                 ]}
               />
               <Legend wrapperStyle={{ paddingTop: '15px' }} />
               <Area
+                yAxisId="left"
                 type="monotone"
                 dataKey="Chuyên cần (%)"
                 stroke="#10b981"
@@ -791,6 +780,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                 animationDuration={1500}
               />
               <Area
+                yAxisId="right"
                 type="monotone"
                 dataKey="GPA"
                 stroke="#8b5cf6"

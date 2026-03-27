@@ -14,11 +14,10 @@ export {
   NotFoundError,
   RateLimitError,
   ValidationError,
-} from "./errors";
+} from './errors';
 
 // Response helpers
 export {
-  type ApiResponse,
   badRequest,
   conflict,
   created,
@@ -26,11 +25,10 @@ export {
   noContent,
   notFound,
   paginated,
-  type PaginatedResponse,
   serverError,
   success,
   unauthorized,
-} from "./responses";
+} from './responses';
 
 // Validation schemas
 export {
@@ -49,7 +47,7 @@ export {
   updateGradeSchema,
   updateStudentSchema,
   uuidSchema,
-} from "@/lib/schemas";
+} from '@/lib/schemas';
 
 // Middleware
 export {
@@ -57,7 +55,7 @@ export {
   type RouteHandler,
   withAuth,
   withErrorHandler,
-} from "./middleware";
+} from './middleware';
 
 // API Handler Factory (NEW)
 export {
@@ -68,14 +66,11 @@ export {
   createApiHandler,
   createGetHandler,
   type HandlerConfig,
-} from "./apiHandler";
+} from './apiHandler';
 
 // API Versioning
-export {
-  API_VERSION,
-  getVersionHeaders,
-  withVersionHeaders,
-} from "./apiVersion";
+export { API_VERSION, getVersionHeaders, withVersionHeaders } from './apiVersion';
 
 // API Handler Types
-export * from "./types";
+export * from './types';
+export type { ApiPaginatedResponse as PaginatedResponse } from './types';

@@ -1,10 +1,10 @@
 // web/components/AuthGuard.tsx
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
-import { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 type Props = {
   children: React.ReactNode;
@@ -22,7 +22,7 @@ export default function AuthGuard({ children }: Props) {
 
       if (mounted) {
         if (!data?.session) {
-          router.replace("/login");
+          router.replace('/login');
         } else {
           setLoading(false);
         }
@@ -33,17 +33,17 @@ export default function AuthGuard({ children }: Props) {
     checkSession();
 
     // Listen for auth changes (e.g. token refresh or login/logout across tabs)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, session: Session | null) => {
-        if (!mounted) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (!mounted) return;
 
-        if (!session) {
-          router.replace("/login");
-        } else {
-          setLoading(false);
-        }
+      if (session) {
+        setLoading(false);
+      } else {
+        router.replace('/login');
       }
-    );
+    });
 
     return () => {
       mounted = false;
@@ -62,8 +62,12 @@ export default function AuthGuard({ children }: Props) {
           </div>
         </div>
         <div className="mt-8 flex flex-col items-center gap-2">
-          <h2 className="text-sm font-black text-stone-400 uppercase tracking-[0.3em] animate-pulse">BH-EDU</h2>
-          <p className="text-[10px] font-bold text-stone-400/60 uppercase tracking-widest">Đang xác thực bảo mật...</p>
+          <h2 className="text-sm font-black text-stone-400 uppercase tracking-[0.3em] animate-pulse">
+            BH-EDU
+          </h2>
+          <p className="text-[10px] font-bold text-stone-400/60 uppercase tracking-widest">
+            Đang xác thực bảo mật...
+          </p>
         </div>
       </div>
     );

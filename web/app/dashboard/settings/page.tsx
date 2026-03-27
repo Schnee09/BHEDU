@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api/client';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
@@ -8,8 +8,7 @@ import Icons from '@/components/ui/Icons';
 import { Button, Input, Badge } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import PageGuard from '@/components/PageGuard';
-import Menu from 'lucide-react/dist/esm/icons/menu';
-import { Search, Check, Palette, Droplets, Wind, Sun, Moon, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import {
   useCustomization,
   AccentColor,
@@ -75,6 +74,48 @@ function SettingsPageContent() {
   const [selectedYear, setSelectedYear] = useState<AcademicYear | undefined>(undefined);
   const toast = useToast();
 
+  // Security data states
+  const [sessionsData, setSessionsData] = useState<any[]>([]);
+  const [logsData, setLogsData] = useState<any[]>([]);
+
+  // Notification states
+  const [channels, setChannels] = useState([
+    { id: 'email', label: 'Email Notifications', icon: Icons.Mail, active: true },
+    { id: 'sms', label: 'SMS Notifications', icon: Icons.Phone, active: false },
+    { id: 'push', label: 'Push Notifications', icon: Icons.Notifications, active: true },
+  ]);
+
+  const [events, setEvents] = useState([
+    {
+      id: 'scores',
+      label: 'Điểm số mới',
+      description: 'Thông báo khi hệ thống cập nhật điểm cho học sinh',
+      push: true,
+      email: true,
+    },
+    {
+      id: 'billing',
+      label: 'Yêu cầu thanh toán',
+      description: 'Thông báo khi có hóa đơn học phí mới cần thanh toán',
+      push: true,
+      email: true,
+    },
+    {
+      id: 'schedule',
+      label: 'Thay đổi thời khóa biểu',
+      description: 'Thông báo khi lịch học hoặc giáo viên thay đổi',
+      push: true,
+      email: false,
+    },
+    {
+      id: 'system',
+      label: 'Cập nhật hệ thống',
+      description: 'Thông báo về các bảo trì hoặc tính năng mới',
+      push: false,
+      email: true,
+    },
+  ]);
+
   const {
     accentColor,
     setAccentColor,
@@ -96,7 +137,21 @@ function SettingsPageContent() {
     fetchSettings();
     fetchAcademicYears();
     fetchGradingScales();
+    fetchSecurityData();
   }, []);
+
+  const fetchSecurityData = async () => {
+    try {
+      const response = await apiFetch('/api/auth/sessions');
+      if (response.ok) {
+        const data = await response.json();
+        setSessionsData(data.data?.sessions || []);
+        setLogsData(data.data?.logs || []);
+      }
+    } catch (error) {
+      console.error('[Settings] Security Data Error:', error);
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -163,11 +218,28 @@ function SettingsPageContent() {
   };
 
   // Auto-save logic for customization
+  const isInitialMount = useRef(true);
   useEffect(() => {
     if (loading) return;
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     const timer = setTimeout(() => {
-      // Small visual feedback that changes are saved
-      console.log('Customization auto-saved');
+      // Basic persistance logic (can be expanded to save to db)
+      localStorage.setItem(
+        'bh_customization',
+        JSON.stringify({
+          accentColor,
+          density,
+          glassOpacity,
+          blurStrength,
+          texture,
+          theme,
+        })
+      );
+      toast.success('Đã lưu', 'Tùy chỉnh giao diện đã được tự động lưu.');
     }, 1000);
     return () => clearTimeout(timer);
   }, [accentColor, density, glassOpacity, blurStrength, texture, theme]);
@@ -535,7 +607,7 @@ function SettingsPageContent() {
                     </div>
                   </CardHeader>
                   <CardBody className="p-6 md:p-10 space-y-8">
-                    {activeTab === 'general' || activeTab === 'finance' ? (
+                    {activeTab === 'general' ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                         {filteredSettings.map((setting) => (
                           <div key={setting.id} className="group flex flex-col gap-2">
@@ -610,6 +682,67 @@ function SettingsPageContent() {
                           </div>
                         ))}
                       </div>
+                    ) : activeTab === 'grading' ? (
+                      <div className="space-y-6 animate-fade-in-up">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {gradingScales.map((scale) => (
+                            <div
+                              key={scale.id}
+                              className="p-6 bg-white dark:bg-stone-900 border border-stone-100 dark:border-white/5 rounded-3xl hover:border-amber-500/30 transition-all cursor-pointer"
+                            >
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <h3 className="font-bold text-stone-900 dark:text-white uppercase tracking-tight">
+                                    {scale.name}
+                                  </h3>
+                                  {scale.description && (
+                                    <p className="text-xs text-stone-500 mt-1">
+                                      {scale.description}
+                                    </p>
+                                  )}
+                                </div>
+                                {scale.is_default && (
+                                  <Badge
+                                    variant="warning"
+                                    className="text-[9px] px-2 py-0.5 uppercase tracking-widest"
+                                  >
+                                    Mặc định
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex gap-4">
+                                <div className="space-y-1">
+                                  <p className="text-[10px] text-stone-400 font-black uppercase tracking-widest">
+                                    MIN
+                                  </p>
+                                  <p className="font-mono font-bold">{scale.min_score ?? '-'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-[10px] text-stone-400 font-black uppercase tracking-widest">
+                                    MAX
+                                  </p>
+                                  <p className="font-mono font-bold">{scale.max_score ?? '-'}</p>
+                                </div>
+                                {scale.grade_letter && (
+                                  <div className="space-y-1">
+                                    <p className="text-[10px] text-stone-400 font-black uppercase tracking-widest">
+                                      GRADE
+                                    </p>
+                                    <p className="font-black text-amber-500">
+                                      {scale.grade_letter}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          {gradingScales.length === 0 && (
+                            <div className="col-span-1 md:col-span-2 p-12 text-center text-stone-500 font-medium">
+                              Chưa có thang điểm nào được thiết lập.
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     ) : activeTab === 'security' ? (
                       <div className="space-y-10">
                         <section className="space-y-6">
@@ -617,64 +750,83 @@ function SettingsPageContent() {
                             Phiên hoạt động
                           </h3>
                           <div className="grid grid-cols-1 gap-4">
-                            {[
-                              {
-                                device: 'MacBook Pro 14"',
-                                browser: 'Chrome',
-                                ip: '192.168.1.1',
-                                location: 'TP. Hồ Chí Minh',
-                                current: true,
-                              },
-                              {
-                                device: 'iPhone 15 Pro',
-                                browser: 'Safari',
-                                ip: '112.45.2.1',
-                                location: 'TP. Hồ Chí Minh',
-                                current: false,
-                              },
-                              {
-                                device: 'Windows PC',
-                                browser: 'Edge',
-                                ip: '14.161.5.2',
-                                location: 'Hà Nội',
-                                current: false,
-                              },
-                            ].map((session, i) => (
-                              <div
-                                key={i}
-                                className="flex items-center justify-between p-6 bg-white dark:bg-stone-900 rounded-3xl border border-stone-100 dark:border-white/5 group hover:border-amber-500/30 transition-all"
-                              >
-                                <div className="flex items-center gap-4">
-                                  <div className="p-3 bg-stone-50 dark:bg-white/5 rounded-2xl text-stone-400 group-hover:text-amber-500 transition-colors">
-                                    <Icons.Menu className="w-5 h-5" />
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-bold text-stone-900 dark:text-stone-100 text-[15px]">
-                                        {session.device}
-                                      </span>
-                                      {session.current && (
-                                        <span className="text-[9px] font-black uppercase text-amber-500 px-2 py-0.5 bg-amber-500/10 rounded-full">
-                                          Hiện tại
-                                        </span>
-                                      )}
+                            {sessionsData.length > 0 ? (
+                              sessionsData.map((session, i) => (
+                                <div
+                                  key={`${session.device}-${session.ip}-${i}`}
+                                  className="flex items-center justify-between p-6 bg-white dark:bg-stone-900 rounded-3xl border border-stone-100 dark:border-white/5 group hover:border-amber-500/30 transition-all"
+                                >
+                                  <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-stone-50 dark:bg-white/5 rounded-2xl text-stone-400 group-hover:text-amber-500 transition-colors">
+                                      <Icons.Menu className="w-5 h-5" />
                                     </div>
-                                    <p className="text-[11px] text-stone-500 font-medium">
-                                      {session.browser} &bull; {session.ip} &bull;{' '}
-                                      {session.location}
-                                    </p>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-bold text-stone-900 dark:text-stone-100 text-[15px]">
+                                          {session.device}
+                                        </span>
+                                        {session.current && (
+                                          <span className="text-[9px] font-black uppercase text-amber-500 px-2 py-0.5 bg-amber-500/10 rounded-full">
+                                            Hiện tại
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-[11px] text-stone-500 font-medium">
+                                        {session.browser} &bull; {session.ip} &bull;{' '}
+                                        {session.location}
+                                      </p>
+                                    </div>
                                   </div>
+                                  {!session.current && (
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          await apiFetch('/api/auth/sessions', {
+                                            method: 'DELETE',
+                                            body: JSON.stringify({
+                                              id: session.id || session.device,
+                                            }),
+                                          });
+                                          toast.success(
+                                            'Đã đăng xuất',
+                                            'Phiên làm việc đã kết thúc'
+                                          );
+                                          setSessionsData((prev) =>
+                                            prev.filter((s) => s !== session)
+                                          );
+                                        } catch (e) {
+                                          toast.error('Lỗi', 'Không thể đăng xuất phiên này');
+                                        }
+                                      }}
+                                      className="text-[10px] font-black text-red-500 uppercase tracking-widest px-4 py-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                    >
+                                      Đăng xuất
+                                    </button>
+                                  )}
                                 </div>
-                                {!session.current && (
-                                  <button className="text-[10px] font-black text-red-500 uppercase tracking-widest px-4 py-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100">
-                                    Đăng xuất
-                                  </button>
-                                )}
+                              ))
+                            ) : (
+                              <div className="p-6 text-center text-sm font-medium text-stone-500">
+                                Chưa có dữ liệu phiên hoạt động
                               </div>
-                            ))}
+                            )}
                           </div>
-                          <button className="w-full py-4 text-[10px] font-black text-stone-500 uppercase tracking-widest border border-stone-100 dark:border-white/5 rounded-2xl hover:bg-stone-50 dark:hover:bg-white/5 transition-all">
-                            Đăng xuất khỏi tất cả các thiết bị khác
+                          <button
+                            onClick={async () => {
+                              try {
+                                await apiFetch('/api/auth/sessions', {
+                                  method: 'DELETE',
+                                  body: JSON.stringify({ allOther: true }),
+                                });
+                                toast.success('Đã đăng xuất', 'Tất cả phiên khác đã kết thúc');
+                                setSessionsData((prev) => prev.filter((s) => s.current));
+                              } catch (e) {
+                                toast.error('Lỗi', 'Không thể đăng xuất các phiên khác');
+                              }
+                            }}
+                            className="w-full py-4 text-[10px] font-black text-red-500/70 hover:text-red-500 uppercase tracking-widest border border-red-500/20 hover:border-red-500/50 rounded-2xl hover:bg-red-50 dark:hover:bg-red-500/5 transition-all"
+                          >
+                            Đăng xuất khỏi tất cả thiết bị khác
                           </button>
                         </section>
 
@@ -683,69 +835,54 @@ function SettingsPageContent() {
                             Nhật ký hoạt động
                           </h3>
                           <div className="space-y-1">
-                            {[
-                              {
-                                action: 'Đã thay đổi màu chủ đạo',
-                                date: '10 phút trước',
-                                category: 'Giao diện',
-                              },
-                              {
-                                action: 'Đã cập nhật thang điểm học kỳ',
-                                date: '2 giờ trước',
-                                category: 'Thang điểm',
-                              },
-                              {
-                                action: 'Đã thay đổi trạng thái năm học 2024-2025',
-                                date: 'Hôm qua',
-                                category: 'Năm học',
-                              },
-                              {
-                                action: 'Đã đăng nhập từ thiết bị mới',
-                                date: '2 ngày trước',
-                                category: 'Bảo mật',
-                              },
-                            ].map((log, i) => (
-                              <div
-                                key={i}
-                                className="flex items-center justify-between p-4 hover:bg-stone-50 dark:hover:bg-white/2 rounded-2xl transition-all group"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-stone-300 dark:bg-stone-700 group-hover:bg-amber-500 transition-colors" />
-                                  <div>
-                                    <p className="text-sm font-bold text-stone-800 dark:text-stone-200">
-                                      {log.action}
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                      <span className="text-[10px] font-medium text-stone-500 uppercase tracking-wider">
-                                        {log.category}
-                                      </span>
-                                      <span className="text-[10px] text-stone-400">
-                                        &bull; {log.date}
-                                      </span>
+                            {logsData.length > 0 ? (
+                              logsData.map((log, i) => (
+                                <div
+                                  key={`${log.action}-${log.date}-${i}`}
+                                  className="flex items-center justify-between p-4 hover:bg-stone-50 dark:hover:bg-white/2 rounded-2xl transition-all group"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-stone-300 dark:bg-stone-700 group-hover:bg-amber-500 transition-colors" />
+                                    <div>
+                                      <p className="text-sm font-bold text-stone-800 dark:text-stone-200">
+                                        {log.action}
+                                      </p>
+                                      <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-[10px] font-medium text-stone-500 uppercase tracking-wider">
+                                          {log.category}
+                                        </span>
+                                        <span className="text-[10px] text-stone-400">
+                                          &bull; {log.date}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
+                                  <Icons.ChevronRight className="w-4 h-4 text-stone-300 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
                                 </div>
-                                <Icons.ChevronRight className="w-4 h-4 text-stone-300 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                              ))
+                            ) : (
+                              <div className="p-6 text-center text-sm font-medium text-stone-500">
+                                Chưa có nhật ký hoạt động
                               </div>
-                            ))}
+                            )}
                           </div>
                         </section>
                       </div>
                     ) : activeTab === 'notifications' ? (
                       <div className="space-y-10">
                         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          {[
-                            { label: 'Email Notifications', icon: Icons.Mail, active: true },
-                            { label: 'SMS Notifications', icon: Icons.Phone, active: false },
-                            {
-                              label: 'Push Notifications',
-                              icon: Icons.Notifications,
-                              active: true,
-                            },
-                          ].map((channel, i) => (
+                          {channels.map((channel, i) => (
                             <div
-                              key={i}
-                              className="p-6 bg-white dark:bg-stone-900 rounded-3xl border border-stone-100 dark:border-white/5 space-y-4"
+                              key={channel.id}
+                              onClick={() => {
+                                setChannels((prev) =>
+                                  prev.map((c, idx) =>
+                                    idx === i ? { ...c, active: !c.active } : c
+                                  )
+                                );
+                                toast.success('Đã lưu', 'Cài đặt kênh thông báo đã được cập nhật.');
+                              }}
+                              className="p-6 bg-white dark:bg-stone-900 rounded-3xl border border-stone-100 dark:border-white/5 space-y-4 cursor-pointer hover:border-amber-500/30 transition-all"
                             >
                               <div className="flex justify-between items-start">
                                 <div className="p-3 bg-stone-50 dark:bg-white/5 rounded-2xl text-stone-400">
@@ -779,34 +916,9 @@ function SettingsPageContent() {
                             Sự kiện kích hoạt
                           </h3>
                           <div className="bg-stone-50/50 dark:bg-white/2 rounded-[32px] border border-stone-100 dark:border-white/5 overflow-hidden">
-                            {[
-                              {
-                                label: 'Điểm số mới',
-                                description: 'Thông báo khi hể thống cập nhật điểm cho học sinh',
-                                push: true,
-                                email: true,
-                              },
-                              {
-                                label: 'Yêu cầu thanh toán',
-                                description: 'Thông báo khi có hóa đơn học phí mới cần thanh toán',
-                                push: true,
-                                email: true,
-                              },
-                              {
-                                label: 'Thay đổi thời khóa biểu',
-                                description: 'Thông báo khi lịch học hoặc giáo viên thay đổi',
-                                push: true,
-                                email: false,
-                              },
-                              {
-                                label: 'Cập nhật hệ thống',
-                                description: 'Thông báo về các bảo trì hoặc tính năng mới',
-                                push: false,
-                                email: true,
-                              },
-                            ].map((event, i) => (
+                            {events.map((event, i) => (
                               <div
-                                key={i}
+                                key={event.id}
                                 className="flex items-center justify-between p-6 border-b border-stone-100 dark:border-white/5 last:border-0 hover:bg-white dark:hover:bg-white/2 transition-all"
                               >
                                 <div className="space-y-1">
@@ -818,28 +930,48 @@ function SettingsPageContent() {
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-6">
-                                  <div className="flex flex-col items-center gap-2">
-                                    <span className="text-[8px] font-black text-stone-400 uppercase tracking-widest">
+                                  <label className="flex flex-col items-center gap-2 cursor-pointer group">
+                                    <span className="text-[8px] font-black text-stone-400 group-hover:text-amber-500 uppercase tracking-widest transition-colors">
                                       Push
                                     </span>
                                     <input
                                       type="checkbox"
                                       checked={event.push}
-                                      readOnly
-                                      className="w-4 h-4 rounded border-stone-300 text-amber-500 focus:ring-amber-500"
+                                      onChange={() => {
+                                        setEvents((prev) =>
+                                          prev.map((e, idx) =>
+                                            idx === i ? { ...e, push: !e.push } : e
+                                          )
+                                        );
+                                        toast.success(
+                                          'Đã lưu',
+                                          'Cài đặt thông báo Push đã được cập nhật.'
+                                        );
+                                      }}
+                                      className="w-4 h-4 rounded border-stone-300 text-amber-500 focus:ring-amber-500 cursor-pointer"
                                     />
-                                  </div>
-                                  <div className="flex flex-col items-center gap-2">
-                                    <span className="text-[8px] font-black text-stone-400 uppercase tracking-widest">
+                                  </label>
+                                  <label className="flex flex-col items-center gap-2 cursor-pointer group">
+                                    <span className="text-[8px] font-black text-stone-400 group-hover:text-amber-500 uppercase tracking-widest transition-colors">
                                       Email
                                     </span>
                                     <input
                                       type="checkbox"
                                       checked={event.email}
-                                      readOnly
-                                      className="w-4 h-4 rounded border-stone-300 text-amber-500 focus:ring-amber-500"
+                                      onChange={() => {
+                                        setEvents((prev) =>
+                                          prev.map((e, idx) =>
+                                            idx === i ? { ...e, email: !e.email } : e
+                                          )
+                                        );
+                                        toast.success(
+                                          'Đã lưu',
+                                          'Cài đặt thông báo Email đã được cập nhật.'
+                                        );
+                                      }}
+                                      className="w-4 h-4 rounded border-stone-300 text-amber-500 focus:ring-amber-500 cursor-pointer"
                                     />
-                                  </div>
+                                  </label>
                                 </div>
                               </div>
                             ))}

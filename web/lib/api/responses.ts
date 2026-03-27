@@ -2,21 +2,7 @@
  * Standardized API response helpers for Next.js Route Handlers
  */
 
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-export interface PaginatedResponse<T = unknown> extends ApiResponse<T[]> {
-  pagination?: {
-    page: number;
-    pageSize: number;
-    totalItems: number;
-    totalPages: number;
-  };
-}
+import { ApiResponse, ApiErrorResponse, ApiPaginatedResponse } from './types';
 
 /**
  * Success response with data
@@ -53,7 +39,7 @@ export function noContent(): Response {
  * Bad request error (400)
  */
 export function badRequest(error: string): Response {
-  const body: ApiResponse = {
+  const body: ApiErrorResponse = {
     success: false,
     error,
   };
@@ -64,7 +50,7 @@ export function badRequest(error: string): Response {
  * Unauthorized error (401)
  */
 export function unauthorized(error: string = 'Unauthorized'): Response {
-  const body: ApiResponse = {
+  const body: ApiErrorResponse = {
     success: false,
     error,
   };
@@ -75,7 +61,7 @@ export function unauthorized(error: string = 'Unauthorized'): Response {
  * Forbidden error (403)
  */
 export function forbidden(error: string = 'Forbidden'): Response {
-  const body: ApiResponse = {
+  const body: ApiErrorResponse = {
     success: false,
     error,
   };
@@ -86,7 +72,7 @@ export function forbidden(error: string = 'Forbidden'): Response {
  * Not found error (404)
  */
 export function notFound(error: string = 'Resource not found'): Response {
-  const body: ApiResponse = {
+  const body: ApiErrorResponse = {
     success: false,
     error,
   };
@@ -97,7 +83,7 @@ export function notFound(error: string = 'Resource not found'): Response {
  * Conflict error (409)
  */
 export function conflict(error: string): Response {
-  const body: ApiResponse = {
+  const body: ApiErrorResponse = {
     success: false,
     error,
   };
@@ -108,7 +94,7 @@ export function conflict(error: string): Response {
  * Internal server error (500)
  */
 export function serverError(error: string = 'Internal server error'): Response {
-  const body: ApiResponse = {
+  const body: ApiErrorResponse = {
     success: false,
     error,
   };
@@ -124,13 +110,13 @@ export function paginated<T>(
   pageSize: number,
   totalItems: number
 ): Response {
-  const body: PaginatedResponse<T> = {
+  const body: ApiPaginatedResponse<T> = {
     success: true,
     data,
     pagination: {
       page,
       pageSize,
-      totalItems,
+      total: totalItems,
       totalPages: Math.ceil(totalItems / pageSize),
     },
   };

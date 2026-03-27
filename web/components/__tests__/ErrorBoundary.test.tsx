@@ -25,7 +25,7 @@ const WorkingComponent = () => <div>Working component</div>;
 describe('ErrorBoundary', () => {
   // Suppress console errors during tests
   beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => { });
+    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -133,10 +133,8 @@ describe('ErrorBoundary', () => {
         </PageErrorBoundary>
       );
 
-      const resetButton = screen.queryByText(/thử lại/i);
-      if (resetButton) {
-        expect(resetButton).toBeInTheDocument();
-      }
+      const resetButton = screen.getByRole('button', { name: /thử lại/i });
+      expect(resetButton).toBeInTheDocument();
     });
   });
 
@@ -167,9 +165,7 @@ describe('ErrorBoundary', () => {
     });
 
     it('passes through component props', () => {
-      const ComponentWithProps = ({ message }: { message: string }) => (
-        <div>{message}</div>
-      );
+      const ComponentWithProps = ({ message }: { message: string }) => <div>{message}</div>;
 
       const WrappedComponent = withErrorBoundary(ComponentWithProps);
 

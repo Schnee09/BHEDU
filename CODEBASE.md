@@ -8,11 +8,12 @@ before making architectural changes.
 
 ```mermaid
 graph TD
-  A[Pages / Route Handlers] -->|use| B[Services]
-  B -->|use| C[Repositories]
-  C -->|extend| D[Base Repository]
-  A -->|use| E[Hooks]
-  A -->|use| F[UI Components]
+  A[Pages / UI Components] -->|use| B[Hooks / lib]
+  A -->|request| C[API Routes]
+  C -->|use| D[API Middleware / Handler Factory]
+  D -->|use| E[Services]
+  E -->|use| F[Repositories]
+  F -->|extend| G[Base Repository]
 ```
 
 ## Dependency Map
@@ -61,6 +62,10 @@ graph TD
   - _Depends on:_ Grading standards and coefficient logic (Pure function)
 - **`web/lib/supabase/client.ts` (`server.ts`)**
   - _Depends on:_ `@supabase/ssr`, Next.js cookies/headers
+- **`web/lib/api/apiHandler.ts`**
+  - _Depends on:_ `errors.ts`, `middleware.ts`, `responses.ts`
+- **`web/app/api/health/route.ts`**
+  - _Depends on:_ `database`, `node-os` (diagnostic)
 
 ### 5. API Routes
 

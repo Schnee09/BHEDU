@@ -1,69 +1,63 @@
-import {
-  apiSuccess,
-  createApiHandler,
-  createGetHandler,
-} from "@/lib/api/apiHandler";
-import { ValidationError } from "@/lib/api/errors";
-import { gradeService } from "@/lib/services/gradeService";
-import { EvaluationType } from "@/lib/grades/types";
-import { logger } from "@/lib/logger";
+import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api/apiHandler';
+import { ValidationError } from '@/lib/api/errors';
+import { gradeService } from '@/lib/services/gradeService';
+import { EvaluationType } from '@/lib/grades/types';
+import { logger } from '@/lib/logger';
 
 // GET: Fetch students with their grades for a specific class, subject, and semester
-export const GET = createGetHandler(
-  { permission: "grades.view" },
-  async ({ searchParams }) => {
-    const classId = searchParams.get("class_id") || searchParams.get("classId");
-    const subjectCode = searchParams.get("subject_code") ||
-      searchParams.get("subjectCode");
-    const semester: any = searchParams.get("semester");
+export const GET = createGetHandler({ permission: 'grades.view' }, async ({ searchParams }) => {
+  const classId = searchParams.get('class_id') || searchParams.get('classId');
+  const subjectCode = searchParams.get('subject_code') || searchParams.get('subjectCode');
+  const semesterStr = searchParams.get('semester');
+  const semester = semesterStr ? parseInt(semesterStr, 10) : null;
 
-    if (!classId || !semester) {
-      throw new ValidationError("Missing classId or semester");
-    }
+  if (!classId || semester === null || isNaN(semester)) {
+    throw new ValidationError('Missing or invalid classId or semester');
+  }
 
-    // Default subjectCode to classId if not provided (common pattern in this project)
-    const targetSubjectCode = subjectCode || classId;
+  const targetSubjectCode = subjectCode;
+  if (!targetSubjectCode) {
+    throw new ValidationError('subject_code is required');
+  }
 
-    const students = await gradeService.getGrades(
-      classId,
-      targetSubjectCode,
-      semester,
-    );
+  const students = await gradeService.getGrades(classId, targetSubjectCode, semester as any);
 
-    // Map back to the structure expected by the frontend
-    const mappedStudents = students.map((s) => ({
-      id: s.student_id,
-      student_code: s.student_code,
-      full_name: s.full_name,
-      grades: {
-        [EvaluationType.MIDTERM]: s.midterm,
-        [EvaluationType.FINAL]: s.final,
-        average: s.average,
-        // Legacy fields (null for now as we transition to Midterm/Final only)
-        oral: null,
-        fifteen_min: null,
-        one_period: null,
-      },
-    }));
+  // Map back to the structure expected by the frontend
+  const mappedStudents = students.map((s) => ({
+    id: s.student_id,
+    student_code: s.student_code,
+    full_name: s.full_name,
+    grades: {
+      [EvaluationType.MIDTERM]: s.midterm,
+      [EvaluationType.FINAL]: s.final,
+      average: s.average,
+      // Legacy fields (null for now as we transition to Midterm/Final only)
+      oral: null,
+      fifteen_min: null,
+      one_period: null,
+    },
+  }));
 
-    return apiSuccess({ students: mappedStudents });
-  },
-);
+  return apiSuccess({ students: mappedStudents });
+});
 
 // POST: Save grades for multiple students
 export const POST = createApiHandler(
   {
-    permission: "grades.entry",
+    permission: 'grades.entry',
   },
   async ({ request }) => {
     const body = await request.json();
     const { class_id, subject_code, semester, students } = body as any;
 
     if (!class_id || !semester || !Array.isArray(students)) {
-      throw new ValidationError("Invalid request data");
+      throw new ValidationError('Invalid request data');
     }
 
-    const targetSubjectCode = subject_code || class_id;
+    const targetSubjectCode = subject_code;
+    if (!targetSubjectCode) {
+      throw new ValidationError('subject_code is required');
+    }
 
     const result = await gradeService.saveGrades({
       class_id,
@@ -78,15 +72,15 @@ export const POST = createApiHandler(
       })),
     });
 
-    logger.info("Grades updated via modernized API", {
+    logger.info('Grades updated via modernized API', {
       classId: class_id,
       subjectCode: targetSubjectCode,
       count: result.count,
     });
 
     return apiSuccess({
-      message: "Grades saved successfully",
+      message: 'Grades saved successfully',
       count: result.count,
     });
-  },
+  }
 );

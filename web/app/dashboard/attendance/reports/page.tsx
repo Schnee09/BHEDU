@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { apiFetch, getClasses, getAttendance } from '@/lib/api/client';
+import { toast } from 'react-hot-toast';
 import { ChartBarIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import {
   PieChart,
@@ -203,10 +204,10 @@ export default function AttendanceReportsPage() {
     });
 
     // Calculate Rates
-    Object.values(byClass).forEach((c: any) => {
+    Object.values(byClass).forEach((c) => {
       c.rate = Math.round((c.present / c.count) * 100);
     });
-    Object.values(byStudent).forEach((s: any) => {
+    Object.values(byStudent).forEach((s) => {
       s.rate = Math.round((s.present / s.count) * 100);
     });
 
@@ -223,7 +224,7 @@ export default function AttendanceReportsPage() {
 
   const handleExport = () => {
     if (records.length === 0) {
-      alert('No data to export');
+      toast.error('Không có dữ liệu để xuất');
       return;
     }
 
@@ -257,7 +258,7 @@ export default function AttendanceReportsPage() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Không thể xuất dữ liệu');
+      toast.error('Không thể xuất dữ liệu');
     } finally {
       setExporting(false);
     }

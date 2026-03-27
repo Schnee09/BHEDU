@@ -55,6 +55,17 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
+  handleCopyError = () => {
+    if (!this.state.error) return;
+    const text = `
+Error: ${this.state.error.toString()}
+Stack: ${this.state.errorInfo?.componentStack || 'N/A'}
+Page: ${this.props.pageName || 'N/A'}
+    `.trim();
+    navigator.clipboard.writeText(text);
+    alert('Đã sao chép chi tiết lỗi vào bộ nhớ tạm');
+  };
+
   render() {
     if (this.state.hasError) {
       // Use custom fallback if provided
@@ -131,6 +142,15 @@ export class ErrorBoundary extends Component<Props, State> {
                 >
                   Tải lại trang
                 </Button>
+                {this.state.error && (
+                  <Button
+                    onClick={this.handleCopyError}
+                    variant="ghost"
+                    className="px-8 py-6 rounded-2xl text-stone-500 hover:text-stone-900 dark:hover:text-white font-bold uppercase tracking-wider text-[10px]"
+                  >
+                    Sao chép lỗi
+                  </Button>
+                )}
               </div>
 
               {/* Support Link */}

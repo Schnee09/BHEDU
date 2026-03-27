@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import Image from "next/image";
-import Button from "@/components/ui/Button";
-import PublicHeader from "@/components/PublicHeader";
-import { CheckCircle2, BarChart3, Users, ArrowRight, Phone, Mail, MapPin } from "lucide-react";
+import Link from 'next/link';
+import Image from 'next/image';
+import Button from '@/components/ui/Button';
+import PublicHeader from '@/components/PublicHeader';
+import { CheckCircle2, BarChart3, Users, ArrowRight, Phone, Mail, MapPin } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -27,25 +27,43 @@ export default function LandingPage() {
                 Phiên bản Mới 2026
               </div>
 
-              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 dark:text-white animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+              <h1
+                className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 dark:text-white animate-fade-in-up"
+                style={{ animationDelay: '0.1s' }}
+              >
                 Hệ Thống Quản Lý <br className="hidden sm:block" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">Giáo Dục Toàn Diện</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
+                  Giáo Dục Toàn Diện
+                </span>
               </h1>
 
-              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-                Giải pháp tối ưu cho trung tâm <strong>Bùi Hoàng Education</strong>.
-                Quản lý học sinh, điểm danh và báo cáo học tập chuyên nghiệp.
+              <p
+                className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed animate-fade-in-up"
+                style={{ animationDelay: '0.2s' }}
+              >
+                Giải pháp tối ưu cho trung tâm <strong>Bùi Hoàng Education</strong>. Quản lý học
+                sinh, điểm danh và báo cáo học tập chuyên nghiệp.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+              <div
+                className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto animate-fade-in-up"
+                style={{ animationDelay: '0.3s' }}
+              >
                 <Link href="/login" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto h-14 px-8 gap-3 text-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-xl shadow-amber-500/20 hover:shadow-amber-500/40 border-0 rounded-2xl">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto h-14 px-8 gap-3 text-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-xl shadow-amber-500/20 hover:shadow-amber-500/40 border-0 rounded-2xl"
+                  >
                     Truy cập Hệ thống
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 </Link>
                 <Link href="#features" className="w-full sm:w-auto">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 px-8 text-lg border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl hover:text-amber-600 dark:hover:text-amber-400">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto h-14 px-8 text-lg border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl hover:text-amber-600 dark:hover:text-amber-400"
+                  >
                     Xem Tính Năng
                   </Button>
                 </Link>
@@ -58,8 +76,12 @@ export default function LandingPage() {
         <section id="features" className="w-full py-20 bg-white/50 dark:bg-gray-900/50 relative">
           <div className="container px-4 md:px-6">
             <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Tính Năng Nổi Bật</h2>
-              <p className="text-lg text-gray-600 dark:text-gray-400">Công cụ mạnh mẽ hỗ trợ quản lý hiệu quả</p>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                Tính Năng Nổi Bật
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                Công cụ mạnh mẽ hỗ trợ quản lý hiệu quả
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -68,9 +90,12 @@ export default function LandingPage() {
                 <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <CheckCircle2 className="h-7 w-7 text-amber-600 dark:text-amber-400" />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">Điểm Danh Thông Minh</h3>
+                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">
+                  Điểm Danh Thông Minh
+                </h3>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Hệ thống điểm danh nhanh chóng, chính xác. Tự động tổng hợp báo cáo chuyên cần hàng ngày, hàng tuần.
+                  Hệ thống điểm danh nhanh chóng, chính xác. Tự động tổng hợp báo cáo chuyên cần
+                  hàng ngày, hàng tuần.
                 </p>
               </div>
 
@@ -79,9 +104,12 @@ export default function LandingPage() {
                 <div className="w-14 h-14 rounded-2xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <BarChart3 className="h-7 w-7 text-orange-600 dark:text-orange-400" />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">Quản Lý Điểm Số</h3>
+                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">
+                  Quản Lý Điểm Số
+                </h3>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Nhập điểm chi tiết từng môn học. Tự động tính điểm trung bình, xếp hạng và xuất phiếu báo điểm PDF.
+                  Nhập điểm chi tiết từng môn học. Tự động tính điểm trung bình, xếp hạng và xuất
+                  phiếu báo điểm PDF.
                 </p>
               </div>
 
@@ -90,9 +118,12 @@ export default function LandingPage() {
                 <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Users className="h-7 w-7 text-amber-600 dark:text-amber-400" />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">Hồ Sơ Học Sinh</h3>
+                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">
+                  Hồ Sơ Học Sinh
+                </h3>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Lưu trữ thông tin học sinh, phụ huynh đầy đủ. Dễ dàng tra cứu và liên lạc khi cần thiết.
+                  Lưu trữ thông tin học sinh, phụ huynh đầy đủ. Dễ dàng tra cứu và liên lạc khi cần
+                  thiết.
                 </p>
               </div>
             </div>
@@ -109,7 +140,9 @@ export default function LandingPage() {
                     Về Bùi Hoàng Education
                   </h2>
                   <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-                    Chúng tôi cam kết mang đến môi trường giáo dục chất lượng cao, nơi mỗi học sinh được quan tâm và phát triển toàn diện. Hệ thống quản lý này là một phần trong nỗ lực chuyển đổi số để phục vụ phụ huynh và học sinh tốt hơn.
+                    Chúng tôi cam kết mang đến môi trường giáo dục chất lượng cao, nơi mỗi học sinh
+                    được quan tâm và phát triển toàn diện. Hệ thống quản lý này là một phần trong nỗ
+                    lực chuyển đổi số để phục vụ phụ huynh và học sinh tốt hơn.
                   </p>
                 </div>
 
@@ -119,7 +152,9 @@ export default function LandingPage() {
                       <MapPin className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">Địa chỉ trung tâm</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        Địa chỉ trung tâm
+                      </p>
                       <p className="text-sm text-gray-500">TP. Hồ Chí Minh, Việt Nam</p>
                     </div>
                   </div>
@@ -130,7 +165,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white">Hotline liên hệ</p>
-                      <p className="text-sm text-gray-500">0123 456 789</p>
+                      <p className="text-sm text-gray-500">(028) 3812 3456</p>
                     </div>
                   </div>
 
@@ -159,8 +194,12 @@ export default function LandingPage() {
                       className="object-contain"
                     />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Bùi Hoàng Education</h3>
-                  <p className="text-amber-600 dark:text-amber-400 font-medium">Chất lượng - Đam mê - Sáng tạo</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                    Bùi Hoàng Education
+                  </h3>
+                  <p className="text-amber-600 dark:text-amber-400 font-medium">
+                    Chất lượng - Đam mê - Sáng tạo
+                  </p>
                 </div>
               </div>
             </div>
@@ -182,8 +221,18 @@ export default function LandingPage() {
               © 2026 Trung tâm Giáo dục Bùi Hoàng. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
-              <Link href="#" className="text-sm text-gray-500 hover:text-amber-600 transition-colors">Bảo mật</Link>
-              <Link href="#" className="text-sm text-gray-500 hover:text-amber-600 transition-colors">Điều khoản</Link>
+              <Link
+                href="/privacy"
+                className="text-sm text-gray-500 hover:text-amber-600 transition-colors"
+              >
+                Bảo mật
+              </Link>
+              <Link
+                href="/terms"
+                className="text-sm text-gray-500 hover:text-amber-600 transition-colors"
+              >
+                Điều khoản
+              </Link>
             </div>
           </div>
         </div>

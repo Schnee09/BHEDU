@@ -53,6 +53,27 @@ describe('validateGrade', () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Must be a number');
     });
+
+    it('should reject near-boundary upper out of bounds', () => {
+      const result = validateGrade(10.001);
+      expect(result.valid).toBe(false);
+    });
+
+    it('should reject near-boundary lower out of bounds', () => {
+      const result = validateGrade(-0.001);
+      expect(result.valid).toBe(false);
+    });
+
+    it('should reject Infinity', () => {
+      const result = validateGrade(Infinity);
+      expect(result.valid).toBe(false);
+    });
+
+    it('should reject string inputs even if numeric', () => {
+      // @ts-expect-error testing invalid javascript runtime types
+      const result = validateGrade('8');
+      expect(result.valid).toBe(false);
+    });
   });
 });
 
@@ -64,9 +85,9 @@ describe('validatePayload', () => {
     students: [
       {
         student_id: 'student-1',
-        grades: { [EvaluationType.MIDTERM]: 8 }
-      }
-    ]
+        grades: { [EvaluationType.MIDTERM]: 8 },
+      },
+    ],
   };
 
   it('should accept valid payload', () => {
