@@ -165,7 +165,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white">Hotline liên hệ</p>
-                      <p className="text-sm text-gray-500">(028) 3812 3456</p>
+                      <p className="text-sm text-gray-500">0123 456 789</p>
                     </div>
                   </div>
 

@@ -54,6 +54,7 @@ export const createUserSchema = z.object({
 
   // Role specific fields
   notes: notesSchema,
+  student_id: z.string().max(50).optional(),
   student_code: z.string().max(50).optional(),
   grade_level: z.string().max(50).optional(),
   department: z.string().max(100).optional(),

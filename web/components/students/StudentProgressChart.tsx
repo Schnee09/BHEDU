@@ -114,7 +114,7 @@ export default function StudentProgressChart({ studentId }: StudentProgressChart
           icon={<AcademicCapIcon className="w-5 h-5" />}
           label="Điểm trung bình"
           value={`${summary.overallAverage.toFixed(1)}`}
-          color="indigo"
+          color="emerald"
         />
         <SummaryCard
           icon={
@@ -147,7 +147,7 @@ export default function StudentProgressChart({ studentId }: StudentProgressChart
       <Card>
         <CardHeader>
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <ArrowTrendingUpIcon className="w-5 h-5 text-indigo-600" />
+            <ArrowTrendingUpIcon className="w-5 h-5 text-emerald-600" />
             Xu hướng điểm theo thời gian
           </h3>
         </CardHeader>
@@ -183,7 +183,7 @@ export default function StudentProgressChart({ studentId }: StudentProgressChart
                   {/* Line connecting points */}
                   <polyline
                     fill="none"
-                    stroke="#6366f1"
+                    stroke="#10b981"
                     strokeWidth="2"
                     points={trendData
                       .map((d, i) => {
@@ -203,7 +203,7 @@ export default function StudentProgressChart({ studentId }: StudentProgressChart
                         cx={`${x}%`}
                         cy={`${y}%`}
                         r="5"
-                        fill="#6366f1"
+                        fill="#10b981"
                         stroke="white"
                         strokeWidth="2"
                       />
@@ -218,7 +218,7 @@ export default function StudentProgressChart({ studentId }: StudentProgressChart
                     className="flex-1 flex flex-col items-center justify-end group relative"
                   >
                     <div
-                      className="w-full max-w-8 bg-indigo-100 hover:bg-indigo-200 rounded-t transition-all"
+                      className="w-full max-w-8 bg-emerald-100 hover:bg-emerald-200 rounded-t transition-all"
                       style={{ height: `${(d.average / 10) * 100}%` }}
                     />
 
@@ -288,15 +288,15 @@ function SummaryCard({
   icon: React.ReactNode;
   label: string;
   value: string;
-  color: 'indigo' | 'emerald' | 'red' | 'amber' | 'blue';
+  color: 'emerald' | 'red' | 'amber' | 'blue' | 'slate';
   small?: boolean;
 }) {
   const colorClasses = {
-    indigo: 'bg-indigo-50 text-indigo-600',
     emerald: 'bg-emerald-50 text-emerald-600',
     red: 'bg-red-50 text-red-600',
     amber: 'bg-amber-50 text-amber-600',
     blue: 'bg-blue-50 text-blue-600',
+    slate: 'bg-stone-50 text-stone-600',
   };
 
   return (
@@ -316,12 +316,12 @@ function getBarColor(index: number): string {
   const colors = [
     'bg-emerald-500',
     'bg-blue-500',
-    'bg-indigo-500',
-    'bg-purple-500',
-    'bg-pink-500',
-    'bg-amber-500',
     'bg-teal-500',
+    'bg-amber-500',
+    'bg-pink-500',
+    'bg-orange-500',
     'bg-cyan-500',
+    'bg-lime-500',
   ];
   return colors[index % colors.length] ?? 'bg-emerald-500';
 }

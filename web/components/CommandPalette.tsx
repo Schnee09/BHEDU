@@ -194,7 +194,7 @@ export default function CommandPalette() {
                             className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none"
                         />
                         {loading && (
-                            <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                            <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                         )}
                         <button
                             onClick={() => setIsOpen(false)}
@@ -217,7 +217,7 @@ export default function CommandPalette() {
                                         key={result.id}
                                         onClick={() => handleSelect(result)}
                                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${index === selectedIndex
-                                                ? "bg-indigo-50 dark:bg-indigo-900/30"
+                                                ? "bg-amber-50 dark:bg-amber-900/30"
                                                 : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
                                             }`}
                                     >

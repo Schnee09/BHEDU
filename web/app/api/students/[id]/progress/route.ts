@@ -35,6 +35,7 @@ export async function GET(
         id,
         full_name,
         student_id,
+        student_code,
         grade_level
       `)
       .eq("id", resolvedParams.id)
@@ -235,9 +236,10 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: {
-        student_id: student.id,
+        student_uu_id: student.id, // Internal UUID
         student_name: student.full_name,
-        student_code: student.student_id || "N/A",
+        student_code: student.student_code || "N/A",
+        student_id: student.student_id || "N/A",
         class_name: currentClass?.name || "Chưa có lớp",
         grade_level: student.grade_level || "N/A",
         semesters,

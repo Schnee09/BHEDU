@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/auth/adminAuth'
 import { getDataClient } from '@/lib/auth/dataClient'
 import { logger } from '@/lib/logger'
+import { EnrollmentRepository } from '@/lib/repositories/EnrollmentRepository'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -26,6 +27,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     const { id } = await params
     const { supabase } = await getDataClient(req)
+    const repository = new EnrollmentRepository(supabase)
 
     // Verify student exists
     const { data: student } = await supabase
@@ -39,38 +41,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })
     }
 
-    const { data: enrollmentRows, error } = await supabase
-      .from('enrollments')
-      .select(
-        `
-          id,
-          student_id,
-          class_id,
-          enrollment_date,
-          status,
-          class:classes(
-            id,
-            name,
-            code,
-            schedule,
-            capacity,
-            teacher:profiles!classes_teacher_id_fkey(
-              id,
-              full_name
-            )
-          )
-        `
-      )
-      .eq('student_id', id)
-      .order('enrollment_date', { ascending: false })
-
-    if (error) {
-      logger.error('Failed to fetch student enrollments', { error: error.message, studentId: id })
-      return NextResponse.json(
-        { error: error.message || 'Failed to fetch enrollments' },
-        { status: 500 }
-      )
-    }
+    const enrollmentRows = await repository.findByStudent(id)
 
     const enrollments = (enrollmentRows || []).map((row: any) => ({
       id: row.id,

@@ -193,7 +193,7 @@ function TutorsContent() {
     if (profileLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full" />
+                <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full" />
             </div>
         );
     }
@@ -204,7 +204,7 @@ function TutorsContent() {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                        <GraduationCap className="w-8 h-8 text-purple-600" />
+                        <GraduationCap className="w-8 h-8 text-emerald-600" />
                         Quản lý Gia sư
                     </h1>
                     <p className="text-gray-500 mt-1">Quản lý danh sách sinh viên dạy kèm</p>
@@ -212,7 +212,7 @@ function TutorsContent() {
                 {canManage && (
                     <button
                         onClick={openCreateModal}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
                     >
                         <Plus className="w-5 h-5" />
                         Thêm gia sư
@@ -229,16 +229,16 @@ function TutorsContent() {
                         placeholder="Tìm gia sư theo tên, email, môn dạy..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                 </div>
             </div>
 
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
-                    <div className="text-2xl font-bold text-purple-700">{tutors.length}</div>
-                    <div className="text-sm text-purple-600">Tổng số gia sư</div>
+                <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
+                    <div className="text-2xl font-bold text-emerald-700">{tutors.length}</div>
+                    <div className="text-sm text-emerald-600">Tổng số gia sư</div>
                 </div>
                 <div className="bg-green-50 rounded-lg p-4 border border-green-100">
                     <div className="text-2xl font-bold text-green-700">
@@ -257,7 +257,7 @@ function TutorsContent() {
             {/* Tutor Grid */}
             {loading ? (
                 <div className="text-center py-12">
-                    <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto" />
+                    <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto" />
                     <p className="mt-4 text-gray-500">Đang tải...</p>
                 </div>
             ) : filteredTutors.length === 0 ? (
@@ -269,7 +269,7 @@ function TutorsContent() {
                     {!searchQuery && canManage && (
                         <button
                             onClick={openCreateModal}
-                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
                         >
                             Thêm gia sư đầu tiên
                         </button>
@@ -284,7 +284,7 @@ function TutorsContent() {
                         >
                             <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                                    <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
                                         {tutor.photo_url ? (
                                             <img
                                                 src={tutor.photo_url}
@@ -292,12 +292,12 @@ function TutorsContent() {
                                                 className="w-12 h-12 rounded-full object-cover"
                                             />
                                         ) : (
-                                            <GraduationCap className="w-6 h-6 text-purple-600" />
+                                            <GraduationCap className="w-6 h-6 text-emerald-600" />
                                         )}
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-gray-800">{tutor.full_name}</h3>
-                                        <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+                                        <span className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full">
                                             Gia sư
                                         </span>
                                     </div>
@@ -381,7 +381,7 @@ function TutorsContent() {
                                     type="text"
                                     value={formData.full_name}
                                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
                                     placeholder="Nguyễn Văn A"
                                 />
                             </div>
@@ -441,7 +441,7 @@ function TutorsContent() {
                                                 type="button"
                                                 onClick={() => toggleSubject(subject.id)}
                                                 className={`px-3 py-1.5 rounded-full text-sm transition-colors ${formData.teaching_subjects.includes(subject.id)
-                                                    ? 'bg-purple-600 text-white'
+                                                    ? 'bg-emerald-600 text-white'
                                                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                     }`}
                                             >
@@ -491,7 +491,7 @@ function TutorsContent() {
                             <button
                                 onClick={saveTutor}
                                 disabled={saving || !formData.full_name.trim()}
-                                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                             >
                                 {saving && (
                                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

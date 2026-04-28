@@ -69,18 +69,19 @@ export function SidebarHeader({ profile, isCollapsed }: SidebarHeaderProps) {
                 {!isCollapsed && (
                     <div className="flex flex-col min-w-0 flex-1 justify-center py-1">
                         <Link href="/dashboard/profile" className="group/profile block w-full min-w-0">
-                            <h1 className="text-[13px] font-black uppercase leading-tight tracking-tight text-stone-900 dark:text-stone-100 group-hover/profile:text-amber-600 transition-colors break-all line-clamp-2">
+                            <span className="block text-[11px] font-black uppercase leading-[1.3] tracking-wider text-stone-900 dark:text-stone-100 group-hover/profile:text-amber-600 transition-colors truncate">
                                 {profile.full_name || "NGƯỜI DÙNG"}
-                            </h1>
+                            </span>
                         </Link>
-                        <div className="flex items-center gap-2 mt-1.5 overflow-hidden">
-                            <Badge variant="gold" className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm shrink-0">{role}</Badge>
-                            <span className="text-[10px] font-medium text-stone-500 dark:text-stone-400 opacity-80 italic tracking-tight truncate flex-1">
+                        <div className="flex items-center gap-2 mt-1 overflow-hidden">
+                            <Badge variant="gold" className="text-[7.5px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm shrink-0 h-[16px] flex items-center">{role}</Badge>
+                            <span className="text-[9px] font-medium text-stone-500 dark:text-stone-400 opacity-80 italic tracking-tight truncate flex-1">
                                 {greeting} {getDisplayName(profile).split(' ').pop()}!
                             </span>
                         </div>
                     </div>
                 )}
+
             </div>
         </div>
     );

@@ -111,7 +111,7 @@ function BackupContent() {
     if (profileLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
+                <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
             </div>
         );
     }
@@ -154,8 +154,8 @@ function BackupContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
                         <div className="flex items-center gap-4 mb-4">
-                            <div className="p-3 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl">
-                                <Download className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/40 rounded-xl">
+                                <Download className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                             </div>
                             <div>
                                 <h3 className="font-semibold text-gray-900 dark:text-white">Xuất dữ liệu</h3>
@@ -165,7 +165,7 @@ function BackupContent() {
                         <button
                             onClick={handleExportData}
                             disabled={creating}
-                            className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                            className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
                         >
                             {creating ? (
                                 <>
@@ -183,15 +183,15 @@ function BackupContent() {
 
                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
                         <div className="flex items-center gap-4 mb-4">
-                            <div className="p-3 bg-amber-100 dark:bg-amber-900/40 rounded-xl">
-                                <Upload className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                            <div className="p-3 bg-blue-100 dark:bg-blue-900/40 rounded-xl">
+                                <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                             </div>
                             <div>
                                 <h3 className="font-semibold text-gray-900 dark:text-white">Khôi phục dữ liệu</h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">Nhập từ file JSON</p>
                             </div>
                         </div>
-                        <label className="w-full py-2.5 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                        <label className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-blue-500/20">
                             <Upload className="w-4 h-4" />
                             Chọn file khôi phục
                             <input type="file" accept=".json" className="hidden" />
@@ -241,8 +241,8 @@ function BackupContent() {
                             <div key={backup.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg">
-                                            <Database className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                                        <div className="p-2 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg">
+                                            <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                                         </div>
                                         <div>
                                             <p className="font-medium text-gray-900 dark:text-white">{backup.name}</p>
@@ -258,7 +258,7 @@ function BackupContent() {
                                     <button
                                         onClick={() => handleRestore(backup.id)}
                                         disabled={restoring}
-                                        className="px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                        className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50"
                                     >
                                         Khôi phục
                                     </button>

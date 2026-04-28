@@ -159,6 +159,8 @@ export const attendanceStatusSchema = z.enum([
 
 /** Enrollment status (matches database enum) */
 export const enrollmentStatusSchema = z.enum([
+  "active",
+  "inactive",
   "enrolled",
   "completed",
   "dropped",

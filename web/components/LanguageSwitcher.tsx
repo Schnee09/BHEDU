@@ -52,13 +52,13 @@ export default function LanguageSwitcher() {
                                 setLocale(lang.code);
                                 setIsOpen(false);
                             }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${locale === lang.code ? "bg-indigo-50 dark:bg-indigo-900/30" : ""
+                            className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${locale === lang.code ? "bg-emerald-50 dark:bg-emerald-900/10" : ""
                                 }`}
                         >
                             <span className="text-xl">{lang.flag}</span>
                             <span className="flex-1 font-medium text-gray-900 dark:text-white">{lang.name}</span>
                             {locale === lang.code && (
-                                <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                             )}
                         </button>
                     ))}

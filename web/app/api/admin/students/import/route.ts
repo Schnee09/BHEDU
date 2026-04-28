@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
               role: "student",
               phone: student.phone,
               address: student.address,
-              student_code: student.studentId || undefined,
+              student_id: student.studentId,
               grade_level: student.gradeLevel,
               status: (student.status as any) || "active",
               is_managed: true,

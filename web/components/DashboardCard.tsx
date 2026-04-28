@@ -6,13 +6,13 @@ import { useEffect, useState, useRef } from 'react';
 // Premium gradient variants with enhanced colors
 const cardVariants = [
   {
-    bg: 'from-indigo-50 via-white to-indigo-50/50 dark:from-indigo-950/40 dark:via-slate-900 dark:to-indigo-950/20',
-    border: 'border-indigo-100/80 dark:border-indigo-800/40',
-    text: 'text-indigo-600 dark:text-indigo-400',
-    icon: 'text-indigo-600 dark:text-indigo-400',
-    glow: 'group-hover:shadow-indigo-500/20 dark:group-hover:shadow-indigo-500/30',
-    iconBg: 'bg-indigo-100/80 dark:bg-indigo-900/40',
-    accent: 'bg-gradient-to-r from-indigo-500 to-purple-500',
+    bg: 'from-stone-50 via-white to-stone-50/50 dark:from-stone-900/40 dark:via-black dark:to-stone-900/20',
+    border: 'border-stone-200/80 dark:border-stone-800/40',
+    text: 'text-stone-900 dark:text-stone-100',
+    icon: 'text-stone-900 dark:text-stone-100',
+    glow: 'group-hover:shadow-stone-500/10 dark:group-hover:shadow-stone-500/20',
+    iconBg: 'bg-stone-100/80 dark:bg-stone-800/40',
+    accent: 'bg-gradient-to-r from-stone-900 to-stone-600 dark:from-white dark:to-stone-400',
   },
   {
     bg: 'from-sky-50 via-white to-sky-50/50 dark:from-sky-950/40 dark:via-slate-900 dark:to-sky-950/20',

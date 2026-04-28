@@ -73,7 +73,7 @@ const reportTypes: ReportConfig[] = [
     title: 'Báo cáo học tập',
     description: 'Phân bố điểm và phân tích thành tích học tập',
     icon: Icons.Grades,
-    color: 'text-purple-600 bg-purple-100',
+    color: 'text-emerald-600 bg-emerald-100',
     available: true,
   },
   {
@@ -377,7 +377,7 @@ function ReportsPageContent() {
               <StatCard
                 label="Môn học"
                 value={stats.courses.total}
-                color="purple"
+                color="blue"
                 icon={<Icons.Teachers className="w-6 h-6" />}
                 trend={
                   stats.courses.withTeacher > 0

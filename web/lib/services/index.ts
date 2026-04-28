@@ -5,8 +5,6 @@
 export * from "./studentService";
 export * from "./teacherService";
 export * from "./classService";
-export { EnrollmentService, enrollmentService } from "./enrollmentService";
-export type { Enrollment } from "./enrollmentService";
 export { SubjectService, subjectService } from "./subjectService";
 export type {
   CreateSubjectInput,

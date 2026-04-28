@@ -1,8 +1,16 @@
+/**
+ * Import History Panel
+ * Refactored with premium stone/amber theme and Vietnamese localization
+ */
+
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '@/lib/api/client'
 import { showToast } from '@/components/ToastProvider'
+import { Icons } from '@/components/ui/Icons'
+import { Badge, Button, Card } from '@/components/ui'
+import { cn } from '@/lib/utils'
 
 type ImportLog = {
   id: string
@@ -44,13 +52,13 @@ export default function ImportHistoryPanel() {
         const res = await apiFetch('/api/admin/students/import/history?limit=10&offset=0')
         const json = await res.json()
         if (!res.ok) {
-          showToast.error(json?.error || 'Failed to load import history')
+          showToast.error(json?.error || 'Không thể tải lịch sử nhập liệu')
           return
         }
         setLogs(json.logs || [])
       } catch (err) {
         console.error(err)
-        showToast.error('Failed to load import history')
+        showToast.error('Không thể tải lịch sử nhập liệu')
       } finally {
         setLoading(false)
       }
@@ -65,155 +73,166 @@ export default function ImportHistoryPanel() {
       const res = await apiFetch(`/api/admin/students/import/errors?import_log_id=${encodeURIComponent(importLogId)}`)
       const json = await res.json()
       if (!res.ok) {
-        showToast.error(json?.error || 'Failed to load import errors')
+        showToast.error(json?.error || 'Không thể tải chi tiết lỗi')
         return
       }
       setErrors(json.data || [])
     } catch (err) {
       console.error(err)
-      showToast.error('Failed to load import errors')
+      showToast.error('Không thể tải chi tiết lỗi')
     } finally {
       setErrorsLoading(false)
     }
   }
 
   if (loading) {
-    return <div className="text-center py-8 text-slate-600">Loading import history...</div>
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Đang tải lịch sử...</p>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">Import History</h2>
-        <p className="text-sm text-gray-600 mt-1">Validation results and error reporting from bulk student imports.</p>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="pb-6 border-b border-stone-100 dark:border-white/5">
+        <h2 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+          <Icons.History className="w-6 h-6 text-amber-500" /> Lịch sử Nhập liệu (Bulk Import)
+        </h2>
+        <p className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest mt-1">
+          Báo cáo kết quả kiểm soát và chi tiết lỗi từ các đợt nhập học viên hàng loạt.
+        </p>
       </div>
 
       {logs.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-600">No imports found.</div>
+        <Card borderStyle="dashed" className="p-16 text-center rounded-[2.5rem] bg-stone-50/50 dark:bg-white/[0.01]">
+          <div className="w-16 h-16 bg-stone-100 dark:bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Icons.Archive className="w-8 h-8 text-stone-300" />
+          </div>
+          <p className="text-stone-500 font-medium">Chưa có dữ liệu nhập liệu hàng loạt nào được ghi nhận.</p>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-            <div className="px-4 py-3 border-b bg-gray-50 text-sm font-medium text-gray-700">Recent imports</div>
-            <ul className="divide-y">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Recent Imports List */}
+          <div className="lg:col-span-5 space-y-4">
+            <h3 className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Các lượt nhập gần đây</h3>
+            <div className="grid gap-3">
               {logs.map((log) => {
                 const isSelected = log.id === selectedLogId
-                const badgeColor =
-                  log.status === 'completed'
-                    ? 'bg-green-100 text-green-800'
-                    : log.status === 'failed'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                const statusVariant = 
+                  log.status === 'completed' ? 'success' : 
+                  log.status === 'failed' ? 'danger' : 'secondary';
+                
+                const statusLabel = 
+                  log.status === 'completed' ? 'Hoàn tất' : 
+                  log.status === 'failed' ? 'Thất bại' : 'Đang xử lý';
 
                 return (
-                  <li key={log.id} className={`p-4 hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setSelectedLogId(log.id)
-                        await loadErrors(log.id)
-                      }}
-                      className="w-full text-left"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="font-semibold text-gray-900">{new Date(log.created_at).toLocaleString()}</div>
-                          <div className="text-xs text-gray-600 mt-1">
-                            By {log.importer?.full_name || log.importer?.email || 'Unknown'} · Total {log.total_rows ?? 0}
-                          </div>
+                  <div
+                    key={log.id}
+                    onClick={async () => {
+                      setSelectedLogId(log.id)
+                      await loadErrors(log.id)
+                    }}
+                    className={cn(
+                      "group cursor-pointer p-5 rounded-3xl border transition-all duration-300",
+                      isSelected 
+                        ? "bg-amber-500 text-white border-amber-600 shadow-xl shadow-amber-500/20 translate-x-2" 
+                        : "bg-white dark:bg-stone-900 border-stone-100 dark:border-white/5 hover:border-amber-500/20 hover:shadow-lg"
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div>
+                        <div className={cn("font-serif font-black text-sm uppercase tracking-tight", isSelected ? "text-white" : "text-stone-900 dark:text-white")}>
+                          {new Date(log.created_at).toLocaleString('vi-VN')}
                         </div>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${badgeColor}`}>{log.status}</span>
+                        <div className={cn("text-[9px] font-black uppercase tracking-widest mt-0.5", isSelected ? "text-amber-100" : "text-stone-400")}>
+                          Bởi {log.importer?.full_name || log.importer?.email || 'Hệ thống'} • Tổng {log.total_rows ?? 0} dòng
+                        </div>
                       </div>
-                      <div className="mt-2 text-sm text-gray-700 flex gap-4 flex-wrap">
-                        <span>✅ {log.success_count ?? 0} success</span>
-                        <span>❌ {log.error_count ?? 0} errors</span>
-                        <span>📦 {log.processed_rows ?? 0}/{log.total_rows ?? 0} processed</span>
+                      <Badge 
+                        variant={statusVariant} 
+                        className={cn(
+                          "font-black text-[8px] uppercase tracking-widest px-2 h-5",
+                          isSelected && "bg-white/20 border-white/30 text-white"
+                        )}
+                      >
+                        {statusLabel}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex gap-4 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <Icons.Check className={cn("w-3 h-3", isSelected ? "text-amber-100" : "text-emerald-500")} />
+                        <span className={cn("text-[10px] font-bold", isSelected ? "text-white" : "text-stone-700 dark:text-stone-300")}>{log.success_count ?? 0} thành công</span>
                       </div>
-                    </button>
-                  </li>
+                      <div className="flex items-center gap-1.5">
+                        <Icons.Error className={cn("w-3 h-3", isSelected ? "text-amber-100" : "text-red-500")} />
+                        <span className={cn("text-[10px] font-bold", isSelected ? "text-white" : "text-stone-700 dark:text-stone-300")}>{log.error_count ?? 0} lỗi</span>
+                      </div>
+                    </div>
+                  </div>
                 )
               })}
-            </ul>
+            </div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-            <div className="px-4 py-3 border-b bg-gray-50 text-sm font-medium text-gray-700">Errors</div>
-
-            {!selectedLog ? (
-              <div className="p-6 text-sm text-gray-600">Select an import to view row-level errors.</div>
-            ) : errorsLoading ? (
-              <div className="p-6 text-sm text-gray-600">Loading errors...</div>
-            ) : errors.length === 0 ? (
-              <div className="p-6 text-sm text-gray-600">No errors for this import.</div>
-            ) : (
-              <>
-                {/* Mobile Card View */}
-                <div className="md:hidden space-y-3 p-4">
-                  {errors.slice(0, 50).map((e) => (
-                    <div key={e.id} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600">Row {e.row_number ?? '?'}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${e.severity === 'warning'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                            }`}>
-                            {e.severity || 'error'}
-                          </span>
+          {/* Details & Errors Panel */}
+          <div className="lg:col-span-7 space-y-4">
+            <h3 className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Chi tiết lỗi dòng dữ liệu</h3>
+            <Card className="rounded-[2rem] p-0 overflow-hidden min-h-[400px]">
+              {!selectedLog ? (
+                <div className="h-full flex flex-col items-center justify-center p-12 text-center">
+                  <Icons.Search className="w-10 h-10 text-stone-200 mb-4" />
+                  <p className="text-stone-400 text-sm font-medium">Chọn một lượt nhập để xem chi tiết báo cáo.</p>
+                </div>
+              ) : errorsLoading ? (
+                <div className="p-20 flex flex-col items-center justify-center space-y-4">
+                  <div className="w-8 h-8 border-3 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+                  <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Đang tải báo cáo lỗi...</p>
+                </div>
+              ) : errors.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center p-12 text-center">
+                  <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-4">
+                    <Icons.Success className="w-6 h-6 text-emerald-500" />
+                  </div>
+                  <p className="text-stone-500 font-bold mb-1">Không có lỗi nào!</p>
+                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest italic">Toàn bộ dữ liệu đã được xử lý thành công.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-stone-50 dark:divide-white/5">
+                  <div className="bg-stone-50/50 dark:bg-white/[0.02] px-6 py-4 grid grid-cols-12 gap-4 text-[9px] font-black text-stone-400 uppercase tracking-widest">
+                    <div className="col-span-2">Dòng</div>
+                    <div className="col-span-3">Trường dữ liệu</div>
+                    <div className="col-span-5">Thông báo lỗi</div>
+                    <div className="col-span-2 text-right">Mức độ</div>
+                  </div>
+                  <div className="max-h-[600px] overflow-y-auto">
+                    {errors.slice(0, 100).map((e) => (
+                      <div key={e.id} className="px-6 py-4 grid grid-cols-12 gap-4 items-center hover:bg-stone-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                        <div className="col-span-2 font-mono text-xs font-bold text-stone-400">#{e.row_number ?? '?'}</div>
+                        <div className="col-span-3 text-[11px] font-black text-stone-700 dark:text-stone-200 uppercase tracking-wide truncate">{e.field_name ?? '—'}</div>
+                        <div className="col-span-5 text-[11px] text-stone-600 dark:text-stone-400 font-medium leading-relaxed">{e.error_message ?? 'Không có thông báo'}</div>
+                        <div className="col-span-2 text-right">
+                          <Badge 
+                            variant={e.severity === 'warning' ? 'secondary' : 'danger'}
+                            className="font-black text-[8px] uppercase tracking-widest px-2 h-5"
+                          >
+                            {e.severity || 'Lỗi'}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="mb-1">
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Field:</span>
-                        <span className="ml-2 text-sm font-medium text-gray-900">{e.field_name ?? '—'}</span>
+                    ))}
+                    {errors.length > 100 && (
+                      <div className="p-4 text-center bg-stone-50/50 dark:bg-white/[0.02]">
+                        <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Chỉ hiển thị 100 lỗi đầu tiên</p>
                       </div>
-                      <div className="text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">
-                        {e.error_message ?? 'No error message'}
-                      </div>
-                    </div>
-                  ))}
-                  {errors.length > 50 && (
-                    <div className="text-center text-xs text-gray-500 py-2">
-                      Showing first 50 errors only
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-
-                {/* Desktop Table View */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="bg-gray-50 border-b">
-                        <th className="text-left px-4 py-3 font-semibold text-gray-700">Row</th>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-700">Field</th>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-700">Message</th>
-                        <th className="text-left px-4 py-3 font-semibold text-gray-700">Severity</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {errors.slice(0, 50).map((e) => (
-                        <tr key={e.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-gray-600">{e.row_number ?? '—'}</td>
-                          <td className="px-4 py-2 font-medium text-gray-900">{e.field_name ?? '—'}</td>
-                          <td className="px-4 py-2 text-gray-700">{e.error_message ?? '—'}</td>
-                          <td className="px-4 py-2">
-                            <span
-                              className={`px-2 py-1 rounded text-xs font-medium ${e.severity === 'warning'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                                }`}
-                            >
-                              {e.severity || 'error'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {errors.length > 50 && (
-                    <div className="p-3 text-xs text-gray-600 border-t">Showing first 50 errors.</div>
-                  )}
-                </div>
-              </>
-            )}
+              )}
+            </Card>
           </div>
         </div>
       )}

@@ -50,7 +50,7 @@ export function GlowCard({
 interface GradientCardProps {
   children: React.ReactNode;
   className?: string;
-  gradient?: "amber" | "purple" | "green" | "blue" | "slate";
+  gradient?: "amber" | "emerald" | "green" | "blue" | "slate";
 }
 
 /**
@@ -63,7 +63,7 @@ export function GradientCard({
 }: GradientCardProps) {
   const gradients = {
     amber: "bg-gradient-to-br from-amber-50/50 via-transparent to-orange-50/30 dark:from-amber-900/10 dark:to-orange-900/5",
-    purple: "bg-gradient-to-br from-purple-50/50 via-transparent to-pink-50/30 dark:from-purple-900/10 dark:to-pink-900/5",
+    emerald: "bg-gradient-to-br from-emerald-50/50 via-transparent to-teal-50/30 dark:from-emerald-900/10 dark:to-teal-900/5",
     green: "bg-gradient-to-br from-green-50/50 via-transparent to-emerald-50/30 dark:from-green-900/10 dark:to-emerald-900/5",
     blue: "bg-gradient-to-br from-blue-50/50 via-transparent to-cyan-50/30 dark:from-blue-900/10 dark:to-cyan-900/5",
     slate: "bg-gradient-to-br from-slate-50/50 via-transparent to-gray-50/30 dark:from-slate-900/10 dark:to-gray-900/5",

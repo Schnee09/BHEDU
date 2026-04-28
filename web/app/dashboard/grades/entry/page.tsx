@@ -32,6 +32,9 @@ import {
 import { validateGrade } from '@/lib/grades/validation';
 import PageGuard from '@/components/PageGuard';
 import BulkGradeImport from '@/components/grades/BulkGradeImport';
+import { Icons } from '@/components/ui/Icons';
+import { Badge } from '@/components/ui';
+import { cn } from '@/lib/utils';
 
 // Types
 interface Student {
@@ -228,10 +231,10 @@ function GradeEntryPageContent() {
 
         // Students might be raw array (from my client.ts)
         const studentList = studentsData.map((s: any) => ({
-          id: s.id,
+          id: s.student_id || s.id, // Support both student_id and id
           name: s.full_name || s.name,
           full_name: s.full_name || s.name,
-        }));
+        })).filter(s => s.id && typeof s.id === 'string'); // Ensure we have a valid ID
         setStudents(studentList);
 
         // Map grades
@@ -300,7 +303,11 @@ function GradeEntryPageContent() {
             score: grades[student.id]?.[component] ?? null,
             notes: null,
           }))
-          .filter((g) => g.score !== null && g.score !== undefined); // Only save if score exists
+          .filter((g) => 
+            g.student_id && // Must have a student ID
+            g.score !== null && 
+            g.score !== undefined // Only save if score exists
+          ); 
 
         if (gradesToSave.length > 0) {
           await bulkCreateGrades({
@@ -433,21 +440,24 @@ function GradeEntryPageContent() {
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Nhập Điểm</h1>
-          <p className="mt-2 text-muted-foreground">
-            Nhập điểm Giữa kỳ và Cuối kỳ (thang điểm 10, trọng số 50:50)
+        <div className="mb-10">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-stone-900 dark:text-white">
+            Nhập điểm học tập
+          </h1>
+          <p className="mt-2 text-stone-500 font-medium text-sm">
+            Cập nhật kết quả điểm Giữa kỳ và Cuối kỳ (trọng số 50:50) cho học sinh
           </p>
         </div>
 
         {/* Filters */}
-        <div className="bg-surface/80 backdrop-blur-sm rounded-xl shadow-soft border border-border p-6 mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Lớp học</label>
+        <div className="glass-crystal p-8 rounded-[2rem] shadow-ultra border-none mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2.5">
+              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">Lớp học</label>
               <Select
                 value={selectedClassId || ''}
                 onChange={(e) => setSelectedClassId(e.target.value || null)}
+                className="h-12 rounded-xl glass-crystal border-none font-semibold"
               >
                 <option value="">Chọn lớp...</option>
                 {classes.map((c) => (
@@ -458,11 +468,12 @@ function GradeEntryPageContent() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Học kỳ</label>
+            <div className="space-y-2.5">
+              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">Học kỳ</label>
               <Select
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value as Semester)}
+                className="h-12 rounded-xl glass-crystal border-none font-semibold"
               >
                 {semesters.length > 0 ? (
                   semesters.map((s) => (
@@ -479,12 +490,13 @@ function GradeEntryPageContent() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Môn học</label>
+            <div className="space-y-2.5">
+              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">Môn học</label>
               <Select
                 value={selectedSubjectId || ''}
                 onChange={(e) => setSelectedSubjectId(e.target.value || null)}
                 disabled={classSubjects.length === 0}
+                className="h-12 rounded-xl glass-crystal border-none font-semibold"
               >
                 <option value="">Chọn môn học...</option>
                 {classSubjects.map((s) => (
@@ -508,26 +520,30 @@ function GradeEntryPageContent() {
           </div>
         ) : (
           <>
-            <div className="mb-4 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                <strong>{students.length}</strong> học sinh trong lớp{' '}
-                <strong>{selectedClass?.name}</strong>
+            <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-stone-500 font-medium">
+                Đang hiển thị <strong>{students.length}</strong> học sinh — Lớp{' '}
+                <span className="text-emerald-600 font-bold">{selectedClass?.name}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {hasErrors && (
-                  <div className="text-sm text-red-600 mr-2">
-                    ⚠️ {Object.values(errors).reduce((acc, e) => acc + e.length, 0)} lỗi
+                  <div className="text-xs bg-red-50 dark:bg-red-500/10 text-red-600 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-500/20 font-bold flex items-center gap-2">
+                    <Icons.Error className="w-4 h-4" />
+                    {Object.values(errors).reduce((acc, e) => acc + e.length, 0)} lỗi nhập liệu
                   </div>
                 )}
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={downloadTemplate}
-                  className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg font-medium flex items-center gap-2 transition-colors"
-                  title="Tải mẫu CSV"
+                  className="rounded-xl h-10 px-4 font-bold border-stone-200 dark:border-white/10"
+                  leftIcon={<Icons.Download className="w-4 h-4" />}
                 >
-                  📥 Xuất mẫu
-                </button>
-                <label className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center gap-2 cursor-pointer transition-colors">
-                  📤 Import CSV
+                  Xuất mẫu CSV
+                </Button>
+                <label className="h-10 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg shadow-emerald-500/20 text-sm">
+                  <Icons.Upload className="w-4 h-4" />
+                  Import CSV
                   <input
                     type="file"
                     accept=".csv,.txt"
@@ -535,35 +551,38 @@ function GradeEntryPageContent() {
                     className="hidden"
                   />
                 </label>
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setShowExcelImport(true)}
-                  className="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+                  className="rounded-xl h-10 px-4 font-bold border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/5"
+                  leftIcon={<Icons.Chart className="w-4 h-4" />}
                 >
-                  📊 Import Excel
-                </button>
+                  Import Excel
+                </Button>
               </div>
             </div>
 
-            <div className="bg-surface/80 backdrop-blur-sm rounded-xl shadow-soft border border-border overflow-hidden">
+            <div className="glass-crystal rounded-[2.5rem] shadow-ultra border-none overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-surface-secondary border-b border-border">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-foreground w-12">
+                  <thead>
+                    <tr className="bg-stone-50/50 dark:bg-white/5 border-b border-stone-100 dark:border-white/5">
+                      <th className="px-6 py-5 text-left text-xs font-bold text-stone-400 uppercase tracking-widest w-16">
                         #
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">
+                      <th className="px-6 py-5 text-left text-xs font-bold text-stone-400 uppercase tracking-widest">
                         Học sinh
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-foreground w-28">
+                      <th className="px-6 py-5 text-center text-xs font-bold text-stone-400 uppercase tracking-widest w-36">
                         {GRADE_LABELS[EvaluationType.MIDTERM]}
-                        <span className="text-muted-foreground font-normal"> (50%)</span>
+                        <span className="text-stone-300 dark:text-stone-600 font-medium ml-1">(50%)</span>
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-foreground w-28">
+                      <th className="px-6 py-5 text-center text-xs font-bold text-stone-400 uppercase tracking-widest w-36">
                         {GRADE_LABELS[EvaluationType.FINAL]}
-                        <span className="text-muted-foreground font-normal"> (50%)</span>
+                        <span className="text-stone-300 dark:text-stone-600 font-medium ml-1">(50%)</span>
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-foreground w-24 bg-blue-50 dark:bg-blue-900/20">
+                      <th className="px-6 py-5 text-center text-xs font-bold text-emerald-600 uppercase tracking-widest w-32 bg-emerald-50/30 dark:bg-emerald-500/5">
                         Điểm TB
                       </th>
                     </tr>
@@ -583,13 +602,13 @@ function GradeEntryPageContent() {
                               : 'hover:bg-surface-secondary/50 transition-colors'
                           }
                         >
-                          <td className="px-4 py-3 text-sm font-medium text-foreground">
+                          <td className="px-6 py-4 text-sm font-bold text-stone-400">
                             {idx + 1}
                           </td>
-                          <td className="px-4 py-3 text-sm text-foreground">
+                          <td className="px-6 py-4 text-sm font-bold text-stone-900 dark:text-stone-100">
                             {student.full_name || student.name || '—'}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-6 py-4">
                             <GradeInput
                               value={studentGrades[EvaluationType.MIDTERM] ?? ''}
                               onChange={(val) =>
@@ -601,7 +620,7 @@ function GradeEntryPageContent() {
                               }
                             />
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-6 py-4">
                             <GradeInput
                               value={studentGrades[EvaluationType.FINAL] ?? ''}
                               onChange={(val) =>
@@ -612,8 +631,8 @@ function GradeEntryPageContent() {
                               }
                             />
                           </td>
-                          <td className="px-4 py-3 text-center bg-blue-50 dark:bg-blue-900/20">
-                            <span className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                          <td className="px-6 py-4 text-center bg-emerald-50/30 dark:bg-emerald-500/5">
+                            <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
                               {studentGrades.average !== null && studentGrades.average !== undefined
                                 ? studentGrades.average.toFixed(1)
                                 : '—'}
@@ -627,13 +646,16 @@ function GradeEntryPageContent() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-8 flex justify-end">
               <Button
+                variant="success"
                 onClick={() => setShowConfirm(true)}
                 disabled={!hasGrades || hasErrors || saving}
                 size="lg"
+                className="px-12 rounded-2xl shadow-xl shadow-emerald-500/20 font-bold"
+                leftIcon={<Icons.Save className="w-5 h-5" />}
               >
-                {saving ? 'Đang lưu...' : 'Save Grades'}
+                {saving ? 'Đang lưu...' : 'Lưu bảng điểm'}
               </Button>
             </div>
           </>
@@ -688,7 +710,7 @@ function GradeInput({
   error?: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1 group">
       <Input
         type="number"
         min="0"
@@ -696,10 +718,15 @@ function GradeInput({
         step="0.1"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="0-10"
-        className={`w-20 text-center ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+        placeholder="Điểm"
+        className={cn(
+          "w-32 h-12 text-center text-lg font-bold rounded-xl transition-all",
+          "bg-stone-50 dark:bg-white/5 border-stone-200 dark:border-white/10",
+          "focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500",
+          error ? 'border-red-500 ring-red-500/10' : ''
+        )}
       />
-      {error && <span className="text-xs text-red-600 font-medium">{error}</span>}
+      {error && <span className="text-[10px] text-red-600 font-bold uppercase tracking-tight">{error}</span>}
     </div>
   );
 }

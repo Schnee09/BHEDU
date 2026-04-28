@@ -91,6 +91,8 @@ export const Icons = {
   Grades: DocumentTextIcon,
   Progress: PresentationChartLineIcon,
   Finance: CurrencyDollarIcon,
+  Parents: UsersIcon,
+  Work: ClipboardDocumentListIcon,
 
   // Actions
   View: EyeIcon,
@@ -112,6 +114,7 @@ export const Icons = {
   CreditCard: CreditCardIcon,
   Phone: PhoneIcon,
   Mail: EnvelopeIcon,
+  Email: EnvelopeIcon,
   Location: MapPinIcon,
   Back: ArrowLeftIcon,
   History: ClockIcon,
@@ -121,6 +124,7 @@ export const Icons = {
   EyeOff: EyeSlashIcon,
   Check: CheckIcon,
   ArrowRight: ArrowRightIcon,
+  Description: DocumentTextIcon,
 
   // Status
   Success: CheckCircleIcon,

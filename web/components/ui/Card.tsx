@@ -15,6 +15,7 @@ interface CardProps {
   as?: 'div' | 'article' | 'section';
   padding?: string;
   variant?: string;
+  borderStyle?: 'solid' | 'dashed';
 }
 
 export const Card = memo(function Card({
@@ -24,7 +25,8 @@ export const Card = memo(function Card({
   onClick,
   as: Component = 'div',
   padding,
-  variant
+  variant,
+  borderStyle = 'solid'
 }: CardProps) {
   const isClickable = !!onClick;
 
@@ -33,6 +35,7 @@ export const Card = memo(function Card({
       onClick={onClick}
       className={cn(
         "rounded-3xl transition-all duration-500 glass-premium text-foreground",
+        borderStyle === 'dashed' ? "border-2 border-dashed border-stone-200 dark:border-white/10" : "border border-stone-100 dark:border-white/5",
         hover || isClickable ? "hover:shadow-ultra hover:-translate-y-1 hover:border-primary/20" : "shadow-sm",
         isClickable ? "cursor-pointer active:scale-[0.98]" : "",
         padding || "p-4 sm:p-6",
@@ -181,7 +184,7 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
-  color?: 'blue' | 'green' | 'orange' | 'purple' | 'slate' | 'amber';
+  color?: 'blue' | 'green' | 'orange' | 'slate' | 'amber' | 'emerald';
   onClick?: () => void;
   className?: string;
 }
@@ -199,9 +202,9 @@ const COLOR_CLASSES = {
     icon: 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400',
     gradient: 'from-orange-500/5 to-transparent'
   },
-  purple: {
-    icon: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
-    gradient: 'from-purple-500/5 to-transparent'
+  emerald: {
+    icon: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400',
+    gradient: 'from-emerald-500/5 to-transparent'
   },
   slate: {
     icon: 'bg-stone-50 dark:bg-stone-800/50 text-stone-600 dark:text-stone-400',

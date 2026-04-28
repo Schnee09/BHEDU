@@ -29,8 +29,10 @@ export interface Student {
   address: string | null;
   emergency_contact: string | null;
   grade_level: string | null;
-  status: "active" | "inactive" | "graduated" | "transferred";
+  status: "active" | "inactive" | "graduated" | "suspended" | "transferred";
   role: "student";
+  student_id: string | null;
+  student_code: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -67,20 +69,24 @@ export interface CreateStudentInput {
   address?: string | null;
   emergency_contact?: string | null;
   grade_level?: string | null;
-  status?: "active" | "inactive";
+  student_id?: string | null;
+  student_code?: string | null;
+  status?: "active" | "inactive" | "suspended";
 }
 
 export interface UpdateStudentInput {
   first_name?: string;
   last_name?: string;
-  email?: string;
+  email?: string | null;
   phone?: string | null;
   date_of_birth?: string | null;
   gender?: string | null;
   address?: string | null;
   emergency_contact?: string | null;
   grade_level?: string | null;
-  status?: "active" | "inactive" | "graduated" | "transferred";
+  student_id?: string | null;
+  student_code?: string | null;
+  status?: "active" | "inactive" | "graduated" | "suspended" | "transferred";
 }
 
 // ============================================
@@ -127,11 +133,24 @@ export class StudentRepository
     const studentQuery = this.supabase
       .from(this.tableName)
       .select(`
-        *,
-        student_profiles (
-          student_code,
-          grade_level
-        )
+        id,
+        user_id,
+        first_name,
+        last_name,
+        full_name,
+        email,
+        phone,
+        date_of_birth,
+        gender,
+        address,
+        emergency_contact,
+        grade_level,
+        status,
+        role,
+        created_at,
+        updated_at,
+        student_code,
+        student_id
       `)
       .eq("id", id)
       .eq("role", "student")
@@ -163,14 +182,7 @@ export class StudentRepository
       throw new Error(`Failed to find student: ${studentResult.error.message}`);
     }
 
-    const rawData = studentResult.data as any;
-    const { student_profiles, ...rest } = rawData;
-
-    const student = {
-      ...rest,
-      student_code: student_profiles?.[0]?.student_code || rawData.student_code,
-      grade_level: student_profiles?.[0]?.grade_level || rawData.grade_level,
-    } as Student;
+    const student = studentResult.data as Student;
 
     const enrollments = (enrollmentsResult.data || []).map((e: any) => ({
       ...e,
@@ -198,11 +210,24 @@ export class StudentRepository
       .from(this.tableName)
       .select(
         `
-        *,
-        student_profiles (
-          student_code,
-          grade_level
-        )
+        id,
+        user_id,
+        first_name,
+        last_name,
+        full_name,
+        email,
+        phone,
+        date_of_birth,
+        gender,
+        address,
+        emergency_contact,
+        grade_level,
+        status,
+        role,
+        created_at,
+        updated_at,
+        student_code,
+        student_id
       `,
         { count: "exact" },
       )
@@ -211,7 +236,7 @@ export class StudentRepository
     // Apply filters
     if (filters.search) {
       query = query.or(
-        `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`,
+        `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,student_code.ilike.%${filters.search}%,student_id.ilike.%${filters.search}%`,
       );
     }
 
@@ -235,15 +260,7 @@ export class StudentRepository
       throw new Error(`Failed to fetch students: ${error.message}`);
     }
 
-    // Flatten
-    const flattenedData = (data || []).map((s: any) => {
-      const { student_profiles, ...rest } = s;
-      return {
-        ...rest,
-        student_code: student_profiles?.[0]?.student_code || s.student_code,
-        grade_level: student_profiles?.[0]?.grade_level || s.grade_level,
-      };
-    }) as Student[];
+    const flattenedData = (data || []) as Student[];
 
     return {
       data: flattenedData,
@@ -266,38 +283,41 @@ export class StudentRepository
     const start = (page - 1) * pageSize;
     const end = start + pageSize - 1;
 
-    // First get classes taught by this teacher
-    const { data: classes } = await this.supabase
-      .from("classes")
-      .select("id")
-      .eq("teacher_id", teacherId);
-
-    const classIds = classes?.map((c) => c.id) || [];
-
-    if (classIds.length === 0) {
-      return { data: [], total: 0, page, pageSize, totalPages: 0 };
-    }
-
-    // Get students enrolled in those classes
-    const { data: enrollments } = await this.supabase
-      .from("enrollments")
-      .select("student_id")
-      .in("class_id", classIds)
-      .eq("status", "enrolled");
-
-    const studentIds = [
-      ...new Set(enrollments?.map((e) => e.student_id) || []),
-    ];
-
-    if (studentIds.length === 0) {
-      return { data: [], total: 0, page, pageSize, totalPages: 0 };
-    }
-
     let query = this.supabase
       .from(this.tableName)
-      .select("*", { count: "exact" })
-      .in("id", studentIds)
-      .eq("role", "student");
+      .select(
+        `
+        id,
+        user_id,
+        first_name,
+        last_name,
+        full_name,
+        email,
+        phone,
+        date_of_birth,
+        gender,
+        address,
+        emergency_contact,
+        grade_level,
+        status,
+        role,
+        created_at,
+        updated_at,
+        student_code,
+        student_id,
+        enrollments!inner(
+          status,
+          class_id,
+          classes!inner(
+            teacher_id
+          )
+        )
+      `,
+        { count: "exact" },
+      )
+      .eq("role", "student")
+      .eq("enrollments.status", "active")
+      .eq("enrollments.classes.teacher_id", teacherId);
 
     // Apply filters
     if (filters.search) {
@@ -318,8 +338,14 @@ export class StudentRepository
       throw new Error(`Failed to fetch teacher's students: ${error.message}`);
     }
 
+    // Remove the nested enrollment data from the result to match the Student type
+    const cleanedData = (data || []).map((s: any) => {
+      const { enrollments, ...rest } = s;
+      return rest;
+    }) as Student[];
+
     return {
-      data: (data || []) as Student[],
+      data: cleanedData,
       total: count || 0,
       page,
       pageSize,
@@ -410,13 +436,12 @@ export class StudentRepository
       throw new Error(`Failed to count students: ${error.message}`);
     }
 
-    const counts: Record<string, number> = {};
-    for (const row of data || []) {
+    // Better aggregation using reduce to avoid multiple iterations
+    return (data || []).reduce((acc: Record<string, number>, row: any) => {
       const status = row.status || "unknown";
-      counts[status] = (counts[status] || 0) + 1;
-    }
-
-    return counts;
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
   }
 
   /**

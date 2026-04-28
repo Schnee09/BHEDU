@@ -74,7 +74,7 @@ export default function DeleteUserModal({ isOpen, onClose, onSuccess, user }: De
             size="md"
             footer={
                 <div className="flex gap-3 justify-end w-full">
-                    <Button variant="outline" onClick={handleClose} disabled={loading} className="rounded-xl">
+                    <Button variant="outline" onClick={handleClose} disabled={loading} className="rounded-2xl h-14 flex-1">
                         Hủy bỏ
                     </Button>
                     <Button
@@ -82,10 +82,10 @@ export default function DeleteUserModal({ isOpen, onClose, onSuccess, user }: De
                         onClick={handleDelete}
                         isLoading={loading}
                         disabled={confirmEmail !== user?.email}
-                        className="rounded-xl px-8"
+                        className="rounded-2xl h-14 flex-[2] shadow-lg shadow-red-500/20"
                         leftIcon={<Icons.Trash className="w-4 h-4" />}
                     >
-                        Xóa người dùng
+                        Xác nhận xóa vĩnh viễn
                     </Button>
                 </div>
             }
@@ -96,8 +96,8 @@ export default function DeleteUserModal({ isOpen, onClose, onSuccess, user }: De
                         <Icons.Error className="w-10 h-10 text-red-600" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight">Hành động nguy hiểm!</h3>
-                        <p className="text-sm text-stone-500 max-w-xs mx-auto">
+                        <h3 className="text-xl font-bold text-stone-900 dark:text-white uppercase tracking-tight">Hành động nguy hiểm!</h3>
+                        <p className="text-sm text-stone-500 font-medium max-w-xs mx-auto">
                             Bạn đang chuẩn bị xóa vĩnh viễn tài khoản của <b>{user?.full_name}</b>. Hành động này không thể hoàn tác.
                         </p>
                     </div>
@@ -106,7 +106,7 @@ export default function DeleteUserModal({ isOpen, onClose, onSuccess, user }: De
                 <div className="bg-red-50 dark:bg-red-900/10 p-5 rounded-3xl border border-red-100 dark:border-red-500/20 space-y-3">
                     <div className="flex items-center gap-3">
                         <Icons.Info className="w-5 h-5 text-red-600 shrink-0" />
-                        <p className="text-xs font-black text-red-900 dark:text-red-400 uppercase tracking-widest">Lưu ý quan trọng</p>
+                        <p className="text-xs font-bold text-red-900 dark:text-red-400 uppercase tracking-widest">Lưu ý quan trọng</p>
                     </div>
                     <ul className="text-[11px] text-red-800/70 dark:text-red-300 space-y-1 ml-8 list-disc font-medium">
                         <li>Tất cả dữ liệu hồ sơ sẽ bị xóa vĩnh viễn.</li>
@@ -116,7 +116,7 @@ export default function DeleteUserModal({ isOpen, onClose, onSuccess, user }: De
                 </div>
 
                 <div className="space-y-3 group">
-                    <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest px-1">
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-1">
                         Nhập email <b>{user?.email}</b> để xác nhận
                     </label>
                     <Input

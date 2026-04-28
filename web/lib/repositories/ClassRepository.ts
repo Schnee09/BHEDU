@@ -25,6 +25,7 @@ export interface Class {
   schedule: string | null;
   capacity: number | null;
   academic_year_id: string | null;
+  grade_level: string | null;
   status: "active" | "inactive" | "completed";
   created_at: string;
   updated_at: string;
@@ -50,6 +51,8 @@ export interface ClassWithDetails extends Class {
   _count?: {
     enrollments: number;
   };
+  enrollment_count?: number; // Backward compatibility
+  code?: string | null; // Flattened from course.code
 }
 
 export interface ClassFilters extends PaginationParams {
@@ -275,12 +278,15 @@ export class ClassRepository
       throw new Error(`Failed to fetch classes: ${error.message}`);
     }
 
-    const resultData = (data || []).map((item: any) => ({
-      ...item,
-      // Flatten enrollment count if it comes as an array/object
-      enrollment_count: item.enrollments?.[0]?.count || 0,
-      // Teacher and course are already in right format from select
-    }));
+    const resultData = (data || []).map((item: any) => {
+      const enrollmentCount = item.enrollments?.[0]?.count || 0;
+      return {
+        ...item,
+        code: item.code || item.course?.code || null,
+        enrollment_count: enrollmentCount,
+        _count: { enrollments: enrollmentCount },
+      };
+    });
 
     return {
       data: resultData as ClassWithDetails[],
@@ -394,11 +400,15 @@ export class ClassRepository
       throw new Error(`Failed to fetch student classes: ${error.message}`);
     }
 
-    const resultData = (data || []).map((item: any) => ({
-      ...item,
-      // Flatten enrollment count
-      enrollment_count: item.enrollments?.[0]?.count || 0,
-    }));
+    const resultData = (data || []).map((item: any) => {
+      const enrollmentCount = item.enrollments?.[0]?.count || 0;
+      return {
+        ...item,
+        code: item.code || item.course?.code || null,
+        enrollment_count: enrollmentCount,
+        _count: { enrollments: enrollmentCount },
+      };
+    });
 
     return {
       data: resultData as ClassWithDetails[],

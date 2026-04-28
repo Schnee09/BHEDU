@@ -18,15 +18,9 @@ import {
     ChevronDownIcon
 } from '@heroicons/react/24/outline'
 
-interface Class {
-    id: string
-    name: string
-    code: string
-    grade_level?: string
-    teacher?: {
-        id: string
-        full_name: string
-    }
+import { ClassResponse } from '@/lib/schemas/responses/class'
+
+interface Class extends ClassResponse {
     _count?: {
         enrollments: number
     }
@@ -273,7 +267,7 @@ export default function EnrollmentsPage() {
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                        <AcademicCapIcon className="w-8 h-8 text-indigo-600" />
+                        <AcademicCapIcon className="w-8 h-8 text-primary" />
                         Quản lý ghi danh
                     </h1>
                     <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -289,12 +283,12 @@ export default function EnrollmentsPage() {
                     <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
-                        className="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                        className="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
                     >
                         <option value="">Chọn lớp...</option>
                         {classes.map(cls => (
                             <option key={cls.id} value={cls.id}>
-                                {cls.name} ({cls.code}) - {cls._count?.enrollments || 0} HS
+                                {cls.name} ({cls.code || cls.course?.code || 'Không có mã'}) - {cls._count?.enrollments || cls.enrollment_count || 0} HS
                             </option>
                         ))}
                     </select>
@@ -302,35 +296,35 @@ export default function EnrollmentsPage() {
 
                 {/* Class Info Card */}
                 {selectedClassData && (
-                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 mb-6 text-white shadow-lg">
+                    <div className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 mb-6 text-white shadow-lg">
                         <div className="flex flex-wrap items-center justify-between gap-4">
                             <div>
                                 <h2 className="text-2xl font-bold">{selectedClassData.name}</h2>
-                                <p className="text-indigo-100 text-sm mt-1">Mã: {selectedClassData.code}</p>
+                                <p className="text-primary-100 text-sm mt-1">Mã: {selectedClassData.code}</p>
                             </div>
                             <div className="flex flex-wrap gap-6">
                                 <div className="flex items-center gap-2">
-                                    <UsersIcon className="w-5 h-5 text-indigo-200" />
+                                    <UsersIcon className="w-5 h-5 text-surface-hover" />
                                     <div>
                                         <p className="text-2xl font-bold">{enrolledStudents.length}</p>
-                                        <p className="text-xs text-indigo-200">Học sinh</p>
+                                        <p className="text-xs text-surface-hover">Học sinh</p>
                                     </div>
                                 </div>
                                 {selectedClassData.grade_level && (
                                     <div className="flex items-center gap-2">
-                                        <BookOpenIcon className="w-5 h-5 text-indigo-200" />
+                                        <BookOpenIcon className="w-5 h-5 text-surface-hover" />
                                         <div>
                                             <p className="text-lg font-bold">{selectedClassData.grade_level}</p>
-                                            <p className="text-xs text-indigo-200">Khối</p>
+                                            <p className="text-xs text-surface-hover">Khối</p>
                                         </div>
                                     </div>
                                 )}
                                 {selectedClassData.teacher && (
                                     <div className="flex items-center gap-2">
-                                        <UserIcon className="w-5 h-5 text-indigo-200" />
+                                        <UserIcon className="w-5 h-5 text-surface-hover" />
                                         <div>
                                             <p className="text-sm font-medium">{selectedClassData.teacher.full_name}</p>
-                                            <p className="text-xs text-indigo-200">GVCN</p>
+                                            <p className="text-xs text-surface-hover">GVCN</p>
                                         </div>
                                     </div>
                                 )}
@@ -343,11 +337,11 @@ export default function EnrollmentsPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Enrolled Students */}
                         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                            <div className="bg-indigo-50 dark:bg-indigo-900/30 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <div className="bg-emerald-50 dark:bg-emerald-900/30 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                            <CheckIcon className="w-5 h-5 text-indigo-600" />
+                                            <CheckIcon className="w-5 h-5 text-emerald-600" />
                                             Đã ghi danh ({filteredEnrolled.length})
                                         </h2>
                                     </div>
@@ -396,7 +390,7 @@ export default function EnrollmentsPage() {
                                             type="checkbox"
                                             checked={selectedToRemove.size === filteredEnrolled.length && filteredEnrolled.length > 0}
                                             onChange={toggleSelectAllForRemove}
-                                            className="w-4 h-4 text-indigo-600 rounded"
+                                            className="w-4 h-4 text-primary rounded"
                                         />
                                         <span className="text-xs text-gray-500 font-medium">Chọn tất cả</span>
                                     </div>
@@ -407,7 +401,7 @@ export default function EnrollmentsPage() {
                                                 type="checkbox"
                                                 checked={selectedToRemove.has(student.student_id)}
                                                 onChange={() => toggleRemoveSelection(student.student_id)}
-                                                className="w-4 h-4 text-indigo-600 rounded"
+                                                className="w-4 h-4 text-primary rounded"
                                             />
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-medium text-gray-900 dark:text-white truncate">

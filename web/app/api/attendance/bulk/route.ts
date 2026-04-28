@@ -1,44 +1,57 @@
-import { AttendanceStatus } from '@/lib/attendance/types';
-import { apiSuccess, createApiHandler } from '@/lib/api/apiHandler';
-import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
-import { createServiceClient } from '@/lib/supabase/server';
-import { z } from 'zod';
-
 /**
- * Bulk Attendance Marking API
+ * Attendance Bulk API (Unified)
  * POST /api/attendance/bulk
+ *
+ * Uses Repository pattern, Zod validation, CASL permissions
  */
+
+import { NextResponse } from "next/server";
+import { apiSuccess, createApiHandler } from "@/lib/api";
+import {
+  checkRateLimit,
+  getRateLimitIdentifier,
+  rateLimitConfigs,
+} from "@/lib/auth/rateLimit";
+import { AttendanceRepository } from "@/lib/repositories/AttendanceRepository";
+import { createServiceClient } from "@/lib/supabase/server";
+import { createAbility } from "@/lib/auth/permissions";
+import { type BulkAttendanceInput, bulkAttendanceSchema } from "@/lib/schemas";
+
+// POST /api/attendance/bulk
 export const POST = createApiHandler(
   {
-    // Use a restrictive permission or role check
-    allowedRoles: ['admin', 'staff', 'teacher', 'super_admin', 'owner'],
-    bodySchema: z.object({
-      classId: z.string().uuid(),
-      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD format'),
-      records: z.array(
-        z.object({
-          studentId: z.string().uuid(),
-          status: z.nativeEnum(AttendanceStatus),
-          remarks: z.string().optional(),
-        })
-      ),
-    }),
+    allowedRoles: [
+      "admin",
+      "staff",
+      "super_admin",
+      "owner",
+      "teacher",
+      "tutor",
+    ],
+    bodySchema: bulkAttendanceSchema,
   },
-  async ({ body, user }) => {
+  async ({ request, body, user }) => {
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
+    }
+
+    const ability = createAbility({ userId: user.id, role: user.role });
+    if (ability.cannot("create", "Attendance")) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 },
+      );
+    }
+
     const supabase = createServiceClient();
     const repository = new AttendanceRepository(supabase);
+    const result = await repository.createBulk(body as BulkAttendanceInput);
 
-    const result = await repository.createBulk({
-      class_id: body.classId,
-      date: body.date,
-      records: body.records.map((r) => ({
-        student_id: r.studentId,
-        status: r.status,
-        notes: r.remarks,
-      })),
-      marked_by: user.id,
-    });
-
-    return apiSuccess(result, { message: 'Điểm danh đã được lưu thành công' });
-  }
+    return apiSuccess(result, { _status: 201 });
+  },
 );

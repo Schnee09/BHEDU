@@ -59,6 +59,7 @@ export type PermissionCode =
     // Grades
     | "grades.view"
     | "grades.entry"
+    | "grades.manage"
     | "grades.delete"
     | "grades.analytics"
     // Curriculum
@@ -122,6 +123,7 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
         "reports.view",
         "reports.export",
         "grades.analytics",
+        "grades.manage",
     ],
     admin: [
         "system.audit",
@@ -137,6 +139,8 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
         "enrollments.manage",
         "subjects.view",
         "subjects.manage",
+        "grades.entry",
+        "grades.manage",
     ],
     staff: [
         "users.view",
@@ -154,9 +158,12 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
         "enrollments.view",
         "enrollments.manage",
         "curriculum.manage",
+        "grades.entry",
+        "grades.manage",
     ],
     teacher: [
         "grades.entry",
+        "grades.manage",
         "grades.delete",
         "attendance.mark",
         "attendance.reports",

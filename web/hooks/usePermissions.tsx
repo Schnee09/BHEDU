@@ -132,6 +132,12 @@ export function usePermissions() {
   const isStudent = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'student') : false, [profile]);
   const isParent = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'parent') : false, [profile]);
 
+  // Exact role checks (Identity-based, not inherited)
+  const isExactAdmin = useMemo(() => profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'owner', [profile]);
+  const isExactTeacher = useMemo(() => profile?.role === 'teacher', [profile]);
+  const isExactStudent = useMemo(() => profile?.role === 'student', [profile]);
+  const isExactParent = useMemo(() => profile?.role === 'parent', [profile]);
+
   // Capability convenience check
   const hasTeacherCapabilities = useMemo(() => {
     if (!profile) return false;
@@ -157,6 +163,12 @@ export function usePermissions() {
     isStudent,
     isParent,
     hasTeacherCapabilities,
+
+    // Identity checks (Exact role)
+    isExactAdmin,
+    isExactTeacher,
+    isExactStudent,
+    isExactParent,
 
     // Utilities
     hasCustomPermission: (code: PermissionCode) => customPermissions.has(code),

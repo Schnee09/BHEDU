@@ -206,7 +206,7 @@ export default function StudentPerformanceCard({
                         </div>
                     )}
                     <div className="text-center">
-                        <div className="text-lg font-semibold text-purple-600">
+                        <div className="text-lg font-semibold text-emerald-600">
                             {strengths.length}
                         </div>
                         <div className="text-xs text-muted-foreground">Môn mạnh</div>

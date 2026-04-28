@@ -14,6 +14,7 @@ export interface ClassResponse {
     schedule?: string | null;
     capacity?: number | null;
     academic_year_id?: string | null;
+    grade_level?: string | null;
     status: "active" | "inactive" | "completed";
     created_at: string;
     updated_at: string;
@@ -36,6 +37,7 @@ export interface ClassResponse {
     _count?: {
         enrollments: number;
     };
+    enrollment_count?: number;
 }
 
 /**

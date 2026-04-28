@@ -110,7 +110,7 @@
   
   /* Spacing */
   --nav-height: 64px;
-  --sidebar-width: 260px;
+  --sidebar-width: 280px;
   
   /* Z-index */
   --z-dropdown: 10;
@@ -134,7 +134,7 @@
   --chart-3: #0D9488;
   --chart-4: #CA8A04;
   --chart-5: #DC2626;
-  --chart-6: #7C3AED;
+  --chart-6: #f59e0b;
 }
 
 /* Dark Mode - Clean, not glassmorphism */

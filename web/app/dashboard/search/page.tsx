@@ -48,7 +48,7 @@ function SearchContent() {
                     { name: "Học phí & Tài chính", href: "/dashboard/finance", keywords: ["finance", "hoc phi", "tien hoc"] },
                     { name: "Học sinh", href: "/dashboard/students", keywords: ["students", "hoc sinh"] },
                     { name: "Lớp học", href: "/dashboard/classes", keywords: ["classes", "lop hoc"] },
-                    { name: "Hồ sơ của tôi", href: "/dashboard/profile", keywords: ["profile", "ca nhan", "ho so"] },
+                    { name: "HềEsơ của tôi", href: "/dashboard/profile", keywords: ["profile", "ca nhan", "ho so"] },
                     { name: "Cài đặt & Bảo mật", href: "/dashboard/settings", keywords: ["settings", "cai dat"] },
                 ];
 
@@ -65,7 +65,7 @@ function SearchContent() {
                 });
 
                 // 2. Search students (V2)
-                const studentsRes = await apiFetch(`/api/v2/students?search=${encodeURIComponent(query)}&limit=10`);
+                const studentsRes = await apiFetch(`/api/students?search=${encodeURIComponent(query)}&limit=10`);
                 if (studentsRes.ok) {
                     const res = await studentsRes.json();
                     const students = Array.isArray(res.data) ? res.data : (res.data?.data || []);
@@ -81,7 +81,7 @@ function SearchContent() {
                 }
 
                 // 3. Search classes (V2)
-                const classesRes = await apiFetch(`/api/v2/classes?search=${encodeURIComponent(query)}&limit=10`);
+                const classesRes = await apiFetch(`/api/classes?search=${encodeURIComponent(query)}&limit=10`);
                 if (classesRes.ok) {
                     const res = await classesRes.json();
                     const classes = Array.isArray(res.data) ? res.data : (res.data?.data || []);
@@ -185,13 +185,13 @@ function SearchContent() {
                                 <Search className="w-16 h-16 text-stone-300 mx-auto" />
                                 <div className="space-y-1">
                                     <p className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight">Không tìm thấy kết quả</p>
-                                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Vui lòng thử từ khóa khác để có kết quả tốt hơn</p>
+                                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Vui lòng thử từ khóa khác đềEcó kết quả tốt hơn</p>
                                 </div>
                             </div>
                         ) : (
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-2">
-                                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest pl-3 border-l-4 border-emerald-500">PHÁT HIỆN {results.length} KẾT QUẢ ĐỐI CHIẾU</p>
+                                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest pl-3 border-l-4 border-emerald-500">PHÁT HIềE {results.length} KẾT QUẢ ĐỐI CHIẾU</p>
                                 </div>
                                 <div className="grid grid-cols-1 gap-3">
                                     {results.map((result) => (
@@ -234,7 +234,7 @@ function SearchContent() {
                         </div>
                         <div className="space-y-2">
                             <p className="text-2xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight">Khám phá BH-EDU</p>
-                            <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">Nhập từ khóa để bắt đầu truy vấn hệ thống</p>
+                            <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">Nhập từ khóa đềEbắt đầu truy vấn hềEthống</p>
                         </div>
                     </div>
                 )}

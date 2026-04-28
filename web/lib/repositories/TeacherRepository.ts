@@ -15,6 +15,7 @@ export interface Teacher {
     department: string | null;
     specialization: string | null;
     hourly_rate: number | null;
+    teacher_code: string | null;
     class_count: number;
 }
 
@@ -66,7 +67,7 @@ export class TeacherRepository extends BaseRepository<any, any, any> {
 
         if (filters.search) {
             query = query.or(
-                `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`,
+                `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,teacher_code.ilike.%${filters.search}%`,
             );
         }
 

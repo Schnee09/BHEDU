@@ -754,9 +754,9 @@ p {
   box-shadow: var(--shadow-neu-sm);
 }
 
-.stat-card-purple {
-  background: linear-gradient(135deg, #FAF5FF, #F3E8FF);
-  border: 1px solid rgba(139, 92, 246, 0.15);
+.stat-card-amber {
+  background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+  border: 1px solid rgba(245, 158, 11, 0.15);
   box-shadow: var(--shadow-neu-sm);
 }
 
@@ -784,10 +784,10 @@ p {
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
 }
 
-.dark .stat-card-purple {
-  background: rgba(168, 85, 247, 0.1);
-  border-color: rgba(168, 85, 247, 0.3);
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.15);
+.dark .stat-card-amber {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
 }
 
 .dark .stat-card-blue {
@@ -1679,8 +1679,8 @@ a:not(.inline-link),
 }
 
 .dark .scroll-progress-bar {
-  background: linear-gradient(90deg, var(--color-primary), var(--glow-purple));
-  box-shadow: 0 0 10px var(--glow-cyan);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+  box-shadow: var(--shadow-primary);
 }
 
 /* Empty State Styling */

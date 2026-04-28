@@ -64,7 +64,7 @@ export default function ParentDashboardPage() {
   if (profileLoading || (loading && !error)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -109,7 +109,7 @@ export default function ParentDashboardPage() {
         </div>
         <Link
           href="/dashboard/parent/link-student"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-purple-500/25"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/25"
         >
           <UserPlus className="w-5 h-5" />
           Kết nối thêm học sinh
@@ -122,7 +122,7 @@ export default function ParentDashboardPage() {
           label="Học sinh đang theo dõi"
           value={students.length}
           icon={<GraduationCap className="w-6 h-6" />}
-          color="purple"
+          color="blue"
         />
       </div>
 
@@ -134,8 +134,8 @@ export default function ParentDashboardPage() {
 
         {students.length === 0 ? (
           <div className="bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-[40px] p-12 text-center border border-slate-200 dark:border-white/10 shadow-xl animate-in fade-in zoom-in-95 duration-500">
-            <div className="bg-purple-100 dark:bg-purple-900/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <GraduationCap className="w-10 h-10 text-purple-600 dark:text-purple-400" />
+            <div className="bg-blue-100 dark:bg-blue-900/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <GraduationCap className="w-10 h-10 text-blue-600 dark:text-blue-400" />
             </div>
             <h3 className="text-xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
               Chưa kết nối học sinh
@@ -146,7 +146,7 @@ export default function ParentDashboardPage() {
             </p>
             <Link
               href="/dashboard/parent/link-student"
-              className="mt-8 inline-flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold hover:gap-3 transition-all uppercase tracking-widest text-xs"
+              className="mt-8 inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold hover:gap-3 transition-all uppercase tracking-widest text-xs"
             >
               Bắt đầu kết nối ngay <ChevronRight className="w-4 h-4" />
             </Link>
@@ -157,16 +157,16 @@ export default function ParentDashboardPage() {
               <Link
                 key={student.student_id}
                 href={`/dashboard/students/${student.student_id}`}
-                className="group relative bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-[32px] p-6 border border-white/20 dark:border-white/5 hover:border-purple-500/50 shadow-xl hover:shadow-purple-500/10 transition-all duration-500 press-effect overflow-hidden block"
+                className="group relative bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-[32px] p-6 border border-white/20 dark:border-white/5 hover:border-blue-500/50 shadow-xl hover:shadow-blue-500/10 transition-all duration-500 press-effect overflow-hidden block"
               >
-                <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full group-hover:bg-purple-500/10 transition-colors" />
+                <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full group-hover:bg-blue-500/10 transition-colors" />
 
                 <div className="flex items-center gap-5 relative z-10">
-                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-purple-500/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-500/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
                     {student.student_name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-black text-stone-900 dark:text-stone-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors truncate uppercase tracking-tight text-lg">
+                    <h3 className="font-black text-stone-900 dark:text-stone-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate uppercase tracking-tight text-lg">
                       {student.student_name}
                     </h3>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -178,7 +178,7 @@ export default function ParentDashboardPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/5 flex items-center justify-center text-stone-400 group-hover:bg-purple-500 group-hover:text-white transition-all duration-500">
+                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/5 flex items-center justify-center text-stone-400 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500">
                     <ChevronRight className="w-6 h-6" />
                   </div>
                 </div>

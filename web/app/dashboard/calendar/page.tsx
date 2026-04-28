@@ -60,11 +60,11 @@ interface TimetableSlot {
 }
 
 const EVENT_TYPES = {
-    general: { label: "Chung", icon: CalendarIcon, color: "#6366f1", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
+    general: { label: "Chung", icon: CalendarIcon, color: "#3b82f6", bg: "bg-blue-500/10", border: "border-blue-500/20" },
     exam: { label: "Kiểm tra", icon: BookOpen, color: "#ef4444", bg: "bg-red-500/10", border: "border-red-500/20" },
     holiday: { label: "Nghỉ lễ", icon: PartyPopper, color: "#22c55e", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
     meeting: { label: "Họp", icon: Clock, color: "#f59e0b", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-    deadline: { label: "Deadline", icon: AlertCircle, color: "#ec4899", bg: "bg-pink-500/10", border: "border-pink-500/20" },
+    deadline: { label: "Deadline", icon: AlertCircle, color: "#f59e0b", bg: "bg-amber-500/10", border: "border-amber-500/20" },
 };
 
 export default function AcademicCalendarPage() {
@@ -188,7 +188,7 @@ export default function AcademicCalendarPage() {
             end_time: "",
             is_all_day: true,
             description: "",
-            color: "#6366f1"
+            color: "#3b82f6"
         });
         setShowModal(true);
     };
@@ -222,7 +222,7 @@ export default function AcademicCalendarPage() {
                 end_date: formData.end_date || null,
                 start_time: formData.is_all_day ? null : formData.start_time,
                 end_time: formData.is_all_day ? null : formData.end_time,
-                color: EVENT_TYPES[formData.event_type as keyof typeof EVENT_TYPES]?.color || "#6366f1"
+                color: EVENT_TYPES[formData.event_type as keyof typeof EVENT_TYPES]?.color || "#3b82f6"
             };
 
             const url = editingEvent ? `/api/calendar/${editingEvent.id}` : '/api/calendar';
@@ -299,7 +299,7 @@ export default function AcademicCalendarPage() {
                             {canManageEvents && (
                                 <>
                                     <span className="text-stone-300 dark:text-stone-700">•</span>
-                                    <Link href="/dashboard/timetable" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                    <Link href="/dashboard/timetable" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                         <LinkIcon className="w-3 h-3" />
                                         Xếp lịch
                                     </Link>
@@ -668,7 +668,7 @@ export default function AcademicCalendarPage() {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-indigo-900 dark:text-indigo-200">Loại sự kiện</label>
+                            <label className="text-sm font-bold text-stone-900 dark:text-stone-200">Loại sự kiện</label>
                             <select
                                 value={formData.event_type}
                                 onChange={(e) => setFormData({ ...formData, event_type: e.target.value })}
@@ -730,7 +730,7 @@ export default function AcademicCalendarPage() {
                     )}
 
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-indigo-900 dark:text-indigo-200">Mô tả chi tiết</label>
+                        <label className="text-sm font-bold text-stone-900 dark:text-stone-200">Mô tả chi tiết</label>
                         <textarea
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}

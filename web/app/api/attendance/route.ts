@@ -1,120 +1,131 @@
 /**
- * Attendance API (REFACTORED)
- * GET /api/attendance - Fetch attendance records with role-based filtering
+ * Attendance API (Unified)
+ * GET/POST /api/attendance
+ *
+ * Uses Repository pattern, Zod validation, CASL permissions
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  apiPaginated,
+  apiSuccess,
+  createApiHandler,
+  createGetHandler,
+} from "@/lib/api";
+import {
+  checkRateLimit,
+  getRateLimitIdentifier,
+  rateLimitConfigs,
+} from "@/lib/auth/rateLimit";
+import { AttendanceRepository } from "@/lib/repositories/AttendanceRepository";
 import { createServiceClient } from "@/lib/supabase/server";
-import { apiSuccess, createGetHandler } from "@/lib/api";
-import { hasPermission } from "@/lib/auth/core";
-import { logger } from "@/lib/logger";
+import { createAbility } from "@/lib/auth/permissions";
+import {
+  type AttendanceQueryInput,
+  attendanceQuerySchema,
+  type CreateAttendanceInput,
+  createAttendanceSchema,
+} from "@/lib/schemas";
 
+// GET /api/attendance
 export const GET = createGetHandler(
-  { permission: "attendance.view" },
-  async ({ user, searchParams }) => {
+  { requireAuth: true },
+  async ({ request, user, searchParams }) => {
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
+    }
+
+    const params: Record<string, any> = {};
+    searchParams.forEach((value, key) => {
+      params[key] = value;
+    });
+
+    const validatedQuery = attendanceQuerySchema.parse(params);
+
     const supabase = createServiceClient();
+    const repository = new AttendanceRepository(supabase);
 
-    // Build base query
-    let query = supabase
-      .from("attendance")
-      .select(`id, class_id, student_id, date, status, remarks`)
-      .order("date", { ascending: false });
+    const ability = createAbility({
+      userId: user.id,
+      role: user.role,
+      classIds: [],
+    });
 
-    // --- Role-based Visibility Logic ---
-
-    // 1. Staff and Higher (Admins, Super Admins) see all attendance
-    const canViewAll = hasPermission(user.role as any, "attendance.mark");
-
-    if (canViewAll) {
-      // No filter needed
-    } else if (user.role === "teacher") {
-      // Teacher sees own classes
-      const { data: classes } = await supabase
-        .from("classes")
-        .select("id")
-        .eq("teacher_id", user.id);
-
-      const classIds = classes?.map((c) => c.id) || [];
-      if (classIds.length === 0) {
-        return apiSuccess([]);
+    if (ability.can("read", "Attendance")) {
+      if (
+        ["admin", "staff", "super_admin", "owner"].includes(user.role)
+      ) {
+        const { data, ...pagination } = await repository.findAll(validatedQuery);
+        return apiPaginated(data, pagination);
       }
-      query = query.in("class_id", classIds);
-    } else if (user.role === "student") {
-      // Student sees own attendance
-      query = query.eq("student_id", user.id);
-    } else {
-      return apiSuccess([]);
+
+      if (["teacher", "tutor"].includes(user.role)) {
+        const { data, ...pagination } = await repository.findAll(validatedQuery);
+        return apiPaginated(data, pagination);
+      }
+
+      if (user.role === "student") {
+        const studentConfig = {
+          ...validatedQuery,
+          student_id: user.id,
+        };
+        const { data, ...pagination } = await repository.findAll(studentConfig);
+        return apiPaginated(data, pagination);
+      }
+
+      return apiPaginated([], { page: 1, pageSize: 50, total: 0 });
     }
 
-    // Apply basic filters from query params
-    const qClassId = searchParams.get("classId");
-    if (qClassId) query = query.eq("class_id", qClassId);
-
-    const qStudentId = searchParams.get("studentId");
-    if (qStudentId) query = query.eq("student_id", qStudentId);
-
-    const qDate = searchParams.get("date");
-    if (qDate) query = query.eq("date", qDate);
-
-    const { data, error } = await query;
-
-    if (error) {
-      logger.error("[API] Attendance query error:", { error });
-      throw new Error(`Database error: ${error.message}`);
-    }
-
-    if (!data || data.length === 0) {
-      return apiSuccess([]);
-    }
-
-    // Batch fetch student/class metadata for transformation
-    const classIds = Array.from(
-      new Set(data.map((r: any) => r.class_id).filter(Boolean)),
+    return NextResponse.json(
+      {
+        success: false,
+        error: ability.reasonFor("read", "Attendance") || "Forbidden",
+      },
+      { status: 403 },
     );
-    const studentIds = Array.from(
-      new Set(data.map((r: any) => r.student_id).filter(Boolean)),
-    );
+  },
+);
 
-    const classesMap: Record<string, any> = {};
-    if (classIds.length > 0) {
-      const { data: classesData } = await supabase
-        .from("classes")
-        .select("id, name")
-        .in("id", classIds as string[]);
-
-      if (classesData) {
-        classesData.forEach((c: any) => {
-          classesMap[c.id] = c;
-        });
-      }
+// POST /api/attendance
+export const POST = createApiHandler(
+  {
+    allowedRoles: [
+      "admin",
+      "staff",
+      "super_admin",
+      "owner",
+      "teacher",
+      "tutor",
+    ],
+    bodySchema: createAttendanceSchema,
+  },
+  async ({ request, body, user }) => {
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
     }
 
-    const profilesMap: Record<string, any> = {};
-    if (studentIds.length > 0) {
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", studentIds as string[]);
-
-      if (profilesData) {
-        profilesData.forEach((p: any) => {
-          profilesMap[p.id] = p;
-        });
-      }
+    const ability = createAbility({ userId: user.id, role: user.role });
+    if (ability.cannot("create", "Attendance")) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 },
+      );
     }
 
-    // Transform data
-    const attendance = data.map((record: any) => ({
-      id: record.id,
-      class_id: record.class_id,
-      student_id: record.student_id,
-      date: record.date,
-      status: record.status,
-      remarks: record.remarks,
-      student_name: profilesMap[record.student_id]?.full_name || "Unknown",
-      class_name: classesMap[record.class_id]?.name || "Unknown",
-    }));
+    const supabase = createServiceClient();
+    const repository = new AttendanceRepository(supabase);
+    const record = await repository.create(body as CreateAttendanceInput);
 
-    return apiSuccess(attendance);
+    return apiSuccess(record, { _status: 201 });
   },
 );

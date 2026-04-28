@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslation } from '@/contexts/I18nContext';
 import {
   apiFetch,
   getClasses,
@@ -10,10 +11,24 @@ import {
   bulkCreateAttendance,
 } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
-import { AcademicBackground } from '@/components/Academic/AcademicBackground';
-import { AttendanceStatus, AttendanceRecord } from '@/lib/attendance/types';
-import { Button } from '@/components/ui';
+import { AttendanceStatus } from '@/lib/attendance/types';
+import { Button, LoadingState } from '@/components/ui';
+import Badge from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import PageGuard from '@/components/PageGuard';
+import { 
+  CheckCircleIcon, 
+  XCircleIcon, 
+  ArrowLeftIcon, 
+  ClipboardDocumentCheckIcon,
+  Squares2X2Icon,
+  UserGroupIcon,
+  CheckBadgeIcon,
+  ExclamationCircleIcon,
+  ChartBarIcon
+} from '@heroicons/react/24/outline';
+import { toast } from 'react-hot-toast';
 
 // Types
 interface Class {
@@ -39,32 +54,27 @@ interface AttendanceSummary {
   attendanceRate: number;
 }
 
-// Helpers
-const getStatusFormatted = (status: string) => {
-  switch (status) {
-    case AttendanceStatus.PRESENT:
-      return { color: 'text-green-700', bgColor: 'bg-green-100', label: 'Có mặt' };
-    case AttendanceStatus.ABSENT:
-      return { color: 'text-red-700', bgColor: 'bg-red-100', label: 'Vắng' };
-    default:
-      return { color: 'text-gray-700', bgColor: 'bg-gray-100', label: 'Chưa điểm danh' };
-  }
-};
-
 export default function AttendanceMarkingPage() {
   return (
     <PageGuard permissions="attendance.mark">
-      <AttendanceMarkingPageContent />
+      <Suspense fallback={<div className="min-h-screen bg-transparent flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full shadow-lg" />
+      </div>}>
+        <AttendanceMarkingPageContent />
+      </Suspense>
     </PageGuard>
   );
 }
 
 function AttendanceMarkingPageContent() {
+  const { t } = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialClassId = searchParams.get('classId');
 
   // Selection State
   const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClass, setSelectedClass] = useState<string>('');
+  const [selectedClass, setSelectedClass] = useState<string>(initialClassId || '');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0] ?? '');
 
   // Data State
@@ -75,7 +85,6 @@ function AttendanceMarkingPageContent() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
 
   // Warn about unsaved changes
   useEffect(() => {
@@ -89,7 +98,7 @@ function AttendanceMarkingPageContent() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  // Load teacher's classes on mount
+  // Load classes on mount
   useEffect(() => {
     loadClasses();
   }, []);
@@ -103,14 +112,11 @@ function AttendanceMarkingPageContent() {
 
   const loadClasses = async () => {
     try {
-      // Fetch classes (defaults to my-classes for teachers if backend handles context,
-      // or we can use specific endpoint if needed, but getClasses is V2 standard)
-      // We pass pageSize: 100 to get a good list.
       const res = await getClasses({ limit: 100 });
       const classList = (res.data || []) as any[];
       setClasses(classList.map((c) => ({ id: c.id, name: c.name })));
-
-      if (classList.length > 0) {
+      
+      if (!selectedClass && classList.length > 0) {
         setSelectedClass(classList[0].id);
       }
     } catch (error) {
@@ -119,7 +125,7 @@ function AttendanceMarkingPageContent() {
     }
   };
 
-  const loadAttendance = async () => {
+  const loadAttendance = useCallback(async () => {
     setLoading(true);
     try {
       const [studentsRes, attendanceRes] = await Promise.all([
@@ -130,13 +136,12 @@ function AttendanceMarkingPageContent() {
       const classStudents = studentsRes || [];
       const attendanceRecords = attendanceRes.data || [];
 
-      // Map students and merge with attendance
       const mappedStudents: StudentAttendanceView[] = classStudents.map((s: any) => {
         const record = attendanceRecords.find((r: any) => r.student_id === s.id);
         return {
           studentId: s.id,
           studentName: s.full_name || s.name || 'Unknown',
-          studentCode: s.student_code || s.student_id || '', // Adjust based on profile schema
+          studentCode: s.student_code || s.student_id || '',
           email: s.email,
           status: record ? (record.status as AttendanceStatus) : 'unmarked',
           remarks: record?.notes || record?.remarks || '',
@@ -149,11 +154,11 @@ function AttendanceMarkingPageContent() {
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Failed to load attendance', error);
-      alert('Không thể tải dữ liệu điểm danh');
+      toast.error(t('attendance.mark.table.noStudents'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedClass, date, t]);
 
   const calculateSummary = (currentStudents: StudentAttendanceView[]) => {
     const total = currentStudents.length;
@@ -196,7 +201,6 @@ function AttendanceMarkingPageContent() {
   const saveAttendance = async () => {
     setSaving(true);
     try {
-      // Filter out unmarked if we don't want to save them
       const recordsToSave = students
         .filter((s) => s.status !== 'unmarked')
         .map((student) => ({
@@ -206,7 +210,7 @@ function AttendanceMarkingPageContent() {
         }));
 
       if (recordsToSave.length === 0) {
-        setShowSuccess(true);
+        toast.success(t('common.success'));
         setHasUnsavedChanges(false);
         setSaving(false);
         return;
@@ -218,84 +222,99 @@ function AttendanceMarkingPageContent() {
         records: recordsToSave,
       });
 
-      setShowSuccess(true);
+      toast.success(t('common.success'));
       setHasUnsavedChanges(false);
-      setTimeout(() => setShowSuccess(false), 3000);
-      loadAttendance(); // Reload to refresh/sync IDs
+      loadAttendance();
     } catch (error) {
       console.error('Failed to save attendance', error);
-      alert('Không thể lưu điểm danh');
+      toast.error(t('common.error'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-Be_Vietnam_Pro selection:bg-red-600/30 text-stone-900 dark:text-stone-100 p-4 md:p-12 lg:p-16">
-      <AcademicBackground />
-
-      <div className="max-w-[1400px] mx-auto relative z-10 space-y-10">
+    <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-10">
+      <div className="max-w-[1600px] mx-auto space-y-8 relative z-10">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-b border-stone-200 dark:border-stone-800 pb-10">
-          <div className="space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight uppercase">
-              Điểm danh <span className="text-red-600">sinh viên</span>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 glass-premium p-6 md:p-10 rounded-[40px] border border-emerald-500/10 shadow-2xl relative overflow-hidden animate-fade-in">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
+          
+          <div className="relative z-10">
+             <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-emerald-500/10 rounded-2xl">
+                <ClipboardDocumentCheckIcon className="w-6 h-6 text-emerald-600" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 shadow-sm">
+                {t('attendance.mark.subtitle')}
+              </span>
+            </div>
+            <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-stone-900 leading-none">
+              {t('attendance.mark.title')}
             </h1>
-            <p className="text-stone-500 font-mono text-xs tracking-widest uppercase flex items-center gap-2">
-              ATTENDANCE • CLASS MANAGEMENT
-            </p>
           </div>
-          <div className="flex flex-col items-end gap-4 max-w-md w-full">
-            <div className="grid grid-cols-2 gap-4 w-full">
+
+          <div className="flex flex-col sm:flex-row items-center gap-6 bg-stone-100/50 p-2 rounded-[32px] border border-stone-200/50 backdrop-blur-sm relative z-10 w-full md:w-auto">
+            <div className="grid grid-cols-2 gap-4 w-full sm:w-[400px] px-2">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                  Lớp học
+                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">
+                  {t('attendance.mark.class')}
                 </label>
-                <select
+                <Select
                   value={selectedClass}
-                  onChange={(e) => setSelectedClass(e.target.value)}
-                  className="w-full h-10 bg-white dark:bg-white/5 border border-stone-200 dark:border-stone-800 rounded-sharp px-3 text-xs font-bold uppercase tracking-wider focus:border-red-600/50 outline-none transition-all appearance-none"
+                  className="rounded-2xl border-stone-200 bg-white/80 h-10 text-xs font-bold uppercase tracking-tight"
+                  onChange={(e: any) => setSelectedClass(e.target.value)}
                 >
                   {classes.map((cls) => (
                     <option key={cls.id} value={cls.id}>
                       {cls.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                  Ngày
+                <label className="text-[10px] font-black uppercase tracking-widest text-stone-400 ml-1">
+                   {t('attendance.mark.date')}
                 </label>
-                <input
+                <Input
                   type="date"
                   value={date}
                   max={new Date().toISOString().split('T')[0]}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full h-10 bg-white dark:bg-white/5 border border-stone-200 dark:border-stone-800 rounded-sharp px-3 text-xs font-bold uppercase tracking-wider focus:border-red-600/50 outline-none transition-all appearance-none"
+                  className="rounded-2xl border-stone-200 bg-white/80 h-10 text-xs font-bold uppercase tracking-tight"
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Summary with Progress */}
+        {/* Summary Tracker */}
         {summary && (
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
             {[
-              { label: 'Tổng số', value: summary.totalStudents, color: 'stone' },
-              { label: 'Có mặt', value: summary.presentCount, color: 'green' },
-              { label: 'Vắng', value: summary.absentCount, color: 'red' },
-              { label: 'Chưa đánh dấu', value: summary.unmarkedCount, color: 'stone' },
-              { label: 'Tỷ lệ', value: `${summary.attendanceRate}%`, color: 'red' },
+              { label: t('attendance.mark.summary.total'), value: summary.totalStudents, icon: UserGroupIcon, color: 'emerald' },
+              { label: t('attendance.mark.summary.present'), value: summary.presentCount, icon: CheckBadgeIcon, color: 'emerald' },
+              { label: t('attendance.mark.summary.absent'), value: summary.absentCount, icon: XCircleIcon, color: 'red' },
+              { label: t('attendance.mark.summary.unmarked'), value: summary.unmarkedCount, icon: ExclamationCircleIcon, color: 'amber' },
+              { label: t('attendance.mark.summary.rate'), value: `${summary.attendanceRate}%`, icon: ChartBarIcon, color: 'emerald' },
             ].map((stat, i) => (
               <div
                 key={i}
-                className="bg-white/50 dark:bg-stone-900/50 p-6 rounded-sharp border border-stone-200 dark:border-stone-800 backdrop-blur-sm border-l-4 border-l-stone-200 dark:border-l-stone-800 hover:border-l-red-600 transition-all duration-300"
+                className={cn(
+                  "glass-premium p-6 rounded-[32px] border border-white/20 shadow-xl hover-up transition-all group relative overflow-hidden",
+                )}
               >
-                <div className="text-2xl font-bold tracking-tight mb-1">{stat.value}</div>
-                <div className="text-[9px] font-bold text-stone-500 uppercase tracking-[0.2em]">
-                  {stat.label}
+                <div className={`absolute top-0 right-0 w-20 h-20 bg-${stat.color}-500/5 blur-2xl rounded-full translate-x-10 -translate-y-10 group-hover:scale-150 transition-transform`} />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className={cn("text-[10px] font-black uppercase tracking-widest opacity-60", stat.color === 'emerald' ? 'text-emerald-600' : stat.color === 'red' ? 'text-red-600' : 'text-amber-600')}>
+                      {stat.label}
+                    </p>
+                    <stat.icon className={cn("w-5 h-5 opacity-40", stat.color === 'emerald' ? 'text-emerald-500' : stat.color === 'red' ? 'text-red-500' : 'text-amber-500')} />
+                  </div>
+                  <p className={`text-3xl font-black tracking-tighter text-stone-900`}>
+                    {stat.value}
+                  </p>
                 </div>
               </div>
             ))}
@@ -304,149 +323,172 @@ function AttendanceMarkingPageContent() {
 
         {/* Actions Bar */}
         {students.length > 0 && (
-          <div className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200 dark:border-stone-800 p-4 rounded-sharp flex flex-wrap items-center justify-between gap-4 sticky top-4 z-20 shadow-xl shadow-stone-900/5">
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mr-2">
-                Đánh dấu nhanh:
+          <div className="glass-premium bg-white/80 backdrop-blur-xl border border-white/20 p-6 rounded-[32px] flex flex-wrap items-center justify-between gap-6 sticky top-8 z-30 shadow-2xl shadow-emerald-900/5 animate-fade-in">
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] px-2 border-r border-stone-200">
+                {t('attendance.mark.actions.quickMark')}
               </span>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={() => markAll(AttendanceStatus.PRESENT)}
-                className="rounded-sharp border-stone-200 text-green-600 hover:bg-green-50 uppercase text-[10px] font-bold tracking-widest h-8"
+                className="rounded-2xl border-emerald-100 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 uppercase text-[10px] font-black tracking-widest px-6 h-10 shadow-sm"
               >
-                ✅ Tất cả có mặt
+                <CheckCircleIcon className="w-4 h-4 mr-2" />
+                {t('attendance.mark.actions.allPresent')}
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={() => markAll(AttendanceStatus.ABSENT)}
-                className="rounded-sharp border-stone-200 text-red-600 hover:bg-red-50 uppercase text-[10px] font-bold tracking-widest h-8"
+                className="rounded-2xl border-red-100 bg-red-50 text-red-600 hover:bg-red-100 uppercase text-[10px] font-black tracking-widest px-6 h-10 shadow-sm"
               >
-                ❌ Tất cả vắng
+                <XCircleIcon className="w-4 h-4 mr-2" />
+                {t('attendance.mark.actions.allAbsent')}
               </Button>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               {hasUnsavedChanges && (
-                <span className="text-[10px] font-bold text-red-600 animate-pulse italic uppercase tracking-widest">
-                  Chưa lưu thay đổi •
-                </span>
+                <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-2xl border border-amber-100 animate-pulse">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full" />
+                  <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">
+                    {t('attendance.mark.actions.unsaved')}
+                  </span>
+                </div>
               )}
               <Button
                 onClick={saveAttendance}
                 disabled={saving}
-                className="rounded-sharp bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-[0.2em] text-[10px] h-9 px-8 shadow-lg shadow-red-600/20"
+                className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-[0.22em] text-[10px] h-11 px-10 shadow-xl shadow-emerald-500/20"
               >
-                {saving ? 'Đang đồng bộ...' : 'Lưu dữ liệu'}
+                {saving ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {t('attendance.mark.actions.saving')}
+                  </div>
+                ) : t('attendance.mark.actions.save')}
               </Button>
             </div>
           </div>
         )}
 
-        {/* Student List */}
+        {/* Student List Grid */}
         {loading ? (
-          <div className="py-24 flex flex-col items-center gap-4">
-            <div className="animate-spin h-8 w-8 border-2 border-red-600 border-t-transparent rounded-sharp" />
-            <span className="text-xs font-bold tracking-widest uppercase text-stone-400">
-              Đang tải danh sách...
-            </span>
-          </div>
+          <LoadingState message={t('common.loading')} />
         ) : students.length === 0 ? (
-          <div className="py-24 bg-white/30 rounded-sharp border-2 border-dashed border-stone-200 dark:border-stone-800 text-center">
-            <span className="text-sm font-medium text-stone-500 italic">
-              Chọn lớp để bắt đầu điểm danh.
-            </span>
+          <div className="py-32 glass-premium rounded-[40px] border-2 border-dashed border-stone-100 text-center relative overflow-hidden">
+             <div className="absolute inset-0 bg-gradient-to-b from-stone-50/10 to-transparent pointer-events-none" />
+             <UserGroupIcon className="w-20 h-20 text-stone-200 mx-auto mb-6" />
+             <p className="text-sm font-black text-stone-300 uppercase tracking-[0.2em]">
+               {t('attendance.mark.table.noStudents')}
+             </p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-stone-900/50 rounded-sharp border border-stone-200 dark:border-stone-800 overflow-hidden shadow-2xl">
-            <table className="min-w-full divide-y divide-stone-200 dark:divide-stone-800">
+          <div className="glass-premium rounded-[40px] border border-white/20 overflow-hidden shadow-2xl relative">
+            <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />
+            <table className="min-w-full divide-y divide-stone-100 relative z-10 font-Be_Vietnam_Pro">
               <thead>
-                <tr className="bg-stone-50/50 dark:bg-stone-800/50">
-                  <th className="px-8 py-5 text-left text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">
-                    Sinh viên
+                <tr className="bg-stone-50/80 backdrop-blur-md">
+                  <th className="px-10 py-6 text-left text-[11px] font-black uppercase tracking-widest text-stone-400">
+                    {t('attendance.mark.table.student')}
                   </th>
-                  <th className="px-8 py-5 text-left text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">
-                    Trạng thái
+                  <th className="px-10 py-6 text-left text-[11px] font-black uppercase tracking-widest text-stone-400">
+                    {t('attendance.mark.table.status')}
                   </th>
-                  <th className="px-8 py-5 text-left text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">
-                    Ghi chú
+                  <th className="px-10 py-6 text-left text-[11px] font-black uppercase tracking-widest text-stone-400">
+                    {t('attendance.mark.table.remarks')}
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+              <tbody className="divide-y divide-stone-50 bg-white/40">
                 {students.map((student, idx) => (
                   <tr
                     key={student.studentId}
-                    className="hover:bg-stone-50/50 dark:hover:bg-red-600/5 transition-colors group"
+                    className="hover:bg-emerald-50/20 transition-all group"
                   >
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-sharp bg-stone-100 dark:bg-stone-800 flex items-center justify-center font-bold text-stone-400 group-hover:bg-red-600 group-hover:text-white transition-all">
+                    <td className="px-10 py-6">
+                      <div className="flex items-center gap-6">
+                        <div className="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center font-black text-stone-400 group-hover:bg-emerald-600 group-hover:text-white group-hover:scale-110 transition-all duration-500 shadow-inner">
                           {idx + 1}
                         </div>
-                        <div>
-                          <div className="font-bold text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+                        <div className="space-y-1">
+                          <div className="font-black text-stone-900 uppercase tracking-tighter text-base">
                             {student.studentName}
                           </div>
-                          <div className="text-[10px] font-mono text-stone-400 uppercase tracking-widest mt-0.5">
-                            {student.studentCode || 'BH-STUDENT'}
+                          <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-2">
+                             <span className="px-2 py-0.5 bg-stone-100 rounded-md">{student.studentCode || 'BH-ID'}</span>
+                             <span className="text-stone-300">•</span>
+                             <span className="lowercase">{student.email}</span>
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <div className="flex gap-2">
+                    <td className="px-10 py-6">
+                      <div className="flex gap-3">
                         {[
                           {
                             val: AttendanceStatus.PRESENT,
-                            icon: '✅',
-                            label: 'Có mặt',
-                            color: 'green',
+                            icon: CheckBadgeIcon,
+                            label: t('attendance.present'),
+                            color: 'emerald',
                           },
-                          { val: AttendanceStatus.ABSENT, icon: '❌', label: 'Vắng', color: 'red' },
-                          { val: 'unmarked', icon: '➖', label: 'Chưa đánh', color: 'stone' },
+                          { 
+                            val: AttendanceStatus.ABSENT, 
+                            icon: XCircleIcon, 
+                            label: t('attendance.absent'), 
+                            color: 'red' 
+                          },
+                          { 
+                            val: 'unmarked', 
+                            icon: Squares2X2Icon, 
+                            label: t('attendance.mark.summary.unmarked'), 
+                            color: 'stone' 
+                          },
                         ].map((opt) => {
-                          const colorMap: Record<string, string> = {
-                            green: 'bg-green-600 shadow-green-500/20',
-                            red: 'bg-red-600 shadow-red-500/20',
-                            stone: 'bg-stone-600 shadow-stone-500/20',
+                          const isActive = student.status === opt.val;
+                          const activeStyles = {
+                            emerald: 'bg-emerald-600 text-white shadow-emerald-500/30 ring-emerald-500/20',
+                            red: 'bg-red-600 text-white shadow-red-500/30 ring-red-500/20',
+                            stone: 'bg-stone-600 text-white shadow-stone-500/30 ring-stone-500/20',
                           };
-                          const currentColor =
-                            colorMap[opt.color] || 'bg-stone-600 shadow-stone-500/20';
+                          
                           return (
                             <button
                               key={opt.val}
                               onClick={() => updateStudentStatus(student.studentId, opt.val)}
                               className={cn(
-                                'h-9 px-4 rounded-sharp text-[9px] font-bold uppercase tracking-widest transition-all border',
-                                student.status === opt.val
-                                  ? `${currentColor} border-transparent text-white shadow-lg`
-                                  : 'bg-white dark:bg-white/5 border-stone-200 dark:border-stone-800 text-stone-400 hover:border-red-600/30'
+                                'h-10 px-5 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 border ring-4 ring-transparent',
+                                isActive
+                                  ? activeStyles[opt.color as keyof typeof activeStyles]
+                                  : 'bg-white border-stone-100 text-stone-400 hover:border-emerald-600/30 hover:text-emerald-600'
                               )}
                             >
-                              {opt.icon} {opt.label}
+                              <opt.icon className={cn("w-4 h-4", isActive ? "text-white" : "text-stone-300 group-hover:text-emerald-500")} />
+                              {opt.label}
                             </button>
                           );
                         })}
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <input
-                        type="text"
-                        value={student.remarks || ''}
-                        placeholder="Thêm ghi chú..."
-                        onChange={(e) => {
-                          const newVal = e.target.value;
-                          setStudents((prev) =>
-                            prev.map((s) =>
-                              s.studentId === student.studentId ? { ...s, remarks: newVal } : s
-                            )
-                          );
-                          setHasUnsavedChanges(true);
-                        }}
-                        className="w-full bg-transparent border-b border-stone-200 dark:border-stone-800 py-1 text-xs focus:border-red-600 outline-none transition-all placeholder:italic placeholder:text-stone-300"
-                      />
+                    <td className="px-10 py-6">
+                      <div className="relative group/input max-w-md">
+                        <Input
+                          type="text"
+                          value={student.remarks || ''}
+                          placeholder={t('attendance.mark.table.placeholder')}
+                          onChange={(e) => {
+                            const newVal = e.target.value;
+                            setStudents((prev) =>
+                              prev.map((s) =>
+                                s.studentId === student.studentId ? { ...s, remarks: newVal } : s
+                              )
+                            );
+                            setHasUnsavedChanges(true);
+                          }}
+                          className="w-full bg-stone-50/50 border-stone-100 border-none rounded-xl py-3 px-4 text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all placeholder:stone-300 shadow-inner"
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -455,22 +497,17 @@ function AttendanceMarkingPageContent() {
           </div>
         )}
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-start pt-6">
           <Button
-            variant="ghost"
-            onClick={() => router.push('/dashboard')}
-            className="font-bold text-xs uppercase tracking-widest text-stone-400 hover:text-red-600"
+            variant="secondary"
+            onClick={() => router.push('/dashboard/attendance')}
+            className="font-black text-[11px] uppercase tracking-widest text-stone-400 hover:text-emerald-600 transition-all flex items-center gap-3 px-8 h-12 bg-white/50 backdrop-blur-sm rounded-[24px] border border-white/20"
           >
-            ← Quay lại bảng điều khiển
+            <ArrowLeftIcon className="w-4 h-4" />
+            {t('attendance.mark.backToDashboard')}
           </Button>
         </div>
       </div>
-
-      <style jsx global>{`
-        .rounded-sharp {
-          border-radius: 4px;
-        }
-      `}</style>
     </div>
   );
 }

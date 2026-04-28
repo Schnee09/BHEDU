@@ -138,7 +138,7 @@ describe('API Response Helpers', () => {
       expect(body.pagination).toEqual({
         page: 1,
         pageSize: 20,
-        totalItems: 42,
+        total: 42,
         totalPages: 3,
       });
     });

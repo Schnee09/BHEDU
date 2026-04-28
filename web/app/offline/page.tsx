@@ -33,7 +33,7 @@ export default function OfflinePage() {
                 <div className="space-y-4">
                     <button
                         onClick={() => window.location.reload()}
-                        className="w-full py-3 px-4 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+                        className="w-full py-3 px-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
                     >
                         Thử lại
                     </button>

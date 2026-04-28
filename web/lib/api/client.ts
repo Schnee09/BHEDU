@@ -57,6 +57,33 @@ export interface StudentWithEnrollments extends Student {
   }>;
 }
 
+// ============================================
+// Internal Helpers
+// ============================================
+
+/**
+ * Safely parses JSON from a response, handling non-JSON error pages gracefully.
+ */
+async function safeParseJson(response: Response) {
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      return await response.json();
+    } catch (e) {
+      logger.error('[apiClient] Failed to parse JSON even though content-type was matching', e);
+    }
+  }
+
+  // If not JSON, it might be an HTML error page (404, 500)
+  const bodySnippet = await response.text();
+  logger.error(`[apiClient] Expected JSON but received ${contentType || 'unknown type'}. Status: ${response.status}`, {
+    bodyPreview: bodySnippet.slice(0, 200),
+    url: response.url,
+  });
+
+  throw new Error(`Server error (${response.status}): Received non-JSON response. Check console for details.`);
+}
+
 /**
  * Fetch wrapper that:
  * - Includes credentials for same-origin cookie auth
@@ -168,8 +195,8 @@ export async function apiFetch(url: string, options?: RequestInit, maxRetries = 
         if (baseUrl.includes('/api/subjects')) {
           requestCache.invalidate('/api/subjects');
         }
-        if (baseUrl.includes('/api/v2/students')) {
-          requestCache.invalidate('/api/v2/students');
+        if (baseUrl.includes('/api/students')) {
+          requestCache.invalidate('/api/students');
         }
       }
 
@@ -251,16 +278,14 @@ export async function getStudents(params?: StudentListParams): Promise<{
   }
   if (params?.search) searchParams.set('search', params.search);
 
-  const url = `/api/v2/students${searchParams.toString() ? `?${searchParams}` : ''}`;
+  const url = `/api/students${searchParams.toString() ? `?${searchParams}` : ''}`;
   const response = await apiFetch(url);
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch students');
-  }
+  const result = await safeParseJson(response);
 
-  // V2 returns standard ApiResponse structure
-  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || 'Failed to fetch students');
+  }
 
   // Handle case where result.data contains { data, total, ... } (double wrapped)
   // or result.data is the array (standard)
@@ -294,14 +319,13 @@ export async function getStudents(params?: StudentListParams): Promise<{
  * Get student by ID with enrollments
  */
 export async function getStudentById(id: string): Promise<StudentWithEnrollments> {
-  const response = await apiFetch(`/api/v2/students/${id}`);
+  const response = await apiFetch(`/api/students/${id}`);
+  const result = await safeParseJson(response);
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch student');
+    throw new Error(result.error || 'Failed to fetch student');
   }
 
-  const result = await response.json();
   return result.data;
 }
 
@@ -309,17 +333,16 @@ export async function getStudentById(id: string): Promise<StudentWithEnrollments
  * Create a new student
  */
 export async function createStudent(data: CreateStudentInput): Promise<Student> {
-  const response = await apiFetch('/api/v2/students', {
+  const response = await apiFetch('/api/students', {
     method: 'POST',
     body: JSON.stringify(data),
   });
+  const result = await safeParseJson(response);
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create student');
+    throw new Error(result.error || 'Failed to create student');
   }
 
-  const result = await response.json();
   return result.data;
 }
 
@@ -327,20 +350,19 @@ export async function createStudent(data: CreateStudentInput): Promise<Student> 
  * Update student information
  */
 export async function updateStudent(id: string, data: UpdateStudentInput): Promise<Student> {
-  const response = await apiFetch(`/api/v2/students/${id}`, {
+  const response = await apiFetch(`/api/students/${id}`, {
     method: 'PUT', // V2 prefers PUT or PATCH? Usually PUT in our V2 handlers if full replace, but PATCH often safer. Let's check handler.
     // Checking V2 handler... usually supports both or specifically one.
     // I'll stick to PATCH if supported or leave as was if unsure, but usually V2 implies standardization.
-    // Re-checking V2 routes... `app/api/v2/students/[id]/route.ts` likely exists.
+    // Re-checking V2 routes... `app/api/students/[id]/route.ts` likely exists.
     body: JSON.stringify(data),
   });
+  const result = await safeParseJson(response);
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update student');
+    throw new Error(result.error || 'Failed to update student');
   }
 
-  const result = await response.json();
   return result.data;
 }
 
@@ -348,13 +370,13 @@ export async function updateStudent(id: string, data: UpdateStudentInput): Promi
  * Delete student (validates no active enrollments)
  */
 export async function deleteStudent(id: string): Promise<void> {
-  const response = await apiFetch(`/api/v2/students/${id}`, {
+  const response = await apiFetch(`/api/students/${id}`, {
     method: 'DELETE',
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to delete student');
+    const result = await safeParseJson(response);
+    throw new Error(result.error || 'Failed to delete student');
   }
 }
 
@@ -362,14 +384,14 @@ export async function deleteStudent(id: string): Promise<void> {
  * Bulk archive students
  */
 export async function bulkArchiveStudents(studentIds: string[]): Promise<void> {
-  const response = await apiFetch('/api/v2/students/bulk-archive', {
+  const response = await apiFetch('/api/students/bulk-archive', {
     method: 'POST',
     body: JSON.stringify({ studentIds }),
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to archive students');
+    const result = await safeParseJson(response);
+    throw new Error(result.error || 'Failed to archive students');
   }
 }
 
@@ -377,17 +399,16 @@ export async function bulkArchiveStudents(studentIds: string[]): Promise<void> {
  * Enroll student in a class
  */
 export async function enrollStudent(studentId: string, classId: string): Promise<any> {
-  const response = await apiFetch('/api/v2/enrollments', {
+  const response = await apiFetch('/api/enrollments', {
     method: 'POST',
     body: JSON.stringify({ student_id: studentId, class_id: classId }),
   });
+  const result = await safeParseJson(response);
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to enroll student');
+    throw new Error(result.error || 'Failed to enroll student');
   }
 
-  const result = await response.json();
   return result.data;
 }
 
@@ -395,13 +416,13 @@ export async function enrollStudent(studentId: string, classId: string): Promise
  * Remove enrollment
  */
 export async function deleteEnrollment(enrollmentId: string): Promise<void> {
-  const response = await apiFetch(`/api/v2/enrollments/${enrollmentId}`, {
+  const response = await apiFetch(`/api/enrollments/${enrollmentId}`, {
     method: 'DELETE',
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to delete enrollment');
+    const result = await safeParseJson(response);
+    throw new Error(result.error || 'Failed to delete enrollment');
   }
 }
 
@@ -419,14 +440,13 @@ export async function unenrollStudent(studentId: string, classId: string): Promi
  * Get student grades
  */
 export async function getStudentGrades(studentId: string): Promise<any[]> {
-  const response = await apiFetch(`/api/v1/students/${studentId}/grades`);
+  const response = await apiFetch(`/api/grades?student_id=${studentId}`);
+  const result = await safeParseJson(response);
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch grades');
+    throw new Error(result.error || 'Failed to fetch grades');
   }
 
-  const result = await response.json();
   return result.data;
 }
 
@@ -434,14 +454,13 @@ export async function getStudentGrades(studentId: string): Promise<any[]> {
  * Get student attendance
  */
 export async function getStudentAttendance(studentId: string): Promise<any[]> {
-  const response = await apiFetch(`/api/v1/students/${studentId}/attendance`);
+  const response = await apiFetch(`/api/attendance?student_id=${studentId}`);
+  const result = await safeParseJson(response);
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch attendance');
+    throw new Error(result.error || 'Failed to fetch attendance');
   }
 
-  const result = await response.json();
   return result.data;
 }
 // ============================================================================
@@ -474,14 +493,12 @@ export async function getClasses(params?: ClassListParams): Promise<{
   if (params?.teacher_id) searchParams.set('teacher_id', params.teacher_id);
   if (params?.status) searchParams.set('status', params.status);
 
-  const response = await apiFetch(`/api/v2/classes?${searchParams.toString()}`);
+  const response = await apiFetch(`/api/classes?${searchParams.toString()}`);
+  const result = await safeParseJson(response);
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch classes');
+    throw new Error(result.error || 'Failed to fetch classes');
   }
-
-  const result = await response.json();
 
   // Handle double-wrapping or standard V2
   const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
@@ -511,61 +528,58 @@ export async function getClasses(params?: ClassListParams): Promise<{
 }
 
 export async function getClassById(id: string): Promise<any> {
-  const response = await apiFetch(`/api/v2/classes/${id}`);
+  const response = await apiFetch(`/api/classes/${id}`);
+  const result = await safeParseJson(response);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch class');
+    throw new Error(result.error || 'Failed to fetch class');
   }
-  const result = await response.json();
   return result.data;
 }
 
 export async function createClass(data: any): Promise<any> {
-  const response = await apiFetch('/api/v2/classes', {
+  const response = await apiFetch('/api/classes', {
     method: 'POST',
     body: JSON.stringify(data),
   });
+  const result = await safeParseJson(response);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create class');
+    throw new Error(result.error || 'Failed to create class');
   }
-  const result = await response.json();
   return result.data;
 }
 
 export async function updateClass(id: string, data: any): Promise<any> {
-  const response = await apiFetch(`/api/v2/classes/${id}`, {
+  const response = await apiFetch(`/api/classes/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
+  const result = await safeParseJson(response);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update class');
+    throw new Error(result.error || 'Failed to update class');
   }
-  const result = await response.json();
   return result.data;
 }
 
 export async function deleteClass(id: string): Promise<void> {
-  const response = await apiFetch(`/api/v2/classes/${id}`, {
+  const response = await apiFetch(`/api/classes/${id}`, {
     method: 'DELETE',
   });
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to delete class');
+    const result = await safeParseJson(response);
+    throw new Error(result.error || 'Failed to delete class');
   }
 }
 
 export async function getClassStudents(classId: string): Promise<any[]> {
-  const response = await apiFetch(`/api/v2/classes/${classId}/students`);
+  const response = await apiFetch(`/api/classes/${classId}/students`);
   // Fallback to V1 if V2 404s or not implemented yet (Phase 3 migration)
   if (!response.ok) {
     const v1Response = await apiFetch(`/api/classes/${classId}/students`);
     if (!v1Response.ok) return [];
-    const json = await v1Response.json();
+    const json = await safeParseJson(v1Response);
     return json.data || json.students || [];
   }
-  const result = await response.json();
+  const result = await safeParseJson(response);
   return result.data || [];
 }
 
@@ -608,14 +622,12 @@ export async function getGrades(params?: GradeListParams): Promise<{
     searchParams.set('academic_year_id', params.academic_year_id);
   }
 
-  const response = await apiFetch(`/api/v2/grades?${searchParams.toString()}`);
+  const response = await apiFetch(`/api/grades?${searchParams.toString()}`);
+  const result = await safeParseJson(response);
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch grades');
+    throw new Error(result.error || 'Failed to fetch grades');
   }
-
-  const result = await response.json();
 
   const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
   const pagination =
@@ -644,38 +656,36 @@ export async function getGrades(params?: GradeListParams): Promise<{
 }
 
 export async function bulkCreateGrades(data: any): Promise<any> {
-  const response = await apiFetch('/api/v2/grades', {
+  const response = await apiFetch('/api/grades', {
     method: 'POST',
     body: JSON.stringify(data),
   });
+  const result = await safeParseJson(response);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create grades');
+    throw new Error(result.error || 'Failed to create grades');
   }
-  const result = await response.json();
   return result.data;
 }
 
 export async function updateGrade(id: string, data: any): Promise<any> {
-  const response = await apiFetch(`/api/v2/grades/${id}`, {
+  const response = await apiFetch(`/api/grades/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
+  const result = await safeParseJson(response);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update grade');
+    throw new Error(result.error || 'Failed to update grade');
   }
-  const result = await response.json();
   return result.data;
 }
 
 export async function deleteGrade(id: string): Promise<void> {
-  const response = await apiFetch(`/api/v2/grades/${id}`, {
+  const response = await apiFetch(`/api/grades/${id}`, {
     method: 'DELETE',
   });
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to delete grade');
+    const result = await safeParseJson(response);
+    throw new Error(result.error || 'Failed to delete grade');
   }
 }
 
@@ -720,14 +730,12 @@ export async function getAttendance(params?: AttendanceListParams): Promise<{
     searchParams.set('status', params.status);
   }
 
-  const response = await apiFetch(`/api/v2/attendance?${searchParams.toString()}`);
+  const response = await apiFetch(`/api/attendance?${searchParams.toString()}`);
+  const result = await safeParseJson(response);
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch attendance');
+    throw new Error(result.error || 'Failed to fetch attendance');
   }
-
-  const result = await response.json();
 
   const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
   const pagination =
@@ -756,28 +764,26 @@ export async function getAttendance(params?: AttendanceListParams): Promise<{
 }
 
 export async function createAttendance(data: any): Promise<any> {
-  const response = await apiFetch('/api/v2/attendance', {
+  const response = await apiFetch('/api/attendance', {
     method: 'POST',
     body: JSON.stringify(data),
   });
+  const result = await safeParseJson(response);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to mark attendance');
+    throw new Error(result.error || 'Failed to mark attendance');
   }
-  const result = await response.json();
   return result.data;
 }
 
 export async function bulkCreateAttendance(data: any): Promise<any> {
-  const response = await apiFetch('/api/v2/attendance/bulk', {
+  const response = await apiFetch('/api/attendance/bulk', {
     method: 'POST',
     body: JSON.stringify(data),
   });
+  const result = await safeParseJson(response);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to bulk mark attendance');
+    throw new Error(result.error || 'Failed to bulk mark attendance');
   }
-  const result = await response.json();
   return result.data;
 }
 
@@ -794,13 +800,11 @@ export async function getFinanceReports(
   if (params?.startDate) searchParams.set('start_date', params.startDate);
   if (params?.endDate) searchParams.set('end_date', params.endDate);
 
-  const response = await apiFetch(`/api/v2/finance/reports?${searchParams.toString()}`);
+  const response = await apiFetch(`/api/finance/reports?${searchParams.toString()}`);
+  const result = await safeParseJson(response);
   if (!response.ok) {
-    // Fallback for non-200, though apiFetch might handle auth errors
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch reports');
+    throw new Error(result.error || 'Failed to fetch reports');
   }
-  const result = await response.json();
   return result.data;
 }
 
@@ -824,12 +828,11 @@ export async function getInvoices(params?: any): Promise<{
     searchParams.set('status', params.status);
   }
 
-  const response = await apiFetch(`/api/v2/finance/invoices?${searchParams.toString()}`);
+  const response = await apiFetch(`/api/finance/invoices?${searchParams.toString()}`);
+  const result = await safeParseJson(response);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch invoices');
+    throw new Error(result.error || 'Failed to fetch invoices');
   }
-  const result = await response.json();
 
   const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
   const pagination =
@@ -860,15 +863,14 @@ export async function getInvoices(params?: any): Promise<{
 }
 
 export async function createInvoice(data: any): Promise<any> {
-  const response = await apiFetch('/api/v2/finance/invoices', {
+  const response = await apiFetch('/api/finance/invoices', {
     method: 'POST',
     body: JSON.stringify(data),
   });
+  const result = await safeParseJson(response);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create invoice');
+    throw new Error(result.error || 'Failed to create invoice');
   }
-  const result = await response.json();
   return result.data;
 }
 
@@ -891,7 +893,7 @@ export async function getPayments(params?: any): Promise<{
   if (params?.startDate) searchParams.set('start_date', params.startDate);
   if (params?.endDate) searchParams.set('end_date', params.endDate);
 
-  const response = await apiFetch(`/api/v2/finance/payments?${searchParams.toString()}`);
+  const response = await apiFetch(`/api/finance/payments?${searchParams.toString()}`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch payments');
@@ -927,7 +929,7 @@ export async function getPayments(params?: any): Promise<{
 }
 
 export async function createPayment(data: any): Promise<any> {
-  const response = await apiFetch('/api/v2/finance/payments', {
+  const response = await apiFetch('/api/finance/payments', {
     method: 'POST',
     body: JSON.stringify(data),
   });

@@ -326,11 +326,8 @@ describe('Card Components', () => {
       rerender(<StatCard label="Green" value="100" color="green" />);
       expect(screen.getByText('Green')).toBeInTheDocument();
 
-      rerender(<StatCard label="Orange" value="100" color="orange" />);
-      expect(screen.getByText('Orange')).toBeInTheDocument();
-
-      rerender(<StatCard label="Purple" value="100" color="purple" />);
-      expect(screen.getByText('Purple')).toBeInTheDocument();
+      rerender(<StatCard label="Amber" value="100" color="amber" />);
+      expect(screen.getByText('Amber')).toBeInTheDocument();
 
       rerender(<StatCard label="Slate" value="100" color="slate" />);
       expect(screen.getByText('Slate')).toBeInTheDocument();

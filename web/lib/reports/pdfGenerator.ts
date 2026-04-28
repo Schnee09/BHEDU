@@ -251,16 +251,16 @@ export function generateAttendanceReportHTML(
 
   <!-- Summary -->
   <div class="grid grid-cols-3 gap-4 mb-6">
-    <div class="bg-blue-50 rounded-lg p-4 text-center">
-      <p class="text-3xl font-bold text-blue-600">${data.classSummary.totalStudents}</p>
+    <div class="bg-emerald-50 rounded-lg p-4 text-center">
+      <p class="text-3xl font-bold text-emerald-600">${data.classSummary.totalStudents}</p>
       <p class="text-sm text-gray-600">Tổng số học sinh</p>
     </div>
-    <div class="bg-green-50 rounded-lg p-4 text-center">
-      <p class="text-3xl font-bold text-green-600">${data.classSummary.averageAttendanceRate.toFixed(1)}%</p>
+    <div class="bg-amber-50 rounded-lg p-4 text-center">
+      <p class="text-3xl font-bold text-amber-600">${data.classSummary.averageAttendanceRate.toFixed(1)}%</p>
       <p class="text-sm text-gray-600">Tỷ lệ đi học TB</p>
     </div>
-    <div class="bg-purple-50 rounded-lg p-4 text-center">
-      <p class="text-3xl font-bold text-purple-600">${data.classSummary.perfectAttendance}</p>
+    <div class="bg-blue-50 rounded-lg p-4 text-center">
+      <p class="text-3xl font-bold text-blue-600">${data.classSummary.perfectAttendance}</p>
       <p class="text-sm text-gray-600">Đi học đầy đủ</p>
     </div>
   </div>
@@ -392,7 +392,7 @@ export function generateTranscriptHTML(
       </div>
       <div>
         <p class="text-sm text-gray-600">Điểm GPA (4.0)</p>
-        <p class="text-2xl font-bold text-purple-600">${transcript.cumulativeGPA4.toFixed(2)}</p>
+        <p class="text-2xl font-bold text-blue-600">${transcript.cumulativeGPA4.toFixed(2)}</p>
       </div>
       <div>
         <p class="text-sm text-gray-600">Tín chỉ tích lũy</p>

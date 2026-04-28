@@ -27,8 +27,9 @@ import {
   Table,
   SkeletonStatCard,
   SkeletonTable,
-  Modal
+  Modal,
 } from "@/components/ui";
+import { PermissionGuard } from "@/hooks/usePermissions";
 import { StatCard } from "@/components/ui/Card";
 import { Icons } from "@/components/ui/Icons";
 import { PageHeader } from "@/components/Breadcrumb";
@@ -38,22 +39,10 @@ import { createAuditLog, AuditActions } from "@/lib/audit";
 import { routes } from "@/lib/routes";
 import { Copy, Check, ChevronDown } from "lucide-react";
 import MobileStudentList from "@/components/students/MobileStudentList";
+import StudentQuickActions from "@/components/students/StudentQuickActions";
 import { cn } from "@/lib/utils";
 
-interface Student {
-  id: string;
-  full_name: string;
-  email: string | null;
-  role: string;
-  date_of_birth: string | null;
-  phone: string | null;
-  address: string | null;
-  student_code?: string;
-  grade_level?: string;
-  status?: string;
-  gender?: string;
-  created_at: string;
-}
+import StudentFormModal, { Student } from "@/components/students/StudentFormModal";
 
 interface StudentStats {
   total_students: number;
@@ -106,7 +95,7 @@ export default function StudentsPage() {
     total: number;
     statistics?: StudentStats;
   }>(
-    `/api/v2/students?${queryParams.toString()}`
+    `/api/students?${queryParams.toString()}`
   );
 
   // Handle successful fetch
@@ -137,7 +126,7 @@ export default function StudentsPage() {
 
   // Bulk archive mutation (admin/staff only)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { mutate: archiveStudent, loading: archiving } = useMutation('/api/v2/students', 'DELETE');
+  const { mutate: archiveStudent, loading: archiving } = useMutation('/api/students', 'DELETE');
 
   const students = (data?.students || (data as any)?.data || []) as Student[];
   const statistics = data?.statistics;
@@ -249,10 +238,11 @@ export default function StudentsPage() {
       : students;
 
     // Create CSV content
-    const headers = ["ID", "Full Name", "Email", "Phone", "Date of Birth", "Grade", "Status", "Joined"];
+    const headers = ["Họ và tên", "UID (Mã truy cập)", "CID (Mã định danh)", "Email", "Số điện thoại", "Ngày sinh", "Khối lớp", "Trạng thái", "Ngày tham gia"];
     const rows = studentsToExport.map(s => [
-      s.id,
       s.full_name,
+      s.student_code || "",
+      s.student_id || "",
       s.email || "",
       s.phone || "",
       s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString('vi-VN') : "",
@@ -302,7 +292,7 @@ export default function StudentsPage() {
           value={statistics.total_students}
           icon={<Icons.Students className="w-5 h-5" />}
           trend={{ value: 0, isPositive: true }}
-          subtitle="Toàn hệ thống"
+          subtitle="Hồ sơ toàn hệ thống"
           color="blue"
           className="shadow-md"
         />
@@ -313,16 +303,16 @@ export default function StudentsPage() {
           icon={<Icons.Success className="w-5 h-5" />}
           trend={{ value: Math.round((statistics.active_students / statistics.total_students) * 100), isPositive: true }}
           subtitle="Tỉ lệ hiện diện"
-          color="green"
+          color="emerald"
           className="shadow-md"
         />
 
         <StatCard
-          label="Nghỉ học"
+          label="Lưu trữ"
           value={statistics.inactive_students}
           icon={<Icons.Error className="w-5 h-5" />}
           trend={{ value: 0, isPositive: false }}
-          subtitle="Hồ sơ lưu trữ"
+          subtitle="Hồ sơ tạm ngưng"
           color="slate"
           className="shadow-md"
         />
@@ -332,7 +322,7 @@ export default function StudentsPage() {
           value={Object.keys(statistics.by_grade || {}).length}
           icon={<Icons.Classes className="w-5 h-5" />}
           trend={{ value: 0, isPositive: true }}
-          subtitle="Các khối lớp"
+          subtitle="Các cấp độ học thuật"
           color="amber"
           className="shadow-md"
         />
@@ -367,7 +357,7 @@ export default function StudentsPage() {
   }
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-10 relative overflow-x-hidden">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-10 relative overflow-x-hidden animate-in fade-in duration-1000">
       <div className="max-w-[1600px] mx-auto relative z-10">
         {/* Toast Container */}
         <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
@@ -386,18 +376,22 @@ export default function StudentsPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Link href="/dashboard/students/bulk">
-              <Button variant="outline" size="md" className="font-black uppercase tracking-widest text-[10px]">
-                Tạo hàng loạt
+            <PermissionGuard permissions="students.import">
+              <Link href="/dashboard/students/bulk">
+                <Button variant="outline" size="md" className="font-black uppercase tracking-widest text-[10px]">
+                  Tạo hàng loạt
+                </Button>
+              </Link>
+            </PermissionGuard>
+            <PermissionGuard permissions="students.create">
+              <Button
+                variant="primary"
+                onClick={() => setShowAddModal(true)}
+                className="font-black uppercase tracking-widest text-[10px] shadow-amber-glow"
+              >
+                Thêm Học sinh mới
               </Button>
-            </Link>
-            <Button
-              variant="primary"
-              onClick={() => setShowAddModal(true)}
-              className="font-black uppercase tracking-widest text-[10px] shadow-amber-glow"
-            >
-              Thêm Học sinh mới
-            </Button>
+            </PermissionGuard>
           </div>
         </div>
 
@@ -506,25 +500,29 @@ export default function StudentsPage() {
 
                   <div className="h-8 w-px bg-stone-200 dark:bg-stone-800 mx-2 hidden lg:block" />
 
-                  <Button
-                    variant="success"
-                    onClick={handleExportCSV}
-                    className="h-11 px-6 font-black uppercase tracking-widest text-[10px] shadow-emerald-glow"
-                    disabled={students.length === 0}
-                  >
-                    <Icons.Download className="w-3.5 h-3.5 mr-2" /> Trích xuất CSV
-                  </Button>
-
-                  {hasAdminAccess && selectedIds.size > 0 && (
+                  <PermissionGuard permissions="reports.export">
                     <Button
-                      variant="danger"
-                      onClick={handleBulkArchive}
-                      isLoading={archiving}
-                      className="h-11 px-6 font-black uppercase tracking-widest text-[10px]"
+                      variant="success"
+                      onClick={handleExportCSV}
+                      className="h-11 px-6 font-black uppercase tracking-widest text-[10px] shadow-emerald-glow"
+                      disabled={students.length === 0}
                     >
-                      <Icons.Archive className="w-3.5 h-3.5 mr-2" /> Lưu trữ ({selectedIds.size})
+                      <Icons.Download className="w-3.5 h-3.5 mr-2" /> Trích xuất CSV
                     </Button>
-                  )}
+                  </PermissionGuard>
+
+                  <PermissionGuard permissions="students.delete">
+                    {selectedIds.size > 0 && (
+                      <Button
+                        variant="danger"
+                        onClick={handleBulkArchive}
+                        isLoading={archiving}
+                        className="h-11 px-6 font-black uppercase tracking-widest text-[10px]"
+                      >
+                        <Icons.Archive className="w-3.5 h-3.5 mr-2" /> Lưu trữ ({selectedIds.size})
+                      </Button>
+                    )}
+                  </PermissionGuard>
                 </div>
               </div>
 
@@ -635,80 +633,78 @@ export default function StudentsPage() {
                         },
                         {
                           key: 'student_code',
-                          header: 'Mã học sinh',
+                          header: 'UID (Mã truy cập)',
                           render: (student) => (
-                            <span className="text-gray-600 font-mono text-sm">
+                            <span className="text-stone-600 dark:text-stone-400 font-mono text-xs font-bold bg-stone-100 dark:bg-white/5 px-2 py-0.5 rounded border border-stone-200/50 dark:border-white/10">
                               {student.student_code || '-'}
                             </span>
                           ),
                         },
                         {
-                          key: 'email',
-                          header: 'Email',
+                          key: 'student_id',
+                          header: 'CID (Mã định danh)',
                           render: (student) => (
-                            <span className="text-gray-600">{student.email || '-'}</span>
+                            <span className="text-amber-600 dark:text-amber-400 font-mono text-xs font-black px-2 py-0.5 rounded bg-amber-500/5 border border-amber-500/10">
+                              {student.student_id || '-'}
+                            </span>
+                          ),
+                        },
+                        {
+                          key: 'email',
+                          header: 'Địa chỉ Email',
+                          render: (student) => (
+                            <span className="text-stone-600 dark:text-stone-400 text-xs font-medium">{student.email || '-'}</span>
                           ),
                         },
                         {
                           key: 'grade_level',
-                          header: 'Lớp',
+                          header: 'Khối lớp',
                           render: (student) => (
                             student.grade_level ? (
-                              <Badge variant="info">{student.grade_level}</Badge>
+                              <Badge variant="info" className="font-black text-[10px] uppercase tracking-widest">{student.grade_level}</Badge>
                             ) : (
-                              <span className="text-slate-600">-</span>
+                              <span className="text-stone-400">-</span>
                             )
                           ),
                         },
                         {
                           key: 'phone',
-                          header: 'Điện thoại',
+                          header: 'Số điện thoại',
                           render: (student) => (
-                            <span className="text-slate-700">{student.phone || '-'}</span>
+                            <span className="text-stone-700 dark:text-stone-300 text-xs font-bold">{student.phone || '-'}</span>
                           ),
                         },
                         {
                           key: 'status',
                           header: 'Trạng thái',
                           render: (student) => (
-                            <Badge variant={student.status === 'active' ? 'success' : 'default'}>
-                              {student.status || 'active'}
+                            <Badge 
+                              variant={student.status === 'active' ? 'success' : 'default'}
+                              className="font-black text-[10px] uppercase tracking-widest"
+                            >
+                              {student.status === 'active' ? 'Đang học' : student.status || 'Hồ sơ'}
                             </Badge>
                           ),
                         },
                         {
                           key: 'created_at',
-                          header: 'Ngày tham gia',
+                          header: 'Ngày gia nhập',
                           render: (student) => (
-                            <span className="text-gray-600 text-sm">
+                            <span className="text-stone-500 dark:text-stone-500 text-[10px] font-black uppercase tracking-widest">
                               {new Date(student.created_at).toLocaleDateString('vi-VN')}
                             </span>
                           ),
                         },
                         {
                           key: 'actions',
-                          header: 'Hành động',
-                          width: '160px',
+                          header: '',
+                          width: '60px',
                           render: (student) => (
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditingStudent(student)}
-                                leftIcon={<Icons.Edit className="w-4 h-4" />}
-                              >
-                                Chỉnh sửa
-                              </Button>
-                              {hasAdminAccess && (
-                                <Button
-                                  variant="danger"
-                                  size="sm"
-                                  onClick={() => handleArchiveOne(student)}
-                                  leftIcon={<Icons.Archive className="w-4 h-4" />}
-                                >
-                                  Lưu trữ
-                                </Button>
-                              )}
+                            <div className="flex justify-end pr-4">
+                              <StudentQuickActions 
+                                studentId={student.id} 
+                                studentName={student.full_name} 
+                              />
                             </div>
                           ),
                         },
@@ -768,360 +764,3 @@ export default function StudentsPage() {
     </div>
   );
 }
-
-// Student Form Modal Component
-interface StudentFormModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  student: Student | null;
-  onSuccess: () => void;
-}
-
-function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormModalProps) {
-  const toast = useToast();
-  const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    date_of_birth: '',
-    address: '',
-    student_code: '',
-    grade_level: '',
-    status: 'active',
-    gender: ''
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  // Populate form when editing
-  useEffect(() => {
-    if (student) {
-      setFormData({
-        full_name: student.full_name || '',
-        email: student.email || '',
-        phone: student.phone || '',
-        date_of_birth: student.date_of_birth || '',
-        address: student.address || '',
-        student_code: student.student_code || '',
-        grade_level: student.grade_level || '',
-        status: student.status || 'active',
-        gender: student.gender || ''
-      });
-    } else {
-      setFormData({
-        full_name: '',
-        email: '',
-        phone: '',
-        date_of_birth: '',
-        address: '',
-        student_code: '',
-        grade_level: '',
-        status: 'active',
-        gender: ''
-      });
-    }
-    setErrors({});
-    setErrors({});
-    setTempPassword(null);
-  }, [student, isOpen]);
-
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.full_name.trim()) {
-      newErrors.full_name = 'Họ tên là bắt buộc';
-    }
-
-    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Định dạng email không hợp lệ';
-    }
-
-    if (formData.phone && !/^\+?[\d\s-()]+$/.test(formData.phone)) {
-      newErrors.phone = 'Định dạng số điện thoại không hợp lệ';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validate()) {
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      const url = student
-        ? `/api/students/${student.id}`
-        : '/api/students';
-
-      const method = student ? 'PUT' : 'POST';
-
-      // Sanitize payload: convert empty strings to null or undefined for optional fields
-      const payload = {
-        ...formData,
-        email: formData.email.trim() || undefined,
-        full_name: formData.full_name.trim(),
-        phone: formData.phone.trim() || null,
-        address: formData.address.trim() || null,
-        date_of_birth: formData.date_of_birth || null,
-        student_code: formData.student_code.trim() || undefined, // Let backend generate if empty
-        grade_level: formData.grade_level || null,
-        gender: formData.gender || null,
-        // Status is always set to a value from select
-      };
-
-      const response = await apiFetch(url, {
-        method,
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Không thể lưu học sinh');
-      }
-
-      if (data.tempPassword) {
-        setTempPassword(data.tempPassword);
-        // Do not close yet - let user see password
-      } else {
-        onSuccess();
-      }
-    } catch (error: any) {
-      toast.error('Error', error.message);
-      logger.error('Student form error', error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleCopyPassword = () => {
-    if (tempPassword) {
-      navigator.clipboard.writeText(tempPassword);
-      setCopied(true);
-      toast.success("Đã sao chép", "Mật khẩu đã được lưu vào clipboard");
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={tempPassword ? 'Student Created Successfully' : (student ? 'Edit Student' : 'Add New Student')}
-      size="lg"
-      footer={
-        tempPassword ? (
-          <div className="flex justify-end w-full">
-            <Button variant="primary" onClick={onSuccess}>
-              Hoàn tất (Done)
-            </Button>
-          </div>
-        ) : (
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={onClose} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSubmit}
-              isLoading={submitting}
-              leftIcon={student ? <Icons.Save className="w-4 h-4" /> : <Icons.Add className="w-4 h-4" />}
-            >
-              {student ? 'Update' : 'Add'} Student
-            </Button>
-          </div>
-        )
-      }
-    >
-      {tempPassword ? (
-        <div className="space-y-6 py-4">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-            <Icons.Success className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-green-800">Tài khoản học sinh đã được tạo</h3>
-              <p className="text-green-700 text-sm mt-1">
-                Vui lòng sao chép thông tin đăng nhập dưới đây và gửi cho học sinh.
-                Lưu ý: Mật khẩu này chỉ hiện <strong>một lần duy nhất</strong>.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-4 bg-slate-50 p-6 rounded-xl border border-slate-200">
-            <div>
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block">
-                Họ và Tên
-              </label>
-              <div className="text-lg font-medium text-slate-900">{formData.full_name}</div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block">
-                  Mã Học Sinh (Dùng để đăng nhập)
-                </label>
-                <div className="text-lg font-mono font-medium text-slate-900 bg-white px-3 py-2 rounded border border-slate-200">
-                  {formData.student_code}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block">
-                  Mật khẩu
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="text-lg font-mono font-medium text-slate-900 bg-white px-3 py-2 rounded border border-slate-200 flex-1">
-                    {tempPassword}
-                  </div>
-                  <button
-                    onClick={handleCopyPassword}
-                    className="p-2hover:bg-slate-200 rounded-lg transition-colors text-slate-600 hover:text-slate-900"
-                    title="Copy Password"
-                  >
-                    {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Full Name */}
-          <Input
-            label="Họ và tên"
-            required
-            value={formData.full_name}
-            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-            error={errors.full_name}
-            placeholder="Nhập họ và tên học sinh"
-          />
-
-          {/* Email and Student Code */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              error={errors.email}
-              placeholder="hocsinh@example.com"
-            />
-
-            <Input
-              label="Mã học sinh"
-              value={formData.student_code}
-              onChange={(e) => setFormData({ ...formData, student_code: e.target.value })}
-              placeholder="HS2024001"
-            />
-          </div>
-
-          {/* Phone and Date of Birth */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Số điện thoại"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              error={errors.phone}
-              placeholder="0912 345 678"
-            />
-
-            <Input
-              label="Ngày sinh"
-              type="date"
-              value={formData.date_of_birth}
-              onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-            />
-          </div>
-
-          {/* Grade Level, Status, Gender */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Khối lớp
-              </label>
-              <select
-                value={formData.grade_level}
-                onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Chọn khối lớp</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(grade => (
-                  <option key={grade} value={`Lớp ${grade}`}>Lớp {grade}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Trạng thái
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="active">Đang học</option>
-                <option value="inactive">Nghỉ học</option>
-                <option value="graduated">Đã tốt nghiệp</option>
-                <option value="suspended">Đình chỉ</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Giới tính
-              </label>
-              <select
-                value={formData.gender}
-                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Chọn giới tính</option>
-                <option value="male">Nam</option>
-                <option value="female">Nữ</option>
-                <option value="other">Khác</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Address */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Địa chỉ
-            </label>
-            <textarea
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              rows={3}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Nhập địa chỉ học sinh"
-            />
-          </div>
-          {/* Note */}
-          {!student && (
-            <div className="bg-blue-50 text-blue-700 p-4 rounded-lg text-sm flex items-start gap-3 mt-6">
-              <Icons.Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium">Thông tin tài khoản</p>
-                <p className="mt-1">
-                  Hệ thống sẽ tự động tạo tài khoản đăng nhập cho học sinh.
-                  Mật khẩu sẽ được hiển thị sau khi tạo thành công.
-                </p>
-              </div>
-            </div>
-          )}
-        </form>
-      )}
-    </Modal>
-  );
-}
-

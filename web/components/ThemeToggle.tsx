@@ -38,7 +38,7 @@ export default function ThemeToggle() {
     >
       {/* Dynamic Background Glow */}
       <div className={`absolute inset-0 transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 blur-xl" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 blur-xl" />
       </div>
       <div className={`absolute inset-0 transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`}>
         <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 to-orange-500/20 blur-xl" />
@@ -53,7 +53,7 @@ export default function ThemeToggle() {
       {/* Moon Icon (Dark Mode) */}
       <div className={`absolute transition-all duration-500 ease-out transform
         ${isDark ? 'translate-y-0 opacity-100 rotate-0' : '-translate-y-8 opacity-0 -rotate-90'}`}>
-        <MoonIcon className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(129,140,248,0.6)]" />
+        <MoonIcon className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
       </div>
     </button>
   );

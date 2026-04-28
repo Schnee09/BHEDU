@@ -71,10 +71,10 @@ export default function Sidebar({
           // Border & shadow
           'border-r lg:border border-stone-200/80 dark:border-white/10',
           'shadow-xl shadow-stone-900/8 dark:shadow-black/25',
-          // Z-stack: above header on mobile, normal on desktop
-          'z-50',
+          // Z-stack: above header on mobile and desktop
+          'z-[1000]',
           // Width
-          isCollapsed ? 'w-[72px]' : 'w-[260px]',
+          isCollapsed ? 'w-[72px]' : 'w-[280px]',
           // Mobile slide
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}

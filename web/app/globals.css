@@ -48,7 +48,7 @@
  * All margin/padding math in JSX derives from these.
  * ============================================= */
 :root {
-  --sidebar-width: 260px;
+  --sidebar-width: 280px;
   --sidebar-collapsed-width: 72px;
   --sidebar-left: 16px;       /* left-4 floating offset */
   --sidebar-gap: 16px;        /* gap between sidebar right edge and content */
@@ -66,7 +66,7 @@
 }
 @media (min-width: 1024px) {
   .content-area {
-    margin-left: var(--content-offset, 292px);
+    margin-left: var(--content-offset, 312px);
   }
   .content-area-collapsed {
     margin-left: var(--content-offset-collapsed, 104px);

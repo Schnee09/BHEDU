@@ -96,8 +96,8 @@ function getGradientForType(type: EmptyStateProps["type"]) {
   switch (type) {
     case "students": return "bg-blue-500";
     case "attendance": return "bg-green-500";
-    case "calendar": return "bg-purple-500";
-    case "grades": return "bg-amber-500";
+    case "calendar": return "bg-amber-500";
+    case "grades": return "bg-emerald-500";
     case "search": return "bg-slate-500";
     default: return "bg-amber-500";
   }

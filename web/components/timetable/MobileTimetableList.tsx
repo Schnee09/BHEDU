@@ -79,10 +79,10 @@ export default function MobileTimetableList({
   });
 
   const getSlotStyles = (slot: any) => {
-    if (viewMode === 'tutoring') return 'border-l-purple-500 bg-purple-500/5 dark:bg-purple-500/10';
+    if (viewMode === 'tutoring') return 'border-l-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10';
     if (viewMode === 'teacher')
       return 'border-l-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10';
-    if (viewMode === 'class') return 'border-l-indigo-500 bg-indigo-500/5 dark:bg-indigo-500/10';
+    if (viewMode === 'class') return 'border-l-amber-600 bg-amber-600/5 dark:bg-amber-600/10';
     return 'border-l-amber-500 bg-amber-500/5 dark:bg-amber-500/10';
   };
 

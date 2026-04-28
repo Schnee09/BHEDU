@@ -24,7 +24,7 @@ import { TOKENS } from "./tokens";
 import { classService } from "@/lib/services/classService";
 import { studentService } from "@/lib/services/studentService";
 import { courseService } from "@/lib/services/courseService";
-import { enrollmentService, subjectService } from "@/lib/services";
+import { subjectService } from "@/lib/services";
 
 /**
  * Bootstrap the container with default service registrations.
@@ -35,10 +35,6 @@ export function bootstrapContainer(): void {
     container.registerSingleton(TOKENS.ClassService, () => classService);
     container.registerSingleton(TOKENS.StudentService, () => studentService);
     container.registerSingleton(TOKENS.CourseService, () => courseService);
-    container.registerSingleton(
-        TOKENS.EnrollmentService,
-        () => enrollmentService,
-    );
     container.registerSingleton(TOKENS.SubjectService, () => subjectService);
 }
 

@@ -164,7 +164,7 @@ export class EnrollmentRepository extends BaseRepository<
   }
 
   /**
-   * Find all enrollments for a student with class details
+   * Find all enrollments for a student with detailed class and teacher info
    */
   async findByStudent(studentId: string): Promise<EnrollmentWithDetails[]> {
     const { data, error } = await this.supabase
@@ -174,8 +174,14 @@ export class EnrollmentRepository extends BaseRepository<
         class:classes (
           id,
           name,
+          code,
+          schedule,
           course_id,
-          teacher_id
+          teacher_id,
+          teacher:profiles!classes_teacher_id_fkey (
+            id,
+            full_name
+          )
         )
       `)
       .eq("student_id", studentId)
@@ -205,7 +211,7 @@ export class EnrollmentRepository extends BaseRepository<
         )
       `)
       .eq("class_id", classId)
-      .eq("status", "enrolled")
+      .eq("status", "active")
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -246,7 +252,7 @@ export class EnrollmentRepository extends BaseRepository<
         ...input,
         enrollment_date: input.enrollment_date ||
           new Date().toISOString().split("T")[0],
-        status: (input.status as any) || "enrolled",
+        status: (input.status as any) || "active",
       })
       .select()
       .single();
@@ -269,7 +275,7 @@ export class EnrollmentRepository extends BaseRepository<
       student_id: studentId,
       class_id: data.class_id,
       enrollment_date: enrollmentDate,
-      status: "enrolled",
+      status: "active",
     }));
 
     const { data: created, error } = await this.supabase
@@ -320,5 +326,31 @@ export class EnrollmentRepository extends BaseRepository<
     }
 
     return count || 0;
+  }
+
+  /**
+   * Transfer student from one class to another
+   */
+  async transferStudent(
+    studentId: string,
+    fromClassId: string,
+    toClassId: string,
+  ): Promise<Enrollment> {
+    // 1. Find the existing enrollment ID
+    const enrollment = await this.findByStudentAndClass(studentId, fromClassId);
+    if (!enrollment) {
+      throw new Error("Student is not enrolled in the source class");
+    }
+
+    // 2. Perform the transfer (delete existing and create new)
+    // Note: We don't have atomic transactions in Supabase client easily,
+    // so we'll do them sequentially.
+    await this.delete(enrollment.id);
+    
+    return await this.create({
+      student_id: studentId,
+      class_id: toClassId,
+      status: "enrolled",
+    });
   }
 }

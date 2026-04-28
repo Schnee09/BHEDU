@@ -91,8 +91,8 @@ export default function ResetPasswordModal({ isOpen, onClose, user }: ResetPassw
                             <Icons.Success className="w-8 h-8 text-green-600" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-stone-900 dark:text-white">Thành công!</h3>
-                            <p className="text-sm text-stone-500">Mật khẩu của <b>{user?.full_name}</b> đã được thay đổi.</p>
+                            <h3 className="text-xl font-bold text-stone-900 dark:text-white">Thành công!</h3>
+                            <p className="text-sm text-stone-500 font-medium">Mật khẩu của <b>{user?.full_name}</b> đã được thay đổi.</p>
                         </div>
                     </div>
 
@@ -125,8 +125,8 @@ export default function ResetPasswordModal({ isOpen, onClose, user }: ResetPassw
                     <div className="flex justify-center pt-2">
                         <Button
                             onClick={handleClose}
-                            variant="gold"
-                            className="rounded-2xl px-12 h-14"
+                            variant="success"
+                            className="rounded-2xl px-12 h-14 shadow-lg shadow-emerald-600/20"
                         >
                             Hoàn tất & Đóng
                         </Button>
@@ -135,8 +135,8 @@ export default function ResetPasswordModal({ isOpen, onClose, user }: ResetPassw
             ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="flex items-center gap-4 p-4 bg-stone-50 dark:bg-white/5 rounded-3xl border border-stone-100 dark:border-white/5">
-                        <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center flex-shrink-0">
-                            <Icons.Lock className="w-6 h-6 text-amber-500" />
+                        <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center flex-shrink-0">
+                            <Icons.Lock className="w-6 h-6 text-emerald-600" />
                         </div>
                         <div className="min-w-0">
                             <p className="text-xs font-black text-stone-400 uppercase tracking-widest">Đang đặt lại mật khẩu cho</p>
@@ -192,15 +192,15 @@ export default function ResetPasswordModal({ isOpen, onClose, user }: ResetPassw
                             type="button"
                             variant="outline"
                             onClick={handleClose}
-                            className="flex-1 h-14 rounded-2xl"
+                            className="flex-1 h-14 rounded-xl font-bold"
                         >
                             Hủy bỏ
                         </Button>
                         <Button
                             type="submit"
-                            variant="gold"
+                            variant="success"
                             isLoading={loading}
-                            className="flex-1 h-14 rounded-2xl"
+                            className="flex-1 h-14 rounded-xl shadow-lg shadow-emerald-600/20 font-bold"
                             leftIcon={<Icons.Lock className="w-4 h-4" />}
                         >
                             Đặt lại mật khẩu

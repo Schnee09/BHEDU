@@ -139,7 +139,7 @@ function BulkImportContent() {
     if (profileLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
+                <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
             </div>
         );
     }
@@ -167,11 +167,11 @@ function BulkImportContent() {
                                     setResult(null);
                                 }}
                                 className={`p-4 rounded-xl border-2 text-left transition-all ${selectedType === type.id
-                                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
+                                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                                     : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                                     }`}
                             >
-                                <div className={`mb-2 ${selectedType === type.id ? "text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400"}`}>
+                                <div className={`mb-2 ${selectedType === type.id ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}>
                                     {type.icon}
                                 </div>
                                 <h3 className="font-semibold text-gray-900 dark:text-white">{type.label}</h3>
@@ -185,7 +185,7 @@ function BulkImportContent() {
                 <div className="mb-6">
                     <button
                         onClick={() => downloadTemplate(selectedType)}
-                        className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                        className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
                     >
                         <Download className="w-4 h-4" />
                         Tải file mẫu CSV
@@ -198,7 +198,7 @@ function BulkImportContent() {
                         onClick={() => fileInputRef.current?.click()}
                         className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${file
                             ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/20"
-                            : "border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500"
+                            : "border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500"
                             }`}
                     >
                         <input
@@ -232,7 +232,7 @@ function BulkImportContent() {
                             <>
                                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                                 <p className="text-gray-600 dark:text-gray-300">
-                                    Kéo thả file CSV hoặc <span className="text-indigo-600 dark:text-indigo-400">chọn file</span>
+                                    Kéo thả file CSV hoặc <span className="text-blue-600 dark:text-blue-400">chọn file</span>
                                 </p>
                             </>
                         )}
@@ -276,7 +276,7 @@ function BulkImportContent() {
                         <button
                             onClick={handleImport}
                             disabled={importing}
-                            className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-black rounded-xl hover:from-blue-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/25 active:scale-[0.98]"
                         >
                             {importing ? "Đang nhập..." : "Nhập dữ liệu"}
                         </button>

@@ -13,7 +13,8 @@ interface Student {
     date_of_birth: string | null;
     phone: string | null;
     address: string | null;
-    student_code?: string;
+    student_code?: string; // UID
+    student_id?: string; // CID
     grade_level?: string;
     status?: string;
     created_at: string;
@@ -83,12 +84,21 @@ export default function MobileStudentList({
                                         </span>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-stone-500 dark:text-stone-400 font-mono tracking-tight">
-                                        {student.student_code || 'HS-XXXX'}
-                                    </span>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">UID</span>
+                                        <span className="text-xs text-blue-600 dark:text-blue-400 font-mono font-bold tracking-tight">
+                                            {student.student_code || 'HS-XXXX'}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[9px] font-black text-amber-500/60 uppercase tracking-widest">CID</span>
+                                        <span className="text-xs text-amber-600 dark:text-amber-500 font-mono font-bold tracking-tight">
+                                            {student.student_id || '—'}
+                                        </span>
+                                    </div>
                                     <span className={cn(
-                                        "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                                        "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ml-auto",
                                         isActive
                                             ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400'
                                             : 'bg-stone-100 text-stone-600 border-stone-200 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-400'
@@ -116,8 +126,8 @@ export default function MobileStudentList({
                             )}
                             {student.email && (
                                 <div className="flex items-center gap-2.5 text-sm text-stone-600 dark:text-stone-300">
-                                    <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
-                                        <Mail className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                                    <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                                        <Mail className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                     </div>
                                     <span className="truncate">{student.email}</span>
                                 </div>

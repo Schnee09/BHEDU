@@ -17,8 +17,13 @@ import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import RankingWidget from '@/components/dashboard/RankingWidget';
 import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
 import { SystemStatusWidget } from '@/components/dashboard/SystemStatusWidget';
-import { ClassComparison } from '@/components/dashboard/ClassComparison';
 import { SchoolMetrics } from '@/components/dashboard/SchoolMetrics';
+import dynamic from 'next/dynamic';
+
+const ClassComparison = dynamic(
+  () => import('@/components/dashboard/ClassComparison').then(mod => mod.ClassComparison),
+  { ssr: false, loading: () => <SkeletonCard /> }
+);
 import { cn } from '@/lib/utils';
 
 interface DashboardStats {
@@ -219,15 +224,15 @@ export default function DashboardPage() {
             <StatCard
               label="Điểm trung bình"
               value={myRanking ? myRanking.average.toFixed(1) : '—'}
-              color="amber"
-              icon={<Icons.Grades className="w-5 h-5 text-amber-500" />}
+              color="emerald"
+              icon={<Icons.Grades className="w-5 h-5 text-emerald-500" />}
               subtitle="/10 (Điểm TB tích lũy)"
             />
             <StatCard
               label="Xếp hạng hiện tại"
               value={myRanking ? `#${myRanking.rank}` : '—'}
-              color="purple"
-              icon={<Icons.Students className="w-5 h-5 text-purple-500" />}
+              color="blue"
+              icon={<Icons.Students className="w-5 h-5 text-blue-500" />}
               subtitle={`/${totalRankedStudents} học sinh khối`}
             />
             <StatCard
@@ -257,8 +262,8 @@ export default function DashboardPage() {
             <StatCard
               label="Bài tập"
               value={displayStats.totalAssignments}
-              color="purple"
-              icon={<Icons.Assignments className="w-5 h-5" />}
+              color="blue"
+              icon={<Icons.Assignments className="w-5 h-5 text-blue-500" />}
             />
             <StatCard
               label="Điểm danh"

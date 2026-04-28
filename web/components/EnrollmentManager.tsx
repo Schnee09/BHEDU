@@ -1,9 +1,26 @@
+/**
+ * Enrollment Manager Component
+ * Refactored with premium stone/amber theme and Vietnamese localization
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { apiFetch, enrollStudent, deleteEnrollment } from '@/lib/api/client';
 import { showToast } from "@/components/ToastProvider";
-import { CalendarDaysIcon, UserIcon } from "@heroicons/react/24/outline";
+import { Icons } from "@/components/ui/Icons";
+import { useTranslation } from "@/contexts/I18nContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button, Card, Badge } from "@/components/ui";
 
 interface Class {
   id: string;
@@ -11,9 +28,10 @@ interface Class {
   code: string;
   schedule?: string;
   teacher_name?: string;
-  capacity?: number;           // Legacy field
-  max_capacity?: number;       // New: max 12 students
-  enrolled_count?: number;
+  capacity?: number;
+  enrollment_count?: number;
+  course_code?: string;
+  course?: { id: string; code: string; name: string };
   class_type?: 'group' | 'tutoring';
   sessions_per_week?: number;
 }
@@ -34,6 +52,7 @@ interface EnrollmentManagerProps {
 }
 
 export default function EnrollmentManager({ studentId }: EnrollmentManagerProps) {
+  const { t } = useTranslation();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [availableClasses, setAvailableClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +60,12 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
   const [selectedClassId, setSelectedClassId] = useState("");
   const [scheduleConflicts, setScheduleConflicts] = useState<string[]>([]);
   const [processingEnrollment, setProcessingEnrollment] = useState<string | null>(null);
+
+  // Dialog states
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [enrollmentToRemove, setEnrollmentToRemove] = useState<{ id: string, name: string } | null>(null);
+  const [capacityWarning, setCapacityWarning] = useState<{ enrolled: number, max: number } | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -68,7 +93,7 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
       }
     } catch (error) {
       console.error("Error fetching enrollment data:", error);
-      showToast.error("Failed to load enrollment data");
+      showToast.error("Không thể tải thông tin ghi danh");
     } finally {
       setLoading(false);
     }
@@ -79,7 +104,8 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
 
     const conflicts: string[] = [];
     enrollments.forEach((enrollment) => {
-      if (enrollment.schedule && hasTimeOverlap(enrollment.schedule, newSchedule)) {
+      // Check for conflicts only with active enrollments
+      if (enrollment.status === "active" && enrollment.schedule && hasTimeOverlap(enrollment.schedule, newSchedule)) {
         conflicts.push(`${enrollment.class_name} (${enrollment.schedule})`);
       }
     });
@@ -87,12 +113,9 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
   };
 
   const hasTimeOverlap = (schedule1: string, schedule2: string): boolean => {
-    // Simple schedule conflict detection
-    // Format expected: "Mon/Wed 10:00-11:30" or "Tue/Thu 14:00-15:30"
     const days1 = schedule1.split(" ")[0]?.toLowerCase() || "";
     const days2 = schedule2.split(" ")[0]?.toLowerCase() || "";
 
-    // Check if any day overlaps
     const dayAbbrevs = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
     const hasDayOverlap = dayAbbrevs.some(day =>
       days1.includes(day) && days2.includes(day)
@@ -100,7 +123,6 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
 
     if (!hasDayOverlap) return false;
 
-    // If days overlap, check time ranges
     const time1 = schedule1.split(" ")[1];
     const time2 = schedule2.split(" ")[1];
     if (!time1 || !time2) return false;
@@ -109,7 +131,6 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
     const [start2, end2] = time2.split("-");
     if (!start1 || !end1 || !start2 || !end2) return false;
 
-    // Convert to minutes for easier comparison
     const toMinutes = (time: string) => {
       const [hours, minutes] = time.split(":").map(Number);
       return (hours || 0) * 60 + (minutes || 0);
@@ -120,57 +141,60 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
     const s2 = toMinutes(start2);
     const e2 = toMinutes(end2);
 
-    // Check if time ranges overlap
     return (s1 < e2 && s2 < e1);
   };
 
   const handleClassSelect = (classId: string) => {
     setSelectedClassId(classId);
     const selectedClass = availableClasses.find(c => c.id === classId);
+    
+    // Check conflicts
     const conflicts = checkScheduleConflict(selectedClass?.schedule);
     setScheduleConflicts(conflicts);
+
+    // Check capacity (synchronized with API property names)
+    const maxCapacity = selectedClass?.capacity ?? 12;
+    const currentEnrolled = selectedClass?.enrollment_count ?? 0;
+    if (currentEnrolled >= maxCapacity) {
+      setCapacityWarning({ enrolled: currentEnrolled, max: maxCapacity });
+    } else {
+      setCapacityWarning(null);
+    }
   };
 
   const handleAddEnrollment = async () => {
     if (!selectedClassId) {
-      showToast.error("Please select a class");
+      showToast.error("Vui lòng chọn một lớp học");
       return;
     }
 
-    if (scheduleConflicts.length > 0) {
-      const confirmed = window.confirm(
-        `This class has a schedule conflict with:\n${scheduleConflicts.join("\n")}\n\nEnroll anyway?`
-      );
-      if (!confirmed) return;
-    }
-
-    const selectedClass = availableClasses.find(c => c.id === selectedClassId);
-
-    // Check class capacity - BLOCK enrollment if at max (default 12)
-    const maxCapacity = selectedClass?.max_capacity ?? selectedClass?.capacity ?? 12;
-    const currentEnrolled = selectedClass?.enrolled_count ?? 0;
-
-    if (currentEnrolled >= maxCapacity) {
-      showToast.error(
-        `Lớp đã đủ sĩ số (${currentEnrolled}/${maxCapacity} học sinh). Không thể đăng ký thêm.`
-      );
+    // If there are warnings, show dialog instead of proceeding directly
+    if (scheduleConflicts.length > 0 || capacityWarning) {
+      setShowWarningDialog(true);
       return;
     }
 
-    const toastId = showToast.loading("Enrolling student...");
+    await performEnrollment();
+  };
+
+  const performEnrollment = async () => {
+    const toastId = showToast.loading("Đang thực hiện ghi danh...");
     setProcessingEnrollment(selectedClassId);
+    setShowWarningDialog(false);
 
     try {
+      // enrollStudent uses the internal client which now defaults to 'active' status
       await enrollStudent(studentId, selectedClassId);
 
       showToast.dismiss(toastId);
-      showToast.success("Student enrolled successfully");
+      showToast.success("Ghi danh học viên thành công!");
       setSelectedClassId("");
       setScheduleConflicts([]);
+      setCapacityWarning(null);
       setShowAddDropdown(false);
-      await fetchData(); // Refresh data
+      await fetchData();
     } catch (error) {
-      const errMessage = error instanceof Error ? error.message : "An error occurred";
+      const errMessage = error instanceof Error ? error.message : "Đã có lỗi xảy ra";
       console.error("Error enrolling student:", error);
       showToast.dismiss(toastId);
       showToast.error(errMessage);
@@ -179,185 +203,293 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
     }
   };
 
-  const handleRemoveEnrollment = async (enrollmentId: string, className: string) => {
-    const confirmed = window.confirm(
-      `Remove student from "${className}"?\n\nThis will set the enrollment status to inactive.`
-    );
-    if (!confirmed) return;
+  const handleRemoveClick = (enrollmentId: string, className: string) => {
+    setEnrollmentToRemove({ id: enrollmentId, name: className });
+    setShowRemoveDialog(true);
+  };
 
-    const toastId = showToast.loading("Removing enrollment...");
-    setProcessingEnrollment(enrollmentId);
+  const performRemoval = async () => {
+    if (!enrollmentToRemove) return;
+
+    const toastId = showToast.loading("Đang hủy ghi danh...");
+    setProcessingEnrollment(enrollmentToRemove.id);
+    setShowRemoveDialog(false);
 
     try {
-      await deleteEnrollment(enrollmentId);
+      await deleteEnrollment(enrollmentToRemove.id);
 
       showToast.dismiss(toastId);
-      showToast.success("Enrollment removed successfully");
-      await fetchData(); // Refresh data
+      showToast.success("Đã hủy ghi danh thành công");
+      await fetchData();
     } catch (error) {
-      const errMessage = error instanceof Error ? error.message : "An error occurred";
+      const errMessage = error instanceof Error ? error.message : "Không thể hủy ghi danh";
       console.error("Error removing enrollment:", error);
       showToast.dismiss(toastId);
       showToast.error(errMessage);
     } finally {
       setProcessingEnrollment(null);
+      setEnrollmentToRemove(null);
     }
   };
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <div className="flex items-center justify-center py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-        </div>
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Đang tải dữ liệu lớp học...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* Add Enrollment Section */}
-      <div className="rounded-lg border border-stone-200 bg-white p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-medium text-stone-900">Quick Enrollment</h3>
+      <div className="grid grid-cols-1 gap-8">
+        <div className="flex items-center justify-between pb-6 border-b border-stone-100 dark:border-white/5">
+          <div className="space-y-1">
+            <h2 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+              <Icons.Classes className="w-6 h-6 text-amber-500" /> Quản lý Ghi danh
+            </h2>
+            <p className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+              Ghi danh học viên vào các lớp học đang hoạt động.
+            </p>
+          </div>
           {!showAddDropdown && (
-            <button
+            <Button
               onClick={() => setShowAddDropdown(true)}
-              className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2"
+              className="font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-2xl shadow-amber-glow"
             >
-              + Add Class
-            </button>
+              <Icons.Add className="w-3.5 h-3.5 mr-2" /> Ghi danh Lớp mới
+            </Button>
           )}
         </div>
 
         {showAddDropdown && (
-          <div className="space-y-4 rounded-lg bg-stone-50 p-4">
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                Select Class
-              </label>
-              <select
-                value={selectedClassId}
-                onChange={(e) => handleClassSelect(e.target.value)}
-                className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                disabled={processingEnrollment !== null}
-              >
-                <option value="">-- Choose a class --</option>
-                {availableClasses.map((cls) => {
-                  const maxCap = cls.max_capacity ?? cls.capacity ?? 12;
-                  const enrolled = cls.enrolled_count ?? 0;
-                  const isFull = enrolled >= maxCap;
-                  return (
-                    <option
-                      key={cls.id}
-                      value={cls.id}
-                      disabled={isFull}
-                    >
-                      {cls.code} - {cls.name}
-                      {cls.schedule && ` (${cls.schedule})`}
-                      {` - ${enrolled}/${maxCap} học sinh`}
-                      {isFull && ' [ĐẦY]'}
-                    </option>
-                  );
-                })}
-              </select>
-              {availableClasses.length === 0 && (
-                <p className="mt-2 text-sm text-slate-600">
-                  No available classes. Student may already be enrolled in all active classes.
-                </p>
-              )}
-            </div>
-
-            {scheduleConflicts.length > 0 && (
-              <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-3">
-                <p className="text-sm font-medium text-yellow-800 mb-1">
-                  ⚠️ Schedule Conflict Detected
-                </p>
-                <p className="text-sm text-yellow-700">
-                  This class conflicts with: {scheduleConflicts.join(", ")}
-                </p>
+          <div className="rounded-[2rem] bg-stone-50/50 dark:bg-white/[0.02] border border-stone-100 dark:border-white/5 p-10 animate-in slide-in-from-top-4 duration-500">
+            <div className="max-w-xl space-y-8">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+                  Chọn Lớp học khả dụng
+                </label>
+                <select
+                  value={selectedClassId}
+                  onChange={(e) => handleClassSelect(e.target.value)}
+                  className="w-full h-14 bg-white dark:bg-stone-950 rounded-2xl border-stone-200 dark:border-white/10 px-6 font-bold text-stone-900 dark:text-white focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition-all shadow-sm"
+                  disabled={processingEnrollment !== null}
+                >
+                  <option value="">-- Chọn lớp học từ danh sách --</option>
+                  {availableClasses.map((cls) => {
+                    const maxCap = cls.capacity ?? 12;
+                    const enrolled = cls.enrollment_count ?? 0;
+                    const isFull = enrolled >= maxCap;
+                    return (
+                      <option
+                        key={cls.id}
+                        value={cls.id}
+                        className="py-2"
+                      >
+                        {cls.code || cls.course_code || cls.course?.code || 'N/A'} - {cls.name} {cls.schedule && ` | ${cls.schedule}`} ({enrolled}/{maxCap}) {isFull ? '[LỚP ĐÃ ĐẦY]' : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+                {availableClasses.length === 0 && (
+                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 dark:bg-amber-900/10 p-4 rounded-xl">
+                    Hiện không có lớp học nào khả dụng để ghi danh.
+                  </p>
+                )}
               </div>
-            )}
 
-            <div className="flex gap-2">
-              <button
-                onClick={handleAddEnrollment}
-                disabled={!selectedClassId || processingEnrollment !== null}
-                className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2 disabled:bg-stone-300 disabled:cursor-not-allowed"
-              >
-                Enroll Student
-              </button>
-              <button
-                onClick={() => {
-                  setShowAddDropdown(false);
-                  setSelectedClassId("");
-                  setScheduleConflicts([]);
-                }}
-                disabled={processingEnrollment !== null}
-                className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2"
-              >
-                Cancel
-              </button>
+              {/* Inline Warnings */}
+              <div className="space-y-4">
+                {scheduleConflicts.length > 0 && (
+                  <div className="flex items-start gap-4 rounded-[1.5rem] bg-amber-50 border border-amber-100 p-6 dark:bg-amber-900/10 dark:border-amber-500/20">
+                    <Icons.Warning className="w-6 h-6 text-amber-500 shrink-0" />
+                    <div>
+                      <p className="text-xs font-black text-amber-900 dark:text-amber-400 uppercase tracking-widest mb-1">
+                        Cảnh báo Trùng lịch học
+                      </p>
+                      <ul className="text-[11px] text-amber-700 dark:text-amber-500 space-y-1 font-medium">
+                        {scheduleConflicts.map((c, i) => <li key={i}>• Trùng với: {c}</li>)}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {capacityWarning && (
+                  <div className="flex items-start gap-4 rounded-[1.5rem] bg-orange-50 border border-orange-100 p-6 dark:bg-orange-900/10 dark:border-orange-500/20">
+                    <Icons.Warning className="w-6 h-6 text-orange-500 shrink-0" />
+                    <div>
+                      <p className="text-xs font-black text-orange-900 dark:text-orange-400 uppercase tracking-widest mb-1">
+                        Cảnh báo Sĩ số lớp
+                      </p>
+                      <p className="text-[11px] text-orange-700 dark:text-orange-500 font-medium">
+                        Lớp đã đạt sĩ số tối đa ({capacityWarning.enrolled}/{capacityWarning.max}). Cần xác nhận trước khi tiếp tục.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleAddEnrollment}
+                  disabled={!selectedClassId || processingEnrollment !== null}
+                  isLoading={processingEnrollment === selectedClassId}
+                  className="font-black uppercase tracking-widest text-[11px] h-14 px-10 rounded-2xl shadow-amber-glow"
+                >
+                  Xác nhận Ghi danh
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddDropdown(false);
+                    setSelectedClassId("");
+                    setScheduleConflicts([]);
+                    setCapacityWarning(null);
+                  }}
+                  disabled={processingEnrollment !== null}
+                  className="font-black uppercase tracking-widest text-[11px] h-14 px-8 rounded-2xl border-stone-200"
+                >
+                  Hủy bỏ
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
       {/* Current Enrollments */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
-          Current Enrollments ({enrollments.length})
-        </h3>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+            Danh sách Lớp đã ghi danh ({enrollments.length})
+          </h3>
+        </div>
 
         {enrollments.length === 0 ? (
-          <p className="text-sm text-slate-600 py-4">
-            Student is not currently enrolled in any classes.
-          </p>
+          <Card borderStyle="dashed" className="p-16 text-center rounded-[2.5rem] bg-stone-50/50 dark:bg-white/[0.01]">
+            <div className="w-16 h-16 bg-stone-100 dark:bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Icons.Classes className="w-8 h-8 text-stone-300" />
+            </div>
+            <p className="text-stone-500 font-medium mb-2">Học sinh chưa tham gia lớp học nào.</p>
+            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest italic">Nhấn vào nút "Ghi danh Lớp mới" để bắt đầu.</p>
+          </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-4">
             {enrollments.map((enrollment) => (
               <div
                 key={enrollment.id}
-                className="flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50"
+                className="group flex flex-col md:flex-row items-start md:items-center justify-between p-6 bg-white dark:bg-stone-900 border border-stone-100 dark:border-white/5 rounded-[2rem] hover:shadow-xl hover:border-amber-500/20 transition-all duration-500"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900">
+                <div className="flex-1 space-y-3">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <Badge variant="secondary" className="bg-stone-50 dark:bg-white/5 text-stone-500 dark:text-stone-400 font-black text-[10px] uppercase tracking-widest px-3 h-8">
                       {enrollment.class_code}
-                    </span>
-                    <span className="text-gray-600">-</span>
-                    <span className="text-gray-900">{enrollment.class_name}</span>
-                    {enrollment.status !== "active" && (
-                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                        {enrollment.status}
-                      </span>
+                    </Badge>
+                    <h4 className="font-serif font-black text-lg text-stone-900 dark:text-white uppercase tracking-tight">
+                      {enrollment.class_name}
+                    </h4>
+                    {enrollment.status === "active" ? (
+                      <Badge variant="success" className="font-black text-[8px] uppercase tracking-widest px-2 h-5">Đang học</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="font-black text-[8px] uppercase tracking-widest px-2 h-5">{enrollment.status}</Badge>
                     )}
                   </div>
-                  <div className="mt-1 flex gap-4 text-sm text-slate-600">
+                  <div className="flex flex-wrap items-center gap-x-8 gap-y-2 text-[11px] font-black text-stone-400 uppercase tracking-widest">
                     {enrollment.schedule && (
-                      <span className="flex items-center gap-1"><CalendarDaysIcon className="w-4 h-4" /> {enrollment.schedule}</span>
+                      <span className="flex items-center gap-2"><Icons.Calendar className="w-4 h-4 text-amber-500" /> {enrollment.schedule}</span>
                     )}
                     {enrollment.teacher_name && (
-                      <span className="flex items-center gap-1"><UserIcon className="w-4 h-4" /> {enrollment.teacher_name}</span>
+                      <span className="flex items-center gap-2"><Icons.User className="w-4 h-4 text-amber-500" /> {enrollment.teacher_name}</span>
                     )}
-                    <span>Enrolled: {new Date(enrollment.enrollment_date).toLocaleDateString()}</span>
+                    <span className="flex items-center gap-2"><Icons.History className="w-4 h-4 text-stone-300" /> Ngày ghi danh: {new Date(enrollment.enrollment_date).toLocaleDateString('vi-VN')}</span>
                   </div>
                 </div>
 
                 {enrollment.status === "active" && (
-                  <button
-                    onClick={() => handleRemoveEnrollment(enrollment.id, enrollment.class_name)}
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleRemoveClick(enrollment.id, enrollment.class_name)}
                     disabled={processingEnrollment === enrollment.id}
-                    className="ml-4 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-6 md:mt-0 font-black uppercase tracking-widest text-[9px] h-10 text-red-500 hover:bg-red-500/10 rounded-xl"
                   >
-                    {processingEnrollment === enrollment.id ? "Removing..." : "Remove"}
-                  </button>
+                    {processingEnrollment === enrollment.id ? 'Đang xử lý...' : 'Hủy ghi danh'}
+                  </Button>
                 )}
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Warning Dialog (Capacity + Schedule) */}
+      <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+        <AlertDialogContent className="bg-white dark:bg-stone-900 rounded-[2.5rem] border border-stone-200 dark:border-white/5 p-10 max-w-xl shadow-ultra">
+          <AlertDialogHeader>
+            <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-6">
+              <Icons.Warning className="w-8 h-8 text-amber-500" />
+            </div>
+            <AlertDialogTitle className="text-2xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight mb-4">
+              Xác nhận ghi danh đặc biệt
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-stone-500 font-medium leading-relaxed mb-6">
+              Hệ thống phát hiện các xung đột sau đây, bạn có chắc chắn muốn tiếp tục ghi danh không?
+              <div className="mt-6 space-y-3">
+                {scheduleConflicts.map((conflict, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-500/20 text-xs font-bold text-amber-700 dark:text-amber-500">
+                    <span className="shrink-0">•</span> <span>Xung đột lịch học với: {conflict}</span>
+                  </div>
+                ))}
+                {capacityWarning && (
+                  <div className="flex items-start gap-3 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-2xl border border-orange-100 dark:border-orange-500/20 text-xs font-bold text-orange-700 dark:text-orange-500">
+                    <span className="shrink-0">•</span> <span>Sĩ số lớp đã đạt tối đa ({capacityWarning.enrolled}/{capacityWarning.max})</span>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-4">
+            <AlertDialogCancel disabled={processingEnrollment !== null} className="flex-1 font-black uppercase tracking-widest text-[11px] h-14 rounded-2xl border-stone-200">
+              Kiểm tra lại
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={performEnrollment}
+              className="flex-1 font-black uppercase tracking-widest text-[11px] h-14 rounded-2xl bg-amber-600 hover:bg-amber-700 shadow-amber-glow"
+            >
+              Vẫn ghi danh
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Remove Confirmation Dialog */}
+      <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
+        <AlertDialogContent className="bg-white dark:bg-stone-900 rounded-[2.5rem] border border-stone-200 dark:border-white/5 p-10 max-w-md shadow-ultra">
+          <AlertDialogHeader>
+            <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mb-6">
+              <Icons.Archive className="w-8 h-8 text-red-500" />
+            </div>
+            <AlertDialogTitle className="text-2xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight mb-4 text-red-600">
+              Hủy ghi danh lớp học?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-stone-500 font-medium leading-relaxed mb-8">
+              Bạn có chắc chắn muốn hủy ghi danh học sinh khỏi lớp <span className="font-bold text-stone-900 dark:text-white">{enrollmentToRemove?.name}</span>? Thao tác này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-4">
+            <AlertDialogCancel disabled={processingEnrollment !== null} className="flex-1 font-black uppercase tracking-widest text-[11px] h-14 rounded-2xl border-stone-200">
+              Giữ lại
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={performRemoval}
+              className="flex-1 font-black uppercase tracking-widest text-[11px] h-14 rounded-2xl bg-red-600 hover:bg-red-700 shadow-lg"
+            >
+              Xác nhận hủy
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

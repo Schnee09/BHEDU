@@ -216,7 +216,7 @@ export function useFetch<T = any>(
       const wrapInCollectionEnvelope = (arr: any[]): AnyRecord => {
         const envelope: AnyRecord = { data: arr, total: arr.length };
 
-        // Try to infer the resource name from the URL path (e.g. '/api/v2/students')
+        // Try to infer the resource name from the URL path (e.g. '/api/students')
         try {
           const pathname = new URL(url!, 'http://localhost').pathname;
           const parts = pathname.split('/').filter(Boolean);

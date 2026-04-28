@@ -88,7 +88,7 @@ export default function EditClassPage() {
 
                 // Fetch class data directly by ID (optimized), teachers, and courses in parallel
                 const [classRes, teachersRes, coursesRes, academicYearsRes] = await Promise.all([
-                    apiFetch(`/api/v2/classes/${classId}`),
+                    apiFetch(`/api/classes/${classId}`),
                     apiFetch('/api/admin/users?role=teacher&limit=1000'),
                     apiFetch('/api/admin/courses?limit=1000'),
                     apiFetch('/api/academic-years')
@@ -310,13 +310,13 @@ export default function EditClassPage() {
                                 Khóa học
                             </label>
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600 transition-transform group-hover:scale-110">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 transition-transform group-hover:scale-110">
                                     <BookOpen className="w-5 h-5" />
                                 </div>
                                 <select
                                     value={formData.course_id}
                                     onChange={(e) => setFormData(prev => ({ ...prev, course_id: e.target.value }))}
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-purple-500 dark:focus:border-purple-500 rounded-[1.5rem] font-bold text-gray-700 dark:text-gray-300 transition-all outline-none appearance-none"
+                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-500 rounded-[1.5rem] font-bold text-gray-700 dark:text-gray-300 transition-all outline-none appearance-none"
                                 >
                                     <option value="">-- Chọn khóa học --</option>
                                     {courses.map((course) => (
@@ -363,10 +363,10 @@ export default function EditClassPage() {
                     {/* Schedule Section */}
                     <div className="bg-white dark:bg-gray-800 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-xl p-10 space-y-8 relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8">
-                            <Clock className="w-12 h-12 text-purple-500/5" />
+                            <Clock className="w-12 h-12 text-emerald-500/5" />
                         </div>
 
-                        <div className="border-l-4 border-purple-500 pl-6">
+                        <div className="border-l-4 border-emerald-500 pl-6">
                             <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Lịch biểu & Địa điểm</h2>
                             <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Thời gian và không gian học tập</p>
                         </div>

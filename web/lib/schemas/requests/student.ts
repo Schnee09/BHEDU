@@ -36,6 +36,7 @@ export const createStudentSchema = z.object({
     address: z.string().max(500).optional().nullable(),
     emergency_contact: z.string().max(100).optional().nullable(),
     grade_level: z.string().max(50).optional().nullable(),
+    student_id: z.string().max(50).optional().nullable(),
     student_code: z.string()
         .regex(/^HS\d{8}$/, "Student code must be in format HS{YEAR}{4-DIGIT}")
         .optional(), // Auto-generated if not provided
@@ -115,6 +116,7 @@ export const importStudentsSchema = z.object({
             date_of_birth: dateStringSchema,
             gender: genderSchema,
             student_code: z.string().min(1),
+            student_id: z.string().optional().nullable(),
             email: emailSchema.optional().nullable(),
             phone: z.string().optional().nullable(),
             address: z.string().optional().nullable(),

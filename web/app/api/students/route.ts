@@ -1,75 +1,141 @@
-import { NextRequest } from "next/server";
+/**
+ * Students API (Unified)
+ * GET/POST /api/students
+ *
+ * Uses Repository pattern, Zod validation, CASL permissions
+ */
+
+import { NextRequest, NextResponse } from "next/server";
 import {
   apiPaginated,
   apiSuccess,
   createApiHandler,
-} from "@/lib/api/apiHandler";
-import { studentService } from "@/lib/services";
-import { hasPermission } from "@/lib/auth/core";
-import { createStudentSchema } from "@/lib/schemas";
+  createGetHandler,
+} from "@/lib/api";
+import {
+  checkRateLimit,
+  getRateLimitIdentifier,
+  rateLimitConfigs,
+} from "@/lib/auth/rateLimit";
+import { StudentRepository } from "@/lib/repositories/StudentRepository";
+import { createServiceClient } from "@/lib/supabase/server";
+import { createAbility } from "@/lib/auth/permissions";
+import {
+  type CreateStudentInput,
+  createStudentSchema,
+  type StudentQuery,
+  studentQuerySchema,
+} from "@/lib/schemas";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/students - List students with role-aware filtering
- */
-export const GET = createApiHandler({
-  permission: "students.view",
-}, async ({ user, searchParams }) => {
-  const role = user.role;
-  const profileId = user.id;
+// GET /api/students
+export const GET = createGetHandler(
+  { requireAuth: true },
+  async ({ request, user, searchParams }) => {
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
+    }
 
-  const commonFilters = {
-    search: searchParams.get("search") || undefined,
-    page: Number(searchParams.get("page")) || 1,
-    pageSize: Number(searchParams.get("pageSize")) ||
-      Number(searchParams.get("limit")) || 20,
-    status: searchParams.get("status") || undefined,
-    grade_level: searchParams.get("grade_level") || undefined,
-    gender: searchParams.get("gender") || undefined,
-  };
-
-  // 1. Staff/Admin: See all students
-  if (hasPermission(role, "students.create")) {
-    const result = await studentService.getStudents(commonFilters);
-    return apiPaginated(result.students, {
-      page: result.page,
-      pageSize: result.pageSize,
-      total: result.total,
+    const params: Record<string, any> = {};
+    searchParams.forEach((value, key) => {
+      if (key === "search" && value.trim() === "") return;
+      params[key] = value;
     });
-  }
 
-  // 2. Teachers: See students in their assigned classes
-  if (role === "teacher") {
-    // Map pageSize to limit for this specific service method (standardizing soon)
-    const teacherFilters = {
-      ...commonFilters,
-      limit: commonFilters.pageSize,
+    const validatedQuery = studentQuerySchema.parse(params);
+    const queryOpts = {
+      ...validatedQuery,
+      pageSize: validatedQuery.limit,
     };
 
-    const result = await studentService.getStudentsForTeacher(
-      profileId,
-      teacherFilters,
-    );
+    const supabase = createServiceClient();
+    const repository = new StudentRepository(supabase);
 
-    return apiPaginated(result.students, {
-      page: commonFilters.page,
-      pageSize: commonFilters.pageSize,
-      total: result.total,
+    const ability = createAbility({
+      userId: user.id,
+      role: user.role,
+      classIds: [],
     });
-  }
 
-  // 3. Others: No access or empty
-  return apiSuccess([]);
-});
+    if (ability.can("read", "Student")) {
+      if (
+        user.role === "admin" || user.role === "staff" ||
+        user.role === "super_admin" || user.role === "owner"
+      ) {
+        const { data, ...pagination } = await repository.findAll(queryOpts);
+        return apiPaginated(data, pagination);
+      }
 
-/**
- * POST /api/students - Create a new student (Staff/Admin only)
- */
-export const POST = createApiHandler({
-  permission: "students.create",
-  bodySchema: createStudentSchema,
-}, async ({ body }) => {
-  const newStudent = await studentService.createStudent(body);
-  return apiSuccess(newStudent);
-});
+      if (user.role === "teacher" || user.role === "tutor") {
+        const { data, ...pagination } = await repository.findByTeacher(
+          user.id,
+          queryOpts,
+        );
+        return apiPaginated(data, pagination);
+      }
+
+      if (user.role === "student") {
+        const student = await repository.findById(user.id);
+        return apiPaginated(student ? [student] : [], {
+          page: 1,
+          pageSize: 1,
+          total: student ? 1 : 0,
+        });
+      }
+
+      if (user.role === "parent") {
+        return apiPaginated([], { page: 1, pageSize: 0, total: 0 });
+      }
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: ability.reasonFor("read", "Student") || "Forbidden",
+      },
+      { status: 403 },
+    );
+  },
+);
+
+// POST /api/students
+export const POST = createApiHandler(
+  {
+    allowedRoles: ["admin", "staff", "super_admin", "owner"],
+    bodySchema: createStudentSchema,
+  },
+  async ({ request, body, user }) => {
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
+    }
+
+    const ability = createAbility({ userId: user.id, role: user.role });
+    if (ability.cannot("create", "Student")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: ability.reasonFor("create", "Student") ||
+            "You do not have permission to create students",
+        },
+        { status: 403 },
+      );
+    }
+
+    const supabase = createServiceClient();
+    const repository = new StudentRepository(supabase);
+    const student = await repository.create(body as any);
+
+    return apiSuccess(student, { _status: 201 });
+  },
+);

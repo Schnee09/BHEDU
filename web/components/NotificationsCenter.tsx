@@ -37,9 +37,9 @@ const NotificationSkeleton = () => (
 const EmptyStateIllustration = () => (
     <div className="p-8 text-center">
         <div className="relative w-16 h-16 mx-auto mb-4">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-2xl" />
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-100 to-emerald-100 dark:from-amber-900/30 dark:to-emerald-900/30 rounded-2xl" />
             <div className="absolute inset-0 flex items-center justify-center">
-                <Bell className="w-8 h-8 text-indigo-400 dark:text-indigo-500" />
+                <Bell className="w-8 h-8 text-amber-500 dark:text-amber-600" />
             </div>
             <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-amber-400" />
         </div>
@@ -271,10 +271,10 @@ export default function NotificationsCenter() {
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-750">
                         <div className="flex items-center gap-2">
-                            <Bell className="w-5 h-5 text-indigo-500" />
+                            <Bell className="w-5 h-5 text-amber-500" />
                             <h3 className="font-semibold text-gray-900 dark:text-white">Thông báo</h3>
                             {unreadCount > 0 && (
-                                <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-full">
+                                <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 rounded-full">
                                     {unreadCount} mới
                                 </span>
                             )}
@@ -282,7 +282,7 @@ export default function NotificationsCenter() {
                         {unreadCount > 0 && (
                             <button
                                 onClick={markAllAsRead}
-                                className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+                                className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors cursor-pointer"
                             >
                                 <CheckCheck className="w-3.5 h-3.5" />
                                 Đọc tất cả
@@ -309,7 +309,7 @@ export default function NotificationsCenter() {
                                         w-full p-4 text-left border-b border-gray-50 dark:border-gray-700/50 
                                         hover:bg-gray-50 dark:hover:bg-gray-700/50 
                                         transition-all duration-200 cursor-pointer
-                                        ${!notification.is_read ? "bg-indigo-50/50 dark:bg-indigo-900/10" : ""}
+                                        ${!notification.is_read ? "bg-amber-50/50 dark:bg-amber-900/10" : ""}
                                         animate-list-item-enter
                                     `}
                                     style={{ animationDelay: `${Math.min(index, 5) * 0.05}s`, opacity: 0 }}
@@ -320,7 +320,7 @@ export default function NotificationsCenter() {
                                         <div className={`
                                             w-2 h-2 rounded-full mt-2 flex-shrink-0 transition-all
                                             ${!notification.is_read
-                                                ? "bg-indigo-500 shadow-md shadow-indigo-500/50"
+                                                ? "bg-amber-500 shadow-md shadow-amber-500/50"
                                                 : "bg-transparent"
                                             }
                                         `} />
@@ -377,7 +377,7 @@ export default function NotificationsCenter() {
                                     router.push("/dashboard/notifications");
                                     handleClose();
                                 }}
-                                className="w-full text-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors cursor-pointer py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                                className="w-full text-center text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors cursor-pointer py-1 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20"
                             >
                                 Xem tất cả thông báo
                             </button>

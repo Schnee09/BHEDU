@@ -179,7 +179,7 @@ export default function SubjectManagementPage() {
     if (profileLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
+                <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
             </div>
         );
     }
@@ -207,7 +207,7 @@ export default function SubjectManagementPage() {
                     </div>
                     <button
                         onClick={() => handleOpenModal()}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
                     >
                         <Plus className="w-4 h-4" />
                         Thêm môn học
@@ -218,8 +218,8 @@ export default function SubjectManagementPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl">
-                                <BookOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/40 rounded-xl">
+                                <BookOpen className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">Tổng số môn học</p>
@@ -260,20 +260,20 @@ export default function SubjectManagementPage() {
                             placeholder="Tìm kiếm môn học theo tên hoặc mã..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                            className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
                         />
                     </div>
                     <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
                         <button
                             onClick={() => setViewMode('table')}
-                            className={`p-2 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-gray-500'}`}
+                            className={`p-2 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500'}`}
                             title="Chế độ bảng"
                         >
                             <ListIcon className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => setViewMode('grid')}
-                            className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-gray-500'}`}
+                            className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500'}`}
                             title="Chế độ lưới"
                         >
                             <LayoutGrid className="w-5 h-5" />
@@ -328,11 +328,11 @@ export default function SubjectManagementPage() {
                                             <tr key={subject.id} className="group hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-all">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-4">
-                                                        <div className={`p-2.5 rounded-xl transition-colors ${subject.is_active ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30' : 'bg-gray-50 text-gray-400 dark:bg-gray-700'}`}>
+                                                        <div className={`p-2.5 rounded-xl transition-colors ${subject.is_active ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30' : 'bg-gray-50 text-gray-400 dark:bg-gray-700'}`}>
                                                             <BookOpen className="w-5 h-5" />
                                                         </div>
                                                         <div>
-                                                            <p className="font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                                            <p className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                                                 {subject.name}
                                                             </p>
                                                             {subject.description && (
@@ -366,7 +366,7 @@ export default function SubjectManagementPage() {
                                                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <button
                                                             onClick={() => handleOpenModal(subject)}
-                                                            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 dark:hover:text-indigo-400 rounded-xl transition-all"
+                                                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/40 dark:hover:text-blue-400 rounded-xl transition-all"
                                                             title="Chỉnh sửa"
                                                         >
                                                             <Edit className="w-4 h-4" />
@@ -399,15 +399,15 @@ export default function SubjectManagementPage() {
                                 </div>
                             ) : (
                                 filteredSubjects.map((subject) => (
-                                    <div key={subject.id} className="group relative bg-gray-50/50 dark:bg-gray-700/20 border border-gray-100 dark:border-gray-700/50 rounded-2xl p-6 transition-all hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-900/50">
+                                    <div key={subject.id} className="group relative bg-gray-50/50 dark:bg-gray-700/20 border border-gray-100 dark:border-gray-700/50 rounded-2xl p-6 transition-all hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-900/50">
                                         <div className="flex items-start justify-between mb-4">
-                                            <div className={`p-3 rounded-xl ${subject.is_active ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400' : 'bg-gray-200 text-gray-400 dark:bg-gray-700'}`}>
+                                            <div className={`p-3 rounded-xl ${subject.is_active ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-gray-200 text-gray-400 dark:bg-gray-700'}`}>
                                                 <BookOpen className="w-6 h-6" />
                                             </div>
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={() => handleOpenModal(subject)}
-                                                    className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-white dark:hover:bg-gray-800 rounded-lg shadow-sm transition-all"
+                                                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-white dark:hover:bg-gray-800 rounded-lg shadow-sm transition-all"
                                                 >
                                                     <Edit className="w-4 h-4" />
                                                 </button>
@@ -482,7 +482,7 @@ export default function SubjectManagementPage() {
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             placeholder="Ví dụ: Toán học, Ngữ văn..."
-                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                         />
                                     </div>
 
@@ -496,7 +496,7 @@ export default function SubjectManagementPage() {
                                             value={formData.code}
                                             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                                             placeholder="Ví dụ: MATH, LIT..."
-                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all uppercase"
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all uppercase"
                                         />
                                     </div>
 
@@ -509,7 +509,7 @@ export default function SubjectManagementPage() {
                                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                             placeholder="Nhập mô tả ngắn gọn về môn học..."
                                             rows={3}
-                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
                                         />
                                     </div>
 
@@ -521,7 +521,7 @@ export default function SubjectManagementPage() {
                                         <button
                                             type="button"
                                             onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none ${formData.is_active ? 'bg-indigo-600' : 'bg-gray-300'}`}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none ${formData.is_active ? 'bg-blue-600' : 'bg-gray-300'}`}
                                         >
                                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.is_active ? 'translate-x-6' : 'translate-x-1'}`} />
                                         </button>
@@ -539,7 +539,7 @@ export default function SubjectManagementPage() {
                                     </button>
                                     <button
                                         type="submit"
-                                        className="flex-1 px-6 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                        className="flex-1 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                                         disabled={saving}
                                     >
                                         {saving ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}

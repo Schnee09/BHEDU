@@ -77,6 +77,7 @@ export const ALL_NAV_ITEMS: NavSection[] = [
         label: 'Lớp học',
         icon: BookOpen,
         permissions: ['classes.view'],
+        badge: '12',
       },
       {
         href: '/dashboard/students',
@@ -95,6 +96,7 @@ export const ALL_NAV_ITEMS: NavSection[] = [
         label: 'Duyệt kết nối PH',
         icon: UserPlus,
         permissions: ['students.edit'],
+        badge: '3',
       },
       {
         href: '/dashboard/my-schedule',
@@ -246,7 +248,7 @@ export const ALL_NAV_ITEMS: NavSection[] = [
           },
           {
             href: '/dashboard/admin/data',
-            label: 'Xuất dữ liệu',
+            label: 'Quản trị dữ liệu tập trung',
             icon: Download,
             permissions: ['reports.export'],
           },
@@ -341,9 +343,9 @@ export function isLinkVisible(link: NavLink, userPermissions: Set<PermissionCode
 
 export const ROLE_SPECIFIC_LABELS: Partial<Record<UserRole, Record<string, string>>> = {
   staff: {
-    '/dashboard/classes': 'Quản lý lớp học',
-    '/dashboard/students': 'Quản lý học sinh',
-    '/dashboard/timetable': 'Quản lý TKB',
+    '/dashboard/classes': 'Quản trị lớp học',
+    '/dashboard/students': 'Quản trị học sinh',
+    '/dashboard/timetable': 'Quản lý lịch học tập',
   },
   teacher: {
     '/dashboard/classes': 'Lớp của tôi',

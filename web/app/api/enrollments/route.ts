@@ -3,15 +3,19 @@ import {
   createApiHandler,
   createGetHandler,
 } from "@/lib/api/apiHandler";
-import { enrollmentService } from "@/lib/services";
 import { enrollmentQuerySchema } from "@/lib/schemas";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/api/errors";
+import { EnrollmentRepository } from "@/lib/repositories/EnrollmentRepository";
+import { getDataClient } from "@/lib/auth/dataClient";
 
 // GET /api/enrollments
 export const GET = createGetHandler(
   { permission: "enrollments.view" },
-  async ({ searchParams }) => {
+  async ({ searchParams, request }) => {
+    const { supabase } = await getDataClient(request);
+    const repository = new EnrollmentRepository(supabase);
+
     // Validate and normalize query params
     const query = enrollmentQuerySchema.safeParse({
       class_id: searchParams.get("classId") || searchParams.get("class_id"),
@@ -30,8 +34,14 @@ export const GET = createGetHandler(
       order: "desc" as const,
     };
 
-    const result = await enrollmentService.getEnrollments(validatedQuery);
-    return apiSuccess(result);
+    const result = await repository.findAll(validatedQuery);
+    return apiSuccess({
+      data: result.data,
+      total: result.total,
+      page: result.page,
+      pageSize: result.pageSize,
+      totalPages: result.totalPages,
+    });
   },
 );
 
@@ -40,7 +50,10 @@ export const POST = createApiHandler(
   {
     permission: "enrollments.manage",
   },
-  async ({ body }) => {
+  async ({ body, request }) => {
+    const { supabase } = await getDataClient(request);
+    const repository = new EnrollmentRepository(supabase);
+
     const {
       studentId,
       classId,
@@ -58,22 +71,25 @@ export const POST = createApiHandler(
     // Bulk enrollment
     const targetStudentIds = studentIds || student_ids;
     if (targetStudentIds && Array.isArray(targetStudentIds)) {
-      const result = await enrollmentService.bulkEnroll(
-        targetClassId,
-        targetStudentIds,
-      );
+      const result = await repository.createBulk({
+        class_id: targetClassId,
+        student_ids: targetStudentIds,
+      });
+      
+      const successCount = result.filter(r => r.status === 'enrolled').length;
+      const failedCount = result.length - successCount;
+
       logger.info("Bulk enrollment completed", {
         classId: targetClassId,
-        ...result,
+        successCount,
+        failedCount,
       });
 
       return apiSuccess({
-        message: `Đã ghi danh ${result.success || 0} học sinh, ${
-          result.failed || 0
-        } thất bại`,
-        enrolledCount: result.success,
-        failedCount: result.failed,
-        errors: result.errors,
+        message: `Đã ghi danh ${successCount} học sinh, ${failedCount} thất bại`,
+        enrolledCount: successCount,
+        failedCount: failedCount,
+        results: result,
       });
     }
 
@@ -83,7 +99,7 @@ export const POST = createApiHandler(
       throw new ValidationError("Mã học sinh là bắt buộc");
     }
 
-    const enrollment = await enrollmentService.createEnrollment({
+    const enrollment = await repository.create({
       student_id: targetStudentId,
       class_id: targetClassId,
       status: "enrolled",

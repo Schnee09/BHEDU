@@ -1,91 +1,94 @@
 /**
- * Role-aware Student Detail API (REFACTORED)
- * GET/PUT/DELETE /api/students/[id]
+ * Students API - Resource Detail (Unified)
+ * GET/PATCH/DELETE /api/students/[id]
  */
 
-import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
+import { NextRequest, NextResponse } from "next/server";
+import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
 import {
-  DELETE as adminDELETE,
-  GET as adminGET,
-  PUT as adminPUT,
-} from '@/app/api/admin/students/[id]/route';
-import { AuthorizationError, NotFoundError } from '@/lib/api/errors';
-import { getDataClient } from '@/lib/auth/dataClient';
+  checkRateLimit,
+  getRateLimitIdentifier,
+  rateLimitConfigs,
+} from "@/lib/auth/rateLimit";
+import { StudentRepository } from "@/lib/repositories/StudentRepository";
+import { createServiceClient } from "@/lib/supabase/server";
+import { updateStudentSchema } from "@/lib/schemas";
+import { AuthorizationError, NotFoundError } from "@/lib/api/errors";
+
 
 // GET /api/students/[id]
 export const GET = createGetHandler(
-  { allowedRoles: ['admin', 'staff', 'teacher'] },
+  { requireAuth: true },
   async ({ params, request, user }) => {
-    const studentId = params.id as string;
-    // 1. Admin/Staff bypass to admin handler
-    if (user.role === 'admin' || user.role === 'staff') {
-      return adminGET(request, { params: Promise.resolve(params) });
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
     }
 
-    // 2. Teacher logic
-    const { supabase } = await getDataClient(request);
+    const id = params.id as string;
+    const supabase = createServiceClient();
+    const repository = new StudentRepository(supabase);
 
-    // Find teacher profile id
-    const { data: teacherProfile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (!teacherProfile) {
-      throw new AuthorizationError('Teacher profile not found');
+    if (user.role === "student" && user.id !== id) {
+      throw new AuthorizationError("Forbidden");
     }
 
-    // Verify student is in one of teacher's classes via enrollment
-    const { data: enrollment } = await supabase
-      .from('enrollments')
-      .select('class_id')
-      .eq('student_id', studentId)
-      .eq('status', 'active')
-      .maybeSingle();
-
-    if (!enrollment) {
-      throw new NotFoundError('Student not found or not enrolled');
-    }
-
-    const { data: teacherClass } = await supabase
-      .from('classes')
-      .select('id')
-      .eq('id', enrollment.class_id)
-      .eq('teacher_id', teacherProfile.id)
-      .maybeSingle();
-
-    if (!teacherClass) {
-      throw new AuthorizationError('Bạn không có quyền xem thông tin học sinh này');
-    }
-
-    // Fetch student data
-    const { data: student } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', studentId)
-      .eq('role', 'student')
-      .maybeSingle();
-
+    const student = await repository.findByIdWithEnrollments(id);
     if (!student) {
-      throw new NotFoundError('Student not found');
+      throw new NotFoundError("Student not found");
     }
 
     return apiSuccess(student);
-  }
+  },
 );
 
-// Admin-only operations via delegation
-export const PUT = createApiHandler(
-  { allowedRoles: ['admin', 'staff'] },
-  async ({ params, request }) => {
-    return adminPUT(request, { params: Promise.resolve(params) });
-  }
+// PATCH /api/students/[id]
+export const PATCH = createApiHandler(
+  {
+    allowedRoles: ["admin", "staff"],
+    bodySchema: updateStudentSchema,
+  },
+  async ({ params, request, body }) => {
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
+    }
+
+    const id = params.id as string;
+    const supabase = createServiceClient();
+    const repository = new StudentRepository(supabase);
+
+    const updated = await repository.update(id, body);
+    return apiSuccess(updated);
+  },
 );
 
+// DELETE /api/students/[id]
 export const DELETE = createGetHandler(
-  { allowedRoles: ['admin', 'staff'] },
+  { allowedRoles: ["admin", "staff"] },
   async ({ params, request }) => {
-    return adminDELETE(request, { params: Promise.resolve(params) });
-  }
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
+    }
+
+    const id = params.id as string;
+    const supabase = createServiceClient();
+    const repository = new StudentRepository(supabase);
+
+    await repository.softDelete(id);
+    return apiSuccess(null, { message: "Student archived successfully" });
+  },
 );

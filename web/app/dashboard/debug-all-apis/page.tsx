@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getBrowserSupabase } from '@/lib/supabase/browser';
 import { Card } from '@/components/ui';
+import PageGuard from '@/components/PageGuard';
 
 interface ApiTest {
   name: string;
@@ -134,7 +135,7 @@ const API_TESTS: ApiTest[] = [
   },
 ];
 
-export default function DebugAllApisPage() {
+function DebugAllApisPageContent() {
   const [authState, setAuthState] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -616,5 +617,13 @@ export default function DebugAllApisPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function DebugAllApisPage() {
+  return (
+    <PageGuard permissions="system.audit">
+      <DebugAllApisPageContent />
+    </PageGuard>
   );
 }

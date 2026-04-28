@@ -1,87 +1,169 @@
 /**
- * Single Class API (REFACTORED)
- *
- * Uses the new createApiHandler pattern for cleaner code.
- *
- * GET /api/classes/[classId] - Get class details
- * PUT /api/classes/[classId] - Update class
- * DELETE /api/classes/[classId] - Delete class
+ * Classes API - Resource Detail (Unified)
+ * GET/PATCH/DELETE /api/classes/[classId]
  */
 
-import { NextResponse } from 'next/server';
-import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
-import { updateClassSchema } from '@/lib/schemas';
-import { ClassService } from '@/lib/services/classService';
-import { AuthorizationError, NotFoundError } from '@/lib/api/errors';
-import { hasPermission } from '@/lib/auth/core';
-import { createServiceClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from "next/server";
+import {
+    checkRateLimit,
+    getRateLimitIdentifier,
+    rateLimitConfigs,
+} from "@/lib/auth/rateLimit";
+import { staffAuth, teacherAuth } from "@/lib/auth/adminAuth";
+import { ClassRepository } from "@/lib/repositories/ClassRepository";
+import { createServiceClient } from "@/lib/supabase/server";
+import { z } from "zod";
 
-// GET /api/classes/[classId]
-export const GET = createGetHandler({ permission: 'classes.view' }, async ({ params, user }) => {
-  const classId = params.classId as string;
-  const classData = await ClassService.getClassById(classId);
+export const dynamic = "force-dynamic";
 
-  if (!classData) {
-    throw new NotFoundError('Không tìm thấy lớp học');
-  }
-
-  // Access Control Logic
-  const canManageAll = hasPermission(user.role, 'classes.manage');
-
-  if (!canManageAll) {
-    if (user.role === 'teacher') {
-      // Teacher can only view their own classes
-      if (classData.teacher?.id !== user.id) {
-        throw new AuthorizationError('Không có quyền truy cập lớp này');
-      }
-    } else if (user.role === 'student') {
-      // Students can only view classes they are enrolled in
-      const client = createServiceClient();
-      const { data: enrollment } = await client
-        .from('enrollments')
-        .select('id')
-        .eq('student_id', user.id)
-        .eq('class_id', classId)
-        .eq('status', 'active')
-        .maybeSingle();
-
-      if (!enrollment) {
-        throw new AuthorizationError('Không có quyền truy cập lớp này');
-      }
-    } else {
-      throw new AuthorizationError('Forbidden');
-    }
-  }
-
-  return apiSuccess(classData);
+// Validation Schemas
+const updateSchema = z.object({
+    name: z.string().min(1).max(255).optional(),
+    course_id: z.string().optional().nullable(),
+    teacher_id: z.string().optional().nullable(),
+    room: z.string().max(100).optional().nullable(),
+    schedule: z.string().max(200).optional().nullable(),
+    capacity: z.coerce.number().int().positive().optional().nullable(),
+    academic_year_id: z.string().optional().nullable(),
+    status: z.enum(["active", "inactive", "completed"]).optional(),
 });
 
-// PUT /api/classes/[classId]
-export const PUT = createApiHandler(
-  {
-    permission: 'classes.manage',
-    bodySchema: updateClassSchema,
-  },
-  async ({ params, body }) => {
-    const classId = params.classId as string;
-    const existing = await ClassService.getClassById(classId);
-    if (!existing) {
-      throw new NotFoundError('Không tìm thấy lớp học');
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ classId: string }> },
+) {
+    try {
+        const { classId } = await params;
+
+        // Rate limit
+        const identifier = getRateLimitIdentifier(request);
+        const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+        if (!rateCheck.allowed) {
+            return NextResponse.json({ error: "Rate limit exceeded" }, {
+                status: 429,
+            });
+        }
+
+        // Auth
+        const auth = await teacherAuth(request);
+
+        if (!auth.authorized) {
+            return NextResponse.json({ error: auth.reason || "Unauthorized" }, {
+                status: 401,
+            });
+        }
+
+        const supabase = createServiceClient();
+        const repository = new ClassRepository(supabase);
+
+        const cls = await repository.findByIdWithDetails(classId);
+
+        if (!cls) {
+            return NextResponse.json({ error: "Class not found" }, {
+                status: 404,
+            });
+        }
+
+        return NextResponse.json({ success: true, class: cls });
+    } catch (error) {
+        console.error("[API] GET /api/classes/[classId] error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, {
+            status: 500,
+        });
     }
+}
 
-    const updated = await ClassService.updateClass(classId, body);
-    return apiSuccess(updated);
-  }
-);
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: Promise<{ classId: string }> },
+) {
+    try {
+        const { classId } = await params;
 
-// DELETE /api/classes/[classId]
-export const DELETE = createGetHandler({ permission: 'classes.manage' }, async ({ params }) => {
-  const classId = params.classId as string;
-  const existing = await ClassService.getClassById(classId);
-  if (!existing) {
-    throw new NotFoundError('Không tìm thấy lớp học');
-  }
+        // Rate limit
+        const identifier = getRateLimitIdentifier(request);
+        const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+        if (!rateCheck.allowed) {
+            return NextResponse.json({ error: "Rate limit exceeded" }, {
+                status: 429,
+            });
+        }
 
-  await ClassService.deleteClass(classId);
-  return NextResponse.json({ success: true, message: 'Đã xóa lớp học' });
-});
+        // Auth - staff/admin only
+        const auth = await staffAuth(request);
+        if (!auth.authorized) {
+            return NextResponse.json({ error: auth.reason || "Forbidden" }, {
+                status: 403,
+            });
+        }
+
+        // Parse body
+        let body: unknown;
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json({ error: "Invalid JSON" }, {
+                status: 400,
+            });
+        }
+
+        const parsed = updateSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({
+                error: "Validation Error",
+                details: parsed.error.issues,
+            }, { status: 400 });
+        }
+
+        const supabase = createServiceClient();
+        const repository = new ClassRepository(supabase);
+
+        const updated = await repository.update(classId, parsed.data);
+        return NextResponse.json({ success: true, class: updated });
+    } catch (error) {
+        console.error("[API] PATCH /api/classes/[classId] error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, {
+            status: 500,
+        });
+    }
+}
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ classId: string }> },
+) {
+    try {
+        const { classId } = await params;
+
+        // Rate limit
+        const identifier = getRateLimitIdentifier(request);
+        const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+        if (!rateCheck.allowed) {
+            return NextResponse.json({ error: "Rate limit exceeded" }, {
+                status: 429,
+            });
+        }
+
+        // Auth - staff/admin only
+        const auth = await staffAuth(request);
+        if (!auth.authorized) {
+            return NextResponse.json({ error: auth.reason || "Forbidden" }, {
+                status: 403,
+            });
+        }
+
+        const supabase = createServiceClient();
+        const repository = new ClassRepository(supabase);
+
+        await repository.delete(classId);
+        return NextResponse.json({
+            success: true,
+            message: "Class deleted successfully",
+        });
+    } catch (error) {
+        console.error("[API] DELETE /api/classes/[classId] error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, {
+            status: 500,
+        });
+    }
+}

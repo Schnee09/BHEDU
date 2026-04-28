@@ -19,7 +19,7 @@ export const enrollmentQuerySchema = z.object({
     ...createSortSchema(["enrolled_at", "created_at"], "enrolled_at").shape,
     class_id: uuidSchema.optional(),
     student_id: uuidSchema.optional(),
-    status: z.enum(["enrolled", "withdrawn", "dropped", "completed", "all"])
+    status: z.enum(["active", "inactive", "enrolled", "withdrawn", "dropped", "completed", "all"])
         .optional(),
     academic_year_id: uuidSchema.optional(),
     from_date: dateStringSchema.optional(),
@@ -33,7 +33,7 @@ export const createEnrollmentSchema = z.object({
     student_id: uuidSchema,
     class_id: uuidSchema,
     enrollment_date: dateStringSchema.optional(),
-    status: enrollmentStatusSchema.optional().default("enrolled"),
+    status: enrollmentStatusSchema.optional().default("active"),
     notes: z.string().max(500).optional().nullable(),
 });
 

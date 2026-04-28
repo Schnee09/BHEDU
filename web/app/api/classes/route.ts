@@ -1,54 +1,136 @@
-import { NextRequest } from "next/server";
+/**
+ * Classes API (Unified)
+ * GET/POST /api/classes
+ *
+ * Uses Repository pattern, Zod validation, CASL permissions
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 import {
   apiPaginated,
   apiSuccess,
   createApiHandler,
-} from "@/lib/api/apiHandler";
-import { ClassService } from "@/lib/services/classService";
-import { createClassSchema } from "@/lib/schemas";
+  createGetHandler,
+} from "@/lib/api";
+import {
+  checkRateLimit,
+  getRateLimitIdentifier,
+  rateLimitConfigs,
+} from "@/lib/auth/rateLimit";
+import { ClassRepository } from "@/lib/repositories/ClassRepository";
+import { createServiceClient } from "@/lib/supabase/server";
+import { createAbility } from "@/lib/auth/permissions";
+import { classQuerySchema, createClassSchema } from "@/lib/schemas";
 
-/**
- * GET /api/classes - Fetch classes with role-based visibility
- */
-export const GET = createApiHandler({
-  permission: "classes.view",
-}, async ({ user, searchParams }) => {
-  const filters = {
-    search: searchParams.get("search") || undefined,
-    courseId: searchParams.get("courseId") || undefined,
-    teacherId: searchParams.get("teacherId") || undefined,
-    academicYearId: searchParams.get("academicYearId") || undefined,
-    page: Number(searchParams.get("page")) || 1,
-    pageSize: Number(searchParams.get("pageSize")) || 20,
-    context: {
+export const dynamic = "force-dynamic";
+
+// GET /api/classes
+export const GET = createGetHandler(
+  { requireAuth: true },
+  async ({ request, user, searchParams }) => {
+    logger.debug("[API/Classes] GET request received", { user: user.id, role: user.role });
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
+    }
+
+    const params: Record<string, any> = {};
+    searchParams.forEach((value, key) => {
+      params[key] = value;
+    });
+    const validatedQuery = classQuerySchema.parse(params);
+
+    const supabase = createServiceClient();
+    const repository = new ClassRepository(supabase);
+
+    const ability = createAbility({
+      userId: user.id,
       role: user.role,
-      profileId: user.id,
-    },
-  };
+      classIds: [],
+    });
 
-  const { classes, total, page, pageSize } = await ClassService.getClasses(
-    filters,
-  );
+    if (ability.can("read", "Class")) {
+      if (
+        user.role === "admin" || user.role === "staff" ||
+        user.role === "super_admin" || user.role === "owner"
+      ) {
+        const { data, ...pagination } = await repository.findAll(validatedQuery);
+        logger.debug("[API/Classes] Admin/Staff fetch success", { count: data.length });
+        return apiPaginated(data, pagination);
+      }
 
-  return apiPaginated(classes, {
-    page,
-    pageSize,
-    total,
-  });
-});
+      if (user.role === "teacher" || user.role === "tutor") {
+        const { data, ...pagination } = await repository.findAll({
+          ...validatedQuery,
+          teacher_id: user.id,
+        });
+        return apiPaginated(data, pagination);
+      }
 
-/**
- * POST /api/classes - Create a new class
- */
-export const POST = createApiHandler({
-  permission: "classes.manage",
-  bodySchema: createClassSchema,
-}, async ({ body }) => {
-  // Normalize body for the service if needed (though bodySchema should handle it)
-  // The service expects snake_case, but the schema might allow camelCase
-  // createClassSchema typically uses snake_case as per BH-EDU conventions
+      if (user.role === "student") {
+        const { data, ...pagination } = await repository.findByStudent(
+          user.id,
+          validatedQuery,
+        );
+        return apiPaginated(data, pagination);
+      }
 
-  const newClass = await ClassService.createClass(body as any);
+      if (user.role === "parent") {
+        return apiSuccess({
+          data: [],
+          pagination: { page: 1, pageSize: 0, total: 0 },
+        });
+      }
+    }
 
-  return apiSuccess(newClass);
-});
+    return NextResponse.json(
+      {
+        success: false,
+        error: ability.reasonFor("read", "Class") || "Forbidden",
+      },
+      { status: 403 },
+    );
+  },
+);
+
+// POST /api/classes
+export const POST = createApiHandler(
+  {
+    allowedRoles: ["admin", "staff", "super_admin", "owner"],
+    bodySchema: createClassSchema,
+  },
+  async ({ request, body, user }) => {
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded" },
+        { status: 429 },
+      );
+    }
+
+    const ability = createAbility({ userId: user.id, role: user.role });
+    if (ability.cannot("create", "Class")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: ability.reasonFor("create", "Class") ||
+            "You do not have permission to create classes",
+        },
+        { status: 403 },
+      );
+    }
+
+    const supabase = createServiceClient();
+    const repository = new ClassRepository(supabase);
+    const cls = await repository.create(body as any);
+
+    logger.info("[API/Classes] Class created", { classId: cls.id, createdBy: user.id });
+    return apiSuccess({ class: cls }, { _status: 201 });
+  },
+);

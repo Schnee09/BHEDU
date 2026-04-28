@@ -76,6 +76,8 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
         is_managed: true,
         // Role specific
         student_code: '',
+        student_id: '',
+        teacher_code: '',
         grade_level: 'Lớp 10',
         gender: 'male',
         department: '',
@@ -126,6 +128,8 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
                     is_active: user.is_active ?? true,
                     is_managed: user.is_managed ?? true,
                     student_code: user.student_code || '',
+                    student_id: user.student_id || '',
+                    teacher_code: user.teacher_code || '',
                     grade_level: user.grade_level || 'Lớp 10',
                     gender: user.gender || 'male',
                     department: user.department || '',
@@ -149,6 +153,8 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
                     is_active: true,
                     is_managed: true,
                     student_code: '',
+                    student_id: '',
+                    teacher_code: '',
                     grade_level: 'Lớp 10',
                     gender: 'male',
                     department: '',
@@ -222,7 +228,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
 
             const payload = { ...formData };
             // Sanitize optional fields: convert empty strings to undefined so Zod treats them as omitted
-            const textFields = ['phone', 'personal_email', 'address', 'specialization', 'department', 'notes', 'student_code'];
+            const textFields = ['phone', 'personal_email', 'address', 'specialization', 'department', 'notes', 'student_code', 'student_id', 'teacher_code'];
             textFields.forEach(field => {
                 if ((payload as any)[field] === '') {
                     (payload as any)[field] = undefined;
@@ -282,7 +288,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
             </div>
 
             <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-yellow-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                 <Card className="relative bg-white dark:bg-[#1A1A1A] border-stone-200 dark:border-white/10 rounded-2xl overflow-hidden">
                     <div className="p-6 space-y-4">
                         <div className="flex justify-between items-center border-b border-stone-100 dark:border-white/5 pb-3">
@@ -302,11 +308,35 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
 
                         {createdUserInfo?.student_code && (
                             <div className="flex justify-between items-center border-b border-stone-100 dark:border-white/5 pb-3">
-                                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">Mã học sinh</span>
+                                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">UID (Mã truy cập)</span>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-mono font-bold text-amber-600 dark:text-amber-500">{createdUserInfo?.student_code}</span>
-                                    <button onClick={() => copyToClipboard(createdUserInfo?.student_code, 'Mã học sinh')} className="p-1 hover:bg-stone-100 dark:hover:bg-white/5 rounded transition-colors">
-                                        {copiedField === 'Mã học sinh' ? <Icons.Check className="w-4 h-4 text-green-500" /> : <Icons.Copy className="w-4 h-4 text-stone-400" />}
+                                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-500">{createdUserInfo?.student_code}</span>
+                                    <button onClick={() => copyToClipboard(createdUserInfo?.student_code, 'UID')} className="p-1 hover:bg-stone-100 dark:hover:bg-white/5 rounded transition-colors">
+                                        {copiedField === 'UID' ? <Icons.Check className="w-4 h-4 text-green-500" /> : <Icons.Copy className="w-4 h-4 text-stone-400" />}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {createdUserInfo?.teacher_code && (
+                            <div className="flex justify-between items-center border-b border-stone-100 dark:border-white/5 pb-3">
+                                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">UID (Mã tài khoản)</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-500">{createdUserInfo?.teacher_code}</span>
+                                    <button onClick={() => copyToClipboard(createdUserInfo?.teacher_code, 'UID')} className="p-1 hover:bg-stone-100 dark:hover:bg-white/5 rounded transition-colors">
+                                        {copiedField === 'UID' ? <Icons.Check className="w-4 h-4 text-green-500" /> : <Icons.Copy className="w-4 h-4 text-stone-400" />}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {createdUserInfo?.student_id && (
+                            <div className="flex justify-between items-center border-b border-stone-100 dark:border-white/5 pb-3">
+                                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">CID (Mã định danh)</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-mono font-bold text-amber-600 dark:text-amber-500">{createdUserInfo?.student_id}</span>
+                                    <button onClick={() => copyToClipboard(createdUserInfo?.student_id, 'CID')} className="p-1 hover:bg-stone-100 dark:hover:bg-white/5 rounded transition-colors">
+                                        {copiedField === 'CID' ? <Icons.Check className="w-4 h-4 text-green-500" /> : <Icons.Copy className="w-4 h-4 text-stone-400" />}
                                     </button>
                                 </div>
                             </div>
@@ -315,7 +345,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
                         <div className="flex justify-between items-center pb-1">
                             <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">Mật khẩu tạm thời</span>
                             <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-red-600 dark:text-red-400 tracking-wider bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded">
+                                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 tracking-wider bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded">
                                     {createdUserInfo?.password}
                                 </span>
                                 <button onClick={() => copyToClipboard(createdUserInfo?.password || '', 'Mật khẩu')} className="p-1 hover:bg-stone-100 dark:hover:bg-white/5 rounded transition-colors">
@@ -338,8 +368,8 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
                 </p>
             </div>
 
-            <Button variant="primary" fullWidth size="lg" onClick={onSuccess} className="rounded-2xl h-14 text-lg">
-                Hoàn tất (Return)
+            <Button variant="success" fullWidth size="lg" onClick={onSuccess} className="rounded-xl h-14 text-lg shadow-xl shadow-success/10 font-bold">
+                Hoàn tất & Quay lại
             </Button>
         </div>
     );
@@ -352,15 +382,15 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
             size="lg"
             footer={!createdUserInfo ? (
                 <div className="flex gap-3 justify-end w-full">
-                    <Button variant="outline" onClick={onClose} disabled={loading} className="rounded-xl">
+                    <Button variant="outline" onClick={onClose} disabled={loading} className="rounded-xl font-bold">
                         Hủy bỏ
                     </Button>
                     <Button
-                        variant="gold"
+                        variant="success"
                         onClick={handleSubmit}
                         isLoading={loading}
                         leftIcon={isEdit ? <Icons.Save className="w-4 h-4" /> : <Icons.Add className="w-4 h-4" />}
-                        className="rounded-xl px-8"
+                        className="rounded-xl px-10 shadow-lg shadow-emerald-600/20 font-bold"
                     >
                         {isEdit ? 'Lưu thay đổi' : 'Tạo người dùng'}
                     </Button>
@@ -372,9 +402,9 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
                     {/* Modern Toggle Header */}
                     <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-6 bg-amber-500 rounded-full"></div>
-                            <h4 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider">
-                                {isQuickMode ? 'Thêm nhanh' : 'Chi tiết người dùng'}
+                            <div className="w-1 h-5 bg-emerald-600 rounded-full"></div>
+                            <h4 className="text-sm font-bold text-stone-900 dark:text-white">
+                                {isQuickMode ? 'Tạo nhanh' : 'Chi tiết thông tin'}
                             </h4>
                         </div>
                         {!isEdit && (
@@ -382,10 +412,10 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setIsQuickMode(!isQuickMode)}
-                                className="text-stone-400 hover:text-amber-500 text-[10px] font-black uppercase tracking-wider h-8"
+                                className="text-stone-400 hover:text-emerald-600 text-[10px] font-bold h-8 px-2"
                                 type="button"
                             >
-                                {isQuickMode ? 'Chế độ chi tiết' : 'Chế độ thêm nhanh'}
+                                {isQuickMode ? 'Mở rộng thông tin' : 'Thu gọn biểu mẫu'}
                             </Button>
                         )}
                     </div>
@@ -431,15 +461,15 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
 
                             {/* Live Preview Card */}
                             <div className="relative group transition-all duration-300">
-                                <div className="absolute -inset-0.5 bg-gradient-to-r from-stone-100 to-stone-200 dark:from-white/5 dark:to-white/10 rounded-2xl blur opacity-30"></div>
+                                <div className="absolute -inset-0.5 bg-gradient-to-r from-stone-100 to-stone-200 dark:from-white/5 dark:to-white/10 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
                                 <div className="relative bg-white dark:bg-[#1A1A1A] border border-stone-100 dark:border-white/5 rounded-2xl p-4 space-y-3">
                                     <div className="flex items-center justify-between border-b border-stone-50 dark:border-white/5 pb-2">
-                                        <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Dự kiến tài khoản</span>
-                                        <Badge variant="indigo" className="text-[9px] uppercase tracking-tighter opacity-70">Auto-generated</Badge>
+                                        <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest">Xem trước tài khoản</span>
+                                        <Badge variant="blue" className="text-[9px] font-medium opacity-70">Tự động khởi tạo</Badge>
                                     </div>
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-center text-xs">
-                                            <span className="text-stone-400">Email:</span>
+                                            <span className="text-stone-400">Tên đăng nhập:</span>
                                             <span className="font-mono font-bold text-blue-600 dark:text-blue-400 truncate max-w-[200px]">
                                                 {formData.email}
                                             </span>
@@ -452,9 +482,9 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-xl border border-amber-100 dark:border-amber-500/10">
-                                <Icons.Info className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                                <p className="text-[10px] text-amber-700 dark:text-amber-400 leading-tight">
+                            <div className="flex items-center gap-3 p-3 bg-emerald-50/50 dark:bg-emerald-500/5 rounded-xl border border-emerald-100 dark:border-emerald-500/10">
+                                <Icons.Info className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                <p className="text-[10px] text-emerald-700 dark:text-emerald-400 leading-tight">
                                     Các thông tin khác có thể được bổ sung sau trong trang chi tiết hồ sơ.
                                     Mật khẩu sẽ được hiển thị ngay sau khi tạo thành công.
                                 </p>
@@ -554,18 +584,42 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
                                 </div>
 
                                 {formData.role === 'student' && (
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Input
+                                                label="UID (Mã truy cập)"
+                                                placeholder="HS2026..."
+                                                value={formData.student_code}
+                                                onChange={(e) => setFormData({ ...formData, student_code: e.target.value.toUpperCase() })}
+                                                hint="Dùng để đăng nhập và định danh hệ thống"
+                                            />
+                                            <Input
+                                                label="CID (Mã định danh)"
+                                                placeholder="001205..."
+                                                value={formData.student_id}
+                                                onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
+                                                hint="Mã định danh cá nhân / Thẻ học sinh"
+                                            />
+                                        </div>
+                                        <div className="w-full">
+                                            <Select
+                                                label="Khối lớp"
+                                                options={gradeLevelOptions}
+                                                value={formData.grade_level}
+                                                onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {(formData.role === 'teacher' || formData.role === 'tutor' || formData.role === 'staff') && (
+                                    <div className="w-full mb-4">
                                         <Input
-                                            label="Mã học sinh"
-                                            placeholder="HS2026..."
-                                            value={formData.student_code}
-                                            onChange={(e) => setFormData({ ...formData, student_code: e.target.value.toUpperCase() })}
-                                        />
-                                        <Select
-                                            label="Khối lớp"
-                                            options={gradeLevelOptions}
-                                            value={formData.grade_level}
-                                            onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
+                                            label="UID (Mã tài khoản)"
+                                            placeholder="GV2026..."
+                                            value={formData.teacher_code}
+                                            onChange={(e) => setFormData({ ...formData, teacher_code: e.target.value.toUpperCase() })}
+                                            hint="Mã số nhân viên / Giảng viên dùng để đăng nhập"
                                         />
                                     </div>
                                 )}

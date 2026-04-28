@@ -129,7 +129,7 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, onClose }) => {
     info: {
       bg: 'bg-blue-50 dark:bg-blue-950/40',
       border: 'border-blue-200 dark:border-blue-800/60',
-      icon: 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25',
+      icon: 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25',
       text: 'text-blue-900 dark:text-blue-100',
       subtext: 'text-blue-700 dark:text-blue-300',
       progress: 'toast-progress-info',

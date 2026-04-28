@@ -74,7 +74,11 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params;
+    const studentIdRequesting = resolvedParams.id;
+    
+    // Flexible auth: allow students (self), parents (linked), and teachers/admins
     const authResult = await teacherAuth(request);
+    
     if (!authResult.authorized) {
       return NextResponse.json(
         { error: authResult.reason || 'Unauthorized' },
@@ -82,7 +86,45 @@ export async function GET(
       );
     }
 
+    const { userId, userRole } = authResult;
     const supabase = createClientFromRequest(request as any);
+
+    // ========== ROLE SCOPING ==========
+    let hasAccess = false;
+
+    // 1. Admins/Staff always have access
+    if (['super_admin', 'owner', 'admin', 'staff'].includes(userRole || '')) {
+      hasAccess = true;
+    }
+    // 2. Teachers have access if they teach the student (checked by database RLS or teacherAuth hierarchy)
+    // For now we trust teacherAuth hierarchy which allows teachers. 
+    // Ideally we check if they teach a class with this student.
+    else if (userRole === 'teacher') {
+      hasAccess = true; // In this system, teachers generally see all student profiles/transcripts
+    }
+    // 3. Students see ONLY themselves
+    else if (userRole === 'student') {
+      hasAccess = userId === studentIdRequesting;
+    }
+    // 4. Parents see ONLY linked students
+    else if (userRole === 'parent') {
+      const { data: link } = await supabase
+        .from('parent_student_links')
+        .select('id')
+        .eq('parent_id', userId)
+        .eq('student_id', studentIdRequesting)
+        .eq('status', 'approved')
+        .single();
+      
+      hasAccess = !!link;
+    }
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Forbidden: You do not have permission to view this transcript' },
+        { status: 403 }
+      );
+    }
     const { searchParams } = new URL(request.url);
     const academicYearId = searchParams.get('academic_year_id');
     const semester = searchParams.get('semester') || 'HK1';

@@ -39,8 +39,9 @@ interface User {
   phone?: string;
   is_managed?: boolean;
   student_code?: string;
-  department?: string;
   student_id?: string;
+  teacher_code?: string;
+  department?: string;
   grade_level?: string;
   notes?: string;
   personal_email?: string;
@@ -191,16 +192,18 @@ function UserManagementPageContent() {
     switch (role) {
       case 'admin':
       case 'super_admin':
-        return 'danger';
+        return 'info'; // Indigo/Blue for admin
       case 'owner':
-        return 'warning';
+        return 'warning'; // Amber for owner
       case 'teacher':
       case 'tutor':
-        return 'info';
+        return 'blue'; // Sky blue for educators
       case 'student':
-        return 'success';
+        return 'success'; // Emerald for students
+      case 'staff':
+        return 'secondary';
       case 'parent':
-        return 'indigo';
+        return 'gold'; // Amber for parents
       default:
         return 'default';
     }
@@ -215,30 +218,30 @@ function UserManagementPageContent() {
         <StatCard
           label="Tổng người dùng"
           value={stats.total_users}
-          icon={<Icons.Users className="w-6 h-6" />}
+          icon={<Icons.Users className="w-8 h-8 text-blue-600" />}
           color="blue"
-          className="glass-card hover:translate-y-[-4px] transition-transform"
+          className="glass-crystal rounded-3xl border-none shadow-ultra hover:translate-y-[-4px] transition-all duration-300"
         />
         <StatCard
           label="Đang hoạt động"
           value={stats.active_users}
-          icon={<Icons.Success className="w-6 h-6" />}
+          icon={<Icons.Success className="w-8 h-8 text-emerald-600" />}
           color="green"
-          className="glass-card hover:translate-y-[-4px] transition-transform"
+          className="glass-crystal rounded-3xl border-none shadow-ultra hover:translate-y-[-4px] transition-all duration-300"
         />
         <StatCard
           label="Giáo viên"
           value={stats.teacher_count}
-          icon={<Icons.Teachers className="w-6 h-6" />}
+          icon={<Icons.Teachers className="w-8 h-8 text-amber-600" />}
           color="orange"
-          className="glass-card hover:translate-y-[-4px] transition-transform"
+          className="glass-crystal rounded-3xl border-none shadow-ultra hover:translate-y-[-4px] transition-all duration-300"
         />
         <StatCard
           label="Học sinh"
           value={stats.student_count}
-          icon={<Icons.Students className="w-6 h-6" />}
-          color="purple"
-          className="glass-card hover:translate-y-[-4px] transition-transform"
+          icon={<Icons.Students className="w-8 h-8 text-emerald-600" />}
+          color="emerald"
+          className="glass-crystal rounded-3xl border-none shadow-ultra hover:translate-y-[-4px] transition-all duration-300"
         />
       </div>
     );
@@ -268,30 +271,30 @@ function UserManagementPageContent() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-['Be_Vietnam_Pro'] selection:bg-red-600/30 text-stone-900 dark:text-stone-100 p-4 md:p-12 lg:p-16">
+    <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-['Be_Vietnam_Pro'] selection:bg-emerald-600/30 text-stone-900 dark:text-stone-100 p-4 md:p-12 lg:p-16">
       <AcademicBackground />
       <div className="max-w-[1600px] mx-auto space-y-12 relative z-10 animate-fade-in">
 
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-stone-200 dark:border-stone-800 pb-10">
           <div className="space-y-4">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight flex items-center gap-6">
-              <div className="p-4 glass-crystal rounded-sharp">
-                <Icons.Users className="w-10 h-10 text-red-600" />
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight flex items-center gap-5">
+              <div className="p-3 glass-crystal rounded-[1.5rem] shadow-ultra">
+                <Icons.Users className="w-8 h-8 text-emerald-600" />
               </div>
-              Quản lý <span className="text-red-600">Thành viên</span>
+              Quản lý <span className="text-emerald-600">tài khoản</span>
             </h1>
-            <p className="text-stone-500 font-mono text-xs tracking-widest uppercase flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-600 rounded-full animate-bubble" />
-              Hệ thống quản trị cơ sở dữ liệu nhân sự chuyên sâu
+            <p className="text-stone-500 font-medium text-xs md:text-sm flex items-center gap-3">
+              <span className="w-2 h-2 bg-emerald-600/50 rounded-full" />
+              Danh sách và thông tin quản trị thành viên trong hệ thống
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <Button
-              variant="gold"
+              variant="success"
               onClick={() => setShowCreateModal(true)}
-              className="h-14 px-10 rounded-sharp text-xs font-bold uppercase tracking-widest shadow-xl shadow-gold-accent/20"
+              className="h-12 px-8 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/10"
               leftIcon={<Icons.Add className="w-5 h-5" />}
             >
               Thêm người dùng mới
@@ -305,49 +308,47 @@ function UserManagementPageContent() {
         {/* Filters and Table Section */}
         <div className="space-y-6">
           {/* Controls Bar */}
-          <div className="glass-crystal p-8 rounded-sharp border-none flex flex-col lg:flex-row gap-6 items-center shadow-2xl">
+          <div className="glass-crystal p-6 rounded-[2rem] border-none flex flex-col lg:flex-row gap-5 items-center shadow-ultra">
             <div className="flex-1 w-full relative group">
-              <Icons.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500 group-focus-within:text-red-600 transition-colors" />
+              <Icons.Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 group-focus-within:text-emerald-600 transition-colors" />
               <Input
                 type="text"
-                placeholder="TỔ CHỨC TRUY VẤN: TÊN, EMAIL, SĐT..."
+                placeholder="Tìm kiếm theo tên, email, số điện thoại..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-14 pl-12 pr-4 bg-transparent rounded-sharp border-none text-xs font-bold uppercase tracking-widest focus:ring-1 focus:ring-red-600 transition-all outline-none"
+                className="h-14 pl-12 pr-6 bg-transparent rounded-xl border-none text-sm font-medium focus:ring-2 focus:ring-emerald-600/20 transition-all outline-none placeholder:text-stone-400"
               />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-              <div className="w-full sm:w-48">
+              <div className="w-full sm:w-52">
                 <Select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
-                  className="h-14 rounded-sharp font-bold text-[10px] uppercase tracking-widest glass-crystal border-none"
+                  className="h-14 rounded-xl font-semibold text-sm glass-crystal border-none"
                   options={[
-                    {
-                      value: 'all', label: 'TẤT CẢ VAI TRÒ'
-                    },
-                    ...roleOptions.map(o => ({ value: o.value, label: o.label.toUpperCase() }))
+                    { value: 'all', label: 'Tất cả vai trò' },
+                    ...roleOptions.map(o => ({ value: o.value, label: o.label }))
                   ]}
                 />
               </div>
 
-              <div className="w-full sm:w-48">
+              <div className="w-full sm:w-52">
                 <Select
                   value={activeFilter}
                   onChange={(e) => setActiveFilter(e.target.value)}
-                  className="h-14 rounded-sharp font-bold text-[10px] uppercase tracking-widest glass-crystal border-none"
+                  className="h-14 rounded-xl font-semibold text-sm glass-crystal border-none"
                   options={[
-                    { value: 'all', label: 'TRẠNG THÁI: TẤT CẢ' },
-                    { value: 'true', label: 'HOẠT ĐỘNG' },
-                    { value: 'false', label: 'VÔ HIỆU HÓA' },
+                    { value: 'all', label: 'Tất cả trạng thái' },
+                    { value: 'true', label: 'Hoạt động' },
+                    { value: 'false', label: 'Vô hiệu hóa' },
                   ]}
                 />
               </div>
 
               <Button
                 variant="outline"
-                className="h-14 w-14 p-0 rounded-sharp border-none glass-crystal hover:bg-white/10"
+                className="h-14 w-14 p-0 rounded-xl border-none glass-crystal hover:bg-white/10"
                 onClick={() => {
                   setSearchQuery('');
                   setRoleFilter('all');
@@ -360,7 +361,7 @@ function UserManagementPageContent() {
           </div>
 
           {/* Table Container */}
-          <Card className="rounded-sharp overflow-hidden border-none shadow-2xl glass-crystal p-0">
+          <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-ultra glass-crystal p-0">
             {users.length === 0 ? (
               <div className="py-24 text-center">
                 <div className="w-20 h-20 bg-stone-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -392,17 +393,17 @@ function UserManagementPageContent() {
                       header: 'NGƯỜI DÙNG',
                       render: (user) => (
                         <div className="flex items-center gap-4 py-2">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-stone-100 to-stone-50 dark:from-white/5 dark:to-white/2 flex items-center justify-center font-black text-stone-400 border border-stone-100 dark:border-white/5 group-hover:scale-105 transition-transform">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-stone-100 to-stone-50 dark:from-white/5 dark:to-white/2 flex items-center justify-center font-bold text-stone-400 border border-stone-100 dark:border-white/5 group-hover:scale-105 transition-transform">
                             {user.full_name?.charAt(0)}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-bold text-stone-900 dark:text-white tracking-tight">{user.full_name}</p>
                               {user.is_managed && (
-                                <Badge variant="info" className="text-[8px] px-1.5 py-0 rounded-md font-black uppercase">Managed</Badge>
+                                <Badge variant="info" className="text-[9px] px-2 py-0.5 rounded font-bold">Quản lý bởi HT</Badge>
                               )}
                             </div>
-                            <p className="text-xs text-stone-400 font-bold">{user.email}</p>
+                            <p className="text-xs text-stone-400 font-medium">{user.email}</p>
                           </div>
                         </div>
                       )
@@ -411,9 +412,36 @@ function UserManagementPageContent() {
                       key: 'role',
                       header: 'VAI TRÒ',
                       render: (user) => (
-                        <Badge variant={getRoleBadgeVariant(user.role) as any} className="px-4 py-1.5 rounded-full border-none shadow-sm font-black uppercase tracking-widest text-[10px]">
+                        <Badge variant={getRoleBadgeVariant(user.role) as any} className="px-3 py-1 rounded-full border-none shadow-sm font-bold text-xs ring-1 ring-stone-900/5 dark:ring-white/10">
                           {getRoleLabel(user.role)}
                         </Badge>
+                      )
+                    },
+                    {
+                      key: 'identity',
+                      header: 'ĐỊNH DANH',
+                      render: (user) => (
+                        <div className="flex flex-col gap-1">
+                          {(user.student_code || user.teacher_code) && (
+                            <div className="flex items-center gap-1.5 text-[10px]">
+                              <span className="text-stone-400 font-bold uppercase tracking-wide opacity-70">UID:</span>
+                              <code className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-mono font-bold">
+                                {user.student_code || user.teacher_code}
+                              </code>
+                            </div>
+                          )}
+                          {user.role === 'student' && user.student_id && (
+                            <div className="flex items-center gap-1.5 text-[10px]">
+                              <span className="text-stone-400 font-bold uppercase tracking-wide opacity-70">CID:</span>
+                              <code className="bg-amber-500/10 text-amber-600 dark:text-amber-500 px-1.5 py-0.5 rounded font-mono font-bold">
+                                {user.student_id}
+                              </code>
+                            </div>
+                          )}
+                          {(!user.student_code && !user.teacher_code && !user.student_id) && (
+                            <span className="text-stone-400 font-mono text-xs">—</span>
+                          )}
+                        </div>
                       )
                     },
                     {
@@ -422,9 +450,9 @@ function UserManagementPageContent() {
                       render: (user) => (
                         <Badge
                           variant={user.is_active ? "success" : "danger"}
-                          className="px-4 py-1.5 rounded-full border-none shadow-sm font-black uppercase tracking-widest text-[10px]"
+                          className="px-3 py-1 rounded-full border-none shadow-sm font-bold text-xs ring-1 ring-stone-900/5 dark:ring-white/10"
                         >
-                          {user.is_active ? 'Đang hoạt động' : 'Đã khóa'}
+                          {user.is_active ? 'Hoạt động' : 'Đã khóa'}
                         </Badge>
                       )
                     },
@@ -436,7 +464,7 @@ function UserManagementPageContent() {
                           <span className="text-stone-900 dark:text-white font-bold tracking-tight">
                             {new Date(user.created_at).toLocaleDateString('vi-VN')}
                           </span>
-                          <span className="text-[10px] text-stone-400 font-black uppercase tracking-widest">
+                          <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wide">
                             {new Date(user.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>

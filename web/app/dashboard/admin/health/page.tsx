@@ -83,7 +83,7 @@ export default function SystemHealthPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20">
+            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
               <Icons.Progress className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-4xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
@@ -103,7 +103,7 @@ export default function SystemHealthPage() {
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
               className={`w-10 h-6 rounded-full transition-colors relative ${
-                autoRefresh ? 'bg-indigo-600' : 'bg-stone-300'
+                autoRefresh ? 'bg-blue-600' : 'bg-stone-300'
               }`}
             >
               <div
@@ -156,7 +156,7 @@ export default function SystemHealthPage() {
                     <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
                       Độ trễ
                     </p>
-                    <p className="text-2xl font-black text-indigo-600">
+                    <p className="text-2xl font-black text-blue-600">
                       {data.database?.latency_ms}ms
                     </p>
                   </div>
@@ -176,8 +176,8 @@ export default function SystemHealthPage() {
             <Card className="rounded-[40px] border-none bg-white dark:bg-stone-900 shadow-xl overflow-hidden group">
               <div className="p-8 space-y-6">
                 <div className="flex items-start justify-between">
-                  <div className="w-14 h-14 bg-amber-50 dark:bg-amber-900/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Icons.History className="w-8 h-8 text-amber-600" />
+                  <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Icons.History className="w-8 h-8 text-blue-600" />
                   </div>
                   <StatusBadge status={data.external?.status || 'unknown'} />
                 </div>
@@ -194,18 +194,18 @@ export default function SystemHealthPage() {
                     <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
                       Trung bình
                     </p>
-                    <p className="text-2xl font-black text-amber-600">
+                    <p className="text-2xl font-black text-blue-600">
                       {data.external?.latency_ms}ms
                     </p>
                   </div>
-                  <Icons.TrendUp className="w-6 h-6 text-amber-500 mb-1" />
+                  <Icons.TrendUp className="w-6 h-6 text-blue-500 mb-1" />
                 </div>
               </div>
             </Card>
 
             {/* Overall Latency */}
             <Card className="rounded-[40px] border-none bg-stone-900 shadow-2xl overflow-hidden relative group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 blur-[80px] rounded-full" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 blur-[80px] rounded-full" />
               <div className="p-8 space-y-6 relative">
                 <div className="flex items-start justify-between">
                   <div className="w-14 h-14 bg-white/10 rounded-3xl flex items-center justify-center">
@@ -237,8 +237,8 @@ export default function SystemHealthPage() {
             {/* System Info */}
             <Card className="rounded-[40px] border-none bg-white dark:bg-stone-900 shadow-xl p-10">
               <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center">
-                  <Icons.Info className="w-5 h-5 text-indigo-600" />
+                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center">
+                  <Icons.Info className="w-5 h-5 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
                   Thông tin hệ thống
@@ -316,7 +316,7 @@ export default function SystemHealthPage() {
         </>
       ) : (
         <div className="py-20 text-center space-y-4">
-          <Icons.Progress className="w-12 h-12 text-indigo-600 animate-spin mx-auto" />
+          <Icons.Progress className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
           <p className="text-stone-500 font-bold uppercase tracking-widest text-xs">
             Đang kiểm tra sức khỏe hệ thống...
           </p>

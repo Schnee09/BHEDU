@@ -138,6 +138,7 @@ export class UserService {
                     full_name: fullName,
                     role: input.role,
                     personal_email: input.personal_email,
+                    student_id: input.student_id,
                     student_code: studentCode,
                     grade_level: input.grade_level,
                     department: input.department,
@@ -177,6 +178,7 @@ export class UserService {
                     is_managed: isManaged,
                     created_by: createdBy,
                     notes: input.notes,
+                    student_id: input.student_id,
                     student_code: studentCode,
                     grade_level: input.grade_level,
                     department: input.department,
@@ -297,6 +299,8 @@ export class UserService {
                 is_active: input.is_active,
                 notes: input.notes,
                 personal_email: input.personal_email,
+                student_id: input.student_id,
+                student_code: input.student_code,
             })
             .eq("id", id)
             .select()

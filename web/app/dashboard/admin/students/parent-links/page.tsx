@@ -85,8 +85,8 @@ export default function ParentLinksPage() {
         <div className="flex flex-col">
           <span className="font-semibold text-gray-900">{item.student.full_name}</span>
           <div className="flex items-center gap-1 mt-0.5">
-            <IdentificationIcon className="w-3 h-3 text-amber-500" />
-            <span className="text-xs font-mono font-bold text-amber-600 bg-amber-50 px-1.5 rounded uppercase">
+            <IdentificationIcon className="w-3 h-3 text-blue-500" />
+            <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-1.5 rounded uppercase">
               {item.student.student_code}
             </span>
           </div>
@@ -152,8 +152,8 @@ export default function ParentLinksPage() {
           title={item.parent.full_name}
           subtitle={
             <div className="flex items-center gap-2">
-              <IdentificationIcon className="w-3 h-3 text-amber-500" />
-              <span className="font-bold text-amber-600 uppercase tracking-tighter">
+              <IdentificationIcon className="w-3 h-3 text-blue-500" />
+              <span className="font-bold text-blue-600 uppercase tracking-tighter">
                 {item.student.full_name} ({item.student.student_code})
               </span>
             </div>

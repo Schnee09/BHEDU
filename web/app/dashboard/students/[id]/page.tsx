@@ -13,6 +13,7 @@ import EnrollmentManager from '@/components/EnrollmentManager';
 import StudentPhotoUpload from '@/components/StudentPhotoUpload';
 import StudentNotes from '@/components/StudentNotes';
 import StudentDocuments from '@/components/StudentDocuments';
+import { cn } from '@/lib/utils';
 
 import StudentStatusPanel from '../../../../components/StudentStatusPanel';
 import ImportHistoryPanel from '../../../../components/ImportHistoryPanel';
@@ -25,7 +26,7 @@ import ImportHistoryPanel from '../../../../components/ImportHistoryPanel';
 async function fetchStudentWithClient(supabase: any, id: string) {
   const { data: profile, error: pErr } = await supabase
     .from('profiles')
-    .select('id, full_name, email, phone, address, date_of_birth, photo_url, created_at, role')
+    .select('id, full_name, email, phone, address, date_of_birth, photo_url, created_at, role, student_code, student_id')
     .eq('id', id)
     .maybeSingle();
 
@@ -186,242 +187,213 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       : '—';
 
   const overview = (
-    <div className="space-y-6">
-      {/* Hero Section with Photo and Quick Stats */}
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Hero Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-xl" />
-        <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-white/50 dark:border-slate-700/50 shadow-xl p-6 overflow-hidden">
-          {/* Student Info Row */}
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Photo + Name */}
-            <div className="flex items-center gap-4">
-              <StudentPhotoUpload
-                studentId={id}
-                currentPhotoUrl={(profile as { photo_url?: string | null }).photo_url}
-              />
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {profile.full_name}
-                </h2>
-                <p className="text-gray-600 dark:text-gray-300">{profile.email}</p>
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <Badge color="purple">{profile.role}</Badge>
-                  {enrollments.length > 0 && (
-                    <Badge color="blue">{(enrollments[0] as any)?.classes?.name}</Badge>
-                  )}
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 via-amber-500/5 to-blue-500/5 rounded-[2rem] blur-2xl" />
+        <div className="relative bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl rounded-[2rem] border border-stone-200 dark:border-white/5 shadow-2xl p-8 overflow-hidden">
+          <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start text-center lg:text-left">
+            {/* Profile Info */}
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="relative group p-1 bg-stone-100 dark:bg-white/5 rounded-3xl transition-transform hover:scale-[1.02]">
+                <StudentPhotoUpload
+                  studentId={id}
+                  currentPhotoUrl={(profile as { photo_url?: string | null }).photo_url}
+                />
+              </div>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-center lg:justify-start gap-3">
+                    <div className="w-1.5 h-6 bg-amber-500 rounded-full shadow-accent-glow" />
+                    <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">Học sinh</span>
+                  </div>
+                  <h2 className="text-3xl md:text-5xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                    {profile.full_name}
+                  </h2>
                 </div>
+                
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-stone-100 dark:bg-white/5 rounded-full border border-stone-200/50 dark:border-white/10">
+                    <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">UID</span>
+                    <span className="text-[10px] font-black text-stone-900 dark:text-white uppercase">{profile.student_code || '—'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 rounded-full border border-amber-500/20">
+                    <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">CID</span>
+                    <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">{profile.student_id || '—'}</span>
+                  </div>
+                  {enrollments.length > 0 && (
+                    <Badge variant="secondary" className="font-black text-[9px] uppercase tracking-widest px-3 h-6 border-stone-200/50">Lớp: {(enrollments[0] as any)?.classes?.name}</Badge>
+                  )}
+                  <Badge variant="success" className="font-black text-[9px] uppercase tracking-widest px-3 h-6 shadow-sm border-transparent">{profile.status === 'active' ? 'Đang theo học' : 'Hồ sơ lưu trữ'}</Badge>
+                </div>
+                
+                <p className="text-stone-500 dark:text-stone-400 font-medium flex items-center justify-center lg:justify-start gap-2">
+                  <Icons.Email className="w-4 h-4 text-stone-400" /> {profile.email}
+                </p>
               </div>
             </div>
 
-            {/* Quick Stats Row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:ml-auto">
-              <div className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/30 dark:to-green-900/20 rounded-xl p-4 text-center border border-emerald-200/50 dark:border-emerald-700/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {attendanceRate}%
-                </p>
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                  Chuyên cần
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/20 rounded-xl p-4 text-center border border-blue-200/50 dark:border-blue-700/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  {averageGrade}
-                </p>
-                <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Điểm TB</p>
-              </div>
-              <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/20 rounded-xl p-4 text-center border border-purple-200/50 dark:border-purple-700/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                  {enrollments.length}
-                </p>
-                <p className="text-xs font-medium text-purple-700 dark:text-purple-300">Lớp học</p>
-              </div>
-              <div className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/20 rounded-xl p-4 text-center border border-orange-200/50 dark:border-orange-700/50 hover:shadow-lg transition-all">
-                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                  {grades.length}
-                </p>
-                <p className="text-xs font-medium text-orange-700 dark:text-orange-300">Điểm số</p>
-              </div>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:ml-auto w-full lg:w-auto">
+              <StatCardSmall label="Chuyên cần" value={`${attendanceRate}%`} color="emerald" icon={<Icons.Attendance className="w-4 h-4" />} />
+              <StatCardSmall label="Điểm TB" value={averageGrade} color="blue" icon={<Icons.Grades className="w-4 h-4" />} />
+              <StatCardSmall label="Lớp học" value={enrollments.length} color="amber" icon={<Icons.Classes className="w-4 h-4" />} />
+              <StatCardSmall label="Điểm số" value={grades.length} color="stone" icon={<Icons.Success className="w-4 h-4" />} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Info Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Personal Info Card */}
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-slate-700/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg flex items-center justify-center">
-              <Icons.Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            </span>
-            Thông tin cá nhân
-          </h3>
-          <div className="space-y-3">
-            {profile.phone && (
-              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                <span className="text-xl">📱</span>
-                <div>
-                  <p className="text-xs text-gray-500">Điện thoại</p>
-                  <p className="font-medium text-gray-900">{profile.phone}</p>
-                </div>
+      {/* Details Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Personal Info */}
+        <div className="bg-white dark:bg-stone-900/50 rounded-3xl border border-stone-200 dark:border-white/5 shadow-xl p-8 hover:shadow-2xl transition-all duration-300">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
+                <Icons.Students className="w-5 h-5 text-amber-600" />
               </div>
-            )}
-            {profile.address && (
-              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                <span className="text-xl">📍</span>
-                <div>
-                  <p className="text-xs text-gray-500">Địa chỉ</p>
-                  <p className="font-medium text-gray-900">{profile.address}</p>
-                </div>
-              </div>
-            )}
-            {profile.date_of_birth && (
-              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                <CakeIcon className="w-5 h-5 text-pink-500" />
-                <div>
-                  <p className="text-xs text-gray-500">Ngày sinh</p>
-                  <p className="font-medium text-gray-900">
-                    {new Date(profile.date_of_birth).toLocaleDateString('vi-VN')}
-                  </p>
-                </div>
-              </div>
-            )}
-            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
-              <Icons.Calendar className="w-5 h-5 text-blue-500" />
-              <div>
-                <p className="text-xs text-gray-500">Ngày tham gia</p>
-                <p className="font-medium text-gray-900">
-                  {new Date(profile.created_at).toLocaleDateString('vi-VN')}
-                </p>
-              </div>
-            </div>
+              Thông tin cá nhân
+            </h3>
+            <Link href={`/dashboard/students/${id}/edit`}>
+              <button className="text-[10px] font-black text-amber-600 uppercase tracking-widest hover:underline">Chỉnh sửa</button>
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InfoItem label="Số điện thoại" value={profile.phone} icon="📱" />
+            <InfoItem label="UID (Mã truy cập)" value={profile.student_code} icon="🔐" />
+            <InfoItem label="CID (Mã định danh)" value={profile.student_id} icon="🆔" />
+            <InfoItem label="Ngày sinh" value={profile.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString('vi-VN') : null} icon={<CakeIcon className="w-4 h-4 text-pink-500" />} />
+            <InfoItem label="Ngày tham gia" value={new Date(profile.created_at).toLocaleDateString('vi-VN')} icon={<Icons.Calendar className="w-4 h-4 text-blue-500" />} />
+            <InfoItem label="Địa chỉ" value={profile.address} icon="📍" className="md:col-span-1" />
           </div>
         </div>
 
-        {/* Attendance Summary Card */}
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-slate-700/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
-              <Icons.Attendance className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            </span>
-            Tổng quan điểm danh
-          </h3>
+        {/* Attendance Summary */}
+        <div className="bg-white dark:bg-stone-900/50 rounded-3xl border border-stone-200 dark:border-white/5 shadow-xl p-8 hover:shadow-2xl transition-all duration-300">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-serif font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tight flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                <Icons.Attendance className="w-5 h-5 text-emerald-600" />
+              </div>
+              Tổng quan điểm danh
+            </h3>
+          </div>
+          
           {attendanceStats.total === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div className="text-center py-12 text-stone-400 font-black uppercase tracking-widest text-xs bg-stone-50 dark:bg-white/5 rounded-2xl">
               Chưa có dữ liệu điểm danh
             </div>
           ) : (
-            <>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="relative w-20 h-20">
-                  <svg className="w-20 h-20 transform -rotate-90">
-                    <circle cx="40" cy="40" r="35" stroke="#e5e7eb" strokeWidth="6" fill="none" />
+            <div className="space-y-8">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="relative w-32 h-32">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="none" className="text-stone-100 dark:text-white/5" />
                     <circle
-                      cx="40"
-                      cy="40"
-                      r="35"
-                      stroke={
-                        attendanceRate >= 80
-                          ? '#22c55e'
-                          : attendanceRate >= 60
-                            ? '#f59e0b'
-                            : '#ef4444'
-                      }
-                      strokeWidth="6"
+                      cx="64"
+                      cy="64"
+                      r="58"
+                      stroke="currentColor"
+                      strokeWidth="8"
                       fill="none"
-                      strokeDasharray={`${attendanceRate * 2.2} 220`}
+                      strokeDasharray={`${attendanceRate * 3.64} 364`}
                       strokeLinecap="round"
+                      className={cn(
+                        "transition-all duration-1000",
+                        attendanceRate >= 80 ? "text-emerald-500" : attendanceRate >= 60 ? "text-amber-500" : "text-rose-500"
+                      )}
                     />
                   </svg>
-                  <span className="absolute inset-0 flex items-center justify-center font-bold text-lg">
-                    {attendanceRate}%
-                  </span>
-                </div>
-                <div className="flex-1 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Có mặt</span>
-                    <span className="font-semibold text-green-600">{attendanceStats.present}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Đi muộn</span>
-                    <span className="font-semibold text-yellow-600">{attendanceStats.late}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Vắng mặt</span>
-                    <span className="font-semibold text-red-600">{attendanceStats.absent}</span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-3xl font-black text-stone-900 dark:text-white leading-none">{attendanceRate}%</span>
+                    <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest mt-1">Tỉ lệ</span>
                   </div>
                 </div>
+                <div className="flex-1 grid grid-cols-1 gap-4 w-full">
+                  <AttendanceRow label="Có mặt" value={attendanceStats.present} total={attendanceStats.total} color="emerald" />
+                  <AttendanceRow label="Đi muộn" value={attendanceStats.late} total={attendanceStats.total} color="amber" />
+                  <AttendanceRow label="Vắng mặt" value={attendanceStats.absent} total={attendanceStats.total} color="rose" />
+                </div>
               </div>
-              <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
-                <div
-                  className="bg-green-500 transition-all"
-                  style={{ width: `${(attendanceStats.present / attendanceStats.total) * 100}%` }}
-                />
-                <div
-                  className="bg-yellow-500 transition-all"
-                  style={{ width: `${(attendanceStats.late / attendanceStats.total) * 100}%` }}
-                />
-                <div
-                  className="bg-red-500 transition-all"
-                  style={{ width: `${(attendanceStats.absent / attendanceStats.total) * 100}%` }}
-                />
-              </div>
-            </>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Recent Grades Preview */}
+      {/* Recent Grades */}
       {grades.length > 0 && (
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-slate-700/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
-              <Icons.Grades className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-            </span>
-            Điểm gần đây
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <Card className="hover:shadow-2xl transition-all duration-300">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
+                <Icons.Grades className="w-5 h-5 text-amber-600" />
+              </div>
+              Điểm số gần đây
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {grades.slice(0, 6).map((g: any) => (
-              <div
-                key={g.id}
-                className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-600 rounded-xl p-3 text-center hover:shadow-md transition-all hover:scale-[1.02]"
-              >
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div key={g.id} className="bg-stone-50 dark:bg-white/5 rounded-2xl p-4 text-center border border-stone-100 dark:border-white/5 hover:border-amber-500/30 transition-all group">
+                <p className="text-2xl font-black text-stone-900 dark:text-white mb-1 group-hover:text-amber-500 transition-colors">
                   {g.score ?? g.points_earned}
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-300 truncate">
-                  {g.subjects?.name ?? 'N/A'}
+                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest truncate">
+                  {g.subjects?.name ?? '—'}
                 </p>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* Account Info (if exists) */}
+      {/* Finance Summary */}
       {accountInfo && (
-        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-2xl border border-teal-200/50 shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-teal-900 mb-3 flex items-center gap-2">
-            <Icons.Finance className="w-5 h-5 text-teal-600" />
-            Tài khoản
-          </h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-3xl font-bold text-teal-600">₫{accountInfo.balance ?? '0'}</p>
-              <p className="text-sm text-teal-700 capitalize">{accountInfo.status}</p>
+        <div className="glass-premium rounded-[2.5rem] p-8 border-none relative overflow-hidden group shadow-2xl shadow-emerald-500/10">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/90 via-emerald-600 to-teal-700 opacity-100 transition-opacity group-hover:opacity-95" />
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700 ease-out">
+            <Icons.Finance className="w-40 h-40 text-white" />
+          </div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-3">
+              <span className="text-[10px] font-black text-emerald-100/80 uppercase tracking-[0.3em]">Trạng thái tài chính</span>
+              <div className="flex items-center gap-4">
+                <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tight tabular-nums">₫{Number(accountInfo.balance).toLocaleString('vi-VN')}</h3>
+                <div className="bg-white/20 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/20 shadow-lg">
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest">{accountInfo.status}</span>
+                </div>
+              </div>
             </div>
             {accountInfo.last_payment_date && (
-              <div className="text-right">
-                <p className="text-xs text-teal-600">Thanh toán gần nhất</p>
-                <p className="font-medium text-teal-900">
-                  {new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN')}
-                </p>
+              <div className="text-left md:text-right border-l md:border-l-0 md:bg-white/10 md:backdrop-blur-md md:p-6 md:rounded-3xl border-white/20 pl-6 md:pl-6 transition-all hover:bg-white/20">
+                <p className="text-[9px] font-black text-emerald-100/70 uppercase tracking-widest mb-1">Giao dịch thu phí cuối</p>
+                <p className="text-xl font-black text-white">{new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN')}</p>
               </div>
             )}
           </div>
         </div>
       )}
     </div>
+  );
+
+  const statusSection = (
+    <StudentStatusPanel studentId={id} currentStatus={profile.status as any} isAdmin={viewerRole === 'admin'} />
+  );
+
+  const guardiansSection = (
+    <GuardianManagement studentId={id} />
+  );
+
+  const importSection = (
+    <ImportHistoryPanel />
+  );
+
+  const documentsSection = (
+    <StudentDocuments studentId={id} />
+  );
+
+  const notesSection = (
+    <StudentNotes studentId={id} />
   );
 
   const enrollmentsSection = (
@@ -431,101 +403,123 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
   );
 
   const attendanceSection = (
-    <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Bản ghi điểm danh</h2>
+    <Card padding="none" className="overflow-hidden border-stone-200 dark:border-white/5 bg-white dark:bg-stone-900/50 shadow-xl">
+      <div className="p-8 border-b border-stone-100 dark:border-white/5 bg-stone-50/50 dark:bg-white/[0.02]">
+        <h2 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+            <Icons.Attendance className="w-5 h-5 text-emerald-600" />
+          </div>
+          Lịch sử Điểm danh
+        </h2>
+      </div>
+      
       {attendance.length === 0 ? (
-        <Empty
-          title="Không có điểm danh"
-          description="Không tìm thấy bản ghi điểm danh nào cho học sinh này."
-        />
+        <div className="p-12">
+          <Empty
+            title="Sẵn sàng ghi nhận"
+            description="Chưa tìm thấy bản ghi điểm danh nào tồn tại trong hệ thống."
+          />
+        </div>
       ) : (
-        <>
+        <div className="p-2">
           {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
+          <div className="md:hidden space-y-3 p-2">
             {attendance.map((a: any) => (
-              <div key={a.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="font-medium text-gray-900">
-                    {new Date(a.date).toLocaleDateString('vi-VN')}
+              <div key={a.id} className="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-200 dark:border-white/5 shadow-sm space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="font-serif italic font-black text-stone-900 dark:text-white capitalize">
+                    {new Date(a.date).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit' })}
                   </div>
                   <Badge
-                    color={
-                      a.status === 'present' ? 'green' : a.status === 'absent' ? 'red' : 'yellow'
-                    }
+                    variant={a.status === 'present' ? 'success' : a.status === 'absent' ? 'danger' : 'warning'}
+                    className="font-black text-[9px] uppercase tracking-widest px-3"
                   >
-                    {a.status}
+                    {a.status === 'present' ? 'Có mặt' : a.status === 'absent' ? 'Vắng mặt' : 'Đi muộn'}
                   </Badge>
                 </div>
-                <div className="space-y-1 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Lớp:</span>
-                    <span className="font-medium text-gray-900">
-                      {a.classes?.name ?? a.class_id}
-                    </span>
-                  </div>
-                  {a.notes && (
-                    <div className="pt-2 mt-2 border-t border-gray-100">
-                      <span className="block text-xs text-gray-500 mb-1">Ghi chú:</span>
-                      <span>{a.notes}</span>
-                    </div>
-                  )}
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-stone-400">
+                  <span>Lớp học</span>
+                  <span className="text-stone-700 dark:text-stone-300">{a.classes?.name ?? a.class_id}</span>
                 </div>
+                {a.notes && (
+                  <div className="pt-2 border-t border-stone-50 dark:border-white/5">
+                    <p className="text-[10px] text-stone-500 leading-relaxed italic">&quot;{a.notes}&quot;</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
           {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Lớp</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Trạng thái</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Ghi chú</th>
+          <div className="hidden md:block overflow-x-auto rounded-2xl border border-stone-100 dark:border-white/5 shadow-inner m-4">
+            <table className="min-w-full text-sm font-sans">
+              <thead className="bg-stone-50/50 dark:bg-white/[0.02]">
+                <tr>
+                  <th className="text-left px-6 py-4 font-black text-stone-400 uppercase tracking-widest text-[10px]">Thời gian</th>
+                  <th className="text-left px-6 py-4 font-black text-stone-400 uppercase tracking-widest text-[10px]">Lớp học đào tạo</th>
+                  <th className="text-left px-6 py-4 font-black text-stone-400 uppercase tracking-widest text-[10px]">Trạng thái</th>
+                  <th className="text-left px-6 py-4 font-black text-stone-400 uppercase tracking-widest text-[10px]">Ghi chú hệ thống</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-stone-50 dark:divide-white/5">
                 {attendance.map((a: any) => (
-                  <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">{new Date(a.date).toLocaleDateString('vi-VN')}</td>
-                    <td className="px-4 py-3">{a.classes?.name ?? a.class_id}</td>
-                    <td className="px-4 py-3">
+                  <tr key={a.id} className="hover:bg-emerald-500/[0.02] transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-serif italic font-black text-stone-900 dark:text-white capitalize">
+                          {new Date(a.date).toLocaleDateString('vi-VN', { weekday: 'long' })}
+                        </span>
+                        <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                          {new Date(a.date).toLocaleDateString('vi-VN')}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 font-bold text-stone-600 dark:text-stone-300">
+                      {a.classes?.name ?? a.class_id}
+                    </td>
+                    <td className="px-6 py-4">
                       <Badge
-                        color={
-                          a.status === 'present'
-                            ? 'green'
-                            : a.status === 'absent'
-                              ? 'red'
-                              : 'yellow'
-                        }
+                        variant={a.status === 'present' ? 'success' : a.status === 'absent' ? 'danger' : 'warning'}
+                        className="font-black text-[9px] uppercase tracking-widest px-3"
                       >
-                        {a.status}
+                        {a.status === 'present' ? 'Có mặt' : a.status === 'absent' ? 'Vắng mặt' : 'Đi muộn'}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{a.notes ?? '-'}</td>
+                    <td className="px-6 py-4 text-stone-500 italic text-xs group-hover:text-stone-900 dark:group-hover:text-stone-300 transition-colors">
+                      {a.notes ?? '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </>
+        </div>
       )}
     </Card>
   );
 
   const gradesSection = (
-    <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Điểm số</h2>
+    <Card padding="none" className="overflow-hidden border-stone-200 dark:border-white/5 bg-white dark:bg-stone-900/50 shadow-xl">
+      <div className="p-8 border-b border-stone-100 dark:border-white/5 bg-stone-50/50 dark:bg-white/[0.02]">
+        <h2 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
+          <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
+            <Icons.Grades className="w-5 h-5 text-amber-600" />
+          </div>
+          Kết quả Học tập
+        </h2>
+      </div>
+
       {grades.length === 0 ? (
-        <Empty title="Không có điểm" description="Chưa có điểm nào gần đây." />
+        <div className="p-12">
+          <Empty title="Bảng điểm trống" description="Hệ thống chưa ghi nhận bất kỳ kết quả học tập nào gần đây." />
+        </div>
       ) : (
-        <>
+        <div className="p-2">
           {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
+          <div className="md:hidden space-y-4 p-2">
             {grades.map((g: any) => {
               const componentLabels: Record<string, string> = {
-                oral: 'Miệng',
+                oral: 'Miệm',
                 fifteen_min: '15 phút',
                 one_period: '1 tiết',
                 midterm: 'Giữa kỳ',
@@ -534,26 +528,26 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
               return (
                 <div
                   key={g.id}
-                  className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden"
+                  className="bg-white dark:bg-stone-900 p-5 rounded-2xl border border-stone-200 dark:border-white/5 shadow-sm relative overflow-hidden group hover:border-amber-500/30 transition-all"
                 >
-                  <div className="absolute top-0 right-0 p-2 opacity-10">
-                    <Icons.Grades className="w-12 h-12" />
+                  <div className="absolute -top-4 -right-4 p-4 opacity-[0.03] group-hover:scale-110 transition-transform bg-amber-500 rounded-full">
+                    <Icons.Grades className="w-16 h-16" />
                   </div>
-                  <div className="flex justify-between items-start mb-3 relative z-10">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 text-lg">
-                        {g.subjects?.name ?? 'N/A'}
+                  <div className="flex justify-between items-start mb-4 relative z-10">
+                    <div className="space-y-1">
+                      <h4 className="font-serif italic font-black text-stone-900 dark:text-white text-lg">
+                        {g.subjects?.name ?? '—'}
                       </h4>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {g.graded_at ? new Date(g.graded_at).toLocaleString('vi-VN') : '-'}
+                      <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                        {g.graded_at ? new Date(g.graded_at).toLocaleDateString('vi-VN') : '—'}
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">
+                    <div className="text-2xl font-black text-amber-600 bg-amber-500/10 px-4 py-2 rounded-2xl border border-amber-500/10">
                       {g.score ?? g.points_earned ?? '—'}
                     </div>
                   </div>
                   <div className="flex gap-2 relative z-10">
-                    <Badge color="gray">
+                    <Badge variant="default" className="bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-400 font-black text-[9px] uppercase tracking-widest px-3 border-transparent">
                       {componentLabels[g.component_type] ?? g.component_type}
                     </Badge>
                   </div>
@@ -563,41 +557,50 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
           </div>
 
           {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Môn học</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Loại điểm</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Điểm</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày chấm</th>
+          <div className="hidden md:block overflow-x-auto rounded-2xl border border-stone-100 dark:border-white/5 shadow-inner m-4">
+            <table className="min-w-full text-sm font-sans">
+              <thead className="bg-stone-50/50 dark:bg-white/[0.02]">
+                <tr>
+                  <th className="text-left px-6 py-4 font-black text-stone-400 uppercase tracking-widest text-[10px]">Lĩnh vực chuyên môn</th>
+                  <th className="text-left px-6 py-4 font-black text-stone-400 uppercase tracking-widest text-[10px]">Cột điểm</th>
+                  <th className="text-left px-6 py-4 font-black text-stone-400 uppercase tracking-widest text-[10px]">Trọng số / Kết quả</th>
+                  <th className="text-left px-6 py-4 font-black text-stone-400 uppercase tracking-widest text-[10px]">Ngày ghi nhận</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-stone-50 dark:divide-white/5">
                 {grades.map((g: any) => {
                   const componentLabels: Record<string, string> = {
-                    oral: 'Miệng',
+                    oral: 'Miệm',
                     fifteen_min: '15 phút',
                     one_period: '1 tiết',
                     midterm: 'Giữa kỳ',
                     final: 'Cuối kỳ',
                   };
                   return (
-                    <tr key={g.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900">
-                        {g.subjects?.name ?? 'N/A'}
+                    <tr key={g.id} className="hover:bg-amber-500/[0.02] transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-amber-500 shadow-amber-glow" />
+                          <span className="font-serif italic font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                            {g.subjects?.name ?? '—'}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
-                        {componentLabels[g.component_type] ?? g.component_type}
+                      <td className="px-6 py-4">
+                        <Badge variant="info" className="bg-stone-100 dark:bg-white/5 text-stone-500 font-black text-[9px] uppercase tracking-widest border-transparent">
+                          {componentLabels[g.component_type] ?? g.component_type}
+                        </Badge>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="font-semibold text-blue-600">
-                          {g.score ?? g.points_earned ?? '—'}
-                        </span>
-                        <span className="text-gray-500"> / 10</span>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-black text-amber-600">
+                            {g.score ?? g.points_earned ?? '—'}
+                          </span>
+                          <span className="text-[10px] font-black text-stone-300 uppercase leading-none mt-1">/ 10.0</span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {g.graded_at ? new Date(g.graded_at).toLocaleString('vi-VN') : '-'}
+                      <td className="px-6 py-4 text-stone-500 font-black text-[10px] uppercase tracking-widest">
+                        {g.graded_at ? new Date(g.graded_at).toLocaleDateString('vi-VN') : '—'}
                       </td>
                     </tr>
                   );
@@ -605,265 +608,194 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
               </tbody>
             </table>
           </div>
-        </>
+        </div>
       )}
     </Card>
   );
 
   const financeSection = (
-    <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Tổng quan tài chính</h2>
+    <Card padding="lg" className="border-none shadow-none bg-transparent">
+      <h2 className="text-2xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight mb-8 flex items-center gap-3">
+        <Icons.Finance className="w-7 h-7 text-amber-500" /> Hồ sơ Tài chính
+      </h2>
+      
       {accountInfo ? (
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card padding="md" className="bg-gradient-to-br from-slate-50 to-gray-100">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-              Trạng thái tài khoản
-            </p>
-            <p className="text-xl font-bold text-gray-900 mt-2 capitalize">
-              {accountInfo?.status ?? '—'}
-            </p>
-          </Card>
-          <Card padding="md" className="bg-gradient-to-br from-emerald-50 to-green-50">
-            <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">
-              Số dư hiện tại
-            </p>
-            <p className="text-xl font-bold text-emerald-900 mt-2">
-              ₫{accountInfo?.balance ?? '0'}
-            </p>
-          </Card>
-          <Card padding="md" className="bg-gradient-to-br from-blue-50 to-indigo-50">
-            <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">
-              Thanh toán gần nhất
-            </p>
-            <p className="text-sm font-semibold text-blue-900 mt-2">
-              {accountInfo?.last_payment_date
-                ? new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN')
-                : 'Chưa có thanh toán'}
-            </p>
-          </Card>
+        <div className="mb-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCardSmall 
+            label="Trạng thái tài khoản" 
+            value={accountInfo?.status ?? '—'} 
+            color="stone" 
+            icon={<Icons.Clipboard className="w-4 h-4"/>} 
+          />
+          <StatCardSmall 
+            label="Số dư hiện tại" 
+            value={`₫${accountInfo?.balance?.toLocaleString('vi-VN') ?? '0'}`} 
+            color="emerald" 
+            icon={<Icons.Payment className="w-4 h-4"/>} 
+          />
+          <StatCardSmall 
+            label="Thanh toán gần nhất" 
+            value={accountInfo?.last_payment_date
+              ? new Date(accountInfo.last_payment_date).toLocaleDateString('vi-VN')
+              : 'Chưa có'} 
+            color="blue" 
+            icon={<Icons.Calendar className="w-4 h-4"/>} 
+          />
         </div>
       ) : (
         <Empty title="Không có tài khoản" description="Không tìm thấy tài khoản học sinh." />
       )}
 
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <h3 className="font-semibold mb-3 text-gray-900">Hóa đơn gần đây</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+              <Icons.Finance className="w-5 h-5 text-amber-500" /> Hóa đơn học phí
+            </h3>
+            {invoiceRows.length > 0 && <Badge variant="default" className="bg-amber-500/10 text-amber-600 font-black text-[9px] px-3">{invoiceRows.length} Bản ghi</Badge>}
+          </div>
+          
           {invoiceRows.length === 0 ? (
-            <Empty title="Không có hóa đơn" />
+            <Empty title="Chưa có dữ liệu hóa đơn" />
           ) : (
-            <>
-              {/* Mobile Card View */}
-              <div className="md:hidden space-y-3">
-                {invoiceRows.map((inv) => (
-                  <div
-                    key={inv.id}
-                    className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm"
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium text-gray-900">{inv.invoice_number}</span>
-                      <Badge
-                        color={
-                          inv.status === 'paid'
-                            ? 'green'
-                            : inv.status === 'overdue'
-                              ? 'red'
-                              : 'yellow'
-                        }
-                      >
-                        {inv.status}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-500">Tổng:</span>
-                      <span className="font-medium">₫{inv.total_amount}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm mt-1">
-                      <span className="text-gray-500">Còn nợ:</span>
-                      <span className="font-bold text-red-600">₫{inv.balance}</span>
-                    </div>
-                    {inv.due_date && (
-                      <div className="text-xs text-gray-400 mt-2 text-right">
-                        Hạn: {new Date(inv.due_date).toLocaleDateString('vi-VN')}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">#</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Total</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Số dư</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Hạn</th>
+            <div className="overflow-x-auto rounded-3xl border border-stone-100 dark:border-white/5 overflow-hidden shadow-inner">
+              <table className="min-w-full text-[11px] font-sans">
+                <thead className="bg-stone-50/50 dark:bg-white/[0.02]">
+                  <tr>
+                    <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest">Mã hóa đơn</th>
+                    <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest">Số tiền</th>
+                    <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest">Trạng thái</th>
+                    <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest">Hạn thanh toán</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-50 dark:divide-white/5">
+                  {invoiceRows.map((inv) => (
+                    <tr key={inv.id} className="hover:bg-amber-500/[0.02] transition-colors">
+                      <td className="px-6 py-4 font-black text-stone-800 dark:text-stone-200 uppercase tracking-tighter">
+                        INV-{inv.id.slice(0, 8).toUpperCase()}
+                      </td>
+                      <td className="px-6 py-4 font-black text-amber-600">
+                        ₫{inv.total_amount.toLocaleString('vi-VN')}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge
+                          variant={inv.status === 'paid' ? 'success' : 'warning'}
+                          className="font-black text-[9px] uppercase tracking-widest"
+                        >
+                          {inv.status === 'paid' ? 'Đã thu' : 'Chưa thu'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-stone-500 font-medium">
+                        {inv.due_date ? new Date(inv.due_date).toLocaleDateString('vi-VN') : '—'}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {invoiceRows.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 font-medium text-gray-900">
-                          {inv.invoice_number}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge
-                            color={
-                              inv.status === 'paid'
-                                ? 'green'
-                                : inv.status === 'overdue'
-                                  ? 'red'
-                                  : 'yellow'
-                            }
-                          >
-                            {inv.status}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 font-medium">₫{inv.total_amount}</td>
-                        <td className="px-4 py-3 font-semibold text-red-600">₫{inv.balance}</td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {inv.due_date ? new Date(inv.due_date).toLocaleDateString('vi-VN') : '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-        <div>
-          <h3 className="font-semibold mb-3 text-gray-900">Thanh toán gần đây</h3>
-          {paymentRows.length === 0 ? (
-            <Empty title="Không có thanh toán" />
-          ) : (
-            <>
-              {/* Mobile Card View */}
-              <div className="md:hidden space-y-3">
-                {paymentRows.map((p) => (
-                  <div
-                    key={p.id}
-                    className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm"
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-bold text-green-600 text-lg">₫{p.amount}</span>
-                      <span className="text-xs text-gray-500">
-                        {p.payment_date
-                          ? new Date(p.payment_date).toLocaleDateString('vi-VN')
-                          : '-'}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-700 mb-1">
-                      {p.payment_methods?.name ?? '—'}
-                    </div>
-                    <div className="text-xs text-gray-400 truncate">
-                      Ref: {p.transaction_reference ?? '—'}
-                    </div>
-                  </div>
-                ))}
-              </div>
 
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Ngày</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Số tiền</th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">
-                        Phương thức
-                      </th>
-                      <th className="text-left px-4 py-3 font-semibold text-gray-700">Ref</th>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+              <Icons.Payment className="w-5 h-5 text-emerald-500" /> Thanh toán gần đây
+            </h3>
+            {paymentRows.length > 0 && <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 font-black text-[9px] px-3">Lịch sử thu phí</Badge>}
+          </div>
+
+          {paymentRows.length === 0 ? (
+            <Empty title="Chưa có lịch sử thanh toán" />
+          ) : (
+            <div className="overflow-x-auto rounded-3xl border border-stone-100 dark:border-white/5 overflow-hidden shadow-inner">
+              <table className="min-w-full text-[11px] font-sans">
+                <thead className="bg-stone-50/50 dark:bg-white/[0.02]">
+                  <tr>
+                    <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest">Ngày thu</th>
+                    <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest">Số tiền</th>
+                    <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest">Phương thức</th>
+                    <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest">Tham chiếu</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-50 dark:divide-white/5">
+                  {paymentRows.map((p) => (
+                    <tr key={p.id} className="hover:bg-emerald-500/[0.02] transition-colors">
+                      <td className="px-6 py-4 text-stone-600 font-medium font-serif italic">
+                        {p.payment_date ? new Date(p.payment_date).toLocaleDateString('vi-VN') : '—'}
+                      </td>
+                      <td className="px-6 py-4 font-black text-emerald-600 text-sm">
+                        ₫{p.amount?.toLocaleString('vi-VN')}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="default" className="bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-400 font-black text-[9px] uppercase tracking-widest">
+                          {p.payment_methods?.name ?? '—'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-stone-400 font-mono text-[10px]">
+                        {p.transaction_reference ?? '—'}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {paymentRows.map((p) => (
-                      <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-gray-600">
-                          {p.payment_date
-                            ? new Date(p.payment_date).toLocaleDateString('vi-VN')
-                            : '—'}
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-green-600">₫{p.amount}</td>
-                        <td className="px-4 py-3">{p.payment_methods?.name ?? '—'}</td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {p.transaction_reference ?? '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
     </Card>
   );
 
-  const documentsSection = (
-    <Card padding="lg">
-      <StudentDocuments studentId={id} />
-    </Card>
-  );
-
-  const notesSection = (
-    <Card padding="lg">
-      <StudentNotes studentId={id} />
-    </Card>
-  );
-
-  const guardiansSection = (
-    <Card padding="lg">
-      <GuardianManagement studentId={id} />
-    </Card>
-  );
-
-  const statusSection = (
-    <Card padding="lg">
-      <StudentStatusPanel
-        studentId={id}
-        currentStatus={(profile as any).status ?? 'active'}
-        isAdmin={viewerRole === 'admin'}
-      />
-    </Card>
-  );
-
-  const importSection = (
-    <Card padding="lg">
-      <ImportHistoryPanel />
-    </Card>
-  );
-
   const activitySection = (
-    <Card padding="lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Nhật ký hoạt động</h2>
+    <Card padding="lg" className="border-none shadow-2xl bg-white dark:bg-stone-900 rounded-[2.5rem]">
+      <h2 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-2">
+        <Icons.History className="w-6 h-6 text-amber-500" /> Nhật ký hoạt động
+      </h2>
       {auditRows.length === 0 ? (
-        <Empty title="Không có hoạt động gần đây" />
+        <Empty title="Chưa ghi nhận hoạt động nào" description="Hoạt động hệ thống của người dùng này sẽ xuất hiện tại đây." />
       ) : (
-        <ul className="space-y-4">
-          {auditRows.map((a) => (
-            <li
-              key={a.id}
-              className="flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge color="blue">{a.action}</Badge>
-                  <span className="text-sm text-gray-600">·</span>
-                  <span className="text-sm text-gray-500">
-                    {new Date(a.created_at).toLocaleString()}
-                  </span>
+        <div className="relative">
+          {/* Timeline Line */}
+          <div className="absolute left-[26px] top-4 bottom-4 w-0.5 bg-stone-100 dark:bg-white/5" />
+          
+          <ul className="space-y-8 relative z-10">
+            {auditRows.map((a) => (
+              <li key={a.id} className="flex items-start gap-6 group">
+                <div className="relative flex-shrink-0">
+                  <div className="w-[52px] h-[52px] rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-white/5 shadow-sm flex items-center justify-center transition-all group-hover:scale-110 group-hover:border-amber-500/30">
+                    {a.action.includes('create') ? (
+                       <Icons.Add className="w-5 h-5 text-emerald-500" />
+                    ) : a.action.includes('delete') ? (
+                       <Icons.Delete className="w-5 h-5 text-rose-500" />
+                    ) : a.action.includes('login') ? (
+                       <Icons.Lock className="w-5 h-5 text-blue-500" />
+                    ) : (
+                       <Icons.Edit className="w-5 h-5 text-amber-500" />
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-gray-600 mt-1">Actor ID: {a.actor_id}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+                
+                <div className="flex-1 pt-1">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-3">
+                      <Badge variant="default" className="bg-stone-50 dark:bg-white/5 text-stone-500 dark:text-stone-400 font-black text-[9px] uppercase tracking-[0.1em] px-3 py-1 border-stone-100 dark:border-white/5">
+                        {a.action.toUpperCase()}
+                      </Badge>
+                      <h4 className="text-xs font-black text-stone-400 uppercase tracking-widest italic opacity-60">
+                         {new Date(a.created_at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
+                      </h4>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 rounded-2xl bg-stone-50/50 dark:bg-white/[0.02] border border-stone-100/50 dark:border-white/5 transition-all group-hover:border-amber-500/10 group-hover:bg-amber-500/[0.01]">
+                    <p className="text-xs text-stone-600 dark:text-stone-400 font-medium leading-relaxed">
+                      Tài khoản định danh <span className="font-mono font-bold text-stone-900 dark:text-stone-200">UID: {a.actor_id?.slice(0, 8).toUpperCase() || 'SYSTEM'}</span> đã thực hiện ghi nhận này vào Nhật ký hệ thống.
+                    </p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </Card>
   );
@@ -916,4 +848,73 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       </div>
     </div>
   );
+}
+function StatCardSmall({ label, value, color, icon }: { label: string, value: string | number, color: 'emerald' | 'blue' | 'amber' | 'stone', icon: React.ReactNode }) {
+  const colorMap = {
+    emerald: 'text-emerald-600 bg-emerald-500/5 border-emerald-500/10',
+    blue: 'text-blue-600 bg-blue-500/5 border-blue-500/10',
+    amber: 'text-amber-600 bg-amber-500/5 border-amber-500/10',
+    stone: 'text-stone-600 bg-stone-500/5 border-stone-500/10'
+  }
+  
+  return (
+    <div className={cn(
+      "rounded-3xl p-6 border transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 relative overflow-hidden group", 
+      colorMap[color]
+    )}>
+      {/* Decorative Glow */}
+      <div className={cn(
+        "absolute -top-10 -right-10 w-24 h-24 blur-3xl opacity-10 transition-opacity group-hover:opacity-20",
+        color === 'emerald' ? 'bg-emerald-500' : color === 'blue' ? 'bg-blue-500' : color === 'amber' ? 'bg-amber-500' : 'bg-stone-500'
+      )} />
+      
+      <div className="flex items-center gap-3 mb-4 relative z-10">
+        <div className={cn(
+          "p-2 rounded-xl transition-colors",
+          color === 'emerald' ? 'bg-emerald-500/10' : color === 'blue' ? 'bg-blue-500/10' : color === 'amber' ? 'bg-amber-500/10' : 'bg-stone-500/10'
+        )}>
+          {icon}
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">{label}</span>
+      </div>
+      <p className="text-2xl font-black tabular-nums tracking-tight relative z-10">{value}</p>
+    </div>
+  )
+}
+
+function InfoItem({ label, value, icon, className }: { label: string, value: string | null | undefined, icon: React.ReactNode, className?: string }) {
+  return (
+    <div className={cn("p-4 bg-stone-50 dark:bg-white/5 rounded-2xl border border-stone-100 dark:border-white/5 group hover:border-amber-500/20 transition-all", className)}>
+      <div className="flex items-center gap-3 mb-1">
+        <span className="text-sm">{icon}</span>
+        <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{label}</span>
+      </div>
+      <p className="font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight ml-7">
+        {value || '—'}
+      </p>
+    </div>
+  )
+}
+
+function AttendanceRow({ label, value, total, color }: { label: string, value: number, total: number, color: 'emerald' | 'amber' | 'rose' }) {
+  const percentage = Math.round((value / total) * 100) || 0
+  const colorMap = {
+    emerald: 'bg-emerald-500',
+    amber: 'bg-amber-500',
+    rose: 'bg-rose-500'
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+        <span className="text-stone-400">{label}</span>
+        <span className={cn(
+          color === 'emerald' ? 'text-emerald-600' : color === 'amber' ? 'text-amber-600' : 'text-rose-500'
+        )}>{value} ({percentage}%)</span>
+      </div>
+      <div className="h-1.5 bg-stone-100 dark:bg-white/5 rounded-full overflow-hidden">
+        <div className={cn("h-full rounded-full transition-all duration-1000", colorMap[color])} style={{ width: `${percentage}%` }} />
+      </div>
+    </div>
+  )
 }

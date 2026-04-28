@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getDisplayName } from "@/lib/utils/names";
+import { PermissionGuard } from "@/hooks/usePermissions";
 
 interface ClassDetail {
   id: string;
@@ -82,13 +83,13 @@ export default function ClassDetailPage() {
       try {
         setLoading(true);
 
-        const response = await apiFetch(`/api/v2/classes/${classId}`);
+        const response = await apiFetch(`/api/classes/${classId}`);
         if (!response.ok) throw new Error("Không thể tải thông tin lớp học");
 
         const resJson = await response.json();
         const cls = resJson.class;
 
-        const studentsRes = await apiFetch(`/api/v2/classes/${classId}/students`);
+        const studentsRes = await apiFetch(`/api/classes/${classId}/students`);
         let students: any[] = [];
         if (studentsRes.ok) {
           const studentsJson = await studentsRes.json();
@@ -173,7 +174,7 @@ export default function ClassDetailPage() {
           <div className="relative p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
             <div className="relative shrink-0">
               <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full animate-pulse" />
-              <div className="relative w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-blue-600 to-indigo-700 p-1 shadow-2xl overflow-hidden">
+              <div className="relative w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-blue-600 to-emerald-600 p-1 shadow-2xl overflow-hidden">
                 <div className="w-full h-full rounded-[2rem] bg-white dark:bg-gray-900 flex items-center justify-center">
                   <GraduationCap className="w-16 h-16 text-blue-600" />
                 </div>
@@ -189,11 +190,11 @@ export default function ClassDetailPage() {
               </h1>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-6">
                 {classData.course && (
-                  <div className="flex items-center gap-2.5 px-4 py-2 bg-purple-50 dark:bg-purple-500/10 rounded-2xl border border-purple-100 dark:border-purple-800/30">
-                    <BookOpen className="w-5 h-5 text-purple-600" />
+                  <div className="flex items-center gap-2.5 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
+                    <BookOpen className="w-5 h-5 text-emerald-600" />
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest leading-none mb-1">Khóa học</span>
-                      <span className="text-sm font-black text-purple-700 dark:text-purple-300">{classData.course.name}</span>
+                      <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1">Khóa học</span>
+                      <span className="text-sm font-black text-emerald-700 dark:text-emerald-300">{classData.course.name}</span>
                     </div>
                   </div>
                 )}
@@ -212,7 +213,7 @@ export default function ClassDetailPage() {
                 </div>
                 {classData.room && (
                   <div className="flex items-center gap-2.5 px-4 py-2 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                    <MapPin className="w-5 h-5 text-purple-500" />
+                    <MapPin className="w-5 h-5 text-emerald-500" />
                     <span className="text-sm font-black text-gray-700 dark:text-gray-300">Phòng {classData.room}</span>
                   </div>
                 )}
@@ -227,12 +228,14 @@ export default function ClassDetailPage() {
                 <ChevronLeft className="w-5 h-5" />
                 Quay lại
               </button>
-              <Link href={routes.classes.edit(classId)}>
-                <button className="w-full px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold rounded-2xl hover:scale-105 transition-all shadow-xl shadow-gray-200 dark:shadow-none flex items-center justify-center gap-2 active:scale-95">
-                  <Edit3 className="w-5 h-5" />
-                  Quản lý lớp
-                </button>
-              </Link>
+              <PermissionGuard permissions="classes.manage">
+                <Link href={routes.classes.edit(classId)}>
+                  <button className="w-full px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold rounded-2xl hover:scale-105 transition-all shadow-xl shadow-gray-200 dark:shadow-none flex items-center justify-center gap-2 active:scale-95">
+                    <Edit3 className="w-5 h-5" />
+                    Quản lý lớp
+                  </button>
+                </Link>
+              </PermissionGuard>
             </div>
           </div>
         </div>
@@ -281,10 +284,12 @@ export default function ClassDetailPage() {
                     <h2 className="text-xl font-black text-gray-900 dark:text-white">Học sinh trong lớp</h2>
                     <p className="text-sm text-gray-400">Tổng số {classData.students?.length || 0} học sinh đã ghi danh</p>
                   </div>
-                  <button className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 font-bold text-xs rounded-xl hover:bg-gray-100 transition-all border border-gray-100 dark:border-gray-700">
-                    <Download className="w-4 h-4" />
-                    Xuất PDF
-                  </button>
+                  <PermissionGuard permissions="attendance.mark">
+                    <button className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 font-bold text-xs rounded-xl hover:bg-gray-100 transition-all border border-gray-100 dark:border-gray-700">
+                      <Download className="w-4 h-4" />
+                      Xuất PDF
+                    </button>
+                  </PermissionGuard>
                 </div>
 
                 {classData.students && classData.students.length > 0 ? (
@@ -380,13 +385,13 @@ export default function ClassDetailPage() {
 
                 <div className="bg-white dark:bg-gray-800 p-10 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-8">
-                    <Calendar className="w-12 h-12 text-purple-500/5 group-hover:scale-125 transition-transform duration-500" />
+                    <Calendar className="w-12 h-12 text-emerald-500/5 group-hover:scale-125 transition-transform duration-500" />
                   </div>
-                  <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 border-l-4 border-purple-500 pl-4">Lịch học & Phòng</h3>
+                  <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 border-l-4 border-emerald-500 pl-4">Lịch học & Phòng</h3>
                   <div className="space-y-6">
                     <div className="flex items-center gap-5">
-                      <div className="w-16 h-16 rounded-3xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center">
-                        <Clock className="w-8 h-8 text-purple-600" />
+                      <div className="w-16 h-16 rounded-3xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
+                        <Clock className="w-8 h-8 text-emerald-600" />
                       </div>
                       <div className="flex-1">
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Thời gian</p>
@@ -410,6 +415,14 @@ export default function ClassDetailPage() {
             {/* Tab Content: Actions */}
             {activeTab === 'actions' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                <PermissionGuard
+                  permissions="attendance.mark"
+                  fallback={
+                    <div className="p-10 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-700 text-center text-sm text-gray-400 italic">
+                      Bạn không có quyền điểm danh lớp này.
+                    </div>
+                  }
+                >
                 <Link href={`/dashboard/attendance/mark?class=${classId}`} className="group relative bg-white dark:bg-gray-800 p-10 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-2xl transition-all overflow-hidden">
                   <div className="absolute top-0 right-0 p-8">
                     <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl group-hover:rotate-12 transition-transform">
@@ -424,7 +437,16 @@ export default function ClassDetailPage() {
                     </div>
                   </div>
                 </Link>
+                </PermissionGuard>
 
+                <PermissionGuard
+                  permissions="grades.entry"
+                  fallback={
+                    <div className="p-10 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-700 text-center text-sm text-gray-400 italic">
+                      Bạn không có quyền nhập điểm lớp này.
+                    </div>
+                  }
+                >
                 <Link href={`/dashboard/grades/entry?class=${classId}`} className="group relative bg-white dark:bg-gray-800 p-10 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-2xl transition-all overflow-hidden">
                   <div className="absolute top-0 right-0 p-8">
                     <div className="p-4 bg-orange-50 dark:bg-orange-500/10 rounded-2xl group-hover:rotate-12 transition-transform">
@@ -439,6 +461,7 @@ export default function ClassDetailPage() {
                     </div>
                   </div>
                 </Link>
+                </PermissionGuard>
               </div>
             )}
           </div>

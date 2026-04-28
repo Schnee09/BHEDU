@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { apiFetch, deleteStudent } from '@/lib/api/client'
 import { showToast } from '@/components/ToastProvider'
+import { Icons } from '@/components/ui/Icons'
+import { Button } from '@/components/ui'
+import { cn } from '@/lib/utils'
 
 interface StudentActionsProps {
   studentId: string
@@ -19,120 +22,151 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
 
   const handleArchive = async () => {
     setDeleting(true)
-    const loadingToast = showToast.loading('Archiving student...')
+    const loadingToast = showToast.loading('Đang lưu trữ hồ sơ...')
 
     try {
       await deleteStudent(studentId);
 
       showToast.dismiss(loadingToast)
-      showToast.success('Student archived successfully!')
+      showToast.success('Hồ sơ đã được lưu trữ thành công!')
       setShowDeleteModal(false)
       setTimeout(() => {
         router.push('/dashboard/students')
       }, 1500)
 
-
     } catch (error) {
       showToast.dismiss(loadingToast)
       console.error('Failed to archive student:', error)
-      showToast.error('Failed to archive student. Please try again.')
+      showToast.error('Không thể lưu trữ hồ sơ. Vui lòng thử lại.')
     } finally {
       setDeleting(false)
     }
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <Link
-        href={`/dashboard/students/${studentId}/edit`}
-        className="px-4 py-2 bg-stone-900 text-white rounded-lg hover:bg-stone-800 font-medium text-sm"
-      >
-        ✏️ Edit
+    <div className="flex flex-wrap items-center gap-2">
+      <Link href={`/dashboard/students/${studentId}/edit`}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="font-black uppercase tracking-widest text-[10px] h-10 px-4"
+          leftIcon={<Icons.Edit className="w-3.5 h-3.5" />}
+        >
+          Chỉnh sửa thông tin
+        </Button>
       </Link>
 
-      {/* Impersonation action removed */}
-
-      <Link
-        href={`/dashboard/admin/finance/invoices?student_id=${studentId}`}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm"
-      >
-        💳 Invoices
+      <Link href={`/dashboard/grades/transcripts?student_id=${studentId}`}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="font-black uppercase tracking-widest text-[10px] h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white"
+          leftIcon={<Icons.Grades className="w-3.5 h-3.5" />}
+        >
+          Xem Học Bạ
+        </Button>
       </Link>
 
-      <Link
-        href={`/dashboard/admin/finance/payments?student_id=${studentId}`}
-        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm"
-      >
-        💰 Payments
+      <Link href={`/dashboard/admin/finance/invoices?student_id=${studentId}`}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="font-black uppercase tracking-widest text-[10px] h-10 px-4 border-stone-200"
+          leftIcon={<Icons.Finance className="w-3.5 h-3.5" />}
+        >
+          Hóa đơn học phí
+        </Button>
+      </Link>
+
+      <Link href={`/dashboard/admin/finance/payments?student_id=${studentId}`}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="font-black uppercase tracking-widest text-[10px] h-10 px-4 border-stone-200"
+          leftIcon={<Icons.Download className="w-3.5 h-3.5" />}
+        >
+          Lịch sử đóng phí
+        </Button>
       </Link>
 
       {isAdmin && (
-        <button
+        <Button
+          variant="danger"
+          size="sm"
           onClick={() => setShowDeleteModal(true)}
-          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm"
+          className="font-black uppercase tracking-widest text-[10px] h-10 px-4"
+          leftIcon={<Icons.Archive className="w-3.5 h-3.5" />}
         >
-          🗑️ Archive
-        </button>
+          Lưu trữ hồ sơ
+        </Button>
       )}
 
       {isAdmin && (
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={async () => {
             try {
-              const loading = showToast.loading('Resetting password...')
+              const loading = showToast.loading('Đang đặt lại mật mã...')
               const res = await apiFetch(`/api/admin/users/${studentId}/reset-password`, { method: 'POST' })
               const json = await res.json()
               showToast.dismiss(loading)
               if (res.ok) {
-                showToast.success(json.message || 'Password reset email queued')
+                showToast.success(json.message || 'Email khôi phục đã được gửi')
               } else {
-                showToast.error(json.error || 'Failed to reset password')
+                showToast.error(json.error || 'Đặt lại mật mã thất bại')
               }
             } catch (err) {
               console.error(err)
-              showToast.error('Failed to reset password')
+              showToast.error('Lỗi hệ thống khi đặt lại mật mã')
             }
           }}
-          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium text-sm"
+          className="font-black uppercase tracking-widest text-[10px] h-10 px-4 border-stone-200"
+          leftIcon={<Icons.Lock className="w-3.5 h-3.5" />}
         >
-          🔐 Reset Password
-        </button>
+          Đặt lại mật mã
+        </Button>
       )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Archive Student?</h2>
-            <p className="text-gray-700 mb-2">
-              Are you sure you want to archive <strong>{studentName}</strong>?
-            </p>
-            <p className="text-sm text-gray-600 mb-6">
-              This will set their status to &quot;inactive&quot; and hide them from active student lists.
-              This action can be reversed by editing the student later.
-            </p>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
-              <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> All student data (grades, attendance, enrollments) will be preserved.
-              </p>
+        <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[2000] animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-md w-full p-8 shadow-2xl border border-stone-200 dark:border-white/5 animate-in zoom-in-95 duration-300">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                <Icons.Archive className="w-6 h-6 text-red-500" />
+              </div>
+              <h2 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                Lưu trữ học sinh?
+              </h2>
             </div>
+            
+            <p className="text-stone-600 dark:text-stone-400 mb-2 font-medium">
+              Xác nhận lưu trữ hồ sơ của học sinh <strong>{studentName}</strong>?
+            </p>
+            <p className="text-sm text-stone-500 mb-6 leading-relaxed">
+              Thao tác này sẽ chuyển trạng thái học sinh sang &quot;Ngưng học&quot; và ẩn khỏi danh sách hoạt động. Toàn bộ dữ liệu điểm số, điểm danh và học phí sẽ được bảo toàn.
+            </p>
 
-            <div className="flex gap-3">
-              <button
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                fullWidth
                 onClick={() => setShowDeleteModal(false)}
                 disabled={deleting}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium disabled:opacity-50"
+                className="font-black uppercase tracking-widest text-[10px] h-12"
               >
-                Cancel
-              </button>
-              <button
+                Hủy bỏ
+              </Button>
+              <Button
+                variant="danger"
+                fullWidth
                 onClick={handleArchive}
-                disabled={deleting}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:bg-red-400"
+                isLoading={deleting}
+                className="font-black uppercase tracking-widest text-[10px] h-12 shadow-md"
               >
-                {deleting ? 'Archiving...' : 'Yes, Archive'}
-              </button>
+                Xác nhận lưu trữ
+              </Button>
             </div>
           </div>
         </div>
@@ -140,3 +174,4 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
     </div>
   )
 }
+

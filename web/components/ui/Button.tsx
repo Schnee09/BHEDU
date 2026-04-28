@@ -6,10 +6,13 @@
 
 import { ButtonHTMLAttributes, ReactNode } from 'react';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
+type ButtonSize = 'sm' | 'md' | 'lg';
+
+interface BaseButtonProps {
   children: ReactNode;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   fullWidth?: boolean;
   loading?: boolean;
   isLoading?: boolean;
@@ -17,9 +20,15 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   iconPosition?: 'left' | 'right';
+  className?: string;
+  disabled?: boolean;
 }
 
-function Button({
+type ButtonProps<T extends React.ElementType = 'button'> = BaseButtonProps & {
+  as?: T;
+} & Omit<React.ComponentPropsWithoutRef<T>, keyof BaseButtonProps | 'as'>;
+
+const Button = <T extends React.ElementType = 'button'>({
   children,
   variant = 'primary',
   size = 'md',
@@ -32,15 +41,17 @@ function Button({
   rightIcon,
   iconPosition = 'left',
   className = '',
+  as,
   ...props
-}: ButtonProps) {
+}: ButtonProps<T>) => {
+  const Component = as || 'button';
   const isLoadingState = loading || isLoading;
   const actualLeftIcon = leftIcon || (icon && iconPosition === 'left' ? icon : null);
   const actualRightIcon = rightIcon || (icon && iconPosition === 'right' ? icon : null);
 
   const baseClasses = 'inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.97] dark:focus:ring-offset-gray-900';
 
-  const variantClasses = {
+  const variantClasses: Record<ButtonVariant, string> = {
     primary: `
       bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-500/50
       shadow-md hover:shadow-lg hover:-translate-y-0.5
@@ -68,24 +79,20 @@ function Button({
     `,
   };
 
-  const sizeClasses = {
+  const sizeClasses: Record<ButtonSize, string> = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2.5 text-base',
     lg: 'px-6 py-3 text-lg',
   };
 
+  const componentProps = {
+    className: `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className}`,
+    disabled: disabled || isLoadingState,
+    ...props
+  } as any;
+
   return (
-    <button
-      className={`
-        ${baseClasses}
-        ${variantClasses[variant]}
-        ${sizeClasses[size]}
-        ${fullWidth ? 'w-full' : ''}
-        ${className}
-      `}
-      disabled={disabled || isLoadingState}
-      {...props}
-    >
+    <Component {...componentProps}>
       {isLoadingState && (
         <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -95,7 +102,7 @@ function Button({
       {!isLoadingState && actualLeftIcon}
       {children}
       {!isLoadingState && actualRightIcon}
-    </button>
+    </Component>
   );
 }
 

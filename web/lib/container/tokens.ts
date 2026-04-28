@@ -28,7 +28,6 @@ export const TOKENS = {
     // Core Services (typed as 'any' for now, will be refined when services become instance-based)
     ClassService: createToken<any>("ClassService"),
     StudentService: createToken<any>("StudentService"),
-    EnrollmentService: createToken<any>("EnrollmentService"),
     SubjectService: createToken<any>("SubjectService"),
     CourseService: createToken<any>("CourseService"),
 

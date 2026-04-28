@@ -319,6 +319,7 @@ export async function teacherAuth(
     }
 
     if (!isAtLeast(profile.role as UserRole, "student")) {
+      console.warn(`[teacherAuth] Authorization failed for user ${profile.id}. Role: ${profile.role}. Reason: Role not in hierarchy or below student level.`);
       logAuthAttempt({
         success: false,
         userId: profile.id,

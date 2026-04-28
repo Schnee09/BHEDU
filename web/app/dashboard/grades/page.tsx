@@ -61,7 +61,7 @@ const navCards: NavCard[] = [
     description: 'Nhập điểm sử dụng thang điểm Việt Nam',
     icon: PencilSquareIcon,
     permission: 'grades.entry',
-    color: 'indigo',
+    color: 'blue',
   },
   {
     href: '/dashboard/grades/analytics',
@@ -77,7 +77,7 @@ const navCards: NavCard[] = [
     description: 'Tạo và xuất báo cáo điểm chi tiết',
     icon: DocumentTextIcon,
     permission: 'reports.view',
-    color: 'amber',
+    color: 'emerald',
   },
   {
     href: '/dashboard/students/me/transcript', // Placeholder that we'll handle in-component or update to real ID
@@ -90,29 +90,17 @@ const navCards: NavCard[] = [
 ];
 
 const colorClasses: Record<string, { bg: string; hover: string; text: string; icon: string }> = {
-  indigo: {
-    bg: 'bg-indigo-50',
-    hover: 'group-hover:bg-indigo-100',
-    text: 'text-indigo-600',
-    icon: 'text-indigo-600',
+  blue: {
+    bg: 'bg-blue-50',
+    hover: 'group-hover:bg-blue-100',
+    text: 'text-blue-600',
+    icon: 'text-blue-600',
   },
   emerald: {
     bg: 'bg-emerald-50',
     hover: 'group-hover:bg-emerald-100',
     text: 'text-emerald-600',
     icon: 'text-emerald-600',
-  },
-  amber: {
-    bg: 'bg-amber-50',
-    hover: 'group-hover:bg-amber-100',
-    text: 'text-amber-600',
-    icon: 'text-amber-600',
-  },
-  blue: {
-    bg: 'bg-blue-50',
-    hover: 'group-hover:bg-blue-100',
-    text: 'text-blue-600',
-    icon: 'text-blue-600',
   },
 };
 
@@ -226,9 +214,9 @@ export default function GradesPageModern() {
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-1.5 h-8 bg-amber-500 rounded-full" />
+            <div className="w-1.5 h-8 bg-blue-600 rounded-full" />
             <h1 className="text-3xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
-              Điểm <span className="text-amber-500">&amp; Bài tập</span>
+              Điểm <span className="text-blue-600">&amp; Bài tập</span>
             </h1>
           </div>
           <p className="text-sm text-stone-500 dark:text-stone-400 pl-4">
@@ -273,8 +261,8 @@ export default function GradesPageModern() {
 
             <div className="glass-crystal rounded-2xl p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-500/10 rounded-xl">
-                  <ArrowTrendingUpIcon className="w-5 h-5 text-amber-500" />
+                <div className="p-2 bg-emerald-500/10 rounded-xl">
+                  <ArrowTrendingUpIcon className="w-5 h-5 text-emerald-500" />
                 </div>
                 <div>
                   <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
@@ -289,8 +277,8 @@ export default function GradesPageModern() {
 
             <div className="glass-crystal rounded-2xl p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-500/10 rounded-xl">
-                  <ClockIcon className="w-5 h-5 text-indigo-500" />
+                <div className="p-2 bg-blue-500/10 rounded-xl">
+                  <ClockIcon className="w-5 h-5 text-blue-500" />
                 </div>
                 <div>
                   <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
@@ -449,17 +437,17 @@ export default function GradesPageModern() {
               </h3>
               <div className="space-y-3">
                 <Link href="/dashboard/grades/entry">
-                  <div className="flex items-center gap-3 p-3 bg-indigo-500/8 dark:bg-indigo-500/10 hover:bg-indigo-500/15 rounded-xl transition-colors cursor-pointer group">
-                    <PencilSquareIcon className="w-5 h-5 text-indigo-500" />
-                    <span className="font-bold text-indigo-700 dark:text-indigo-400 text-sm group-hover:text-indigo-600">
+                  <div className="flex items-center gap-3 p-3 bg-blue-500/8 dark:bg-blue-500/10 hover:bg-blue-500/15 rounded-xl transition-colors cursor-pointer group">
+                    <PencilSquareIcon className="w-5 h-5 text-blue-500" />
+                    <span className="font-bold text-blue-700 dark:text-blue-400 text-sm group-hover:text-blue-600">
                       Nhập điểm mới
                     </span>
                   </div>
                 </Link>
                 <Link href="/dashboard/grades/reports">
-                  <div className="flex items-center gap-3 p-3 bg-amber-500/8 dark:bg-amber-500/10 hover:bg-amber-500/15 rounded-xl transition-colors cursor-pointer group">
-                    <DocumentTextIcon className="w-5 h-5 text-amber-500" />
-                    <span className="font-bold text-amber-700 dark:text-amber-400 text-sm group-hover:text-amber-600">
+                  <div className="flex items-center gap-3 p-3 bg-emerald-500/8 dark:bg-emerald-500/10 hover:bg-emerald-500/15 rounded-xl transition-colors cursor-pointer group">
+                    <DocumentTextIcon className="w-5 h-5 text-emerald-500" />
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm group-hover:text-emerald-600">
                       Xuất báo cáo
                     </span>
                   </div>

@@ -193,9 +193,9 @@ export const requestCache = new RequestCache();
  * Cache configuration for specific endpoints
  */
 export const cacheConfig: Record<string, number> = {
-    "/api/v2/classes": 2 * 60 * 1000, // 2 minutes
-    "/api/v2/students": 2 * 60 * 1000, // 2 minutes
-    "/api/v2/subjects": 5 * 60 * 1000, // 5 minutes
+    "/api/classes": 2 * 60 * 1000, // 2 minutes
+    "/api/students": 2 * 60 * 1000, // 2 minutes
+    "/api/subjects": 5 * 60 * 1000, // 5 minutes
     "/api/settings": 10 * 60 * 1000, // 10 minutes
 };
 

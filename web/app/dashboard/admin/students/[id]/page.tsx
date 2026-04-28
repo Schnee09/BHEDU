@@ -12,6 +12,7 @@ import GuardianManagement from '@/components/GuardianManagement'
 import EnrollmentManager from '@/components/EnrollmentManager'
 import StudentPhotoUpload from '@/components/StudentPhotoUpload'
 import { AcademicBackground } from '@/components/Academic/AcademicBackground'
+import { AcademicMatrix } from '@/components/Academic/AcademicMatrix'
 import { cn } from '@/lib/utils'
 
 /**
@@ -51,10 +52,22 @@ async function fetchStudentWithClient(supabase: any, id: string) {
       .limit(20),
     supabase
       .from('grades')
-      .select('id, assignment_id, points_earned, score, feedback, graded_at, assignments(title, total_points, max_points)')
+      .select(`
+        id, 
+        assignment_id, 
+        points_earned, 
+        score, 
+        feedback, 
+        graded_at,
+        component_type,
+        semester,
+        academic_year_id,
+        assignments(title, total_points, max_points),
+        subject:subjects(id, name, code),
+        academic_year:academic_years(id, name)
+      `)
       .eq('student_id', id)
-      .order('graded_at', { ascending: false })
-      .limit(20),
+      .order('graded_at', { ascending: false }),
     supabase
       .from('student_accounts')
       .select('id, student_id, balance, status, last_payment_date')
@@ -131,7 +144,7 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
                 {profile.full_name}
               </h1>
-              <Badge color="purple" className="px-5 py-1.5 rounded-sharp uppercase tracking-widest text-[10px] font-bold">Học sinh</Badge>
+              <Badge color="blue" className="px-5 py-1.5 rounded-sharp uppercase tracking-widest text-[10px] font-bold">Học sinh</Badge>
             </div>
           </div>
           <StudentActions studentId={id} studentName={profile.full_name} isAdmin={viewerRole === 'admin'} />
@@ -262,38 +275,9 @@ export default async function AdminStudentDetail({ params }: { params: Promise<{
               },
               {
                 key: 'grades', label: 'Điểm số', content: (
-                  <Card padding="lg" className="glass-crystal rounded-sharp border-none shadow-2xl">
-                    {grades.length === 0 ? (
-                      <Empty title="Chưa có dữ liệu" description="Hiện chưa có bài kiểm tra nào được chấm điểm." />
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-stone-200 dark:border-stone-800 text-stone-500 uppercase tracking-widest text-[10px] font-bold">
-                              <th className="text-left px-6 py-4">Bài tập / Bài thi</th>
-                              <th className="text-left px-6 py-4">Điểm số</th>
-                              <th className="text-left px-6 py-4">Ngày chấm</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-                            {grades.map((g: any) => (
-                              <tr key={g.id} className="hover:bg-white/5 transition-colors">
-                                <td className="px-6 py-4 font-bold text-stone-900 dark:text-stone-100">{g.assignments?.title ?? g.assignment_id}</td>
-                                <td className="px-6 py-4">
-                                  <span className="font-bold text-red-600 text-lg">{g.points_earned ?? g.score ?? '—'}</span>
-                                  <span className="text-stone-500 text-xs">
-                                    {' '}
-                                    / {g.assignments?.total_points ?? g.assignments?.max_points ?? '-'}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 text-stone-500">{g.graded_at ? new Date(g.graded_at).toLocaleDateString('vi-VN') : '-'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </Card>
+                  <div className="space-y-6">
+                    <AcademicMatrix grades={grades} />
+                  </div>
                 )
               },
               ...(showFinance ? [{

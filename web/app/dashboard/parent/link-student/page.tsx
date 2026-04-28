@@ -107,7 +107,7 @@ export default function LinkStudentPage() {
         </p>
         <button
           onClick={() => router.push('/dashboard/parent')}
-          className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-purple-500/25 active:scale-95 uppercase tracking-widest text-xs"
+          className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-500/25 active:scale-95 uppercase tracking-widest text-xs"
         >
           Quay lại Bảng điều khiển
         </button>
@@ -132,7 +132,7 @@ export default function LinkStudentPage() {
 
       <div className="bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-[40px] p-6 sm:p-10 shadow-2xl border border-white/20 dark:border-white/5 relative overflow-hidden">
         {/* Background Accent */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 blur-[100px] rounded-full" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] rounded-full" />
 
         {!foundStudent ? (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -142,9 +142,9 @@ export default function LinkStudentPage() {
               </label>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1 group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 group-focus-within:text-purple-500 transition-colors" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 group-focus-within:text-blue-500 transition-colors" />
                   <input
-                    className="w-full h-16 bg-stone-100/50 dark:bg-white/5 border border-stone-200 dark:border-white/10 pl-12 pr-4 rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all text-lg font-black uppercase tracking-widest placeholder:text-stone-300 dark:placeholder:text-stone-700"
+                    className="w-full h-16 bg-stone-100/50 dark:bg-white/5 border border-stone-200 dark:border-white/10 pl-12 pr-4 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-lg font-black uppercase tracking-widest placeholder:text-stone-300 dark:placeholder:text-stone-700"
                     value={studentCode}
                     onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
                     placeholder="HS2025001"
@@ -154,7 +154,7 @@ export default function LinkStudentPage() {
                 <button
                   onClick={lookupStudent}
                   disabled={searching || !studentCode}
-                  className="h-16 px-10 bg-purple-600 text-white rounded-2xl font-black hover:bg-purple-700 transition-all shadow-lg shadow-purple-500/25 disabled:opacity-50 active:scale-95 uppercase tracking-widest text-xs"
+                  className="h-16 px-10 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50 active:scale-95 uppercase tracking-widest text-xs"
                 >
                   {searching ? <Loader2 className="w-6 h-6 animate-spin" /> : "Tìm kiếm"}
                 </button>
@@ -175,22 +175,22 @@ export default function LinkStudentPage() {
         ) : (
           <form onSubmit={handleRequestLink} className="space-y-10 animate-in zoom-in-95 duration-500">
             {/* Student Info Card */}
-            <div className="bg-purple-100/50 dark:bg-purple-900/20 rounded-[32px] p-8 flex flex-col sm:flex-row items-center gap-6 border border-purple-200/50 dark:border-purple-800/30 shadow-inner">
+            <div className="bg-blue-100/50 dark:bg-blue-900/20 rounded-[32px] p-8 flex flex-col sm:flex-row items-center gap-6 border border-blue-200/50 dark:border-blue-800/30 shadow-inner">
               <div className="w-20 h-20 bg-white dark:bg-stone-800 rounded-2xl flex items-center justify-center shadow-xl rotate-3">
-                <GraduationCap className="w-10 h-10 text-purple-600 dark:text-purple-400" />
+                <GraduationCap className="w-10 h-10 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="text-center sm:text-left flex-1">
                 <h3 className="text-2xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
                   {foundStudent.full_name}
                 </h3>
-                <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-white/50 dark:bg-black/20 rounded-lg text-sm font-black font-mono text-purple-600 dark:text-purple-400 uppercase tracking-widest border border-purple-200/50 dark:border-purple-800/50">
+                <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-white/50 dark:bg-black/20 rounded-lg text-sm font-black font-mono text-blue-600 dark:text-blue-400 uppercase tracking-widest border border-blue-200/50 dark:border-blue-800/50">
                   {foundStudent.student_code}
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setFoundStudent(null)}
-                className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-purple-600 bg-stone-100 dark:bg-white/5 rounded-xl transition-all"
+                className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-blue-600 bg-stone-100 dark:bg-white/5 rounded-xl transition-all"
               >
                 Thay đổi
               </button>
@@ -208,8 +208,8 @@ export default function LinkStudentPage() {
                     type="button"
                     onClick={() => setRelationship(opt.value)}
                     className={`h-16 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 border-2 ${relationship === opt.value
-                      ? 'border-purple-600 bg-purple-600 text-white shadow-lg shadow-purple-500/25 scale-105 z-10'
-                      : 'border-stone-100 bg-white dark:bg-stone-800/50 dark:border-white/5 text-stone-500 hover:border-purple-200 dark:hover:border-purple-800'
+                      ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-500/25 scale-105 z-10'
+                      : 'border-stone-100 bg-white dark:bg-stone-800/50 dark:border-white/5 text-stone-500 hover:border-blue-200 dark:hover:border-blue-800'
                       }`}
                   >
                     <Heart className={`w-4 h-4 ${relationship === opt.value ? 'fill-white animate-pulse' : 'text-stone-300'}`} />
@@ -229,7 +229,7 @@ export default function LinkStudentPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-20 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-[24px] transition-all shadow-2xl shadow-purple-500/40 flex items-center justify-center gap-4 disabled:opacity-50 active:scale-[0.98] uppercase tracking-[0.2em] text-sm"
+              className="w-full h-20 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-[24px] transition-all shadow-2xl shadow-blue-500/40 flex items-center justify-center gap-4 disabled:opacity-50 active:scale-[0.98] uppercase tracking-[0.2em] text-sm"
             >
               {loading ? (
                 <Loader2 className="w-8 h-8 animate-spin" />

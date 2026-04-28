@@ -104,6 +104,12 @@ export function SidebarNav({
             {label}
           </span>
         )}
+
+        {link.badge && !isCollapsed && (
+          <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded-full min-w-[18px] text-center shadow-lg shadow-amber-500/20">
+            {link.badge}
+          </span>
+        )}
       </Link>
     );
   };
@@ -187,9 +193,9 @@ export function SidebarNav({
         <div key={section.title} className="space-y-1">
           {/* Section Title */}
           {!isCollapsed && (
-            <div className="flex items-center gap-3 px-6 mb-3 mt-1">
-              <div className="w-1 h-1 bg-amber-500 rounded-full shadow-accent-glow"></div>
-              <h3 className="text-[9px] font-black text-stone-400 dark:text-stone-600 uppercase tracking-[0.35em] font-mono italic">
+            <div className="flex items-center gap-3 px-6 mb-2 mt-1">
+              <div className="w-1 h-1 bg-amber-500/60 rounded-full shadow-accent-glow"></div>
+              <h3 className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-[0.15em] font-sans">
                 {section.title}
               </h3>
             </div>

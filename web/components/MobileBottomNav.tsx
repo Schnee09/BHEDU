@@ -36,34 +36,34 @@ export default function MobileBottomNav() {
 
     if (role === 'parent') {
         mainNavItems.push(
-            { name: "Của tôi", href: "/dashboard/parent", icon: GraduationCap, color: "purple" },
+            { name: "Của tôi", href: "/dashboard/parent", icon: GraduationCap, color: "orange" },
 
             { name: "Lịch học", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" }
         );
     } else if (role === 'student') {
         mainNavItems.push(
-            { name: "Điểm số", href: "/dashboard/grades", icon: GraduationCap, color: "purple" },
+            { name: "Điểm số", href: "/dashboard/grades", icon: GraduationCap, color: "orange" },
             { name: "Lịch học", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" },
             { name: "Thông báo", href: "/dashboard/notifications", icon: Bell, color: "orange" }
         );
     } else if (role === 'teacher' || role === 'tutor') {
         mainNavItems.push(
             { name: "Lịch dạy", href: "/dashboard/timetable", icon: CalendarCheck, color: "blue" },
-            { name: "Lớp học", href: "/dashboard/classes", icon: BookOpen, color: "purple" },
+            { name: "Lớp học", href: "/dashboard/classes", icon: BookOpen, color: "orange" },
             { name: "Điểm danh", href: "/dashboard/attendance", icon: Users, color: "green" }
         );
     } else {
         // Admin/Staff/Super_admin default
         mainNavItems.push(
             { name: "Lớp", href: "/dashboard/classes", icon: BookOpen, color: "blue" },
-            { name: "Học sinh", href: "/dashboard/students", icon: Users, color: "purple" },
+            { name: "Học sinh", href: "/dashboard/students", icon: Users, color: "orange" },
             { name: "Điểm danh", href: "/dashboard/attendance", icon: CalendarCheck, color: "green" }
         );
     }
 
     const moreMenuItems = [
 
-        { name: "Điểm số", href: "/dashboard/grades", icon: GraduationCap, color: "purple" },
+        { name: "Điểm số", href: "/dashboard/grades", icon: GraduationCap, color: "orange" },
         { name: "Thời khóa biểu", href: "/dashboard/timetable", icon: ClipboardList, color: "blue" },
         { name: "Thông báo", href: "/dashboard/notifications", icon: Bell, color: "orange" },
         { name: "Tìm kiếm", href: "/dashboard/search", icon: Search, color: "slate" },
@@ -125,7 +125,7 @@ export default function MobileBottomNav() {
                                     "absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity blur-xl rounded-full",
                                     item.color === 'orange' ? 'bg-orange-500' :
                                         item.color === 'blue' ? 'bg-blue-500' :
-                                            item.color === 'purple' ? 'bg-purple-500' :
+                                            item.color === 'emerald' ? 'bg-emerald-500' :
                                                 item.color === 'green' ? 'bg-green-500' : 'bg-stone-500'
                                 )} />
 
@@ -133,7 +133,7 @@ export default function MobileBottomNav() {
                                     "p-3 rounded-2xl mb-2 transition-all group-hover:scale-110",
                                     item.color === 'orange' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
                                         item.color === 'blue' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
-                                            item.color === 'purple' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' :
+                                            item.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
                                                 item.color === 'green' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-stone-500/10 text-stone-500'
                                 )}>
                                     <item.icon className="w-6 h-6" strokeWidth={2} />
