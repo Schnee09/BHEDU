@@ -19,11 +19,7 @@ import {
 import Link from 'next/link';
 import MobileTimetableList from '@/components/timetable/MobileTimetableList';
 import { cn } from '@/lib/utils';
-import {
-  Button,
-  Badge,
-  LoadingState,
-} from '@/components/ui';
+import { Button, Badge, LoadingState } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
 
 // Lib
@@ -43,9 +39,10 @@ export default function TimetablePage() {
   const { profile, loading: profileLoading } = useProfile();
   const { can, role } = usePermissions();
   const toast = useToast();
-  
-  const isAdmin = role === 'admin' || role === 'staff' || role === 'super_admin';
-  const canEdit = can('timetable.edit');
+
+  const isAdmin =
+    role === 'admin' || role === 'staff' || role === 'super_admin' || role === 'owner';
+  const canEdit = can('timetable.edit') || role === 'super_admin' || role === 'owner';
 
   // State
   const [loading, setLoading] = useState(true);
@@ -55,12 +52,12 @@ export default function TimetablePage() {
   const [selectedCampus, setSelectedCampus] = useState(CAMPUSES[0]?.id || 'NQ');
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedTeacher, setSelectedTeacher] = useState<string>('');
-  
+
   // Filter Options (Lighter lists for dropdowns)
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [tutors, setTutors] = useState<TeacherOption[]>([]);
-  
+
   // Tutoring State
   const isTutoring = selectedCampus === 'HK';
   const [tutoringViewMode, setTutoringViewMode] = useState<'list' | 'teacher'>('list');
@@ -83,9 +80,13 @@ export default function TimetablePage() {
   const fetchAllSlots = async () => {
     setLoading(true);
     try {
-      const response = await apiFetch(`/api/timetable?week_start_date=${currentWeekStart}`);
+      const response = await apiFetch(
+        `/api/timetable/all?week_start_date=${currentWeekStart}&t=${Date.now()}`
+      );
       const data = await response.json();
-      setSlots(data.data?.slots || data.slots || []);
+      const fetchedSlots = data.data?.slots || data.slots || [];
+      console.log(`[TimetablePage] Fetched ${fetchedSlots.length} slots`);
+      setSlots(fetchedSlots);
     } catch (error) {
       console.error('Failed to fetch slots:', error);
       setSlots([]);
@@ -122,7 +123,7 @@ export default function TimetablePage() {
       const classData = await classRes.json();
       const teacherData = await teacherRes.json();
       const tutorData = await tutorRes.json();
-      
+
       setClasses(classData.data?.data || classData.data || classData.classes || []);
       setTeachers(teacherData.data?.data || teacherData.data || teacherData.users || []);
       setTutors(tutorData.data || tutorData.tutors || []);
@@ -132,13 +133,19 @@ export default function TimetablePage() {
   };
 
   useEffect(() => {
-    if (profileLoading) return;
-    if (!isAdmin) {
+    if (profileLoading || !role) return;
+    if (
+      !isAdmin &&
+      role !== 'admin' &&
+      role !== 'staff' &&
+      role !== 'super_admin' &&
+      role !== 'owner'
+    ) {
       window.location.href = '/dashboard/my-schedule';
       return;
     }
     fetchFilterOptions();
-  }, [profileLoading, isAdmin]);
+  }, [profileLoading, isAdmin, role]);
 
   useEffect(() => {
     if (viewMode === 'class' && selectedClass) {
@@ -177,9 +184,9 @@ export default function TimetablePage() {
       const result = await response.json();
 
       if (!result.success) throw new Error(result.error);
-      
+
       toast.success('Thành công', 'Đã xóa tiết học');
-      
+
       if (viewMode === 'class') fetchClassSlots();
       else fetchAllSlots();
     } catch (error: any) {
@@ -187,7 +194,12 @@ export default function TimetablePage() {
     }
   };
 
-  if (profileLoading) return <div className="min-h-screen flex items-center justify-center"><LoadingState /></div>;
+  if (profileLoading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingState />
+      </div>
+    );
 
   return (
     <PageGuard permissions={['timetable.view']}>
@@ -201,34 +213,80 @@ export default function TimetablePage() {
                   <Layout className="w-6 h-6 text-primary" />
                 </div>
                 <Badge variant="warning">Quản trị</Badge>
+                {slots.length > 0 && <Badge variant="emerald">{slots.length} tiết học</Badge>}
+                {loading && (
+                  <div className="flex items-center gap-2 text-[10px] font-black text-amber-500 animate-pulse uppercase tracking-widest ml-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    Đang tải...
+                  </div>
+                )}
               </div>
               <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-white uppercase leading-none">
                 {viewMode === 'room' ? 'Lịch Sử Dụng Phòng' : 'Quản Lý Thời Khóa Biểu'}
               </h1>
-              <p className="text-muted mt-2 max-w-2xl font-medium">
+              <p className="text-muted mt-2 max-w-2xl font-medium italic">
                 {weekDates[0]?.toLocaleDateString('vi-VN')} -{' '}
                 {weekDates[6]?.toLocaleDateString('vi-VN')}
+                {slots.length === 0 && !loading && ' - Không có dữ liệu'}
               </p>
             </div>
 
             <div className="flex flex-col gap-3 items-end">
               <div className="flex items-center gap-3 bg-gray-100 dark:bg-white/5 p-1.5 rounded-2xl">
                 <div className="flex items-center gap-3 px-3 border-r border-gray-200 dark:border-gray-700 mr-1 pr-4">
-                  <Link href="/dashboard/my-schedule" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-blue-600 transition-colors">
+                  <Link
+                    href="/dashboard/my-schedule"
+                    className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-blue-600 transition-colors"
+                  >
                     <LinkIcon className="w-3 h-3" /> Cá nhân
                   </Link>
                   <span className="text-stone-300 dark:text-stone-700">•</span>
-                  <Link href="/dashboard/calendar" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-blue-600 transition-colors">
+                  <Link
+                    href="/dashboard/calendar"
+                    className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-stone-500 hover:text-blue-600 transition-colors"
+                  >
                     <LinkIcon className="w-3 h-3" /> Sự kiện
                   </Link>
                 </div>
-                <Button variant="primary" size="sm" className="rounded-xl px-5" onClick={() => setCurrentWeek(new Date())}>Hôm nay</Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="rounded-xl px-5"
+                  onClick={() => setCurrentWeek(new Date())}
+                >
+                  Hôm nay
+                </Button>
                 <div className="flex items-center">
-                  <Button variant="ghost" size="sm" onClick={() => setCurrentWeek(new Date(currentWeek.setDate(currentWeek.getDate() - 7)))}><ChevronLeft className="w-5 h-5" /></Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentWeek(new Date(currentWeek.setDate(currentWeek.getDate() - 7)))
+                    }
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
                   <span className="text-sm font-black px-4 min-w-[150px] text-center">
-                    Tuần {weekDates[0]?.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} - {weekDates[6]?.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
+                    Tuần{' '}
+                    {weekDates[0]?.toLocaleDateString('vi-VN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                    })}{' '}
+                    -{' '}
+                    {weekDates[6]?.toLocaleDateString('vi-VN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                    })}
                   </span>
-                  <Button variant="ghost" size="sm" onClick={() => setCurrentWeek(new Date(currentWeek.setDate(currentWeek.getDate() + 7)))}><ChevronRight className="w-5 h-5" /></Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentWeek(new Date(currentWeek.setDate(currentWeek.getDate() + 7)))
+                    }
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -237,29 +295,86 @@ export default function TimetablePage() {
           {/* View Mode Tabs */}
           <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 gap-4">
             <div className="flex bg-gray-100 dark:bg-white/5 p-1.5 rounded-2xl w-full sm:w-auto">
-              <button onClick={() => setViewMode('room')} className={cn('px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2', viewMode === 'room' ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-muted hover:text-gray-900') }><Building className="w-4 h-4" /> Theo phòng</button>
-              <button onClick={() => setViewMode('class')} className={cn('px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2', viewMode === 'class' ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-muted hover:text-gray-900') }><Users className="w-4 h-4" /> Theo lớp</button>
-              <button onClick={() => setViewMode('teacher')} className={cn('px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2', viewMode === 'teacher' ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-muted hover:text-gray-900') }><GraduationCap className="w-4 h-4" /> Theo giáo viên</button>
+              <button
+                onClick={() => setViewMode('room')}
+                className={cn(
+                  'px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2',
+                  viewMode === 'room'
+                    ? 'bg-white dark:bg-gray-700 text-primary shadow-sm'
+                    : 'text-muted hover:text-gray-900'
+                )}
+              >
+                <Building className="w-4 h-4" /> Theo phòng
+              </button>
+              <button
+                onClick={() => setViewMode('class')}
+                className={cn(
+                  'px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2',
+                  viewMode === 'class'
+                    ? 'bg-white dark:bg-gray-700 text-primary shadow-sm'
+                    : 'text-muted hover:text-gray-900'
+                )}
+              >
+                <Users className="w-4 h-4" /> Theo lớp
+              </button>
+              <button
+                onClick={() => setViewMode('teacher')}
+                className={cn(
+                  'px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2',
+                  viewMode === 'teacher'
+                    ? 'bg-white dark:bg-gray-700 text-primary shadow-sm'
+                    : 'text-muted hover:text-gray-900'
+                )}
+              >
+                <GraduationCap className="w-4 h-4" /> Theo giáo viên
+              </button>
             </div>
 
             <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
               {viewMode === 'room' && (
                 <div className="flex bg-gray-100 dark:bg-white/5 p-1.5 rounded-2xl">
                   {CAMPUSES.map((campus) => (
-                    <button key={campus.id} onClick={() => setSelectedCampus(campus.id)} className={cn('px-6 py-2.5 rounded-xl text-sm font-black transition-all', selectedCampus === campus.id ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-muted hover:text-gray-900')}>{campus.name}</button>
+                    <button
+                      key={campus.id}
+                      onClick={() => setSelectedCampus(campus.id)}
+                      className={cn(
+                        'px-6 py-2.5 rounded-xl text-sm font-black transition-all',
+                        selectedCampus === campus.id
+                          ? 'bg-white dark:bg-gray-700 text-primary shadow-sm'
+                          : 'text-muted hover:text-gray-900'
+                      )}
+                    >
+                      {campus.name}
+                    </button>
                   ))}
                 </div>
               )}
               {viewMode === 'class' && (
-                <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="w-full sm:w-64 px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-white/5 rounded-xl text-sm font-black text-gray-900 dark:text-white outline-none">
+                <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="w-full sm:w-64 px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-white/5 rounded-xl text-sm font-black text-gray-900 dark:text-white outline-none"
+                >
                   <option value="">-- Chọn lớp --</option>
-                  {classes.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               )}
               {viewMode === 'teacher' && (
-                <select value={selectedTeacher} onChange={(e) => setSelectedTeacher(e.target.value)} className="w-full sm:w-64 px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-white/5 rounded-xl text-sm font-black text-gray-900 dark:text-white outline-none">
+                <select
+                  value={selectedTeacher}
+                  onChange={(e) => setSelectedTeacher(e.target.value)}
+                  className="w-full sm:w-64 px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-white/5 rounded-xl text-sm font-black text-gray-900 dark:text-white outline-none"
+                >
                   <option value="">👨‍🏫 Chọn giáo viên</option>
-                  {teachers.map((t) => (<option key={t.id} value={t.id}>{t.full_name}</option>))}
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.full_name}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>
@@ -273,8 +388,18 @@ export default function TimetablePage() {
               </h2>
               {isTutoring && (
                 <div className="flex justify-center gap-2 mt-3">
-                  <button onClick={() => setTutoringViewMode('list')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${tutoringViewMode === 'list' ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-400' : 'bg-gray-50 text-gray-600 border border-gray-300'}`}>📋 Danh sách</button>
-                  <button onClick={() => setTutoringViewMode('teacher')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${tutoringViewMode === 'teacher' ? 'bg-blue-100 text-blue-700 border-2 border-blue-400' : 'bg-gray-50 text-gray-600 border border-gray-100'}`}>👨‍🏫 Theo giáo viên</button>
+                  <button
+                    onClick={() => setTutoringViewMode('list')}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${tutoringViewMode === 'list' ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-400' : 'bg-gray-50 text-gray-600 border border-gray-300'}`}
+                  >
+                    📋 Danh sách
+                  </button>
+                  <button
+                    onClick={() => setTutoringViewMode('teacher')}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${tutoringViewMode === 'teacher' ? 'bg-blue-100 text-blue-700 border-2 border-blue-400' : 'bg-gray-50 text-gray-600 border border-gray-100'}`}
+                  >
+                    👨‍🏫 Theo giáo viên
+                  </button>
                 </div>
               )}
             </div>
@@ -301,17 +426,51 @@ export default function TimetablePage() {
             ) : viewMode === 'room' ? (
               isTutoring ? (
                 tutoringViewMode === 'list' ? (
-                  <TutoringListView slots={slots} weekDates={weekDates} onEditSlot={openEditModal} onDeleteSlot={handleDeleteSlot} onCreateSlot={openCreateModal} />
+                  <TutoringListView
+                    slots={slots}
+                    weekDates={weekDates}
+                    onEditSlot={openEditModal}
+                    onDeleteSlot={handleDeleteSlot}
+                    onCreateSlot={openCreateModal}
+                  />
                 ) : (
-                  <TutoringTeacherGridView slots={slots} tutors={tutors} weekDates={weekDates} onEditSlot={openEditModal} onCreateSlot={(d, s, tId) => openCreateModal(d, s, 'Linh hoạt')} />
+                  <TutoringTeacherGridView
+                    slots={slots}
+                    tutors={tutors}
+                    weekDates={weekDates}
+                    onEditSlot={openEditModal}
+                    onCreateSlot={(d, s, tId) => openCreateModal(d, s, 'Linh hoạt')}
+                  />
                 )
               ) : (
-                <RoomGridView slots={slots} currentCampus={currentCampus!} weekDates={weekDates} onEditSlot={openEditModal} onDeleteSlot={handleDeleteSlot} onCreateSlot={openCreateModal} />
+                <RoomGridView
+                  slots={slots}
+                  currentCampus={currentCampus!}
+                  weekDates={weekDates}
+                  onEditSlot={openEditModal}
+                  onDeleteSlot={handleDeleteSlot}
+                  onCreateSlot={openCreateModal}
+                />
               )
             ) : viewMode === 'class' ? (
-              <ClassGridView slots={slots} selectedClass={selectedClass} classes={classes} weekDates={weekDates} onEditSlot={openEditModal} onDeleteSlot={handleDeleteSlot} onCreateSlot={openCreateModal} />
+              <ClassGridView
+                slots={slots}
+                selectedClass={selectedClass}
+                classes={classes}
+                weekDates={weekDates}
+                onEditSlot={openEditModal}
+                onDeleteSlot={handleDeleteSlot}
+                onCreateSlot={openCreateModal}
+              />
             ) : (
-              <TeacherGridView slots={slots} selectedTeacher={selectedTeacher} teachers={teachers} weekDates={weekDates} onEditSlot={openEditModal} onDeleteSlot={handleDeleteSlot} />
+              <TeacherGridView
+                slots={slots}
+                selectedTeacher={selectedTeacher}
+                teachers={teachers}
+                weekDates={weekDates}
+                onEditSlot={openEditModal}
+                onDeleteSlot={handleDeleteSlot}
+              />
             )}
           </div>
         </div>

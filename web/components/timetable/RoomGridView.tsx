@@ -29,22 +29,37 @@ export default function RoomGridView({
   onDeleteSlot,
   onCreateSlot,
 }: RoomGridViewProps) {
+  if (!currentCampus || !currentCampus.rooms || currentCampus.rooms.length === 0) {
+    return (
+      <div className="p-8 text-center bg-white dark:bg-stone-900 rounded-[32px] border border-dashed border-stone-200 dark:border-white/5">
+        <p className="text-stone-500 font-bold uppercase tracking-widest text-xs">
+          Cơ sở này chưa được cấu hình phòng học.
+        </p>
+      </div>
+    );
+  }
+
+  // Debugging: Log slots count in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[RoomGridView] Rendering with ${slots.length} slots for ${currentCampus.name}`);
+  }
+
   return (
     <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-[32px] overflow-hidden shadow-2xl border border-stone-200/50 dark:border-white/5">
       <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-320px)] relative custom-scrollbar">
         <table className="w-full border-separate border-spacing-0">
           <thead className="sticky top-0 z-30">
-            <tr className="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md">
-              <th className="p-4 border-b border-stone-200/50 dark:border-white/5 text-center text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] w-28 sticky left-0 z-40 bg-white/95 dark:bg-stone-900/95">
+            <tr className="bg-white dark:bg-stone-900">
+              <th className="p-4 border-b border-stone-200/50 dark:border-white/5 text-center text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] w-40 sticky left-0 z-40 bg-white dark:bg-stone-900">
                 Ca học
               </th>
-              <th className="p-4 border-b border-stone-200/50 dark:border-white/5 text-center text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] w-20 sticky left-28 z-40 bg-white/95 dark:bg-stone-900/95">
+              <th className="p-4 border-b border-stone-200/50 dark:border-white/5 text-center text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] w-24 sticky left-40 z-40 bg-white dark:bg-stone-900">
                 Phòng
               </th>
               {DAYS.map((day, i) => (
                 <th
                   key={day}
-                  className="p-4 border-b border-stone-200/50 dark:border-white/5 text-center min-w-[200px] bg-transparent"
+                  className="p-4 border-b border-stone-200/50 dark:border-white/5 text-center min-w-[200px] bg-white dark:bg-stone-900"
                 >
                   <div className="font-black text-stone-900 dark:text-stone-100 uppercase tracking-tighter text-base">
                     {day}
@@ -67,7 +82,7 @@ export default function RoomGridView({
                     {roomIdx === 0 && (
                       <td
                         rowSpan={currentCampus.rooms.length}
-                        className="p-4 border-b border-stone-200/50 dark:border-white/5 align-middle text-center sticky left-0 z-20 bg-white/90 dark:bg-stone-900/90 shadow-[4px_0_12px_rgba(0,0,0,0.02)]"
+                        className="p-4 border-b border-stone-200/50 dark:border-white/5 align-middle text-center sticky left-0 z-20 bg-white dark:bg-stone-900 shadow-[4px_0_12px_rgba(0,0,0,0.02)]"
                       >
                         <div className="font-black text-blue-500 text-lg leading-tight">
                           {session.label}
@@ -77,7 +92,7 @@ export default function RoomGridView({
                         </div>
                       </td>
                     )}
-                    <td className="p-2 border-b border-stone-200/50 dark:border-white/5 text-center bg-stone-500/5 dark:bg-white/3 w-20 sticky left-28 z-20">
+                    <td className="p-2 border-b border-stone-200/50 dark:border-white/5 text-center bg-stone-50 dark:bg-stone-800/50 w-24 sticky left-40 z-20">
                       <div className="text-sm font-black text-stone-900 dark:text-stone-100">
                         {room}
                       </div>
@@ -85,7 +100,13 @@ export default function RoomGridView({
                     {DAYS.map((_, dayIndex) => {
                       const isAvailable = session.days.includes(dayIndex);
                       const slot = isAvailable
-                        ? getSlotForRoomCell(slots, currentCampus.name, room, dayIndex, session.start)
+                        ? getSlotForRoomCell(
+                            slots,
+                            currentCampus.name,
+                            room,
+                            dayIndex,
+                            session.start
+                          )
                         : null;
 
                       return (
@@ -111,7 +132,7 @@ export default function RoomGridView({
                             >
                               <div className="flex justify-between items-start mb-2">
                                 <div className="font-black text-stone-900 dark:text-stone-100 text-[13px] leading-tight line-clamp-2">
-                                  {slot.student?.full_name || slot.class?.name || 'N/A'}
+                                  {slot.class?.name || slot.student?.full_name || 'Tiết học'}
                                 </div>
                                 <button
                                   onClick={(e) => {
@@ -134,7 +155,12 @@ export default function RoomGridView({
                                     <div className="w-4 h-4 rounded-full bg-stone-500/10 flex items-center justify-center">
                                       <Users className="w-2.5 h-2.5" />
                                     </div>
-                                    {getDisplayName(slot.teacher).split(' ').pop()}
+                                    <span
+                                      className="truncate max-w-[100px]"
+                                      title={getDisplayName(slot.teacher)}
+                                    >
+                                      {getDisplayName(slot.teacher)}
+                                    </span>
                                   </div>
                                 )}
                                 {slot.has_weekly_note && (
@@ -149,11 +175,7 @@ export default function RoomGridView({
                             <div
                               className="h-full rounded-2xl border-2 border-dashed border-stone-200 dark:border-white/5 hover:border-amber-500/50 hover:bg-amber-500/5 cursor-pointer flex items-center justify-center transition-all group/empty"
                               onClick={() =>
-                                onCreateSlot(
-                                  dayIndex,
-                                  session,
-                                  `${currentCampus.name} - ${room}`
-                                )
+                                onCreateSlot(dayIndex, session, `${currentCampus.name} - ${room}`)
                               }
                             >
                               <div className="p-2.5 rounded-2xl bg-stone-500/5 dark:bg-white/5 group-hover/empty:scale-110 group-hover/empty:bg-amber-500 group-hover/empty:text-white transition-all text-stone-300 dark:text-stone-700">

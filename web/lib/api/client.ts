@@ -76,12 +76,17 @@ async function safeParseJson(response: Response) {
 
   // If not JSON, it might be an HTML error page (404, 500)
   const bodySnippet = await response.text();
-  logger.error(`[apiClient] Expected JSON but received ${contentType || 'unknown type'}. Status: ${response.status}`, {
-    bodyPreview: bodySnippet.slice(0, 200),
-    url: response.url,
-  });
+  logger.error(
+    `[apiClient] Expected JSON but received ${contentType || 'unknown type'}. Status: ${response.status}`,
+    {
+      bodyPreview: bodySnippet.slice(0, 200),
+      url: response.url,
+    }
+  );
 
-  throw new Error(`Server error (${response.status}): Received non-JSON response. Check console for details.`);
+  throw new Error(
+    `Server error (${response.status}): Received non-JSON response. Check console for details.`
+  );
 }
 
 /**
@@ -192,11 +197,23 @@ export async function apiFetch(url: string, options?: RequestInit, maxRetries = 
         const baseUrl = url.split('?')[0] ?? url;
         requestCache.invalidate(baseUrl);
 
+        // Also invalidate parent path to ensure collections are refreshed
+        // (e.g., /api/classes/1/enrollments/2 -> /api/classes/1/enrollments)
+        const parts = baseUrl.split('/');
+        if (parts.length > 4) {
+          // Only if it's deeper than /api/resource
+          const parentUrl = parts.slice(0, -1).join('/');
+          requestCache.invalidate(parentUrl);
+        }
+
         if (baseUrl.includes('/api/subjects')) {
           requestCache.invalidate('/api/subjects');
         }
         if (baseUrl.includes('/api/students')) {
           requestCache.invalidate('/api/students');
+        }
+        if (baseUrl.includes('enrollments')) {
+          requestCache.invalidate('enrollments');
         }
       }
 

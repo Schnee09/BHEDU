@@ -50,10 +50,7 @@ export default function TeacherGridView({
         </div>
         <div>
           <h3 className="font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
-            Lịch dạy:{' '}
-            <span className="text-emerald-500">
-              {currentTeacher?.full_name}
-            </span>
+            Lịch dạy: <span className="text-emerald-500">{currentTeacher?.full_name}</span>
           </h3>
           <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mt-0.5">
             Thời khóa biểu cá nhân giáo viên
@@ -63,14 +60,14 @@ export default function TeacherGridView({
       <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-320px)] relative custom-scrollbar">
         <table className="w-full border-separate border-spacing-0">
           <thead className="sticky top-0 z-30">
-            <tr className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-md">
-              <th className="p-4 border-b border-stone-200/50 dark:border-white/5 text-center text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] w-28 sticky left-0 z-40 bg-white/95 dark:bg-stone-900/95">
+            <tr className="bg-white dark:bg-stone-900">
+              <th className="p-4 border-b border-stone-200/50 dark:border-white/5 text-center text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] w-40 sticky left-0 z-40 bg-white dark:bg-stone-900">
                 Ca học
               </th>
               {DAYS.map((day, i) => (
                 <th
                   key={day}
-                  className="p-4 border-b border-stone-200/50 dark:border-white/5 text-center min-w-[200px] bg-transparent"
+                  className="p-4 border-b border-stone-200/50 dark:border-white/5 text-center min-w-[200px] bg-white dark:bg-stone-900"
                 >
                   <div className="font-black text-stone-900 dark:text-stone-100 uppercase tracking-tighter text-base">
                     {day}
@@ -88,7 +85,7 @@ export default function TeacherGridView({
           <tbody>
             {ALL_SESSIONS.map((session) => (
               <tr key={session.id} className="group transition-colors">
-                <td className="p-4 border-b border-stone-200/50 dark:border-white/5 align-middle text-center sticky left-0 z-20 bg-white/90 dark:bg-stone-900/90 shadow-[4px_0_12px_rgba(0,0,0,0.02)]">
+                <td className="p-4 border-b border-stone-200/50 dark:border-white/5 align-middle text-center sticky left-0 z-20 bg-white dark:bg-stone-900 shadow-[4px_0_12px_rgba(0,0,0,0.02)]">
                   <div className="font-black text-blue-500 text-lg leading-tight">
                     {session.label}
                   </div>

@@ -75,13 +75,33 @@ export function getDisplayName(
 ): string {
   if (!profile) return 'Chưa có';
 
-  // Prioritize structured fields to ensure standard Vietnamese order
-  const formatted = formatVietnameseName(profile.first_name, profile.last_name);
-  if (formatted) return formatted;
+  const firstName = (profile.first_name || '').trim();
+  const lastName = (profile.last_name || '').trim();
+  const fullName = (profile.full_name || '').trim();
 
-  if (profile.full_name && profile.full_name.trim()) {
-    return profile.full_name.trim();
+  // 1. Try to use structured fields first
+  let displayName = formatVietnameseName(firstName, lastName);
+
+  // 2. If we only have one word (e.g. only first_name) but full_name is longer
+  // it's likely that last_name is missing but full_name contains it.
+  if (displayName.split(/\s+/).length === 1 && fullName.split(/\s+/).length > 1) {
+    // Check if full_name starts with the display name (e.g., "Bảo Nguyễn Cao Quốc")
+    // In this case, full_name is likely in "First Last" order.
+    // We want to flip it to "Last First" (Standard Vietnamese)
+    if (fullName.toLowerCase().startsWith(displayName.toLowerCase())) {
+      const parts = fullName.split(/\s+/);
+      const tens = parts[0];
+      const hos = parts.slice(1).join(' ');
+      displayName = `${hos} ${tens}`;
+    } else {
+      // If it doesn't start with display name, full_name might already be in correct order
+      // or at least more complete.
+      displayName = fullName;
+    }
   }
 
-  return 'Chưa có';
+  // 3. Fallback to whatever we have
+  if (!displayName && fullName) displayName = fullName;
+
+  return displayName || 'Chưa có';
 }

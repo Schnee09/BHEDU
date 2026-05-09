@@ -85,7 +85,7 @@ export default function TutoringTeacherGridView({
                     )}
                     <td className="p-2 border-b border-stone-200/50 dark:border-white/5 text-center bg-stone-500/5 dark:bg-white/3 w-32 sticky left-24 z-20">
                       <div className="text-xs font-black text-stone-500 dark:text-stone-400 truncate px-2">
-                        {getDisplayName(tutor).split(' ').pop()}
+                        {getDisplayName(tutor)}
                       </div>
                     </td>
                     {DAYS.map((_, dayIndex) => {
@@ -122,9 +122,7 @@ export default function TutoringTeacherGridView({
                               onClick={() => onEditSlot(slot)}
                             >
                               <div className="font-black text-stone-900 dark:text-stone-100 text-[11px] line-clamp-2 leading-tight mb-1.5">
-                                {slot.class?.name ||
-                                  slot.student?.full_name ||
-                                  slot.subject?.name}
+                                {slot.class?.name || slot.student?.full_name || slot.subject?.name}
                               </div>
                               <div className="flex items-center gap-2 mt-auto pt-1.5 border-t border-stone-200/30 dark:border-white/5">
                                 {(slot.weekly_note || slot.notes) && (

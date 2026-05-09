@@ -47,14 +47,15 @@ export class TimetableRepository extends BaseRepository<
                 end_time,
                 room,
                 notes,
-                subject:subjects!timetable_slots_subject_id_fkey (id, name, code),
-                teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name),
-                student:profiles!timetable_slots_student_id_fkey (id, full_name),
-                class:classes!timetable_slots_class_id_fkey (id, name)
+                subject:subjects (id, name, code),
+                teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name, first_name, last_name),
+                student:profiles!timetable_slots_student_id_fkey (id, full_name, first_name, last_name),
+                class:classes (id, name)
             `
       )
       .order('day_of_week')
-      .order('start_time');
+      .order('start_time')
+      .limit(1000);
 
     if (filters.class_id) query = query.eq('class_id', filters.class_id);
     if (filters.student_id) {
@@ -63,6 +64,8 @@ export class TimetableRepository extends BaseRepository<
     if (filters.teacher_id) {
       query = query.eq('teacher_id', filters.teacher_id);
     }
+
+    query = query.is('deleted_at', null);
 
     const { data: slots, error } = await query;
     if (error) throw error;
@@ -101,43 +104,85 @@ export class TimetableRepository extends BaseRepository<
 
     // Room Conflict
     if (room && room !== 'Linh hoạt') {
+      // Get Active Semester to scope conflicts
+      const { data: activeSemester } = await this.supabase
+        .from('semesters')
+        .select('id')
+        .eq('is_active', true)
+        .maybeSingle();
+
       let query = this.supabase
         .from('timetable_slots')
-        .select('id, start_time, end_time')
+        .select(
+          `
+          id, 
+          start_time, 
+          end_time, 
+          class:classes(name),
+          student:profiles(full_name)
+        `
+        )
         .eq('room', room)
         .eq('day_of_week', day_of_week)
-        .gt('end_time', start_time) // Overlap logic: existing.end > new.start AND existing.start < new.end
-        .lt('start_time', end_time); // Strictly less/greater to allow back-to-back classes
+        .gt('end_time', start_time)
+        .lt('start_time', end_time);
+
+      if (activeSemester?.id) {
+        query = query.or(`semester_id.eq.${activeSemester.id},semester_id.is.null`);
+      }
 
       if (excludeSlotId) query = query.neq('id', excludeSlotId);
 
       const { data: roomConflicts } = await query;
       if (roomConflicts && roomConflicts.length > 0) {
-        const first = roomConflicts[0];
-        return `Phòng "${room}" đã có lịch vào khung giờ này (Tiết: ${
-          first?.start_time ?? ''
-        }-${first?.end_time ?? ''}).`;
+        const first = roomConflicts[0] as any;
+        const holder = first.class?.name || first.student?.full_name || 'Đối tượng khác';
+        return `Phòng "${room}" đã có lịch của "${holder}" vào khung giờ này (Tiết: ${
+          first?.start_time?.substring(0, 5) ?? ''
+        }-${first?.end_time?.substring(0, 5) ?? ''}).`;
       }
     }
 
     // Teacher Conflict
     if (teacher_id) {
+      const { data: activeSemester } = await this.supabase
+        .from('semesters')
+        .select('id')
+        .eq('is_active', true)
+        .maybeSingle();
+
       let query = this.supabase
         .from('timetable_slots')
-        .select('id, room, start_time, end_time')
+        .select(
+          `
+          id, 
+          room, 
+          start_time, 
+          end_time,
+          class:classes(name),
+          student:profiles(full_name)
+        `
+        )
         .eq('teacher_id', teacher_id)
         .eq('day_of_week', day_of_week)
         .gt('end_time', start_time)
         .lt('start_time', end_time);
 
+      if (activeSemester?.id) {
+        query = query.or(`semester_id.eq.${activeSemester.id},semester_id.is.null`);
+      }
+
       if (excludeSlotId) query = query.neq('id', excludeSlotId);
 
       const { data: teacherConflicts } = await query;
       if (teacherConflicts && teacherConflicts.length > 0) {
-        const first = teacherConflicts[0];
-        return `Giáo viên đã có lịch dạy vào khung giờ này (tại "${
+        const first = teacherConflicts[0] as any;
+        const holder = first.class?.name || first.student?.full_name || 'Tiết học khác';
+        return `Giáo viên đã có lịch dạy "${holder}" vào khung giờ này (tại "${
           first?.room ?? ''
-        }" - Tiết: ${first?.start_time ?? ''}-${first?.end_time ?? ''}).`;
+        }" - Tiết: ${first?.start_time?.substring(0, 5) ?? ''}-${
+          first?.end_time?.substring(0, 5) ?? ''
+        }).`;
       }
     }
 
@@ -171,10 +216,10 @@ export class TimetableRepository extends BaseRepository<
             end_time,
             room,
             notes,
-            subject:subjects!timetable_slots_subject_id_fkey (id, name, code),
-            teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name),
-            student:profiles!timetable_slots_student_id_fkey (id, full_name),
-            class:classes!timetable_slots_class_id_fkey (id, name)
+            subject:subjects (id, name, code),
+            teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name, first_name, last_name),
+            student:profiles!timetable_slots_student_id_fkey (id, full_name, first_name, last_name),
+            class:classes (id, name)
         `
       )
       .single();
@@ -214,20 +259,23 @@ export class TimetableRepository extends BaseRepository<
         .select(
           `
                 id, class_id, student_id, day_of_week, start_time, end_time, room, notes, semester_id,
-                subject:subjects!timetable_slots_subject_id_fkey (id, name, code),
-                teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name),
-                student:profiles!timetable_slots_student_id_fkey (id, full_name),
-                class:classes!timetable_slots_class_id_fkey (id, name)
+                subject:subjects (id, name, code),
+                teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name, first_name, last_name),
+                student:profiles!timetable_slots_student_id_fkey (id, full_name, first_name, last_name),
+                class:classes (id, name)
             `
         )
         .order('day_of_week')
-        .order('start_time');
+        .order('start_time')
+        .limit(1000);
 
       // Personal schedule: filter by active semester BUT allow null semester_id
       // to catch unassigned or "eternal" slots
       if (activeSemester?.id) {
         query = query.or(`semester_id.eq.${activeSemester.id},semester_id.is.null`);
       }
+
+      query = query.is('deleted_at', null);
 
       if (classIds.length > 0) {
         query = query.or(`class_id.in.(${classIds.join(',')}),student_id.eq.${userId}`);
@@ -245,19 +293,22 @@ export class TimetableRepository extends BaseRepository<
         .select(
           `
                 id, class_id, student_id, day_of_week, start_time, end_time, room, notes, semester_id,
-                subject:subjects!timetable_slots_subject_id_fkey (id, name, code),
-                teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name),
-                student:profiles!timetable_slots_student_id_fkey (id, full_name),
-                class:classes!timetable_slots_class_id_fkey (id, name)
+                subject:subjects (id, name, code),
+                teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name, first_name, last_name),
+                student:profiles!timetable_slots_student_id_fkey (id, full_name, first_name, last_name),
+                class:classes (id, name)
             `
         )
         .eq('teacher_id', userId)
         .order('day_of_week')
-        .order('start_time');
+        .order('start_time')
+        .limit(1000);
 
       if (activeSemester?.id) {
         query = query.or(`semester_id.eq.${activeSemester.id},semester_id.is.null`);
       }
+
+      query = query.is('deleted_at', null);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -315,19 +366,24 @@ export class TimetableRepository extends BaseRepository<
       .eq('is_active', true)
       .maybeSingle();
 
-    let query = this.supabase.from('timetable_slots').select(`
+    const query = this.supabase
+      .from('timetable_slots')
+      .select(
+        `
             id, class_id, student_id, day_of_week, start_time, end_time, room, notes, semester_id,
-            subject:subjects!timetable_slots_subject_id_fkey (id, name, code),
-            teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name),
-            student:profiles!timetable_slots_student_id_fkey (id, full_name),
-            class:classes!timetable_slots_class_id_fkey (id, name)
-         `);
+            subject:subjects (id, name, code),
+            teacher:profiles!timetable_slots_teacher_id_fkey (id, full_name, first_name, last_name),
+            student:profiles!timetable_slots_student_id_fkey (id, full_name, first_name, last_name),
+            class:classes (id, name)
+         `
+      )
+      .is('deleted_at', null);
 
-    if (activeSemester?.id) {
-      query = query.eq('semester_id', activeSemester.id);
-    }
-
-    const { data, error } = await query.order('room').order('day_of_week').order('start_time');
+    const { data, error } = await query
+      .order('room')
+      .order('day_of_week')
+      .order('start_time')
+      .limit(5000);
 
     if (error) throw error;
     let slots = data || [];

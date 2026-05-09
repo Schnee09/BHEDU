@@ -1,0 +1,32 @@
+
+[UX AUDIT] 638 files checked
+--------------------------------------------------
+[!] ISSUES (814):
+  - [Color] globals-clean.css: PURPLE DETECTED ('purple'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+  - [Cognitive Load] globals.css: Form inputs without labels. Use <label> for accessibility and clarity.
+  - [Cognitive Load] page.tsx: Form inputs without labels. Use <label> for accessibility and clarity.
+  - [Cognitive Load] page.tsx: Form inputs without labels. Use <label> for accessibility and clarity.
+  - [Color] page.tsx: PURPLE DETECTED ('purple'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+  - [Cognitive Load] page.tsx: Form inputs without labels. Use <label> for accessibility and clarity.
+  - [Color] page.tsx: PURPLE DETECTED ('purple'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+  - [Cognitive Load] page.tsx: Form inputs without labels. Use <label> for accessibility and clarity.
+  - [Cognitive Load] page.tsx: Form inputs without labels. Use <label> for accessibility and clarity.
+  - [Cognitive Load] page.tsx: Form inputs without labels. Use <label> for accessibility and clarity.
+[*] WARNINGS (6051):
+  - [Von Restorff] error.tsx: No primary CTA
+  - [Reflective] error.tsx: Long-form content without brand story/values. Add 'About' or 'Why We Exist' section.
+  - [Trust] error.tsx: No social proof detected. Consider adding testimonials, ratings, or 'Trusted by' logos.
+  - [Typography] error.tsx: No line length constraint (45-75ch). Use max-w-prose or max-w-[65ch].
+  - [Visual] error.tsx: Flat design with no depth. Consider shadows or subtle gradients for hierarchy.
+  - [Cognitive Load] globals-clean.css: High visual noise detected. Many colors and borders increase cognitive load.
+  - [Typography] globals-clean.css: Adjacent font weights (700/600). Skip at least 2 levels for contrast.
+  - [Typography] globals-clean.css: Adjacent font weights (600/500). Skip at least 2 levels for contrast.
+  - [Typography] globals-clean.css: Adjacent font weights (500/600). Skip at least 2 levels for contrast.
+  - [Typography] globals-clean.css: Adjacent font weights (600/700). Skip at least 2 levels for contrast.
+  - [Typography] globals-clean.css: Fixed font sizes without clamp(). Consider fluid typography: clamp(MIN, PREFERRED, MAX)
+  - [Performance] globals-clean.css: Animating expensive properties (margin, height, top, padding, right, width, bottom, left). Use transform/opacity where possible.
+  - [Accessibility] globals-clean.css: Animations found without prefers-reduced-motion check
+  - [Visual] globals-clean.css: Many border declarations (11). Simplify for cleaner look.
+  - [Color] globals-clean.css: 40 distinct colors. Consider 60-30-10 rule: dominant (60%), secondary (30%), accent (10%).
+[+] PASSED CHECKS: 158
+STATUS: FAIL
