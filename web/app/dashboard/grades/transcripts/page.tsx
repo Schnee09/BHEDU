@@ -7,13 +7,24 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Select } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
-import { GraduationCap, Search, TrendingUp, Award, Star, Users, BookOpen, RefreshCw } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
+import {
+  GraduationCap,
+  Search,
+  TrendingUp,
+  Award,
+  Star,
+  Users,
+  BookOpen,
+  RefreshCw,
+} from 'lucide-react';
 import { AcademicMatrix } from '@/components/Academic/AcademicMatrix';
 
 export default function TranscriptsPage() {
   const searchParams = useSearchParams();
-  const { isAdmin, isStudent, isParent, profile, loading: permsLoading } = usePermissions();
-  
+  const { profile } = useProfile();
+  const { isAdmin, isStudent, isParent, loading: permsLoading } = usePermissions();
+
   // State
   const [classes, setClasses] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -94,14 +105,18 @@ export default function TranscriptsPage() {
   // Stats Calculations
   const averageScore = useMemo(() => {
     if (grades.length === 0) return 0;
-    const scores = grades.map(g => g.score ?? g.points_earned).filter(s => typeof s === 'number');
+    const scores = grades
+      .map((g) => g.score ?? g.points_earned)
+      .filter((s) => typeof s === 'number');
     if (scores.length === 0) return 0;
     return scores.reduce((a, b) => a + b, 0) / scores.length;
   }, [grades]);
 
   const maxScore = useMemo(() => {
     if (grades.length === 0) return 0;
-    const scores = grades.map(g => g.score ?? g.points_earned).filter(s => typeof s === 'number');
+    const scores = grades
+      .map((g) => g.score ?? g.points_earned)
+      .filter((s) => typeof s === 'number');
     return Math.max(...scores, 0);
   }, [grades]);
 
@@ -110,7 +125,6 @@ export default function TranscriptsPage() {
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 py-10 px-6 lg:px-12">
       <div className="max-w-[1100px] mx-auto space-y-10 relative">
-        
         {/* Simplified Top Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
@@ -120,10 +134,12 @@ export default function TranscriptsPage() {
             </h1>
             {selectedStudent && (
               <div className="flex items-center gap-2 mt-2">
-                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                 <p className="text-sm font-black text-stone-600 dark:text-stone-300 uppercase tracking-tighter">
-                   {students.find(s => s.id === selectedStudent)?.full_name || profile?.full_name || 'Học sinh đang chọn'}
-                 </p>
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-sm font-black text-stone-600 dark:text-stone-300 uppercase tracking-tighter">
+                  {students.find((s) => s.id === selectedStudent)?.full_name ||
+                    profile?.full_name ||
+                    'Học sinh đang chọn'}
+                </p>
               </div>
             )}
             <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] px-1 mt-1">
@@ -133,15 +149,15 @@ export default function TranscriptsPage() {
 
           <div className="flex items-center gap-3">
             <div className="flex -space-x-3 overflow-hidden">
-               {/* Quick stats badges */}
-               <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
-                  <TrendingUp className="w-3 h-3" />
-                  Điểm TB: {averageScore > 0 ? averageScore.toFixed(1) : '-'}
-               </div>
-               <div className="flex items-center gap-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-amber-500/20">
-                  <Award className="w-3 h-3" />
-                  Max: {maxScore > 0 ? maxScore.toFixed(1) : '-'}
-               </div>
+              {/* Quick stats badges */}
+              <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
+                <TrendingUp className="w-3 h-3" />
+                Điểm TB: {averageScore > 0 ? averageScore.toFixed(1) : '-'}
+              </div>
+              <div className="flex items-center gap-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-amber-500/20">
+                <Award className="w-3 h-3" />
+                Max: {maxScore > 0 ? maxScore.toFixed(1) : '-'}
+              </div>
             </div>
           </div>
         </div>
@@ -167,7 +183,9 @@ export default function TranscriptsPage() {
                   >
                     <option value="">Chọn lớp để xem danh sách...</option>
                     {classes.map((cls) => (
-                      <option key={cls.id} value={cls.id}>{cls.name}</option>
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
                     ))}
                   </Select>
                 </div>
@@ -200,17 +218,16 @@ export default function TranscriptsPage() {
 
         {/* Global Academic Matrix Section */}
         <div className="space-y-6">
-           <div className="flex items-center justify-between px-2">
-              <h2 className="text-lg font-black uppercase tracking-widest text-stone-800 dark:text-white flex items-center gap-3">
-                  <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
-                  Kết quả học tập chi tiết
-              </h2>
-              {loading && <RefreshCw className="w-5 h-5 text-stone-300 animate-spin" />}
-           </div>
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-lg font-black uppercase tracking-widest text-stone-800 dark:text-white flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+              Kết quả học tập chi tiết
+            </h2>
+            {loading && <RefreshCw className="w-5 h-5 text-stone-300 animate-spin" />}
+          </div>
 
-           <AcademicMatrix grades={grades} />
+          <AcademicMatrix grades={grades} />
         </div>
-
       </div>
     </div>
   );

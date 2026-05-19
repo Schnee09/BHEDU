@@ -5,8 +5,10 @@ import { getStartOfWeek } from '@/lib/utils/date';
 const normalizeTime = (time?: string) => {
   if (!time) return '';
   const parts = time.split(':');
-  if (parts.length < 2) return time;
-  return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+  const part0 = parts[0];
+  const part1 = parts[1];
+  if (!part0 || !part1) return time;
+  return `${part0.padStart(2, '0')}:${part1.padStart(2, '0')}`;
 };
 
 export const getSlotForRoomCell = (

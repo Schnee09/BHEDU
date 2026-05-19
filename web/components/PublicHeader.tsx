@@ -14,7 +14,6 @@ export default function PublicHeader({ showNavLinks = true }: PublicHeaderProps)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { href: '/#features', label: 'Tính năng' },
     { href: '/#about', label: 'Giới thiệu' },
     { href: '/#contact', label: 'Liên hệ' },
   ];

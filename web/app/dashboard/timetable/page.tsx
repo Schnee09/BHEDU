@@ -134,13 +134,7 @@ export default function TimetablePage() {
 
   useEffect(() => {
     if (profileLoading || !role) return;
-    if (
-      !isAdmin &&
-      role !== 'admin' &&
-      role !== 'staff' &&
-      role !== 'super_admin' &&
-      role !== 'owner'
-    ) {
+    if (!isAdmin) {
       window.location.href = '/dashboard/my-schedule';
       return;
     }
@@ -213,7 +207,7 @@ export default function TimetablePage() {
                   <Layout className="w-6 h-6 text-primary" />
                 </div>
                 <Badge variant="warning">Quản trị</Badge>
-                {slots.length > 0 && <Badge variant="emerald">{slots.length} tiết học</Badge>}
+                {slots.length > 0 && <Badge variant="success">{slots.length} tiết học</Badge>}
                 {loading && (
                   <div className="flex items-center gap-2 text-[10px] font-black text-amber-500 animate-pulse uppercase tracking-widest ml-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />

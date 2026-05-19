@@ -24,6 +24,7 @@ import {
   User,
   UserPlus,
   Users,
+  Megaphone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { getFlattenedPermissions, PermissionCode, UserRole } from './core';
@@ -222,6 +223,12 @@ export const ALL_NAV_ITEMS: NavSection[] = [
         icon: Building,
         permissions: ['classes.view'],
         links: [
+          {
+            href: '/dashboard/admin/announcements',
+            label: 'Bảng tin',
+            icon: Bell,
+            permissions: ['users.view'],
+          },
           {
             href: '/dashboard/admin/semesters',
             label: 'Học kỳ',

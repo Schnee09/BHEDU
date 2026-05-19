@@ -127,6 +127,9 @@ describe('EnrollmentRepository', () => {
       const insertMock = jest.fn().mockReturnValue({
         select: selectMock,
       });
+      const upsertMock = jest.fn().mockReturnValue({
+        select: selectMock,
+      });
 
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'enrollments') {
@@ -137,6 +140,7 @@ describe('EnrollmentRepository', () => {
             }),
             delete: deleteMock,
             insert: insertMock,
+            upsert: upsertMock,
           };
         }
         return {};
@@ -146,10 +150,13 @@ describe('EnrollmentRepository', () => {
 
       expect(result).toEqual(newEnrollment);
       expect(deleteMock).toHaveBeenCalled();
-      expect(insertMock).toHaveBeenCalledWith(
+      expect(upsertMock).toHaveBeenCalledWith(
         expect.objectContaining({
           student_id: studentId,
           class_id: toClassId,
+        }),
+        expect.objectContaining({
+          onConflict: 'student_id,class_id',
         })
       );
     });

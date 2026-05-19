@@ -4,7 +4,19 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import PublicHeader from '@/components/PublicHeader';
-import { CheckCircle2, BarChart3, Users, ArrowRight, Phone, Mail, MapPin } from 'lucide-react';
+import NoticeBoard from '@/components/NoticeBoard';
+import {
+  CheckCircle2,
+  BarChart3,
+  Users,
+  ArrowRight,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  Bell,
+  HelpCircle,
+} from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -22,18 +34,13 @@ export default function LandingPage() {
 
           <div className="container px-4 md:px-6 relative z-10">
             <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
-              <div className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-800 dark:border-amber-900/30 dark:bg-amber-900/10 dark:text-amber-300 animate-fade-in-up">
-                <span className="flex h-2 w-2 rounded-full bg-amber-600 mr-2 animate-pulse"></span>
-                Phiên bản Mới 2026
-              </div>
-
               <h1
                 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 dark:text-white animate-fade-in-up"
                 style={{ animationDelay: '0.1s' }}
               >
-                Hệ Thống Quản Lý <br className="hidden sm:block" />
+                Cổng Thông Tin <br className="hidden sm:block" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
-                  Giáo Dục Toàn Diện
+                  Bùi Hoàng Education
                 </span>
               </h1>
 
@@ -41,8 +48,7 @@ export default function LandingPage() {
                 className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed animate-fade-in-up"
                 style={{ animationDelay: '0.2s' }}
               >
-                Giải pháp tối ưu cho trung tâm <strong>Bùi Hoàng Education</strong>. Quản lý học
-                sinh, điểm danh và báo cáo học tập chuyên nghiệp.
+                Đăng nhập để quản lý lớp học, điểm danh và theo dõi kết quả học tập của học sinh.
               </p>
 
               <div
@@ -58,77 +64,74 @@ export default function LandingPage() {
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 </Link>
-                <Link href="#features" className="w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-full sm:w-auto h-14 px-8 text-lg border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl hover:text-amber-600 dark:hover:text-amber-400"
-                  >
-                    Xem Tính Năng
-                  </Button>
-                </Link>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features Grid */}
-        <section id="features" className="w-full py-20 bg-white/50 dark:bg-gray-900/50 relative">
+        {/* Quick Links Section */}
+        <section id="links" className="w-full py-20 bg-white/50 dark:bg-gray-900/50 relative">
           <div className="container px-4 md:px-6">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                Tính Năng Nổi Bật
+                Liên kết Nhanh
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-400">
-                Công cụ mạnh mẽ hỗ trợ quản lý hiệu quả
+                Truy cập nhanh các tiện ích dành cho học sinh và giáo viên
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {/* Feature 1 */}
-              <div className="group glass-card rounded-3xl p-8 hover:-translate-y-2 transition-all duration-300">
-                <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <CheckCircle2 className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+              {/* Link 1 */}
+              <Link href="/login" className="group">
+                <div className="glass-card rounded-3xl p-8 h-full hover:-translate-y-2 transition-all duration-300">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <Calendar className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                    Thời khóa biểu
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                    Xem lịch học, lịch thi và các buổi học kèm hằng tuần của bạn.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">
-                  Điểm Danh Thông Minh
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Hệ thống điểm danh nhanh chóng, chính xác. Tự động tổng hợp báo cáo chuyên cần
-                  hàng ngày, hàng tuần.
-                </p>
-              </div>
+              </Link>
 
-              {/* Feature 2 */}
-              <div className="group glass-card rounded-3xl p-8 hover:-translate-y-2 transition-all duration-300">
-                <div className="w-14 h-14 rounded-2xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <BarChart3 className="h-7 w-7 text-orange-600 dark:text-orange-400" />
+              {/* Link 2 */}
+              <Link href="/login" className="group">
+                <div className="glass-card rounded-3xl p-8 h-full hover:-translate-y-2 transition-all duration-300">
+                  <div className="w-14 h-14 rounded-2xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <Bell className="h-7 w-7 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                    Thông báo
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                    Cập nhật tin tức mới nhất, lịch nghỉ lễ và các sự kiện tại trung tâm.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">
-                  Quản Lý Điểm Số
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Nhập điểm chi tiết từng môn học. Tự động tính điểm trung bình, xếp hạng và xuất
-                  phiếu báo điểm PDF.
-                </p>
-              </div>
+              </Link>
 
-              {/* Feature 3 */}
-              <div className="group glass-card rounded-3xl p-8 hover:-translate-y-2 transition-all duration-300">
-                <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Users className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+              {/* Link 3 */}
+              <Link href="#contact" className="group">
+                <div className="glass-card rounded-3xl p-8 h-full hover:-translate-y-2 transition-all duration-300">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <HelpCircle className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                    Hướng dẫn & Hỗ trợ
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                    Liên hệ với ban quản trị hoặc xem hướng dẫn sử dụng hệ thống.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">
-                  Hồ Sơ Học Sinh
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Lưu trữ thông tin học sinh, phụ huynh đầy đủ. Dễ dàng tra cứu và liên lạc khi cần
-                  thiết.
-                </p>
-              </div>
+              </Link>
             </div>
           </div>
         </section>
+
+        {/* Notice Board */}
+        <NoticeBoard />
 
         {/* Info/Contact Section */}
         <section id="contact" className="w-full py-20 bg-gray-50 dark:bg-gray-950">

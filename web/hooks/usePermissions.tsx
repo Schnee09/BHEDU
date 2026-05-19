@@ -13,7 +13,7 @@ import {
   hasPermission,
   isAtLeast,
   UserRole,
-  PermissionCode
+  PermissionCode,
 } from '@/lib/auth/core';
 
 // ============================================
@@ -69,18 +69,20 @@ export function usePermissions() {
           .eq('user_id', profile.id);
 
         if (fetchError) {
-          console.warn('[usePermissions] Table user_permissions missing or inaccessible.');
+          console.warn(
+            '[usePermissions] Table user_permissions missing or inaccessible.',
+            fetchError
+          );
         } else {
+          console.log('[usePermissions] Raw user_permissions data from DB:', data);
           const now = new Date();
           const rows = (data || []) as unknown as PermissionRow[];
 
           const validPermissions = rows
-            .filter(p =>
-              !p.is_denied &&
-              (!p.expires_at || new Date(p.expires_at) > now)
-            )
-            .map(p => p.permission_code as PermissionCode);
+            .filter((p) => !p.is_denied && (!p.expires_at || new Date(p.expires_at) > now))
+            .map((p) => p.permission_code as PermissionCode);
 
+          console.log('[usePermissions] Validated custom permissions:', validPermissions);
           setCustomPermissions(new Set(validPermissions));
         }
       } catch (err) {
@@ -103,37 +105,65 @@ export function usePermissions() {
     const permissions = getFlattenedPermissions(role);
 
     // Merge with custom permissions
-    customPermissions.forEach(p => permissions.add(p));
+    customPermissions.forEach((p) => permissions.add(p));
 
+    console.log('[usePermissions] Computed permissions list:', Array.from(permissions));
     return permissions;
   }, [profile?.role, customPermissions]);
 
   // Permission check functions
-  const can = useCallback((permission: PermissionCode): boolean => {
-    if (!profile?.role) return false;
-    // Check custom permissions first
-    if (customPermissions.has(permission)) return true;
-    // Fallback to core RBAC logic (includes inheritance)
-    return hasPermission(profile.role as UserRole, permission);
-  }, [profile?.role, customPermissions]);
+  const can = useCallback(
+    (permission: PermissionCode): boolean => {
+      if (!profile?.role) return false;
+      // Check custom permissions first
+      if (customPermissions.has(permission)) return true;
+      // Fallback to core RBAC logic (includes inheritance)
+      return hasPermission(profile.role as UserRole, permission);
+    },
+    [profile?.role, customPermissions]
+  );
 
-  const canAny = useCallback((permissions: PermissionCode[]): boolean => {
-    return permissions.some(p => can(p));
-  }, [can]);
+  const canAny = useCallback(
+    (permissions: PermissionCode[]): boolean => {
+      return permissions.some((p) => can(p));
+    },
+    [can]
+  );
 
-  const canAll = useCallback((permissions: PermissionCode[]): boolean => {
-    return permissions.every(p => can(p));
-  }, [can]);
+  const canAll = useCallback(
+    (permissions: PermissionCode[]): boolean => {
+      return permissions.every((p) => can(p));
+    },
+    [can]
+  );
 
   // Role checks using inheritance logic
-  const isAdmin = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'admin') : false, [profile]);
-  const isStaff = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'staff') : false, [profile]);
-  const isTeacher = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'teacher') : false, [profile]);
-  const isStudent = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'student') : false, [profile]);
-  const isParent = useMemo(() => profile ? isAtLeast(profile.role as UserRole, 'parent') : false, [profile]);
+  const isAdmin = useMemo(
+    () => (profile ? isAtLeast(profile.role as UserRole, 'admin') : false),
+    [profile]
+  );
+  const isStaff = useMemo(
+    () => (profile ? isAtLeast(profile.role as UserRole, 'staff') : false),
+    [profile]
+  );
+  const isTeacher = useMemo(
+    () => (profile ? isAtLeast(profile.role as UserRole, 'teacher') : false),
+    [profile]
+  );
+  const isStudent = useMemo(
+    () => (profile ? isAtLeast(profile.role as UserRole, 'student') : false),
+    [profile]
+  );
+  const isParent = useMemo(
+    () => (profile ? isAtLeast(profile.role as UserRole, 'parent') : false),
+    [profile]
+  );
 
   // Exact role checks (Identity-based, not inherited)
-  const isExactAdmin = useMemo(() => profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'owner', [profile]);
+  const isExactAdmin = useMemo(
+    () => profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'owner',
+    [profile]
+  );
   const isExactTeacher = useMemo(() => profile?.role === 'teacher', [profile]);
   const isExactStudent = useMemo(() => profile?.role === 'student', [profile]);
   const isExactParent = useMemo(() => profile?.role === 'parent', [profile]);
