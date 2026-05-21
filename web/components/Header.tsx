@@ -204,17 +204,19 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
         <div className="flex items-center justify-end gap-3 md:gap-4 flex-1 min-w-0">
           <button
             onClick={() => setOpenPanel('search')}
-            className="lg:hidden p-3 rounded-full bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-300 active:scale-95 hover:scale-105 transition-all border border-transparent hover:border-amber-500/20"
+            className="hidden md:block lg:hidden p-3 rounded-full bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-300 active:scale-95 hover:scale-105 transition-all border border-transparent hover:border-amber-500/20"
           >
             <MagnifyingGlassIcon className="w-5 h-5" strokeWidth={2.5} />
           </button>
 
-          <QuickActions
-            isOpen={showQuickActions}
-            onToggle={() => setOpenPanel(openPanel === 'quickActions' ? null : 'quickActions')}
-            onClose={() => setOpenPanel(null)}
-            actions={quickActions}
-          />
+          <div className="hidden md:block">
+            <QuickActions
+              isOpen={showQuickActions}
+              onToggle={() => setOpenPanel(openPanel === 'quickActions' ? null : 'quickActions')}
+              onClose={() => setOpenPanel(null)}
+              actions={quickActions}
+            />
+          </div>
 
           <div className="relative group">
             <button

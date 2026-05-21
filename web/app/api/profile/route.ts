@@ -60,7 +60,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Profile not found', code: 'NOT_FOUND' }, { status: 404 });
     }
 
-    return NextResponse.json(profile);
+    const res = NextResponse.json(profile);
+    res.cookies.set('user-role', `${user.id}:${profile.role}`, {
+      maxAge: 60 * 60 * 24, // 1 day
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+    return res;
   } catch (err: any) {
     logger.error('Unexpected error in GET /api/profile:', err);
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import Sidebar from '@/components/Sidebar';
+import { CustomizationProvider } from '@/contexts/CustomizationContext';
 import '@testing-library/jest-dom';
 
 // Mock next/navigation functions used by Sidebar
@@ -32,7 +33,11 @@ jest.mock('@/lib/supabase/client', () => ({
 
 describe('Sidebar smoke', () => {
   it('renders sidebar and shows Students link for admin role', () => {
-    const { container } = render(<Sidebar />);
+    const { container } = render(
+      <CustomizationProvider>
+        <Sidebar />
+      </CustomizationProvider>
+    );
 
     // Check for the students link by href (label may be localized)
     const studentsAnchor = container.querySelector('a[href="/dashboard/students"]');

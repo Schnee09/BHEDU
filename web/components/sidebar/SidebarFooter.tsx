@@ -2,6 +2,7 @@
 
 import { LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface SidebarFooterProps {
   onLogout: () => void;
@@ -11,6 +12,16 @@ interface SidebarFooterProps {
 export function SidebarFooter({ onLogout, isCollapsed }: SidebarFooterProps) {
   return (
     <div className="p-5 mt-auto border-t border-stone-100 dark:border-white/5 bg-stone-50/30 dark:bg-white/2 backdrop-blur-sm">
+      {/* Mobile-only Theme Toggle Row */}
+      {!isCollapsed && (
+        <div className="lg:hidden flex items-center justify-between px-3.5 py-2.5 mb-4 rounded-2xl bg-stone-100/50 dark:bg-white/5 border border-stone-200/50 dark:border-white/5">
+          <span className="font-black text-[11px] text-stone-500 dark:text-stone-400 uppercase tracking-[0.15em]">
+            Giao diện
+          </span>
+          <ThemeToggle />
+        </div>
+      )}
+
       <button
         onClick={onLogout}
         aria-label="Đăng xuất"

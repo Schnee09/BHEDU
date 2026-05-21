@@ -4,6 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import { Icons } from '../ui/Icons';
 
+import { usePermissions } from '@/hooks/usePermissions';
+
 interface UserProfile {
   id?: string;
   full_name?: string | null;
@@ -30,6 +32,8 @@ export function UserMenu({
   profile,
   initials,
 }: UserMenuProps) {
+  const { can } = usePermissions();
+
   return (
     <div className="hidden md:block relative">
       <button
@@ -119,16 +123,18 @@ export function UserMenu({
               Hồ sơ của tôi
             </Link>
 
-            <Link
-              href="/dashboard/settings"
-              onClick={onClose}
-              className="flex items-center gap-4 px-6 py-4 hover:bg-stone-50 dark:hover:bg-white/5 transition-all text-sm font-black text-stone-700 dark:text-stone-300 group"
-            >
-              <div className="p-2 rounded-xl bg-stone-100 dark:bg-white/5 group-hover:bg-amber-500 group-hover:text-white transition-colors">
-                <Icons.Settings className="w-4 h-4" />
-              </div>
-              Cài đặt
-            </Link>
+            {can('system.settings') && (
+              <Link
+                href="/dashboard/settings"
+                onClick={onClose}
+                className="flex items-center gap-4 px-6 py-4 hover:bg-stone-50 dark:hover:bg-white/5 transition-all text-sm font-black text-stone-700 dark:text-stone-300 group"
+              >
+                <div className="p-2 rounded-xl bg-stone-100 dark:bg-white/5 group-hover:bg-amber-500 group-hover:text-white transition-colors">
+                  <Icons.Settings className="w-4 h-4" />
+                </div>
+                Cài đặt
+              </Link>
+            )}
 
             <div className="border-t border-stone-100 dark:border-white/5 my-1" />
 
