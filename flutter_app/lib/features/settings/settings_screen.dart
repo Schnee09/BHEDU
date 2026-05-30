@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/theme.dart';
 import '../../core/providers/customization_provider.dart';
 import '../../core/services/biometric_service.dart';
@@ -297,12 +298,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: Icons.lock_outline,
             title: 'Đổi mật khẩu',
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Navigate to change password
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tính năng đang phát triển')),
-              );
-            },
+            onTap: () => _showChangePasswordDialog(),
           ),
 
           // Data section
@@ -420,6 +416,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showChangePasswordDialog() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Đổi mật khẩu'),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: 'Mật khẩu mới',
+            hintText: 'Nhập ít nhất 6 ký tự',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Cập nhật'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final password = controller.text.trim();
+    if (password.length < 6) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Mật khẩu phải có ít nhất 6 ký tự')),
+      );
+      return;
+    }
+
+    try {
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(password: password),
+      );
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Đã đổi mật khẩu thành công'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
+      );
+    }
   }
 }
 

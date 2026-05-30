@@ -50,4 +50,26 @@ class ClassesRepository {
 
     return (response as List).length;
   }
+  /// Create a new class
+  Future<ClassModel> createClass({
+    required String name,
+    String? subjectId,
+    String? roomId,
+    String? teacherId,
+    int? capacity,
+  }) async {
+    final response = await supabase
+        .from('classes')
+        .insert({
+          'name': name,
+          if (subjectId != null) 'subject_id': subjectId,
+          if (roomId != null) 'room_id': roomId,
+          if (teacherId != null) 'teacher_id': teacherId,
+          if (capacity != null) 'capacity': capacity,
+        })
+        .select()
+        .single();
+
+    return ClassModel.fromJson(response);
+  }
 }

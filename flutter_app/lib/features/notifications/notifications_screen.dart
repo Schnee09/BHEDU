@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../config/theme.dart';
 import '../../core/l10n/app_strings.dart';
@@ -60,7 +61,23 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         notification: notification,
                         onTap: () {
                           ref.read(notificationsProvider.notifier).markAsRead(notification.id);
-                          // TODO: Navigate based on notification link or category
+                          if (notification.link != null && notification.link!.isNotEmpty) {
+                            context.push(notification.link!);
+                          } else {
+                            switch (notification.category) {
+                              case 'attendance':
+                              case 'grade':
+                              case 'finance':
+                                // Default to home/dashboard if no specific route for category is set
+                                context.go('/');
+                                break;
+                              case 'system':
+                                context.push('/settings');
+                                break;
+                              default:
+                                break;
+                            }
+                          }
                         },
                       );
                     },

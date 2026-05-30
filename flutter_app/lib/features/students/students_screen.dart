@@ -23,17 +23,29 @@ final studentsListProvider = FutureProvider<List<ProfileModel>>((ref) async {
 /// Search query provider
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
+/// Student status filter provider (null = show all)
+final studentStatusFilterProvider = StateProvider<StudentStatus?>((ref) => null);
+
 /// Filtered students provider
 final filteredStudentsProvider = FutureProvider<List<ProfileModel>>((
   ref,
 ) async {
   final query = ref.watch(searchQueryProvider);
+  final statusFilter = ref.watch(studentStatusFilterProvider);
   final repo = ref.watch(studentsRepositoryProvider);
 
+  List<ProfileModel> students;
   if (query.isEmpty) {
-    return repo.getStudents();
+    students = await repo.getStudents();
+  } else {
+    students = await repo.searchStudents(query);
   }
-  return repo.searchStudents(query);
+
+  if (statusFilter != null) {
+    students = students.where((s) => s.status == statusFilter).toList();
+  }
+
+  return students;
 });
 
 class StudentsScreen extends ConsumerStatefulWidget {
@@ -63,19 +75,30 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
     }
   }
 
+  Future<void> _showFilterDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => const _FilterDialog(),
+    );
+    // Invalidate after filter changes (provider already auto-rebuilds)
+  }
+
   @override
   Widget build(BuildContext context) {
     final studentsAsync = ref.watch(filteredStudentsProvider);
+    final statusFilter = ref.watch(studentStatusFilterProvider);
+    final hasFilter = statusFilter != null;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Học sinh'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              // TODO: Filter dialog
-            },
+            icon: Badge(
+              isLabelVisible: hasFilter,
+              child: const Icon(Icons.filter_list),
+            ),
+            onPressed: _showFilterDialog,
           ),
         ],
       ),
@@ -105,6 +128,24 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
               },
             ),
           ),
+
+          // Active filter chip
+          if (hasFilter)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: Text(statusFilter.labelVi),
+                    selected: true,
+                    onSelected: (_) {},
+                    onDeleted: () {
+                      ref.read(studentStatusFilterProvider.notifier).state = null;
+                    },
+                  ),
+                ],
+              ),
+            ),
 
           // Students list
           Expanded(
@@ -420,4 +461,73 @@ class _EmptyState extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FilterDialog extends ConsumerWidget {
+  const _FilterDialog();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentStatus = ref.watch(studentStatusFilterProvider);
+
+    void setStatus(StudentStatus? value) {
+      ref.read(studentStatusFilterProvider.notifier).state = value;
+    }
+
+    // Build status items as a list (needed for RadioGroup child)
+    final statusItems = [
+      _StatusOption(value: null, label: 'Tất cả'),
+      ...StudentStatus.values.map(
+        (s) => _StatusOption(value: s, label: s.labelVi),
+      ),
+    ];
+
+    return AlertDialog(
+      title: const Text('Lọc học sinh'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Trạng thái',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          RadioGroup<StudentStatus?>(
+            groupValue: currentStatus,
+            onChanged: (value) => setStatus(value),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: statusItems.map((option) {
+                return RadioListTile<StudentStatus?>(
+                  title: Text(option.label),
+                  value: option.value,
+                  contentPadding: EdgeInsets.zero,
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            setStatus(null);
+            Navigator.pop(context);
+          },
+          child: const Text('Xóa bộ lọc'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Áp dụng'),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusOption {
+  final StudentStatus? value;
+  final String label;
+  const _StatusOption({required this.value, required this.label});
 }

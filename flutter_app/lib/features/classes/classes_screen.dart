@@ -70,8 +70,14 @@ class ClassesScreen extends ConsumerWidget {
       floatingActionButton: isTeacher
           ? null
           : FloatingActionButton.extended(
-              onPressed: () {
-                // TODO: Add class
+              onPressed: () async {
+                final result = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => const _AddClassDialog(),
+                );
+                if (result == true) {
+                  ref.invalidate(classesListProvider);
+                }
               },
               icon: const Icon(Icons.add),
               label: const Text('Add Class'),
@@ -230,6 +236,105 @@ class _EmptyState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AddClassDialog extends ConsumerStatefulWidget {
+  const _AddClassDialog();
+
+  @override
+  ConsumerState<_AddClassDialog> createState() => _AddClassDialogState();
+}
+
+class _AddClassDialogState extends ConsumerState<_AddClassDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _capacityController = TextEditingController();
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _capacityController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    
+    try {
+      final repo = ref.read(classesRepositoryProvider);
+      await repo.createClass(
+        name: _nameController.text.trim(),
+        capacity: int.tryParse(_capacityController.text.trim()),
+      );
+
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã tạo lớp học thành công'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Thêm lớp học mới'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Tên lớp học'),
+                validator: (v) => v?.isEmpty == true ? 'Bắt buộc' : null,
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _capacityController,
+                decoration: const InputDecoration(labelText: 'Sĩ số tối đa'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        ElevatedButton(
+          onPressed: _isSaving ? null : _submit,
+          child: _isSaving
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Tạo mới'),
+        ),
+      ],
     );
   }
 }
