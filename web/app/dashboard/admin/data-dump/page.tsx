@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui';
-import { Icons } from "@/components/ui/Icons";
+import { Icons } from '@/components/ui/Icons';
 
 export default function DataDumpPage() {
   const [data, setData] = useState<any>(null);
@@ -11,13 +11,32 @@ export default function DataDumpPage() {
   useEffect(() => {
     const fetchAllData = async () => {
       const tables = [
-        'profiles', 'classes', 'enrollments', 'attendance',
-        'assignments', 'assignment_categories', 'grades', 'guardians',
-        'courses', 'lessons', 'academic_years', 'grading_scales',
-        'fee_types', 'payment_methods', 'audit_logs', 'import_logs',
-        'import_errors', 'school_settings', 'student_accounts',
-        'invoices', 'invoice_items', 'payments', 'payment_allocations',
-        'fee_assignments', 'payment_schedules', 'payment_schedule_installments'
+        'profiles',
+        'classes',
+        'enrollments',
+        'attendance',
+        'assignments',
+        'assignment_categories',
+        'grades',
+        'guardians',
+        'courses',
+        'lessons',
+        'academic_years',
+        'grading_scales',
+        'fee_types',
+        'payment_methods',
+        'audit_logs',
+        'import_logs',
+        'import_errors',
+        'school_settings',
+        'student_accounts',
+        'invoices',
+        'invoice_items',
+        'payments',
+        'payment_allocations',
+        'fee_assignments',
+        'payment_schedules',
+        'payment_schedule_installments',
       ];
 
       const results: any = {};
@@ -31,7 +50,7 @@ export default function DataDumpPage() {
             results[table] = {
               count: json.pagination?.total || 0,
               data: json.data || [],
-              success: true
+              success: true,
             };
             console.log(`✅ ${table}`);
           } else {
@@ -42,13 +61,13 @@ export default function DataDumpPage() {
             } catch {
               errorData = { error: errorText };
             }
-            
+
             results[table] = {
               count: 0,
               data: [],
               error: errorData.error || errorText,
               reason: errorData.reason,
-              success: false
+              success: false,
             };
             console.log(`❌ ${table}`, errorData);
           }
@@ -57,13 +76,13 @@ export default function DataDumpPage() {
             count: 0,
             data: [],
             error: error.message,
-            success: false
+            success: false,
           };
           console.log(`❌ ${table}`, error.message);
         }
-        
+
         // Add 200ms delay between requests to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
 
       setData(results);
@@ -73,13 +92,13 @@ export default function DataDumpPage() {
       console.log('='.repeat(80));
       console.log('DATABASE DATA DUMP - ' + new Date().toLocaleString());
       console.log('='.repeat(80));
-      
+
       // Summary table
       const summary = Object.entries(results).map(([table, info]: [string, any]) => ({
         Table: table,
         Count: info.count,
         Status: info.success ? '✅' : '❌',
-        Error: info.error || '-'
+        Error: info.error || '-',
       }));
       console.table(summary);
 
@@ -107,7 +126,7 @@ export default function DataDumpPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-8 flex items-center justify-center">
         <Card className="p-8 text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold text-gray-900">Fetching All Database Data...</h2>
@@ -117,26 +136,24 @@ export default function DataDumpPage() {
     );
   }
 
-  const summary = data ? Object.entries(data).map(([table, info]: [string, any]) => ({
-    table,
-    count: info.count,
-    success: info.success,
-    error: info.error
-  })) : [];
+  const summary = data
+    ? Object.entries(data).map(([table, info]: [string, any]) => ({
+        table,
+        count: info.count,
+        success: info.success,
+        error: info.error,
+      }))
+    : [];
 
   const totalRecords = summary.reduce((sum, item) => sum + item.count, 0);
-  const successTables = summary.filter(item => item.success).length;
+  const successTables = summary.filter((item) => item.success).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-8">
       <div className="max-w-7xl mx-auto">
         <Card className="p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            📥 Database Data Dump Complete
-          </h1>
-          <p className="text-gray-600 mb-6">
-            All data has been exported to your browser console
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">📥 Database Data Dump Complete</h1>
+          <p className="text-gray-600 mb-6">All data has been exported to your browser console</p>
 
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="bg-blue-50 rounded-lg p-4 text-center">
@@ -147,8 +164,8 @@ export default function DataDumpPage() {
               <p className="text-3xl font-bold text-green-600">{successTables}</p>
               <p className="text-sm text-gray-600">Successful</p>
             </div>
-            <div className="bg-purple-50 rounded-lg p-4 text-center">
-              <p className="text-3xl font-bold text-purple-600">{totalRecords}</p>
+            <div className="bg-amber-50 rounded-lg p-4 text-center">
+              <p className="text-3xl font-bold text-amber-600">{totalRecords}</p>
               <p className="text-sm text-gray-600">Total Records</p>
             </div>
           </div>
@@ -163,7 +180,10 @@ export default function DataDumpPage() {
                   Open your browser DevTools to see the data:
                 </p>
                 <ol className="mt-2 text-sm text-yellow-700 list-decimal list-inside space-y-1">
-                  <li>Press <kbd className="px-2 py-1 bg-white rounded border">F12</kbd> or right-click → Inspect</li>
+                  <li>
+                    Press <kbd className="px-2 py-1 bg-white rounded border">F12</kbd> or
+                    right-click → Inspect
+                  </li>
                   <li>Click on the "Console" tab</li>
                   <li>Scroll up to see the formatted tables and JSON data</li>
                 </ol>
@@ -173,13 +193,11 @@ export default function DataDumpPage() {
 
           <div className="space-y-2">
             <h3 className="font-semibold text-lg mb-3">Table Summary:</h3>
-            {summary.map(item => (
+            {summary.map((item) => (
               <div
                 key={item.table}
                 className={`flex items-center justify-between p-3 rounded-lg border ${
-                  item.success
-                    ? 'bg-green-50 border-green-200'
-                    : 'bg-red-50 border-red-200'
+                  item.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -206,7 +224,9 @@ export default function DataDumpPage() {
             </button>
             <button
               onClick={() => {
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const blob = new Blob([JSON.stringify(data, null, 2)], {
+                  type: 'application/json',
+                });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;

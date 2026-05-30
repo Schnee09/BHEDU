@@ -17,27 +17,29 @@
  * ```
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 import {
   checkRateLimit,
   getRateLimitIdentifier,
   type RateLimitConfig,
   rateLimitConfigs,
-} from "@/lib/auth/rateLimit";
-import { adminAuth, staffAuth, teacherAuth } from "@/lib/auth/adminAuth";
-import { logAuditEvent } from "@/lib/auth/auditLog";
+} from '@/lib/auth/rateLimit';
+import { adminAuth, staffAuth, teacherAuth } from '@/lib/auth/adminAuth';
+import { logAuditEvent } from '@/lib/auth/auditLog';
 
 // ============================================
 // Types
 // ============================================
 
 export type Role =
-  | "admin"
-  | "staff"
-  | "teacher"
-  | "student"
-  | "super_admin"
-  | "owner";
+  | 'admin'
+  | 'staff'
+  | 'teacher'
+  | 'tutor'
+  | 'parent'
+  | 'student'
+  | 'super_admin'
+  | 'owner';
 
 export interface MiddlewareContext {
   userId?: string;
@@ -48,10 +50,7 @@ export interface MiddlewareContext {
   };
 }
 
-export type Handler = (
-  request: NextRequest,
-  context: MiddlewareContext,
-) => Promise<NextResponse>;
+export type Handler = (request: NextRequest, context: MiddlewareContext) => Promise<NextResponse>;
 
 export type Middleware = (handler: Handler) => Handler;
 
@@ -62,52 +61,41 @@ export type Middleware = (handler: Handler) => Handler;
 const errorResponses = {
   unauthorized: () =>
     NextResponse.json(
-      { error: "Unauthorized", message: "Authentication required" },
-      { status: 401 },
+      { error: 'Unauthorized', message: 'Authentication required' },
+      { status: 401 }
     ),
 
-  forbidden: (message = "Access denied") =>
-    NextResponse.json(
-      { error: "Forbidden", message },
-      { status: 403 },
-    ),
+  forbidden: (message = 'Access denied') =>
+    NextResponse.json({ error: 'Forbidden', message }, { status: 403 }),
 
   rateLimited: (retryAfter: number) =>
     NextResponse.json(
       {
-        error: "Too Many Requests",
-        message: "Rate limit exceeded",
+        error: 'Too Many Requests',
+        message: 'Rate limit exceeded',
         retryAfter,
       },
       {
         status: 429,
-        headers: { "Retry-After": String(Math.ceil(retryAfter / 1000)) },
-      },
+        headers: { 'Retry-After': String(Math.ceil(retryAfter / 1000)) },
+      }
     ),
 
-  serverError: (message = "Internal server error") =>
-    NextResponse.json(
-      { error: "Internal Server Error", message },
-      { status: 500 },
-    ),
+  serverError: (message = 'Internal server error') =>
+    NextResponse.json({ error: 'Internal Server Error', message }, { status: 500 }),
 };
 
 // ============================================
 // Rate Limiting Middleware
 // ============================================
 
-export function withRateLimit(
-  config: RateLimitConfig = rateLimitConfigs.api,
-): Middleware {
-  return (handler: Handler) =>
-  async (request: NextRequest, context: MiddlewareContext) => {
+export function withRateLimit(config: RateLimitConfig = rateLimitConfigs.api): Middleware {
+  return (handler: Handler) => async (request: NextRequest, context: MiddlewareContext) => {
     const identifier = getRateLimitIdentifier(request, context.userId);
     const result = checkRateLimit(identifier, config);
 
     if (!result.allowed) {
-      const retryAfter = result.blockUntil
-        ? result.blockUntil - Date.now()
-        : config.windowMs;
+      const retryAfter = result.blockUntil ? result.blockUntil - Date.now() : config.windowMs;
 
       return errorResponses.rateLimited(retryAfter);
     }
@@ -130,8 +118,7 @@ export function withRateLimit(
  * Require any authenticated user
  */
 export function withAuth(roles?: Role[]): Middleware {
-  return (handler: Handler) =>
-  async (request: NextRequest, context: MiddlewareContext) => {
+  return (handler: Handler) => async (request: NextRequest, context: MiddlewareContext) => {
     // Try most permissive auth first
     const auth = await teacherAuth(request);
 
@@ -144,9 +131,7 @@ export function withAuth(roles?: Role[]): Middleware {
 
     // Check role restriction if specified
     if (roles && roles.length > 0 && !roles.includes(context.userRole)) {
-      return errorResponses.forbidden(
-        `Requires one of these roles: ${roles.join(", ")}`,
-      );
+      return errorResponses.forbidden(`Requires one of these roles: ${roles.join(', ')}`);
     }
 
     return handler(request, context);
@@ -157,13 +142,12 @@ export function withAuth(roles?: Role[]): Middleware {
  * Require admin role specifically
  */
 export function withAdminAuth(): Middleware {
-  return (handler: Handler) =>
-  async (request: NextRequest, context: MiddlewareContext) => {
+  return (handler: Handler) => async (request: NextRequest, context: MiddlewareContext) => {
     const auth = await adminAuth(request);
 
     if (!auth.authorized) {
-      return auth.reason === "Forbidden"
-        ? errorResponses.forbidden("Admin access required")
+      return auth.reason === 'Forbidden'
+        ? errorResponses.forbidden('Admin access required')
         : errorResponses.unauthorized();
     }
 
@@ -178,13 +162,12 @@ export function withAdminAuth(): Middleware {
  * Require staff or admin role
  */
 export function withStaffAuth(): Middleware {
-  return (handler: Handler) =>
-  async (request: NextRequest, context: MiddlewareContext) => {
+  return (handler: Handler) => async (request: NextRequest, context: MiddlewareContext) => {
     const auth = await staffAuth(request);
 
     if (!auth.authorized) {
-      return auth.reason === "Forbidden"
-        ? errorResponses.forbidden("Staff or admin access required")
+      return auth.reason === 'Forbidden'
+        ? errorResponses.forbidden('Staff or admin access required')
         : errorResponses.unauthorized();
     }
 
@@ -200,8 +183,7 @@ export function withStaffAuth(): Middleware {
 // ============================================
 
 export function withAuditLog(action: string): Middleware {
-  return (handler: Handler) =>
-  async (request: NextRequest, context: MiddlewareContext) => {
+  return (handler: Handler) => async (request: NextRequest, context: MiddlewareContext) => {
     const startTime = Date.now();
 
     try {
@@ -209,7 +191,7 @@ export function withAuditLog(action: string): Middleware {
 
       // Log successful action
       logAuditEvent({
-        type: "data.read",
+        type: 'data.read',
         userId: context.userId,
         action,
         resource: request.nextUrl.pathname,
@@ -220,8 +202,7 @@ export function withAuditLog(action: string): Middleware {
           durationMs: Date.now() - startTime,
         },
         request: {
-          ip: request.headers.get("x-forwarded-for")?.split(",")[0] ||
-            undefined,
+          ip: request.headers.get('x-forwarded-for')?.split(',')[0] || undefined,
           method: request.method,
           url: request.url,
         },
@@ -231,19 +212,18 @@ export function withAuditLog(action: string): Middleware {
     } catch (error) {
       // Log failed action
       logAuditEvent({
-        type: "data.read",
+        type: 'data.read',
         userId: context.userId,
         action,
         resource: request.nextUrl.pathname,
         success: false,
-        reason: error instanceof Error ? error.message : "Unknown error",
+        reason: error instanceof Error ? error.message : 'Unknown error',
         metadata: {
           method: request.method,
           durationMs: Date.now() - startTime,
         },
         request: {
-          ip: request.headers.get("x-forwarded-for")?.split(",")[0] ||
-            undefined,
+          ip: request.headers.get('x-forwarded-for')?.split(',')[0] || undefined,
           method: request.method,
           url: request.url,
         },
@@ -269,19 +249,16 @@ export function withMiddleware(
   const middlewares = args as Middleware[];
 
   // Apply middlewares in reverse order (last added wraps first)
-  const composed = middlewares.reduceRight(
-    (acc, middleware) => middleware(acc),
-    handler,
-  );
+  const composed = middlewares.reduceRight((acc, middleware) => middleware(acc), handler);
 
   return async (request: NextRequest) => {
     try {
       const context: MiddlewareContext = {};
       return await composed(request, context);
     } catch (error) {
-      console.error("[Middleware] Unhandled error:", error);
+      console.error('[Middleware] Unhandled error:', error);
       return errorResponses.serverError(
-        error instanceof Error ? error.message : "An unexpected error occurred",
+        error instanceof Error ? error.message : 'An unexpected error occurred'
       );
     }
   };
@@ -302,8 +279,7 @@ export const middlewarePresets = {
   authenticated: () => [withRateLimit(), withAuth()],
 
   /** Admin-only API with stricter rate limiting */
-  adminOnly:
-    () => [withRateLimit(rateLimitConfigs.authStrict), withAdminAuth()],
+  adminOnly: () => [withRateLimit(rateLimitConfigs.authStrict), withAdminAuth()],
 
   /** Staff/Admin API */
   staffOnly: () => [withRateLimit(), withStaffAuth()],

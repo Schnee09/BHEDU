@@ -1,17 +1,9 @@
-"use client"
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api/client';
 import { logger } from '@/lib/logger';
-import {
-  Button,
-  Input,
-  Modal,
-  Card,
-  Table,
-  Badge,
-  Alert
-} from '@/components/ui';
+import { Button, Input, Modal, Card, Table, Badge, Alert } from '@/components/ui';
 import { DropdownMenu, DropdownItem } from '@/components/ui/dropdown-menu';
 import { StatCard } from '@/components/ui/Card';
 import { SkeletonTable, SkeletonStatCard } from '@/components/ui/skeleton';
@@ -19,10 +11,10 @@ import { Select } from '@/components/ui/form';
 import { Icons } from '@/components/ui/Icons';
 import PageGuard from '@/components/PageGuard';
 import type { UserRole } from '@/lib/auth/core';
-import MobileUserList from "@/components/users/MobileUserList";
-import UserFormModal from "@/components/users/UserFormModal";
-import ResetPasswordModal from "@/components/users/ResetPasswordModal";
-import DeleteUserModal from "@/components/users/DeleteUserModal";
+import MobileUserList from '@/components/users/MobileUserList';
+import UserFormModal from '@/components/users/UserFormModal';
+import ResetPasswordModal from '@/components/users/ResetPasswordModal';
+import DeleteUserModal from '@/components/users/DeleteUserModal';
 import { AcademicBackground } from '@/components/Academic/AcademicBackground';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
@@ -108,7 +100,7 @@ function UserManagementPageContent() {
       const params = new URLSearchParams({
         search: searchQuery,
         page: page.toString(),
-        limit: '50'
+        limit: '50',
       });
 
       if (roleFilter !== 'all') params.append('role', roleFilter);
@@ -128,7 +120,9 @@ function UserManagementPageContent() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to fetch users';
       setError(errorMsg);
-      logger.error('Error fetching users', err instanceof Error ? err : new Error(errorMsg), { originalError: errorMsg });
+      logger.error('Error fetching users', err instanceof Error ? err : new Error(errorMsg), {
+        originalError: errorMsg,
+      });
       setUsers([]);
     } finally {
       setLoading(false);
@@ -140,7 +134,6 @@ function UserManagementPageContent() {
     fetchUsers();
   }, [roleFilter, activeFilter, searchQuery, page, fetchUsers]);
 
-
   const handleToggleActive = async (user: User) => {
     setLoading(true);
     setError(null);
@@ -148,25 +141,32 @@ function UserManagementPageContent() {
     try {
       logger.info('Toggling user active status', {
         userId: user.id,
-        currentStatus: user.is_active
+        currentStatus: user.is_active,
       });
 
       const response = await apiFetch(`/api/admin/users/${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...user, is_active: !user.is_active })
+        body: JSON.stringify({ ...user, is_active: !user.is_active }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Thành công', `Người dùng đã được ${user.is_active ? 'vô hiệu hóa' : 'kích hoạt'} thành công!`);
+        toast.success(
+          'Thành công',
+          `Người dùng đã được ${user.is_active ? 'vô hiệu hóa' : 'kích hoạt'} thành công!`
+        );
         fetchUsers();
 
-        logger.audit('User status changed', {}, {
-          userId: user.id,
-          newStatus: !user.is_active
-        });
+        logger.audit(
+          'User status changed',
+          {},
+          {
+            userId: user.id,
+            newStatus: !user.is_active,
+          }
+        );
       } else {
         throw new Error(data.error || 'Failed to toggle user status');
       }
@@ -176,7 +176,6 @@ function UserManagementPageContent() {
       setLoading(false);
     }
   };
-
 
   const openEditModal = (user: User) => {
     setSelectedUser(user);
@@ -192,7 +191,7 @@ function UserManagementPageContent() {
     switch (role) {
       case 'admin':
       case 'super_admin':
-        return 'info'; // Indigo/Blue for admin
+        return 'info'; // Sky/Blue for admin
       case 'owner':
         return 'warning'; // Amber for owner
       case 'teacher':
@@ -274,7 +273,6 @@ function UserManagementPageContent() {
     <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-['Be_Vietnam_Pro'] selection:bg-emerald-600/30 text-stone-900 dark:text-stone-100 p-4 md:p-12 lg:p-16">
       <AcademicBackground />
       <div className="max-w-[1600px] mx-auto space-y-12 relative z-10 animate-fade-in">
-
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-stone-200 dark:border-stone-800 pb-10">
           <div className="space-y-4">
@@ -328,7 +326,7 @@ function UserManagementPageContent() {
                   className="h-14 rounded-xl font-semibold text-sm glass-crystal border-none"
                   options={[
                     { value: 'all', label: 'Tất cả vai trò' },
-                    ...roleOptions.map(o => ({ value: o.value, label: o.label }))
+                    ...roleOptions.map((o) => ({ value: o.value, label: o.label })),
                   ]}
                 />
               </div>
@@ -367,8 +365,12 @@ function UserManagementPageContent() {
                 <div className="w-20 h-20 bg-stone-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Icons.Users className="w-10 h-10 text-stone-300" />
                 </div>
-                <h3 className="text-xl font-black text-stone-900 dark:text-white mb-2">Không tìm thấy ai cả!</h3>
-                <p className="text-stone-400 font-medium">Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
+                <h3 className="text-xl font-black text-stone-900 dark:text-white mb-2">
+                  Không tìm thấy ai cả!
+                </h3>
+                <p className="text-stone-400 font-medium">
+                  Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.
+                </p>
                 <Button
                   variant="outline"
                   className="mt-8 rounded-xl"
@@ -398,24 +400,34 @@ function UserManagementPageContent() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-bold text-stone-900 dark:text-white tracking-tight">{user.full_name}</p>
+                              <p className="font-bold text-stone-900 dark:text-white tracking-tight">
+                                {user.full_name}
+                              </p>
                               {user.is_managed && (
-                                <Badge variant="info" className="text-[9px] px-2 py-0.5 rounded font-bold">Quản lý bởi HT</Badge>
+                                <Badge
+                                  variant="info"
+                                  className="text-[9px] px-2 py-0.5 rounded font-bold"
+                                >
+                                  Quản lý bởi HT
+                                </Badge>
                               )}
                             </div>
                             <p className="text-xs text-stone-400 font-medium">{user.email}</p>
                           </div>
                         </div>
-                      )
+                      ),
                     },
                     {
                       key: 'role',
                       header: 'VAI TRÒ',
                       render: (user) => (
-                        <Badge variant={getRoleBadgeVariant(user.role) as any} className="px-3 py-1 rounded-full border-none shadow-sm font-bold text-xs ring-1 ring-stone-900/5 dark:ring-white/10">
+                        <Badge
+                          variant={getRoleBadgeVariant(user.role) as any}
+                          className="px-3 py-1 rounded-full border-none shadow-sm font-bold text-xs ring-1 ring-stone-900/5 dark:ring-white/10"
+                        >
                           {getRoleLabel(user.role)}
                         </Badge>
-                      )
+                      ),
                     },
                     {
                       key: 'identity',
@@ -424,7 +436,9 @@ function UserManagementPageContent() {
                         <div className="flex flex-col gap-1">
                           {(user.student_code || user.teacher_code) && (
                             <div className="flex items-center gap-1.5 text-[10px]">
-                              <span className="text-stone-400 font-bold uppercase tracking-wide opacity-70">UID:</span>
+                              <span className="text-stone-400 font-bold uppercase tracking-wide opacity-70">
+                                UID:
+                              </span>
                               <code className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-mono font-bold">
                                 {user.student_code || user.teacher_code}
                               </code>
@@ -432,29 +446,31 @@ function UserManagementPageContent() {
                           )}
                           {user.role === 'student' && user.student_id && (
                             <div className="flex items-center gap-1.5 text-[10px]">
-                              <span className="text-stone-400 font-bold uppercase tracking-wide opacity-70">CID:</span>
+                              <span className="text-stone-400 font-bold uppercase tracking-wide opacity-70">
+                                CID:
+                              </span>
                               <code className="bg-amber-500/10 text-amber-600 dark:text-amber-500 px-1.5 py-0.5 rounded font-mono font-bold">
                                 {user.student_id}
                               </code>
                             </div>
                           )}
-                          {(!user.student_code && !user.teacher_code && !user.student_id) && (
+                          {!user.student_code && !user.teacher_code && !user.student_id && (
                             <span className="text-stone-400 font-mono text-xs">—</span>
                           )}
                         </div>
-                      )
+                      ),
                     },
                     {
                       key: 'status',
                       header: 'TRẠNG THÁI',
                       render: (user) => (
                         <Badge
-                          variant={user.is_active ? "success" : "danger"}
+                          variant={user.is_active ? 'success' : 'danger'}
                           className="px-3 py-1 rounded-full border-none shadow-sm font-bold text-xs ring-1 ring-stone-900/5 dark:ring-white/10"
                         >
                           {user.is_active ? 'Hoạt động' : 'Đã khóa'}
                         </Badge>
-                      )
+                      ),
                     },
                     {
                       key: 'created_at',
@@ -465,10 +481,13 @@ function UserManagementPageContent() {
                             {new Date(user.created_at).toLocaleDateString('vi-VN')}
                           </span>
                           <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wide">
-                            {new Date(user.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(user.created_at).toLocaleTimeString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
                           </span>
                         </div>
-                      )
+                      ),
                     },
                     {
                       key: 'actions',
@@ -498,8 +517,14 @@ function UserManagementPageContent() {
                             </DropdownItem>
                             <DropdownItem
                               onClick={() => handleToggleActive(user)}
-                              variant={user.is_active ? "danger" : "default"}
-                              icon={user.is_active ? <Icons.Error className="w-4 h-4" /> : <Icons.Success className="w-4 h-4" />}
+                              variant={user.is_active ? 'danger' : 'default'}
+                              icon={
+                                user.is_active ? (
+                                  <Icons.Error className="w-4 h-4" />
+                                ) : (
+                                  <Icons.Success className="w-4 h-4" />
+                                )
+                              }
                               className="font-bold py-3"
                             >
                               {user.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
@@ -518,8 +543,8 @@ function UserManagementPageContent() {
                             </DropdownItem>
                           </DropdownMenu>
                         </div>
-                      )
-                    }
+                      ),
+                    },
                   ]}
                 />
               </div>

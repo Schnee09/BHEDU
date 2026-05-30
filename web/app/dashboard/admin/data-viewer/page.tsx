@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api/client';
@@ -35,7 +35,7 @@ export default function DataViewerPage() {
           const counts: Record<string, number> = countsJson?.counts || {};
           const errors: Record<string, string> = countsJson?.errors || {};
 
-          setTableData(prev => {
+          setTableData((prev) => {
             const next = { ...prev };
             for (const table of tableList) {
               const count = typeof counts[table] === 'number' ? counts[table] : 0;
@@ -45,7 +45,7 @@ export default function DataViewerPage() {
                 count,
                 data: prev[table]?.data || [],
                 loading: false,
-                ...(error ? { error } : {})
+                ...(error ? { error } : {}),
               };
             }
             return next;
@@ -64,15 +64,15 @@ export default function DataViewerPage() {
   }, []);
 
   const fetchTableData = useCallback(async (tableName: string) => {
-    setTableData(prev => ({
+    setTableData((prev) => ({
       ...prev,
-      [tableName]: { tableName, count: 0, data: [], loading: true }
+      [tableName]: { tableName, count: 0, data: [], loading: true },
     }));
 
     try {
       // Use the admin API to fetch table data
       const response = await apiFetch(`/api/admin/data/${tableName}?limit=100`);
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch data');
@@ -80,26 +80,26 @@ export default function DataViewerPage() {
 
       const result = await response.json();
 
-      setTableData(prev => ({
+      setTableData((prev) => ({
         ...prev,
         [tableName]: {
           tableName,
           // keep existing count if we already fetched counts-first
           count: (prev?.[tableName]?.count ?? result.pagination?.total) || 0,
           data: result.data || [],
-          loading: false
-        }
+          loading: false,
+        },
       }));
     } catch (error: any) {
-      setTableData(prev => ({
+      setTableData((prev) => ({
         ...prev,
         [tableName]: {
           tableName,
           count: 0,
           data: [],
           error: error.message,
-          loading: false
-        }
+          loading: false,
+        },
       }));
     }
   }, []);
@@ -113,15 +113,11 @@ export default function DataViewerPage() {
   const selectedData = tableData[selectedTable];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            📊 Database Data Viewer
-          </h1>
-          <p className="text-gray-600">
-            View all data from your Supabase tables
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">📊 Database Data Viewer</h1>
+          <p className="text-gray-600">View all data from your Supabase tables</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -130,18 +126,16 @@ export default function DataViewerPage() {
             <Card className="p-4">
               <h2 className="text-lg font-semibold mb-4 text-gray-900">Tables</h2>
               <div className="space-y-2">
-                {tables.map(table => {
+                {tables.map((table) => {
                   const data = tableData[table];
                   const isSelected = selectedTable === table;
-                  
+
                   return (
                     <button
                       key={table}
                       onClick={() => setSelectedTable(table)}
                       className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                        isSelected
-                          ? 'bg-blue-500 text-white'
-                          : 'hover:bg-gray-100 text-gray-700'
+                        isSelected ? 'bg-blue-500 text-white' : 'hover:bg-gray-100 text-gray-700'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -151,9 +145,11 @@ export default function DataViewerPage() {
                         ) : data?.error ? (
                           <span className="text-xs text-red-500">❌</span>
                         ) : (
-                          <span className={`text-xs font-semibold ${
-                            isSelected ? 'text-white' : 'text-blue-600'
-                          }`}>
+                          <span
+                            className={`text-xs font-semibold ${
+                              isSelected ? 'text-white' : 'text-blue-600'
+                            }`}
+                          >
                             {data?.count ?? 0}
                           </span>
                         )}
@@ -170,9 +166,7 @@ export default function DataViewerPage() {
             <Card className="p-6">
               <div className="mb-6 flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {selectedTable}
-                  </h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{selectedTable}</h2>
                   {selectedData && !selectedData.loading && !selectedData.error && (
                     <p className="text-sm text-gray-600 mt-1">
                       Showing {selectedData.data.length} of {selectedData.count} rows
@@ -204,47 +198,56 @@ export default function DataViewerPage() {
               )}
 
               {/* Empty State */}
-              {selectedData && !selectedData.loading && !selectedData.error && selectedData.data.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-gray-600 text-lg">No data in this table</p>
-                </div>
-              )}
+              {selectedData &&
+                !selectedData.loading &&
+                !selectedData.error &&
+                selectedData.data.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-600 text-lg">No data in this table</p>
+                  </div>
+                )}
 
               {/* Data Display */}
-              {selectedData && !selectedData.loading && !selectedData.error && selectedData.data.length > 0 && (
-                <div className="overflow-x-auto">
-                  <div className="space-y-4">
-                    {selectedData.data.map((row, index) => (
-                      <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {Object.entries(row).map(([key, value]) => (
-                            <div key={key} className="flex flex-col">
-                              <span className="text-xs font-semibold text-gray-600 uppercase mb-1">
-                                {key}
-                              </span>
-                              <span className="text-sm text-gray-900 font-mono break-all">
-                                {value === null ? (
-                                  <span className="text-gray-600 italic">null</span>
-                                ) : typeof value === 'object' ? (
-                                  <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
-                                    {JSON.stringify(value, null, 2)}
-                                  </pre>
-                                ) : typeof value === 'boolean' ? (
-                                  <span className={value ? 'text-green-600' : 'text-red-600'}>
-                                    {value ? '✓ true' : '✗ false'}
-                                  </span>
-                                ) : (
-                                  String(value)
-                                )}
-                              </span>
-                            </div>
-                          ))}
+              {selectedData &&
+                !selectedData.loading &&
+                !selectedData.error &&
+                selectedData.data.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <div className="space-y-4">
+                      {selectedData.data.map((row, index) => (
+                        <div
+                          key={index}
+                          className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {Object.entries(row).map(([key, value]) => (
+                              <div key={key} className="flex flex-col">
+                                <span className="text-xs font-semibold text-gray-600 uppercase mb-1">
+                                  {key}
+                                </span>
+                                <span className="text-sm text-gray-900 font-mono break-all">
+                                  {value === null ? (
+                                    <span className="text-gray-600 italic">null</span>
+                                  ) : typeof value === 'object' ? (
+                                    <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
+                                      {JSON.stringify(value, null, 2)}
+                                    </pre>
+                                  ) : typeof value === 'boolean' ? (
+                                    <span className={value ? 'text-green-600' : 'text-red-600'}>
+                                      {value ? '✓ true' : '✗ false'}
+                                    </span>
+                                  ) : (
+                                    String(value)
+                                  )}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </Card>
           </div>
         </div>
@@ -253,12 +256,12 @@ export default function DataViewerPage() {
         <Card className="mt-6 p-6">
           <h3 className="text-lg font-semibold mb-4 text-gray-900">📈 Database Summary</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {tables.map(table => {
+            {tables.map((table) => {
               const data = tableData[table];
               return (
                 <div key={table} className="text-center">
                   <p className="text-2xl font-bold text-blue-600">
-                    {data?.loading ? '...' : data?.error ? '❌' : data?.count ?? 0}
+                    {data?.loading ? '...' : data?.error ? '❌' : (data?.count ?? 0)}
                   </p>
                   <p className="text-xs text-gray-600 mt-1">{table}</p>
                 </div>
@@ -271,21 +274,21 @@ export default function DataViewerPage() {
         <div className="mt-6 text-center">
           <button
             onClick={() => {
-              const summary = tables.map(table => {
+              const summary = tables.map((table) => {
                 const data = tableData[table];
                 return {
                   table,
                   count: data?.count ?? 0,
                   hasError: !!data?.error,
-                  error: data?.error
+                  error: data?.error,
                 };
               });
-              
+
               console.log('=== DATABASE SUMMARY ===');
               console.table(summary);
               console.log('=== FULL DATA ===');
               console.log(JSON.stringify(tableData, null, 2));
-              
+
               alert('Data exported to browser console! Check DevTools → Console');
             }}
             className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"

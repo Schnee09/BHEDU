@@ -1,144 +1,143 @@
 /**
  * Bulk Student Import Page
- * Refactored with Purple Ban design system
+ * Refactored with Strict Ban design system
  */
 
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { apiFetch } from '@/lib/api/client'
-import { routes } from '@/lib/routes'
-import { 
-  parseCSV, 
-  validateImportData, 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { apiFetch } from '@/lib/api/client';
+import { routes } from '@/lib/routes';
+import {
+  parseCSV,
+  validateImportData,
   generateCSVTemplate,
-  type ImportPreview
-} from '@/lib/importService'
-import { Button, Card, CardHeader, Badge } from '@/components/ui'
-import { Icons } from '@/components/ui/Icons'
-import { cn } from '@/lib/utils'
+  type ImportPreview,
+} from '@/lib/importService';
+import { Button, Card, CardHeader, Badge } from '@/components/ui';
+import { Icons } from '@/components/ui/Icons';
+import { cn } from '@/lib/utils';
 
 export default function BulkImportPage() {
-  const router = useRouter()
-  const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<ImportPreview | null>(null)
-  const [importing, setImporting] = useState(false)
-  const [importComplete, setImportComplete] = useState(false)
+  const router = useRouter();
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<ImportPreview | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importComplete, setImportComplete] = useState(false);
   const [importResults, setImportResults] = useState<{
-    total: number
-    successCount: number
-    errorCount: number
-    errors: Array<{ row: number; email: string; error: string }>
-  } | null>(null)
-  const [dragActive, setDragActive] = useState(false)
+    total: number;
+    successCount: number;
+    errorCount: number;
+    errors: Array<{ row: number; email: string; error: string }>;
+  } | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   // Handle file selection
   const handleFileChange = async (selectedFile: File | null) => {
     if (!selectedFile) {
-      setFile(null)
-      setPreview(null)
-      return
+      setFile(null);
+      setPreview(null);
+      return;
     }
 
-    setFile(selectedFile)
+    setFile(selectedFile);
 
     try {
       // Parse and validate CSV
-      const rows = await parseCSV(selectedFile)
-      const validation = await validateImportData(rows)
-      setPreview(validation)
+      const rows = await parseCSV(selectedFile);
+      const validation = await validateImportData(rows);
+      setPreview(validation);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Không thể đọc tệp CSV')
-      setFile(null)
-      setPreview(null)
+      alert(error instanceof Error ? error.message : 'Không thể đọc tệp CSV');
+      setFile(null);
+      setPreview(null);
     }
-  }
+  };
 
   // Handle drag and drop
   const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault();
+    e.stopPropagation();
     if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
+      setDragActive(true);
     } else if (e.type === 'dragleave') {
-      setDragActive(false)
+      setDragActive(false);
     }
-  }
+  };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileChange(e.dataTransfer.files[0])
+      handleFileChange(e.dataTransfer.files[0]);
     }
-  }
+  };
 
   // Download CSV template
   const downloadTemplate = () => {
-    const csv = generateCSVTemplate()
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'bieu_mau_nhap_lieu_hoc_sinh.csv'
-    a.click()
-    window.URL.revokeObjectURL(url)
-  }
+    const csv = generateCSVTemplate();
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bieu_mau_nhap_lieu_hoc_sinh.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   // Handle import
   const handleImport = async () => {
     if (!preview || preview.valid.length === 0) {
-      alert('Không có dữ liệu hợp lệ để nhập')
-      return
+      alert('Không có dữ liệu hợp lệ để nhập');
+      return;
     }
 
     if (preview.errorRows > 0) {
       const confirmed = confirm(
         `Đang có ${preview.errorRows} dòng gặp lỗi. Bạn có muốn tiếp tục nhập ${preview.validRows} học sinh hợp lệ không?`
-      )
-      if (!confirmed) return
+      );
+      if (!confirmed) return;
     }
 
-    setImporting(true)
+    setImporting(true);
 
     try {
       const response = await apiFetch('/api/admin/students/import', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          students: preview.valid
-        })
-      })
+          students: preview.valid,
+        }),
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Nhập liệu thất bại')
+        throw new Error(data.error || 'Nhập liệu thất bại');
       }
 
-      setImportResults(data.results)
-      setImportComplete(true)
-
+      setImportResults(data.results);
+      setImportComplete(true);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Lỗi hệ thống khi nhập liệu')
+      alert(error instanceof Error ? error.message : 'Lỗi hệ thống khi nhập liệu');
     } finally {
-      setImporting(false)
+      setImporting(false);
     }
-  }
+  };
 
   // Reset form
   const handleReset = () => {
-    setFile(null)
-    setPreview(null)
-    setImportComplete(false)
-    setImportResults(null)
-  }
+    setFile(null);
+    setPreview(null);
+    setImportComplete(false);
+    setImportResults(null);
+  };
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-10 relative overflow-x-hidden bg-stone-50 dark:bg-stone-950">
@@ -146,7 +145,10 @@ export default function BulkImportPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-stone-200/50 dark:border-white/5 mb-8">
           <div className="space-y-4">
-            <Link href={routes.students.list()} className="group inline-flex items-center text-[10px] font-black text-amber-600 uppercase tracking-widest hover:translate-x-[-4px] transition-transform">
+            <Link
+              href={routes.students.list()}
+              className="group inline-flex items-center text-[10px] font-black text-amber-600 uppercase tracking-widest hover:translate-x-[-4px] transition-transform"
+            >
               <Icons.Back className="w-3 h-3 mr-2" /> Quay lại danh sách
             </Link>
             <div className="flex items-center gap-3">
@@ -159,7 +161,7 @@ export default function BulkImportPage() {
               Hệ thống xử lý hồ sơ tự động qua tệp tin CSV
             </p>
           </div>
-          
+
           <Button
             onClick={downloadTemplate}
             variant="outline"
@@ -178,10 +180,10 @@ export default function BulkImportPage() {
                 <div className="p-8 text-center">
                   <div
                     className={cn(
-                      "border-2 border-dashed rounded-3xl p-16 transition-all duration-500 group relative overflow-hidden",
+                      'border-2 border-dashed rounded-3xl p-16 transition-all duration-500 group relative overflow-hidden',
                       dragActive
-                        ? "border-amber-500 bg-amber-500/5 scale-[1.01]"
-                        : "border-stone-100 dark:border-white/5 hover:border-amber-500/50 hover:bg-stone-50/50 dark:hover:bg-white/[0.02]"
+                        ? 'border-amber-500 bg-amber-500/5 scale-[1.01]'
+                        : 'border-stone-100 dark:border-white/5 hover:border-amber-500/50 hover:bg-stone-50/50 dark:hover:bg-white/[0.02]'
                     )}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
@@ -218,8 +220,12 @@ export default function BulkImportPage() {
                           <Icons.Check className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <p className="font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight text-lg">{file.name}</p>
-                          <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">{(file.size / 1024).toFixed(2)} KB • Sẵn sàng xử lý</p>
+                          <p className="font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight text-lg">
+                            {file.name}
+                          </p>
+                          <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">
+                            {(file.size / 1024).toFixed(2)} KB • Sẵn sàng xử lý
+                          </p>
                         </div>
                       </div>
                       <Button
@@ -234,15 +240,30 @@ export default function BulkImportPage() {
                 </div>
               </Card>
             </div>
-            
+
             {/* Preview and Validation Results */}
             {preview && (
               <div className="lg:col-span-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-                  <StatCardModern label="Tổng số hồ sơ" value={preview.totalRows} color="blue" icon={<Icons.Students className="w-6 h-6"/>} />
-                  <StatCardModern label="Hồ sơ hợp lệ" value={preview.validRows} color="emerald" icon={<Icons.Success className="w-6 h-6"/>} />
-                  <StatCardModern label="Hồ sơ lỗi" value={preview.errorRows} color="rose" icon={<Icons.Error className="w-6 h-6"/>} />
+                  <StatCardModern
+                    label="Tổng số hồ sơ"
+                    value={preview.totalRows}
+                    color="blue"
+                    icon={<Icons.Students className="w-6 h-6" />}
+                  />
+                  <StatCardModern
+                    label="Hồ sơ hợp lệ"
+                    value={preview.validRows}
+                    color="emerald"
+                    icon={<Icons.Success className="w-6 h-6" />}
+                  />
+                  <StatCardModern
+                    label="Hồ sơ lỗi"
+                    value={preview.errorRows}
+                    color="rose"
+                    icon={<Icons.Error className="w-6 h-6" />}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -256,11 +277,20 @@ export default function BulkImportPage() {
                         </h3>
                         <div className="space-y-3 max-h-96 overflow-y-auto pr-3 custom-scrollbar">
                           {preview.errors.map((error, idx) => (
-                            <div key={idx} className="text-xs p-4 bg-white dark:bg-stone-900 border border-rose-100 dark:border-rose-500/10 rounded-2xl flex items-center gap-4 transition-all hover:translate-x-1">
-                              <Badge variant="danger" className="font-black text-[9px] h-6 px-3">Dòng {error.row}</Badge>
+                            <div
+                              key={idx}
+                              className="text-xs p-4 bg-white dark:bg-stone-900 border border-rose-100 dark:border-rose-500/10 rounded-2xl flex items-center gap-4 transition-all hover:translate-x-1"
+                            >
+                              <Badge variant="danger" className="font-black text-[9px] h-6 px-3">
+                                Dòng {error.row}
+                              </Badge>
                               <div className="flex-1">
-                                <span className="font-black text-stone-400 uppercase tracking-widest mr-2">{error.field}:</span>
-                                <span className="text-stone-700 dark:text-stone-300 font-medium">{error.message}</span>
+                                <span className="font-black text-stone-400 uppercase tracking-widest mr-2">
+                                  {error.field}:
+                                </span>
+                                <span className="text-stone-700 dark:text-stone-300 font-medium">
+                                  {error.message}
+                                </span>
                               </div>
                             </div>
                           ))}
@@ -276,11 +306,20 @@ export default function BulkImportPage() {
                         </h3>
                         <div className="space-y-3 max-h-96 overflow-y-auto pr-3 custom-scrollbar">
                           {preview.warnings.map((warning, idx) => (
-                            <div key={idx} className="text-xs p-4 bg-white dark:bg-stone-900 border border-amber-100 dark:border-amber-500/10 rounded-2xl flex items-center gap-4 transition-all hover:translate-x-1">
-                              <Badge variant="warning" className="font-black text-[9px] h-6 px-3">Dòng {warning.row}</Badge>
+                            <div
+                              key={idx}
+                              className="text-xs p-4 bg-white dark:bg-stone-900 border border-amber-100 dark:border-amber-500/10 rounded-2xl flex items-center gap-4 transition-all hover:translate-x-1"
+                            >
+                              <Badge variant="warning" className="font-black text-[9px] h-6 px-3">
+                                Dòng {warning.row}
+                              </Badge>
                               <div className="flex-1">
-                                <span className="font-black text-stone-400 uppercase tracking-widest mr-2">{warning.field}:</span>
-                                <span className="text-stone-700 dark:text-stone-300 font-medium">{warning.message}</span>
+                                <span className="font-black text-stone-400 uppercase tracking-widest mr-2">
+                                  {warning.field}:
+                                </span>
+                                <span className="text-stone-700 dark:text-stone-300 font-medium">
+                                  {warning.message}
+                                </span>
                               </div>
                             </div>
                           ))}
@@ -297,7 +336,9 @@ export default function BulkImportPage() {
                           <h3 className="font-serif font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tight flex items-center gap-3 text-xl">
                             <Icons.Success className="w-6 h-6" /> Xem trước dữ liệu
                           </h3>
-                          <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">Sơ lược 10 hồ sơ đầu tiên</p>
+                          <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">
+                            Sơ lược 10 hồ sơ đầu tiên
+                          </p>
                         </div>
                       </div>
 
@@ -305,28 +346,48 @@ export default function BulkImportPage() {
                         <table className="min-w-full divide-y divide-stone-100 dark:divide-white/5 text-[11px]">
                           <thead className="bg-stone-50 dark:bg-white/[0.02]">
                             <tr>
-                              <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest uppercase">Học sinh</th>
-                              <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest uppercase">Email</th>
-                              <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest uppercase">CID (Mã định danh)</th>
+                              <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest uppercase">
+                                Học sinh
+                              </th>
+                              <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest uppercase">
+                                Email
+                              </th>
+                              <th className="px-6 py-4 text-left font-black text-stone-400 uppercase tracking-widest uppercase">
+                                CID (Mã định danh)
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-transparent divide-y divide-stone-50 dark:divide-white/5">
                             {preview.valid.slice(0, 10).map((student, idx) => (
-                              <tr key={idx} className="hover:bg-amber-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                              <tr
+                                key={idx}
+                                className="hover:bg-amber-50/50 dark:hover:bg-white/[0.02] transition-colors"
+                              >
                                 <td className="px-6 py-4">
-                                  <p className="font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">{student.firstName} {student.lastName}</p>
-                                  <p className="text-[9px] font-black text-stone-400 uppercase mt-0.5">{student.gradeLevel || '—'}</p>
+                                  <p className="font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+                                    {student.firstName} {student.lastName}
+                                  </p>
+                                  <p className="text-[9px] font-black text-stone-400 uppercase mt-0.5">
+                                    {student.gradeLevel || '—'}
+                                  </p>
                                 </td>
-                                <td className="px-6 py-4 text-stone-500 font-medium">{student.email}</td>
+                                <td className="px-6 py-4 text-stone-500 font-medium">
+                                  {student.email}
+                                </td>
                                 <td className="px-6 py-4">
-                                  <Badge variant="info" className="font-black text-[9px] h-6 px-3 bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-400">{student.studentId || 'CHỜ CẤP'}</Badge>
+                                  <Badge
+                                    variant="info"
+                                    className="font-black text-[9px] h-6 px-3 bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-400"
+                                  >
+                                    {student.studentId || 'CHỜ CẤP'}
+                                  </Badge>
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
-                      
+
                       {/* Global Action Box */}
                       <div className="pt-8 border-t border-stone-100 dark:border-white/5 flex gap-4">
                         <Button
@@ -366,23 +427,36 @@ export default function BulkImportPage() {
                 Xử lý <span className="text-emerald-500">Thành công!</span>
               </h2>
               <p className="text-stone-500 dark:text-stone-400 font-medium mb-12 max-w-lg mx-auto leading-relaxed text-sm">
-                Hệ thống đã hoàn tất xử lý tệp tin. Toàn bộ hồ sơ hợp lệ đã được tích hợp vào cơ sở dữ liệu học sinh của trường.
+                Hệ thống đã hoàn tất xử lý tệp tin. Toàn bộ hồ sơ hợp lệ đã được tích hợp vào cơ sở
+                dữ liệu học sinh của trường.
               </p>
 
               {importResults && (
                 <div className="max-w-xl mx-auto mb-12">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-stone-50 dark:bg-stone-950/50 rounded-3xl p-6 border border-stone-100 dark:border-white/5 shadow-inner">
-                      <p className="text-3xl font-black text-stone-900 dark:text-white mb-2">{importResults.total}</p>
-                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Tổng số</p>
+                      <p className="text-3xl font-black text-stone-900 dark:text-white mb-2">
+                        {importResults.total}
+                      </p>
+                      <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
+                        Tổng số
+                      </p>
                     </div>
                     <div className="bg-emerald-50/50 dark:bg-emerald-500/[0.03] rounded-3xl p-6 border border-emerald-100 dark:border-emerald-500/10 shadow-inner">
-                      <p className="text-3xl font-black text-emerald-600 mb-2">{importResults.successCount}</p>
-                      <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-[0.2em]">Hợp lệ</p>
+                      <p className="text-3xl font-black text-emerald-600 mb-2">
+                        {importResults.successCount}
+                      </p>
+                      <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-[0.2em]">
+                        Hợp lệ
+                      </p>
                     </div>
                     <div className="bg-rose-50/50 dark:bg-rose-500/[0.03] rounded-3xl p-6 border border-rose-100 dark:border-rose-500/10 shadow-inner">
-                      <p className="text-3xl font-black text-rose-500 mb-2">{importResults.errorCount}</p>
-                      <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-[0.2em]">Có lỗi</p>
+                      <p className="text-3xl font-black text-rose-500 mb-2">
+                        {importResults.errorCount}
+                      </p>
+                      <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-[0.2em]">
+                        Có lỗi
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -411,40 +485,61 @@ export default function BulkImportPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-function StatCardModern({ label, value, color, icon }: { label: string, value: number, color: 'blue' | 'emerald' | 'rose', icon: React.ReactNode }) {
+function StatCardModern({
+  label,
+  value,
+  color,
+  icon,
+}: {
+  label: string;
+  value: number;
+  color: 'blue' | 'emerald' | 'rose';
+  icon: React.ReactNode;
+}) {
   const colorMap = {
     blue: {
       card: 'bg-blue-50/30 dark:bg-blue-900/10 border-blue-500/10 hover:border-blue-500/30',
       icon: 'bg-blue-500/10 text-blue-600',
-      text: 'text-blue-600'
+      text: 'text-blue-600',
     },
     emerald: {
       card: 'bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-500/10 hover:border-emerald-500/30',
       icon: 'bg-emerald-500/10 text-emerald-600',
-      text: 'text-emerald-600'
+      text: 'text-emerald-600',
     },
     rose: {
       card: 'bg-rose-50/30 dark:bg-rose-900/10 border-rose-500/10 hover:border-rose-500/30',
       icon: 'bg-rose-500/10 text-rose-500',
-      text: 'text-rose-500'
-    }
-  }
+      text: 'text-rose-500',
+    },
+  };
 
-  const styles = colorMap[color]
+  const styles = colorMap[color];
 
   return (
-    <div className={cn("rounded-[2rem] p-8 border transition-all duration-500 shadow-lg group hover:-translate-y-1", styles.card)}>
+    <div
+      className={cn(
+        'rounded-[2rem] p-8 border transition-all duration-500 shadow-lg group hover:-translate-y-1',
+        styles.card
+      )}
+    >
       <div className="flex items-center justify-between mb-6">
-        <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-sm", styles.icon)}>
+        <div
+          className={cn(
+            'w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-sm',
+            styles.icon
+          )}
+        >
           {icon}
         </div>
       </div>
-      <p className={cn("text-4xl font-serif font-black mb-1 tabular-nums", styles.text)}>{value}</p>
-      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 group-hover:text-stone-500 transition-colors uppercase">{label}</p>
+      <p className={cn('text-4xl font-serif font-black mb-1 tabular-nums', styles.text)}>{value}</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 group-hover:text-stone-500 transition-colors uppercase">
+        {label}
+      </p>
     </div>
-  )
+  );
 }
-

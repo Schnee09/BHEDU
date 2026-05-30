@@ -155,7 +155,7 @@ export default function BulkImportPage() {
 
         <>
           {/* Download Template */}
-          <Card className="mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+          <Card className="mb-6 bg-gradient-to-br from-blue-50 to-sky-50 border-blue-200">
               <CardHeader
                 title="📥 Step 1: Download Template"
                 subtitle="Download our CSV template with sample data to see the required format"

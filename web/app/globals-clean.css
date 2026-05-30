@@ -4,7 +4,7 @@
  * - No box-shadows (use borders instead)
  * - Minimal gradients (only hover states)
  * - Professional font: Be Vietnam Pro
- * - Warm, unique color palette (no cyan-purple)
+ * - Warm, unique color palette (strict colors)
  * - Consistent border-radius hierarchy
  * - No glassmorphism/blur effects
  */
@@ -53,7 +53,7 @@
   --color-primary-hover: #15803D;
   --color-primary-light: #86EFAC;
   
-  /* Secondary: Warm Orange (Energy, Action) - NOT purple! */
+  /* Secondary: Warm Orange (Energy, Action) */
   --color-secondary: #EA580C;
   --color-secondary-hover: #C2410C;
   --color-secondary-light: #FB923C;

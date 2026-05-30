@@ -82,6 +82,15 @@ export type PermissionCode =
   // Reports
   | 'reports.view'
   | 'reports.export'
+  // Finance
+  | 'finance.view'
+  | 'finance.manage'
+  | 'finance.refund'
+  | 'finance.export'
+  // Tutoring Sessions
+  | 'tutoring.sessions.view'
+  | 'tutoring.sessions.manage'
+  | 'tutoring.feedback.submit'
   // Announcements
   | 'announcements.manage'
   | '*'; // Wildcard
@@ -103,9 +112,9 @@ export interface Permission {
 export const ROLE_HIERARCHY: Record<UserRole, UserRole[]> = {
   super_admin: ['owner', 'admin'],
   owner: ['staff'],
-  admin: ['staff'],
-  staff: ['teacher'],
-  teacher: ['tutor'],
+  admin: ['staff', 'teacher'],
+  staff: ['student'],
+  teacher: ['student'],
   tutor: ['student'],
   parent: ['student'],
   student: [],
@@ -121,7 +130,16 @@ export const ROLE_HIERARCHY: Record<UserRole, UserRole[]> = {
  */
 export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
   super_admin: ['*'], // God mode
-  owner: ['reports.view', 'reports.export', 'grades.analytics', 'grades.manage'],
+  owner: [
+    'reports.view',
+    'reports.export',
+    'grades.analytics',
+    'grades.manage',
+    'finance.view',
+    'finance.manage',
+    'finance.refund',
+    'finance.export',
+  ],
   admin: [
     'system.audit',
     'roles.view',
@@ -140,11 +158,15 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'grades.manage',
     'announcements.manage',
     'classes.view',
+    'finance.view',
+    'finance.manage',
+    'finance.refund',
   ],
   staff: [
     'users.view',
     'users.create',
     'users.edit',
+    'users.delete.soft',
     'parent_links.view',
     'students.create',
     'students.edit',
@@ -161,6 +183,8 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'grades.manage',
     'announcements.manage',
     'classes.view',
+    'finance.view',
+    'finance.manage',
   ],
   teacher: [
     'grades.entry',
@@ -171,10 +195,7 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'curriculum.manage',
     'timetable.edit',
   ],
-  tutor: [
-    // Tutors might have specific limited access to tutoring sessions
-    // but in this system they mostly act like junior teachers
-  ],
+  tutor: ['tutoring.sessions.view', 'tutoring.sessions.manage', 'tutoring.feedback.submit'],
   parent: ['parent.view_students', 'parent.link_student'],
   student: [
     'students.view',

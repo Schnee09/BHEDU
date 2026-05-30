@@ -70,17 +70,17 @@ interface CategoryStats {
   median: number;
 }
 
-// Chart color palette refined for Stone/Emerald/Amber (No Blue/Purple)
+// Chart color palette refined for Stone/Emerald/Amber
 const CHART_COLORS = {
   bands: {
-    'gioi': '#10b981', // Emerald-500
-    'kha': '#84cc16',  // Lime-500
-    'tb': '#f59e0b',   // Amber-500
-    'yeu': '#ef4444',  // Red-500
+    gioi: '#10b981', // Emerald-500
+    kha: '#84cc16', // Lime-500
+    tb: '#f59e0b', // Amber-500
+    yeu: '#ef4444', // Red-500
   },
   pieColors: ['#10b981', '#84cc16', '#f59e0b', '#f97316', '#78716c', '#44403c'],
   primary: '#10b981', // Emerald-500
-  accent: '#f59e0b',  // Amber-500
+  accent: '#f59e0b', // Amber-500
   success: '#10b981',
   warning: '#f59e0b',
   danger: '#ef4444',
@@ -177,7 +177,7 @@ export default function GradeAnalyticsPage() {
   const getGradeDistribution = (): GradeDistribution[] => {
     if (grades.length === 0) return [];
 
-    const distribution: { 
+    const distribution: {
       gioi: { count: number; label: string };
       kha: { count: number; label: string };
       tb: { count: number; label: string };
@@ -328,8 +328,12 @@ export default function GradeAnalyticsPage() {
                 {classStats && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-3xl p-6 border border-stone-200 dark:border-white/5 shadow-lg group hover:border-emerald-500/50 transition-all">
-                      <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">{t('analytics.classAverage')}</div>
-                      <div className={`text-4xl font-black ${getLetterGradeColor(percentageToLetterGrade(classStats.average))}`}>
+                      <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">
+                        {t('analytics.classAverage')}
+                      </div>
+                      <div
+                        className={`text-4xl font-black ${getLetterGradeColor(percentageToLetterGrade(classStats.average))}`}
+                      >
                         {classStats.average.toFixed(1)}%
                       </div>
                       <div className="text-xs font-bold text-stone-500 mt-2 uppercase">
@@ -338,7 +342,9 @@ export default function GradeAnalyticsPage() {
                     </div>
 
                     <div className="bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-3xl p-6 border border-stone-200 dark:border-white/5 shadow-lg group hover:border-emerald-500/50 transition-all">
-                      <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">{t('analytics.highestGrade')}</div>
+                      <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">
+                        {t('analytics.highestGrade')}
+                      </div>
                       <div className="text-4xl font-black text-emerald-500">
                         {classStats.highest.toFixed(1)}%
                       </div>
@@ -348,7 +354,9 @@ export default function GradeAnalyticsPage() {
                     </div>
 
                     <div className="bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-3xl p-6 border border-stone-200 dark:border-white/5 shadow-lg group hover:border-amber-500/50 transition-all">
-                      <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">{t('analytics.lowestGrade')}</div>
+                      <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">
+                        {t('analytics.lowestGrade')}
+                      </div>
                       <div className="text-4xl font-black text-amber-500">
                         {classStats.lowest.toFixed(1)}%
                       </div>
@@ -358,7 +366,9 @@ export default function GradeAnalyticsPage() {
                     </div>
 
                     <div className="bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-3xl p-6 border border-stone-200 dark:border-white/5 shadow-lg group hover:border-stone-500/50 transition-all">
-                      <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">{t('analytics.medianGrade')}</div>
+                      <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2">
+                        {t('analytics.medianGrade')}
+                      </div>
                       <div className={`text-4xl font-black text-stone-600 dark:text-stone-300`}>
                         {classStats.median.toFixed(1)}%
                       </div>
@@ -376,7 +386,7 @@ export default function GradeAnalyticsPage() {
                       {t('analytics.distribution')}
                     </h2>
                   </div>
-                  
+
                   <div className="grid gap-6">
                     {gradeDistribution
                       .filter((d) => d.count > 0)
@@ -387,15 +397,18 @@ export default function GradeAnalyticsPage() {
                               {dist.grade}
                             </span>
                             <span className="text-[11px] font-bold text-stone-500 uppercase tracking-widest">
-                              {t('analytics.studentCount', { count: dist.count })} ({dist.percentage.toFixed(1)}%)
+                              {t('analytics.studentCount', { count: dist.count })} (
+                              {dist.percentage.toFixed(1)}%)
                             </span>
                           </div>
                           <div className="w-full bg-stone-200 dark:bg-stone-800 rounded-full h-3 overflow-hidden p-0.5">
                             <div
                               className="h-full rounded-full transition-all duration-1000 ease-out"
-                              style={{ 
+                              style={{
                                 width: `${dist.percentage}%`,
-                                backgroundColor: CHART_COLORS.bands[dist.id as keyof typeof CHART_COLORS.bands] || '#78716c'
+                                backgroundColor:
+                                  CHART_COLORS.bands[dist.id as keyof typeof CHART_COLORS.bands] ||
+                                  '#78716c',
                               }}
                             />
                           </div>
@@ -414,7 +427,7 @@ export default function GradeAnalyticsPage() {
                       {t('analytics.semesterOverviewDesc')}
                     </p>
                   </div>
-                  
+
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
@@ -439,11 +452,30 @@ export default function GradeAnalyticsPage() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }} />
-                        <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }} />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}
-                          itemStyle={{ fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                        <XAxis
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
+                        />
+                        <YAxis
+                          domain={[0, 100]}
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#fff',
+                            borderRadius: '16px',
+                            border: 'none',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
+                          }}
+                          itemStyle={{
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            textTransform: 'uppercase',
+                          }}
                         />
                         <Area
                           type="monotone"
@@ -480,16 +512,26 @@ export default function GradeAnalyticsPage() {
                             nameKey="grade"
                             animationDuration={1500}
                           >
-                            {gradeDistribution.filter((d) => d.count > 0).map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={CHART_COLORS.bands[entry.id as keyof typeof CHART_COLORS.bands] || CHART_COLORS.pieColors[index % 6]} 
-                                stroke="transparent"
-                              />
-                            ))}
+                            {gradeDistribution
+                              .filter((d) => d.count > 0)
+                              .map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={
+                                    CHART_COLORS.bands[
+                                      entry.id as keyof typeof CHART_COLORS.bands
+                                    ] || CHART_COLORS.pieColors[index % 6]
+                                  }
+                                  stroke="transparent"
+                                />
+                              ))}
                           </Pie>
-                          <Tooltip 
-                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
+                          <Tooltip
+                            contentStyle={{
+                              borderRadius: '16px',
+                              border: 'none',
+                              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                            }}
                           />
                         </PieChart>
                       </ResponsiveContainer>
@@ -505,17 +547,34 @@ export default function GradeAnalyticsPage() {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={gradeDistribution.filter((d) => d.count > 0)}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                          <XAxis dataKey="grade" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }} />
-                          <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '16px', border: 'none' }} />
-                          <Bar 
-                            dataKey="count" 
-                            radius={[12, 12, 0, 0]} 
-                            animationDuration={1500}
-                          >
-                            {gradeDistribution.filter((d) => d.count > 0).map((entry, index) => (
-                              <Cell key={`bar-${index}`} fill={CHART_COLORS.bands[entry.id as keyof typeof CHART_COLORS.bands] || '#10b981'} />
-                            ))}
+                          <XAxis
+                            dataKey="grade"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
+                          />
+                          <Tooltip
+                            cursor={{ fill: 'transparent' }}
+                            contentStyle={{ borderRadius: '16px', border: 'none' }}
+                          />
+                          <Bar dataKey="count" radius={[12, 12, 0, 0]} animationDuration={1500}>
+                            {gradeDistribution
+                              .filter((d) => d.count > 0)
+                              .map((entry, index) => (
+                                <Cell
+                                  key={`bar-${index}`}
+                                  fill={
+                                    CHART_COLORS.bands[
+                                      entry.id as keyof typeof CHART_COLORS.bands
+                                    ] || '#10b981'
+                                  }
+                                />
+                              ))}
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
@@ -534,19 +593,38 @@ export default function GradeAnalyticsPage() {
                       <table className="w-full">
                         <thead className="border-b border-stone-100 dark:border-white/5">
                           <tr>
-                            <th className="pb-4 text-left text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">{t('grades.component')}</th>
-                            <th className="pb-4 text-center text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">{t('analytics.median')}</th>
-                            <th className="pb-4 text-center text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">{t('analytics.highest')}</th>
-                            <th className="pb-4 text-center text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">{t('analytics.lowest')}</th>
+                            <th className="pb-4 text-left text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
+                              {t('grades.component')}
+                            </th>
+                            <th className="pb-4 text-center text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
+                              {t('analytics.median')}
+                            </th>
+                            <th className="pb-4 text-center text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
+                              {t('analytics.highest')}
+                            </th>
+                            <th className="pb-4 text-center text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
+                              {t('analytics.lowest')}
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-50 dark:divide-white/5">
                           {categoryStats.map((cat, idx) => (
-                            <tr key={idx} className="group hover:bg-stone-50/50 dark:hover:bg-white/5 transition-colors">
-                              <td className="py-4 font-bold text-stone-900 dark:text-white uppercase text-xs tracking-widest">{cat.category_name}</td>
-                              <td className="py-4 text-center text-sm font-black text-stone-600 dark:text-stone-400">{cat.median.toFixed(1)}%</td>
-                              <td className="py-4 text-center text-sm font-black text-emerald-500">{cat.highest.toFixed(1)}%</td>
-                              <td className="py-4 text-center text-sm font-black text-amber-500">{cat.lowest.toFixed(1)}%</td>
+                            <tr
+                              key={idx}
+                              className="group hover:bg-stone-50/50 dark:hover:bg-white/5 transition-colors"
+                            >
+                              <td className="py-4 font-bold text-stone-900 dark:text-white uppercase text-xs tracking-widest">
+                                {cat.category_name}
+                              </td>
+                              <td className="py-4 text-center text-sm font-black text-stone-600 dark:text-stone-400">
+                                {cat.median.toFixed(1)}%
+                              </td>
+                              <td className="py-4 text-center text-sm font-black text-emerald-500">
+                                {cat.highest.toFixed(1)}%
+                              </td>
+                              <td className="py-4 text-center text-sm font-black text-amber-500">
+                                {cat.lowest.toFixed(1)}%
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -562,26 +640,38 @@ export default function GradeAnalyticsPage() {
                       <div className="p-2 bg-amber-500/10 rounded-xl">
                         <ExclamationTriangleIcon className="w-6 h-6 text-amber-500" />
                       </div>
-                      <h2 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight">{t('analytics.strugglingStudents')}</h2>
+                      <h2 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                        {t('analytics.strugglingStudents')}
+                      </h2>
                     </div>
                     <div className="space-y-4">
                       {strugglingStudents.slice(0, 5).map((student) => (
-                        <Link 
-                          key={student.student_id} 
+                        <Link
+                          key={student.student_id}
                           href={`/dashboard/grades/transcripts?student_id=${student.student_id}&class_id=${selectedClass}`}
                           className="flex items-center justify-between p-4 bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-white/5 shadow-sm hover:border-amber-500/50 transition-all group/item"
                         >
                           <div className="flex items-center gap-3">
-                            <span className="w-8 h-8 flex items-center justify-center bg-amber-500/10 rounded-full text-[10px] font-black text-amber-600 uppercase tracking-widest">{student.student_number?.slice(-2)}</span>
+                            <span className="w-8 h-8 flex items-center justify-center bg-amber-500/10 rounded-full text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                              {student.student_number?.slice(-2)}
+                            </span>
                             <div>
-                              <div className="text-xs font-black text-stone-900 dark:text-white uppercase tracking-widest group-hover/item:text-amber-600 transition-colors">{student.student_name}</div>
-                              <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest leading-none mt-1">{student.student_number}</div>
+                              <div className="text-xs font-black text-stone-900 dark:text-white uppercase tracking-widest group-hover/item:text-amber-600 transition-colors">
+                                {student.student_name}
+                              </div>
+                              <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest leading-none mt-1">
+                                {student.student_number}
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
                             <div className="text-right">
-                              <div className="text-sm font-black text-amber-600">{student.overall_percentage.toFixed(1)}%</div>
-                              <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{student.letter_grade}</div>
+                              <div className="text-sm font-black text-amber-600">
+                                {student.overall_percentage.toFixed(1)}%
+                              </div>
+                              <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                                {student.letter_grade}
+                              </div>
                             </div>
                             <Icons.ChevronRight className="w-4 h-4 text-stone-300 group-hover/item:translate-x-1 transition-all" />
                           </div>
@@ -589,7 +679,9 @@ export default function GradeAnalyticsPage() {
                       ))}
                       {strugglingStudents.length > 5 && (
                         <div className="text-center pt-2">
-                          <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">{t('analytics.moreStudents', { count: strugglingStudents.length - 5 })}</span>
+                          <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
+                            {t('analytics.moreStudents', { count: strugglingStudents.length - 5 })}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -602,27 +694,39 @@ export default function GradeAnalyticsPage() {
                         <div className="p-2 bg-white/20 rounded-xl backdrop-blur-lg border border-white/20">
                           <SparklesIcon className="w-6 h-6 text-white" />
                         </div>
-                        <h2 className="text-xl font-black uppercase tracking-tight">{t('analytics.topPerformers')}</h2>
+                        <h2 className="text-xl font-black uppercase tracking-tight">
+                          {t('analytics.topPerformers')}
+                        </h2>
                       </div>
-                      
+
                       <div className="space-y-4">
                         {topPerformers.slice(0, 5).map((student) => (
-                          <Link 
-                            key={student.student_id} 
+                          <Link
+                            key={student.student_id}
                             href={`/dashboard/grades/transcripts?student_id=${student.student_id}&class_id=${selectedClass}`}
                             className="flex items-center justify-between p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 hover:bg-white/20 transition-all group/item"
                           >
                             <div className="flex items-center gap-3">
-                              <span className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full text-[10px] font-black text-white uppercase tracking-widest">A+</span>
+                              <span className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full text-[10px] font-black text-white uppercase tracking-widest">
+                                A+
+                              </span>
                               <div>
-                                <div className="text-xs font-black uppercase tracking-widest">{student.student_name}</div>
-                                <div className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-1">{student.student_number}</div>
+                                <div className="text-xs font-black uppercase tracking-widest">
+                                  {student.student_name}
+                                </div>
+                                <div className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-1">
+                                  {student.student_number}
+                                </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
                               <div className="text-right">
-                                <div className="text-sm font-black">{student.overall_percentage.toFixed(1)}%</div>
-                                <div className="text-[10px] font-black opacity-60 uppercase tracking-widest">{student.letter_grade}</div>
+                                <div className="text-sm font-black">
+                                  {student.overall_percentage.toFixed(1)}%
+                                </div>
+                                <div className="text-[10px] font-black opacity-60 uppercase tracking-widest">
+                                  {student.letter_grade}
+                                </div>
                               </div>
                               <Icons.ChevronRight className="w-4 h-4 text-white/40 group-hover/item:translate-x-1 transition-all" />
                             </div>
