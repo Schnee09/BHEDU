@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { apiFetch } from "@/lib/api/client";
-import { Button, Input, Modal } from "@/components/ui";
-import { Icons } from "@/components/ui/Icons";
-import { useToast } from "@/hooks";
-import { logger } from "@/lib/logger";
-import { Copy, Check } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api/client';
+import { Button, Input, Modal } from '@/components/ui';
+import { Icons } from '@/components/ui/Icons';
+import { useToast } from '@/hooks';
+import { logger } from '@/lib/logger';
+import { Copy, Check } from 'lucide-react';
 
 export interface Student {
   id: string;
@@ -29,7 +29,12 @@ interface StudentFormModalProps {
   onSuccess: () => void;
 }
 
-export default function StudentFormModal({ isOpen, onClose, student, onSuccess }: StudentFormModalProps) {
+export default function StudentFormModal({
+  isOpen,
+  onClose,
+  student,
+  onSuccess,
+}: StudentFormModalProps) {
   const toast = useToast();
   const [formData, setFormData] = useState({
     full_name: '',
@@ -41,7 +46,7 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
     student_id: '',
     grade_level: '',
     status: 'active',
-    gender: ''
+    gender: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -62,7 +67,7 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
         student_id: student.student_id || '',
         grade_level: student.grade_level || '',
         status: student.status || 'active',
-        gender: student.gender || ''
+        gender: student.gender || '',
       });
     } else {
       setFormData({
@@ -75,7 +80,7 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
         student_id: '',
         grade_level: '',
         status: 'active',
-        gender: ''
+        gender: '',
       });
     }
     setErrors({});
@@ -111,11 +116,9 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
     setSubmitting(true);
 
     try {
-      const url = student
-        ? `/api/students/${student.id}`
-        : '/api/students';
+      const url = student ? `/api/students/${student.id}` : '/api/students';
 
-      const method = student ? 'PUT' : 'POST';
+      const method = student ? 'PATCH' : 'POST';
 
       // Sanitize payload: convert empty strings to null or undefined for optional fields
       const payload = {
@@ -133,7 +136,7 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
 
       const response = await apiFetch(url, {
         method,
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -160,7 +163,7 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
     if (tempPassword) {
       navigator.clipboard.writeText(tempPassword);
       setCopied(true);
-      toast.success("Đã sao chép", "Mật khẩu đã được lưu vào clipboard");
+      toast.success('Đã sao chép', 'Mật khẩu đã được lưu vào clipboard');
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -169,27 +172,33 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={tempPassword ? 'TẠO HỒ SƠ THÀNH CÔNG' : (student ? 'CẬP NHẬT HỒ SƠ HỌC SINH' : 'THÊM MỚI HỌC SINH')}
+      title={
+        tempPassword
+          ? 'TẠO HỒ SƠ THÀNH CÔNG'
+          : student
+            ? 'CẬP NHẬT HỒ SƠ HỌC SINH'
+            : 'THÊM MỚI HỌC SINH'
+      }
       className="bg-stone-50/50 dark:bg-stone-900 shadow-2xl rounded-[2.5rem] border border-stone-200 dark:border-white/5"
       size="lg"
       footer={
         tempPassword ? (
           <div className="flex justify-end w-full px-4 pb-4">
-            <Button 
-                variant="primary" 
-                onClick={onSuccess}
-                className="font-black uppercase tracking-widest text-[10px] h-12 px-10 shadow-emerald-glow"
+            <Button
+              variant="primary"
+              onClick={onSuccess}
+              className="font-black uppercase tracking-widest text-[10px] h-12 px-10 shadow-emerald-glow"
             >
               Hoàn tất (Done)
             </Button>
           </div>
         ) : (
           <div className="flex justify-end gap-3 px-4 pb-4">
-            <Button 
-                variant="outline" 
-                onClick={onClose} 
-                disabled={submitting}
-                className="font-black uppercase tracking-widest text-[10px] h-12 px-8 border-stone-200"
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={submitting}
+              className="font-black uppercase tracking-widest text-[10px] h-12 px-8 border-stone-200"
             >
               Hủy bỏ (Cancel)
             </Button>
@@ -198,7 +207,9 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
               onClick={handleSubmit}
               isLoading={submitting}
               className="font-black uppercase tracking-widest text-[10px] h-12 px-10 shadow-amber-glow"
-              leftIcon={student ? <Icons.Save className="w-4 h-4" /> : <Icons.Add className="w-4 h-4" />}
+              leftIcon={
+                student ? <Icons.Save className="w-4 h-4" /> : <Icons.Add className="w-4 h-4" />
+              }
             >
               {student ? 'Cập nhật' : 'Thêm mới'} (Submit)
             </Button>
@@ -213,8 +224,8 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
             <div>
               <h3 className="font-semibold text-green-800">Tài khoản học sinh đã được tạo</h3>
               <p className="text-green-700 text-sm mt-1">
-                Vui lòng sao chép thông tin đăng nhập dưới đây và gửi cho học sinh.
-                Lưu ý: Mật khẩu này chỉ hiện <strong>một lần duy nhất</strong>.
+                Vui lòng sao chép thông tin đăng nhập dưới đây và gửi cho học sinh. Lưu ý: Mật khẩu
+                này chỉ hiện <strong>một lần duy nhất</strong>.
               </p>
             </div>
           </div>
@@ -250,7 +261,11 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
                     className="p-2 hover:bg-slate-200 rounded-lg transition-colors text-slate-600 hover:text-slate-900"
                     title="Copy Password"
                   >
-                    {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                    {copied ? (
+                      <Check className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <Copy className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -318,25 +333,23 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Khối lớp
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Khối lớp</label>
               <select
                 value={formData.grade_level}
                 onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Chọn khối lớp</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(grade => (
-                  <option key={grade} value={`Lớp ${grade}`}>Lớp {grade}</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((grade) => (
+                  <option key={grade} value={`Lớp ${grade}`}>
+                    Lớp {grade}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Trạng thái
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -350,9 +363,7 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Giới tính
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Giới tính</label>
               <select
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
@@ -367,9 +378,7 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Địa chỉ
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Địa chỉ</label>
             <textarea
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -384,8 +393,8 @@ export default function StudentFormModal({ isOpen, onClose, student, onSuccess }
               <div>
                 <p className="font-medium">Thông tin tài khoản</p>
                 <p className="mt-1">
-                  Hệ thống sẽ tự động tạo tài khoản đăng nhập cho học sinh.
-                  Mật khẩu sẽ được hiển thị sau khi tạo thành công.
+                  Hệ thống sẽ tự động tạo tài khoản đăng nhập cho học sinh. Mật khẩu sẽ được hiển
+                  thị sau khi tạo thành công.
                 </p>
               </div>
             </div>

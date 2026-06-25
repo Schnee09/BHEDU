@@ -8,13 +8,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { createClient } from '@/lib/supabase/client';
-import {
-  getFlattenedPermissions,
-  hasPermission,
-  isAtLeast,
-  UserRole,
-  PermissionCode,
-} from '@/lib/auth/core';
+import { getFlattenedPermissions, hasPermission, isAtLeast } from '@/lib/auth/core';
+import type { UserRole, PermissionCode } from '@/lib/auth/core';
 
 // ============================================
 // TYPES
@@ -35,6 +30,11 @@ export interface PermissionsState {
 // HOOK
 // ============================================
 
+interface RoleOverrideRow {
+  permission_code: string;
+  is_denied: boolean;
+}
+
 interface PermissionRow {
   permission_code: string;
   is_denied: boolean;
@@ -44,18 +44,19 @@ interface PermissionRow {
 export function usePermissions() {
   const { profile, loading: profileLoading } = useProfile();
   const [customPermissions, setCustomPermissions] = useState<Set<PermissionCode>>(new Set());
+  const [deniedPermissions, setDeniedPermissions] = useState<Set<PermissionCode>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch custom permissions from database (optional feature)
+  // Fetch custom permissions (user-level overrides) + role-level DB overrides
   useEffect(() => {
-    async function fetchCustomPermissions() {
+    async function fetchPermissions() {
       if (!profile?.id) {
         setLoading(false);
         return;
       }
 
-      // Optimization: super_admin doesn't need to fetch custom perms (it has everything)
+      // super_admin has everything — no DB fetch needed
       if (profile.role === 'super_admin') {
         setLoading(false);
         return;
@@ -63,28 +64,51 @@ export function usePermissions() {
 
       try {
         const supabase = createClient();
-        const { data, error: fetchError } = await supabase
-          .from('user_permissions')
-          .select('permission_code, is_denied, expires_at')
-          .eq('user_id', profile.id);
 
-        if (fetchError) {
-          console.warn(
-            '[usePermissions] Table user_permissions missing or inaccessible.',
-            fetchError
-          );
-        } else {
-          console.log('[usePermissions] Raw user_permissions data from DB:', data);
-          const now = new Date();
-          const rows = (data || []) as unknown as PermissionRow[];
+        // Parallel: user overrides + role overrides
+        const [userRes, roleRes] = await Promise.all([
+          supabase
+            .from('user_permissions')
+            .select('permission_code, is_denied, expires_at')
+            .eq('user_id', profile.id),
+          supabase
+            .from('role_permission_overrides')
+            .select('permission_code, is_denied')
+            .eq('role', profile.role),
+        ]);
 
-          const validPermissions = rows
-            .filter((p) => !p.is_denied && (!p.expires_at || new Date(p.expires_at) > now))
-            .map((p) => p.permission_code as PermissionCode);
+        const now = new Date();
+        const granted = new Set<PermissionCode>();
+        const denied = new Set<PermissionCode>();
 
-          console.log('[usePermissions] Validated custom permissions:', validPermissions);
-          setCustomPermissions(new Set(validPermissions));
+        // ── Layer 2: Role-level DB overrides ──
+        const roleRows = (roleRes.data || []) as RoleOverrideRow[];
+        for (const row of roleRows) {
+          const code = row.permission_code as PermissionCode;
+          if (row.is_denied) {
+            denied.add(code);
+          } else {
+            granted.add(code);
+          }
         }
+
+        // ── Layer 1: User-level overrides (highest priority — can override role overrides) ──
+        const userRows = (userRes.data || []) as unknown as PermissionRow[];
+        const validUserRows = userRows.filter((p) => !p.expires_at || new Date(p.expires_at) > now);
+
+        for (const row of validUserRows) {
+          const code = row.permission_code as PermissionCode;
+          if (row.is_denied) {
+            denied.add(code);
+            granted.delete(code);
+          } else {
+            granted.add(code);
+            denied.delete(code);
+          }
+        }
+
+        setCustomPermissions(granted);
+        setDeniedPermissions(denied);
       } catch (err) {
         console.warn('[usePermissions] Error fetching custom permissions:', err);
       } finally {
@@ -93,34 +117,39 @@ export function usePermissions() {
     }
 
     if (!profileLoading) {
-      fetchCustomPermissions();
+      fetchPermissions();
     }
   }, [profile?.id, profile?.role, profileLoading]);
 
-  // Compute all permissions (role inheritance + custom)
+  // Compute all permissions (code defaults + role DB overrides + user DB overrides)
   const allPermissions = useMemo(() => {
     if (!profile?.role) return new Set<PermissionCode>();
 
     const role = profile.role as UserRole;
     const permissions = getFlattenedPermissions(role);
 
-    // Merge with custom permissions
+    // Apply role-level grants from DB
     customPermissions.forEach((p) => permissions.add(p));
 
-    console.log('[usePermissions] Computed permissions list:', Array.from(permissions));
-    return permissions;
-  }, [profile?.role, customPermissions]);
+    // Apply denials (from both role and user overrides)
+    deniedPermissions.forEach((p) => permissions.delete(p));
 
-  // Permission check functions
+    return permissions;
+  }, [profile?.role, customPermissions, deniedPermissions]);
+
+  // Permission check functions — denial takes priority over grant
   const can = useCallback(
     (permission: PermissionCode): boolean => {
       if (!profile?.role) return false;
-      // Check custom permissions first
+      if (profile.role === 'super_admin') return true;
+      // Denials override everything
+      if (deniedPermissions.has(permission)) return false;
+      // User-level or role-level custom grants
       if (customPermissions.has(permission)) return true;
-      // Fallback to core RBAC logic (includes inheritance)
+      // Fallback to code defaults (BASE_ROLE_PERMISSIONS + inheritance)
       return hasPermission(profile.role as UserRole, permission);
     },
-    [profile?.role, customPermissions]
+    [profile?.role, customPermissions, deniedPermissions]
   );
 
   const canAny = useCallback(
@@ -137,13 +166,21 @@ export function usePermissions() {
     [can]
   );
 
-  // Role checks using inheritance logic
+  // ── Role checks (inheritance-aware) ──
+  // NOTE: Owner is now STANDALONE — isAtLeast(owner, admin) returns false.
+  // Use isOwner or isStaff (which includes owner) for owner-specific gates.
   const isAdmin = useMemo(
     () => (profile ? isAtLeast(profile.role as UserRole, 'admin') : false),
     [profile]
   );
+  // isStaff = any privileged operational role (admin or above, OR owner)
   const isStaff = useMemo(
-    () => (profile ? isAtLeast(profile.role as UserRole, 'staff') : false),
+    () =>
+      profile ? isAtLeast(profile.role as UserRole, 'admin') || profile.role === 'owner' : false,
+    [profile]
+  );
+  const isOwner = useMemo(
+    () => profile?.role === 'owner' || profile?.role === 'super_admin',
     [profile]
   );
   const isTeacher = useMemo(
@@ -159,7 +196,7 @@ export function usePermissions() {
     [profile]
   );
 
-  // Exact role checks (Identity-based, not inherited)
+  // Exact role checks (identity-based, not inherited)
   const isExactAdmin = useMemo(
     () => profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'owner',
     [profile]
@@ -168,7 +205,6 @@ export function usePermissions() {
   const isExactStudent = useMemo(() => profile?.role === 'student', [profile]);
   const isExactParent = useMemo(() => profile?.role === 'parent', [profile]);
 
-  // Capability convenience check
   const hasTeacherCapabilities = useMemo(() => {
     if (!profile) return false;
     return isAtLeast(profile.role as UserRole, 'teacher');
@@ -186,8 +222,9 @@ export function usePermissions() {
     canAny,
     canAll,
 
-    // Role checks (Inheritance-aware)
+    // Role checks
     isAdmin,
+    isOwner,
     isStaff,
     isTeacher,
     isStudent,

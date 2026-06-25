@@ -12,10 +12,10 @@
  * - grades: Array of { student_id, score, notes? }
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
-import { staffAuth } from "@/lib/auth/adminAuth";
-import { logger } from "@/lib/logger";
+import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { adminAuth } from '@/lib/auth/adminAuth';
+import { logger } from '@/lib/logger';
 
 interface GradeInput {
   student_id: string;
@@ -23,22 +23,16 @@ interface GradeInput {
   notes?: string;
 }
 
-const VALID_COMPONENT_TYPES = [
-  "oral",
-  "fifteen_min",
-  "one_period",
-  "midterm",
-  "final",
-];
-const VALID_SEMESTERS = ["1", "2"];
+const VALID_COMPONENT_TYPES = ['oral', 'fifteen_min', 'one_period', 'midterm', 'final'];
+const VALID_SEMESTERS = ['1', '2'];
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await staffAuth(request);
+    const authResult = await adminAuth(request);
     if (!authResult.authorized) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized - Staff or Admin required" },
-        { status: 401 },
+        { success: false, error: 'Unauthorized - Staff or Admin required' },
+        { status: 401 }
       );
     }
 
@@ -56,10 +50,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "class_id, subject_id, component_type, and semester are required",
+          error: 'class_id, subject_id, component_type, and semester are required',
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -67,9 +60,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "grades array is required and cannot be empty",
+          error: 'grades array is required and cannot be empty',
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -78,11 +71,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: `Invalid component_type. Must be one of: ${
-            VALID_COMPONENT_TYPES.join(", ")
-          }`,
+          error: `Invalid component_type. Must be one of: ${VALID_COMPONENT_TYPES.join(', ')}`,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -91,11 +82,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: `Invalid semester. Must be one of: ${
-            VALID_SEMESTERS.join(", ")
-          }`,
+          error: `Invalid semester. Must be one of: ${VALID_SEMESTERS.join(', ')}`,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -103,12 +92,10 @@ export async function POST(request: NextRequest) {
 
     // Get students in the class from enrollments
     const { data: enrollments } = await supabase
-      .from("enrollments")
-      .select(
-        "student_id, profiles!enrollments_student_id_fkey(id, student_id, full_name)",
-      )
-      .eq("class_id", class_id)
-      .in("status", ["active", "enrolled"]);
+      .from('enrollments')
+      .select('student_id, profiles!enrollments_student_id_fkey(id, student_id, full_name)')
+      .eq('class_id', class_id)
+      .in('status', ['active', 'enrolled']);
 
     const studentMap = new Map<string, string>();
     enrollments?.forEach((e: any) => {
@@ -142,9 +129,7 @@ export async function POST(request: NextRequest) {
       // Validate score (Vietnamese 0-10 scale)
       if (grade.score < 0 || grade.score > 10) {
         results.failed++;
-        results.errors.push(
-          `Điểm không hợp lệ cho ${grade.student_id}: ${grade.score}`,
-        );
+        results.errors.push(`Điểm không hợp lệ cho ${grade.student_id}: ${grade.score}`);
         continue;
       }
 
@@ -164,24 +149,22 @@ export async function POST(request: NextRequest) {
 
     // Bulk upsert all valid grades
     if (gradesToUpsert.length > 0) {
-      const { error } = await supabase
-        .from("grades")
-        .upsert(gradesToUpsert, {
-          onConflict: "student_id,class_id,subject_id,component_type,semester",
-        });
+      const { error } = await supabase.from('grades').upsert(gradesToUpsert, {
+        onConflict: 'student_id,class_id,subject_id,component_type,semester',
+      });
 
       if (error) {
-        logger.error("Bulk grade import error", { error });
+        logger.error('Bulk grade import error', { error });
         return NextResponse.json(
           { success: false, error: `Database error: ${error.message}` },
-          { status: 500 },
+          { status: 500 }
         );
       }
 
       results.imported = gradesToUpsert.length;
     }
 
-    logger.info("Bulk grade import completed", {
+    logger.info('Bulk grade import completed', {
       class_id,
       subject_id,
       component_type,
@@ -197,10 +180,7 @@ export async function POST(request: NextRequest) {
       ...results,
     });
   } catch (error: any) {
-    logger.error("Error in bulk grade import", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 },
-    );
+    logger.error('Error in bulk grade import', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

@@ -11,7 +11,6 @@ export type UserRole =
   | 'super_admin'
   | 'owner'
   | 'admin'
-  | 'staff'
   | 'teacher'
   | 'tutor'
   | 'parent'
@@ -108,12 +107,15 @@ export interface Permission {
 /**
  * Defines which roles inherit from which other roles.
  * A role inherits everything from its parent.
+ *
+ * Owner is a STANDALONE strategic oversight role.
+ * It does NOT inherit from admin — its permissions are
+ * explicitly listed in BASE_ROLE_PERMISSIONS below.
  */
 export const ROLE_HIERARCHY: Record<UserRole, UserRole[]> = {
   super_admin: ['owner', 'admin'],
-  owner: ['staff'],
-  admin: ['staff', 'teacher'],
-  staff: ['student'],
+  owner: [], // Standalone — strategic oversight, no operational inheritance
+  admin: ['teacher'],
   teacher: ['student'],
   tutor: ['student'],
   parent: ['student'],
@@ -131,43 +133,67 @@ export const ROLE_HIERARCHY: Record<UserRole, UserRole[]> = {
 export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
   super_admin: ['*'], // God mode
   owner: [
-    'reports.view',
-    'reports.export',
+    // ── Visibility (read-only across the board) ──
+    'users.view',
+    'students.view',
+    'classes.view',
+    'timetable.view',
+    'grades.view',
     'grades.analytics',
     'grades.manage',
+    'attendance.view',
+    'attendance.reports',
+    'enrollments.view',
+    'curriculum.view',
+    'subjects.view',
+    // ── Operational Controls (Same as Admin but standalone) ──
+    'students.create',
+    'students.edit',
+    'students.delete',
+    'students.import',
+    'classes.manage',
+    'classes.create',
+    'classes.edit',
+    'classes.delete',
+    'classes.enroll',
+    'enrollments.manage',
+    'curriculum.manage',
+    'grades.entry',
+    'grades.delete',
+    'timetable.edit',
+    'subjects.manage',
+    'parent_links.approve',
+    // ── Finance — full control ──
     'finance.view',
     'finance.manage',
     'finance.refund',
     'finance.export',
-  ],
-  admin: [
-    'system.audit',
-    'roles.view',
-    'roles.manage',
-    'permissions.manage',
+    // ── Reports — full export control ──
+    'reports.view',
+    'reports.export',
+    // ── Announcements — center-wide comms ──
+    'announcements.manage',
+    // ── Staff management (hiring/firing) ──
+    'users.create',
+    'users.edit',
     'users.delete.soft',
     'users.invite',
     'users.bulk_import',
-    'parent_links.approve',
-    'curriculum.manage',
-    'enrollments.view',
-    'enrollments.manage',
-    'subjects.view',
-    'subjects.manage',
-    'grades.entry',
-    'grades.manage',
-    'announcements.manage',
-    'classes.view',
-    'finance.view',
-    'finance.manage',
-    'finance.refund',
+    // ── Oversight ──
+    'roles.view',
+    'roles.manage',
+    'permissions.manage',
+    'parent_links.view',
   ],
-  staff: [
+  admin: [
     'users.view',
     'users.create',
     'users.edit',
     'users.delete.soft',
+    'users.invite',
+    'users.bulk_import',
     'parent_links.view',
+    'parent_links.approve',
     'students.create',
     'students.edit',
     'students.delete',
@@ -176,15 +202,18 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'classes.edit',
     'classes.delete',
     'classes.enroll',
+    'classes.view',
     'enrollments.view',
     'enrollments.manage',
     'curriculum.manage',
     'grades.entry',
     'grades.manage',
     'announcements.manage',
-    'classes.view',
     'finance.view',
     'finance.manage',
+    'finance.refund',
+    'subjects.view',
+    'subjects.manage',
   ],
   teacher: [
     'grades.entry',

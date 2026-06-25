@@ -95,7 +95,7 @@ export function useUser(): UseUserResult {
   const isSuperAdmin = user?.role === 'super_admin';
   const isOwner = user?.role === 'owner';
   const isAdmin = user?.role === 'admin';
-  const isStaff = user?.role === 'staff';
+  const isStaff = user?.role === 'admin';
   const isTeacher = user?.role === 'teacher';
   const isStudent = user?.role === 'student';
   const hasAdminAccess = isSuperAdmin || isOwner || isAdmin || isStaff;

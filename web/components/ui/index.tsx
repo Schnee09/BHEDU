@@ -6,6 +6,7 @@
  */
 
 import React, { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 import { cn } from '@/lib/utils';
 
@@ -363,9 +364,7 @@ export const Input: React.FC<InputProps> = ({
         />
 
         {rightIcon && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-primary">
-            {rightIcon}
-          </div>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-primary">{rightIcon}</div>
         )}
       </div>
 
@@ -452,6 +451,11 @@ export const Modal: React.FC<ModalProps> = ({
   className = '',
 }) => {
   const [isClosing, setIsClosing] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleClose = React.useCallback(() => {
     setIsClosing(true);
@@ -485,7 +489,7 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const sizes = {
     sm: 'max-w-md',
@@ -494,8 +498,8 @@ export const Modal: React.FC<ModalProps> = ({
     xl: 'max-w-4xl',
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[1100] overflow-y-auto">
       {/* Backdrop with blur */}
       <div
         className={`
@@ -581,7 +585,8 @@ export const Modal: React.FC<ModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 Button.displayName = 'Button';

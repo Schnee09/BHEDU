@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { NavSection, NavGroup, NavLink, getNavLabel } from '@/lib/auth/navigation.config';
-import { UserRole } from '@/lib/auth/core';
+import type { UserRole } from '@/lib/auth/core';
 
 interface SidebarNavProps {
   navSections: NavSection[];

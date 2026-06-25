@@ -25,6 +25,30 @@ export class DashboardService {
   }
 
   /**
+   * Get teacher-specific stats
+   */
+  async getTeacherStats(teacherId: string) {
+    try {
+      return await this.repository.getTeacherStats(teacherId);
+    } catch (error) {
+      logger.error('Failed to fetch teacher dashboard stats', error as Error);
+      throw new Error('Failed to retrieve teacher dashboard statistics');
+    }
+  }
+
+  /**
+   * Get student-specific stats
+   */
+  async getStudentStats(studentId: string) {
+    try {
+      return await this.repository.getStudentStats(studentId);
+    } catch (error) {
+      logger.error('Failed to fetch student dashboard stats', error as Error);
+      throw new Error('Failed to retrieve student dashboard statistics');
+    }
+  }
+
+  /**
    * Get recent activity logs for a user/role with filtering and pagination
    */
   async getRecentActivity(
@@ -98,6 +122,14 @@ export class DashboardService {
     return dashboardService.getStats(role, profileId);
   }
 
+  static async getTeacherStats(teacherId: string) {
+    return dashboardService.getTeacherStats(teacherId);
+  }
+
+  static async getStudentStats(studentId: string) {
+    return dashboardService.getStudentStats(studentId);
+  }
+
   static async getRecentActivity(
     limit: number = 10,
     role?: UserRole,
@@ -105,6 +137,22 @@ export class DashboardService {
     filters: { action?: string; entityType?: string; offset?: number } = {}
   ) {
     return dashboardService.getRecentActivity(limit, role, profileId, filters);
+  }
+
+  /**
+   * Get owner-specific stats
+   */
+  async getOwnerStats() {
+    try {
+      return await this.repository.getOwnerStats();
+    } catch (error) {
+      logger.error('Failed to fetch owner dashboard stats', error as Error);
+      throw new Error('Failed to retrieve owner dashboard statistics');
+    }
+  }
+
+  static async getOwnerStats() {
+    return dashboardService.getOwnerStats();
   }
 }
 

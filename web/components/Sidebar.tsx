@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
@@ -30,10 +30,110 @@ export default function Sidebar({
   const { permissions, loading: permissionsLoading } = usePermissions();
   const router = useRouter();
 
-  const navSections = useMemo(() => {
+  const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!profile) return;
+
+    const fetchBadgeCounts = async () => {
+      const counts: Record<string, number> = {};
+      const { apiFetch } = await import('@/lib/api/client');
+
+      // 1. Fetch unread notifications
+      try {
+        const res = await apiFetch('/api/notifications/unread-count');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            counts.notifications = data.count;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch unread notification count:', err);
+      }
+
+      // 2. Fetch pending parent links for admin/owner/super_admin
+      if (['admin', 'owner', 'super_admin'].includes(profile.role)) {
+        try {
+          const res = await apiFetch('/api/admin/parent-links?status=pending&limit=1');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.pagination) {
+              counts.pendingParentLinks = data.pagination.total;
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch pending parent links count:', err);
+        }
+      }
+
+      // 3. Fetch classes count
+      try {
+        const res = await apiFetch('/api/classes?limit=1');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.pagination) {
+            counts.classes = data.pagination.total;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch classes count:', err);
+      }
+
+      setBadgeCounts(counts);
+    };
+
+    fetchBadgeCounts();
+
+    const interval = setInterval(fetchBadgeCounts, 60000);
+    return () => clearInterval(interval);
+  }, [profile]);
+
+  const navSectionsWithBadges = useMemo(() => {
     if (permissionsLoading || !profile) return [];
-    return getNavigationForPermissions(permissions);
-  }, [permissions, permissionsLoading, profile]);
+    const baseSections = getNavigationForPermissions(permissions, profile.role);
+
+    return baseSections.map((section) => ({
+      ...section,
+      links: section.links?.map((link) => {
+        let badge: string | undefined = undefined;
+        if (link.href === '/dashboard/notifications' && badgeCounts.notifications) {
+          badge = String(badgeCounts.notifications);
+        } else if (
+          link.href === '/dashboard/admin/students/parent-links' &&
+          badgeCounts.pendingParentLinks
+        ) {
+          badge = String(badgeCounts.pendingParentLinks);
+        } else if (
+          (link.href === '/dashboard/classes' || link.href === '/dashboard/teacher/classes') &&
+          badgeCounts.classes
+        ) {
+          badge = String(badgeCounts.classes);
+        }
+        return { ...link, badge };
+      }),
+      groups: section.groups?.map((group) => ({
+        ...group,
+        links: group.links.map((link) => {
+          let badge: string | undefined = undefined;
+          if (link.href === '/dashboard/notifications' && badgeCounts.notifications) {
+            badge = String(badgeCounts.notifications);
+          } else if (
+            link.href === '/dashboard/admin/students/parent-links' &&
+            badgeCounts.pendingParentLinks
+          ) {
+            badge = String(badgeCounts.pendingParentLinks);
+          } else if (
+            (link.href === '/dashboard/classes' || link.href === '/dashboard/teacher/classes') &&
+            badgeCounts.classes
+          ) {
+            badge = String(badgeCounts.classes);
+          }
+          return { ...link, badge };
+        }),
+      })),
+    }));
+  }, [permissions, permissionsLoading, profile, badgeCounts]);
 
   const swipeHandlers = useSwipe({
     onSwipedLeft: () => setIsMobileMenuOpen?.(false),
@@ -81,7 +181,7 @@ export default function Sidebar({
       >
         <SidebarHeader profile={profile} isCollapsed={isCollapsed} />
         <SidebarNav
-          navSections={navSections}
+          navSections={navSectionsWithBadges}
           role={profile.role}
           isCollapsed={isCollapsed}
           setIsMobileMenuOpen={setIsMobileMenuOpen}

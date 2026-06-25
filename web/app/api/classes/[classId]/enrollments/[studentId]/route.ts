@@ -5,14 +5,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { staffAuth } from '@/lib/auth/adminAuth';
+import { adminAuth } from '@/lib/auth/adminAuth';
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ classId: string; studentId: string }> }
 ) {
   try {
-    const authResult = await staffAuth(req);
+    const authResult = await adminAuth(req);
     if (!authResult.authorized) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }

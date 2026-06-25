@@ -110,7 +110,7 @@ const SUBJECT_THEMES: Record<
 export default function MySchedulePage() {
   const { t } = useTranslation();
   const { profile, loading: profileLoading } = useProfile();
-  const { isAdmin, isStaff, isTeacher, isStudent } = usePermissions();
+  const { isAdmin, isTeacher, isStudent } = usePermissions();
   const [slots, setSlots] = useState<TimetableSlot[]>([]);
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -152,18 +152,21 @@ export default function MySchedulePage() {
   useEffect(() => {
     if (profileLoading) return;
     fetchMySchedule();
-  }, [profileLoading, isAdmin, isStaff, currentWeek]);
+  }, [profileLoading, isAdmin, currentWeek]);
 
   const weekDates = useMemo(() => getWeekDates(currentWeek), [currentWeek]);
-  const DAYS = useMemo(() => [
-    t('timetable.monday'),
-    t('timetable.tuesday'),
-    t('timetable.wednesday'),
-    t('timetable.thursday'),
-    t('timetable.friday'),
-    t('timetable.saturday'),
-    t('timetable.sunday')
-  ], [t]);
+  const DAYS = useMemo(
+    () => [
+      t('timetable.monday'),
+      t('timetable.tuesday'),
+      t('timetable.wednesday'),
+      t('timetable.thursday'),
+      t('timetable.friday'),
+      t('timetable.saturday'),
+      t('timetable.sunday'),
+    ],
+    [t]
+  );
 
   const getTheme = (code?: string) => {
     return SUBJECT_THEMES[code || ''] || SUBJECT_THEMES.default;
@@ -188,7 +191,9 @@ export default function MySchedulePage() {
   };
 
   const calculateOverlap = (daySlots: TimetableSlot[]) => {
-    const sorted = [...daySlots].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+    const sorted = [...daySlots].sort((a, b) =>
+      (a.start_time || '').localeCompare(b.start_time || '')
+    );
     const groups: TimetableSlot[][] = [];
 
     sorted.forEach((slot) => {
@@ -243,14 +248,13 @@ export default function MySchedulePage() {
 
   if (profileLoading) return <LoadingState message={t('common.loading')} />;
 
-  const titleText =
-    isAdmin || isStaff
-      ? t('timetable.my.title')
-      : isStudent
-        ? t('timetable.my.student')
-        : isTeacher
-          ? t('timetable.my.teaching')
-          : t('timetable.title');
+  const titleText = isAdmin
+    ? t('timetable.my.title')
+    : isStudent
+      ? t('timetable.my.student')
+      : isTeacher
+        ? t('timetable.my.teaching')
+        : t('timetable.title');
 
   return (
     <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-8">
@@ -272,9 +276,7 @@ export default function MySchedulePage() {
               {titleText}
             </h1>
             <p className="text-sm font-medium text-stone-500 dark:text-stone-400 mt-3 max-w-lg leading-relaxed">
-              {isStudent
-                ? t('timetable.my.studentDesc')
-                : t('timetable.my.description')}
+              {isStudent ? t('timetable.my.studentDesc') : t('timetable.my.description')}
             </p>
           </div>
 
@@ -287,7 +289,7 @@ export default function MySchedulePage() {
                 <LinkIcon className="w-3 h-3" />
                 {t('timetable.my.academicCalendar')}
               </Link>
-              {(isAdmin || isStaff) && (
+              {isAdmin && (
                 <>
                   <span className="text-stone-300 dark:text-stone-700">•</span>
                   <Link
@@ -317,7 +319,8 @@ export default function MySchedulePage() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <span className="text-xs font-bold text-stone-700 dark:text-stone-300 min-w-[120px] text-center uppercase tracking-widest">
-                  {t('timetable.my.month')} {currentWeek.getMonth() + 1} / {currentWeek.getFullYear()}
+                  {t('timetable.my.month')} {currentWeek.getMonth() + 1} /{' '}
+                  {currentWeek.getFullYear()}
                 </span>
                 <button
                   onClick={handleNextWeek}
@@ -349,9 +352,7 @@ export default function MySchedulePage() {
             <EmptyState
               title={t('timetable.my.empty')}
               description={
-                isStudent
-                  ? t('timetable.my.emptyStudentDesc')
-                  : t('timetable.my.emptyDesc')
+                isStudent ? t('timetable.my.emptyStudentDesc') : t('timetable.my.emptyDesc')
               }
               icon={<Calendar className="w-12 h-12 text-stone-300 mb-6" />}
             />

@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { staffAuth } from '@/lib/auth/adminAuth';
+import { adminAuth } from '@/lib/auth/adminAuth';
 import { createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, AuthenticationError } from '@/lib/api/errors';
 
@@ -14,7 +14,7 @@ interface RouteParams {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await staffAuth(request);
+    const authResult = await adminAuth(request);
     if (!authResult.authorized) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized');
     }

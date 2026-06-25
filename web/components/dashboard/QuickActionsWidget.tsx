@@ -1,18 +1,31 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { adminQuickActions, teacherQuickActions, studentQuickActions, QuickActionItem } from './config/quick-actions';
+import {
+  adminQuickActions,
+  teacherQuickActions,
+  studentQuickActions,
+  tutorQuickActions,
+  QuickActionItem,
+} from './config/quick-actions';
 import { getDashboardColorStyles } from './styles/color-variants';
 
 interface QuickActionsWidgetProps {
   isAdmin: boolean;
   isTeacher: boolean;
   isStudent: boolean;
+  isTutor?: boolean;
 }
 
-export function QuickActionsWidget({ isAdmin, isTeacher, isStudent }: QuickActionsWidgetProps) {
+export function QuickActionsWidget({
+  isAdmin,
+  isTeacher,
+  isStudent,
+  isTutor,
+}: QuickActionsWidgetProps) {
   let actions: QuickActionItem[] = [];
   if (isAdmin) actions = adminQuickActions;
   else if (isTeacher) actions = teacherQuickActions;
+  else if (isTutor) actions = tutorQuickActions;
   else if (isStudent) actions = studentQuickActions;
 
   if (actions.length === 0) return null;
@@ -41,8 +54,8 @@ function QuickActionSmall({ href, icon, title, color }: QuickActionItem) {
     <Link
       href={href}
       className={cn(
-        "group relative flex flex-col items-center justify-center gap-4 p-6 rounded-[32px] bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl border border-stone-200/50 dark:border-white/5 transition-all duration-500 active:scale-95 overflow-hidden",
-        "hover:border-amber-500/50 hover:shadow-[0_25px_50px_-20px_rgba(245,158,11,0.15)]"
+        'group relative flex flex-col items-center justify-center gap-4 p-6 rounded-[32px] bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl border border-stone-200/50 dark:border-white/5 transition-all duration-500 active:scale-95 overflow-hidden',
+        'hover:border-amber-500/50 hover:shadow-[0_25px_50px_-20px_rgba(245,158,11,0.15)]'
       )}
     >
       {/* Background Accent */}

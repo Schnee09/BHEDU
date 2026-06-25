@@ -4,79 +4,78 @@
  * CRUD operations for courses management using standard API handler.
  */
 
-import { NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
-import { createCourseSchema } from "@/lib/schemas";
-import { CACHE_KEYS, CACHE_TTL, cached, invalidateCache } from "@/lib/cache";
+import { NextResponse } from 'next/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
+import { createCourseSchema } from '@/lib/schemas';
+import { CACHE_KEYS, CACHE_TTL, cached, invalidateCache } from '@/lib/cache';
 
 // GET: List all courses with caching
-export const GET = createGetHandler(
-  { allowedRoles: ["admin", "staff"] },
-  async ({ searchParams }) => {
-    const gradeLevel = searchParams.get("grade_level");
-    const isActive = searchParams.get("is_active");
-    const subjectId = searchParams.get("subject_id");
+export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ searchParams }) => {
+  const gradeLevel = searchParams.get('grade_level');
+  const isActive = searchParams.get('is_active');
+  const subjectId = searchParams.get('subject_id');
 
-    // Build unique cache key based on filters
-    const cacheKey = `${CACHE_KEYS.COURSES_ALL}:filtered:${
-      gradeLevel || "all"
-    }:${isActive || "all"}:${subjectId || "all"}`;
+  // Build unique cache key based on filters
+  const cacheKey = `${CACHE_KEYS.COURSES_ALL}:filtered:${
+    gradeLevel || 'all'
+  }:${isActive || 'all'}:${subjectId || 'all'}`;
 
-    const courses = await cached(
-      cacheKey,
-      async () => {
-        const supabase = createServiceClient();
-        let query = supabase
-          .from("courses")
-          .select(`
+  const courses = await cached(
+    cacheKey,
+    async () => {
+      const supabase = createServiceClient();
+      let query = supabase
+        .from('courses')
+        .select(
+          `
             *,
             subjects(id, name)
-          `)
-          .order("grade_level", { ascending: true })
-          .order("name", { ascending: true });
+          `
+        )
+        .order('grade_level', { ascending: true })
+        .order('name', { ascending: true });
 
-        if (gradeLevel) {
-          query = query.eq("grade_level", parseInt(gradeLevel));
+      if (gradeLevel) {
+        query = query.eq('grade_level', parseInt(gradeLevel));
+      }
+
+      if (isActive !== null) {
+        query = query.eq('is_active', isActive === 'true');
+      }
+
+      if (subjectId) {
+        query = query.eq('subject_id', subjectId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        if (error.code === 'PGRST204' || error.code === '42P01') {
+          return [];
         }
+        throw error;
+      }
 
-        if (isActive !== null) {
-          query = query.eq("is_active", isActive === "true");
-        }
+      return data || [];
+    },
+    { ttl: CACHE_TTL.MEDIUM, tags: ['courses'] }
+  );
 
-        if (subjectId) {
-          query = query.eq("subject_id", subjectId);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-          if (error.code === "PGRST204" || error.code === "42P01") {
-            return [];
-          }
-          throw error;
-        }
-
-        return data || [];
-      },
-      { ttl: CACHE_TTL.MEDIUM, tags: ["courses"] },
-    );
-
-    return apiSuccess(courses);
-  },
-);
+  return apiSuccess(courses);
+});
 
 // POST: Create a new course
 export const POST = createApiHandler(
   {
-    allowedRoles: ["admin", "staff"],
+    allowedRoles: ['admin'],
     bodySchema: createCourseSchema,
   },
   async ({ body }) => {
     const supabase = createServiceClient();
 
     const { data, error } = await supabase
-      .from("courses")
+      .from('courses')
       .insert({
         ...body,
         name_vi: (body as any).name_vi || null,
@@ -91,18 +90,18 @@ export const POST = createApiHandler(
       .single();
 
     if (error) {
-      if (error.code === "23505") {
+      if (error.code === '23505') {
         return NextResponse.json(
-          { success: false, error: "A course with this code already exists" },
-          { status: 409 },
+          { success: false, error: 'A course with this code already exists' },
+          { status: 409 }
         );
       }
       throw error;
     }
 
     // Invalidate course cache
-    invalidateCache("courses");
+    invalidateCache('courses');
 
     return apiSuccess(data, { _status: 201 });
-  },
+  }
 );

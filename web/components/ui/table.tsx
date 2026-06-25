@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 
 interface Column<T = any> {
   key: string;
-  header: string;
+  header: ReactNode;
   render?: (row: T) => ReactNode;
   sortable?: boolean;
   width?: string;
@@ -36,6 +36,8 @@ interface TableProps<T = any> {
   emptyIcon?: ReactNode;
   emptyActionLabel?: string;
   onEmptyAction?: () => void;
+  /** Custom class generator for row level styling based on row data */
+  rowClassName?: (row: T) => string;
 }
 
 export function Table<T = any>({
@@ -54,6 +56,7 @@ export function Table<T = any>({
   emptyIcon,
   emptyActionLabel,
   onEmptyAction,
+  rowClassName,
 }: TableProps<T>) {
   const paddingClass = compact ? 'px-4 py-3' : 'px-6 py-4';
 
@@ -91,91 +94,125 @@ export function Table<T = any>({
       {/* Mobile view - Cards */}
       {mobileCards && (
         <div className="md:hidden space-y-4">
-          {data.map((row) => (
-            <div
-              key={keyExtractor(row)}
-              onClick={() => onRowClick?.(row)}
-              className={cn(
-                'bg-white dark:bg-stone-900/60 p-6 rounded-[24px] border border-stone-100 dark:border-white/5 shadow-md active:scale-[0.98] transition-all',
-                hoverable && 'hover:border-amber-500/30 cursor-pointer'
-              )}
-            >
-              <div className="font-black text-stone-900 dark:text-white mb-4 text-base uppercase tracking-tight">
-                {primaryCol &&
-                  (primaryCol.render ? primaryCol.render(row) : (row as any)[primaryCol.key])}
+          {data.map((row) => {
+            const isClickable = !!onRowClick;
+            const handleKeyDown = (e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onRowClick?.(row);
+              }
+            };
+
+            return (
+              <div
+                key={keyExtractor(row)}
+                onClick={() => onRowClick?.(row)}
+                onKeyDown={isClickable ? handleKeyDown : undefined}
+                role={isClickable ? 'button' : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                className={cn(
+                  'bg-white dark:bg-stone-900/60 p-6 rounded-[24px] border border-stone-100 dark:border-white/5 shadow-md active:scale-[0.98] transition-all',
+                  hoverable && 'hover:border-amber-500/30 cursor-pointer',
+                  isClickable && 'focus:ring-2 focus:ring-amber-500/30 focus:outline-none',
+                  rowClassName?.(row)
+                )}
+              >
+                <div className="font-black text-stone-900 dark:text-white mb-4 text-base uppercase tracking-tight">
+                  {primaryCol &&
+                    (primaryCol.render ? primaryCol.render(row) : (row as any)[primaryCol.key])}
+                </div>
+                <div className="space-y-3">
+                  {columns
+                    .filter((c) => c.key !== (primaryCol?.key || '') && !c.mobileHidden)
+                    .map((col) => (
+                      <div key={col.key} className="flex justify-between items-center">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500">
+                          {col.header}
+                        </span>
+                        <span className="text-sm font-bold text-stone-700 dark:text-stone-200">
+                          {col.render ? col.render(row) : (row as any)[col.key]}
+                        </span>
+                      </div>
+                    ))}
+                </div>
               </div>
-              <div className="space-y-3">
-                {columns
-                  .filter((c) => c.key !== (primaryCol?.key || '') && !c.mobileHidden)
-                  .map((col) => (
-                    <div key={col.key} className="flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 dark:text-stone-500">
-                        {col.header}
-                      </span>
-                      <span className="text-sm font-bold text-stone-700 dark:text-stone-200">
-                        {col.render ? col.render(row) : (row as any)[col.key]}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Desktop view - Table */}
       <div
         className={cn(
-          'overflow-hidden rounded-[32px] bg-white dark:bg-stone-900/40 border border-stone-200 dark:border-white/10 shadow-xl',
+          'overflow-hidden rounded-[24px] md:rounded-[32px] bg-white dark:bg-[#1C1917] border border-stone-200 dark:border-stone-800 shadow-sm',
           mobileCards ? 'hidden md:block' : 'block'
         )}
       >
-        <table className="min-w-full border-collapse">
-          <thead className="bg-stone-50/50 dark:bg-stone-800/20">
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  scope="col"
-                  className={cn(
-                    paddingClass,
-                    'text-left text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 border-b border-stone-100 dark:border-white/5',
-                    column.width || '',
-                    column.mobileHidden && 'hidden md:table-cell'
-                  )}
-                >
-                  {column.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-stone-100 dark:divide-white/5">
-            {data.map((row, index) => (
-              <tr
-                key={keyExtractor(row)}
-                onClick={() => onRowClick?.(row)}
-                className={cn(
-                  'group transition-all duration-300',
-                  hoverable && 'hover:bg-amber-50/30 dark:hover:bg-amber-500/5 cursor-pointer',
-                  striped && index % 2 === 1 && 'bg-stone-50/30 dark:bg-white/[0.02]'
-                )}
-              >
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse">
+            <thead className="bg-stone-50/50 dark:bg-stone-900/50">
+              <tr>
                 {columns.map((column) => (
-                  <td
+                  <th
                     key={column.key}
+                    scope="col"
                     className={cn(
                       paddingClass,
-                      'text-sm font-bold text-stone-700 dark:text-stone-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors',
+                      'text-left text-[10px] font-bold uppercase tracking-[0.15em] text-stone-500 dark:text-stone-400 border-b border-stone-200 dark:border-stone-800 whitespace-nowrap',
+                      column.width || '',
                       column.mobileHidden && 'hidden md:table-cell'
                     )}
                   >
-                    {column.render ? column.render(row) : (row as any)[column.key]}
-                  </td>
+                    {column.header}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-stone-100 dark:divide-stone-850">
+              {data.map((row, index) => {
+                const isClickable = !!onRowClick;
+                const handleKeyDown = (e: React.KeyboardEvent) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onRowClick?.(row);
+                  }
+                };
+
+                return (
+                  <tr
+                    key={keyExtractor(row)}
+                    onClick={() => onRowClick?.(row)}
+                    onKeyDown={isClickable ? handleKeyDown : undefined}
+                    role={isClickable ? 'button' : undefined}
+                    tabIndex={isClickable ? 0 : undefined}
+                    className={cn(
+                      'group transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)]',
+                      hoverable &&
+                        'hover:bg-stone-50/80 dark:hover:bg-white/[0.02] cursor-pointer hover:translate-x-[2px]',
+                      isClickable &&
+                        'focus:bg-stone-50/80 dark:focus:bg-white/[0.03] focus:outline-none',
+                      striped && index % 2 === 1 && 'bg-stone-50/30 dark:bg-white/[0.01]',
+                      rowClassName?.(row)
+                    )}
+                  >
+                    {columns.map((column) => (
+                      <td
+                        key={column.key}
+                        className={cn(
+                          paddingClass,
+                          'text-sm font-semibold text-stone-700 dark:text-stone-200 group-hover:text-stone-950 dark:group-hover:text-white transition-colors whitespace-nowrap',
+                          column.mobileHidden && 'hidden md:table-cell'
+                        )}
+                      >
+                        {column.render ? column.render(row) : (row as any)[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

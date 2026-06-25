@@ -3,23 +3,18 @@
  * Verifies that the current user is an admin
  */
 
-import { createClientFromToken } from "@/lib/supabase/server";
-import { getDataClient } from "./dataClient";
-import type { NextRequest } from "next/server";
-import { cacheConfigs, getCached, setCached } from "./cache";
+import { createClientFromToken } from '@/lib/supabase/server';
+import { getDataClient } from './dataClient';
+import type { NextRequest } from 'next/server';
+import { cacheConfigs, getCached, setCached } from './cache';
 import {
   checkRateLimit,
   getRateLimitIdentifier,
   type RateLimitConfig,
   rateLimitConfigs,
-} from "./rateLimit";
-import { logAuthAttempt, logRateLimitEvent } from "./auditLog";
-import {
-  hasPermission,
-  isAtLeast,
-  type PermissionCode,
-  UserRole,
-} from "./core";
+} from './rateLimit';
+import { logAuthAttempt, logRateLimitEvent } from './auditLog';
+import { hasPermission, isAtLeast, type PermissionCode, UserRole } from './core';
 
 export interface AuthResult {
   authorized: boolean;
@@ -38,7 +33,7 @@ export interface AuthResult {
  */
 export async function adminAuth(
   request?: NextRequest | Request,
-  rateLimitConfig: RateLimitConfig = rateLimitConfigs.auth,
+  rateLimitConfig: RateLimitConfig = rateLimitConfigs.auth
 ): Promise<AuthResult> {
   try {
     // Rate limiting check
@@ -48,7 +43,7 @@ export async function adminAuth(
 
       if (!rateLimit.allowed) {
         logRateLimitEvent({
-          type: rateLimit.blocked ? "blocked" : "exceeded",
+          type: rateLimit.blocked ? 'blocked' : 'exceeded',
           identifier,
           attempts: rateLimit.remaining,
           request,
@@ -57,10 +52,8 @@ export async function adminAuth(
         return {
           authorized: false,
           reason: rateLimit.blocked
-            ? `Rate limit exceeded. Blocked until ${
-              new Date(rateLimit.blockUntil!).toISOString()
-            }`
-            : "Too many authentication attempts",
+            ? `Rate limit exceeded. Blocked until ${new Date(rateLimit.blockUntil!).toISOString()}`
+            : 'Too many authentication attempts',
           rateLimited: true,
         };
       }
@@ -68,9 +61,7 @@ export async function adminAuth(
 
     // Use the centralized data-client helper so server pages/APIs will use a
     // service-role client for admin viewers when appropriate.
-    const { supabase, user: detectedUser } = await getDataClient(
-      request as Request | undefined,
-    );
+    const { supabase, user: detectedUser } = await getDataClient(request as Request | undefined);
 
     // Get current user (may already be provided by getDataClient)
     let user = detectedUser;
@@ -84,7 +75,7 @@ export async function adminAuth(
     if (authError || !user) {
       // Fallback: try Authorization header (Bearer token)
       const token = request
-        ? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
+        ? request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
         : undefined;
       if (token) {
         const tokenClient = createClientFromToken(token);
@@ -97,34 +88,31 @@ export async function adminAuth(
         // Log failed auth attempt
         logAuthAttempt({
           success: false,
-          reason: authError?.message || "Not authenticated",
+          reason: authError?.message || 'Not authenticated',
           request,
         });
 
         return {
           authorized: false,
-          reason: authError?.message || "Not authenticated",
+          reason: authError?.message || 'Not authenticated',
         };
       }
     }
 
     // Try to get profile from cache
     const cacheKey = `profile:${user.id}`;
-    let profile = getCached<{ id: string; full_name?: string; role: UserRole }>(
-      cacheKey,
-      "auth",
-    );
+    let profile = getCached<{ id: string; full_name?: string; role: UserRole }>(cacheKey, 'auth');
 
     if (!profile) {
       // Get user profile to check role
       const { data: fetchedProfile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, full_name, role")
-        .eq("user_id", user.id)
+        .from('profiles')
+        .select('id, full_name, role')
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (profileError) {
-        console.error("[adminAuth/teacherAuth] Auth failure:", profileError);
+        console.error('[adminAuth/teacherAuth] Auth failure:', profileError);
         logAuthAttempt({
           success: false,
           userId: user.id,
@@ -140,32 +128,36 @@ export async function adminAuth(
       }
 
       if (!fetchedProfile) {
-        console.error("[adminAuth/teacherAuth] Auth failure:", profileError);
+        console.error('[adminAuth/teacherAuth] Auth failure:', profileError);
         logAuthAttempt({
           success: false,
           userId: user.id,
           userEmail: user.email,
-          reason: "Profile not found",
+          reason: 'Profile not found',
           request,
         });
 
         return {
           authorized: false,
-          reason: "Profile not found",
+          reason: 'Profile not found',
         };
       }
 
       profile = fetchedProfile;
-      setCached(cacheKey, profile, "auth", cacheConfigs.profile);
+      setCached(cacheKey, profile, 'auth', cacheConfigs.profile);
     }
 
-    if (!isAtLeast(profile.role, "admin")) {
+    if (
+      !isAtLeast(profile.role, 'admin') &&
+      profile.role !== 'owner' &&
+      profile.role !== 'super_admin'
+    ) {
       logAuthAttempt({
         success: false,
         userId: profile.id,
         userEmail: user.email,
         userRole: profile.role,
-        reason: "Insufficient permissions (admin required)",
+        reason: 'Insufficient permissions (admin required)',
         request,
       });
 
@@ -174,7 +166,7 @@ export async function adminAuth(
         userId: profile.id,
         userEmail: user.email,
         userRole: profile.role,
-        reason: "Insufficient permissions (admin required)",
+        reason: 'Insufficient permissions (admin required)',
       };
     }
 
@@ -197,13 +189,13 @@ export async function adminAuth(
   } catch (error) {
     logAuthAttempt({
       success: false,
-      reason: error instanceof Error ? error.message : "Authentication error",
+      reason: error instanceof Error ? error.message : 'Authentication error',
       request,
     });
 
     return {
       authorized: false,
-      reason: error instanceof Error ? error.message : "Authentication error",
+      reason: error instanceof Error ? error.message : 'Authentication error',
     };
   }
 }
@@ -215,7 +207,7 @@ export async function adminAuth(
  */
 export async function teacherAuth(
   request?: NextRequest | Request,
-  rateLimitConfig: RateLimitConfig = rateLimitConfigs.api,
+  rateLimitConfig: RateLimitConfig = rateLimitConfigs.api
 ): Promise<AuthResult> {
   try {
     // Rate limiting check
@@ -225,7 +217,7 @@ export async function teacherAuth(
 
       if (!rateLimit.allowed) {
         logRateLimitEvent({
-          type: rateLimit.blocked ? "blocked" : "exceeded",
+          type: rateLimit.blocked ? 'blocked' : 'exceeded',
           identifier,
           attempts: rateLimit.remaining,
           request,
@@ -234,18 +226,14 @@ export async function teacherAuth(
         return {
           authorized: false,
           reason: rateLimit.blocked
-            ? `Rate limit exceeded. Blocked until ${
-              new Date(rateLimit.blockUntil!).toISOString()
-            }`
-            : "Too many authentication attempts",
+            ? `Rate limit exceeded. Blocked until ${new Date(rateLimit.blockUntil!).toISOString()}`
+            : 'Too many authentication attempts',
           rateLimited: true,
         };
       }
     }
 
-    const { supabase, user: detectedUser } = await getDataClient(
-      request as Request | undefined,
-    );
+    const { supabase, user: detectedUser } = await getDataClient(request as Request | undefined);
 
     let user = detectedUser;
     let authError: any = null;
@@ -258,7 +246,7 @@ export async function teacherAuth(
     if (authError || !user) {
       // Fallback to Authorization header (Bearer token)
       const token = request
-        ? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
+        ? request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
         : undefined;
       if (token) {
         const tokenClient = createClientFromToken(token);
@@ -267,40 +255,40 @@ export async function teacherAuth(
         authError = result.error;
       }
       if (authError || !user) {
-        console.error("[adminAuth/teacherAuth] Auth failure:", authError);
+        console.error('[adminAuth/teacherAuth] Auth failure:', authError);
         logAuthAttempt({
           success: false,
-          reason: "Not authenticated",
+          reason: 'Not authenticated',
           request,
         });
 
         return {
           authorized: false,
-          reason: "Not authenticated",
+          reason: 'Not authenticated',
         };
       }
     }
 
     // Try to get profile from cache
     const cacheKey = `profile:${user.id}`;
-    let profile = getCached<{ id: string; role: string }>(cacheKey, "auth");
+    let profile = getCached<{ id: string; role: string }>(cacheKey, 'auth');
 
     if (!profile) {
       const { data: fetchedProfile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, role")
-        .eq("user_id", user.id)
+        .from('profiles')
+        .select('id, role')
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (profileError || !fetchedProfile) {
-        console.error("[adminAuth/teacherAuth] Auth failure:", profileError);
+        console.error('[adminAuth/teacherAuth] Auth failure:', profileError);
         logAuthAttempt({
           success: false,
           userId: user.id,
           userEmail: user.email,
           reason: profileError
             ? `Profile query error: ${profileError.message}`
-            : "Profile not found",
+            : 'Profile not found',
           request,
         });
 
@@ -308,24 +296,30 @@ export async function teacherAuth(
           authorized: false,
           reason: profileError
             ? `Profile query error: ${profileError.message}`
-            : "Profile not found",
+            : 'Profile not found',
         };
       }
 
       profile = fetchedProfile;
 
       // Cache the profile
-      setCached(cacheKey, profile, "auth", cacheConfigs.profile);
+      setCached(cacheKey, profile, 'auth', cacheConfigs.profile);
     }
 
-    if (!isAtLeast(profile.role as UserRole, "student")) {
-      console.warn(`[teacherAuth] Authorization failed for user ${profile.id}. Role: ${profile.role}. Reason: Role not in hierarchy or below student level.`);
+    if (
+      !isAtLeast(profile.role as UserRole, 'student') &&
+      profile.role !== 'owner' &&
+      profile.role !== 'super_admin'
+    ) {
+      console.warn(
+        `[teacherAuth] Authorization failed for user ${profile.id}. Role: ${profile.role}. Reason: Role not in hierarchy or below student level.`
+      );
       logAuthAttempt({
         success: false,
         userId: profile.id,
         userEmail: user.email,
         userRole: profile.role,
-        reason: "Insufficient permissions (valid role required)",
+        reason: 'Insufficient permissions (valid role required)',
         request,
       });
 
@@ -334,7 +328,7 @@ export async function teacherAuth(
         userId: profile.id,
         userEmail: user.email,
         userRole: profile.role,
-        reason: "Insufficient permissions (valid role required)",
+        reason: 'Insufficient permissions (valid role required)',
       };
     }
 
@@ -357,164 +351,13 @@ export async function teacherAuth(
   } catch (error) {
     logAuthAttempt({
       success: false,
-      reason: error instanceof Error ? error.message : "Authentication error",
+      reason: error instanceof Error ? error.message : 'Authentication error',
       request,
     });
 
     return {
       authorized: false,
-      reason: error instanceof Error ? error.message : "Authentication error",
-    };
-  }
-}
-
-/**
- * Check if the current user is authenticated and has staff or admin role
- * Staff can access most operational features but NOT system configuration
- */
-export async function staffAuth(
-  request?: NextRequest | Request,
-): Promise<AuthResult> {
-  try {
-    // Rate limiting check
-    if (request) {
-      const identifier = getRateLimitIdentifier(request);
-      const rateLimit = checkRateLimit(identifier, rateLimitConfigs.auth);
-
-      if (!rateLimit.allowed) {
-        logRateLimitEvent({
-          type: rateLimit.blocked ? "blocked" : "exceeded",
-          identifier,
-          attempts: rateLimit.remaining,
-          request,
-        });
-
-        return {
-          authorized: false,
-          reason: rateLimit.blocked
-            ? `Rate limit exceeded. Blocked until ${
-              new Date(rateLimit.blockUntil!).toISOString()
-            }`
-            : "Too many authentication attempts",
-          rateLimited: true,
-        };
-      }
-    }
-
-    const { supabase, user: detectedUser } = await getDataClient(
-      request as Request | undefined,
-    );
-
-    let user = detectedUser;
-    let authError: any = null;
-    if (!user) {
-      const result = await supabase.auth.getUser();
-      user = result.data.user;
-      authError = result.error;
-    }
-
-    if (authError || !user) {
-      const token = request
-        ? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
-        : undefined;
-      if (token) {
-        const tokenClient = createClientFromToken(token);
-        const result = await tokenClient.auth.getUser();
-        user = result.data.user;
-        authError = result.error;
-      }
-      if (authError || !user) {
-        logAuthAttempt({
-          success: false,
-          reason: "Not authenticated",
-          request,
-        });
-
-        return {
-          authorized: false,
-          reason: "Not authenticated",
-        };
-      }
-    }
-
-    const cacheKey = `profile:${user.id}`;
-    let profile = getCached<{ id: string; role: string }>(cacheKey, "auth");
-
-    if (!profile) {
-      const { data: fetchedProfile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (profileError || !fetchedProfile) {
-        logAuthAttempt({
-          success: false,
-          userId: user.id,
-          userEmail: user.email,
-          reason: profileError
-            ? `Profile query error: ${profileError.message}`
-            : "Profile not found",
-          request,
-        });
-
-        return {
-          authorized: false,
-          reason: profileError
-            ? `Profile query error: ${profileError.message}`
-            : "Profile not found",
-        };
-      }
-
-      profile = fetchedProfile;
-      setCached(cacheKey, profile, "auth", cacheConfigs.profile);
-    }
-
-    // Staff auth: requires at least staff role
-    if (!isAtLeast(profile.role as UserRole, "staff")) {
-      logAuthAttempt({
-        success: false,
-        userId: profile.id,
-        userEmail: user.email,
-        userRole: profile.role,
-        reason: "Insufficient permissions (staff or admin required)",
-        request,
-      });
-
-      return {
-        authorized: false,
-        userId: profile.id,
-        userEmail: user.email,
-        userRole: profile.role,
-        reason: "Insufficient permissions (staff or admin required)",
-      };
-    }
-
-    logAuthAttempt({
-      success: true,
-      userId: profile.id,
-      userEmail: user.email,
-      userRole: profile.role,
-      request,
-    });
-
-    return {
-      authorized: true,
-      userId: profile.id,
-      userEmail: user.email,
-      userRole: profile.role,
-      supabase,
-    };
-  } catch (error) {
-    logAuthAttempt({
-      success: false,
-      reason: error instanceof Error ? error.message : "Authentication error",
-      request,
-    });
-
-    return {
-      authorized: false,
-      reason: error instanceof Error ? error.message : "Authentication error",
+      reason: error instanceof Error ? error.message : 'Authentication error',
     };
   }
 }
@@ -523,9 +366,6 @@ export async function staffAuth(
  * Check if user has permission for a resource and action
  * Uses the granular permission system
  */
-export function checkPermission(
-  userRole: string,
-  permission: PermissionCode,
-): boolean {
+export function checkPermission(userRole: string, permission: PermissionCode): boolean {
   return hasPermission(userRole as UserRole, permission);
 }

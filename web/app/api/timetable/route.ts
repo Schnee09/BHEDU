@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
-import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
-import { createServiceClient } from "@/lib/supabase/server";
-import { TimetableRepository } from "@/lib/repositories/TimetableRepository";
-import { createTimetableSlotSchema, timetableQuerySchema } from "@/lib/schemas";
-import { validateQuery } from "@/lib/api/validation";
-import { ConflictError, ValidationError } from "@/lib/api/errors";
+import { NextResponse } from 'next/server';
+import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
+import { createServiceClient } from '@/lib/supabase/server';
+import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
+import { createTimetableSlotSchema, timetableQuerySchema } from '@/lib/schemas';
+import { validateQuery } from '@/lib/api/validation';
+import { ConflictError, ValidationError } from '@/lib/api/errors';
 
 export const GET = createGetHandler(
   { requireAuth: false }, // Public/Authenticated - original check was manual classId check
@@ -14,7 +14,7 @@ export const GET = createGetHandler(
     // Original code allowed no auth for GET?
     // "export async function GET(req: NextRequest) { ... }"
     // It didn't have specific auth guards besides standard RLS if applied.
-    // However, POST had explicit staffAuth.
+    // However, POST had explicit adminAuth.
     // We'll keep GET open or requireAuth depending on strictness.
     // Safest is public read if shared, but usually requires login.
     // Let's assume requireAuth=false to match "maybe public schedule" or client handling.
@@ -36,17 +36,17 @@ export const GET = createGetHandler(
     });
 
     return apiSuccess({ slots });
-  },
+  }
 );
 
 export const POST = createApiHandler(
   {
-    permission: "classes.manage", // Or similar? Original used 'staffAuth'.
+    permission: 'classes.manage', // Or similar? Original used 'adminAuth'.
     // We can use ability check or role check.
     // V2 auth typically checks permission.
-    // Let's map 'staffAuth' roles (admin/staff/teacher?) to a permission or allowedRoles.
-    allowedRoles: ["admin", "staff", "owner"], // Teacher might need to create slots?
-    // Original: "const authResult = await staffAuth(req)" -> Staff/Admin/Owner.
+    // Let's map 'adminAuth' roles (admin/staff/teacher?) to a permission or allowedRoles.
+    allowedRoles: ['admin', 'owner'], // Teacher might need to create slots?
+    // Original: "const authResult = await adminAuth(req)" -> Staff/Admin/Owner.
     bodySchema: createTimetableSlotSchema,
   },
   async ({ body, user }) => {
@@ -69,5 +69,5 @@ export const POST = createApiHandler(
     };
 
     return apiSuccess({ slot: transformedSlot }, { status: 201 });
-  },
+  }
 );

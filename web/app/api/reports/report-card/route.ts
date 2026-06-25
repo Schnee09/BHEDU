@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
  * Aggregates student, grade, and attendance data for a printable report card
  */
 export const GET = createGetHandler(
-  { allowedRoles: ['admin', 'staff', 'teacher', 'student'] },
+  { allowedRoles: ['admin', 'teacher', 'student'] },
   async ({ searchParams, user }) => {
     const studentId = searchParams.get('studentId') || (user.role === 'student' ? user.id : null);
     const academicYearId = searchParams.get('academicYearId');

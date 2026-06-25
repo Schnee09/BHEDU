@@ -20,7 +20,6 @@ describe('Role Utilities', () => {
     expect(ROLE_CONFIG.super_admin).toBeDefined();
     expect(ROLE_CONFIG.owner).toBeDefined();
     expect(ROLE_CONFIG.admin).toBeDefined();
-    expect(ROLE_CONFIG.staff).toBeDefined();
     expect(ROLE_CONFIG.teacher).toBeDefined();
     expect(ROLE_CONFIG.tutor).toBeDefined();
     expect(ROLE_CONFIG.parent).toBeDefined();
@@ -29,7 +28,6 @@ describe('Role Utilities', () => {
 
   it('should have correct Vietnamese labels', () => {
     expect(ROLE_CONFIG.admin.label).toBe('Quản trị viên');
-    expect(ROLE_CONFIG.staff.label).toBe('Nhân viên');
     expect(ROLE_CONFIG.teacher.label).toBe('Giáo viên');
     expect(ROLE_CONFIG.student.label).toBe('Học sinh');
     expect(ROLE_CONFIG.owner.label).toBe('Chủ sở hữu');
@@ -38,7 +36,7 @@ describe('Role Utilities', () => {
   it('should have unique colors for each role', () => {
     const colors = getAllRoles().map((role) => ROLE_CONFIG[role].color);
     const uniqueColors = new Set(colors);
-    expect(uniqueColors.size).toBe(8);
+    expect(uniqueColors.size).toBe(7);
   });
 
   describe('getRoleConfig', () => {
@@ -72,7 +70,6 @@ describe('Role Utilities', () => {
   describe('isValidRole', () => {
     it('should return true for valid roles', () => {
       expect(isValidRole('admin')).toBe(true);
-      expect(isValidRole('staff')).toBe(true);
       expect(isValidRole('teacher')).toBe(true);
       expect(isValidRole('student')).toBe(true);
     });
@@ -89,45 +86,28 @@ describe('Role Utilities', () => {
     it('should correctly compare role hierarchy', () => {
       expect(hasHigherOrEqualRole('admin', 'student')).toBe(true);
       expect(hasHigherOrEqualRole('admin', 'admin')).toBe(true);
-      expect(hasHigherOrEqualRole('staff', 'teacher')).toBe(true);
+      expect(hasHigherOrEqualRole('admin', 'teacher')).toBe(true);
       expect(hasHigherOrEqualRole('student', 'admin')).toBe(false);
-      expect(hasHigherOrEqualRole('teacher', 'staff')).toBe(false);
+      expect(hasHigherOrEqualRole('teacher', 'admin')).toBe(false);
     });
   });
 
   describe('canModifyUserRole', () => {
     it('should allow admin to modify staff and below but not other admins', () => {
       expect(canModifyUserRole('admin', 'admin')).toBe(false);
-      expect(canModifyUserRole('admin', 'staff')).toBe(true);
       expect(canModifyUserRole('admin', 'teacher')).toBe(true);
       expect(canModifyUserRole('admin', 'student')).toBe(true);
     });
 
     it('should allow admin to change roles within their targets', () => {
       expect(canModifyUserRole('admin', 'student', 'teacher')).toBe(true);
-      expect(canModifyUserRole('admin', 'teacher', 'staff')).toBe(true);
+      expect(canModifyUserRole('admin', 'teacher')).toBe(true);
       expect(canModifyUserRole('admin', 'student', 'admin')).toBe(false);
     });
 
     it('should allow owner to modify admin, staff, and others', () => {
       expect(canModifyUserRole('owner', 'admin')).toBe(true);
-      expect(canModifyUserRole('owner', 'staff')).toBe(true);
       expect(canModifyUserRole('owner', 'student')).toBe(true);
-    });
-
-    it('should allow staff to modify teacher/student roles', () => {
-      expect(canModifyUserRole('staff', 'teacher')).toBe(true);
-      expect(canModifyUserRole('staff', 'student')).toBe(true);
-    });
-
-    it('should NOT allow staff to modify admin/staff roles', () => {
-      expect(canModifyUserRole('staff', 'admin')).toBe(false);
-      expect(canModifyUserRole('staff', 'staff')).toBe(false);
-    });
-
-    it('should NOT allow staff to promote users to admin/staff', () => {
-      expect(canModifyUserRole('staff', 'student', 'admin')).toBe(false);
-      expect(canModifyUserRole('staff', 'teacher', 'staff')).toBe(false);
     });
 
     it('should NOT allow teacher or student to modify roles', () => {
@@ -142,13 +122,12 @@ describe('Role Utilities', () => {
   });
 
   describe('getAllRoles', () => {
-    it('should return all eight roles', () => {
+    it('should return all seven roles', () => {
       const roles = getAllRoles();
-      expect(roles).toHaveLength(8);
+      expect(roles).toHaveLength(7);
       expect(roles).toContain('super_admin');
       expect(roles).toContain('owner');
       expect(roles).toContain('admin');
-      expect(roles).toContain('staff');
       expect(roles).toContain('teacher');
       expect(roles).toContain('tutor');
       expect(roles).toContain('parent');
@@ -179,13 +158,6 @@ describe('Unified Permission Checks (hasPermission)', () => {
     expect(hasPermission('admin', 'finance.view')).toBe(true);
     expect(hasPermission('admin', 'finance.refund')).toBe(true);
     expect(hasPermission('admin', 'system.settings')).toBe(false);
-  });
-
-  it('staff should keep grades.entry and grades.manage but NOT have teacher mark attendance', () => {
-    expect(hasPermission('staff', 'grades.entry')).toBe(true);
-    expect(hasPermission('staff', 'grades.manage')).toBe(true);
-    expect(hasPermission('staff', 'users.delete.soft')).toBe(true);
-    expect(hasPermission('staff', 'attendance.mark')).toBe(false);
   });
 
   it('teacher should have class-scoped grades/attendance permissions but not users manage or finance', () => {

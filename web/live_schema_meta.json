@@ -1,0 +1,4276 @@
+{
+  "payments": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "invoice_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `invoices.id`.<fk table='invoices' column='id'/>",
+        "isNullable": false
+      },
+      "payment_method_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `payment_methods.id`.<fk table='payment_methods' column='id'/>",
+        "isNullable": false
+      },
+      "amount": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "reference_number": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "payment_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "received_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "public.payment_status",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "all_teachers": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "user_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "full_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "email": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "phone": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "photo_url": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "department": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "teacher_type": {
+        "type": "string",
+        "format": "public.teacher_type",
+        "description": "",
+        "isNullable": false
+      },
+      "specialization": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "teaching_subjects": {
+        "type": "array",
+        "format": "uuid[]",
+        "description": "",
+        "isNullable": false
+      },
+      "hourly_rate": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "bio": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "display_type": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "grades": {
+    "description": "Student grades for assignments",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "assignment_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "score": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "feedback": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "graded_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "graded_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "points_earned": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "component_type": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "semester": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "academic_year_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "isNullable": false
+      },
+      "category_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "subject_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      }
+    }
+  },
+  "class_statistics": {
+    "description": "",
+    "columns": {
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "class_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "total_students": {
+        "type": "integer",
+        "format": "bigint",
+        "description": "",
+        "isNullable": false
+      },
+      "total_attendance_records": {
+        "type": "integer",
+        "format": "bigint",
+        "description": "",
+        "isNullable": false
+      },
+      "present_count": {
+        "type": "integer",
+        "format": "bigint",
+        "description": "",
+        "isNullable": false
+      },
+      "attendance_rate": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "parent_student_links": {
+    "description": "Links parent accounts to their children with approval workflow",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "parent_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "relationship": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "text",
+        "description": "pending: awaiting staff approval, approved: active link, rejected: denied, revoked: deactivated",
+        "isNullable": false
+      },
+      "requested_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "reviewed_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "reviewed_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "rejection_reason": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "can_view_grades": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "can_view_attendance": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "can_view_finance": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "can_view_schedule": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "assignments": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      },
+      "category_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `assignment_categories.id`.<fk table='assignment_categories' column='id'/>",
+        "isNullable": false
+      },
+      "title": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "due_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "max_points": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "teacher_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "role_permissions": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "role": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "permission_code": {
+        "type": "string",
+        "format": "character varying",
+        "description": "Note:\nThis is a Foreign Key to `permission_definitions.code`.<fk table='permission_definitions' column='code'/>",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "student_profiles": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "profile_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "student_code": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "grade_level": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "enrollment_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "parent_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "parent_phone": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "timetable_slots": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      },
+      "subject_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "isNullable": false
+      },
+      "teacher_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "semester_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `semesters.id`.<fk table='semesters' column='id'/>",
+        "isNullable": false
+      },
+      "day_of_week": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "start_time": {
+        "type": "string",
+        "format": "time without time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "end_time": {
+        "type": "string",
+        "format": "time without time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "room": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "subjects": {
+    "description": "Academic subjects (Math, Science, etc.)",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "code": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "credits": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "v_active_profiles": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "user_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "first_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "last_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "full_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "email": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "date_of_birth": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "phone": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "address": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "emergency_contact": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "role": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "grade_level": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "gender": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "enrollment_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "photo_url": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "department": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "student_code": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "subject_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "isNullable": false
+      },
+      "phone_verified": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "preferred_auth_method": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "account_status": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "status_changed_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "status_changed_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "status_note": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_managed": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      }
+    }
+  },
+  "evaluation_types": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "code": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "weight": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "payment_methods": {
+    "description": "Available payment methods (cash, bank transfer, card, etc)",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "requires_reference": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "type": {
+        "type": "string",
+        "format": "public.payment_method_type",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "classes": {
+    "description": "PRIMARY table for class/course management.",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "teacher_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "grade_level": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "academic_year_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "isNullable": false
+      },
+      "subject_group_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "max_capacity": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "sessions_per_week": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "class_type": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "course_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `courses.id`.<fk table='courses' column='id'/>",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "room": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "schedule": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "capacity": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "assignment_categories": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "weight": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "school_settings": {
+    "description": "School-wide configuration settings",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "key": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "value": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "payment_schedules": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "academic_year_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "isNullable": false
+      },
+      "schedule_type": {
+        "type": "string",
+        "format": "public.schedule_type",
+        "description": "",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "profiles": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "user_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "first_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "last_name": {
+        "type": "string",
+        "format": "text",
+        "description": "User last name",
+        "isNullable": false
+      },
+      "full_name": {
+        "type": "string",
+        "format": "text",
+        "description": "Auto-computed full name from first_name and last_name",
+        "isNullable": false
+      },
+      "email": {
+        "type": "string",
+        "format": "text",
+        "description": "User email address (synced from auth.users)",
+        "isNullable": false
+      },
+      "date_of_birth": {
+        "type": "string",
+        "format": "date",
+        "description": "Date of birth",
+        "isNullable": false
+      },
+      "phone": {
+        "type": "string",
+        "format": "text",
+        "description": "Contact phone number",
+        "isNullable": false
+      },
+      "address": {
+        "type": "string",
+        "format": "text",
+        "description": "Residential address",
+        "isNullable": false
+      },
+      "emergency_contact": {
+        "type": "string",
+        "format": "text",
+        "description": "Emergency contact information (phone or email)",
+        "isNullable": false
+      },
+      "role": {
+        "type": "string",
+        "format": "text",
+        "description": "User roles: super_admin, owner, admin, staff, teacher, tutor, parent, student",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "text",
+        "description": "Unique student ID number (school-assigned)",
+        "isNullable": false
+      },
+      "grade_level": {
+        "type": "string",
+        "format": "text",
+        "description": "Current grade level",
+        "isNullable": false
+      },
+      "gender": {
+        "type": "string",
+        "format": "character varying",
+        "description": "Gender",
+        "isNullable": false
+      },
+      "enrollment_date": {
+        "type": "string",
+        "format": "date",
+        "description": "Date when student enrolled",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "character varying",
+        "description": "User status (active/inactive/etc)",
+        "isNullable": false
+      },
+      "photo_url": {
+        "type": "string",
+        "format": "text",
+        "description": "URL to profile photo",
+        "isNullable": false
+      },
+      "department": {
+        "type": "string",
+        "format": "text",
+        "description": "Department (for teachers/staff)",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "Whether user account is active",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "User ID who created this profile",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "Additional notes",
+        "isNullable": false
+      },
+      "student_code": {
+        "type": "string",
+        "format": "character varying",
+        "description": "Vietnamese student code format: HS + Year + 3-digit sequential (e.g., HS2025001). \r\nLegacy format STU-YYYY-NNNN supported for backward compatibility.",
+        "isNullable": false
+      },
+      "subject_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "isNullable": false
+      },
+      "phone_verified": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "preferred_auth_method": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "account_status": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "status_changed_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "status_changed_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "status_note": {
+        "type": "string",
+        "format": "text",
+        "description": "Reason for suspension or deactivation",
+        "isNullable": false
+      },
+      "is_managed": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "personal_email": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "teacher_code": {
+        "type": "string",
+        "format": "text",
+        "description": "UID (Mã truy cập) for Teachers, Staff, and Tutors",
+        "isNullable": false
+      }
+    }
+  },
+  "payment_allocations": {
+    "description": "Tracks how payments are allocated to specific invoices",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "payment_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "invoice_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "amount": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "weekly_notes": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "slot_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `timetable_slots.id`.<fk table='timetable_slots' column='id'/>",
+        "isNullable": false
+      },
+      "week_start_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "settings": {
+    "description": "Key-value store for school configuration settings",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "key": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "value": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "value_json": {
+        "type": "unknown",
+        "format": "jsonb",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "category": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_public": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "teacher_profiles": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "profile_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "department": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "specialization": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "teaching_subjects": {
+        "type": "array",
+        "format": "uuid[]",
+        "description": "",
+        "isNullable": false
+      },
+      "hourly_rate": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "bio": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "teacher_type": {
+        "type": "string",
+        "format": "public.teacher_type",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "attendance_reports": {
+    "description": "Pre-generated attendance summary reports.",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "report_type": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "date_from": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "date_to": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "total_days": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "present_count": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "absent_count": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "late_count": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "excused_count": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "attendance_rate": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "report_data": {
+        "type": "unknown",
+        "format": "jsonb",
+        "description": "",
+        "isNullable": false
+      },
+      "generated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "generated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "invoice_items": {
+    "description": "Line items on invoices detailing what fees are being charged",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "invoice_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `invoices.id`.<fk table='invoices' column='id'/>",
+        "isNullable": false
+      },
+      "fee_type_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `fee_types.id`.<fk table='fee_types' column='id'/>",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "quantity": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "unit_price": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "total_price": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "grading_scales": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "scale": {
+        "type": "unknown",
+        "format": "jsonb",
+        "description": "",
+        "isNullable": false
+      },
+      "is_default": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "user_invitations": {
+    "description": "Manages invite tokens for role-based user registration",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "email": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "phone": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "role": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "token": {
+        "type": "string",
+        "format": "text",
+        "description": "Secure random token sent to invitee",
+        "isNullable": false
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "invited_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "used_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "used_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "metadata": {
+        "type": "unknown",
+        "format": "jsonb",
+        "description": "Additional data like department, subjects to teach, etc.",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "import_errors": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "import_log_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `import_logs.id`.<fk table='import_logs' column='id'/>",
+        "isNullable": false
+      },
+      "row_number": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "field_name": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "error_type": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "error_message": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "row_data": {
+        "type": "unknown",
+        "format": "jsonb",
+        "description": "",
+        "isNullable": false
+      },
+      "severity": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "v_teacher_subjects": {
+    "description": "Convenient view for querying teacher-subject relationships",
+    "columns": {
+      "profile_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "full_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "email": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "subject_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "subject_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "subject_code": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_primary": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "semesters": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "code": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "start_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "end_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "payment_schedule_installments": {
+    "description": "Individual installments in a payment schedule",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "schedule_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "installment_number": {
+        "type": "integer",
+        "format": "integer",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "due_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "percentage": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "teacher_workload": {
+    "description": "",
+    "columns": {
+      "teacher_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "full_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "classes_assigned": {
+        "type": "integer",
+        "format": "bigint",
+        "description": "",
+        "isNullable": false
+      },
+      "total_slots": {
+        "type": "integer",
+        "format": "bigint",
+        "description": "",
+        "isNullable": false
+      },
+      "total_hours_per_week": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "fee_assignments": {
+    "description": "Assigns fees to classes for specific academic years",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "academic_year_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "isNullable": false
+      },
+      "fee_type_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `fee_types.id`.<fk table='fee_types' column='id'/>",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      },
+      "amount": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "v_active_classes": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "teacher_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "grade_level": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "academic_year_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "isNullable": false
+      },
+      "subject_group_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "max_capacity": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "sessions_per_week": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "class_type": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "course_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `courses.id`.<fk table='courses' column='id'/>",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "room": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "schedule": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "capacity": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "course_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "teacher_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "announcements": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "title": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "content": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "type": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_published": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "published_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "student_conducts": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "academic_year_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "isNullable": false
+      },
+      "term": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "rating": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "comments": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "evaluated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "evaluated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "invoices": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "invoice_number": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "student_account_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `student_accounts.id`.<fk table='student_accounts' column='id'/>",
+        "isNullable": false
+      },
+      "academic_year_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "isNullable": false
+      },
+      "issue_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "due_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "total_amount": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "paid_amount": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "public.invoice_status",
+        "description": "",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "academic_years": {
+    "description": "Academic year definitions (e.g. 2024-2025)",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "start_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "end_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "is_current": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "student_notes": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "content": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "student_documents": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "type": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "url": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "size": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "storage_path": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "uploaded_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "uploaded_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "tutors": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "user_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "full_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "email": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "phone": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "photo_url": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "teacher_type": {
+        "type": "string",
+        "format": "public.teacher_type",
+        "description": "",
+        "isNullable": false
+      },
+      "specialization": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "teaching_subjects": {
+        "type": "array",
+        "format": "uuid[]",
+        "description": "",
+        "isNullable": false
+      },
+      "hourly_rate": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "bio": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "fee_types": {
+    "description": "Defines types of fees (tuition, facility, activity, exam, etc)",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "code": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "category": {
+        "type": "string",
+        "format": "public.fee_category",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "student_performance_summary": {
+    "description": "",
+    "columns": {
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "full_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "student_code": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      },
+      "class_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "subjects_count": {
+        "type": "integer",
+        "format": "bigint",
+        "description": "",
+        "isNullable": false
+      },
+      "average_score": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "teacher_subjects": {
+    "description": "Many-to-many relationship between teachers and subjects they can teach",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "profile_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "subject_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "isNullable": false
+      },
+      "is_primary": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "Marks the teacher's primary/main subject",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "permission_audit_logs": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "action": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "user_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "permission_code": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "performed_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "old_value": {
+        "type": "unknown",
+        "format": "jsonb",
+        "description": "",
+        "isNullable": false
+      },
+      "new_value": {
+        "type": "unknown",
+        "format": "jsonb",
+        "description": "",
+        "isNullable": false
+      },
+      "reason": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "ip_address": {
+        "type": "string",
+        "format": "inet",
+        "description": "",
+        "isNullable": false
+      },
+      "user_agent": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "scope": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "qr_codes": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      },
+      "token": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "valid_until": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "used_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "permission_definitions": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "code": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "resource": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "action": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "category": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "is_system": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "v_active_students": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "user_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "first_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "last_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "full_name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "email": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "date_of_birth": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "phone": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "address": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "emergency_contact": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "role": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "grade_level": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "gender": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "enrollment_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "photo_url": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "department": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "student_code": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "subject_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "isNullable": false
+      },
+      "phone_verified": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "preferred_auth_method": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "account_status": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "status_changed_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "status_changed_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "status_note": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_managed": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "sp_student_code": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "sp_grade_level": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "attendance": {
+    "description": "Daily attendance records. Links to classes and students.",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      },
+      "date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "remarks": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "marked_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "timetable_slot_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `timetable_slots.id`.<fk table='timetable_slots' column='id'/>",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "user_permissions": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "user_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "permission_code": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "granted_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "granted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "is_denied": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "student_accounts": {
+    "description": "Tracks student financial account balances and status per academic year",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "academic_year_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "isNullable": false
+      },
+      "balance": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "total_fees": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "total_paid": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "public.account_status",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "enrollments": {
+    "description": "Student enrollments in classes",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "student_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      },
+      "enrollment_date": {
+        "type": "string",
+        "format": "date",
+        "description": "Date when student enrolled",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "public.enrollment_status",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "import_logs": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "imported_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "import_type": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "file_name": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "file_size": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "total_rows": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "processed_rows": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "success_count": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "error_count": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "warning_count": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "status": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "error_summary": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "started_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "duration_seconds": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "notifications": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "user_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "title": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "message": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "type": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_read": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "calendar_events": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "title": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "event_type": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "start_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "end_date": {
+        "type": "string",
+        "format": "date",
+        "description": "",
+        "isNullable": false
+      },
+      "start_time": {
+        "type": "string",
+        "format": "time without time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "end_time": {
+        "type": "string",
+        "format": "time without time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "is_all_day": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "semester_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `semesters.id`.<fk table='semesters' column='id'/>",
+        "isNullable": false
+      },
+      "class_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `classes.id`.<fk table='classes' column='id'/>",
+        "isNullable": false
+      },
+      "color": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "tuition_config": {
+    "description": "",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "class_type": {
+        "type": "string",
+        "format": "character varying",
+        "description": "",
+        "isNullable": false
+      },
+      "sessions_per_week": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "monthly_fee": {
+        "type": "number",
+        "format": "numeric",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "role_permission_overrides": {
+    "description": "Super Admin configured overrides on top of code-defined role defaults. is_denied=false adds a permission, is_denied=true removes one.",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "role": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "permission_code": {
+        "type": "string",
+        "format": "text",
+        "description": "Note:\nThis is a Foreign Key to `permission_definitions.code`.<fk table='permission_definitions' column='code'/>",
+        "isNullable": false
+      },
+      "is_denied": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "granted_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "notes": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "audit_logs": {
+    "description": "Tracks all important user actions for auditing purposes (Recovered)",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "user_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+        "isNullable": false
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "action": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "resource_type": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "resource_id": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "old_data": {
+        "type": "unknown",
+        "format": "jsonb",
+        "description": "",
+        "isNullable": false
+      },
+      "new_data": {
+        "type": "unknown",
+        "format": "jsonb",
+        "description": "",
+        "isNullable": false
+      },
+      "ip_address": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "user_agent": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  },
+  "courses": {
+    "description": "Stores course/curriculum information for the school",
+    "columns": {
+      "id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Primary Key.<pk/>",
+        "isNullable": false
+      },
+      "code": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "name": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "name_vi": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "description": {
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "isNullable": false
+      },
+      "subject_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `subjects.id`.<fk table='subjects' column='id'/>",
+        "isNullable": false
+      },
+      "grade_level": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "credits": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "hours_per_week": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "is_required": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean",
+        "description": "",
+        "isNullable": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "semester": {
+        "type": "integer",
+        "format": "integer",
+        "description": "",
+        "isNullable": false
+      },
+      "academic_year_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Note:\nThis is a Foreign Key to `academic_years.id`.<fk table='academic_years' column='id'/>",
+        "isNullable": false
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "timestamp with time zone",
+        "description": "",
+        "isNullable": false
+      },
+      "created_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      },
+      "updated_by": {
+        "type": "string",
+        "format": "uuid",
+        "description": "",
+        "isNullable": false
+      }
+    }
+  }
+}

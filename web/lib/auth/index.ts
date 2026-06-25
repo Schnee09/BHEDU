@@ -4,13 +4,7 @@
  */
 
 // Core authentication functions
-export {
-  adminAuth,
-  type AuthResult,
-  checkPermission,
-  staffAuth,
-  teacherAuth,
-} from "./adminAuth";
+export { adminAuth, type AuthResult, checkPermission, teacherAuth } from './adminAuth';
 
 // Permission system (Unified Core)
 export {
@@ -22,7 +16,7 @@ export {
   type PermissionCode,
   ROLE_HIERARCHY,
   type UserRole,
-} from "./core";
+} from './core';
 
 // Rate limiting
 export {
@@ -35,7 +29,7 @@ export {
   type RateLimitConfig,
   rateLimitConfigs,
   resetRateLimit,
-} from "./rateLimit";
+} from './rateLimit';
 
 // Caching
 export {
@@ -49,7 +43,7 @@ export {
   getCacheStats,
   setCached,
   withCache,
-} from "./cache";
+} from './cache';
 
 // Audit logging
 export {
@@ -65,4 +59,4 @@ export {
   logDataAccess,
   logRateLimitEvent,
   queryAuditLogs,
-} from "./auditLog";
+} from './auditLog';

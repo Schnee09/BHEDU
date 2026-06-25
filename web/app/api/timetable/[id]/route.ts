@@ -7,7 +7,7 @@ import { ConflictError } from '@/lib/api/errors';
 export const PUT = createApiHandler(
   {
     permission: 'classes.manage',
-    allowedRoles: ['admin', 'staff', 'owner'],
+    allowedRoles: ['admin', 'owner'],
     bodySchema: updateTimetableSlotSchema,
   },
   async ({ body, params }) => {
@@ -39,7 +39,7 @@ export const PUT = createApiHandler(
 export const DELETE = createApiHandler(
   {
     permission: 'classes.manage',
-    allowedRoles: ['admin', 'staff', 'owner'],
+    allowedRoles: ['admin', 'owner'],
   },
   async ({ params }) => {
     const id = params.id as string;

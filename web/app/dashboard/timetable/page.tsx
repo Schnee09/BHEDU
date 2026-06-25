@@ -40,8 +40,7 @@ export default function TimetablePage() {
   const { can, role } = usePermissions();
   const toast = useToast();
 
-  const isAdmin =
-    role === 'admin' || role === 'staff' || role === 'super_admin' || role === 'owner';
+  const isAdmin = role === 'admin' || role === 'super_admin' || role === 'owner';
   const canEdit = can('timetable.edit') || role === 'super_admin' || role === 'owner';
 
   // State

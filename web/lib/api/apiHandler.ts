@@ -22,7 +22,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodSchema } from 'zod';
 import { getAuthContext } from '@/lib/auth/guard';
-import { UserRole } from '@/lib/auth/core';
+import { UserRole, isAtLeast } from '@/lib/auth/core';
 import { AuthenticationError, AuthorizationError, handleApiError, ValidationError } from './errors';
 import { API_VERSION, withVersionHeaders } from './apiVersion';
 import { logger, logRequest, logResponse } from '@/lib/logger';
@@ -56,6 +56,57 @@ export interface HandlerConfig<TBody = unknown> {
 
 type RouteParams = { params: Promise<Record<string, string>> };
 
+function inferPermissionFromPath(method: string, urlStr: string): string | undefined {
+  try {
+    const url = new URL(urlStr);
+    const path = url.pathname;
+    const m = method.toUpperCase();
+
+    // /api/admin/classes/...
+    if (path.startsWith('/api/admin/classes')) {
+      return m === 'GET' ? 'classes.view' : 'classes.manage';
+    }
+    // /api/admin/grades/...
+    if (path.startsWith('/api/admin/grades')) {
+      return m === 'GET' ? 'grades.view' : 'grades.manage';
+    }
+    // /api/admin/attendance/...
+    if (path.startsWith('/api/admin/attendance')) {
+      return m === 'GET' ? 'attendance.view' : 'attendance.manage';
+    }
+    // /api/admin/courses/...
+    if (path.startsWith('/api/admin/courses')) {
+      return m === 'GET' ? 'curriculum.view' : 'curriculum.manage';
+    }
+    // /api/admin/settings/...
+    if (path.startsWith('/api/admin/settings')) {
+      return 'system.settings';
+    }
+    // /api/admin/invitations/...
+    if (path.startsWith('/api/admin/invitations')) {
+      return 'users.invite';
+    }
+    // /api/admin/announcements/...
+    if (path.startsWith('/api/admin/announcements')) {
+      return 'announcements.manage';
+    }
+    // /api/subjects/...
+    if (path.startsWith('/api/subjects')) {
+      return m === 'GET' ? 'subjects.view' : 'subjects.manage';
+    }
+    // /api/students/...
+    if (path.startsWith('/api/students')) {
+      if (m === 'GET') return 'students.view';
+      if (m === 'POST') return 'students.create';
+      if (m === 'PATCH' || m === 'PUT') return 'students.edit';
+      if (m === 'DELETE') return 'students.delete';
+    }
+  } catch (e) {
+    // Ignore URL parsing errors
+  }
+  return undefined;
+}
+
 /**
  * Creates a standardized API handler with auth, validation, and error handling
  */
@@ -73,15 +124,32 @@ export function createApiHandler<TBody = unknown>(
 
       // 1. Authentication & Authorization
       if (config.requireAuth !== false) {
-        const auth = await getAuthContext(request, config.permission as any);
+        let permissionToCheck = config.permission;
 
-        if (!auth.authorized || !auth.profile) {
-          throw new AuthenticationError('Vui lòng đăng nhập để tiếp tục');
+        // Fallback: If permission is not set, try to infer it from URL path if route is restricted to admins
+        if (!permissionToCheck && config.allowedRoles?.includes('admin')) {
+          permissionToCheck = inferPermissionFromPath(request.method, request.url);
         }
 
-        // Check allowed roles if specified
+        const auth = await getAuthContext(request, permissionToCheck as any);
+
+        if (!auth.authorized || !auth.profile) {
+          throw new AuthenticationError(auth.reason || 'Vui lòng đăng nhập để tiếp tục');
+        }
+
+        // Check allowed roles if specified (supports hierarchy and dynamic bypasses)
         if (config.allowedRoles && auth.role) {
-          if (!config.allowedRoles.includes(auth.role as any)) {
+          const hasAccess = config.allowedRoles.some((allowedRole) => {
+            // Owner has access to admin operational routes if they possess the required permission
+            if (allowedRole === 'admin' && auth.role === 'owner') return true;
+
+            // Custom user overrides also bypass hardcoded admin checks
+            if (allowedRole === 'admin' && auth.isCustomOverride) return true;
+
+            return isAtLeast(auth.role as UserRole, allowedRole);
+          });
+
+          if (!hasAccess) {
             throw new AuthorizationError('Bạn không có quyền thực hiện thao tác này');
           }
         }

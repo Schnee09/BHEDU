@@ -2,7 +2,7 @@
 
 import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { UserRole } from '@/lib/auth/core';
+import type { UserRole } from '@/lib/auth/core';
 
 export type Profile = {
   id: string;

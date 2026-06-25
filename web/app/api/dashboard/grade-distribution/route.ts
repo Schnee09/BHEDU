@@ -13,7 +13,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ user }) => {
   const supabase = createServiceClient();
 
   // Determine if we should filter by teacher
-  const isStaff = user.role === 'super_admin' || user.role === 'admin' || user.role === 'staff';
+  const isStaff = user.role === 'super_admin' || user.role === 'owner' || user.role === 'admin';
   const rpcParams = isStaff ? {} : { p_teacher_id: user.id };
 
   const { data, error } = await supabase.rpc('get_grade_distribution', rpcParams);

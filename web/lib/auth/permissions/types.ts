@@ -35,6 +35,7 @@ export type Subject =
   | 'Setting'
   | 'Audit'
   | 'Finance'
+  | 'Announcement'
   | 'TutoringSession'
   | 'all'; // All subjects
 

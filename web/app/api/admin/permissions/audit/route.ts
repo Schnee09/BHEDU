@@ -11,9 +11,11 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createClientFromRequest(request);
     const { searchParams } = new URL(request.url);
-    
+
     // Check admin access
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -24,24 +26,27 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    if (!['super_admin', 'admin', 'owner'].includes(profile?.role || '')) {
+      return NextResponse.json({ error: 'Admin or Owner access required' }, { status: 403 });
     }
 
-    // Parse query params
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const userId = searchParams.get('user_id');
     const action = searchParams.get('action');
+    const scope = searchParams.get('scope'); // 'user' | 'role' | null (all)
 
     // Build query
     let query = supabase
       .from('permission_audit_logs')
-      .select(`
+      .select(
+        `
         *,
         user:profiles!permission_audit_logs_user_fkey (id, full_name, role),
         performer:profiles!permission_audit_logs_performer_fkey (id, full_name)
-      `, { count: 'exact' })
+      `,
+        { count: 'exact' }
+      )
       .order('created_at', { ascending: false });
 
     if (userId) {
@@ -49,6 +54,9 @@ export async function GET(request: NextRequest) {
     }
     if (action) {
       query = query.eq('action', action);
+    }
+    if (scope) {
+      query = query.eq('scope', scope);
     }
 
     query = query.range((page - 1) * limit, page * limit - 1);

@@ -5,27 +5,18 @@
  * Uses Repository pattern, Zod validation, CASL permissions
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import {
-  apiPaginated,
-  apiSuccess,
-  createApiHandler,
-  createGetHandler,
-} from "@/lib/api";
-import {
-  checkRateLimit,
-  getRateLimitIdentifier,
-  rateLimitConfigs,
-} from "@/lib/auth/rateLimit";
-import { AttendanceRepository } from "@/lib/repositories/AttendanceRepository";
-import { createServiceClient } from "@/lib/supabase/server";
-import { createAbility } from "@/lib/auth/permissions";
+import { NextRequest, NextResponse } from 'next/server';
+import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
+import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
+import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
+import { createServiceClient } from '@/lib/supabase/server';
+import { createAbility } from '@/lib/auth/permissions';
 import {
   type AttendanceQueryInput,
   attendanceQuerySchema,
   type CreateAttendanceInput,
   createAttendanceSchema,
-} from "@/lib/schemas";
+} from '@/lib/schemas';
 
 // GET /api/attendance
 export const GET = createGetHandler(
@@ -34,10 +25,7 @@ export const GET = createGetHandler(
     const identifier = getRateLimitIdentifier(request);
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
-      return NextResponse.json(
-        { success: false, error: "Rate limit exceeded" },
-        { status: 429 },
-      );
+      return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
     }
 
     const params: Record<string, any> = {};
@@ -56,25 +44,62 @@ export const GET = createGetHandler(
       classIds: [],
     });
 
-    if (ability.can("read", "Attendance")) {
-      if (
-        ["admin", "staff", "super_admin", "owner"].includes(user.role)
-      ) {
+    if (ability.can('read', 'Attendance')) {
+      if (['admin', 'super_admin', 'owner'].includes(user.role)) {
         const { data, ...pagination } = await repository.findAll(validatedQuery);
         return apiPaginated(data, pagination);
       }
 
-      if (["teacher", "tutor"].includes(user.role)) {
+      if (['teacher', 'tutor'].includes(user.role)) {
         const { data, ...pagination } = await repository.findAll(validatedQuery);
         return apiPaginated(data, pagination);
       }
 
-      if (user.role === "student") {
+      if (user.role === 'student') {
         const studentConfig = {
           ...validatedQuery,
           student_id: user.id,
         };
         const { data, ...pagination } = await repository.findAll(studentConfig);
+        return apiPaginated(data, pagination);
+      }
+
+      if (user.role === 'parent') {
+        let studentId = validatedQuery.student_id;
+
+        // If not specified, get first approved student ID
+        if (!studentId) {
+          const { data: links } = await supabase
+            .from('parent_student_links')
+            .select('student_id')
+            .eq('parent_id', user.id)
+            .eq('status', 'approved')
+            .limit(1);
+
+          if (!links || links.length === 0) {
+            return apiPaginated([], { page: 1, pageSize: 50, total: 0 });
+          }
+          studentId = links[0]!.student_id;
+        } else {
+          // Verify relationship
+          const { data: link } = await supabase
+            .from('parent_student_links')
+            .select('id')
+            .eq('parent_id', user.id)
+            .eq('student_id', studentId)
+            .eq('status', 'approved')
+            .maybeSingle();
+
+          if (!link) {
+            return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+          }
+        }
+
+        const parentConfig = {
+          ...validatedQuery,
+          student_id: studentId,
+        };
+        const { data, ...pagination } = await repository.findAll(parentConfig);
         return apiPaginated(data, pagination);
       }
 
@@ -84,42 +109,29 @@ export const GET = createGetHandler(
     return NextResponse.json(
       {
         success: false,
-        error: ability.reasonFor("read", "Attendance") || "Forbidden",
+        error: ability.reasonFor('read', 'Attendance') || 'Forbidden',
       },
-      { status: 403 },
+      { status: 403 }
     );
-  },
+  }
 );
 
 // POST /api/attendance
 export const POST = createApiHandler(
   {
-    allowedRoles: [
-      "admin",
-      "staff",
-      "super_admin",
-      "owner",
-      "teacher",
-      "tutor",
-    ],
+    allowedRoles: ['admin', 'super_admin', 'owner', 'teacher', 'tutor'],
     bodySchema: createAttendanceSchema,
   },
   async ({ request, body, user }) => {
     const identifier = getRateLimitIdentifier(request);
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
-      return NextResponse.json(
-        { success: false, error: "Rate limit exceeded" },
-        { status: 429 },
-      );
+      return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
     }
 
     const ability = createAbility({ userId: user.id, role: user.role });
-    if (ability.cannot("create", "Attendance")) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 },
-      );
+    if (ability.cannot('create', 'Attendance')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();
@@ -127,5 +139,5 @@ export const POST = createApiHandler(
     const record = await repository.create(body as CreateAttendanceInput);
 
     return apiSuccess(record, { _status: 201 });
-  },
+  }
 );

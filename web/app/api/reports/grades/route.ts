@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  * Returns aggregate grade statistics for a specific class
  */
 export const GET = createGetHandler(
-  { allowedRoles: ['admin', 'staff', 'teacher'] },
+  { allowedRoles: ['admin', 'teacher'] },
   async ({ searchParams }) => {
     const classId = searchParams.get('classId');
 

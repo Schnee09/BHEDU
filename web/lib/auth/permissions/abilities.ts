@@ -29,23 +29,31 @@ export function defineAbilitiesFor(context: PermissionContext): AbilityRule[] {
   }
 
   // ============================================
-  // OWNER - Business oversight
+  // OWNER - Strategic business oversight
   // ============================================
   if (role === 'owner') {
     rules.push(
+      // Read everything for oversight
       { action: 'read', subject: 'all' },
+      // Finance — full control
       { action: 'manage', subject: 'Finance' },
       { action: 'manage', subject: 'Invoice' },
       { action: 'manage', subject: 'Payment' },
-      { action: 'manage', subject: 'User' },
-      { action: 'read', subject: 'Audit' },
-      { action: 'export', subject: 'Report' }
+      // Reports — export access
+      { action: 'export', subject: 'Report' },
+      // Announcements — center-wide comms
+      { action: 'manage', subject: 'Announcement' },
+      // User/staff management (hiring/firing)
+      { action: ['create', 'update', 'delete'], subject: 'User' },
+      { action: ['create', 'update', 'delete'], subject: 'Teacher' },
+      // Audit oversight (read only)
+      { action: 'read', subject: 'Audit' }
     );
     return rules;
   }
 
   // ============================================
-  // ADMIN - System management
+  // ADMIN - Operational management
   // ============================================
   if (role === 'admin') {
     rules.push(
@@ -63,30 +71,8 @@ export function defineAbilitiesFor(context: PermissionContext): AbilityRule[] {
       { action: 'read', subject: 'Audit' },
       // System
       { action: 'manage', subject: 'Setting' },
+      { action: 'manage', subject: 'Announcement' },
       { action: 'export', subject: 'Report' }
-    );
-  }
-
-  // ============================================
-  // STAFF - Operational tasks
-  // ============================================
-  if (role === 'staff' || role === 'admin') {
-    rules.push(
-      // User operations (limited)
-      { action: ['create', 'read', 'update'], subject: 'User' },
-      { action: ['create', 'read', 'update'], subject: 'Student' },
-      // Class management
-      { action: 'manage', subject: 'Class' },
-      { action: 'manage', subject: 'Enrollment' },
-      // Financial
-      { action: 'manage', subject: 'Invoice' },
-      { action: 'manage', subject: 'Payment' },
-      // Reports
-      { action: 'read', subject: 'Report' },
-      { action: 'export', subject: 'Report' },
-      // Grades & Attendance (Global)
-      { action: 'manage', subject: 'Grade' },
-      { action: ['create', 'read', 'update'], subject: 'Attendance' }
     );
   }
 
@@ -267,9 +253,9 @@ export function defineAbilitiesFor(context: PermissionContext): AbilityRule[] {
 export function getRoleDescription(role: UserRole): string {
   const descriptions: Record<UserRole, string> = {
     super_admin: 'Full system access with no restrictions',
-    owner: 'Business oversight with financial and reporting access',
+    owner:
+      'Strategic business oversight — finance, reporting, staff management, and center-wide announcements',
     admin: 'System management including users, classes, and settings',
-    staff: 'Operational tasks including enrollment and finance',
     teacher: 'Class management including grades and attendance for assigned classes',
     tutor: 'Limited teaching access for tutoring sessions',
     parent: "View children's academic progress and make payments",

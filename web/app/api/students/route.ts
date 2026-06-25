@@ -5,29 +5,20 @@
  * Uses Repository pattern, Zod validation, CASL permissions
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import {
-  apiPaginated,
-  apiSuccess,
-  createApiHandler,
-  createGetHandler,
-} from "@/lib/api";
-import {
-  checkRateLimit,
-  getRateLimitIdentifier,
-  rateLimitConfigs,
-} from "@/lib/auth/rateLimit";
-import { StudentRepository } from "@/lib/repositories/StudentRepository";
-import { createServiceClient } from "@/lib/supabase/server";
-import { createAbility } from "@/lib/auth/permissions";
+import { NextRequest, NextResponse } from 'next/server';
+import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
+import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
+import { StudentRepository } from '@/lib/repositories/StudentRepository';
+import { createServiceClient } from '@/lib/supabase/server';
+import { createAbility } from '@/lib/auth/permissions';
 import {
   type CreateStudentInput,
   createStudentSchema,
   type StudentQuery,
   studentQuerySchema,
-} from "@/lib/schemas";
+} from '@/lib/schemas';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 // GET /api/students
 export const GET = createGetHandler(
@@ -36,15 +27,12 @@ export const GET = createGetHandler(
     const identifier = getRateLimitIdentifier(request);
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
-      return NextResponse.json(
-        { success: false, error: "Rate limit exceeded" },
-        { status: 429 },
-      );
+      return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
     }
 
     const params: Record<string, any> = {};
     searchParams.forEach((value, key) => {
-      if (key === "search" && value.trim() === "") return;
+      if (key === 'search' && value.trim() === '') return;
       params[key] = value;
     });
 
@@ -63,24 +51,23 @@ export const GET = createGetHandler(
       classIds: [],
     });
 
-    if (ability.can("read", "Student")) {
+    if (ability.can('read', 'Student')) {
       if (
-        user.role === "admin" || user.role === "staff" ||
-        user.role === "super_admin" || user.role === "owner"
+        user.role === 'admin' ||
+        user.role === ('admin' as any) ||
+        user.role === 'super_admin' ||
+        user.role === 'owner'
       ) {
         const { data, ...pagination } = await repository.findAll(queryOpts);
         return apiPaginated(data, pagination);
       }
 
-      if (user.role === "teacher" || user.role === "tutor") {
-        const { data, ...pagination } = await repository.findByTeacher(
-          user.id,
-          queryOpts,
-        );
+      if (user.role === 'teacher' || user.role === 'tutor') {
+        const { data, ...pagination } = await repository.findByTeacher(user.id, queryOpts);
         return apiPaginated(data, pagination);
       }
 
-      if (user.role === "student") {
+      if (user.role === 'student') {
         const student = await repository.findById(user.id);
         return apiPaginated(student ? [student] : [], {
           page: 1,
@@ -89,7 +76,7 @@ export const GET = createGetHandler(
         });
       }
 
-      if (user.role === "parent") {
+      if (user.role === 'parent') {
         return apiPaginated([], { page: 1, pageSize: 0, total: 0 });
       }
     }
@@ -97,38 +84,36 @@ export const GET = createGetHandler(
     return NextResponse.json(
       {
         success: false,
-        error: ability.reasonFor("read", "Student") || "Forbidden",
+        error: ability.reasonFor('read', 'Student') || 'Forbidden',
       },
-      { status: 403 },
+      { status: 403 }
     );
-  },
+  }
 );
 
 // POST /api/students
 export const POST = createApiHandler(
   {
-    allowedRoles: ["admin", "staff", "super_admin", "owner"],
+    allowedRoles: ['admin', 'super_admin', 'owner'],
     bodySchema: createStudentSchema,
   },
   async ({ request, body, user }) => {
     const identifier = getRateLimitIdentifier(request);
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
-      return NextResponse.json(
-        { success: false, error: "Rate limit exceeded" },
-        { status: 429 },
-      );
+      return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
     }
 
     const ability = createAbility({ userId: user.id, role: user.role });
-    if (ability.cannot("create", "Student")) {
+    if (ability.cannot('create', 'Student')) {
       return NextResponse.json(
         {
           success: false,
-          error: ability.reasonFor("create", "Student") ||
-            "You do not have permission to create students",
+          error:
+            ability.reasonFor('create', 'Student') ||
+            'You do not have permission to create students',
         },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -137,5 +122,5 @@ export const POST = createApiHandler(
     const student = await repository.create(body as any);
 
     return apiSuccess(student, { _status: 201 });
-  },
+  }
 );

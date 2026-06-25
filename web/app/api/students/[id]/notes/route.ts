@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { staffAuth } from '@/lib/auth/adminAuth';
+import { adminAuth } from '@/lib/auth/adminAuth';
 import { createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, AuthenticationError } from '@/lib/api/errors';
 
@@ -14,7 +14,7 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await staffAuth(request);
+    const authResult = await adminAuth(request);
     if (!authResult.authorized) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized');
     }
@@ -24,13 +24,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const { data: notes, error } = await supabase
       .from('student_notes')
-      .select(`
+      .select(
+        `
         id,
         content,
         created_at,
         created_by,
         profiles!student_notes_created_by_fkey (full_name)
-      `)
+      `
+      )
       .eq('student_id', id)
       .order('created_at', { ascending: false });
 
@@ -46,7 +48,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       id: n.id,
       content: n.content,
       created_at: n.created_at,
-      created_by: n.profiles ? { full_name: n.profiles.full_name } : null
+      created_by: n.profiles ? { full_name: n.profiles.full_name } : null,
     }));
 
     return NextResponse.json({ notes: formattedNotes });
@@ -57,7 +59,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await staffAuth(request);
+    const authResult = await adminAuth(request);
     if (!authResult.authorized) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized');
     }
@@ -67,10 +69,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { content } = body;
 
     if (!content?.trim()) {
-      return NextResponse.json(
-        { error: 'Nội dung ghi chú không được để trống' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Nội dung ghi chú không được để trống' }, { status: 400 });
     }
 
     const supabase = createServiceClient();

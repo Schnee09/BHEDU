@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { staffAuth } from '@/lib/auth/adminAuth';
+import { adminAuth } from '@/lib/auth/adminAuth';
 import { createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, AuthenticationError } from '@/lib/api/errors';
 
@@ -14,7 +14,7 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await staffAuth(request);
+    const authResult = await adminAuth(request);
     if (!authResult.authorized) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized');
     }
@@ -24,7 +24,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const { data: documents, error } = await supabase
       .from('student_documents')
-      .select(`
+      .select(
+        `
         id,
         name,
         type,
@@ -33,7 +34,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         uploaded_at,
         uploaded_by,
         profiles!student_documents_uploaded_by_fkey (full_name)
-      `)
+      `
+      )
       .eq('student_id', id)
       .order('uploaded_at', { ascending: false });
 
@@ -52,7 +54,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       url: d.url,
       size: d.size,
       uploaded_at: d.uploaded_at,
-      uploaded_by: d.profiles ? { full_name: d.profiles.full_name } : null
+      uploaded_by: d.profiles ? { full_name: d.profiles.full_name } : null,
     }));
 
     return NextResponse.json({ documents: formattedDocs });
@@ -63,22 +65,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await staffAuth(request);
+    const authResult = await adminAuth(request);
     if (!authResult.authorized) {
       throw new AuthenticationError(authResult.reason || 'Unauthorized');
     }
 
     const { id } = await params;
-    
+
     // Handle file upload via FormData
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'Không có file được tải lên' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Không có file được tải lên' }, { status: 400 });
     }
 
     const supabase = createServiceClient();
@@ -93,7 +92,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       // If bucket doesn't exist, return helpful error
       if (uploadError.message.includes('bucket')) {
         return NextResponse.json(
-          { error: 'Storage bucket chưa được tạo. Vui lòng tạo bucket "student-documents" trong Supabase.' },
+          {
+            error:
+              'Storage bucket chưa được tạo. Vui lòng tạo bucket "student-documents" trong Supabase.',
+          },
           { status: 500 }
         );
       }
@@ -101,9 +103,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('student-documents')
-      .getPublicUrl(fileName);
+    const { data: urlData } = supabase.storage.from('student-documents').getPublicUrl(fileName);
 
     // Save document metadata to database
     const { data: document, error: dbError } = await supabase

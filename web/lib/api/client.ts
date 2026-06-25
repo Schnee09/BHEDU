@@ -245,6 +245,13 @@ export async function apiFetch(url: string, options?: RequestInit, maxRetries = 
 
       return response;
     } catch (error) {
+      const isAbortError = error instanceof DOMException && error.name === 'AbortError';
+
+      if (isAbortError) {
+        logger.debug(`Request aborted: ${method} ${url}`);
+        throw error;
+      }
+
       if (retries < maxRetries) {
         retries++;
         const delay = Math.pow(2, retries) * 1000;
@@ -254,16 +261,7 @@ export async function apiFetch(url: string, options?: RequestInit, maxRetries = 
       }
 
       const duration = performance.now() - startTime;
-
-      // Don't log AbortError as an error - it's normal behavior for useFetch/cancelled requests
-      const isAbortError = error instanceof DOMException && error.name === 'AbortError';
-
-      if (isAbortError) {
-        logger.debug(`Request aborted: ${method} ${url}`, { duration });
-      } else {
-        logger.error(`Request failed: ${method} ${url}`, error, { duration });
-      }
-
+      logger.error(`Request failed: ${method} ${url}`, error, { duration });
       throw error;
     }
   };

@@ -49,54 +49,74 @@ const Button = <T extends React.ElementType = 'button'>({
   const actualLeftIcon = leftIcon || (icon && iconPosition === 'left' ? icon : null);
   const actualRightIcon = rightIcon || (icon && iconPosition === 'right' ? icon : null);
 
-  const baseClasses = 'inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.97] dark:focus:ring-offset-gray-900';
+  const baseClasses =
+    'inline-flex items-center justify-center gap-2 font-semibold rounded-xl md:rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.96] dark:focus:ring-offset-gray-900';
 
   const variantClasses: Record<ButtonVariant, string> = {
     primary: `
-      bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-500/50
-      shadow-md hover:shadow-lg hover:-translate-y-0.5
-      transition-all duration-300
+      bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 focus:ring-amber-500/50
+      shadow-sm hover:shadow-md hover:shadow-amber-500/10 hover:-translate-y-[1px]
+      border border-amber-600/20
     `,
     secondary: `
-      bg-white dark:bg-white/5 text-stone-900 dark:text-white hover:bg-stone-50 dark:hover:bg-white/10
-      border border-stone-200 dark:border-white/10
-      shadow-sm hover:shadow-md
+      bg-stone-100 dark:bg-stone-850 text-stone-900 dark:text-stone-100 hover:bg-stone-200/80 dark:hover:bg-stone-750/80
+      border border-stone-200 dark:border-stone-700
+      shadow-sm
     `,
     outline: `
-      border border-stone-200 dark:border-white/10 bg-transparent
+      border border-stone-300 dark:border-white/15 bg-transparent
       text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-white/5
+      hover:border-stone-400 dark:hover:border-white/30
     `,
     ghost: `
-      text-stone-500 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5
+      text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100/80 dark:hover:bg-white/5
     `,
     danger: `
-      bg-red-500 text-white hover:bg-red-600 focus:ring-red-500/50
-      shadow-md hover:shadow-red-500/30 hover:-translate-y-0.5
+      bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 focus:ring-red-500/50
+      shadow-sm hover:shadow-md hover:shadow-red-500/10 hover:-translate-y-[1px]
+      border border-red-600/20
     `,
     success: `
-      bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-500/50
-      shadow-md hover:shadow-emerald-500/30 hover:-translate-y-0.5
+      bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 focus:ring-emerald-500/50
+      shadow-sm hover:shadow-md hover:shadow-emerald-500/10 hover:-translate-y-[1px]
+      border border-emerald-600/20
     `,
   };
 
   const sizeClasses: Record<ButtonSize, string> = {
-    sm: 'px-3 py-1.5 text-sm',
+    sm: 'px-3 py-1.5 text-sm rounded-lg md:rounded-xl',
     md: 'px-4 py-2.5 text-base',
-    lg: 'px-6 py-3 text-lg',
+    lg: 'px-6 py-3.5 text-lg rounded-2xl md:rounded-[20px]',
   };
 
   const componentProps = {
     className: `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className}`,
     disabled: disabled || isLoadingState,
-    ...props
+    ...props,
   } as any;
 
   return (
     <Component {...componentProps}>
       {isLoadingState && (
-        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        <svg
+          className="animate-spin h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
         </svg>
       )}
       {!isLoadingState && actualLeftIcon}
@@ -104,7 +124,7 @@ const Button = <T extends React.ElementType = 'button'>({
       {!isLoadingState && actualRightIcon}
     </Component>
   );
-}
+};
 
 /**
  * Icon Button - For icon-only actions
@@ -124,29 +144,29 @@ export function IconButton({
   className = '',
   ...props
 }: IconButtonProps) {
-  const baseClasses = 'inline-flex items-center justify-center rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.95] dark:focus:ring-offset-gray-900';
+  const baseClasses =
+    'inline-flex items-center justify-center rounded-xl md:rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.94] dark:focus:ring-offset-gray-900';
 
   const variantClasses = {
     primary: `
-      bg-primary text-white hover:bg-primary-hover focus:ring-primary/50
-      shadow-[var(--shadow-primary)] hover:shadow-[var(--shadow-primary-lg)] hover:-translate-y-0.5
-      dark:bg-primary dark:hover:bg-primary-hover
+      bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 focus:ring-amber-500/50
+      shadow-sm hover:shadow-md hover:shadow-amber-500/10 hover:-translate-y-[1px]
+      border border-amber-600/20
     `,
     secondary: `
-      bg-surface text-foreground hover:bg-surface-hover border border-border-light
-      shadow-sm hover:shadow-md hover:-translate-y-0.5
-      dark:bg-surface-hover dark:hover:bg-surface-active dark:border-border-subtle
+      bg-stone-100 dark:bg-stone-850 text-stone-900 dark:text-stone-100 hover:bg-stone-200/80 dark:hover:bg-stone-750/80
+      border border-stone-200 dark:border-stone-700
+      shadow-sm
     `,
     ghost: `
-      text-muted hover:text-foreground hover:bg-surface-secondary
-      dark:hover:bg-white/5
+      text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100/80 dark:hover:bg-white/5
     `,
   };
 
   const sizeClasses = {
-    sm: 'w-8 h-8',
+    sm: 'w-8 h-8 rounded-lg md:rounded-xl',
     md: 'w-10 h-10',
-    lg: 'w-12 h-12',
+    lg: 'w-12 h-12 rounded-2xl md:rounded-[20px]',
   };
 
   return (

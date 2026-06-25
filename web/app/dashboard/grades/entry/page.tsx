@@ -95,40 +95,43 @@ function GradeEntryPageContent() {
   >([]);
 
   // Helper: Handle grade input change
-  const handleGradeChange = (studentId: string, field: EvaluationType, value: string) => {
-    const numValue = value === '' ? null : Number(value);
+  const handleGradeChange = React.useCallback(
+    (studentId: string, field: EvaluationType, value: string) => {
+      const numValue = value === '' ? null : Number(value);
 
-    // Update grade and calculate average
-    setGrades((prev) => {
-      const studentGrades = { ...prev[studentId], [field]: numValue };
-      const average = calculateAverageGrade(
-        studentGrades[EvaluationType.MIDTERM],
-        studentGrades[EvaluationType.FINAL]
-      );
-      return {
-        ...prev,
-        [studentId]: { ...studentGrades, average },
-      };
-    });
-
-    // Validate and update errors
-    const validation = validateGrade(numValue);
-    setErrors((prev) => {
-      const studentErrors = prev[studentId] || [];
-      if (validation.valid) {
+      // Update grade and calculate average
+      setGrades((prev) => {
+        const studentGrades = { ...prev[studentId], [field]: numValue };
+        const average = calculateAverageGrade(
+          studentGrades[EvaluationType.MIDTERM],
+          studentGrades[EvaluationType.FINAL]
+        );
         return {
           ...prev,
-          [studentId]: studentErrors.filter((e) => e.field !== field),
+          [studentId]: { ...studentGrades, average },
         };
-      } else {
-        const filtered = studentErrors.filter((e) => e.field !== field);
-        return {
-          ...prev,
-          [studentId]: [...filtered, { field, message: validation.error || 'Invalid' }],
-        };
-      }
-    });
-  };
+      });
+
+      // Validate and update errors
+      const validation = validateGrade(numValue);
+      setErrors((prev) => {
+        const studentErrors = prev[studentId] || [];
+        if (validation.valid) {
+          return {
+            ...prev,
+            [studentId]: studentErrors.filter((e) => e.field !== field),
+          };
+        } else {
+          const filtered = studentErrors.filter((e) => e.field !== field);
+          return {
+            ...prev,
+            [studentId]: [...filtered, { field, message: validation.error || 'Invalid' }],
+          };
+        }
+      });
+    },
+    []
+  );
 
   // Load initial data (classes)
   useEffect(() => {
@@ -230,11 +233,13 @@ function GradeEntryPageContent() {
         ]);
 
         // Students might be raw array (from my client.ts)
-        const studentList = studentsData.map((s: any) => ({
-          id: s.student_id || s.id, // Support both student_id and id
-          name: s.full_name || s.name,
-          full_name: s.full_name || s.name,
-        })).filter(s => s.id && typeof s.id === 'string'); // Ensure we have a valid ID
+        const studentList = studentsData
+          .map((s: any) => ({
+            id: s.student_id || s.id, // Support both student_id and id
+            name: s.full_name || s.name,
+            full_name: s.full_name || s.name,
+          }))
+          .filter((s) => s.id && typeof s.id === 'string'); // Ensure we have a valid ID
         setStudents(studentList);
 
         // Map grades
@@ -303,11 +308,12 @@ function GradeEntryPageContent() {
             score: grades[student.id]?.[component] ?? null,
             notes: null,
           }))
-          .filter((g) => 
-            g.student_id && // Must have a student ID
-            g.score !== null && 
-            g.score !== undefined // Only save if score exists
-          ); 
+          .filter(
+            (g) =>
+              g.student_id && // Must have a student ID
+              g.score !== null &&
+              g.score !== undefined // Only save if score exists
+          );
 
         if (gradesToSave.length > 0) {
           await bulkCreateGrades({
@@ -453,7 +459,9 @@ function GradeEntryPageContent() {
         <div className="glass-crystal p-8 rounded-[2rem] shadow-ultra border-none mb-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-2.5">
-              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">Lớp học</label>
+              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">
+                Lớp học
+              </label>
               <Select
                 value={selectedClassId || ''}
                 onChange={(e) => setSelectedClassId(e.target.value || null)}
@@ -469,7 +477,9 @@ function GradeEntryPageContent() {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">Học kỳ</label>
+              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">
+                Học kỳ
+              </label>
               <Select
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value as Semester)}
@@ -491,7 +501,9 @@ function GradeEntryPageContent() {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">Môn học</label>
+              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">
+                Môn học
+              </label>
               <Select
                 value={selectedSubjectId || ''}
                 onChange={(e) => setSelectedSubjectId(e.target.value || null)}
@@ -576,11 +588,15 @@ function GradeEntryPageContent() {
                       </th>
                       <th className="px-6 py-5 text-center text-xs font-bold text-stone-400 uppercase tracking-widest w-36">
                         {GRADE_LABELS[EvaluationType.MIDTERM]}
-                        <span className="text-stone-300 dark:text-stone-600 font-medium ml-1">(50%)</span>
+                        <span className="text-stone-300 dark:text-stone-600 font-medium ml-1">
+                          (50%)
+                        </span>
                       </th>
                       <th className="px-6 py-5 text-center text-xs font-bold text-stone-400 uppercase tracking-widest w-36">
                         {GRADE_LABELS[EvaluationType.FINAL]}
-                        <span className="text-stone-300 dark:text-stone-600 font-medium ml-1">(50%)</span>
+                        <span className="text-stone-300 dark:text-stone-600 font-medium ml-1">
+                          (50%)
+                        </span>
                       </th>
                       <th className="px-6 py-5 text-center text-xs font-bold text-emerald-600 uppercase tracking-widest w-32 bg-emerald-50/30 dark:bg-emerald-500/5">
                         Điểm TB
@@ -591,54 +607,16 @@ function GradeEntryPageContent() {
                     {students.map((student, idx) => {
                       const studentGrades = grades[student.id] || {};
                       const studentErrors = errors[student.id] || [];
-                      const hasStudentErrors = studentErrors.length > 0;
 
                       return (
-                        <tr
+                        <StudentRow
                           key={student.id}
-                          className={
-                            hasStudentErrors
-                              ? 'bg-danger/10'
-                              : 'hover:bg-surface-secondary/50 transition-colors'
-                          }
-                        >
-                          <td className="px-6 py-4 text-sm font-bold text-stone-400">
-                            {idx + 1}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-bold text-stone-900 dark:text-stone-100">
-                            {student.full_name || student.name || '—'}
-                          </td>
-                          <td className="px-6 py-4">
-                            <GradeInput
-                              value={studentGrades[EvaluationType.MIDTERM] ?? ''}
-                              onChange={(val) =>
-                                handleGradeChange(student.id, EvaluationType.MIDTERM, val)
-                              }
-                              error={
-                                studentErrors.find((e) => e.field === EvaluationType.MIDTERM)
-                                  ?.message
-                              }
-                            />
-                          </td>
-                          <td className="px-6 py-4">
-                            <GradeInput
-                              value={studentGrades[EvaluationType.FINAL] ?? ''}
-                              onChange={(val) =>
-                                handleGradeChange(student.id, EvaluationType.FINAL, val)
-                              }
-                              error={
-                                studentErrors.find((e) => e.field === EvaluationType.FINAL)?.message
-                              }
-                            />
-                          </td>
-                          <td className="px-6 py-4 text-center bg-emerald-50/30 dark:bg-emerald-500/5">
-                            <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                              {studentGrades.average !== null && studentGrades.average !== undefined
-                                ? studentGrades.average.toFixed(1)
-                                : '—'}
-                            </span>
-                          </td>
-                        </tr>
+                          student={student}
+                          index={idx}
+                          studentGrades={studentGrades}
+                          studentErrors={studentErrors}
+                          onGradeChange={handleGradeChange}
+                        />
                       );
                     })}
                   </tbody>
@@ -700,15 +678,101 @@ function GradeEntryPageContent() {
   );
 }
 
-function GradeInput({
+// Memoized individual student row to avoid re-rendering other rows when editing a single grade input
+const StudentRow = React.memo(function StudentRow({
+  student,
+  index,
+  studentGrades,
+  studentErrors,
+  onGradeChange,
+}: {
+  student: Student;
+  index: number;
+  studentGrades: Partial<GradeRow>;
+  studentErrors: GradeError[];
+  onGradeChange: (studentId: string, field: EvaluationType, val: string) => void;
+}) {
+  const midtermError = studentErrors.find((e) => e.field === EvaluationType.MIDTERM)?.message;
+  const finalError = studentErrors.find((e) => e.field === EvaluationType.FINAL)?.message;
+  const hasStudentErrors = studentErrors.length > 0;
+
+  const handleMidtermBlur = React.useCallback(
+    (val: string) => {
+      onGradeChange(student.id, EvaluationType.MIDTERM, val);
+    },
+    [student.id, onGradeChange]
+  );
+
+  const handleFinalBlur = React.useCallback(
+    (val: string) => {
+      onGradeChange(student.id, EvaluationType.FINAL, val);
+    },
+    [student.id, onGradeChange]
+  );
+
+  return (
+    <tr
+      className={
+        hasStudentErrors ? 'bg-danger/10' : 'hover:bg-surface-secondary/50 transition-colors'
+      }
+    >
+      <td className="px-6 py-4 text-sm font-bold text-stone-400">{index + 1}</td>
+      <td className="px-6 py-4 text-sm font-bold text-stone-900 dark:text-stone-100">
+        {student.full_name || student.name || '—'}
+      </td>
+      <td className="px-6 py-4">
+        <GradeInput
+          value={studentGrades[EvaluationType.MIDTERM] ?? ''}
+          onBlur={handleMidtermBlur}
+          error={midtermError}
+        />
+      </td>
+      <td className="px-6 py-4">
+        <GradeInput
+          value={studentGrades[EvaluationType.FINAL] ?? ''}
+          onBlur={handleFinalBlur}
+          error={finalError}
+        />
+      </td>
+      <td className="px-6 py-4 text-center bg-emerald-50/30 dark:bg-emerald-500/5">
+        <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+          {studentGrades.average !== null && studentGrades.average !== undefined
+            ? studentGrades.average.toFixed(1)
+            : '—'}
+        </span>
+      </td>
+    </tr>
+  );
+});
+
+// Memoized individual grade input to manage local state and prevent re-rendering during keystrokes
+const GradeInput = React.memo(function GradeInput({
   value,
-  onChange,
+  onBlur,
   error,
 }: {
   value: string | number;
-  onChange: (val: string) => void;
+  onBlur: (val: string) => void;
   error?: string;
 }) {
+  const [localValue, setLocalValue] = useState(value);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const handleBlur = () => {
+    if (localValue !== value) {
+      onBlur(String(localValue));
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
   return (
     <div className="flex flex-col items-center gap-1 group">
       <Input
@@ -716,17 +780,21 @@ function GradeInput({
         min="0"
         max="10"
         step="0.1"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={localValue}
+        onChange={(e) => setLocalValue(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
         placeholder="Điểm"
         className={cn(
-          "w-32 h-12 text-center text-lg font-bold rounded-xl transition-all",
-          "bg-stone-50 dark:bg-white/5 border-stone-200 dark:border-white/10",
-          "focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500",
+          'w-32 h-12 text-center text-lg font-bold rounded-xl transition-all',
+          'bg-stone-50 dark:bg-white/5 border-stone-200 dark:border-white/10',
+          'focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500',
           error ? 'border-red-500 ring-red-500/10' : ''
         )}
       />
-      {error && <span className="text-[10px] text-red-600 font-bold uppercase tracking-tight">{error}</span>}
+      {error && (
+        <span className="text-[10px] text-red-600 font-bold uppercase tracking-tight">{error}</span>
+      )}
     </div>
   );
-}
+});

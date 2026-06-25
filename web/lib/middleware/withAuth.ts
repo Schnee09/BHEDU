@@ -9,7 +9,7 @@
  * ```ts
  * export const GET = withMiddleware(
  *   withRateLimit(),
- *   withAuth(['admin', 'staff']),
+ *   withAuth(['admin']),
  *   async (req, ctx) => {
  *     // Handler code
  *   }
@@ -24,7 +24,7 @@ import {
   type RateLimitConfig,
   rateLimitConfigs,
 } from '@/lib/auth/rateLimit';
-import { adminAuth, staffAuth, teacherAuth } from '@/lib/auth/adminAuth';
+import { adminAuth, teacherAuth } from '@/lib/auth/adminAuth';
 import { logAuditEvent } from '@/lib/auth/auditLog';
 
 // ============================================
@@ -163,7 +163,7 @@ export function withAdminAuth(): Middleware {
  */
 export function withStaffAuth(): Middleware {
   return (handler: Handler) => async (request: NextRequest, context: MiddlewareContext) => {
-    const auth = await staffAuth(request);
+    const auth = await adminAuth(request);
 
     if (!auth.authorized) {
       return auth.reason === 'Forbidden'

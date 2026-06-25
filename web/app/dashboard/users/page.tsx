@@ -16,7 +16,7 @@ import UserFormModal from '@/components/users/UserFormModal';
 import ResetPasswordModal from '@/components/users/ResetPasswordModal';
 import DeleteUserModal from '@/components/users/DeleteUserModal';
 import { AcademicBackground } from '@/components/Academic/AcademicBackground';
-import { useToast } from '@/hooks/useToast';
+import { showToast } from '@/components/ToastProvider';
 import { cn } from '@/lib/utils';
 import { getRoleLabel } from '@/lib/role-utils';
 
@@ -54,7 +54,6 @@ const roleOptions = [
   { value: 'teacher', label: 'Giáo viên' },
   { value: 'tutor', label: 'Gia sư' },
   { value: 'parent', label: 'Phụ huynh' },
-  { value: 'staff', label: 'Nhân viên' },
   { value: 'admin', label: 'Quản trị viên' },
   { value: 'owner', label: 'Chủ trung tâm' },
   { value: 'super_admin', label: 'Siêu quản trị viên' },
@@ -69,7 +68,6 @@ export default function UserManagementPage() {
 }
 
 function UserManagementPageContent() {
-  const toast = useToast();
   // State management
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -82,6 +80,10 @@ function UserManagementPageContent() {
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  // Redesign states
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [showDrawer, setShowDrawer] = useState(false);
 
   // Filter states
   const [roleFilter, setRoleFilter] = useState('all');
@@ -112,7 +114,7 @@ function UserManagementPageContent() {
       if (data.success) {
         setUsers(data.data || data.users || []);
         setStats(data.statistics || null);
-        setTotalPages(data.pagination?.totalPages || 1); // Fixed: apiPaginated returns totalPages
+        setTotalPages(data.pagination?.totalPages || 1);
         logger.info('Users fetched successfully', { count: data.data?.length || 0 });
       } else {
         throw new Error(data.error || 'Không thể tải danh sách người dùng');
@@ -132,6 +134,7 @@ function UserManagementPageContent() {
   // Fetch users when filters change
   useEffect(() => {
     fetchUsers();
+    setSelectedUserIds(new Set());
   }, [roleFilter, activeFilter, searchQuery, page, fetchUsers]);
 
   const handleToggleActive = async (user: User) => {
@@ -153,8 +156,7 @@ function UserManagementPageContent() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success(
-          'Thành công',
+        showToast.success(
           `Người dùng đã được ${user.is_active ? 'vô hiệu hóa' : 'kích hoạt'} thành công!`
         );
         fetchUsers();
@@ -171,9 +173,60 @@ function UserManagementPageContent() {
         throw new Error(data.error || 'Failed to toggle user status');
       }
     } catch (err: any) {
-      toast.error('Lỗi', err.message || 'Không thể thay đổi trạng thái');
+      showToast.error(err.message || 'Không thể thay đổi trạng thái');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkStatus = async (isActive: boolean) => {
+    const ids = Array.from(selectedUserIds);
+    const toastId = showToast.loading(
+      `Đang ${isActive ? 'kích hoạt' : 'khóa'} ${ids.length} tài khoản...`
+    );
+    try {
+      await Promise.all(
+        ids.map(async (id) => {
+          const user = users.find((u) => u.id === id);
+          if (!user) return;
+          await apiFetch(`/api/admin/users/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...user, is_active: isActive }),
+          });
+        })
+      );
+      showToast.dismiss(toastId);
+      showToast.success(
+        `Đã ${isActive ? 'kích hoạt' : 'khóa'} hàng loạt ${ids.length} tài khoản thành công!`
+      );
+      setSelectedUserIds(new Set());
+      fetchUsers();
+    } catch (err) {
+      showToast.dismiss(toastId);
+      showToast.error('Không thể thay đổi trạng thái một số tài khoản');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedUserIds);
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn xóa vĩnh viễn ${ids.length} tài khoản đã chọn? Thao tác này không thể hoàn tác.`
+      )
+    ) {
+      return;
+    }
+    const toastId = showToast.loading(`Đang xóa ${ids.length} tài khoản...`);
+    try {
+      await Promise.all(ids.map((id) => apiFetch(`/api/admin/users/${id}`, { method: 'DELETE' })));
+      showToast.dismiss(toastId);
+      showToast.success(`Đã xóa hàng loạt ${ids.length} tài khoản thành công!`);
+      setSelectedUserIds(new Set());
+      fetchUsers();
+    } catch (err) {
+      showToast.dismiss(toastId);
+      showToast.error('Không thể xóa một số tài khoản');
     }
   };
 
@@ -199,8 +252,6 @@ function UserManagementPageContent() {
         return 'blue'; // Sky blue for educators
       case 'student':
         return 'success'; // Emerald for students
-      case 'staff':
-        return 'secondary';
       case 'parent':
         return 'gold'; // Amber for parents
       default:
@@ -389,7 +440,52 @@ function UserManagementPageContent() {
                   data={users}
                   keyExtractor={(user) => user.id}
                   className="border-none"
+                  onRowClick={(user) => {
+                    setSelectedUser(user);
+                    setShowDrawer(true);
+                  }}
+                  rowClassName={(user) =>
+                    cn(
+                      'transition-all duration-200',
+                      !user.is_active && 'opacity-60 saturate-50 bg-red-500/[0.01]'
+                    )
+                  }
                   columns={[
+                    {
+                      key: 'selection',
+                      header: (
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.size === users.length && users.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedUserIds(new Set(users.map((u) => u.id)));
+                            } else {
+                              setSelectedUserIds(new Set());
+                            }
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4.5 h-4.5 rounded-lg border-stone-300 dark:border-stone-700 text-emerald-600 focus:ring-emerald-500 bg-transparent cursor-pointer"
+                        />
+                      ),
+                      render: (user) => (
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.has(user.id)}
+                          onChange={(e) => {
+                            const next = new Set(selectedUserIds);
+                            if (e.target.checked) {
+                              next.add(user.id);
+                            } else {
+                              next.delete(user.id);
+                            }
+                            setSelectedUserIds(next);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4.5 h-4.5 rounded-lg border-stone-300 dark:border-stone-700 text-emerald-600 focus:ring-emerald-500 bg-transparent cursor-pointer"
+                        />
+                      ),
+                    },
                     {
                       key: 'full_name',
                       header: 'NGƯỜI DÙNG',
@@ -400,7 +496,14 @@ function UserManagementPageContent() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-bold text-stone-900 dark:text-white tracking-tight">
+                              <p
+                                className={cn(
+                                  'font-bold tracking-tight transition-all',
+                                  !user.is_active
+                                    ? 'text-stone-400 dark:text-stone-500 line-through'
+                                    : 'text-stone-900 dark:text-white'
+                                )}
+                              >
                                 {user.full_name}
                               </p>
                               {user.is_managed && (
@@ -421,12 +524,24 @@ function UserManagementPageContent() {
                       key: 'role',
                       header: 'VAI TRÒ',
                       render: (user) => (
-                        <Badge
-                          variant={getRoleBadgeVariant(user.role) as any}
-                          className="px-3 py-1 rounded-full border-none shadow-sm font-bold text-xs ring-1 ring-stone-900/5 dark:ring-white/10"
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(user);
+                          }}
+                          className={cn(
+                            'cursor-pointer active:scale-95 transition-all',
+                            'px-3 py-1 rounded-full border-none shadow-sm font-bold text-xs ring-1 ring-stone-900/5 dark:ring-white/10'
+                          )}
+                          title="Click để chỉnh sửa nhanh hồ sơ"
                         >
-                          {getRoleLabel(user.role)}
-                        </Badge>
+                          <Badge
+                            variant={getRoleBadgeVariant(user.role) as any}
+                            className="px-0 py-0 border-none shadow-none font-bold text-xs bg-transparent text-inherit"
+                          >
+                            {getRoleLabel(user.role)}
+                          </Badge>
+                        </button>
                       ),
                     },
                     {
@@ -464,12 +579,21 @@ function UserManagementPageContent() {
                       key: 'status',
                       header: 'TRẠNG THÁI',
                       render: (user) => (
-                        <Badge
-                          variant={user.is_active ? 'success' : 'danger'}
-                          className="px-3 py-1 rounded-full border-none shadow-sm font-bold text-xs ring-1 ring-stone-900/5 dark:ring-white/10"
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleActive(user);
+                          }}
+                          className={cn(
+                            'cursor-pointer active:scale-95 transition-all px-3 py-1 rounded-full border-none shadow-sm font-bold text-xs ring-1 ring-stone-900/5 dark:ring-white/10',
+                            user.is_active
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                              : 'bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20'
+                          )}
+                          title="Click để thay đổi trạng thái"
                         >
                           {user.is_active ? 'Hoạt động' : 'Đã khóa'}
-                        </Badge>
+                        </button>
                       ),
                     },
                     {
@@ -493,10 +617,47 @@ function UserManagementPageContent() {
                       key: 'actions',
                       header: '',
                       render: (user) => (
-                        <div className="flex justify-end pr-2">
+                        <div
+                          className="flex justify-end items-center gap-1.5 pr-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {/* Quick Action Icons visible on row hover */}
+                          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity duration-200 mr-2">
+                            <button
+                              onClick={() => openEditModal(user)}
+                              className="w-8 h-8 rounded-xl bg-stone-50 dark:bg-white/5 text-stone-600 dark:text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center border border-stone-200/50 dark:border-white/5 active:scale-90 transition-all"
+                              title="Chỉnh sửa hồ sơ"
+                            >
+                              <Icons.Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => openResetPasswordModal(user)}
+                              className="w-8 h-8 rounded-xl bg-stone-50 dark:bg-white/5 text-stone-600 dark:text-stone-400 hover:text-amber-600 dark:hover:text-amber-400 flex items-center justify-center border border-stone-200/50 dark:border-white/5 active:scale-90 transition-all"
+                              title="Đặt lại mật khẩu"
+                            >
+                              <Icons.Lock className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleToggleActive(user)}
+                              className={cn(
+                                'w-8 h-8 rounded-xl bg-stone-50 dark:bg-white/5 flex items-center justify-center border border-stone-200/50 dark:border-white/5 active:scale-90 transition-all',
+                                user.is_active
+                                  ? 'text-stone-600 dark:text-stone-400 hover:text-red-500'
+                                  : 'text-red-500 hover:text-emerald-500'
+                              )}
+                              title={user.is_active ? 'Khóa' : 'Mở khóa'}
+                            >
+                              {user.is_active ? (
+                                <Icons.Error className="w-4 h-4" />
+                              ) : (
+                                <Icons.Success className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+
                           <DropdownMenu
                             trigger={
-                              <button className="w-10 h-10 rounded-2xl hover:bg-stone-100 dark:hover:bg-white/5 text-stone-400 flex items-center justify-center transition-all">
+                              <button className="w-9 h-9 rounded-xl hover:bg-stone-100 dark:hover:bg-white/5 text-stone-400 flex items-center justify-center transition-all active:scale-95">
                                 <Icons.More className="w-5 h-5" />
                               </button>
                             }
@@ -580,6 +741,67 @@ function UserManagementPageContent() {
         </div>
       </div>
 
+      {/* Floating Bulk Action Bar */}
+      {selectedUserIds.size > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[1150] bg-stone-900 dark:bg-stone-950 text-white rounded-3xl px-8 py-4 flex flex-col sm:flex-row items-center gap-6 shadow-2xl shadow-black/40 border border-stone-800 dark:border-stone-850 animate-slide-in-bottom">
+          <div className="flex items-center gap-3">
+            <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-sm font-bold tracking-tight">
+              Đã chọn {selectedUserIds.size} tài khoản
+            </span>
+          </div>
+          <div className="h-px w-full sm:h-5 sm:w-px bg-stone-800 dark:bg-stone-850" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => handleBulkStatus(true)}
+              className="h-10 px-4 text-xs font-black uppercase tracking-widest text-white border-stone-800 hover:bg-stone-900 rounded-xl"
+            >
+              Kích hoạt
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleBulkStatus(false)}
+              className="h-10 px-4 text-xs font-black uppercase tracking-widest text-white border-stone-800 hover:bg-stone-900 rounded-xl"
+            >
+              Khóa
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleBulkDelete}
+              className="h-10 px-4 text-xs font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white rounded-xl border-none shadow-md"
+            >
+              Xóa vĩnh viễn
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setSelectedUserIds(new Set())}
+              className="h-10 px-4 text-xs font-black uppercase tracking-widest text-stone-400 hover:text-white rounded-xl"
+            >
+              Bỏ chọn
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Detailed Sliding Drawer Panel */}
+      <UserDrawer
+        user={selectedUser}
+        isOpen={showDrawer}
+        onClose={() => {
+          setShowDrawer(false);
+          setSelectedUser(null);
+        }}
+        openEditModal={openEditModal}
+        openResetPasswordModal={openResetPasswordModal}
+        handleToggleActive={handleToggleActive}
+        openDeleteModal={() => {
+          setShowDrawer(false);
+          setShowDeleteModal(true);
+        }}
+        getRoleBadgeVariant={getRoleBadgeVariant}
+      />
+
       {/* Unified User Modals */}
       <UserFormModal
         isOpen={showCreateModal || showEditModal}
@@ -619,6 +841,281 @@ function UserManagementPageContent() {
         }}
         user={selectedUser}
       />
+    </div>
+  );
+}
+
+// Side drawer sliding detail panel component
+interface UserDrawerProps {
+  user: User | null;
+  isOpen: boolean;
+  onClose: () => void;
+  openEditModal: (user: User) => void;
+  openResetPasswordModal: (user: User) => void;
+  handleToggleActive: (user: User) => Promise<void>;
+  openDeleteModal: () => void;
+  getRoleBadgeVariant: (role: string) => string;
+}
+
+function UserDrawer({
+  user,
+  isOpen,
+  onClose,
+  openEditModal,
+  openResetPasswordModal,
+  handleToggleActive,
+  openDeleteModal,
+  getRoleBadgeVariant,
+}: UserDrawerProps) {
+  const [activeUser, setActiveUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      setActiveUser(user);
+    }
+  }, [user]);
+
+  if (!activeUser) return null;
+
+  return (
+    <div
+      className={cn(
+        'fixed inset-0 z-[1200] flex justify-end transition-all duration-300',
+        isOpen ? 'pointer-events-auto' : 'pointer-events-none'
+      )}
+    >
+      {/* Backdrop with fade effect */}
+      <div
+        className={cn(
+          'fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300',
+          isOpen ? 'opacity-100' : 'opacity-0'
+        )}
+        onClick={onClose}
+      />
+      {/* Panel with slide-in transition */}
+      <div
+        className={cn(
+          'relative w-full max-w-lg bg-white dark:bg-[#1C1917] border-l border-stone-250 dark:border-stone-800 shadow-2xl p-8 sm:p-10 flex flex-col h-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        )}
+      >
+        {/* Drawer Header */}
+        <div className="flex items-start justify-between border-b border-stone-100 dark:border-white/5 pb-6 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-[20px] bg-gradient-to-tr from-emerald-500 to-emerald-600 text-white flex items-center justify-center font-serif text-3xl font-black shadow-lg shadow-emerald-500/20">
+              {activeUser.full_name?.charAt(0)}
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-stone-900 dark:text-white tracking-tight">
+                {activeUser.full_name}
+              </h2>
+              <p className="text-sm text-stone-400 font-medium">{activeUser.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-stone-400 hover:text-stone-950 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/10 rounded-full transition-all duration-200"
+            aria-label="Đóng"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Scrollable details container */}
+        <div className="flex-1 overflow-y-auto py-8 space-y-8 pr-2 custom-scrollbar">
+          {/* Quick Info Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-stone-50 dark:bg-white/[0.02] p-4 rounded-2xl border border-stone-100 dark:border-white/5">
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block mb-1">
+                Vai trò
+              </span>
+              <Badge
+                variant={getRoleBadgeVariant(activeUser.role) as any}
+                className="font-bold text-xs"
+              >
+                {getRoleLabel(activeUser.role)}
+              </Badge>
+            </div>
+            <div className="bg-stone-50 dark:bg-white/[0.02] p-4 rounded-2xl border border-stone-100 dark:border-white/5">
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block mb-1">
+                Trạng thái
+              </span>
+              <Badge
+                variant={activeUser.is_active ? 'success' : 'danger'}
+                className="font-bold text-xs"
+              >
+                {activeUser.is_active ? 'Hoạt động' : 'Đã khóa'}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 dark:border-white/5 pb-2">
+              Thông tin liên hệ
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-stone-500 font-medium">Số điện thoại:</span>
+                <span className="text-sm text-stone-900 dark:text-white font-bold">
+                  {activeUser.phone || '—'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-stone-500 font-medium">Email cá nhân:</span>
+                <span className="text-sm text-stone-900 dark:text-white font-bold">
+                  {activeUser.personal_email || '—'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Identity & Department */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 dark:border-white/5 pb-2">
+              Định danh & Tổ chức
+            </h3>
+            <div className="space-y-3">
+              {(activeUser.student_code || activeUser.teacher_code) && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-stone-500 font-medium">Mã số định danh (UID):</span>
+                  <code className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-mono font-bold text-sm">
+                    {activeUser.student_code || activeUser.teacher_code}
+                  </code>
+                </div>
+              )}
+              {activeUser.role === 'student' && activeUser.student_id && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-stone-500 font-medium">Mã học sinh (CID):</span>
+                  <code className="bg-amber-500/10 text-amber-600 dark:text-amber-500 px-2 py-0.5 rounded font-mono font-bold text-sm">
+                    {activeUser.student_id}
+                  </code>
+                </div>
+              )}
+              {activeUser.department && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-stone-500 font-medium">
+                    Phòng ban / Lớp quản lý:
+                  </span>
+                  <span className="text-sm text-stone-900 dark:text-white font-bold">
+                    {activeUser.department}
+                  </span>
+                </div>
+              )}
+              {activeUser.grade_level && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-stone-500 font-medium">Khối / Cấp lớp:</span>
+                  <span className="text-sm text-stone-900 dark:text-white font-bold">
+                    {activeUser.grade_level}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* History & Notes */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 dark:border-white/5 pb-2">
+              Hệ thống & Ghi chú
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-stone-500 font-medium">Ngày gia nhập:</span>
+                <span className="text-sm text-stone-900 dark:text-white font-bold text-right">
+                  {new Date(activeUser.created_at).toLocaleDateString('vi-VN')}{' '}
+                  {new Date(activeUser.created_at).toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-stone-500 font-medium">Đăng nhập lần cuối:</span>
+                <span className="text-sm text-stone-900 dark:text-white font-bold text-right">
+                  {activeUser.last_login_at
+                    ? `${new Date(activeUser.last_login_at).toLocaleDateString('vi-VN')} ${new Date(activeUser.last_login_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Chưa đăng nhập'}
+                </span>
+              </div>
+              {activeUser.notes && (
+                <div className="space-y-1">
+                  <span className="text-sm text-stone-500 font-medium block">
+                    Ghi chú hành chính:
+                  </span>
+                  <div className="bg-stone-50 dark:bg-white/[0.01] p-4 rounded-2xl border border-stone-100 dark:border-white/5 text-sm font-medium text-stone-600 dark:text-stone-400 whitespace-pre-wrap leading-relaxed">
+                    {activeUser.notes}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer actions */}
+        <div className="border-t border-stone-100 dark:border-white/5 pt-6 flex flex-col gap-3 shrink-0">
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={() => {
+                onClose();
+                openEditModal(activeUser);
+              }}
+              className="rounded-xl h-12 text-xs font-black uppercase tracking-widest"
+              leftIcon={<Icons.Edit className="w-4 h-4" />}
+            >
+              Sửa hồ sơ
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                onClose();
+                openResetPasswordModal(activeUser);
+              }}
+              className="rounded-xl h-12 text-xs font-black uppercase tracking-widest border-stone-200 dark:border-stone-800"
+              leftIcon={<Icons.Lock className="w-4 h-4" />}
+            >
+              Đổi mật khẩu
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                await handleToggleActive(activeUser);
+                setActiveUser((prev) => (prev ? { ...prev, is_active: !prev.is_active } : null));
+              }}
+              className="rounded-xl h-12 text-xs font-black uppercase tracking-widest border-stone-200 dark:border-stone-800"
+              leftIcon={
+                activeUser.is_active ? (
+                  <Icons.Error className="w-4 h-4" />
+                ) : (
+                  <Icons.Success className="w-4 h-4" />
+                )
+              }
+            >
+              {activeUser.is_active ? 'Khóa tài khoản' : 'Mở khóa'}
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                onClose();
+                openDeleteModal();
+              }}
+              className="rounded-xl h-12 text-xs font-black uppercase tracking-widest shadow-md"
+              leftIcon={<Icons.Trash className="w-4 h-4" />}
+            >
+              Xóa vĩnh viễn
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

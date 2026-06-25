@@ -39,7 +39,7 @@ export const adminQuickActions: QuickActionItem[] = [
 
 export const teacherQuickActions: QuickActionItem[] = [
   {
-    href: routes.classes.list(),
+    href: routes.teacher.classes(),
     icon: <Icons.Classes />,
     title: 'Lớp dạy',
     color: 'blue',
@@ -57,7 +57,7 @@ export const teacherQuickActions: QuickActionItem[] = [
     color: 'orange',
   },
   {
-    href: '/dashboard/timetable',
+    href: routes.timetable.mySchedule(),
     icon: <Icons.Calendar />,
     title: 'Lịch dạy',
     color: 'amber',
@@ -66,22 +66,49 @@ export const teacherQuickActions: QuickActionItem[] = [
 
 export const studentQuickActions: QuickActionItem[] = [
   {
-    href: routes.grades.assignments(),
-    icon: <Icons.Assignments />,
-    title: 'Bài tập',
-    color: 'green',
+    href: routes.grades.transcripts(),
+    icon: <Icons.Grades />,
+    title: 'Học bạ',
+    color: 'emerald',
   },
   {
-    href: routes.grades.list(),
-    icon: <Icons.Grades />,
-    title: 'Kết quả',
-    color: 'emerald',
+    href: routes.attendance.history(),
+    icon: <Icons.Attendance />,
+    title: 'Điểm danh',
+    color: 'orange',
   },
   {
     href: routes.timetable.mySchedule(),
     icon: <Icons.Calendar />,
     title: 'Thời khóa biểu',
     color: 'blue',
+  },
+  {
+    href: routes.profile(),
+    icon: <Icons.Users />,
+    title: 'Hồ sơ',
+    color: 'slate',
+  },
+];
+
+export const tutorQuickActions: QuickActionItem[] = [
+  {
+    href: routes.tutor.students(),
+    icon: <Icons.Students />,
+    title: 'Học sinh kèm',
+    color: 'blue',
+  },
+  {
+    href: routes.timetable.mySchedule(),
+    icon: <Icons.Calendar />,
+    title: 'Lịch kèm',
+    color: 'amber',
+  },
+  {
+    href: routes.grades.list(),
+    icon: <Icons.Grades />,
+    title: 'Kết quả',
+    color: 'emerald',
   },
   {
     href: routes.profile(),

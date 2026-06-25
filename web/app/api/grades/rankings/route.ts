@@ -1,18 +1,18 @@
 import { apiSuccess, createGetHandler, serverError } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
 
-// Cache the rankings for 1 hour to prevent DB load (ISR)
-export const revalidate = 3600;
+// Dynamic route — cannot use ISR (revalidate) because it requires auth
+export const dynamic = 'force-dynamic';
 
 export const GET = createGetHandler({ requireAuth: true }, async ({ request, user }) => {
   const url = new URL(request.url);
   const limit = parseInt(url.searchParams.get('limit') || '10', 10);
+  const teacherId = url.searchParams.get('teacher_id');
 
   // Use service client to calculate global rankings, bypassing RLS
-  // so students can also see the top performers chart.
   const supabase = createServiceClient();
 
-  // 1. Fetch rankings from Database RPC (highly optimized O(1) memory)
+  // 1. Fetch rankings from Database RPC
   const { data: rankings, error } = await supabase.rpc('get_student_rankings');
 
   if (error) {
@@ -20,9 +20,18 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
     return serverError('Failed to calculate rankings');
   }
 
+  // 2. Query class names if filtering by teacher
+  let teacherClassNames: string[] = [];
+  if (teacherId) {
+    const { data: teacherClasses } = await supabase
+      .from('classes')
+      .select('name')
+      .eq('teacher_id', teacherId);
+    teacherClassNames = teacherClasses?.map((c: any) => c.name) || [];
+  }
+
   const totalStudents = rankings ? rankings.length : 0;
 
-  // 2. Map database columns to the frontend widget format
   interface StudentRankingRow {
     student_id: string;
     student_name: string;
@@ -32,6 +41,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
     percentile: string | number;
   }
 
+  // 3. Map database columns
   const formattedRankings = (rankings || []).map((student: StudentRankingRow) => ({
     studentId: student.student_id,
     studentName: student.student_name,
@@ -39,20 +49,35 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
     average: Number(student.average),
     rank: Number(student.rank),
     percentile: Number(student.percentile),
-    change: 0, // Mock trend for now
+    change: 0,
   }));
 
-  // 3. Extract Top Performers
-  const topStudents = formattedRankings.slice(0, limit);
+  // 4. Filter by teacher's classes if requested
+  let filteredRankings = formattedRankings;
+  if (teacherId) {
+    if (teacherClassNames.length === 0) {
+      return apiSuccess({
+        topStudents: [],
+        atRiskStudents: [],
+      });
+    }
+    filteredRankings = formattedRankings.filter((student: any) =>
+      teacherClassNames.includes(student.className)
+    );
+  }
 
-  // 4. Extract At-Risk (Bottom Performers), maintaining the correct frontend format
-  const atRiskStudents = [...formattedRankings]
+  const filteredTotal = filteredRankings.length;
+
+  // 5. Extract Top Performers
+  const topStudents = filteredRankings.slice(0, limit);
+
+  // 6. Extract At-Risk (Bottom Performers)
+  const atRiskStudents = [...filteredRankings]
     .reverse()
     .slice(0, limit)
-    .map((student, index) => ({
+    .map((student: any, index: number) => ({
       ...student,
-      // The widget uses 'rank' as a reverse index for the at-risk list
-      rank: totalStudents - index,
+      rank: filteredTotal - index,
     }));
 
   return apiSuccess({

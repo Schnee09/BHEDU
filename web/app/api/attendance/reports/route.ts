@@ -7,7 +7,7 @@ import { createServiceClient } from '@/lib/supabase/server';
  * GET /api/attendance/reports
  */
 export const GET = createGetHandler(
-  { allowedRoles: ['admin', 'staff', 'teacher', 'super_admin', 'owner', 'student'] },
+  { allowedRoles: ['admin', 'teacher', 'super_admin', 'owner', 'student'] },
   async ({ searchParams, user }) => {
     const supabase = createServiceClient();
     const repository = new AttendanceRepository(supabase);

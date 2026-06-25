@@ -17,8 +17,9 @@ async function checkAnnouncementAccess(request: Request) {
   if (!auth.authorized || !auth.role) {
     return { authorized: false, reason: auth.reason || 'Unauthorized', auth };
   }
-  // Staff and above can manage announcements
-  if (!isAtLeast(auth.role, 'staff')) {
+  // Admin and above, OR owner (who has announcements.manage) can manage announcements
+  const allowedRoles = ['admin', 'owner', 'super_admin'];
+  if (!isAtLeast(auth.role, 'admin') && !allowedRoles.includes(auth.role)) {
     return { authorized: false, reason: 'Insufficient permissions', auth };
   }
   return { authorized: true, auth };

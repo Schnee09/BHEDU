@@ -5,8 +5,8 @@ import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
 export const GET = createGetHandler(
   {
     requireAuth: true,
-    allowedRoles: ['admin', 'staff', 'owner', 'super_admin'],
-    // Original checked 'staffAuth'.
+    allowedRoles: ['admin', 'owner', 'super_admin'],
+    // Original checked 'adminAuth'.
   },
   async ({ request }) => {
     const url = new URL(request.url);

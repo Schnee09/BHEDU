@@ -5,6 +5,7 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Icons } from '@/components/ui/Icons';
 import { Button } from '@/components/ui';
 import { useFetch } from '@/hooks/useFetch';
+import PageGuard from '@/components/PageGuard';
 
 interface HealthData {
   status: string;
@@ -33,6 +34,14 @@ interface HealthData {
 }
 
 export default function SystemHealthPage() {
+  return (
+    <PageGuard permissions="system.settings">
+      <SystemHealthContent />
+    </PageGuard>
+  );
+}
+
+function SystemHealthContent() {
   const { data, loading, error, refetch } = useFetch<HealthData>('/api/health');
   const [autoRefresh, setAutoRefresh] = useState(false);
 

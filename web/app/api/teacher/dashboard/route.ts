@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  */
 export const GET = createGetHandler({ allowedRoles: ['teacher'] }, async ({ user }) => {
   const [stats, activitiesRes] = await Promise.all([
-    DashboardService.getStats('teacher', user.id),
+    DashboardService.getTeacherStats(user.id),
     DashboardService.getRecentActivity(10, 'teacher', user.id),
   ]);
 

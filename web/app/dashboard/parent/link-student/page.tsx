@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useProfile } from "@/hooks/useProfile";
-import { supabase } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { Icons } from "@/components/ui/Icons";
+import { useState } from 'react';
+import { useProfile } from '@/hooks/useProfile';
+import { supabase } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import { Icons } from '@/components/ui/Icons';
 import {
   Loader2,
   Search,
@@ -13,9 +13,9 @@ import {
   AlertCircle,
   User,
   GraduationCap,
-  Heart
-} from "lucide-react";
-import Link from "next/link";
+  Heart,
+} from 'lucide-react';
+import Link from 'next/link';
 
 const RELATIONSHIP_OPTIONS = [
   { value: 'parent', label: 'Bố/Mẹ' },
@@ -29,8 +29,8 @@ const RELATIONSHIP_OPTIONS = [
 export default function LinkStudentPage() {
   const router = useRouter();
   const { profile } = useProfile();
-  const [studentCode, setStudentCode] = useState("");
-  const [relationship, setRelationship] = useState("parent");
+  const [studentCode, setStudentCode] = useState('');
+  const [relationship, setRelationship] = useState('parent');
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [foundStudent, setFoundStudent] = useState<any>(null);
@@ -53,7 +53,7 @@ export default function LinkStudentPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Không tìm thấy học sinh");
+        throw new Error(data.error || 'Không tìm thấy học sinh');
       }
 
       setFoundStudent(data.data);
@@ -77,14 +77,14 @@ export default function LinkStudentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           student_id: foundStudent.id,
-          relationship: relationship
+          relationship: relationship,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Không thể gửi yêu cầu kết nối");
+        throw new Error(data.error || 'Không thể gửi yêu cầu kết nối');
       }
 
       setSuccess(true);
@@ -101,10 +101,16 @@ export default function LinkStudentPage() {
         <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner shadow-green-500/20">
           <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
         </div>
-        <h2 className="text-3xl font-black text-stone-900 dark:text-stone-100 mb-3 uppercase tracking-tight">Đã gửi yêu cầu!</h2>
-        <p className="text-stone-600 dark:text-stone-400 mb-10 font-medium leading-relaxed">
-          Yêu cầu kết nối với <b>{foundStudent?.full_name}</b> đã được gửi tới hệ thống. Vui lòng chờ nhân viên trung tâm phê duyệt.
-        </p>
+        <h2 className="text-3xl font-black text-stone-900 dark:text-stone-100 mb-3 uppercase tracking-tight">
+          Đã gửi yêu cầu!
+        </h2>
+        <div className="bg-success/10 text-success p-4 rounded-md border border-success/20 mb-6 flex items-start gap-3">
+          <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <p className="text-sm">
+            Yêu cầu kết nối với <b>{foundStudent?.full_name}</b> đã được gửi tới hệ thống. Vui lòng
+            chờ trung tâm phê duyệt.
+          </p>
+        </div>
         <button
           onClick={() => router.push('/dashboard/parent')}
           className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-500/25 active:scale-95 uppercase tracking-widest text-xs"
@@ -125,8 +131,12 @@ export default function LinkStudentPage() {
           <ArrowLeft className="w-6 h-6 text-stone-600 dark:text-stone-400" />
         </Link>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">Kết nối học sinh</h1>
-          <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Liên kết tài khoản phụ huynh với con em</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+            Kết nối học sinh
+          </h1>
+          <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">
+            Liên kết tài khoản phụ huynh với con em
+          </p>
         </div>
       </div>
 
@@ -156,7 +166,7 @@ export default function LinkStudentPage() {
                   disabled={searching || !studentCode}
                   className="h-16 px-10 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50 active:scale-95 uppercase tracking-widest text-xs"
                 >
-                  {searching ? <Loader2 className="w-6 h-6 animate-spin" /> : "Tìm kiếm"}
+                  {searching ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Tìm kiếm'}
                 </button>
               </div>
               <p className="mt-4 text-[10px] text-stone-400 font-bold uppercase tracking-wider ml-2 flex items-center gap-2">
@@ -173,7 +183,10 @@ export default function LinkStudentPage() {
             )}
           </div>
         ) : (
-          <form onSubmit={handleRequestLink} className="space-y-10 animate-in zoom-in-95 duration-500">
+          <form
+            onSubmit={handleRequestLink}
+            className="space-y-10 animate-in zoom-in-95 duration-500"
+          >
             {/* Student Info Card */}
             <div className="bg-blue-100/50 dark:bg-blue-900/20 rounded-[32px] p-8 flex flex-col sm:flex-row items-center gap-6 border border-blue-200/50 dark:border-blue-800/30 shadow-inner">
               <div className="w-20 h-20 bg-white dark:bg-stone-800 rounded-2xl flex items-center justify-center shadow-xl rotate-3">
@@ -207,12 +220,15 @@ export default function LinkStudentPage() {
                     key={opt.value}
                     type="button"
                     onClick={() => setRelationship(opt.value)}
-                    className={`h-16 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 border-2 ${relationship === opt.value
-                      ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-500/25 scale-105 z-10'
-                      : 'border-stone-100 bg-white dark:bg-stone-800/50 dark:border-white/5 text-stone-500 hover:border-blue-200 dark:hover:border-blue-800'
-                      }`}
+                    className={`h-16 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 border-2 ${
+                      relationship === opt.value
+                        ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-500/25 scale-105 z-10'
+                        : 'border-stone-100 bg-white dark:bg-stone-800/50 dark:border-white/5 text-stone-500 hover:border-blue-200 dark:hover:border-blue-800'
+                    }`}
                   >
-                    <Heart className={`w-4 h-4 ${relationship === opt.value ? 'fill-white animate-pulse' : 'text-stone-300'}`} />
+                    <Heart
+                      className={`w-4 h-4 ${relationship === opt.value ? 'fill-white animate-pulse' : 'text-stone-300'}`}
+                    />
                     {opt.label}
                   </button>
                 ))}
@@ -231,11 +247,7 @@ export default function LinkStudentPage() {
               disabled={loading}
               className="w-full h-20 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-[24px] transition-all shadow-2xl shadow-blue-500/40 flex items-center justify-center gap-4 disabled:opacity-50 active:scale-[0.98] uppercase tracking-[0.2em] text-sm"
             >
-              {loading ? (
-                <Loader2 className="w-8 h-8 animate-spin" />
-              ) : (
-                <>Gửi yêu cầu kết nối</>
-              )}
+              {loading ? <Loader2 className="w-8 h-8 animate-spin" /> : <>Gửi yêu cầu kết nối</>}
             </button>
           </form>
         )}
@@ -251,13 +263,17 @@ export default function LinkStudentPage() {
             <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
               <Icons.Grades className="w-5 h-5 text-blue-600" />
             </div>
-            <p className="text-xs text-stone-500 dark:text-gray-400 font-bold leading-relaxed uppercase tracking-tighter">Xem điểm số và kết quả học tập theo thời gian thực.</p>
+            <p className="text-xs text-stone-500 dark:text-gray-400 font-bold leading-relaxed uppercase tracking-tighter">
+              Xem điểm số và kết quả học tập theo thời gian thực.
+            </p>
           </div>
           <div className="flex gap-4">
             <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
               <Icons.Attendance className="w-5 h-5 text-orange-600" />
             </div>
-            <p className="text-xs text-stone-500 dark:text-gray-400 font-bold leading-relaxed uppercase tracking-tighter">Theo dõi chuyên cần và báo cáo định kỳ.</p>
+            <p className="text-xs text-stone-500 dark:text-gray-400 font-bold leading-relaxed uppercase tracking-tighter">
+              Theo dõi chuyên cần và báo cáo định kỳ.
+            </p>
           </div>
         </div>
       </div>

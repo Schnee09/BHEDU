@@ -42,7 +42,7 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const { accentColor } = useCustomization();
-  const { can, isAdmin, isStaff, isTeacher, isStudent, isParent } = usePermissions();
+  const { can, isAdmin, isOwner, isStaff, isTeacher, isStudent, isParent } = usePermissions();
   const { notifications, unreadCount, markAllAsRead, markAsRead, deleteNotification } =
     useNotifications(profile?.id);
 
@@ -57,11 +57,12 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
   // Dynamic Portal Title & Greetings
   const portalTitle = useMemo(() => {
     if (isAdmin) return { main: 'Hệ thống', sub: 'QUẢN TRỊ' };
+    if (isOwner) return { main: 'Cổng quản lý', sub: 'CHỦ TRUNG TÂM' };
     if (isStaff) return { main: 'Cổng nội bộ', sub: 'NHÂN SỰ' };
     if (isTeacher) return { main: 'Cổng công cụ', sub: 'GIÁO VIÊN' };
     if (isParent) return { main: 'Cổng kết nối', sub: 'PHỤ HUYNH' };
     return { main: 'Cổng học tập', sub: 'HỌC SINH' };
-  }, [isAdmin, isStaff, isTeacher, isParent]);
+  }, [isAdmin, isOwner, isStaff, isTeacher, isParent]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -114,9 +115,9 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
           show: can('students.create'),
         },
         {
-          label: 'Tạo bài tập',
+          label: 'Nhập điểm',
           icon: ClipboardDocumentListIcon,
-          href: `${routes.grades.assignments()}?action=add`,
+          href: routes.grades.entry(),
           show: can('grades.entry'),
         },
         {

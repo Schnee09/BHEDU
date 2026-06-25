@@ -1,12 +1,18 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { AdminTable, Column } from "../_components/AdminTable";
-import { CrudModal } from "../_components/CrudModal";
-import { FormField, Input, Select, Badge } from "../_components/FormElements";
-import { ResponsiveTable, MobileCard, MobileCardList } from "@/components/ui/ResponsiveTable";
-import { getRoleLabel, getInvitableRoles, UserRole } from "@/lib/role-utils";
-import { PlusIcon, ClipboardIcon, CheckIcon, EnvelopeIcon, PhoneIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from 'react';
+import { AdminTable, Column } from '../_components/AdminTable';
+import { CrudModal } from '../_components/CrudModal';
+import { FormField, Input, Select, Badge } from '../_components/FormElements';
+import { ResponsiveTable, MobileCard, MobileCardList } from '@/components/ui/ResponsiveTable';
+import { getRoleLabel, getInvitableRoles, UserRole } from '@/lib/role-utils';
+import {
+  PlusIcon,
+  ClipboardIcon,
+  CheckIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+} from '@heroicons/react/24/outline';
 
 interface Invitation {
   id: string;
@@ -31,20 +37,20 @@ export default function InvitationsPage() {
 
   // Form state
   const [formData, setFormData] = useState({
-    email: "",
-    phone: "",
-    role: "staff" as UserRole,
+    email: '',
+    phone: '',
+    role: 'staff' as UserRole,
     expires_in_days: 7,
   });
 
   const fetchInvites = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/invitations");
+      const res = await fetch('/api/admin/invitations');
       const data = await res.json();
       setInvites(data.invites || []);
     } catch (error) {
-      console.error("Error fetching invites:", error);
+      console.error('Error fetching invites:', error);
     } finally {
       setLoading(false);
     }
@@ -58,18 +64,18 @@ export default function InvitationsPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch("/api/admin/invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/admin/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
       if (res.ok) {
         setIsModalOpen(false);
-        setFormData({ email: "", phone: "", role: "staff", expires_in_days: 7 });
+        setFormData({ email: '', phone: '', role: 'admin' as UserRole, expires_in_days: 7 });
         fetchInvites();
       }
     } catch (error) {
-      console.error("Error creating invite:", error);
+      console.error('Error creating invite:', error);
     } finally {
       setSubmitting(false);
     }
@@ -84,23 +90,23 @@ export default function InvitationsPage() {
 
   const columns: Column<Invitation>[] = [
     {
-      key: "email",
-      label: "Đối tượng",
+      key: 'email',
+      label: 'Đối tượng',
       render: (_, item) => (
         <div className="flex flex-col">
-          <span className="font-medium text-gray-900">{item.email || item.phone || "N/A"}</span>
-          <span className="text-xs text-gray-500">{item.email ? "Email" : "Số điện thoại"}</span>
+          <span className="font-medium text-gray-900">{item.email || item.phone || 'N/A'}</span>
+          <span className="text-xs text-gray-500">{item.email ? 'Email' : 'Số điện thoại'}</span>
         </div>
       ),
     },
     {
-      key: "role",
-      label: "Vai trò",
+      key: 'role',
+      label: 'Vai trò',
       render: (role) => <Badge variant="info">{getRoleLabel(role as string)}</Badge>,
     },
     {
-      key: "used_at",
-      label: "Trạng thái",
+      key: 'used_at',
+      label: 'Trạng thái',
       render: (used_at, item) => {
         const isExpired = new Date(item.expires_at) < new Date();
         if (used_at) return <Badge variant="success">Đã sử dụng</Badge>;
@@ -109,13 +115,13 @@ export default function InvitationsPage() {
       },
     },
     {
-      key: "expires_at",
-      label: "Ngày hết hạn",
-      render: (date) => new Date(date as string).toLocaleDateString("vi-VN"),
+      key: 'expires_at',
+      label: 'Ngày hết hạn',
+      render: (date) => new Date(date as string).toLocaleDateString('vi-VN'),
     },
     {
-      key: "token",
-      label: "Liên kết mời",
+      key: 'token',
+      label: 'Liên kết mời',
       render: (token) => (
         <button
           onClick={() => copyToClipboard(token as string)}
@@ -127,7 +133,7 @@ export default function InvitationsPage() {
             <ClipboardIcon className="w-4 h-4" />
           )}
           <span className="text-xs font-medium">
-            {copiedToken === token ? "Đã chép" : "Sao chép link"}
+            {copiedToken === token ? 'Đã chép' : 'Sao chép link'}
           </span>
         </button>
       ),
@@ -138,31 +144,42 @@ export default function InvitationsPage() {
     <MobileCardList>
       {invites.map((item) => {
         const isExpired = new Date(item.expires_at) < new Date();
-        const statusLabel = item.used_at ? "Đã dùng" : (isExpired ? "Hết hạn" : "Đang chờ");
-        const statusColor = item.used_at ? "green" : (isExpired ? "red" : "yellow");
+        const statusLabel = item.used_at ? 'Đã dùng' : isExpired ? 'Hết hạn' : 'Đang chờ';
+        const statusColor = item.used_at ? 'green' : isExpired ? 'red' : 'yellow';
 
         return (
           <MobileCard
             key={item.id}
-            title={item.email || item.phone || "N/A"}
+            title={item.email || item.phone || 'N/A'}
             subtitle={
-                <div className="flex items-center gap-2">
-                    {item.email ? <EnvelopeIcon className="w-3 h-3"/> : <PhoneIcon className="w-3 h-3"/>}
-                    <span>{getRoleLabel(item.role)}</span>
-                </div>
+              <div className="flex items-center gap-2">
+                {item.email ? (
+                  <EnvelopeIcon className="w-3 h-3" />
+                ) : (
+                  <PhoneIcon className="w-3 h-3" />
+                )}
+                <span>{getRoleLabel(item.role)}</span>
+              </div>
             }
             status={{ label: statusLabel, color: statusColor as any }}
             fields={[
-              { label: "Ngày hết hạn", value: new Date(item.expires_at).toLocaleDateString("vi-VN") },
-              { label: "Người mời", value: item.invited_by?.full_name || "Hệ thống" },
+              {
+                label: 'Ngày hết hạn',
+                value: new Date(item.expires_at).toLocaleDateString('vi-VN'),
+              },
+              { label: 'Người mời', value: item.invited_by?.full_name || 'Hệ thống' },
             ]}
             actions={
               <button
                 onClick={() => copyToClipboard(item.token)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm press-effect"
               >
-                {copiedToken === item.token ? <CheckIcon className="w-4 h-4" /> : <ClipboardIcon className="w-4 h-4" />}
-                {copiedToken === item.token ? "Đã chép link" : "Sao chép link mời"}
+                {copiedToken === item.token ? (
+                  <CheckIcon className="w-4 h-4" />
+                ) : (
+                  <ClipboardIcon className="w-4 h-4" />
+                )}
+                {copiedToken === item.token ? 'Đã chép link' : 'Sao chép link mời'}
               </button>
             }
           />
@@ -193,12 +210,12 @@ export default function InvitationsPage() {
 
       <div className="bg-white/50 dark:bg-transparent backdrop-blur-sm rounded-[32px] overflow-hidden">
         <ResponsiveTable mobileView={renderMobileView()}>
-            <AdminTable
-                data={invites}
-                columns={columns}
-                loading={loading}
-                emptyMessage="Chưa có lời mời nào được tạo."
-            />
+          <AdminTable
+            data={invites}
+            columns={columns}
+            loading={loading}
+            emptyMessage="Chưa có lời mời nào được tạo."
+          />
         </ResponsiveTable>
       </div>
 
@@ -245,7 +262,9 @@ export default function InvitationsPage() {
               min={1}
               max={30}
               value={formData.expires_in_days}
-              onChange={(e) => setFormData({ ...formData, expires_in_days: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setFormData({ ...formData, expires_in_days: parseInt(e.target.value) })
+              }
             />
           </FormField>
         </div>
