@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -9,7 +10,7 @@ interface SidebarFooterProps {
   isCollapsed: boolean;
 }
 
-export function SidebarFooter({ onLogout, isCollapsed }: SidebarFooterProps) {
+export const SidebarFooter = memo(function SidebarFooter({ onLogout, isCollapsed }: SidebarFooterProps) {
   return (
     <div className="p-5 mt-auto border-t border-stone-100 dark:border-white/5 bg-stone-50/30 dark:bg-white/2 backdrop-blur-sm">
       {/* Mobile-only Theme Toggle Row */}
@@ -41,4 +42,4 @@ export function SidebarFooter({ onLogout, isCollapsed }: SidebarFooterProps) {
       </button>
     </div>
   );
-}
+});

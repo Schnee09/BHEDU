@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useFetch } from '@/hooks/useFetch';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
@@ -61,7 +62,7 @@ function ActivityIcon({ type }: { type: string }) {
   );
 }
 
-export default function ActivityFeed({ limit = 10 }: { limit?: number }) {
+export default memo(function ActivityFeed({ limit = 10 }: { limit?: number }) {
   const { isStaff } = usePermissions();
   const { data, loading, error } = useFetch<any>(`/api/dashboard/stats?limit=${limit}`);
 
@@ -160,4 +161,4 @@ export default function ActivityFeed({ limit = 10 }: { limit?: number }) {
       )}
     </div>
   );
-}
+});

@@ -205,7 +205,7 @@ export default function OwnerDashboard() {
                 </h2>
               </div>
 
-              <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-3xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm p-6 md:p-8">
+              <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm p-6 md:p-8">
                 {currentStats.classUtilization?.length > 0 ? (
                   <div className="space-y-6">
                     {currentStats.classUtilization.map((cls) => (
@@ -258,7 +258,7 @@ export default function OwnerDashboard() {
           {/* Right Column - Actions & Feeds */}
           <div className="xl:col-span-4 space-y-12">
             {/* Quick Actions Panel */}
-            <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-3xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm p-6 md:p-8 space-y-6">
+            <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm p-6 md:p-8 space-y-6">
               <h3 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">
                 Thao tác nhanh
               </h3>
@@ -327,7 +327,7 @@ export default function OwnerDashboard() {
             </div>
 
             {/* Announcements oversight status */}
-            <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-3xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm p-6 md:p-8 space-y-6">
+            <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm p-6 md:p-8 space-y-6">
               <h3 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">
                 Trạng thái Bảng tin
               </h3>
@@ -368,7 +368,7 @@ export default function OwnerDashboard() {
             </div>
 
             {/* System logs feed */}
-            <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-3xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm">
+            <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm">
               <div className="px-8 py-5 border-b border-stone-100 dark:border-white/5 bg-stone-50/50 dark:bg-white/5">
                 <h3 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">
                   Hoạt động hệ thống

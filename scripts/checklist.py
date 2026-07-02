@@ -5,10 +5,11 @@ import json
 
 def run_command(command, cwd=None):
     try:
-        # Avoid shell=True if possible, but for grep it's fine. 
-        # Using subprocess.run with check=False.
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, cwd=cwd, check=False)
-        return result.stdout, result.stderr, result.returncode
+        # Read raw bytes and decode manually to handle UTF-8/emoji output safely on Windows
+        result = subprocess.run(command, shell=True, capture_output=True, cwd=cwd, check=False)
+        stdout = result.stdout.decode('utf-8', errors='replace')
+        stderr = result.stderr.decode('utf-8', errors='replace')
+        return stdout, stderr, result.returncode
     except Exception as e:
         return "", str(e), 1
 

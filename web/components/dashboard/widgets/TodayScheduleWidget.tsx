@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { useFetch } from '@/hooks/useFetch';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { Icons } from '@/components/ui/Icons';
@@ -43,7 +43,7 @@ interface TodayScheduleWidgetProps {
   studentId?: string; // Option for parent view to filter a specific student
 }
 
-export default function TodayScheduleWidget({ role, studentId }: TodayScheduleWidgetProps) {
+const TodayScheduleWidget = memo(function TodayScheduleWidget({ role, studentId }: TodayScheduleWidgetProps) {
   // Fetch slots from my timetable
   const { data, loading, error } = useFetch<{
     slots: TimetableSlot[];
@@ -205,4 +205,6 @@ export default function TodayScheduleWidget({ role, studentId }: TodayScheduleWi
       </CardBody>
     </Card>
   );
-}
+});
+
+export default TodayScheduleWidget;

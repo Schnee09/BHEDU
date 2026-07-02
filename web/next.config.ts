@@ -7,6 +7,17 @@ const withAnalyzer = withBundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  // Tree-shake barrel exports from heavy icon/chart libraries
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      'recharts',
+      '@heroicons/react/24/outline',
+      '@heroicons/react/24/solid',
+      'date-fns',
+    ],
+  },
+
   // Provide safe defaults for public envs to avoid build-time crashes when unset in CI
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.com',

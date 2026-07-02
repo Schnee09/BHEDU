@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
@@ -9,13 +9,14 @@ import { getNavigationForPermissions } from '@/lib/auth/navigation.config';
 import { createClient } from '@/lib/supabase/client';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSwipe } from '@/hooks/useSwipe';
+import { apiFetch } from '@/lib/api/client';
 
 // Sub-components
 import { SidebarHeader } from './sidebar/SidebarHeader';
 import { SidebarNav } from './sidebar/SidebarNav';
 import { SidebarFooter } from './sidebar/SidebarFooter';
 
-export default function Sidebar({
+const Sidebar = memo(function Sidebar({
   isMobileMenuOpen,
   setIsMobileMenuOpen,
   isCollapsed = false,
@@ -36,56 +37,22 @@ export default function Sidebar({
     if (!profile) return;
 
     const fetchBadgeCounts = async () => {
-      const counts: Record<string, number> = {};
-      const { apiFetch } = await import('@/lib/api/client');
-
-      // 1. Fetch unread notifications
       try {
-        const res = await apiFetch('/api/notifications/unread-count');
+        const res = await apiFetch('/api/sidebar/badge-counts');
         if (res.ok) {
           const data = await res.json();
-          if (data.success) {
-            counts.notifications = data.count;
+          if (data.success && data.counts) {
+            setBadgeCounts(data.counts);
           }
         }
       } catch (err) {
-        console.error('Failed to fetch unread notification count:', err);
+        console.error('Failed to fetch badge counts:', err);
       }
-
-      // 2. Fetch pending parent links for admin/owner/super_admin
-      if (['admin', 'owner', 'super_admin'].includes(profile.role)) {
-        try {
-          const res = await apiFetch('/api/admin/parent-links?status=pending&limit=1');
-          if (res.ok) {
-            const data = await res.json();
-            if (data.success && data.pagination) {
-              counts.pendingParentLinks = data.pagination.total;
-            }
-          }
-        } catch (err) {
-          console.error('Failed to fetch pending parent links count:', err);
-        }
-      }
-
-      // 3. Fetch classes count
-      try {
-        const res = await apiFetch('/api/classes?limit=1');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.pagination) {
-            counts.classes = data.pagination.total;
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch classes count:', err);
-      }
-
-      setBadgeCounts(counts);
     };
 
     fetchBadgeCounts();
 
-    const interval = setInterval(fetchBadgeCounts, 60000);
+    const interval = setInterval(fetchBadgeCounts, 120_000);
     return () => clearInterval(interval);
   }, [profile]);
 
@@ -201,4 +168,6 @@ export default function Sidebar({
       </aside>
     </>
   );
-}
+});
+
+export default Sidebar;

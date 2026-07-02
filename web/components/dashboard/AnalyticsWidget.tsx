@@ -8,7 +8,7 @@
  * Uses lazy-loaded chart components for better performance.
  */
 
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useMemo, memo } from 'react';
 import dynamic from 'next/dynamic';
 import {
     Line,
@@ -114,7 +114,7 @@ interface AnalyticsWidgetProps {
     className?: string;
 }
 
-export default function AnalyticsWidget({
+const AnalyticsWidgetComponent = memo(function AnalyticsWidget({
     title,
     subtitle,
     chartType,
@@ -413,7 +413,8 @@ export default function AnalyticsWidget({
             </div>
         </Card>
     );
-}
+});
 
 // Export named component and colors
-export { AnalyticsWidget, COLORS as ChartColors };
+export { AnalyticsWidgetComponent as AnalyticsWidget, COLORS as ChartColors };
+export default AnalyticsWidgetComponent;

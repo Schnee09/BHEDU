@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ interface SidebarHeaderProps {
   isCollapsed: boolean;
 }
 
-export function SidebarHeader({ profile, isCollapsed }: SidebarHeaderProps) {
+export const SidebarHeader = memo(function SidebarHeader({ profile, isCollapsed }: SidebarHeaderProps) {
   const [greeting, setGreeting] = useState('Xin chào');
   const role = (profile.role ?? 'student') as UserRole;
 
@@ -99,4 +99,4 @@ export function SidebarHeader({ profile, isCollapsed }: SidebarHeaderProps) {
       </div>
     </div>
   );
-}
+});

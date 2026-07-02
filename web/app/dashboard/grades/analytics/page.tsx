@@ -157,7 +157,9 @@ export default function GradeAnalyticsPage() {
   const getClassStats = () => {
     if (grades.length === 0) return null;
 
-    const percentages = grades.map((g) => g.overall_percentage).filter((p) => !isNaN(p));
+    const percentages = grades
+      .map((g) => g.overall_percentage)
+      .filter((p) => p !== null && typeof p === 'number' && !isNaN(p));
     if (percentages.length === 0) return null;
 
     const average = percentages.reduce((a, b) => a + b, 0) / percentages.length;
@@ -189,8 +191,12 @@ export default function GradeAnalyticsPage() {
       yeu: { count: 0, label: t('analytics.bands.yeu') },
     };
 
+    let totalGraded = 0;
     grades.forEach((g) => {
       const score = g.overall_percentage;
+      if (score === null || typeof score !== 'number' || isNaN(score)) return;
+
+      totalGraded++;
       if (score >= 80) distribution.gioi.count++;
       else if (score >= 65) distribution.kha.count++;
       else if (score >= 50) distribution.tb.count++;
@@ -201,7 +207,7 @@ export default function GradeAnalyticsPage() {
       id,
       grade: data.label,
       count: data.count,
-      percentage: grades.length > 0 ? (data.count / grades.length) * 100 : 0,
+      percentage: totalGraded > 0 ? (data.count / totalGraded) * 100 : 0,
     }));
   };
 
@@ -213,12 +219,11 @@ export default function GradeAnalyticsPage() {
 
     grades.forEach((student) => {
       student.category_grades.forEach((cat) => {
-        if (!categoryData[cat.category_name]) {
-          categoryData[cat.category_name] = [];
-        }
-        const data = categoryData[cat.category_name];
-        if (data && !isNaN(cat.percentage)) {
-          data.push(cat.percentage);
+        if (cat.percentage !== null && typeof cat.percentage === 'number' && !isNaN(cat.percentage)) {
+          if (!categoryData[cat.category_name]) {
+            categoryData[cat.category_name] = [];
+          }
+          categoryData[cat.category_name]?.push(cat.percentage);
         }
       });
     });
@@ -245,14 +250,14 @@ export default function GradeAnalyticsPage() {
   // Identify struggling students
   const getStrugglingStudents = () => {
     return grades
-      .filter((g) => g.overall_percentage < 70)
+      .filter((g) => g.overall_percentage !== null && typeof g.overall_percentage === 'number' && !isNaN(g.overall_percentage) && g.overall_percentage < 70)
       .sort((a, b) => a.overall_percentage - b.overall_percentage);
   };
 
   // Identify top performers
   const getTopPerformers = () => {
     return grades
-      .filter((g) => g.overall_percentage >= 90)
+      .filter((g) => g.overall_percentage !== null && typeof g.overall_percentage === 'number' && !isNaN(g.overall_percentage) && g.overall_percentage >= 90)
       .sort((a, b) => b.overall_percentage - a.overall_percentage);
   };
 

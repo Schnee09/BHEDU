@@ -23,9 +23,10 @@ export async function GET(request: Request) {
   const supabase = createServiceClient()
     const { searchParams } = new URL(request.url)
     const classId = searchParams.get('classId')
+    const isAdminLike = ['admin', 'super_admin', 'owner', 'staff'].includes(authResult.userRole || '')
 
     // Allow admins to fetch all categories when classId is not provided.
-    if (!classId && authResult.userRole !== 'admin') {
+    if (!classId && !isAdminLike) {
       return NextResponse.json(
         { error: 'classId is required' },
         { status: 400 }
@@ -40,7 +41,7 @@ export async function GET(request: Request) {
         .eq('id', classId)
         .single()
 
-      if (!classData || (classData.teacher_id !== authResult.userId && authResult.userRole !== 'admin')) {
+      if (!classData || (classData.teacher_id !== authResult.userId && !isAdminLike)) {
         return NextResponse.json(
           { error: 'Access denied' },
           { status: 403 }
@@ -117,6 +118,7 @@ export async function POST(request: Request) {
     }
 
   const supabase = createServiceClient()
+    const isAdminLike = ['admin', 'super_admin', 'owner', 'staff'].includes(authResult.userRole || '')
 
     // Verify teacher has access to this class
     const { data: classData } = await supabase
@@ -125,7 +127,7 @@ export async function POST(request: Request) {
       .eq('id', class_id)
       .single()
 
-    if (!classData || (classData.teacher_id !== authResult.userId && authResult.userRole !== 'admin')) {
+    if (!classData || (classData.teacher_id !== authResult.userId && !isAdminLike)) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }

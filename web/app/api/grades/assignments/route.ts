@@ -39,6 +39,8 @@ export async function GET(request: Request) {
       `)
       .order('due_date', { ascending: false })
 
+    const isAdminLike = ['admin', 'super_admin', 'owner', 'staff'].includes(authResult.userRole || '')
+
     if (classId) {
       query = query.eq('class_id', classId)
 
@@ -49,13 +51,13 @@ export async function GET(request: Request) {
         .eq('id', classId)
         .single()
 
-      if (!classData || (classData.teacher_id !== authResult.userId && authResult.userRole !== 'admin')) {
+      if (!classData || (classData.teacher_id !== authResult.userId && !isAdminLike)) {
         return NextResponse.json(
           { error: 'Access denied' },
           { status: 403 }
         )
       }
-    } else if (authResult.userRole !== 'admin') {
+    } else if (!isAdminLike) {
       // Filter by teacher's classes
       const { data: teacherClasses } = await supabase
         .from('classes')
@@ -140,6 +142,8 @@ export async function POST(request: Request) {
     // Use service client to bypass RLS
     const supabase = createServiceClient()
 
+    const isAdminLike = ['admin', 'super_admin', 'owner', 'staff'].includes(authResult.userRole || '')
+
     // Verify teacher has access to this class
     const { data: classData } = await supabase
       .from('classes')
@@ -147,7 +151,7 @@ export async function POST(request: Request) {
       .eq('id', class_id)
       .single()
 
-    if (!classData || (classData.teacher_id !== authResult.userId && authResult.userRole !== 'admin')) {
+    if (!classData || (classData.teacher_id !== authResult.userId && !isAdminLike)) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }

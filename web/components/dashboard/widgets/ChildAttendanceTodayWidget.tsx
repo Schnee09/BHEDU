@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { useFetch } from '@/hooks/useFetch';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { CheckCircle2, XCircle, AlertCircle, Calendar } from 'lucide-react';
@@ -10,7 +10,7 @@ interface ChildAttendanceTodayWidgetProps {
   childId: string;
 }
 
-export default function ChildAttendanceTodayWidget({ childId }: ChildAttendanceTodayWidgetProps) {
+const ChildAttendanceTodayWidget = memo(function ChildAttendanceTodayWidget({ childId }: ChildAttendanceTodayWidgetProps) {
   const { data, loading } = useFetch<any>(
     childId ? `/api/parent/child/${childId}/attendance-today` : null
   );
@@ -101,4 +101,6 @@ export default function ChildAttendanceTodayWidget({ childId }: ChildAttendanceT
       </CardBody>
     </Card>
   );
-}
+});
+
+export default ChildAttendanceTodayWidget;

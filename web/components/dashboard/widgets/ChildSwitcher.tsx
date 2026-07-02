@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { User } from 'lucide-react';
 
@@ -16,7 +16,7 @@ interface ChildSwitcherProps {
   onSelectChild: (id: string) => void;
 }
 
-export default function ChildSwitcher({
+const ChildSwitcher = memo(function ChildSwitcher({
   childrenList,
   selectedChildId,
   onSelectChild,
@@ -62,4 +62,6 @@ export default function ChildSwitcher({
       })}
     </div>
   );
-}
+});
+
+export default ChildSwitcher;

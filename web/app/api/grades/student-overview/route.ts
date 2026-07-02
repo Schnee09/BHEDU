@@ -34,13 +34,14 @@ export async function GET(request: Request) {
       .eq('id', classId)
       .single();
 
-    // Allow access for: class teacher, admin, super_admin, or staff
+    // Allow access for: class teacher, owner, admin, super_admin, or staff
+    const isOwner = authResult.userRole === 'owner';
     const isSuperAdmin = authResult.userRole === 'super_admin';
     const isAdmin = authResult.userRole === 'admin';
     const isStaff = authResult.userRole === 'staff';
     const isClassTeacher = classData?.teacher_id === authResult.userId;
 
-    if (!classData || (!isClassTeacher && !isSuperAdmin && !isAdmin && !isStaff)) {
+    if (!classData || (!isClassTeacher && !isOwner && !isSuperAdmin && !isAdmin && !isStaff)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -74,8 +75,8 @@ export async function GET(request: Request) {
       });
     }
 
-    // Batch fetch student profiles and grades
-    const [profilesResponse, gradesResponse] = await Promise.all([
+    // Batch fetch student profiles, grades, and timetable slots for class-wide and student-specific subjects
+    const [profilesResponse, gradesResponse, timetableSlotsResponse] = await Promise.all([
       supabase.from('profiles').select('id, email, full_name, student_code').in('id', studentIds),
       supabase
         .from('grades')
@@ -90,10 +91,15 @@ export async function GET(request: Request) {
         )
         .in('student_id', studentIds)
         .eq('class_id', classId),
+      supabase
+        .from('timetable_slots')
+        .select('subject_id, student_id')
+        .eq('class_id', classId),
     ]);
 
     const profiles = profilesResponse.data || [];
     const allGrades = gradesResponse.data || [];
+    const timetableSlots = timetableSlotsResponse.data || [];
 
     const studentGrades = studentIds.map((sid) => {
       // Get student info from batched data
@@ -103,12 +109,35 @@ export async function GET(request: Request) {
       // Filter grades for this student from batched data
       const studentSpecificGrades = allGrades.filter((g) => g.student_id === sid);
 
+      // Determine active subjects for this student:
+      // 1. Class-wide subjects (no student_id set)
+      // 2. Tutoring/individual subjects (student_id set to this student's ID)
+      // 3. Subjects with existing grades for this student
+      const studentSubjectIds = new Set<string>();
+
+      timetableSlots.forEach((slot) => {
+        if (!slot.student_id || slot.student_id === sid) {
+          if (slot.subject_id) {
+            studentSubjectIds.add(slot.subject_id);
+          }
+        }
+      });
+
+      studentSpecificGrades.forEach((g) => {
+        if (g.subject_id) {
+          studentSubjectIds.add(g.subject_id);
+        }
+      });
+
       // Group by subject
       const subjectGrades: Record<string, { name: string; scores: number[] }> = {};
 
-      // Initialize all subjects
-      subjects.forEach((sub) => {
-        subjectGrades[sub.id] = { name: sub.name || sub.code, scores: [] };
+      // Initialize only active subjects for this student
+      studentSubjectIds.forEach((subId) => {
+        const sub = subjects.find((s) => s.id === subId);
+        if (sub) {
+          subjectGrades[subId] = { name: sub.name || sub.code, scores: [] };
+        }
       });
 
       // Add scores to subjects
@@ -123,20 +152,20 @@ export async function GET(request: Request) {
 
       // Calculate averages per subject (10-point scale → percentage)
       const category_grades = Object.entries(subjectGrades).map(([subId, data]) => {
-        const avgScore =
-          data.scores.length > 0
-            ? data.scores.reduce((sum, s) => sum + s, 0) / data.scores.length
-            : 0;
+        const hasGrades = data.scores.length > 0;
+        const avgScore = hasGrades
+          ? data.scores.reduce((sum, s) => sum + s, 0) / data.scores.length
+          : null;
 
         // 10-point scale: multiply by 10 for percentage
-        const percentage = avgScore * 10;
+        const percentage = avgScore !== null ? avgScore * 10 : null;
 
         return {
           category_id: subId,
           category_name: data.name,
-          percentage: Math.round(percentage * 10) / 10,
-          letter_grade:
-            percentage >= 80
+          percentage: percentage !== null ? Math.round(percentage * 10) / 10 : null,
+          letter_grade: percentage !== null
+            ? percentage >= 80
               ? 'A'
               : percentage >= 65
                 ? 'B'
@@ -144,20 +173,22 @@ export async function GET(request: Request) {
                   ? 'C'
                   : percentage >= 35
                     ? 'D'
-                    : 'F',
-          points_earned: Math.round(avgScore * 10) / 10,
+                    : 'F'
+            : '-',
+          points_earned: avgScore !== null ? Math.round(avgScore * 10) / 10 : null,
           total_points: 10,
         };
       });
 
-      // Overall: average of all subject percentages
+      // Overall: average of all graded subject percentages
+      const gradedCategories = category_grades.filter((c) => c.percentage !== null);
       const overall_percentage =
-        category_grades.length > 0
-          ? category_grades.reduce((sum, c) => sum + c.percentage, 0) / category_grades.length
-          : 0;
+        gradedCategories.length > 0
+          ? gradedCategories.reduce((sum, c) => sum + (c.percentage || 0), 0) / gradedCategories.length
+          : null;
 
-      const letter_grade =
-        overall_percentage >= 80
+      const letter_grade = overall_percentage !== null
+        ? overall_percentage >= 80
           ? 'A'
           : overall_percentage >= 65
             ? 'B'
@@ -165,13 +196,14 @@ export async function GET(request: Request) {
               ? 'C'
               : overall_percentage >= 35
                 ? 'D'
-                : 'F';
+                : 'F'
+        : '-';
 
       return {
         student_id: sid,
         student_name: student.full_name || student.email || '',
         student_number: student.student_code || '',
-        overall_percentage: Math.round(overall_percentage * 10) / 10,
+        overall_percentage: overall_percentage !== null ? Math.round(overall_percentage * 10) / 10 : null,
         letter_grade,
         category_grades,
       };

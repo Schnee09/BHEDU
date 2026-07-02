@@ -199,7 +199,7 @@ export default function AdminDashboard() {
           <div className="xl:col-span-4 space-y-12 animate-in fade-in slide-in-from-right-4 duration-700 delay-450">
             <RankingWidget limit={5} showAtRisk={isAdmin || isTeacher} />
 
-            <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-3xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm">
+            <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm">
               <div className="px-8 py-5 border-b border-stone-100 dark:border-white/5 bg-stone-50/50 dark:bg-white/5">
                 <h3 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">
                   Hoạt động hệ thống

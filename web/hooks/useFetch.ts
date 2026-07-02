@@ -45,6 +45,13 @@ export function useFetch<T = any>(
   const [loading, setLoading] = useState(immediate && !!url);
   const [error, setError] = useState<string | null>(null);
 
+  // "Latest ref" pattern: always call the freshest callback without
+  // including it in useCallback deps (prevents re-fetch on every render).
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  onSuccessRef.current = onSuccess;
+  onErrorRef.current = onError;
+
   // Prevent state updates after unmount.
   const mountedRef = useRef(true);
 
@@ -110,7 +117,7 @@ export function useFetch<T = any>(
         logger.debug('Cache hit for useFetch', { url });
         safeSetData(cachedData);
         safeSetLoading(false);
-        onSuccess?.(cachedData);
+        onSuccessRef.current?.(cachedData);
         return;
       }
     }
@@ -339,7 +346,7 @@ export function useFetch<T = any>(
       }
 
       safeSetData(fetchedData);
-      onSuccess?.(fetchedData);
+      onSuccessRef.current?.(fetchedData);
 
       const totalDuration = performance.now() - fetchStart;
       logger.info('Data fetched successfully', {
@@ -359,7 +366,7 @@ export function useFetch<T = any>(
 
       const errorMsg = err instanceof Error ? err.message : String(err);
       safeSetError(errorMsg);
-      onError?.(errorMsg);
+      onErrorRef.current?.(errorMsg);
 
       // Don't log rate limit errors - they're expected and handled gracefully
       if (!errorMsg.includes('Rate limit exceeded')) {
@@ -371,7 +378,7 @@ export function useFetch<T = any>(
         safeSetLoading(false);
       }
     }
-  }, [url, onSuccess, onError, cancelPrevious, safeSetData, safeSetError, safeSetLoading]);
+  }, [url, cancelPrevious, safeSetData, safeSetError, safeSetLoading]);
 
   useEffect(() => {
     if (immediate) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,7 @@ interface SidebarNavProps {
   setIsMobileMenuOpen?: (open: boolean) => void;
 }
 
-export function SidebarNav({
+export const SidebarNav = memo(function SidebarNav({
   navSections,
   role,
   isCollapsed,
@@ -212,4 +212,4 @@ export function SidebarNav({
       ))}
     </div>
   );
-}
+});

@@ -100,3 +100,37 @@
 .dark .shell-border-gold {
   border-color: rgba(245, 166, 35, 0.2);
 }
+
+/* Performance & Accessibility optimization for low-spec/prefers-reduced-motion devices */
+@media (prefers-reduced-motion: reduce) {
+  .glass {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .dark .glass {
+    background: rgba(15, 23, 42, 0.95) !important;
+  }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .dark .glass-card {
+    background: rgba(20, 20, 25, 0.9) !important;
+  }
+  .glass-premium {
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .dark .glass-premium {
+    background: rgba(26, 20, 16, 0.98) !important;
+  }
+  
+  /* Fallback for Tailwind backdrop-blur utilities */
+  [class*="backdrop-blur-"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}

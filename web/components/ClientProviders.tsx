@@ -2,9 +2,18 @@
 import React, { Suspense } from 'react'
 import { ToastProvider } from './ToastProvider'
 import ToastBoot from './ToastBoot'
-import CommandPalette from './CommandPalette'
-import KeyboardShortcutsHelp from './KeyboardShortcutsHelp'
+import dynamic from 'next/dynamic'
 import { I18nProvider } from '@/contexts/I18nContext'
+
+const CommandPalette = dynamic(() => import('./CommandPalette'), {
+  ssr: false,
+  loading: () => null,
+})
+
+const KeyboardShortcutsHelp = dynamic(() => import('./KeyboardShortcutsHelp'), {
+  ssr: false,
+  loading: () => null,
+})
 
 /**
  * Client-side providers wrapper
@@ -24,5 +33,3 @@ export default function ClientProviders({ children }: { children: React.ReactNod
     </I18nProvider>
   )
 }
-
-

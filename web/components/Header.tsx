@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from './ThemeToggle';
@@ -38,7 +38,7 @@ interface HeaderProps {
   isMenuOpen?: boolean;
 }
 
-export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProps) {
+export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProps) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const { accentColor } = useCustomization();
@@ -273,4 +273,4 @@ export default function Header({ profile, onMenuToggle, isMenuOpen }: HeaderProp
       </div>
     </header>
   );
-}
+});
