@@ -5,22 +5,20 @@
  * Handles bulk student creation with validation and error tracking
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { getDataClient } from "@/lib/auth/dataClient";
-import { adminAuth } from "@/lib/auth/adminAuth";
-import { logger } from "@/lib/logger";
-import type { StudentImportRow } from "@/lib/importService";
-import { userService } from "@/lib/services/userService";
+import { NextRequest, NextResponse } from 'next/server';
+import { getDataClient } from '@/lib/auth/dataClient';
+import { adminAuth } from '@/lib/auth/adminAuth';
+import { logger } from '@/lib/logger';
+import type { StudentImportRow } from '@/lib/importService';
+import { userService } from '@/lib/services/userService';
+import { formatVietnameseName } from '@/lib/utils/names';
 
 export async function POST(req: NextRequest) {
   try {
     // Admin authentication
     const authResult = await adminAuth(req);
     if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
     }
 
     const { supabase } = await getDataClient(req);
@@ -29,8 +27,8 @@ export async function POST(req: NextRequest) {
 
     if (!students || !Array.isArray(students) || students.length === 0) {
       return NextResponse.json(
-        { error: "Invalid request: students array is required" },
-        { status: 400 },
+        { error: 'Invalid request: students array is required' },
+        { status: 400 }
       );
     }
 
@@ -41,22 +39,19 @@ export async function POST(req: NextRequest) {
 
     // Create import log
     const { data: importLog, error: logError } = await supabase
-      .from("import_logs")
+      .from('import_logs')
       .insert({
         imported_by: authResult.userId,
-        import_type: "students",
+        import_type: 'students',
         total_rows: students.length,
-        status: "processing",
+        status: 'processing',
       })
       .select()
       .single();
 
     if (logError || !importLog) {
-      logger.error("Failed to create import log", logError);
-      return NextResponse.json(
-        { error: "Failed to create import log" },
-        { status: 500 },
-      );
+      logger.error('Failed to create import log', logError);
+      return NextResponse.json({ error: 'Failed to create import log' }, { status: 500 });
     }
 
     const results = {
@@ -79,27 +74,27 @@ export async function POST(req: NextRequest) {
           // 1. Check if student already exists by email if provided
           if (student.email) {
             const { data: existingUser } = await supabase
-              .from("profiles")
-              .select("id")
-              .eq("email", student.email.toLowerCase())
+              .from('profiles')
+              .select('id')
+              .eq('email', student.email.toLowerCase())
               .maybeSingle();
 
             if (existingUser) {
               results.errors.push({
                 row: rowNumber,
                 email: student.email,
-                error: "Student with this email already exists",
+                error: 'Student with this email already exists',
               });
               results.errorCount++;
 
-              await supabase.from("import_errors").insert({
+              await supabase.from('import_errors').insert({
                 import_log_id: importLog.id,
                 row_number: rowNumber,
-                field_name: "email",
-                error_type: "duplicate",
-                error_message: "Student with this email already exists",
+                field_name: 'email',
+                error_type: 'duplicate',
+                error_message: 'Student with this email already exists',
                 row_data: student,
-                severity: "error",
+                severity: 'error',
               });
               continue;
             }
@@ -110,80 +105,74 @@ export async function POST(req: NextRequest) {
             {
               first_name: student.firstName,
               last_name: student.lastName,
-              full_name: `${student.firstName} ${student.lastName}`.trim(),
+              full_name: formatVietnameseName(student.firstName, student.lastName) || undefined,
               email: student.email || undefined,
               password: generateTemporaryPassword(),
-              role: "student",
+              role: 'student',
               phone: student.phone,
               address: student.address,
               student_id: student.studentId,
               grade_level: student.gradeLevel,
-              status: (student.status as any) || "active",
+              status: (student.status as any) || 'active',
               is_managed: true,
             },
-            "admin",
-            "system_import",
+            'admin',
+            'system_import'
           );
 
           const studentId = createdUser.id;
 
           // 3. Create guardian record if guardian information provided
           if (student.guardianName) {
-            const { error: guardianError } = await supabase
-              .from("guardians")
-              .insert({
-                student_id: studentId,
-                name: student.guardianName,
-                relationship: student.guardianRelationship || null,
-                phone: student.guardianPhone || null,
-                email: student.guardianEmail || null,
-                address: student.guardianAddress || null,
-                is_primary_contact: student.isPrimaryContact || false,
-                is_emergency_contact: student.isEmergencyContact || false,
-              });
+            const { error: guardianError } = await supabase.from('guardians').insert({
+              student_id: studentId,
+              name: student.guardianName,
+              relationship: student.guardianRelationship || null,
+              phone: student.guardianPhone || null,
+              email: student.guardianEmail || null,
+              address: student.guardianAddress || null,
+              is_primary_contact: student.isPrimaryContact || false,
+              is_emergency_contact: student.isEmergencyContact || false,
+            });
 
             if (guardianError) {
               logger.warn(`Failed to create guardian for row ${rowNumber}`, {
                 error: guardianError.message,
                 code: guardianError.code,
               });
-              await supabase.from("import_errors").insert({
+              await supabase.from('import_errors').insert({
                 import_log_id: importLog.id,
                 row_number: rowNumber,
-                field_name: "guardian",
-                error_type: "database_error",
-                error_message: guardianError.message ||
-                  "Failed to create guardian",
+                field_name: 'guardian',
+                error_type: 'database_error',
+                error_message: guardianError.message || 'Failed to create guardian',
                 row_data: { guardianName: student.guardianName },
-                severity: "warning",
+                severity: 'warning',
               });
             }
           }
 
           results.success.push(studentId);
           results.successCount++;
-          logger.info(
-            `Successfully imported student: ${student.email || studentId}`,
-          );
+          logger.info(`Successfully imported student: ${student.email || studentId}`);
         } catch (error: any) {
           logger.error(`Import failed for row ${rowNumber}`, error);
 
           results.errors.push({
             row: rowNumber,
             email: student.email,
-            error: error.message || "Failed to create student",
+            error: error.message || 'Failed to create student',
           });
           results.errorCount++;
 
-          await supabase.from("import_errors").insert({
+          await supabase.from('import_errors').insert({
             import_log_id: importLog.id,
             row_number: rowNumber,
-            field_name: "user_creation",
-            error_type: "service_error",
-            error_message: error.message ||
-              "Failed to create student via service",
+            field_name: 'user_creation',
+            error_type: 'service_error',
+            error_message: error.message || 'Failed to create student via service',
             row_data: student,
-            severity: "error",
+            severity: 'error',
           });
         }
       }
@@ -191,25 +180,27 @@ export async function POST(req: NextRequest) {
 
     // Update import log with final results
     await supabase
-      .from("import_logs")
+      .from('import_logs')
       .update({
         processed_rows: students.length,
         success_count: results.successCount,
         error_count: results.errorCount,
-        status: results.errorCount === 0
-          ? "completed"
-          : (results.successCount > 0 ? "completed" : "failed"),
-        error_summary: results.errors.length > 0
-          ? JSON.stringify(results.errors.slice(0, 10))
-          : null,
+        status:
+          results.errorCount === 0
+            ? 'completed'
+            : results.successCount > 0
+              ? 'completed'
+              : 'failed',
+        error_summary:
+          results.errors.length > 0 ? JSON.stringify(results.errors.slice(0, 10)) : null,
       })
-      .eq("id", importLog.id);
+      .eq('id', importLog.id);
 
     // Log audit
-    await supabase.from("audit_logs").insert({
+    await supabase.from('audit_logs').insert({
       actor_id: authResult.userId,
-      action: "bulk_import_students",
-      resource_type: "student",
+      action: 'bulk_import_students',
+      resource_type: 'student',
       details: {
         import_log_id: importLog.id,
         total: students.length,
@@ -229,12 +220,12 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    logger.error("Bulk import error", error);
+    logger.error('Bulk import error', error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Internal server error",
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -243,9 +234,8 @@ export async function POST(req: NextRequest) {
  * Generate a temporary password for new students
  */
 function generateTemporaryPassword(): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let password = "";
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let password = '';
   for (let i = 0; i < 12; i++) {
     password += chars.charAt(Math.floor(Math.random() * chars.length));
   }

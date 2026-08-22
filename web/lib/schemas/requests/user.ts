@@ -56,6 +56,8 @@ export const createUserSchema = z.object({
   notes: notesSchema,
   student_id: z.string().max(50).optional(),
   student_code: z.string().max(50).optional(),
+  teacher_code: z.string().max(50).optional(),
+  teaching_subjects: z.array(z.string()).optional(),
   grade_level: z.string().max(50).optional(),
   school_name: z.string().max(100).optional(),
   occupation: z.string().max(100).optional(),

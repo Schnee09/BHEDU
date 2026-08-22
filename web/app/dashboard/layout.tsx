@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { ProfileProvider, useProfileContext } from "@/contexts/ProfileContext";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
-import LoadingScreen from "@/components/LoadingScreen";
-import AuthGuard from "@/components/AuthGuard";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { SkipToMainContent } from "@/lib/a11y";
-import { ReactNode, useState } from "react";
-import { useSwipe } from "@/hooks/useSwipe";
+import { ProfileProvider, useProfileContext } from '@/contexts/ProfileContext';
+import Sidebar from '@/components/Sidebar';
+import Header from '@/components/Header';
+import LoadingScreen from '@/components/LoadingScreen';
+import AuthGuard from '@/components/AuthGuard';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { SkipToMainContent } from '@/lib/a11y';
+import { ReactNode, useState } from 'react';
+import { useSwipe } from '@/hooks/useSwipe';
 
 function DashboardContent({ children }: { children: ReactNode }) {
   const { profile, loading } = useProfileContext();
@@ -49,7 +49,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
 
           <main
             id="main-content"
-            className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 lg:pt-6 pb-safe"
+            className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 pb-safe"
             role="main"
           >
             <div className="w-full mx-auto max-w-[1600px]">
@@ -67,11 +67,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
   );
 }
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <AuthGuard>
       <ProfileProvider>

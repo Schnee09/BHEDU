@@ -45,7 +45,15 @@ export default function TutoringManagementPage() {
   }, [state.slots, statusFilter, isManager, state.profile?.id]);
 
   const handleExportPayroll = () => {
-    const headers = ['Thứ / Ngày', 'Thời gian', 'Gia sư', 'Học sinh', 'Môn học', 'Trạng thái', 'Ghi chú'];
+    const headers = [
+      'Thứ / Ngày',
+      'Thời gian',
+      'Gia sư',
+      'Học sinh',
+      'Môn học',
+      'Trạng thái',
+      'Ghi chú',
+    ];
     const rows = tutoringSlots.map((s) => [
       `${DAYS[s.day_of_week]} (${state.weekDates[s.day_of_week]?.toLocaleDateString('vi-VN') || ''})`,
       `${s.start_time?.substring(0, 5)} - ${s.end_time?.substring(0, 5)}`,
@@ -55,10 +63,10 @@ export default function TutoringManagementPage() {
       s.status === 'completed'
         ? 'Hoàn thành'
         : s.status === 'cancelled'
-        ? 'Hủy ca'
-        : s.status === 'makeup'
-        ? 'Học bù'
-        : 'Đã xếp',
+          ? 'Hủy ca'
+          : s.status === 'makeup'
+            ? 'Học bù'
+            : 'Đã xếp',
       `"${(s.weekly_note || s.notes || '').replace(/"/g, '""')}"`,
     ]);
 
@@ -79,14 +87,6 @@ export default function TutoringManagementPage() {
     link.click();
     document.body.removeChild(link);
   };
-
-  if (state.profileLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingState message="Đang nạp dữ liệu phân hệ học kèm..." />
-      </div>
-    );
-  }
 
   return (
     <PageGuard permissions={['timetable.view']}>
@@ -123,7 +123,9 @@ export default function TutoringManagementPage() {
               <button
                 onClick={handleExportPayroll}
                 className="px-4 py-2.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-black text-xs transition-all border border-emerald-500/20 flex items-center gap-2"
-                title={isManager ? 'Xuất CSV Bảng chấm công Gia sư tuần này' : 'Xuất lịch dạy cá nhân'}
+                title={
+                  isManager ? 'Xuất CSV Bảng chấm công Gia sư tuần này' : 'Xuất lịch dạy cá nhân'
+                }
               >
                 <Download className="w-4 h-4 text-emerald-500" />{' '}
                 {isManager ? 'Bảng Chấm Công Gia Sư' : 'Xuất Lịch Dạy Của Tôi'}
@@ -145,7 +147,9 @@ export default function TutoringManagementPage() {
           {/* Tutoring Overview Analytics Stats Widget */}
           <TutoringStatsWidget
             slots={isManager ? state.slots : tutoringSlots}
-            tutors={isManager ? state.tutors : state.tutors.filter((t) => t.id === state.profile?.id)}
+            tutors={
+              isManager ? state.tutors : state.tutors.filter((t) => t.id === state.profile?.id)
+            }
           />
 
           {/* Control Toolbar */}
@@ -245,8 +249,13 @@ export default function TutoringManagementPage() {
                 isManager
                   ? state.tutors
                   : state.tutors.filter((t) => t.id === state.profile?.id).length > 0
-                  ? state.tutors.filter((t) => t.id === state.profile?.id)
-                  : [{ id: state.profile?.id || '', full_name: state.profile?.full_name || 'Gia sư' }]
+                    ? state.tutors.filter((t) => t.id === state.profile?.id)
+                    : [
+                        {
+                          id: state.profile?.id || '',
+                          full_name: state.profile?.full_name || 'Gia sư',
+                        },
+                      ]
               }
               weekDates={state.weekDates}
               onEditSlot={state.openEditModal}

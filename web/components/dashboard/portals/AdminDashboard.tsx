@@ -95,32 +95,32 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-x-hidden">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-6 md:py-10 space-y-8 md:space-y-12 relative z-10">
+      <div className="max-w-[1600px] mx-auto px-2.5 sm:px-4 lg:px-6 py-3 sm:py-5 space-y-4 sm:space-y-6 relative z-10">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-stone-200/50 dark:border-white/5">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-amber-500 rounded-full shadow-accent-glow" />
-              <h1 className="text-3xl md:text-5xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-200/50 dark:border-white/5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <div className="w-1.5 h-6 bg-amber-500 rounded-full shadow-accent-glow" />
+              <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
                 Dashboard <span className="text-amber-500">{getRoleTitle()}</span>
               </h1>
             </div>
-            <div className="flex items-center gap-2 pl-4">
-              <span className="text-xs font-black text-stone-500 dark:text-stone-400 uppercase tracking-[0.2em] break-words">
+            <div className="flex items-center gap-2 pl-3">
+              <span className="text-xs font-bold text-stone-500 dark:text-stone-400">
                 Chào mừng trở lại,{' '}
-                <span className="text-stone-900 dark:text-stone-100">
+                <span className="text-stone-900 dark:text-stone-100 font-black">
                   {profile?.full_name ?? 'User'}
                 </span>
               </span>
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-4 bg-white/40 dark:bg-stone-900/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-stone-200/50 dark:border-white/5 shadow-sm">
+          <div className="hidden sm:flex items-center gap-3 bg-white/40 dark:bg-stone-900/40 backdrop-blur-md px-4 py-2 rounded-xl border border-stone-200/50 dark:border-white/5 shadow-xs">
             <div className="flex flex-col items-end">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+              <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">
                 Hôm nay
               </span>
-              <span className="text-sm font-black text-stone-800 dark:text-white uppercase tracking-tight">
+              <span className="text-xs font-black text-stone-800 dark:text-white">
                 {new Date().toLocaleDateString('vi-VN', {
                   weekday: 'long',
                   day: 'numeric',
@@ -143,31 +143,31 @@ export default function AdminDashboard() {
         />
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 pb-32 md:pb-12">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6 pb-12">
           {/* Left Column - Analytics & Primary Stats */}
-          <div className="xl:col-span-8 space-y-12">
-            <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
-              <div className="flex items-center justify-between px-2">
-                <h2 className="text-xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight pl-3 border-l-4 border-amber-500">
+          <div className="xl:col-span-8 space-y-4 sm:space-y-6">
+            <section className="space-y-3 sm:space-y-4 animate-in fade-in duration-500">
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-base sm:text-lg font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight pl-2.5 border-l-4 border-amber-500">
                   Thống kê đào tạo
                 </h2>
                 <Link
                   href="/dashboard/grades/analytics"
-                  className="text-[10px] md:text-xs font-black text-amber-600 hover:text-amber-500 uppercase tracking-tighter flex items-center gap-1 transition-all group"
+                  className="text-xs font-bold text-amber-600 hover:text-amber-500 flex items-center gap-1 transition-all group"
                 >
-                  Xem báo cáo toàn diện{' '}
-                  <Icons.ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  Xem báo cáo{' '}
+                  <Icons.ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                 <AnalyticsWidget
                   title="Phân bố năng lực"
                   subtitle="Dựa trên điểm trung bình"
                   chartType="pie"
                   data={gradeDistribution}
                   dataKey="value"
-                  height={280}
+                  height={240}
                   loading={!gradeDistData}
                   colorPalette="gradeScale"
                   className="rounded-2xl"
@@ -179,14 +179,14 @@ export default function AdminDashboard() {
                   chartType="area"
                   data={weeklyAttendance}
                   dataKey="Có mặt"
-                  height={280}
+                  height={240}
                   loading={!weeklyAttData}
                   emptyMessage="Chưa có dữ liệu chuyên cần tuần này"
                   className="rounded-2xl"
                 />
               </div>
 
-              <div className="mt-8">
+              <div className="mt-4">
                 <ClassComparison classes={classData} loading={classComparisonLoading} />
               </div>
             </section>
@@ -196,12 +196,12 @@ export default function AdminDashboard() {
           </div>
 
           {/* Right Column - Activity & Secondary Info */}
-          <div className="xl:col-span-4 space-y-12 animate-in fade-in slide-in-from-right-4 duration-700 delay-450">
+          <div className="xl:col-span-4 space-y-4 sm:space-y-6 animate-in fade-in duration-500">
             <RankingWidget limit={5} showAtRisk={isAdmin || isTeacher} />
 
-            <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-3xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-sm">
-              <div className="px-8 py-5 border-b border-stone-100 dark:border-white/5 bg-stone-50/50 dark:bg-white/5">
-                <h3 className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">
+            <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-2xl border border-stone-200/50 dark:border-white/5 overflow-hidden shadow-xs">
+              <div className="px-4 py-2.5 border-b border-stone-100 dark:border-white/5 bg-stone-50/50 dark:bg-white/5">
+                <h3 className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">
                   Hoạt động hệ thống
                 </h3>
               </div>

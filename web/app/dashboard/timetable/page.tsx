@@ -20,14 +20,6 @@ export default function TimetablePage() {
     return state.slots.filter((s) => !s.student_id);
   }, [state.slots]);
 
-  if (state.profileLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingState message="Đang nạp thông tin thời khóa biểu..." />
-      </div>
-    );
-  }
-
   const isTeacherUser = state.role === 'teacher' || state.role === 'tutor';
 
   return (

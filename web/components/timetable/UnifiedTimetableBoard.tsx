@@ -25,6 +25,7 @@ import { TimetableSlot, ClassOption, TeacherOption } from '@/lib/timetable/types
 import { DAYS } from '@/lib/timetable/constants';
 import { getSubjectColor } from '@/lib/timetable/subject-colors';
 import { getDisplayName } from '@/lib/utils/names';
+import MobileTimetableList from './MobileTimetableList';
 
 export type TimetableUnifiedViewMode = 'week' | 'room' | 'agenda';
 
@@ -145,9 +146,14 @@ export default function UnifiedTimetableBoard({
 
     // 3. Fallback only if no schedules exist at all
     if (timeSet.size === 0) {
-      ['07:30 - 09:00', '09:15 - 10:45', '14:00 - 15:30', '15:45 - 17:15', '17:30 - 19:00', '19:15 - 20:45'].forEach(
-        (s) => timeSet.add(s)
-      );
+      [
+        '07:30 - 09:00',
+        '09:15 - 10:45',
+        '14:00 - 15:30',
+        '15:45 - 17:15',
+        '17:30 - 19:00',
+        '19:15 - 20:45',
+      ].forEach((s) => timeSet.add(s));
     }
 
     // Sort chronologically by start time
@@ -204,8 +210,20 @@ export default function UnifiedTimetableBoard({
 
     // 3. From standard defaults and actual slots in database
     const defaultBranchRooms: Record<string, string[]> = {
-      'Ngô Quyền': ['Ngô Quyền - P.01', 'Ngô Quyền - P.02', 'Ngô Quyền - P.03', 'Ngô Quyền - P.04', 'Ngô Quyền - P.05', 'Ngô Quyền - P.06'],
-      'Đặng Văn Bi': ['Đặng Văn Bi - P.01', 'Đặng Văn Bi - P.02', 'Đặng Văn Bi - P.03', 'Đặng Văn Bi - P.04'],
+      'Ngô Quyền': [
+        'Ngô Quyền - P.01',
+        'Ngô Quyền - P.02',
+        'Ngô Quyền - P.03',
+        'Ngô Quyền - P.04',
+        'Ngô Quyền - P.05',
+        'Ngô Quyền - P.06',
+      ],
+      'Đặng Văn Bi': [
+        'Đặng Văn Bi - P.01',
+        'Đặng Văn Bi - P.02',
+        'Đặng Văn Bi - P.03',
+        'Đặng Văn Bi - P.04',
+      ],
     };
 
     const slotRooms = slots
@@ -249,7 +267,11 @@ export default function UnifiedTimetableBoard({
         return false;
       }
       // Teacher filter
-      if (selectedTeacher && slot.teacher_id !== selectedTeacher && slot.teacher?.id !== selectedTeacher) {
+      if (
+        selectedTeacher &&
+        slot.teacher_id !== selectedTeacher &&
+        slot.teacher?.id !== selectedTeacher
+      ) {
         return false;
       }
       // Search query
@@ -368,7 +390,11 @@ export default function UnifiedTimetableBoard({
       return { status: 'upcoming', label: 'Sắp tới', color: 'bg-amber-500 text-white shadow-sm' };
     }
     if (currentMinutes > endMinutes) {
-      return { status: 'finished', label: 'Đã xong', color: 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300' };
+      return {
+        status: 'finished',
+        label: 'Đã xong',
+        color: 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300',
+      };
     }
     return null;
   };
@@ -383,7 +409,7 @@ export default function UnifiedTimetableBoard({
       const dayName = DAYS[slot.day_of_week] || `Thứ ${slot.day_of_week + 2}`;
       const timeRange = `${slot.start_time?.substring(0, 5) || ''} - ${slot.end_time?.substring(0, 5) || ''}`;
       return {
-        'Thứ': dayName,
+        Thứ: dayName,
         'Khung Giờ': timeRange,
         'Lớp Học': slot.class?.name || 'Chưa gán',
         'Môn Học': slot.subject?.name || 'Chưa gán',
@@ -401,7 +427,9 @@ export default function UnifiedTimetableBoard({
     XLSX.writeFile(workbook, `TKB_BHEDU_${dateStr}.xlsx`);
   };
 
-  const hasActiveFilters = Boolean(selectedCampus || selectedClass || selectedTeacher || searchQuery);
+  const hasActiveFilters = Boolean(
+    selectedCampus || selectedClass || selectedTeacher || searchQuery
+  );
 
   const handleClearFilters = () => {
     onSelectCampus('');
@@ -525,7 +553,11 @@ export default function UnifiedTimetableBoard({
             </button>
             <span className="font-mono text-[11px] font-black text-stone-800 dark:text-white px-1.5 whitespace-nowrap">
               {weekDates[0]?.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} –{' '}
-              {weekDates[6]?.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              {weekDates[6]?.toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })}
             </span>
             <button
               type="button"
@@ -676,286 +708,73 @@ export default function UnifiedTimetableBoard({
         )}
       </div>
 
-      {/* ── MAIN CONTENT AREA (3 VIEW MODES) ── */}
+      {/* ── MOBILE ADAPTIVE VIEW (< lg) ── */}
+      <div className="lg:hidden animate-fade-in">
+        <MobileTimetableList
+          slots={filteredSlots}
+          days={DAYS}
+          weekDates={weekDates}
+          currentDay={selectedDayForRoomView}
+          onDayChange={setSelectedDayForRoomView}
+          onEditSlot={onEditSlot}
+          onDeleteSlot={onDeleteSlot}
+          onCreateSlot={onCreateSlot}
+          viewMode="class"
+          sessions={effectiveSessions}
+          isLoading={isLoading}
+        />
+      </div>
 
-      {/* 1. VIEW MODE: LƯỚI TUẦN CHUẨN 7 NGÀY (WEEKLY MATRIX) */}
-      {viewMode === 'week' && (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-sm overflow-hidden animate-fade-in">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse min-w-[960px]">
-              <thead>
-                <tr className="border-b border-stone-200 dark:border-white/10 bg-stone-50/90 dark:bg-stone-800/80">
-                  <th className="w-28 p-3 text-left text-[10.5px] font-black uppercase tracking-wider text-stone-400 border-r border-stone-200 dark:border-white/10 sticky left-0 bg-stone-50 dark:bg-stone-800 z-20">
-                    Ca học
-                  </th>
-                  {DAYS.map((dayName, dayIndex) => {
-                    const date = weekDates[dayIndex];
-                    const isToday = dayIndex === todayIndex;
-                    const count = daySlotCounts[dayIndex] || 0;
-
-                    return (
-                      <th
-                        key={dayIndex}
-                        className={`p-2.5 text-center border-r border-stone-200 dark:border-white/10 last:border-r-0 transition-colors ${
-                          isToday ? 'bg-amber-500/10' : ''
-                        }`}
-                      >
-                        <div className="flex flex-col items-center gap-0.5">
-                          <span
-                            className={`text-xs font-black uppercase tracking-wider ${
-                              isToday ? 'text-amber-600 dark:text-amber-400' : 'text-stone-700 dark:text-stone-200'
-                            }`}
-                          >
-                            {dayName}
-                          </span>
-                          <span className="text-[10px] font-mono text-stone-400">
-                            {date?.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                          </span>
-                          {isToday ? (
-                            <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[8px] font-black uppercase">
-                              Hôm nay
-                            </span>
-                          ) : count > 0 ? (
-                            <span className="text-[8.5px] font-bold text-stone-400">
-                              {count} tiết
-                            </span>
-                          ) : null}
-                        </div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-200 dark:divide-white/10">
-                {effectiveSessions.map((session) => (
-                  <tr key={session.id} className="hover:bg-stone-50/30 dark:hover:bg-stone-800/20 transition-colors">
-                    {/* Sticky Session Column */}
-                    <td className="p-2.5 border-r border-stone-200 dark:border-white/10 align-top bg-stone-50/95 dark:bg-stone-800/95 backdrop-blur-sm sticky left-0 z-10 shadow-[1px_0_0_rgba(0,0,0,0.06)]">
-                      <div className="space-y-0.5">
-                        <span className="text-[11px] font-black text-stone-800 dark:text-white block uppercase">
-                          {session.label}
-                        </span>
-                        <span className="text-[9.5px] font-bold text-stone-500 dark:text-stone-400 flex items-center gap-1 font-mono">
-                          <Clock className="w-2.5 h-2.5 text-stone-400 shrink-0" />
-                          {session.start} - {session.end}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* 7 Days Cells */}
-                    {DAYS.map((_, dayIndex) => {
-                      const cellSlots = filteredSlots.filter((slot) => {
-                        if (slot.day_of_week !== dayIndex) return false;
-                        const slotStart = slot.start_time?.substring(0, 5) || '';
-                        const slotEnd = slot.end_time?.substring(0, 5) || '';
-                        return slotStart < session.end && slotEnd > session.start;
-                      });
-
-                      const isToday = dayIndex === todayIndex;
-
-                      return (
-                        <td
-                          key={dayIndex}
-                          className={`p-1.5 border-r border-stone-200 dark:border-white/10 last:border-r-0 align-top min-h-[85px] relative group transition-colors ${
-                            isToday ? 'bg-amber-500/[0.015]' : ''
-                          }`}
-                        >
-                          <div className="space-y-1.5 min-h-[75px] h-full flex flex-col">
-                            {cellSlots.length === 0 ? (
-                              canEdit ? (
-                                <button
-                                  type="button"
-                                  onClick={() => onCreateSlot(dayIndex, session, '')}
-                                  className="w-full h-full min-h-[70px] rounded-xl border border-dashed border-stone-200 dark:border-white/10 hover:border-amber-400 hover:bg-amber-500/5 text-stone-300 dark:text-stone-600 hover:text-amber-600 transition-all flex flex-col items-center justify-center gap-0.5 text-[10px] font-black group/btn cursor-pointer"
-                                >
-                                  <Plus className="w-3 h-3 group-hover/btn:scale-125 transition-transform text-stone-400 group-hover/btn:text-amber-500" />
-                                  <span>+ Trống</span>
-                                </button>
-                              ) : (
-                                <div className="w-full h-full min-h-[70px] flex items-center justify-center text-[10px] text-stone-300 dark:text-stone-700 font-bold">
-                                  --
-                                </div>
-                              )
-                            ) : (
-                              <>
-                                {cellSlots.map((slot) => {
-                                  const style = getSubjectColor(slot.subject?.name || slot.subject?.code);
-                                  const hasConflict = conflictSlotIds.has(slot.id);
-                                  const liveStatus = getLiveSlotStatus(dayIndex, slot.start_time, slot.end_time);
-
-                                  return (
-                                    <div
-                                      key={slot.id}
-                                      onClick={() => {
-                                        if (onSelectSlotForAction) {
-                                          onSelectSlotForAction(slot);
-                                        } else {
-                                          onEditSlot(slot);
-                                        }
-                                      }}
-                                      className={`p-2 rounded-xl border transition-all cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 relative ${
-                                        hasConflict
-                                          ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
-                                          : `${style.bg} ${style.border}`
-                                      }`}
-                                    >
-                                      {/* Subject & Conflict & Live Badge */}
-                                      <div className="flex items-center justify-between gap-1 mb-1 flex-wrap">
-                                        <span
-                                          className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded-md border ${
-                                            hasConflict
-                                              ? 'bg-rose-500/10 text-rose-600 border-rose-500/20'
-                                              : style.badge
-                                          }`}
-                                        >
-                                          {slot.subject?.name || 'Môn học'}
-                                        </span>
-
-                                        <div className="flex items-center gap-1">
-                                          {liveStatus && (
-                                            <span
-                                              className={`px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5 ${liveStatus.color}`}
-                                            >
-                                              {liveStatus.label}
-                                            </span>
-                                          )}
-                                          {hasConflict && (
-                                            <span
-                                              className="text-[8.5px] font-black bg-rose-500 text-white px-1 py-0.2 rounded-md flex items-center gap-0.5 animate-pulse"
-                                              title="Cảnh báo trùng lịch!"
-                                            >
-                                              <AlertTriangle className="w-2.5 h-2.5" /> Trùng
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {/* Class Name */}
-                                      <div className="text-xs font-black text-stone-900 dark:text-white uppercase tracking-tight line-clamp-1">
-                                        Lớp {slot.class?.name || 'Chưa gán'}
-                                      </div>
-
-                                      {/* Teacher & Room Meta */}
-                                      <div className="mt-1 space-y-0.5 text-[10px] font-bold text-stone-600 dark:text-stone-300">
-                                        <div className="flex items-center gap-1 line-clamp-1">
-                                          <Users className="w-2.5 h-2.5 text-stone-400 shrink-0" />
-                                          <span className="truncate">{getDisplayName(slot.teacher) || 'Chưa phân công GV'}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between gap-1">
-                                          <span className="flex items-center gap-0.5 font-mono text-[9px] text-stone-500 dark:text-stone-400">
-                                            <Clock className="w-2.5 h-2.5 text-stone-400 shrink-0" />
-                                            {slot.start_time?.substring(0, 5)} - {slot.end_time?.substring(0, 5)}
-                                          </span>
-                                          {slot.room && (
-                                            <span className="px-1 py-0.2 rounded bg-stone-200/80 dark:bg-white/10 text-stone-800 dark:text-stone-200 text-[9px] font-black font-mono">
-                                              {slot.room.replace(/^.+ - /, '')}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-
-                                {/* Add Slot Button on Existing Cell (if canEdit) */}
-                                {canEdit && (
-                                  <button
-                                    type="button"
-                                    onClick={() => onCreateSlot(dayIndex, session, '')}
-                                    className="w-full py-1 rounded-lg border border-dashed border-stone-200 dark:border-white/10 text-stone-400 hover:text-amber-600 hover:border-amber-400 hover:bg-amber-500/5 transition-all text-[10px] font-black opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 cursor-pointer"
-                                  >
-                                    <Plus className="w-3 h-3" /> Thêm tiết
-                                  </button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* 2. VIEW MODE: THEO PHÒNG HỌC (ROOM MATRIX) */}
-      {viewMode === 'room' && (
-        <div className="space-y-3 animate-fade-in">
-          {/* Day Selector Pill Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {DAYS.map((dayName, dayIndex) => {
-              const date = weekDates[dayIndex];
-              const isSelected = selectedDayForRoomView === dayIndex;
-              const isToday = dayIndex === todayIndex;
-              const count = daySlotCounts[dayIndex] || 0;
-
-              return (
-                <button
-                  key={dayIndex}
-                  type="button"
-                  onClick={() => setSelectedDayForRoomView(dayIndex)}
-                  className={`px-3.5 py-2 rounded-2xl font-black text-xs transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-                    isSelected
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20 scale-105'
-                      : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-200/80 dark:border-white/5 hover:border-blue-400'
-                  }`}
-                >
-                  <span>{dayName}</span>
-                  <span className={`text-[10px] ${isSelected ? 'text-blue-200' : 'text-stone-400'}`}>
-                    {date?.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                  </span>
-                  {count > 0 ? (
-                    <span
-                      className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
-                        isSelected
-                          ? 'bg-white/20 text-white'
-                          : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                      }`}
-                    >
-                      {count} tiết
-                    </span>
-                  ) : (
-                    <span className={`text-[9px] font-normal ${isSelected ? 'text-blue-200' : 'text-stone-400'}`}>
-                      (0)
-                    </span>
-                  )}
-                  {isToday && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Room Matrix Table */}
-          <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+      {/* ── DESKTOP VIEWS (>= lg) ── */}
+      <div className="hidden lg:block space-y-4">
+        {/* 1. VIEW MODE: LƯỚI TUẦN CHUẨN 7 NGÀY (WEEKLY MATRIX) */}
+        {viewMode === 'week' && (
+          <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-sm overflow-hidden animate-fade-in">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse min-w-[900px]">
+              <table className="w-full border-collapse min-w-[960px]">
                 <thead>
                   <tr className="border-b border-stone-200 dark:border-white/10 bg-stone-50/90 dark:bg-stone-800/80">
                     <th className="w-28 p-3 text-left text-[10.5px] font-black uppercase tracking-wider text-stone-400 border-r border-stone-200 dark:border-white/10 sticky left-0 bg-stone-50 dark:bg-stone-800 z-20">
                       Ca học
                     </th>
-                    {effectiveCampusRooms.map((room) => {
-                      const hasBranch = room.includes(' - ');
-                      const parts = room.split(' - ');
-                      const branchName = hasBranch ? (parts[0] || '') : '';
-                      const roomName = hasBranch ? (parts[1] || room) : room;
+                    {DAYS.map((dayName, dayIndex) => {
+                      const date = weekDates[dayIndex];
+                      const isToday = dayIndex === todayIndex;
+                      const count = daySlotCounts[dayIndex] || 0;
 
                       return (
                         <th
-                          key={room}
-                          className="p-3 text-center border-r border-stone-200 dark:border-white/10 last:border-r-0 font-black text-xs text-stone-800 dark:text-white uppercase tracking-wider min-w-[130px]"
+                          key={dayIndex}
+                          className={`p-2.5 text-center border-r border-stone-200 dark:border-white/10 last:border-r-0 transition-colors ${
+                            isToday ? 'bg-amber-500/10' : ''
+                          }`}
                         >
-                          <div className="text-xs font-black">Phòng {roomName}</div>
-                          {branchName && !selectedCampus && (
-                            <div className="text-[9px] font-bold text-stone-400 normal-case tracking-normal mt-0.5">
-                              {branchName}
-                            </div>
-                          )}
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span
+                              className={`text-xs font-black uppercase tracking-wider ${
+                                isToday
+                                  ? 'text-amber-600 dark:text-amber-400'
+                                  : 'text-stone-700 dark:text-stone-200'
+                              }`}
+                            >
+                              {dayName}
+                            </span>
+                            <span className="text-[10px] font-mono text-stone-400">
+                              {date?.toLocaleDateString('vi-VN', {
+                                day: '2-digit',
+                                month: '2-digit',
+                              })}
+                            </span>
+                            {isToday ? (
+                              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[8px] font-black uppercase">
+                                Hôm nay
+                              </span>
+                            ) : count > 0 ? (
+                              <span className="text-[8.5px] font-bold text-stone-400">
+                                {count} tiết
+                              </span>
+                            ) : null}
+                          </div>
                         </th>
                       );
                     })}
@@ -963,116 +782,160 @@ export default function UnifiedTimetableBoard({
                 </thead>
                 <tbody className="divide-y divide-stone-200 dark:divide-white/10">
                   {effectiveSessions.map((session) => (
-                    <tr key={session.id} className="hover:bg-stone-50/30 dark:hover:bg-stone-800/20 transition-colors">
+                    <tr
+                      key={session.id}
+                      className="hover:bg-stone-50/30 dark:hover:bg-stone-800/20 transition-colors"
+                    >
+                      {/* Sticky Session Column */}
                       <td className="p-2.5 border-r border-stone-200 dark:border-white/10 align-top bg-stone-50/95 dark:bg-stone-800/95 backdrop-blur-sm sticky left-0 z-10 shadow-[1px_0_0_rgba(0,0,0,0.06)]">
-                        <span className="text-[11px] font-black text-stone-800 dark:text-white block uppercase">
-                          {session.label}
-                        </span>
-                        <span className="text-[9.5px] font-bold text-stone-500 dark:text-stone-400 block font-mono">
-                          {session.start} - {session.end}
-                        </span>
+                        <div className="space-y-0.5">
+                          <span className="text-[11px] font-black text-stone-800 dark:text-white block uppercase">
+                            {session.label}
+                          </span>
+                          <span className="text-[9.5px] font-bold text-stone-500 dark:text-stone-400 flex items-center gap-1 font-mono">
+                            <Clock className="w-2.5 h-2.5 text-stone-400 shrink-0" />
+                            {session.start} - {session.end}
+                          </span>
+                        </div>
                       </td>
 
-                      {effectiveCampusRooms.map((room) => {
-                        const hasBranch = room.includes(' - ');
-                        const targetParts = room.split(' - ');
-                        const targetBranch = hasBranch ? (targetParts[0] || '').trim() : selectedCampus;
-                        const targetRoomClean = hasBranch ? (targetParts[1] || room).trim() : room.trim();
-
-                        const slot = filteredSlots.find((s) => {
-                          if (s.day_of_week !== selectedDayForRoomView) return false;
-                          const slotRoom = (s.room || '').trim();
-                          if (!slotRoom) return false;
-
-                          const slotHasBranch = slotRoom.includes(' - ');
-                          const slotParts = slotRoom.split(' - ');
-                          const slotBranch = slotHasBranch ? (slotParts[0] || '').trim() : '';
-                          const slotRoomClean = slotHasBranch ? (slotParts[1] || slotRoom).trim() : slotRoom;
-
-                          // Check branch match if specified
-                          if (targetBranch && slotBranch) {
-                            if (targetBranch.toLowerCase() !== slotBranch.toLowerCase()) return false;
-                          }
-
-                          // Check clean room number match
-                          if (
-                            slotRoomClean.toLowerCase() !== targetRoomClean.toLowerCase() &&
-                            slotRoom.toLowerCase() !== room.toLowerCase()
-                          ) {
-                            return false;
-                          }
-
-                          const slotStart = s.start_time?.substring(0, 5) || '';
-                          const slotEnd = s.end_time?.substring(0, 5) || '';
+                      {/* 7 Days Cells */}
+                      {DAYS.map((_, dayIndex) => {
+                        const cellSlots = filteredSlots.filter((slot) => {
+                          if (slot.day_of_week !== dayIndex) return false;
+                          const slotStart = slot.start_time?.substring(0, 5) || '';
+                          const slotEnd = slot.end_time?.substring(0, 5) || '';
                           return slotStart < session.end && slotEnd > session.start;
                         });
 
-                        const isToday = selectedDayForRoomView === todayIndex;
-                        const liveStatus = slot
-                          ? getLiveSlotStatus(selectedDayForRoomView, slot.start_time, slot.end_time)
-                          : null;
-                        const style = slot
-                          ? getSubjectColor(slot.subject?.name || slot.subject?.code)
-                          : null;
+                        const isToday = dayIndex === todayIndex;
 
                         return (
                           <td
-                            key={room}
-                            className={`p-1.5 border-r border-stone-200 dark:border-white/10 last:border-r-0 align-top min-h-[85px] ${
+                            key={dayIndex}
+                            className={`p-1.5 border-r border-stone-200 dark:border-white/10 last:border-r-0 align-top min-h-[85px] relative group transition-colors ${
                               isToday ? 'bg-amber-500/[0.015]' : ''
                             }`}
                           >
-                            {slot && style ? (
-                              <div
-                                onClick={() => {
-                                  if (onSelectSlotForAction) {
-                                    onSelectSlotForAction(slot);
-                                  } else {
-                                    onEditSlot(slot);
-                                  }
-                                }}
-                                className={`p-2 rounded-xl border transition-all cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 relative ${style.bg} ${style.border}`}
-                              >
-                                <div className="flex items-center justify-between gap-1 mb-1">
-                                  <span
-                                    className={`text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded border ${style.badge}`}
+                            <div className="space-y-1.5 min-h-[75px] h-full flex flex-col">
+                              {cellSlots.length === 0 ? (
+                                canEdit ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => onCreateSlot(dayIndex, session, '')}
+                                    className="w-full h-full min-h-[70px] rounded-xl border border-dashed border-stone-200 dark:border-white/10 hover:border-amber-400 hover:bg-amber-500/5 text-stone-300 dark:text-stone-600 hover:text-amber-600 transition-all flex flex-col items-center justify-center gap-0.5 text-[10px] font-black group/btn cursor-pointer"
                                   >
-                                    {slot.subject?.name || 'Môn học'}
-                                  </span>
-                                  {liveStatus && (
-                                    <span
-                                      className={`px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5 ${liveStatus.color}`}
+                                    <Plus className="w-3 h-3 group-hover/btn:scale-125 transition-transform text-stone-400 group-hover/btn:text-amber-500" />
+                                    <span>+ Trống</span>
+                                  </button>
+                                ) : (
+                                  <div className="w-full h-full min-h-[70px] flex items-center justify-center text-[10px] text-stone-300 dark:text-stone-700 font-bold">
+                                    --
+                                  </div>
+                                )
+                              ) : (
+                                <>
+                                  {cellSlots.map((slot) => {
+                                    const style = getSubjectColor(
+                                      slot.subject?.name || slot.subject?.code
+                                    );
+                                    const hasConflict = conflictSlotIds.has(slot.id);
+                                    const liveStatus = getLiveSlotStatus(
+                                      dayIndex,
+                                      slot.start_time,
+                                      slot.end_time
+                                    );
+
+                                    return (
+                                      <div
+                                        key={slot.id}
+                                        onClick={() => {
+                                          if (onSelectSlotForAction) {
+                                            onSelectSlotForAction(slot);
+                                          } else {
+                                            onEditSlot(slot);
+                                          }
+                                        }}
+                                        className={`p-2 rounded-xl border transition-all cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 relative ${
+                                          hasConflict
+                                            ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
+                                            : `${style.bg} ${style.border}`
+                                        }`}
+                                      >
+                                        {/* Subject & Conflict & Live Badge */}
+                                        <div className="flex items-center justify-between gap-1 mb-1 flex-wrap">
+                                          <span
+                                            className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded-md border ${
+                                              hasConflict
+                                                ? 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                                                : style.badge
+                                            }`}
+                                          >
+                                            {slot.subject?.name || 'Môn học'}
+                                          </span>
+
+                                          <div className="flex items-center gap-1">
+                                            {liveStatus && (
+                                              <span
+                                                className={`px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5 ${liveStatus.color}`}
+                                              >
+                                                {liveStatus.label}
+                                              </span>
+                                            )}
+                                            {hasConflict && (
+                                              <span
+                                                className="text-[8.5px] font-black bg-rose-500 text-white px-1 py-0.2 rounded-md flex items-center gap-0.5 animate-pulse"
+                                                title="Cảnh báo trùng lịch!"
+                                              >
+                                                <AlertTriangle className="w-2.5 h-2.5" /> Trùng
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Class Name */}
+                                        <div className="text-xs font-black text-stone-900 dark:text-white uppercase tracking-tight line-clamp-1">
+                                          Lớp {slot.class?.name || 'Chưa gán'}
+                                        </div>
+
+                                        {/* Teacher & Room Meta */}
+                                        <div className="mt-1 space-y-0.5 text-[10px] font-bold text-stone-600 dark:text-stone-300">
+                                          <div className="flex items-center gap-1 line-clamp-1">
+                                            <Users className="w-2.5 h-2.5 text-stone-400 shrink-0" />
+                                            <span className="truncate">
+                                              {getDisplayName(slot.teacher) || 'Chưa phân công GV'}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center justify-between gap-1">
+                                            <span className="flex items-center gap-0.5 font-mono text-[9px] text-stone-500 dark:text-stone-400">
+                                              <Clock className="w-2.5 h-2.5 text-stone-400 shrink-0" />
+                                              {slot.start_time?.substring(0, 5)} -{' '}
+                                              {slot.end_time?.substring(0, 5)}
+                                            </span>
+                                            {slot.room && (
+                                              <span className="px-1 py-0.2 rounded bg-stone-200/80 dark:bg-white/10 text-stone-800 dark:text-stone-200 text-[9px] font-black font-mono">
+                                                {slot.room.replace(/^.+ - /, '')}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+
+                                  {/* Add Slot Button on Existing Cell (if canEdit) */}
+                                  {canEdit && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onCreateSlot(dayIndex, session, '')}
+                                      className="w-full py-1 rounded-lg border border-dashed border-stone-200 dark:border-white/10 text-stone-400 hover:text-amber-600 hover:border-amber-400 hover:bg-amber-500/5 transition-all text-[10px] font-black opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 cursor-pointer"
                                     >
-                                      {liveStatus.label}
-                                    </span>
+                                      <Plus className="w-3 h-3" /> Thêm tiết
+                                    </button>
                                   )}
-                                </div>
-                                <div className="text-xs font-black text-stone-900 dark:text-white uppercase line-clamp-1">
-                                  Lớp {slot.class?.name || 'Chưa gán'}
-                                </div>
-                                <div className="mt-1 space-y-0.5 text-[10px] font-bold text-stone-600 dark:text-stone-300">
-                                  <div className="flex items-center gap-1 line-clamp-1">
-                                    <Users className="w-2.5 h-2.5 text-stone-400 shrink-0" />
-                                    <span className="truncate">{getDisplayName(slot.teacher) || 'Chưa phân công GV'}</span>
-                                  </div>
-                                  <div className="font-mono text-[9px] text-stone-400 flex items-center gap-1">
-                                    <Clock className="w-2.5 h-2.5 text-stone-400 shrink-0" />
-                                    {slot.start_time?.substring(0, 5)} - {slot.end_time?.substring(0, 5)}
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              canEdit && (
-                                <button
-                                  type="button"
-                                  onClick={() => onCreateSlot(selectedDayForRoomView, session, room)}
-                                  className="w-full h-full min-h-[70px] rounded-xl border border-dashed border-stone-200 dark:border-white/10 hover:border-amber-400 hover:bg-amber-500/5 text-stone-300 dark:text-stone-600 hover:text-amber-600 transition-all flex flex-col items-center justify-center gap-0.5 text-[10px] font-black group/btn cursor-pointer"
-                                >
-                                  <Plus className="w-3 h-3 group-hover/btn:scale-125 transition-transform text-stone-400 group-hover/btn:text-amber-500" />
-                                  <span>+ Trống</span>
-                                </button>
-                              )
-                            )}
+                                </>
+                              )}
+                            </div>
                           </td>
                         );
                       })}
@@ -1082,138 +945,372 @@ export default function UnifiedTimetableBoard({
               </table>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 3. VIEW MODE: DANH SÁCH THEO NGÀY (DAILY AGENDA LIST) */}
-      {viewMode === 'agenda' && (
-        <div className="space-y-4 animate-fade-in">
-          {DAYS.map((dayName, dayIndex) => {
-            const date = weekDates[dayIndex];
-            const isToday = dayIndex === todayIndex;
-            const daySlots = filteredSlots
-              .filter((s) => s.day_of_week === dayIndex)
-              .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+        {/* 2. VIEW MODE: THEO PHÒNG HỌC (ROOM MATRIX) */}
+        {viewMode === 'room' && (
+          <div className="space-y-3 animate-fade-in">
+            {/* Day Selector Pill Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {DAYS.map((dayName, dayIndex) => {
+                const date = weekDates[dayIndex];
+                const isSelected = selectedDayForRoomView === dayIndex;
+                const isToday = dayIndex === todayIndex;
+                const count = daySlotCounts[dayIndex] || 0;
 
-            return (
-              <div
-                key={dayIndex}
-                className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-sm p-4 sm:p-5 space-y-3"
-              >
-                {/* Day Header */}
-                <div className="flex items-center justify-between pb-2.5 border-b border-stone-100 dark:border-white/5">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs ${
-                        isToday ? 'bg-amber-500 text-white shadow-sm' : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300'
-                      }`}
+                return (
+                  <button
+                    key={dayIndex}
+                    type="button"
+                    onClick={() => setSelectedDayForRoomView(dayIndex)}
+                    className={`px-3.5 py-2 rounded-2xl font-black text-xs transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
+                      isSelected
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20 scale-105'
+                        : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-200/80 dark:border-white/5 hover:border-blue-400'
+                    }`}
+                  >
+                    <span>{dayName}</span>
+                    <span
+                      className={`text-[10px] ${isSelected ? 'text-blue-200' : 'text-stone-400'}`}
                     >
-                      {dayIndex === 6 ? 'CN' : `T${dayIndex + 2}`}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                          {dayName}
-                        </span>
-                        {isToday && (
-                          <span className="px-2 py-0.2 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[9px] font-black uppercase">
-                            Hôm nay
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] font-medium text-stone-400">
-                        {date?.toLocaleDateString('vi-VN', {
-                          day: '2-digit',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
+                      {date?.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
+                    </span>
+                    {count > 0 ? (
+                      <span
+                        className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
+                          isSelected
+                            ? 'bg-white/20 text-white'
+                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                        }`}
+                      >
+                        {count} tiết
                       </span>
-                    </div>
-                  </div>
+                    ) : (
+                      <span
+                        className={`text-[9px] font-normal ${isSelected ? 'text-blue-200' : 'text-stone-400'}`}
+                      >
+                        (0)
+                      </span>
+                    )}
+                    {isToday && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-                  <span className="text-xs font-black text-stone-500 dark:text-stone-400 px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-xl">
-                    {daySlots.length} tiết học
-                  </span>
-                </div>
+            {/* Room Matrix Table */}
+            <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse min-w-[900px]">
+                  <thead>
+                    <tr className="border-b border-stone-200 dark:border-white/10 bg-stone-50/90 dark:bg-stone-800/80">
+                      <th className="w-28 p-3 text-left text-[10.5px] font-black uppercase tracking-wider text-stone-400 border-r border-stone-200 dark:border-white/10 sticky left-0 bg-stone-50 dark:bg-stone-800 z-20">
+                        Ca học
+                      </th>
+                      {effectiveCampusRooms.map((room) => {
+                        const hasBranch = room.includes(' - ');
+                        const parts = room.split(' - ');
+                        const branchName = hasBranch ? parts[0] || '' : '';
+                        const roomName = hasBranch ? parts[1] || room : room;
 
-                {/* Day Slot Items */}
-                {daySlots.length === 0 ? (
-                  <div className="py-6 text-center text-xs font-bold text-stone-400">
-                    Không có tiết học nào trong ngày này.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {daySlots.map((slot) => {
-                      const style = getSubjectColor(slot.subject?.name || slot.subject?.code);
-                      const hasConflict = conflictSlotIds.has(slot.id);
-                      const liveStatus = getLiveSlotStatus(dayIndex, slot.start_time, slot.end_time);
+                        return (
+                          <th
+                            key={room}
+                            className="p-3 text-center border-r border-stone-200 dark:border-white/10 last:border-r-0 font-black text-xs text-stone-800 dark:text-white uppercase tracking-wider min-w-[130px]"
+                          >
+                            <div className="text-xs font-black">Phòng {roomName}</div>
+                            {branchName && !selectedCampus && (
+                              <div className="text-[9px] font-bold text-stone-400 normal-case tracking-normal mt-0.5">
+                                {branchName}
+                              </div>
+                            )}
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-200 dark:divide-white/10">
+                    {effectiveSessions.map((session) => (
+                      <tr
+                        key={session.id}
+                        className="hover:bg-stone-50/30 dark:hover:bg-stone-800/20 transition-colors"
+                      >
+                        <td className="p-2.5 border-r border-stone-200 dark:border-white/10 align-top bg-stone-50/95 dark:bg-stone-800/95 backdrop-blur-sm sticky left-0 z-10 shadow-[1px_0_0_rgba(0,0,0,0.06)]">
+                          <span className="text-[11px] font-black text-stone-800 dark:text-white block uppercase">
+                            {session.label}
+                          </span>
+                          <span className="text-[9.5px] font-bold text-stone-500 dark:text-stone-400 block font-mono">
+                            {session.start} - {session.end}
+                          </span>
+                        </td>
 
-                      return (
-                        <div
-                          key={slot.id}
-                          onClick={() => {
-                            if (onSelectSlotForAction) {
-                              onSelectSlotForAction(slot);
-                            } else {
-                              onEditSlot(slot);
+                        {effectiveCampusRooms.map((room) => {
+                          const hasBranch = room.includes(' - ');
+                          const targetParts = room.split(' - ');
+                          const targetBranch = hasBranch
+                            ? (targetParts[0] || '').trim()
+                            : selectedCampus;
+                          const targetRoomClean = hasBranch
+                            ? (targetParts[1] || room).trim()
+                            : room.trim();
+
+                          const slot = filteredSlots.find((s) => {
+                            if (s.day_of_week !== selectedDayForRoomView) return false;
+                            const slotRoom = (s.room || '').trim();
+                            if (!slotRoom) return false;
+
+                            const slotHasBranch = slotRoom.includes(' - ');
+                            const slotParts = slotRoom.split(' - ');
+                            const slotBranch = slotHasBranch ? (slotParts[0] || '').trim() : '';
+                            const slotRoomClean = slotHasBranch
+                              ? (slotParts[1] || slotRoom).trim()
+                              : slotRoom;
+
+                            // Check branch match if specified
+                            if (targetBranch && slotBranch) {
+                              if (targetBranch.toLowerCase() !== slotBranch.toLowerCase())
+                                return false;
                             }
-                          }}
-                          className={`p-3 rounded-2xl border transition-all cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 relative ${
-                            hasConflict
-                              ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
-                              : `${style.bg} ${style.border}`
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-1 mb-1.5">
-                            <span
-                              className={`text-[9.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border ${
-                                hasConflict
-                                  ? 'bg-rose-500/10 text-rose-600 border-rose-500/20'
-                                  : style.badge
+
+                            // Check clean room number match
+                            if (
+                              slotRoomClean.toLowerCase() !== targetRoomClean.toLowerCase() &&
+                              slotRoom.toLowerCase() !== room.toLowerCase()
+                            ) {
+                              return false;
+                            }
+
+                            const slotStart = s.start_time?.substring(0, 5) || '';
+                            const slotEnd = s.end_time?.substring(0, 5) || '';
+                            return slotStart < session.end && slotEnd > session.start;
+                          });
+
+                          const isToday = selectedDayForRoomView === todayIndex;
+                          const liveStatus = slot
+                            ? getLiveSlotStatus(
+                                selectedDayForRoomView,
+                                slot.start_time,
+                                slot.end_time
+                              )
+                            : null;
+                          const style = slot
+                            ? getSubjectColor(slot.subject?.name || slot.subject?.code)
+                            : null;
+
+                          return (
+                            <td
+                              key={room}
+                              className={`p-1.5 border-r border-stone-200 dark:border-white/10 last:border-r-0 align-top min-h-[85px] ${
+                                isToday ? 'bg-amber-500/[0.015]' : ''
                               }`}
                             >
-                              {slot.subject?.name || 'Môn học'}
+                              {slot && style ? (
+                                <div
+                                  onClick={() => {
+                                    if (onSelectSlotForAction) {
+                                      onSelectSlotForAction(slot);
+                                    } else {
+                                      onEditSlot(slot);
+                                    }
+                                  }}
+                                  className={`p-2 rounded-xl border transition-all cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 relative ${style.bg} ${style.border}`}
+                                >
+                                  <div className="flex items-center justify-between gap-1 mb-1">
+                                    <span
+                                      className={`text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded border ${style.badge}`}
+                                    >
+                                      {slot.subject?.name || 'Môn học'}
+                                    </span>
+                                    {liveStatus && (
+                                      <span
+                                        className={`px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5 ${liveStatus.color}`}
+                                      >
+                                        {liveStatus.label}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-xs font-black text-stone-900 dark:text-white uppercase line-clamp-1">
+                                    Lớp {slot.class?.name || 'Chưa gán'}
+                                  </div>
+                                  <div className="mt-1 space-y-0.5 text-[10px] font-bold text-stone-600 dark:text-stone-300">
+                                    <div className="flex items-center gap-1 line-clamp-1">
+                                      <Users className="w-2.5 h-2.5 text-stone-400 shrink-0" />
+                                      <span className="truncate">
+                                        {getDisplayName(slot.teacher) || 'Chưa phân công GV'}
+                                      </span>
+                                    </div>
+                                    <div className="font-mono text-[9px] text-stone-400 flex items-center gap-1">
+                                      <Clock className="w-2.5 h-2.5 text-stone-400 shrink-0" />
+                                      {slot.start_time?.substring(0, 5)} -{' '}
+                                      {slot.end_time?.substring(0, 5)}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                canEdit && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      onCreateSlot(selectedDayForRoomView, session, room)
+                                    }
+                                    className="w-full h-full min-h-[70px] rounded-xl border border-dashed border-stone-200 dark:border-white/10 hover:border-amber-400 hover:bg-amber-500/5 text-stone-300 dark:text-stone-600 hover:text-amber-600 transition-all flex flex-col items-center justify-center gap-0.5 text-[10px] font-black group/btn cursor-pointer"
+                                  >
+                                    <Plus className="w-3 h-3 group-hover/btn:scale-125 transition-transform text-stone-400 group-hover/btn:text-amber-500" />
+                                    <span>+ Trống</span>
+                                  </button>
+                                )
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3. VIEW MODE: DANH SÁCH THEO NGÀY (DAILY AGENDA LIST) */}
+        {viewMode === 'agenda' && (
+          <div className="space-y-4 animate-fade-in">
+            {DAYS.map((dayName, dayIndex) => {
+              const date = weekDates[dayIndex];
+              const isToday = dayIndex === todayIndex;
+              const daySlots = filteredSlots
+                .filter((s) => s.day_of_week === dayIndex)
+                .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+
+              return (
+                <div
+                  key={dayIndex}
+                  className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-sm p-4 sm:p-5 space-y-3"
+                >
+                  {/* Day Header */}
+                  <div className="flex items-center justify-between pb-2.5 border-b border-stone-100 dark:border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs ${
+                          isToday
+                            ? 'bg-amber-500 text-white shadow-sm'
+                            : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300'
+                        }`}
+                      >
+                        {dayIndex === 6 ? 'CN' : `T${dayIndex + 2}`}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                            {dayName}
+                          </span>
+                          {isToday && (
+                            <span className="px-2 py-0.2 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[9px] font-black uppercase">
+                              Hôm nay
                             </span>
-                            {liveStatus && (
+                          )}
+                        </div>
+                        <span className="text-[11px] font-medium text-stone-400">
+                          {date?.toLocaleDateString('vi-VN', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className="text-xs font-black text-stone-500 dark:text-stone-400 px-3 py-1 bg-stone-100 dark:bg-stone-800 rounded-xl">
+                      {daySlots.length} tiết học
+                    </span>
+                  </div>
+
+                  {/* Day Slot Items */}
+                  {daySlots.length === 0 ? (
+                    <div className="py-6 text-center text-xs font-bold text-stone-400">
+                      Không có tiết học nào trong ngày này.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {daySlots.map((slot) => {
+                        const style = getSubjectColor(slot.subject?.name || slot.subject?.code);
+                        const hasConflict = conflictSlotIds.has(slot.id);
+                        const liveStatus = getLiveSlotStatus(
+                          dayIndex,
+                          slot.start_time,
+                          slot.end_time
+                        );
+
+                        return (
+                          <div
+                            key={slot.id}
+                            onClick={() => {
+                              if (onSelectSlotForAction) {
+                                onSelectSlotForAction(slot);
+                              } else {
+                                onEditSlot(slot);
+                              }
+                            }}
+                            className={`p-3 rounded-2xl border transition-all cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 relative ${
+                              hasConflict
+                                ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
+                                : `${style.bg} ${style.border}`
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-1 mb-1.5">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider flex items-center gap-1 ${liveStatus.color}`}
+                                className={`text-[9.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border ${
+                                  hasConflict
+                                    ? 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                                    : style.badge
+                                }`}
                               >
-                                {liveStatus.label}
+                                {slot.subject?.name || 'Môn học'}
                               </span>
-                            )}
-                          </div>
-
-                          <div className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                            Lớp {slot.class?.name || 'Chưa gán'}
-                          </div>
-
-                          <div className="mt-2 space-y-1 text-xs font-bold text-stone-600 dark:text-stone-300">
-                            <div className="flex items-center gap-1.5">
-                              <Users className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                              <span>{getDisplayName(slot.teacher) || 'Chưa phân công GV'}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-1">
-                              <span className="flex items-center gap-1 font-mono text-[10.5px] text-stone-500 dark:text-stone-400">
-                                <Clock className="w-3 h-3 text-stone-400" />
-                                {slot.start_time?.substring(0, 5)} - {slot.end_time?.substring(0, 5)}
-                              </span>
-                              {slot.room && (
-                                <span className="px-2 py-0.5 rounded-md bg-stone-200/80 dark:bg-white/10 text-stone-800 dark:text-stone-200 text-[10px] font-black font-mono">
-                                  {slot.room}
+                              {liveStatus && (
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider flex items-center gap-1 ${liveStatus.color}`}
+                                >
+                                  {liveStatus.label}
                                 </span>
                               )}
                             </div>
+
+                            <div className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                              Lớp {slot.class?.name || 'Chưa gán'}
+                            </div>
+
+                            <div className="mt-2 space-y-1 text-xs font-bold text-stone-600 dark:text-stone-300">
+                              <div className="flex items-center gap-1.5">
+                                <Users className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                                <span>{getDisplayName(slot.teacher) || 'Chưa phân công GV'}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="flex items-center gap-1 font-mono text-[10.5px] text-stone-500 dark:text-stone-400">
+                                  <Clock className="w-3 h-3 text-stone-400" />
+                                  {slot.start_time?.substring(0, 5)} -{' '}
+                                  {slot.end_time?.substring(0, 5)}
+                                </span>
+                                {slot.room && (
+                                  <span className="px-2 py-0.5 rounded-md bg-stone-200/80 dark:bg-white/10 text-stone-800 dark:text-stone-200 text-[10px] font-black font-mono">
+                                    {slot.room}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

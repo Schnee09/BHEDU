@@ -443,28 +443,61 @@ function GradeEntryPageContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-stone-900 dark:text-white">
-            Theo dõi điểm số trên trường (GK & CK)
-          </h1>
-          <p className="mt-2 text-stone-500 font-medium text-sm">
-            Ghi nhận kết quả điểm Giữa kỳ và Cuối kỳ của học sinh tại trường phổ thông để theo dõi tiến độ và đánh giá hiệu quả bồi dưỡng của trung tâm
-          </p>
+      <div className="max-w-6xl mx-auto px-2.5 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4">
+        {/* Compact Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 dark:text-white">
+              Theo dõi điểm số (GK & CK)
+            </h1>
+            <p className="text-xs text-stone-500 dark:text-stone-400">
+              Ghi nhận kết quả điểm Giữa kỳ (GK) và Cuối kỳ (CK) tại trường phổ thông
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadTemplate}
+              className="rounded-xl h-8 px-2.5 text-xs font-bold border-stone-200 dark:border-white/10"
+              leftIcon={<Icons.Download className="w-3.5 h-3.5" />}
+            >
+              Xuất CSV
+            </Button>
+            <label className="h-8 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-xs text-xs">
+              <Icons.Upload className="w-3.5 h-3.5" />
+              Import CSV
+              <input
+                type="file"
+                accept=".csv,.txt"
+                onChange={handleFileImport}
+                className="hidden"
+              />
+            </label>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowExcelImport(true)}
+              className="rounded-xl h-8 px-2.5 text-xs font-bold border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/5"
+              leftIcon={<Icons.Chart className="w-3.5 h-3.5" />}
+            >
+              Import Excel
+            </Button>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="glass-crystal p-8 rounded-[2rem] shadow-ultra border-none mb-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="space-y-2.5">
-              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">
+        {/* Compact Filters */}
+        <div className="bg-white dark:bg-stone-900 p-3 sm:p-4 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider px-0.5">
                 Lớp học
               </label>
               <Select
                 value={selectedClassId || ''}
                 onChange={(e) => setSelectedClassId(e.target.value || null)}
-                className="h-12 rounded-xl glass-crystal border-none font-semibold"
+                className="h-9 rounded-xl border-stone-200 dark:border-white/10 text-xs font-semibold"
               >
                 <option value="">Chọn lớp...</option>
                 {classes.map((c) => (
@@ -475,14 +508,14 @@ function GradeEntryPageContent() {
               </Select>
             </div>
 
-            <div className="space-y-2.5">
-              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider px-0.5">
                 Học kỳ
               </label>
               <Select
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value as Semester)}
-                className="h-12 rounded-xl glass-crystal border-none font-semibold"
+                className="h-9 rounded-xl border-stone-200 dark:border-white/10 text-xs font-semibold"
               >
                 {semesters.length > 0 ? (
                   semesters.map((s) => (
@@ -499,15 +532,15 @@ function GradeEntryPageContent() {
               </Select>
             </div>
 
-            <div className="space-y-2.5">
-              <label className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider px-0.5">
                 Môn học
               </label>
               <Select
                 value={selectedSubjectId || ''}
                 onChange={(e) => setSelectedSubjectId(e.target.value || null)}
                 disabled={classSubjects.length === 0}
-                className="h-12 rounded-xl glass-crystal border-none font-semibold"
+                className="h-9 rounded-xl border-stone-200 dark:border-white/10 text-xs font-semibold"
               >
                 <option value="">Chọn môn học...</option>
                 {classSubjects.map((s) => (
@@ -520,89 +553,136 @@ function GradeEntryPageContent() {
           </div>
         </div>
 
-        {/* Grades Table - Simplified with only Midterm, Final, and Average */}
+        {/* Grades Table & Mobile Touch Cards */}
         {loading ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-12 text-stone-400 text-xs font-bold animate-pulse">
             Đang tải danh sách học sinh...
           </div>
         ) : students.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Chọn lớp để xem danh sách học sinh</p>
+          <div className="text-center py-12 bg-white dark:bg-stone-900 rounded-2xl border border-dashed border-stone-200 dark:border-white/10">
+            <p className="text-xs text-stone-400 font-bold uppercase tracking-wider">
+              Chọn lớp để xem danh sách học sinh
+            </p>
           </div>
         ) : (
           <>
-            <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-stone-500 font-medium">
-                Đang hiển thị <strong>{students.length}</strong> học sinh — Lớp{' '}
-                <span className="text-emerald-600 font-bold">{selectedClass?.name}</span>
+            {/* Status & Error notification bar */}
+            <div className="flex items-center justify-between gap-2 px-1">
+              <div className="text-xs text-stone-500 font-medium">
+                Đang hiển thị{' '}
+                <strong className="text-stone-900 dark:text-white font-bold">
+                  {students.length}
+                </strong>{' '}
+                học sinh — Lớp{' '}
+                <span className="text-amber-600 font-bold">{selectedClass?.name}</span>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {hasErrors && (
-                  <div className="text-xs bg-red-50 dark:bg-red-500/10 text-red-600 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-500/20 font-bold flex items-center gap-2">
-                    <Icons.Error className="w-4 h-4" />
-                    {Object.values(errors).reduce((acc, e) => acc + e.length, 0)} lỗi nhập liệu
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={downloadTemplate}
-                  className="rounded-xl h-10 px-4 font-bold border-stone-200 dark:border-white/10"
-                  leftIcon={<Icons.Download className="w-4 h-4" />}
-                >
-                  Xuất mẫu CSV
-                </Button>
-                <label className="h-10 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg shadow-emerald-500/20 text-sm">
-                  <Icons.Upload className="w-4 h-4" />
-                  Import CSV
-                  <input
-                    type="file"
-                    accept=".csv,.txt"
-                    onChange={handleFileImport}
-                    className="hidden"
-                  />
-                </label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowExcelImport(true)}
-                  className="rounded-xl h-10 px-4 font-bold border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/5"
-                  leftIcon={<Icons.Chart className="w-4 h-4" />}
-                >
-                  Import Excel
-                </Button>
-              </div>
+              {hasErrors && (
+                <div className="text-[11px] bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900/50 font-bold flex items-center gap-1.5">
+                  <Icons.Error className="w-3.5 h-3.5" />
+                  {Object.values(errors).reduce((acc, e) => acc + e.length, 0)} lỗi nhập liệu
+                </div>
+              )}
             </div>
 
-            <div className="glass-crystal rounded-[2.5rem] shadow-ultra border-none overflow-hidden">
+            {/* 1. MOBILE TOUCH CARDS VIEW (< md) */}
+            <div className="md:hidden space-y-2.5">
+              {students.map((student, idx) => {
+                const studentGrades = grades[student.id] || {};
+                const studentErrors = errors[student.id] || [];
+                const midtermError = studentErrors.find(
+                  (e) => e.field === EvaluationType.MIDTERM
+                )?.message;
+                const finalError = studentErrors.find(
+                  (e) => e.field === EvaluationType.FINAL
+                )?.message;
+
+                return (
+                  <div
+                    key={student.id}
+                    className={cn(
+                      'bg-white dark:bg-stone-900 p-3 rounded-2xl border transition-all shadow-xs space-y-2.5',
+                      studentErrors.length > 0
+                        ? 'border-rose-300 dark:border-rose-900 bg-rose-50/20'
+                        : 'border-stone-200/80 dark:border-white/10'
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-6 h-6 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center text-[11px] font-black shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="font-bold text-sm text-stone-900 dark:text-white truncate">
+                          {student.full_name || student.name || '—'}
+                        </span>
+                      </div>
+
+                      {/* Average badge */}
+                      <div className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 flex items-center gap-1 shrink-0">
+                        <span className="text-[9px] font-bold text-stone-400 uppercase">ĐTB:</span>
+                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                          {studentGrades.average !== null && studentGrades.average !== undefined
+                            ? studentGrades.average.toFixed(1)
+                            : '—'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Inputs Row */}
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-tight block">
+                          Giữa kỳ (GK 50%)
+                        </label>
+                        <GradeInput
+                          value={studentGrades[EvaluationType.MIDTERM] ?? ''}
+                          onBlur={(val) =>
+                            handleGradeChange(student.id, EvaluationType.MIDTERM, val)
+                          }
+                          error={midtermError}
+                          rowIndex={idx}
+                          colIndex={0}
+                          isMobile
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-tight block">
+                          Cuối kỳ (CK 50%)
+                        </label>
+                        <GradeInput
+                          value={studentGrades[EvaluationType.FINAL] ?? ''}
+                          onBlur={(val) => handleGradeChange(student.id, EvaluationType.FINAL, val)}
+                          error={finalError}
+                          rowIndex={idx}
+                          colIndex={1}
+                          isMobile
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 2. DESKTOP HIGH-DENSITY TABLE (>= md) */}
+            <div className="hidden md:block bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-stone-50/50 dark:bg-white/5 border-b border-stone-100 dark:border-white/5">
-                      <th className="px-6 py-5 text-left text-xs font-bold text-stone-400 uppercase tracking-widest w-16">
-                        #
+                    <tr className="bg-stone-50/70 dark:bg-white/5 border-b border-stone-200/80 dark:border-white/10 text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+                      <th className="px-3.5 py-2.5 text-left w-12">#</th>
+                      <th className="px-3.5 py-2.5 text-left">Học sinh</th>
+                      <th className="px-3.5 py-2.5 text-center w-32">
+                        {GRADE_LABELS[EvaluationType.MIDTERM]} (50%)
                       </th>
-                      <th className="px-6 py-5 text-left text-xs font-bold text-stone-400 uppercase tracking-widest">
-                        Học sinh
+                      <th className="px-3.5 py-2.5 text-center w-32">
+                        {GRADE_LABELS[EvaluationType.FINAL]} (50%)
                       </th>
-                      <th className="px-6 py-5 text-center text-xs font-bold text-stone-400 uppercase tracking-widest w-36">
-                        {GRADE_LABELS[EvaluationType.MIDTERM]}
-                        <span className="text-stone-300 dark:text-stone-600 font-medium ml-1">
-                          (50%)
-                        </span>
-                      </th>
-                      <th className="px-6 py-5 text-center text-xs font-bold text-stone-400 uppercase tracking-widest w-36">
-                        {GRADE_LABELS[EvaluationType.FINAL]}
-                        <span className="text-stone-300 dark:text-stone-600 font-medium ml-1">
-                          (50%)
-                        </span>
-                      </th>
-                      <th className="px-6 py-5 text-center text-xs font-bold text-emerald-600 uppercase tracking-widest w-32 bg-emerald-50/30 dark:bg-emerald-500/5">
+                      <th className="px-3.5 py-2.5 text-center text-emerald-600 dark:text-emerald-400 w-28 bg-emerald-50/40 dark:bg-emerald-500/5">
                         Điểm TB
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-stone-100 dark:divide-white/5 text-xs">
                     {students.map((student, idx) => {
                       const studentGrades = grades[student.id] || {};
                       const studentErrors = errors[student.id] || [];
@@ -623,14 +703,14 @@ function GradeEntryPageContent() {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end">
+            {/* Save Button Floating / Sticky Bar */}
+            <div className="sticky bottom-4 z-20 flex justify-end pt-2">
               <Button
                 variant="success"
                 onClick={() => setShowConfirm(true)}
                 disabled={!hasGrades || hasErrors || saving}
-                size="lg"
-                className="px-12 rounded-2xl shadow-xl shadow-emerald-500/20 font-bold"
-                leftIcon={<Icons.Save className="w-5 h-5" />}
+                className="px-6 h-10 rounded-xl shadow-lg shadow-emerald-500/20 font-black uppercase text-xs cursor-pointer"
+                leftIcon={<Icons.Save className="w-4 h-4" />}
               >
                 {saving ? 'Đang lưu...' : 'Lưu bảng điểm'}
               </Button>
@@ -649,7 +729,10 @@ function GradeEntryPageContent() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel className="font-bold">Hủy bỏ</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSave} className="bg-amber-500 hover:bg-amber-600 font-black">
+              <AlertDialogAction
+                onClick={handleSave}
+                className="bg-amber-500 hover:bg-amber-600 font-black"
+              >
                 Xác nhận lưu
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -663,7 +746,6 @@ function GradeEntryPageContent() {
               <BulkGradeImport
                 classId={selectedClassId}
                 onSuccess={() => {
-                  // Reload students to refresh grades
                   setShowExcelImport(false);
                   toast.success('Import thành công!');
                 }}
@@ -711,15 +793,18 @@ const StudentRow = React.memo(function StudentRow({
 
   return (
     <tr
-      className={
-        hasStudentErrors ? 'bg-danger/10' : 'hover:bg-surface-secondary/50 transition-colors'
-      }
+      className={cn(
+        'transition-colors',
+        hasStudentErrors
+          ? 'bg-rose-50/40 dark:bg-rose-950/20'
+          : 'hover:bg-stone-50/60 dark:hover:bg-white/5'
+      )}
     >
-      <td className="px-6 py-4 text-sm font-bold text-stone-400">{index + 1}</td>
-      <td className="px-6 py-4 text-sm font-bold text-stone-900 dark:text-stone-100">
+      <td className="px-3.5 py-2.5 text-xs font-bold text-stone-400">{index + 1}</td>
+      <td className="px-3.5 py-2.5 text-xs font-bold text-stone-900 dark:text-stone-100">
         {student.full_name || student.name || '—'}
       </td>
-      <td className="px-6 py-4">
+      <td className="px-3.5 py-2">
         <GradeInput
           value={studentGrades[EvaluationType.MIDTERM] ?? ''}
           onBlur={handleMidtermBlur}
@@ -728,7 +813,7 @@ const StudentRow = React.memo(function StudentRow({
           colIndex={0}
         />
       </td>
-      <td className="px-6 py-4">
+      <td className="px-3.5 py-2">
         <GradeInput
           value={studentGrades[EvaluationType.FINAL] ?? ''}
           onBlur={handleFinalBlur}
@@ -737,8 +822,8 @@ const StudentRow = React.memo(function StudentRow({
           colIndex={1}
         />
       </td>
-      <td className="px-6 py-4 text-center bg-emerald-50/30 dark:bg-emerald-500/5">
-        <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+      <td className="px-3.5 py-2 text-center bg-emerald-50/30 dark:bg-emerald-500/5">
+        <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">
           {studentGrades.average !== null && studentGrades.average !== undefined
             ? studentGrades.average.toFixed(1)
             : '—'}
@@ -748,19 +833,21 @@ const StudentRow = React.memo(function StudentRow({
   );
 });
 
-// Memoized individual grade input to manage local state and prevent re-rendering during keystrokes
+// Memoized individual grade input
 const GradeInput = React.memo(function GradeInput({
   value,
   onBlur,
   error,
   rowIndex,
   colIndex,
+  isMobile,
 }: {
   value: string | number;
   onBlur: (val: string) => void;
   error?: string;
   rowIndex: number;
   colIndex: number;
+  isMobile?: boolean;
 }) {
   const [localValue, setLocalValue] = useState(value);
 
@@ -777,8 +864,9 @@ const GradeInput = React.memo(function GradeInput({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      // Move down on Enter
-      const nextInput = document.querySelector(`input[data-row="${rowIndex + 1}"][data-col="${colIndex}"]`) as HTMLInputElement;
+      const nextInput = document.querySelector(
+        `input[data-row="${rowIndex + 1}"][data-col="${colIndex}"]`
+      ) as HTMLInputElement;
       if (nextInput) {
         nextInput.focus();
         nextInput.select();
@@ -790,14 +878,18 @@ const GradeInput = React.memo(function GradeInput({
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      const nextInput = document.querySelector(`input[data-row="${rowIndex + 1}"][data-col="${colIndex}"]`) as HTMLInputElement;
+      const nextInput = document.querySelector(
+        `input[data-row="${rowIndex + 1}"][data-col="${colIndex}"]`
+      ) as HTMLInputElement;
       if (nextInput) {
         nextInput.focus();
         nextInput.select();
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      const prevInput = document.querySelector(`input[data-row="${rowIndex - 1}"][data-col="${colIndex}"]`) as HTMLInputElement;
+      const prevInput = document.querySelector(
+        `input[data-row="${rowIndex - 1}"][data-col="${colIndex}"]`
+      ) as HTMLInputElement;
       if (prevInput) {
         prevInput.focus();
         prevInput.select();
@@ -810,7 +902,9 @@ const GradeInput = React.memo(function GradeInput({
         nextCol = 0;
         nextRow = rowIndex + 1;
       }
-      const nextInput = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`) as HTMLInputElement;
+      const nextInput = document.querySelector(
+        `input[data-row="${nextRow}"][data-col="${nextCol}"]`
+      ) as HTMLInputElement;
       if (nextInput) {
         nextInput.focus();
         nextInput.select();
@@ -823,7 +917,9 @@ const GradeInput = React.memo(function GradeInput({
         prevCol = 1;
         prevRow = rowIndex - 1;
       }
-      const prevInput = document.querySelector(`input[data-row="${prevRow}"][data-col="${prevCol}"]`) as HTMLInputElement;
+      const prevInput = document.querySelector(
+        `input[data-row="${prevRow}"][data-col="${prevCol}"]`
+      ) as HTMLInputElement;
       if (prevInput) {
         prevInput.focus();
         prevInput.select();
@@ -832,7 +928,7 @@ const GradeInput = React.memo(function GradeInput({
   };
 
   return (
-    <div className="flex flex-col items-center gap-1 group">
+    <div className={cn('flex flex-col items-center gap-0.5 group', isMobile && 'w-full')}>
       <Input
         type="number"
         min="0"
@@ -842,18 +938,19 @@ const GradeInput = React.memo(function GradeInput({
         onChange={(e) => setLocalValue(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        placeholder="Điểm"
+        placeholder="0.0"
         data-row={rowIndex}
         data-col={colIndex}
         className={cn(
-          'w-32 h-12 text-center text-lg font-bold rounded-xl transition-all',
-          'bg-stone-50 dark:bg-white/5 border-stone-200 dark:border-white/10',
-          'focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500',
-          error ? 'border-red-500 ring-red-500/10' : ''
+          'text-center font-bold rounded-xl transition-all',
+          isMobile ? 'w-full h-9 text-sm' : 'w-24 h-9 text-xs sm:text-sm',
+          'bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10',
+          'focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500',
+          error ? 'border-rose-500 ring-rose-500/10' : ''
         )}
       />
       {error && (
-        <span className="text-[10px] text-red-600 font-bold uppercase tracking-tight">{error}</span>
+        <span className="text-[9px] text-rose-600 font-bold uppercase tracking-tight">{error}</span>
       )}
     </div>
   );

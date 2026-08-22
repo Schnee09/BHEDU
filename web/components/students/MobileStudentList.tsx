@@ -1,9 +1,19 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Edit, Archive, Phone, Mail, Calendar, UserX, Eye, CheckCircle2, Award } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import Link from 'next/link';
+import {
+  Edit,
+  Archive,
+  Phone,
+  Mail,
+  Calendar,
+  UserX,
+  Eye,
+  CheckCircle2,
+  Award,
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export interface Student {
   id: string;
@@ -56,24 +66,24 @@ export default function MobileStudentList({
     <div className="space-y-2.5 pb-16 md:hidden animate-fade-in">
       {students.map((student, index) => {
         const isSelected = selectedIds.has(student.id);
-        const isActive = student.status === "active";
+        const isActive = student.status === 'active';
 
         return (
           <div
             key={student.id}
             className={cn(
-              "bg-white dark:bg-stone-900 rounded-2xl p-3.5 shadow-xs border transition-all relative overflow-hidden space-y-2.5",
+              'bg-white dark:bg-stone-900 rounded-2xl p-3.5 shadow-xs border transition-all relative overflow-hidden space-y-2.5',
               isSelected
-                ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/10 dark:bg-amber-950/10"
-                : "border-stone-200/80 dark:border-white/10"
+                ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/10 dark:bg-amber-950/10'
+                : 'border-stone-200/80 dark:border-white/10'
             )}
             style={{ animationDelay: `${index * 30}ms` }}
           >
             {/* Status Accent Left Stripe */}
             <div
               className={cn(
-                "absolute left-0 top-0 bottom-0 w-1",
-                isActive ? "bg-emerald-500" : "bg-stone-300 dark:bg-stone-700"
+                'absolute left-0 top-0 bottom-0 w-1',
+                isActive ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-700'
               )}
             />
 
@@ -82,10 +92,16 @@ export default function MobileStudentList({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <h3
-                    onClick={() => onViewDetails ? onViewDetails(student) : onSelect(student.id)}
+                    onClick={() => (onViewDetails ? onViewDetails(student) : onSelect(student.id))}
                     className="font-black text-stone-900 dark:text-white text-sm uppercase tracking-tight truncate cursor-pointer hover:text-amber-500"
                   >
-                    {student.full_name}
+                    {student.full_name &&
+                    student.full_name !== 'undefined undefined' &&
+                    student.full_name !== 'null null'
+                      ? student.full_name
+                      : student.email
+                        ? student.email.split('@')[0]
+                        : 'Học sinh'}
                   </h3>
                   {student.grade_level && (
                     <span className="px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 whitespace-nowrap uppercase">
@@ -94,20 +110,20 @@ export default function MobileStudentList({
                   )}
                   <span
                     className={cn(
-                      "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider",
+                      'px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider',
                       isActive
-                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40"
-                        : "bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-white/10"
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40'
+                        : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-white/10'
                     )}
                   >
-                    {isActive ? "Đang học" : "Lưu trữ"}
+                    {isActive ? 'Đang học' : 'Lưu trữ'}
                   </span>
                 </div>
 
                 {/* UID / CID Badges */}
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono font-bold">
-                    UID: {student.student_code || "HS-XXXX"}
+                    UID: {student.student_code || 'HS-XXXX'}
                   </span>
                   {student.student_id && (
                     <>
@@ -125,10 +141,10 @@ export default function MobileStudentList({
                 type="button"
                 onClick={() => onSelect(student.id)}
                 className={cn(
-                  "w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 cursor-pointer",
+                  'w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 cursor-pointer',
                   isSelected
-                    ? "bg-amber-500 border-amber-500 text-white shadow-xs"
-                    : "border-stone-300 dark:border-stone-700 text-transparent hover:border-amber-400"
+                    ? 'bg-amber-500 border-amber-500 text-white shadow-xs'
+                    : 'border-stone-300 dark:border-stone-700 text-transparent hover:border-amber-400'
                 )}
                 title="Chọn học sinh"
               >
@@ -156,7 +172,7 @@ export default function MobileStudentList({
               {student.date_of_birth && (
                 <span className="px-2 py-1 bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400 rounded-lg flex items-center gap-1 text-[11px] border border-stone-200/60 dark:border-white/5">
                   <Calendar className="w-3 h-3 text-amber-500" />
-                  <span>{format(new Date(student.date_of_birth), "dd/MM/yyyy")}</span>
+                  <span>{format(new Date(student.date_of_birth), 'dd/MM/yyyy')}</span>
                 </span>
               )}
             </div>

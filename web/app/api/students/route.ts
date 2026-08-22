@@ -94,7 +94,7 @@ export const GET = createGetHandler(
 // POST /api/students
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin', 'super_admin', 'owner'],
+    allowedRoles: ['admin', 'super_admin', 'owner', 'staff'],
     bodySchema: createStudentSchema,
   },
   async ({ request, body, user }) => {
@@ -117,10 +117,17 @@ export const POST = createApiHandler(
       );
     }
 
-    const supabase = createServiceClient();
-    const repository = new StudentRepository(supabase);
-    const student = await repository.create(body as any);
+    const { UserService } = await import('@/lib/services/userService');
+    const userService = new UserService();
+    const result = await userService.createUser(
+      {
+        ...body,
+        role: 'student',
+      } as any,
+      user.role,
+      user.id
+    );
 
-    return apiSuccess(student, { _status: 201 });
+    return apiSuccess(result, { _status: 201 });
   }
 );

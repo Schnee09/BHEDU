@@ -128,15 +128,6 @@ function AuditLogsContent() {
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  if (profileLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-[#080808]">
-        <AcademicBackground />
-        <div className="animate-spin h-8 w-8 border-2 border-red-600 border-t-transparent rounded-sharp" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-['Be_Vietnam_Pro'] selection:bg-red-600/30 text-stone-900 dark:text-stone-100 p-4 md:p-12 lg:p-16">
       <AcademicBackground />

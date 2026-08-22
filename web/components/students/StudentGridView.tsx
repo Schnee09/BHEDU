@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React from "react";
-import Link from "next/link";
-import { Edit, Archive, Phone, Mail, Calendar, Eye, Award } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { Student } from "./MobileStudentList";
+import React from 'react';
+import Link from 'next/link';
+import { Edit, Archive, Phone, Mail, Calendar, Eye, Award } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Student } from './MobileStudentList';
 
 interface StudentGridViewProps {
   students: Student[];
@@ -32,24 +32,24 @@ export default function StudentGridView({
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 animate-fade-in">
       {students.map((student, index) => {
         const isSelected = selectedIds.has(student.id);
-        const isActive = student.status === "active";
+        const isActive = student.status === 'active';
 
         return (
           <div
             key={student.id}
             className={cn(
-              "bg-white dark:bg-stone-900 rounded-2xl p-4 border transition-all duration-200 shadow-xs hover:shadow-md relative overflow-hidden flex flex-col justify-between group",
+              'bg-white dark:bg-stone-900 rounded-2xl p-4 border transition-all duration-200 shadow-xs hover:shadow-md relative overflow-hidden flex flex-col justify-between group',
               isSelected
-                ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/10 dark:bg-amber-950/10"
-                : "border-stone-200/80 dark:border-white/10 hover:border-amber-500/40"
+                ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/10 dark:bg-amber-950/10'
+                : 'border-stone-200/80 dark:border-white/10 hover:border-amber-500/40'
             )}
             style={{ animationDelay: `${index * 15}ms` }}
           >
             {/* Top status accent */}
             <div
               className={cn(
-                "absolute top-0 left-0 right-0 h-1",
-                isActive ? "bg-emerald-500" : "bg-stone-300 dark:bg-stone-700"
+                'absolute top-0 left-0 right-0 h-1',
+                isActive ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-700'
               )}
             />
 
@@ -57,16 +57,33 @@ export default function StudentGridView({
               {/* Card Header: Avatar + Name + Checkbox */}
               <div className="flex items-start justify-between gap-3 mb-3 pt-1">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-                    {student.full_name?.charAt(0) || "H"}
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 uppercase">
+                    {(
+                      (student.full_name &&
+                      student.full_name !== 'undefined undefined' &&
+                      student.full_name !== 'null null'
+                        ? student.full_name
+                        : student.email
+                          ? student.email.split('@')[0] || 'H'
+                          : 'H'
+                      ).charAt(0) || 'H'
+                    ).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3
-                      onClick={() => (onViewDetails ? onViewDetails(student) : onSelect(student.id))}
+                      onClick={() =>
+                        onViewDetails ? onViewDetails(student) : onSelect(student.id)
+                      }
                       className="font-bold text-stone-900 dark:text-stone-100 text-sm hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer truncate"
                       title={student.full_name}
                     >
-                      {student.full_name}
+                      {student.full_name &&
+                      student.full_name !== 'undefined undefined' &&
+                      student.full_name !== 'null null'
+                        ? student.full_name
+                        : student.email
+                          ? student.email.split('@')[0]
+                          : 'Học sinh'}
                     </h3>
                     <div className="flex items-center gap-1.5 mt-1">
                       {student.grade_level && (
@@ -78,14 +95,14 @@ export default function StudentGridView({
                         type="button"
                         onClick={() => onToggleStatus && onToggleStatus(student)}
                         className={cn(
-                          "px-2 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer transition-all",
+                          'px-2 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer transition-all',
                           isActive
-                            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100"
-                            : "bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-white/10 hover:bg-stone-200"
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100'
+                            : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-white/10 hover:bg-stone-200'
                         )}
                         title="Click đổi trạng thái"
                       >
-                        {isActive ? "Đang học" : "Lưu trữ"}
+                        {isActive ? 'Đang học' : 'Lưu trữ'}
                       </button>
                     </div>
                   </div>
@@ -104,15 +121,19 @@ export default function StudentGridView({
               {/* Identity Badges: UID & CID */}
               <div className="grid grid-cols-2 gap-2 p-2 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/50 dark:border-white/5 mb-3 text-xs">
                 <div>
-                  <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">Mã UID</span>
+                  <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">
+                    Mã UID
+                  </span>
                   <span className="font-mono font-semibold text-blue-600 dark:text-blue-400 truncate block text-[11px]">
-                    {student.student_code || "—"}
+                    {student.student_code || '—'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">Mã CID</span>
+                  <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">
+                    Mã CID
+                  </span>
                   <span className="font-mono font-semibold text-amber-700 dark:text-amber-300 truncate block text-[11px]">
-                    {student.student_id || "—"}
+                    {student.student_id || '—'}
                   </span>
                 </div>
               </div>
@@ -134,14 +155,16 @@ export default function StudentGridView({
                 {student.email ? (
                   <div className="flex items-center gap-2 truncate">
                     <Mail className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="truncate text-stone-600 dark:text-stone-300">{student.email}</span>
+                    <span className="truncate text-stone-600 dark:text-stone-300">
+                      {student.email}
+                    </span>
                   </div>
                 ) : null}
 
                 {student.date_of_birth ? (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    <span>{format(new Date(student.date_of_birth), "dd/MM/yyyy")}</span>
+                    <span>{format(new Date(student.date_of_birth), 'dd/MM/yyyy')}</span>
                   </div>
                 ) : null}
               </div>

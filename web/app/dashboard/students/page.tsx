@@ -38,7 +38,17 @@ import { ToastContainer } from '@/components/ui/Toast';
 import { logger } from '@/lib/logger';
 import { createAuditLog, AuditActions } from '@/lib/audit';
 import { routes } from '@/lib/routes';
-import { Copy, Check, ChevronDown, Plus, LayoutGrid, List, MessageSquare, Award, Phone } from 'lucide-react';
+import {
+  Copy,
+  Check,
+  ChevronDown,
+  Plus,
+  LayoutGrid,
+  List,
+  MessageSquare,
+  Award,
+  Phone,
+} from 'lucide-react';
 import MobileStudentList from '@/components/students/MobileStudentList';
 import StudentGridView from '@/components/students/StudentGridView';
 import StudentQuickActions from '@/components/students/StudentQuickActions';
@@ -46,7 +56,56 @@ import { cn } from '@/lib/utils';
 import { showToast } from '@/components/ToastProvider';
 import { DropdownMenu, DropdownItem } from '@/components/ui/dropdown-menu';
 
-import StudentFormModal, { Student } from '@/components/students/StudentFormModal';
+import UserFormModal from '@/components/users/UserFormModal';
+
+export interface Student {
+  id: string;
+  full_name: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email: string | null;
+  role: string;
+  date_of_birth: string | null;
+  phone: string | null;
+  address: string | null;
+  student_code?: string;
+  student_id?: string;
+  grade_level?: string;
+  status?: string;
+  gender?: string;
+  created_at: string;
+}
+
+export function getStudentDisplayName(
+  student?: {
+    full_name?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+  } | null
+): string {
+  if (!student) return 'Học sinh';
+  const name = student.full_name?.trim();
+  if (
+    name &&
+    name !== 'undefined undefined' &&
+    name !== 'null null' &&
+    name !== 'undefined' &&
+    name !== 'null'
+  ) {
+    return name;
+  }
+  const parts = [student.last_name, student.first_name].filter(
+    (p) => p && p !== 'undefined' && p !== 'null'
+  );
+  if (parts.length > 0) {
+    return parts.join(' ');
+  }
+  if (student.email) {
+    return student.email.split('@')[0] || 'Học sinh';
+  }
+  return 'Học sinh chưa đặt tên';
+}
 
 interface StudentStats {
   total_students: number;
@@ -428,13 +487,25 @@ export default function StudentsPage() {
         {/* Mobile Mini Stats Pill Bar */}
         <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto pb-1 text-xs font-black">
           <div className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0">
-            <span>👥 Tổng: <strong className="font-mono text-stone-900 dark:text-white">{statistics.total_students}</strong></span>
+            <span>
+              👥 Tổng:{' '}
+              <strong className="font-mono text-stone-900 dark:text-white">
+                {statistics.total_students}
+              </strong>
+            </span>
           </div>
           <div className="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center gap-1.5 shrink-0">
-            <span>✓ Đang học: <strong className="font-mono text-emerald-800 dark:text-emerald-200">{statistics.active_students}</strong></span>
+            <span>
+              ✓ Đang học:{' '}
+              <strong className="font-mono text-emerald-800 dark:text-emerald-200">
+                {statistics.active_students}
+              </strong>
+            </span>
           </div>
           <div className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-500 flex items-center gap-1.5 shrink-0">
-            <span>⏸ Lưu trữ: <strong className="font-mono">{statistics.inactive_students}</strong></span>
+            <span>
+              ⏸ Lưu trữ: <strong className="font-mono">{statistics.inactive_students}</strong>
+            </span>
           </div>
           <div className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/30 flex items-center gap-1.5 shrink-0">
             <span>📚 {Object.keys(statistics.by_grade || {}).length} khối</span>
@@ -849,7 +920,8 @@ export default function StudentsPage() {
                       rowClassName={(student) =>
                         cn(
                           'transition-all duration-150 hover:bg-stone-50/80 dark:hover:bg-white/[0.02] cursor-pointer',
-                          student.status !== 'active' && 'opacity-60 bg-stone-50/30 dark:bg-stone-950/20'
+                          student.status !== 'active' &&
+                            'opacity-60 bg-stone-50/30 dark:bg-stone-950/20'
                         )
                       }
                       columns={[
@@ -886,28 +958,32 @@ export default function StudentsPage() {
                         {
                           key: 'full_name',
                           header: 'Học sinh',
-                          render: (student) => (
-                            <div className="flex items-center gap-2.5 py-1">
-                              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-                                {student.full_name?.charAt(0) || 'H'}
+                          render: (student) => {
+                            const displayName = getStudentDisplayName(student);
+                            const initial = (displayName.charAt(0) || 'H').toUpperCase();
+                            return (
+                              <div className="flex items-center gap-2.5 py-1">
+                                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 uppercase">
+                                  {initial}
+                                </div>
+                                <div className="min-w-0">
+                                  <p
+                                    className={cn(
+                                      'font-bold tracking-tight text-xs transition-colors hover:text-amber-500 truncate',
+                                      student.status !== 'active'
+                                        ? 'text-stone-400 dark:text-stone-500 line-through'
+                                        : 'text-stone-900 dark:text-white'
+                                    )}
+                                  >
+                                    {displayName}
+                                  </p>
+                                  <p className="text-[11px] text-stone-400 font-normal truncate">
+                                    {student.email || 'Chưa có email'}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p
-                                  className={cn(
-                                    'font-bold tracking-tight text-xs transition-colors hover:text-amber-500 truncate',
-                                    student.status !== 'active'
-                                      ? 'text-stone-400 dark:text-stone-500 line-through'
-                                      : 'text-stone-900 dark:text-white'
-                                  )}
-                                >
-                                  {student.full_name}
-                                </p>
-                                <p className="text-[11px] text-stone-400 font-normal truncate">
-                                  {student.email || 'Chưa có email'}
-                                </p>
-                              </div>
-                            </div>
-                          ),
+                            );
+                          },
                         },
                         {
                           key: 'student_code',
@@ -981,7 +1057,10 @@ export default function StudentsPage() {
                             }
                             const cleanPhone = student.phone.replace(/[^0-9+]/g, '');
                             return (
-                              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <div
+                                className="flex items-center gap-1.5"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <a
                                   href={`tel:${student.phone}`}
                                   className="text-stone-800 dark:text-stone-200 text-xs font-semibold hover:text-blue-500 transition-colors flex items-center gap-1"
@@ -1082,109 +1161,110 @@ export default function StudentsPage() {
           </>
         )}
 
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div className="flex justify-center items-center space-x-4 mt-6">
-                <Button
-                  variant="outline"
-                  onClick={pagination.prevPage}
-                  disabled={!pagination.hasPrevPage || loading}
-                >
-                  Trước
-                </Button>
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex justify-center items-center space-x-4 mt-6">
+            <Button
+              variant="outline"
+              onClick={pagination.prevPage}
+              disabled={!pagination.hasPrevPage || loading}
+            >
+              Trước
+            </Button>
 
-                <span className="text-sm text-slate-600">
-                  Trang {pagination.page} của {pagination.totalPages}
-                </span>
+            <span className="text-sm text-slate-600">
+              Trang {pagination.page} của {pagination.totalPages}
+            </span>
 
-                <Button
-                  variant="outline"
-                  onClick={pagination.nextPage}
-                  disabled={!pagination.hasNextPage || loading}
-                >
-                  Tiếp theo
-                </Button>
-              </div>
-            )}
-
-        {/* Add/Edit Student Modal */}
-        <StudentFormModal
-          isOpen={showAddModal || editingStudent !== null}
-          onClose={() => {
-            setShowAddModal(false);
-            setEditingStudent(null);
-          }}
-          student={editingStudent}
-          onSuccess={() => {
-            refetch();
-            setShowAddModal(false);
-            setEditingStudent(null);
-            toast.success(
-              editingStudent ? 'Student updated' : 'Student added',
-              editingStudent
-                ? 'Student information has been updated successfully.'
-                : 'New student has been added successfully.'
-            );
-          }}
-        />
+            <Button
+              variant="outline"
+              onClick={pagination.nextPage}
+              disabled={!pagination.hasNextPage || loading}
+            >
+              Tiếp theo
+            </Button>
+          </div>
+        )}
 
         {/* Floating Bulk Action Bar */}
         {selectedIds.size > 0 && (
-          <div className="fixed bottom-4 sm:bottom-6 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[1150] bg-stone-900 dark:bg-stone-950 text-white rounded-2xl sm:rounded-3xl p-3 sm:px-6 sm:py-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl border border-stone-800 animate-slide-in-bottom max-w-xl sm:w-auto">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-              <span className="text-xs sm:text-sm font-bold tracking-tight">
-                Đã chọn {selectedIds.size} học sinh
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportCSV}
-                className="h-8 px-3 text-xs font-semibold text-white border-stone-700 hover:bg-stone-800 rounded-xl"
-              >
-                Xuất CSV
-              </Button>
-
-              <div className="relative group">
-                <select
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      handleBulkGradeUpdate(e.target.value);
-                      e.target.value = ''; // reset
-                    }
-                  }}
-                  className="h-8 px-3 pr-7 text-xs font-semibold bg-stone-800 hover:bg-stone-700 text-white border border-stone-700 rounded-xl outline-none cursor-pointer appearance-none"
-                >
-                  <option value="" className="bg-stone-900 text-white">
-                    Đổi khối lớp
-                  </option>
-                  {[6, 7, 8, 9, 10, 11, 12].map((g) => (
-                    <option key={g} value={`Lớp ${g}`} className="bg-stone-900 text-white">
-                      Lớp {g}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-stone-400 pointer-events-none" />
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[1150] w-auto max-w-[95vw] animate-slide-in-bottom">
+            <div className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 rounded-full px-5 py-2.5 flex items-center gap-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-stone-200 dark:border-stone-700">
+              {/* Counter Badge */}
+              <div className="flex items-center gap-2 shrink-0 pr-1">
+                <span className="w-2.5 h-2.5 bg-amber-500 rounded-full shrink-0 animate-pulse" />
+                <span className="text-xs font-bold whitespace-nowrap text-stone-800 dark:text-stone-100">
+                  Đã chọn{' '}
+                  <span className="text-amber-600 dark:text-amber-400 font-extrabold">
+                    {selectedIds.size}
+                  </span>{' '}
+                  học sinh
+                </span>
               </div>
 
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleBulkArchive}
-                className="h-8 px-3 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-xl border-none shadow-xs"
-              >
-                Lưu trữ
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedIds(new Set())}
-                className="h-8 px-2 text-xs font-semibold text-stone-400 hover:text-white rounded-xl"
-              >
-                Bỏ chọn
-              </Button>
+              <div className="h-5 w-px bg-stone-200 dark:bg-stone-700 shrink-0" />
+
+              {/* Action Buttons in single clean row */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="h-8 px-3.5 text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-100 border border-stone-200 dark:border-stone-700 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <Icons.Download className="w-3.5 h-3.5 text-stone-600 dark:text-stone-300" />
+                  <span>Xuất CSV</span>
+                </button>
+
+                <div className="relative">
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleBulkGradeUpdate(e.target.value);
+                        e.target.value = ''; // reset
+                      }
+                    }}
+                    className="h-8 pl-3.5 pr-8 text-xs font-semibold bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-100 border border-stone-200 dark:border-stone-700 rounded-full outline-none cursor-pointer appearance-none whitespace-nowrap transition-colors"
+                  >
+                    <option
+                      value=""
+                      className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white"
+                    >
+                      Đổi khối lớp
+                    </option>
+                    {[6, 7, 8, 9, 10, 11, 12].map((g) => (
+                      <option
+                        key={g}
+                        value={`Lớp ${g}`}
+                        className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white"
+                      >
+                        Lớp {g}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-500 pointer-events-none" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleBulkArchive}
+                  className="h-8 px-3.5 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer whitespace-nowrap border border-red-600"
+                >
+                  <Icons.Delete className="w-3.5 h-3.5 text-white" />
+                  <span>Lưu trữ</span>
+                </button>
+
+                <div className="h-5 w-px bg-stone-200 dark:bg-stone-700 shrink-0" />
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="h-8 px-3 text-xs font-semibold text-stone-600 hover:text-stone-900 dark:text-stone-300 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full transition-colors whitespace-nowrap cursor-pointer flex items-center gap-1"
+                  title="Hủy chọn tất cả"
+                >
+                  <Icons.Error className="w-3.5 h-3.5 text-stone-500" />
+                  <span>Bỏ chọn</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1202,6 +1282,22 @@ export default function StudentsPage() {
           }}
           handleToggleStatus={handleInlineStatusToggle}
           onArchive={handleArchiveOne}
+        />
+
+        {/* Unified User Form Modal for Students */}
+        <UserFormModal
+          isOpen={showAddModal || Boolean(editingStudent)}
+          user={editingStudent}
+          initialRole="student"
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingStudent(null);
+          }}
+          onSuccess={() => {
+            setShowAddModal(false);
+            setEditingStudent(null);
+            refetch();
+          }}
         />
       </div>
     </div>
@@ -1277,12 +1373,12 @@ function StudentDrawer({
         {/* Drawer Header */}
         <div className="flex items-center justify-between border-b border-stone-100 dark:border-white/5 pb-4 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold text-lg shadow-xs shrink-0">
-              {activeStudent.full_name?.charAt(0) || 'H'}
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold text-lg shadow-xs shrink-0 uppercase">
+              {(getStudentDisplayName(activeStudent).charAt(0) || 'H').toUpperCase()}
             </div>
             <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-tight truncate">
-                {activeStudent.full_name}
+                {getStudentDisplayName(activeStudent)}
               </h2>
               <p className="text-xs text-stone-400 font-normal truncate mt-0.5">
                 {activeStudent.email || 'Chưa cập nhật email'}
@@ -1312,17 +1408,13 @@ function StudentDrawer({
           {/* Quick Info Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-stone-50 dark:bg-white/[0.02] p-3 rounded-xl border border-stone-100 dark:border-white/5">
-              <span className="text-[11px] font-medium text-stone-400 block mb-1">
-                Khối lớp
-              </span>
+              <span className="text-[11px] font-medium text-stone-400 block mb-1">Khối lớp</span>
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 {activeStudent.grade_level || 'Chưa phân khối'}
               </span>
             </div>
             <div className="bg-stone-50 dark:bg-white/[0.02] p-3 rounded-xl border border-stone-100 dark:border-white/5">
-              <span className="text-[11px] font-medium text-stone-400 block mb-1">
-                Trạng thái
-              </span>
+              <span className="text-[11px] font-medium text-stone-400 block mb-1">Trạng thái</span>
               <span
                 className={cn(
                   'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold',

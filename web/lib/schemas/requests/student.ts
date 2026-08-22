@@ -4,19 +4,19 @@
  * Aligned with BH-EDU v5.0 Architecture
  */
 
-import { z } from "zod";
+import { z } from 'zod';
 import {
-    dateStringSchema,
-    emailSchema,
-    genderSchema,
-    gradeLevelSchema,
-    optionalDateStringSchema,
-    optionalPhoneSchema,
-    paginationSchema,
-    phoneSchema,
-    studentStatusSchema,
-    uuidSchema,
-} from "../common";
+  dateStringSchema,
+  emailSchema,
+  genderSchema,
+  gradeLevelSchema,
+  optionalDateStringSchema,
+  optionalPhoneSchema,
+  paginationSchema,
+  phoneSchema,
+  studentStatusSchema,
+  uuidSchema,
+} from '../common';
 
 // ============================================
 // STUDENT CREATION
@@ -26,26 +26,93 @@ import {
  * Create student request schema
  */
 export const createStudentSchema = z.object({
-    first_name: z.string().min(1, "First name is required").max(100).optional(),
-    last_name: z.string().min(1, "Last name is required").max(100).optional(),
-    full_name: z.string().min(1, "Full name is required").max(200),
-    email: z.string().email("Invalid email format").optional().nullable(),
-    phone: optionalPhoneSchema,
-    date_of_birth: optionalDateStringSchema,
-    gender: genderSchema.optional().nullable(),
-    address: z.string().max(500).optional().nullable(),
-    emergency_contact: z.string().max(100).optional().nullable(),
-    grade_level: z.string().max(50).optional().nullable(),
-    student_id: z.string().max(50).optional().nullable(),
-    student_code: z.string()
-        .regex(/^HS\d{8}$/, "Student code must be in format HS{YEAR}{4-DIGIT}")
-        .optional(), // Auto-generated if not provided
-    photo_url: z.string().url("Invalid photo URL").optional().nullable(),
-    notes: z.string().max(1000).optional().nullable(),
-    enrollment_date: optionalDateStringSchema,
-    status: studentStatusSchema.default("active"),
-    is_active: z.boolean().optional().default(true),
-    is_managed: z.boolean().optional().default(true),
+  first_name: z.string().max(100).optional().nullable(),
+  last_name: z.string().max(100).optional().nullable(),
+  full_name: z.string().min(1, 'Họ tên là bắt buộc').max(200),
+  email: z
+    .string()
+    .email('Định dạng email không hợp lệ')
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? undefined : v)),
+  phone: z
+    .string()
+    .max(20)
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? null : v)),
+  date_of_birth: z
+    .string()
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? null : v)),
+  gender: z
+    .string()
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? null : v)),
+  address: z
+    .string()
+    .max(500)
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? null : v)),
+  emergency_contact: z
+    .string()
+    .max(100)
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? null : v)),
+  grade_level: z
+    .string()
+    .max(50)
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? null : v)),
+  student_id: z
+    .string()
+    .max(50)
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? null : v)),
+  student_code: z
+    .string()
+    .max(50)
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? undefined : v)),
+  photo_url: z
+    .string()
+    .url('Invalid photo URL')
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? null : v)),
+  notes: z
+    .string()
+    .max(1000)
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? null : v)),
+  enrollment_date: z
+    .string()
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((v) => (v === '' ? null : v)),
+  status: studentStatusSchema.default('active'),
+  is_active: z.boolean().optional().default(true),
+  is_managed: z.boolean().optional().default(true),
 });
 
 // ============================================
@@ -56,7 +123,7 @@ export const createStudentSchema = z.object({
  * Update student request schema
  */
 export const updateStudentSchema = createStudentSchema.partial().extend({
-    id: uuidSchema.optional(),
+  id: uuidSchema.optional(),
 });
 
 // ============================================
@@ -67,12 +134,12 @@ export const updateStudentSchema = createStudentSchema.partial().extend({
  * Student query parameters
  */
 export const studentQuerySchema = paginationSchema.extend({
-    search: z.string().max(100).optional(),
-    status: studentStatusSchema.optional(),
-    grade_level: z.string().optional(),
-    gender: genderSchema.optional(),
-    class_id: uuidSchema.optional(), // Filter by class
-    academic_year_id: uuidSchema.optional(), // Filter by academic year
+  search: z.string().max(100).optional(),
+  status: studentStatusSchema.optional(),
+  grade_level: z.string().optional(),
+  gender: genderSchema.optional(),
+  class_id: uuidSchema.optional(), // Filter by class
+  academic_year_id: uuidSchema.optional(), // Filter by academic year
 });
 
 // ============================================
@@ -91,14 +158,14 @@ export type StudentQuery = z.infer<typeof studentQuerySchema>;
  * Guardian creation schema
  */
 export const createGuardianSchema = z.object({
-    student_id: uuidSchema,
-    first_name: z.string().min(1, "First name is required").max(100),
-    last_name: z.string().min(1, "Last name is required").max(100),
-    relationship: z.enum(["father", "mother", "guardian", "other"]),
-    phone: z.string().min(1, "Phone is required").max(20),
-    email: emailSchema.optional().nullable(),
-    address: z.string().max(500).optional().nullable(),
-    is_primary: z.boolean().optional().default(false),
+  student_id: uuidSchema,
+  first_name: z.string().min(1, 'First name is required').max(100),
+  last_name: z.string().min(1, 'Last name is required').max(100),
+  relationship: z.enum(['father', 'mother', 'guardian', 'other']),
+  phone: z.string().min(1, 'Phone is required').max(20),
+  email: emailSchema.optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  is_primary: z.boolean().optional().default(false),
 });
 
 // ============================================
@@ -109,22 +176,22 @@ export const createGuardianSchema = z.object({
  * Student bulk import schema
  */
 export const importStudentsSchema = z.object({
-    students: z.array(
-        z.object({
-            first_name: z.string().min(1),
-            last_name: z.string().min(1),
-            date_of_birth: dateStringSchema,
-            gender: genderSchema,
-            student_code: z.string().min(1),
-            student_id: z.string().optional().nullable(),
-            email: emailSchema.optional().nullable(),
-            phone: z.string().optional().nullable(),
-            address: z.string().optional().nullable(),
-        }),
-    ).min(1, "At least one student is required").max(
-        100,
-        "Maximum 100 students per import",
-    ),
-    class_id: uuidSchema.optional(),
-    enrollment_date: dateStringSchema.optional(),
+  students: z
+    .array(
+      z.object({
+        first_name: z.string().min(1),
+        last_name: z.string().min(1),
+        date_of_birth: dateStringSchema,
+        gender: genderSchema,
+        student_code: z.string().min(1),
+        student_id: z.string().optional().nullable(),
+        email: emailSchema.optional().nullable(),
+        phone: z.string().optional().nullable(),
+        address: z.string().optional().nullable(),
+      })
+    )
+    .min(1, 'At least one student is required')
+    .max(100, 'Maximum 100 students per import'),
+  class_id: uuidSchema.optional(),
+  enrollment_date: dateStringSchema.optional(),
 });

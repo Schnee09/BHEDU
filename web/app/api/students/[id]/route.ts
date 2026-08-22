@@ -38,7 +38,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ params, requ
 // PATCH /api/students/[id]
 export const PATCH = createApiHandler(
   {
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'super_admin', 'owner', 'staff'],
     bodySchema: updateStudentSchema,
   },
   async ({ params, request, body }) => {
@@ -58,17 +58,20 @@ export const PATCH = createApiHandler(
 );
 
 // DELETE /api/students/[id]
-export const DELETE = createGetHandler({ allowedRoles: ['admin'] }, async ({ params, request }) => {
-  const identifier = getRateLimitIdentifier(request);
-  const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
-  if (!rateCheck.allowed) {
-    return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
+export const DELETE = createGetHandler(
+  { allowedRoles: ['admin', 'super_admin', 'owner'] },
+  async ({ params, request }) => {
+    const identifier = getRateLimitIdentifier(request);
+    const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
+    }
+
+    const id = params.id as string;
+    const supabase = createServiceClient();
+    const repository = new StudentRepository(supabase);
+
+    await repository.softDelete(id);
+    return apiSuccess(null, { message: 'Student archived successfully' });
   }
-
-  const id = params.id as string;
-  const supabase = createServiceClient();
-  const repository = new StudentRepository(supabase);
-
-  await repository.softDelete(id);
-  return apiSuccess(null, { message: 'Student archived successfully' });
-});
+);

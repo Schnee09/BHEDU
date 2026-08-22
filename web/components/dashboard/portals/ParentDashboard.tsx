@@ -124,32 +124,32 @@ export default function ParentDashboard() {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-x-hidden">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-6 md:py-10 space-y-8 md:space-y-12 relative z-10">
+      <div className="max-w-[1600px] mx-auto px-2.5 sm:px-4 lg:px-6 py-3 sm:py-5 space-y-4 sm:space-y-6 relative z-10">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-stone-200/50 dark:border-white/5">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-amber-500 rounded-full shadow-accent-glow" />
-              <h1 className="text-3xl md:text-5xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-200/50 dark:border-white/5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <div className="w-1.5 h-6 bg-amber-500 rounded-full shadow-accent-glow" />
+              <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
                 Dashboard <span className="text-amber-500">Phụ huynh</span>
               </h1>
             </div>
-            <div className="flex items-center gap-2 pl-4">
-              <span className="text-xs font-black text-stone-500 dark:text-stone-400 uppercase tracking-[0.2em] break-words">
+            <div className="flex items-center gap-2 pl-3">
+              <span className="text-xs font-bold text-stone-500 dark:text-stone-400">
                 Chào phụ huynh{' '}
-                <span className="text-stone-900 dark:text-stone-100">
+                <span className="text-stone-900 dark:text-stone-100 font-black">
                   {profile?.full_name ?? 'Phụ huynh'}
                 </span>
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link
               href="/dashboard/parent"
-              className="flex items-center gap-2 px-5 py-3 bg-white/40 dark:bg-stone-900/40 backdrop-blur-md border border-stone-200/50 dark:border-white/5 hover:border-amber-500/30 text-xs font-black uppercase tracking-wider text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white rounded-2xl transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-white/40 dark:bg-stone-900/40 backdrop-blur-md border border-stone-200/50 dark:border-white/5 hover:border-amber-500/30 text-xs font-bold text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white rounded-xl transition-all shadow-xs"
             >
-              <Settings className="w-4 h-4" /> Quản lý kết nối
+              <Settings className="w-3.5 h-3.5" /> Quản lý kết nối
             </Link>
           </div>
         </div>
@@ -163,26 +163,26 @@ export default function ParentDashboard() {
 
         {/* Stats Row for Selected Child */}
         {summaryLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <SkeletonStatCard />
             <SkeletonStatCard />
             <SkeletonStatCard />
             <SkeletonStatCard />
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-in fade-in duration-500">
             <StatCard
               label="Điểm trung bình"
               value={displayStats.gpa > 0 ? displayStats.gpa.toFixed(1) : '—'}
               color="emerald"
-              icon={<Icons.Grades className="w-5 h-5 text-emerald-500" />}
+              icon={<Icons.Grades className="w-4 h-4 text-emerald-500" />}
               subtitle={getTrendSubtitle(displayStats.trend)}
             />
             <StatCard
               label="Xếp hạng của con"
               value={displayStats.rank > 0 ? `#${displayStats.rank}` : '—'}
               color="blue"
-              icon={<Icons.Students className="w-5 h-5 text-blue-500" />}
+              icon={<Icons.Students className="w-4 h-4 text-blue-500" />}
               subtitle={
                 displayStats.totalRanked > 0
                   ? `/${displayStats.totalRanked} học sinh khối`
@@ -193,14 +193,14 @@ export default function ParentDashboard() {
               label="Lớp tham gia"
               value={displayStats.totalClasses}
               color="blue"
-              icon={<Icons.Classes className="w-5 h-5 text-blue-500" />}
-              subtitle="Lớp học của con đang tham gia"
+              icon={<Icons.Classes className="w-4 h-4 text-blue-500" />}
+              subtitle="Lớp học của con"
             />
             <StatCard
               label="Bài tập chưa nộp"
               value={displayStats.upcomingAssignments}
               color={displayStats.upcomingAssignments > 0 ? 'orange' : 'green'}
-              icon={<Icons.Assignments className="w-5 h-5" />}
+              icon={<Icons.Assignments className="w-4 h-4" />}
               subtitle={
                 displayStats.upcomingAssignments > 0 ? 'Cần nhắc nhở con' : 'Đã hoàn thành tốt'
               }
@@ -209,9 +209,9 @@ export default function ParentDashboard() {
         )}
 
         {/* Main Content Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 pb-32 md:pb-12">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6 pb-12">
           {/* Left Column */}
-          <div className="xl:col-span-8 space-y-12">
+          <div className="xl:col-span-8 space-y-4 sm:space-y-6">
             {/* Child's Schedule Today */}
             {selectedChildId && <TodayScheduleWidget role="parent" studentId={selectedChildId} />}
 
@@ -225,7 +225,7 @@ export default function ParentDashboard() {
           </div>
 
           {/* Right Column */}
-          <div className="xl:col-span-4 space-y-12">
+          <div className="xl:col-span-4 space-y-4 sm:space-y-6">
             {/* Daily Attendance Card */}
             {selectedChildId && <ChildAttendanceTodayWidget childId={selectedChildId} />}
 

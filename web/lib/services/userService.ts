@@ -12,7 +12,7 @@ import { studentService } from './studentService';
 import { teacherService } from './teacherService';
 import { isAtLeast, UserRole } from '@/lib/auth/core';
 import { generateWelcomeEmail, sendEmail } from '@/lib/email/emailService';
-import { generateUserEmailSlug, splitFullName } from '@/lib/utils/names';
+import { generateUserEmailSlug, splitFullName, formatVietnameseName } from '@/lib/utils/names';
 import { generateStudentCode } from '@/lib/students/studentCode';
 import { logger } from '@/lib/logger';
 
@@ -73,8 +73,18 @@ export class UserService {
 
     // Handle Student Code
     let studentCode = input.student_code;
-    if (input.role === 'student' && !studentCode) {
-      studentCode = await generateStudentCode(this.supabase);
+    if (input.role === 'student') {
+      if (!studentCode) {
+        studentCode = await generateStudentCode(this.supabase);
+      } else {
+        // Normalize 2-digit year format (e.g. HS261234 -> HS20261234)
+        const shortMatch = studentCode.trim().match(/^HS(\d{2})(\d{4})$/i);
+        if (shortMatch) {
+          studentCode = `HS20${shortMatch[1]}${shortMatch[2]}`;
+        } else {
+          studentCode = studentCode.trim();
+        }
+      }
     }
 
     // Handle Email
@@ -146,7 +156,9 @@ export class UserService {
       const isManaged = MANAGED_DOMAINS.some((domain) => email.toLowerCase().endsWith(domain));
       const isStudent = input.role === 'student';
       const isTeacherOrTutor = input.role === 'teacher' || input.role === 'tutor';
-      const isStaffOrAdmin = ['admin', 'owner', 'super_admin', 'staff'].includes(input.role as string);
+      const isStaffOrAdmin = ['admin', 'owner', 'super_admin', 'staff'].includes(
+        input.role as string
+      );
 
       // 5. Upsert Profile (trigger auto-creates it, but we upsert to handle race conditions)
       const { data: profile, error: profileError } = await this.supabase
@@ -166,6 +178,7 @@ export class UserService {
             notes: input.notes,
             student_id: isStudent ? input.student_id : null,
             student_code: isStudent ? studentCode : null,
+            teacher_code: isTeacherOrTutor ? input.teacher_code || null : null,
             grade_level: isStudent ? input.grade_level : null,
             department: isTeacherOrTutor || isStaffOrAdmin ? input.department : null,
             personal_email: input.personal_email,
@@ -194,7 +207,11 @@ export class UserService {
 
         // Provide more specific error message
         let errorMsg = profileError.message || 'Lỗi lưu thông tin hồ sơ';
-        if (profileError.code === '23505' || errorMsg.includes('unique constraint') || errorMsg.includes('duplicate key')) {
+        if (
+          profileError.code === '23505' ||
+          errorMsg.includes('unique constraint') ||
+          errorMsg.includes('duplicate key')
+        ) {
           if (errorMsg.includes('student_code')) {
             errorMsg = `Mã học sinh "${studentCode}" đã tồn tại trong hệ thống. Vui lòng chọn mã khác.`;
           } else if (errorMsg.includes('teacher_code')) {
@@ -222,6 +239,7 @@ export class UserService {
           teacher_type: input.teacher_type || (input.role === 'tutor' ? 'tutor' : 'full_time'),
           department: input.department,
           specialization: input.specialization,
+          teaching_subjects: input.teaching_subjects,
           hourly_rate: input.hourly_rate,
         });
       }
@@ -276,13 +294,23 @@ export class UserService {
    */
   async updateUser(id: string, input: UpdateUserInput) {
     // 1. Update Core Profile
+    let firstName = input.first_name;
+    let lastName = input.last_name;
+    let fullName = (input as any).full_name;
+
+    if (fullName) {
+      fullName = fullName.trim();
+      const split = splitFullName(fullName);
+      firstName = firstName || split.first_name;
+      lastName = lastName || split.last_name;
+    } else if (firstName || lastName) {
+      fullName = formatVietnameseName(firstName, lastName);
+    }
+
     const updatePayload: Record<string, any> = {
-      first_name: input.first_name,
-      last_name: input.last_name,
-      full_name:
-        input.first_name || input.last_name
-          ? `${input.first_name || ''} ${input.last_name || ''}`.trim()
-          : undefined,
+      first_name: firstName,
+      last_name: lastName,
+      full_name: fullName,
       phone: input.phone,
       is_active: input.is_active,
       notes: input.notes,
@@ -299,6 +327,7 @@ export class UserService {
       updatePayload.grade_level = input.grade_level;
     } else if (input.role === 'teacher' || input.role === 'tutor') {
       updatePayload.department = input.department;
+      if (input.teacher_code) updatePayload.teacher_code = input.teacher_code;
       updatePayload.grade_level = null; // Clear mismatched student grade_level
     } else if (['admin', 'owner', 'super_admin', 'staff'].includes(input.role as string)) {
       updatePayload.department = input.department;
@@ -326,7 +355,11 @@ export class UserService {
           user_metadata: { role: input.role },
         });
       } catch (authErr) {
-        logger.warn('Failed to sync auth user metadata role on updateUser', { id, role: input.role, authErr });
+        logger.warn('Failed to sync auth user metadata role on updateUser', {
+          id,
+          role: input.role,
+          authErr,
+        });
       }
     }
 
@@ -341,6 +374,7 @@ export class UserService {
         teacher_type: input.teacher_type,
         department: input.department,
         specialization: input.specialization,
+        teaching_subjects: input.teaching_subjects,
         hourly_rate: input.hourly_rate,
       });
     }

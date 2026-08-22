@@ -1,99 +1,148 @@
-import { createServiceClient } from "@/lib/supabase/server";
-import { NotFoundError, ValidationError } from "@/lib/api/errors";
-import type { CreateUserInput, UpdateUserInput } from "@/lib/schemas";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { TeacherRepository } from "../repositories/TeacherRepository";
+import { createServiceClient } from '@/lib/supabase/server';
+import { NotFoundError, ValidationError } from '@/lib/api/errors';
+import type { CreateUserInput, UpdateUserInput } from '@/lib/schemas';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { TeacherRepository } from '../repositories/TeacherRepository';
 
 export interface TeacherProfile {
-    id: string;
-    profile_id: string;
-    teacher_type: "full_time" | "part_time" | "tutor";
-    department?: string;
-    specialization?: string;
-    teaching_subjects?: string[];
-    hourly_rate?: number;
-    bio?: string;
-    created_at: string;
-    updated_at: string;
+  id: string;
+  profile_id: string;
+  teacher_type: 'full_time' | 'part_time' | 'tutor';
+  department?: string;
+  specialization?: string;
+  teaching_subjects?: string[];
+  hourly_rate?: number;
+  bio?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export class TeacherService {
-    private supabase: SupabaseClient;
-    private repository: TeacherRepository;
+  private supabase: SupabaseClient;
+  private repository: TeacherRepository;
 
-    constructor(supabase?: SupabaseClient) {
-        this.supabase = supabase || createServiceClient();
-        this.repository = new TeacherRepository(this.supabase);
-    }
+  constructor(supabase?: SupabaseClient) {
+    this.supabase = supabase || createServiceClient();
+    this.repository = new TeacherRepository(this.supabase);
+  }
 
-    /**
-     * Syncs teacher_profile data for a profile
-     */
-    async syncTeacherProfile(profileId: string, data: Partial<TeacherProfile>) {
-        const { error } = await this.supabase
-            .from("teacher_profiles")
-            .upsert({
-                profile_id: profileId,
-                teacher_type: data.teacher_type || "full_time",
-                department: data.department,
-                specialization: data.specialization,
-                hourly_rate: data.hourly_rate,
-                updated_at: new Date().toISOString(),
-            }, { onConflict: "profile_id" });
+  /**
+   * Syncs teacher_profile data for a profile
+   */
+  async syncTeacherProfile(profileId: string, data: Partial<TeacherProfile>) {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-        if (error) {
-            console.error("Failed to sync teacher profile:", error);
-            throw new Error("Failed to sync teacher details");
+    // Resolve subject names/codes to UUIDs for PostgreSQL UUID[] column
+    let resolvedSubjectUuids: string[] = [];
+    if (Array.isArray(data.teaching_subjects) && data.teaching_subjects.length > 0) {
+      const rawItems = data.teaching_subjects;
+      const validUuids = rawItems.filter((item) => UUID_REGEX.test(item));
+      const namesToLookup = rawItems.filter((item) => !UUID_REGEX.test(item));
+
+      if (namesToLookup.length > 0) {
+        const { data: matchedSubjects } = await this.supabase
+          .from('subjects')
+          .select('id, name, code');
+
+        if (matchedSubjects) {
+          for (const name of namesToLookup) {
+            const trimmed = name.trim().toLowerCase();
+            const found = matchedSubjects.find(
+              (s) => s.name?.toLowerCase() === trimmed || s.code?.toLowerCase() === trimmed
+            );
+            if (found && !validUuids.includes(found.id)) {
+              validUuids.push(found.id);
+            }
+          }
         }
+      }
+      resolvedSubjectUuids = validUuids;
     }
 
-    /**
-     * Gets a teacher profile by profile_id
-     */
-    async getTeacherProfile(profileId: string): Promise<TeacherProfile | null> {
-        return this.getTeacherProfileByProfileId(profileId);
+    const { error } = await this.supabase.from('teacher_profiles').upsert(
+      {
+        profile_id: profileId,
+        teacher_type: data.teacher_type || 'full_time',
+        department: data.department,
+        specialization: data.specialization,
+        teaching_subjects: resolvedSubjectUuids.length > 0 ? resolvedSubjectUuids : null,
+        hourly_rate: data.hourly_rate,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'profile_id' }
+    );
+
+    if (error) {
+      console.error('Failed to sync teacher profile:', error);
+      throw new Error('Failed to sync teacher details');
     }
 
-    /**
-     * Helper to get teacher profile
-     */
-    private async getTeacherProfileByProfileId(
-        profileId: string,
-    ): Promise<TeacherProfile | null> {
-        const { data, error } = await this.supabase
-            .from("teacher_profiles")
-            .select("*")
-            .eq("profile_id", profileId)
-            .single();
+    // Also sync teacher_subjects join table if any
+    if (resolvedSubjectUuids.length > 0) {
+      try {
+        await this.supabase.from('teacher_subjects').delete().eq('profile_id', profileId);
 
-        if (error && error.code !== "PGRST116") {
-            console.error("Error fetching teacher profile:", error);
-            throw error;
-        }
+        const joinRows = resolvedSubjectUuids.map((subId, idx) => ({
+          profile_id: profileId,
+          subject_id: subId,
+          is_primary: idx === 0,
+        }));
 
-        return data;
+        await this.supabase.from('teacher_subjects').insert(joinRows);
+      } catch (joinErr) {
+        console.warn('Could not sync teacher_subjects join table:', joinErr);
+      }
+    }
+  }
+
+  /**
+   * Gets a teacher profile by profile_id
+   */
+  async getTeacherProfile(profileId: string): Promise<TeacherProfile | null> {
+    return this.getTeacherProfileByProfileId(profileId);
+  }
+
+  /**
+   * Helper to get teacher profile
+   */
+  private async getTeacherProfileByProfileId(profileId: string): Promise<TeacherProfile | null> {
+    const { data, error } = await this.supabase
+      .from('teacher_profiles')
+      .select('*')
+      .eq('profile_id', profileId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching teacher profile:', error);
+      throw error;
     }
 
-    /**
-     * Lists teachers with their profiles and class counts
-     */
-    async getTeachersWithStats(filters: {
-        search?: string;
-        include_staff?: boolean;
-        teacher_type?: "full_time" | "part_time" | "tutor" | "all";
-        page?: number;
-        limit?: number;
-    } = {}) {
-        return this.repository.findTeachersWithStats(filters);
-    }
+    return data;
+  }
 
-    /**
-     * Lists tutors with their profiles and teacher details
-     */
-    async getTutors(filters?: { search?: string }) {
-        let query = this.supabase
-            .from("profiles")
-            .select(`
+  /**
+   * Lists teachers with their profiles and class counts
+   */
+  async getTeachersWithStats(
+    filters: {
+      search?: string;
+      include_staff?: boolean;
+      teacher_type?: 'full_time' | 'part_time' | 'tutor' | 'all';
+      page?: number;
+      limit?: number;
+    } = {}
+  ) {
+    return this.repository.findTeachersWithStats(filters);
+  }
+
+  /**
+   * Lists tutors with their profiles and teacher details
+   */
+  async getTutors(filters?: { search?: string }) {
+    let query = this.supabase
+      .from('profiles')
+      .select(
+        `
                 *,
                 teacher_profiles (
                     teacher_type,
@@ -103,128 +152,153 @@ export class TeacherService {
                     hourly_rate,
                     bio
                 )
-            `)
-            .in("role", ["tutor", "teacher"])
-            .is("deleted_at", null);
+            `
+      )
+      .in('role', ['tutor', 'teacher'])
+      .is('deleted_at', null);
 
-        if (filters?.search) {
-            query = query.or(
-                `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
-            );
-        }
-
-        const { data, error } = await query
-            .order("full_name", { ascending: true })
-            .limit(100);
-
-        if (error) {
-            console.error("Error fetching tutors:", error);
-            const fallback = await this.repository.findTeachersWithStats({
-                search: filters?.search,
-                teacher_type: "tutor",
-                limit: 100,
-            });
-            return fallback.data.map((item) => ({
-                id: item.id,
-                full_name: item.full_name,
-                email: item.email,
-                phone: item.phone,
-                photo_url: (item as any).photo_url,
-                teacher_type: item.teacher_type,
-                specialization: item.specialization,
-                teaching_subjects: (item as any).teaching_subjects || [],
-                hourly_rate: item.hourly_rate,
-                bio: (item as any).bio,
-            }));
-        }
-
-        return (data || [])
-            .filter((item: any) => {
-                const tp = Array.isArray(item.teacher_profiles) ? item.teacher_profiles[0] : item.teacher_profiles;
-                return item.role === "tutor" || tp?.teacher_type === "tutor";
-            })
-            .map((item: any) => {
-                const tp = Array.isArray(item.teacher_profiles) ? item.teacher_profiles[0] : item.teacher_profiles;
-                return {
-                    id: item.id,
-                    full_name: item.full_name,
-                    email: item.email,
-                    phone: item.phone,
-                    photo_url: item.photo_url || null,
-                    teacher_type: tp?.teacher_type || (item.role === "tutor" ? "tutor" : "part_time"),
-                    specialization: tp?.specialization || item.department || null,
-                    teaching_subjects: tp?.teaching_subjects || [],
-                    hourly_rate: tp?.hourly_rate || null,
-                    bio: tp?.bio || item.notes || null,
-                };
-            });
+    if (filters?.search) {
+      query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
     }
 
-    /**
-     * Creates a new tutor (profile + teacher_profile)
-     */
-    async createTutor(input: any) {
-        // Create base profile
-        const { data: profile, error: profileError } = await this.supabase
-            .from("profiles")
-            .insert({
-                full_name: input.full_name,
-                email: input.email || null,
-                phone: input.phone || null,
-                role: "tutor",
-                is_active: true,
-            })
-            .select()
-            .single();
+    const { data, error } = await query.order('full_name', { ascending: true }).limit(100);
 
-        if (profileError) {
-            throw profileError;
+    if (error) {
+      console.error('Error fetching tutors:', error);
+      const fallback = await this.repository.findTeachersWithStats({
+        search: filters?.search,
+        teacher_type: 'tutor',
+        limit: 100,
+      });
+      return fallback.data.map((item) => ({
+        id: item.id,
+        full_name: item.full_name,
+        email: item.email,
+        phone: item.phone,
+        photo_url: (item as any).photo_url,
+        teacher_type: item.teacher_type,
+        specialization: item.specialization,
+        teaching_subjects: (item as any).teaching_subjects || [],
+        hourly_rate: item.hourly_rate,
+        bio: (item as any).bio,
+      }));
+    }
+
+    // Query subjects to map UUIDs -> names
+    const { data: allSubjects } = await this.supabase.from('subjects').select('id, name, code');
+    const subjectMap = new Map<string, string>();
+    (allSubjects || []).forEach((s: any) => {
+      subjectMap.set(s.id, s.name);
+    });
+
+    return (data || [])
+      .filter((item: any) => {
+        const tp = Array.isArray(item.teacher_profiles)
+          ? item.teacher_profiles[0]
+          : item.teacher_profiles;
+        return item.role === 'tutor' || tp?.teacher_type === 'tutor';
+      })
+      .map((item: any) => {
+        const tp = Array.isArray(item.teacher_profiles)
+          ? item.teacher_profiles[0]
+          : item.teacher_profiles;
+        const rawSubjects = tp?.teaching_subjects || [];
+        const resolvedSubjects: string[] = [];
+        if (Array.isArray(rawSubjects)) {
+          for (const s of rawSubjects) {
+            if (subjectMap.has(s)) {
+              resolvedSubjects.push(subjectMap.get(s)!);
+            } else {
+              resolvedSubjects.push(s);
+            }
+          }
         }
-
-        // Create teacher profile
-        const { error: teacherError } = await this.supabase
-            .from("teacher_profiles")
-            .insert({
-                profile_id: profile.id,
-                teacher_type: "tutor",
-                specialization: input.specialization || null,
-                teaching_subjects: input.teaching_subjects || [],
-                hourly_rate: input.hourly_rate || null,
-                bio: input.bio || null,
-            });
-
-        if (teacherError) {
-            // Rollback
-            await this.supabase.from("profiles").delete().eq("id", profile.id);
-            throw teacherError;
+        if (resolvedSubjects.length === 0 && item.department) {
+          resolvedSubjects.push(
+            ...item.department
+              .split(',')
+              .map((s: string) => s.trim())
+              .filter(Boolean)
+          );
         }
 
         return {
-            ...profile,
-            teacher_type: "tutor",
-            specialization: input.specialization,
-            teaching_subjects: input.teaching_subjects,
+          id: item.id,
+          full_name: item.full_name,
+          email: item.email,
+          phone: item.phone,
+          role: item.role || 'tutor',
+          teacher_code: item.teacher_code || null,
+          photo_url: item.photo_url || null,
+          teacher_type: tp?.teacher_type || (item.role === 'tutor' ? 'tutor' : 'part_time'),
+          specialization: tp?.specialization || item.department || null,
+          teaching_subjects: Array.from(new Set(resolvedSubjects)),
+          hourly_rate: tp?.hourly_rate || null,
+          bio: tp?.bio || item.notes || null,
         };
+      });
+  }
+
+  /**
+   * Creates a new tutor (profile + teacher_profile)
+   */
+  async createTutor(input: any) {
+    // Create base profile
+    const { data: profile, error: profileError } = await this.supabase
+      .from('profiles')
+      .insert({
+        full_name: input.full_name,
+        email: input.email || null,
+        phone: input.phone || null,
+        role: 'tutor',
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      throw profileError;
     }
 
-    // ============================================================
-    // STATIC METHODS FOR BACKWARD COMPATIBILITY
-    // ============================================================
+    // Create teacher profile
+    const { error: teacherError } = await this.supabase.from('teacher_profiles').insert({
+      profile_id: profile.id,
+      teacher_type: 'tutor',
+      specialization: input.specialization || null,
+      teaching_subjects: input.teaching_subjects || [],
+      hourly_rate: input.hourly_rate || null,
+      bio: input.bio || null,
+    });
 
-    static async syncTeacherProfile(
-        profileId: string,
-        data: Partial<TeacherProfile>,
-    ) {
-        return teacherService.syncTeacherProfile(profileId, data);
+    if (teacherError) {
+      // Rollback
+      await this.supabase.from('profiles').delete().eq('id', profile.id);
+      throw teacherError;
     }
 
-    static async getTeacherProfile(profileId: string) {
-        return teacherService.getTeacherProfile(profileId);
-    }
+    return {
+      ...profile,
+      teacher_type: 'tutor',
+      specialization: input.specialization,
+      teaching_subjects: input.teaching_subjects,
+    };
+  }
 
-    static async getTeachersWithStats(filters: any) {
-        return teacherService.getTeachersWithStats(filters);
-    }
+  // ============================================================
+  // STATIC METHODS FOR BACKWARD COMPATIBILITY
+  // ============================================================
+
+  static async syncTeacherProfile(profileId: string, data: Partial<TeacherProfile>) {
+    return teacherService.syncTeacherProfile(profileId, data);
+  }
+
+  static async getTeacherProfile(profileId: string) {
+    return teacherService.getTeacherProfile(profileId);
+  }
+
+  static async getTeachersWithStats(filters: any) {
+    return teacherService.getTeachersWithStats(filters);
+  }
 }
 
 // Default singleton instance
