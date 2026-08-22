@@ -14,8 +14,9 @@ import { isAtLeast, UserRole } from '@/lib/auth/core';
 import { generateWelcomeEmail, sendEmail } from '@/lib/email/emailService';
 import { generateUserEmailSlug, splitFullName } from '@/lib/utils/names';
 import { generateStudentCode } from '@/lib/students/studentCode';
+import { logger } from '@/lib/logger';
 
-const MANAGED_DOMAINS = ['@student.bhedu.vn', '@parent.bhedu.vn', '@fake.bhedu.vn'];
+const MANAGED_DOMAINS = ['@id.bhedu.vn', '@student.bhedu.vn', '@parent.bhedu.vn', '@fake.bhedu.vn'];
 
 export interface UserProfile {
   id: string;
@@ -126,7 +127,16 @@ export class UserService {
 
     if (authError || !authData.user) {
       console.error('Auth creation failed:', authError);
-      throw new ValidationError(authError?.message || 'Không thể tạo tài khoản người dùng');
+      let errorMsg = authError?.message || 'Không thể tạo tài khoản người dùng';
+      const lower = errorMsg.toLowerCase();
+      if (lower.includes('already been registered') || lower.includes('already registered')) {
+        errorMsg = `Email hoặc tài khoản "${email}" đã tồn tại trong hệ thống. Vui lòng chọn email hoặc mã truy cập khác.`;
+      } else if (lower.includes('at least 6 characters')) {
+        errorMsg = 'Mật khẩu phải có độ dài tối thiểu 6 ký tự.';
+      } else if (lower.includes('valid email')) {
+        errorMsg = 'Địa chỉ email không hợp lệ. Vui lòng kiểm tra lại cấu trúc email.';
+      }
+      throw new ValidationError(errorMsg);
     }
 
     const userId = authData.user.id;
@@ -134,6 +144,9 @@ export class UserService {
     try {
       // 4. Determine if managed
       const isManaged = MANAGED_DOMAINS.some((domain) => email.toLowerCase().endsWith(domain));
+      const isStudent = input.role === 'student';
+      const isTeacherOrTutor = input.role === 'teacher' || input.role === 'tutor';
+      const isStaffOrAdmin = ['admin', 'owner', 'super_admin', 'staff'].includes(input.role as string);
 
       // 5. Upsert Profile (trigger auto-creates it, but we upsert to handle race conditions)
       const { data: profile, error: profileError } = await this.supabase
@@ -151,10 +164,10 @@ export class UserService {
             is_managed: isManaged,
             created_by: createdBy,
             notes: input.notes,
-            student_id: input.student_id,
-            student_code: studentCode,
-            grade_level: input.grade_level,
-            department: input.department,
+            student_id: isStudent ? input.student_id : null,
+            student_code: isStudent ? studentCode : null,
+            grade_level: isStudent ? input.grade_level : null,
+            department: isTeacherOrTutor || isStaffOrAdmin ? input.department : null,
             personal_email: input.personal_email,
           },
           {
@@ -180,15 +193,22 @@ export class UserService {
         });
 
         // Provide more specific error message
-        if (profileError.code === 'PGRST116') {
-          throw new Error(
-            'Không thể tạo hồ sơ người dùng. Vui lòng chạy migration database hoặc liên hệ quản trị viên.'
-          );
+        let errorMsg = profileError.message || 'Lỗi lưu thông tin hồ sơ';
+        if (profileError.code === '23505' || errorMsg.includes('unique constraint') || errorMsg.includes('duplicate key')) {
+          if (errorMsg.includes('student_code')) {
+            errorMsg = `Mã học sinh "${studentCode}" đã tồn tại trong hệ thống. Vui lòng chọn mã khác.`;
+          } else if (errorMsg.includes('teacher_code')) {
+            errorMsg = `Mã giáo viên đã tồn tại trong hệ thống. Vui lòng chọn mã khác.`;
+          } else if (errorMsg.includes('email')) {
+            errorMsg = `Email "${email}" đã tồn tại trong hệ thống.`;
+          } else {
+            errorMsg = 'Dữ liệu bị trùng lặp (Email hoặc Mã định danh đã được sử dụng).';
+          }
+        } else if (profileError.code === 'PGRST116') {
+          errorMsg = 'Không thể tạo hồ sơ người dùng trong cơ sở dữ liệu.';
         }
 
-        throw new Error(
-          `Không thể cập nhật thông tin hồ sơ: ${profileError.message || 'Unknown error'}`
-        );
+        throw new ValidationError(errorMsg);
       }
 
       // 6. Role-specific Synchronization (Use profile.id NOT userId)
@@ -256,28 +276,58 @@ export class UserService {
    */
   async updateUser(id: string, input: UpdateUserInput) {
     // 1. Update Core Profile
+    const updatePayload: Record<string, any> = {
+      first_name: input.first_name,
+      last_name: input.last_name,
+      full_name:
+        input.first_name || input.last_name
+          ? `${input.first_name || ''} ${input.last_name || ''}`.trim()
+          : undefined,
+      phone: input.phone,
+      is_active: input.is_active,
+      notes: input.notes,
+      personal_email: input.personal_email,
+    };
+
+    if (input.role) {
+      updatePayload.role = input.role;
+    }
+
+    if (input.role === 'student') {
+      updatePayload.student_id = input.student_id;
+      updatePayload.student_code = input.student_code;
+      updatePayload.grade_level = input.grade_level;
+    } else if (input.role === 'teacher' || input.role === 'tutor') {
+      updatePayload.department = input.department;
+      updatePayload.grade_level = null; // Clear mismatched student grade_level
+    } else if (['admin', 'owner', 'super_admin', 'staff'].includes(input.role as string)) {
+      updatePayload.department = input.department;
+      updatePayload.grade_level = null;
+    } else if (input.role === 'parent') {
+      updatePayload.grade_level = null;
+      updatePayload.department = null;
+    }
+
     const { data: profile, error: profileError } = await this.supabase
       .from('profiles')
-      .update({
-        first_name: input.first_name,
-        last_name: input.last_name,
-        full_name:
-          input.first_name || input.last_name
-            ? `${input.first_name || ''} ${input.last_name || ''}`.trim()
-            : undefined,
-        phone: input.phone,
-        is_active: input.is_active,
-        notes: input.notes,
-        personal_email: input.personal_email,
-        student_id: input.student_id,
-        student_code: input.student_code,
-      })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single();
 
     if (profileError) {
       throw new Error('Không thể cập nhật hồ sơ');
+    }
+
+    // Sync Auth metadata if role changed
+    if (input.role) {
+      try {
+        await this.supabase.auth.admin.updateUserById(id, {
+          user_metadata: { role: input.role },
+        });
+      } catch (authErr) {
+        logger.warn('Failed to sync auth user metadata role on updateUser', { id, role: input.role, authErr });
+      }
     }
 
     // 2. Role-specific updates

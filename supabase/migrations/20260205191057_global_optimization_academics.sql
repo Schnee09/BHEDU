@@ -162,9 +162,9 @@ CREATE OR REPLACE VIEW v_active_profiles AS
 SELECT * FROM public.profiles WHERE deleted_at IS NULL AND is_active = true;
 
 CREATE OR REPLACE VIEW v_active_classes AS
-SELECT c.*, co.name as course_name, p.full_name as teacher_name
+SELECT c.*, s.name as course_name, p.full_name as teacher_name
 FROM public.classes c
-LEFT JOIN public.courses co ON c.course_id = co.id
+LEFT JOIN public.subjects s ON c.subject_id = s.id
 LEFT JOIN public.profiles p ON c.teacher_id = p.id
 WHERE c.deleted_at IS NULL AND c.status = 'active';
 

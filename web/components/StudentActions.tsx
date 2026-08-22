@@ -130,7 +130,7 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[2000] animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[2000] transition-opacity duration-150">
           <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-md w-full p-8 shadow-2xl border border-stone-200 dark:border-white/5 animate-in zoom-in-95 duration-300">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center">

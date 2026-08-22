@@ -64,7 +64,7 @@ export async function GET(
           )
         `)
           .eq("student_id", resolvedParams.id)
-          .eq("status", "active"),
+          .eq("status", "enrolled"),
 
         // Get all grades for the student
         supabase

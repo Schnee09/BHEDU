@@ -16,3 +16,4 @@ export * from "./gradeService";
 export * from "./linkService";
 export * from "./userService";
 export * from "./settingsService";
+export * from "./financeService";

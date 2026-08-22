@@ -1,10 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardBody } from '@/components/ui/Card';
-import { Icons } from '@/components/ui/Icons';
-import { Button } from '@/components/ui';
-import { useFetch } from '@/hooks/useFetch';
+import {
+  Activity,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  Server,
+  Database,
+  Cpu,
+  Clock,
+  ShieldCheck,
+  Zap,
+  HardDrive,
+  Check,
+  Radio,
+  ArrowUpRight,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api/client';
 import PageGuard from '@/components/PageGuard';
 
 interface HealthData {
@@ -42,295 +56,377 @@ export default function SystemHealthPage() {
 }
 
 function SystemHealthContent() {
-  const { data, loading, error, refetch } = useFetch<HealthData>('/api/health');
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [data, setData] = useState<HealthData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [testingEndpoint, setTestingEndpoint] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, { ok: boolean; time: number; note: string }>>({});
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (autoRefresh) {
-      interval = setInterval(() => {
-        refetch();
-      }, 30000); // 30 seconds
+  const fetchHealth = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiFetch('/api/health');
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+        setLastRefreshed(new Date());
+      } else {
+        setError('Dịch vụ giám sát trả về mã lỗi: ' + res.status);
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Không thể kết nối đến API Health');
+    } finally {
+      setLoading(false);
     }
-    return () => clearInterval(interval);
-  }, [autoRefresh, refetch]);
-
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatUptime = (seconds: number) => {
+  useEffect(() => {
+    fetchHealth();
+  }, []);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(() => {
+      fetchHealth();
+    }, 20000); // 20s auto refresh
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
+
+  const runDiagnosticTest = async (testKey: string, endpoint: string) => {
+    setTestingEndpoint(testKey);
+    const start = performance.now();
+    try {
+      const res = await apiFetch(endpoint);
+      const time = Math.round(performance.now() - start);
+      setTestResults((prev) => ({
+        ...prev,
+        [testKey]: {
+          ok: res.ok,
+          time,
+          note: res.ok ? `Phản hồi tốt (${time}ms)` : `Lỗi ${res.status} (${time}ms)`,
+        },
+      }));
+    } catch {
+      const time = Math.round(performance.now() - start);
+      setTestResults((prev) => ({
+        ...prev,
+        [testKey]: { ok: false, time, note: `Mất kết nối (${time}ms)` },
+      }));
+    } finally {
+      setTestingEndpoint(null);
+    }
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (!bytes || bytes === 0) return '0 MB';
+    const mb = bytes / (1024 * 1024);
+    if (mb > 1024) {
+      return (mb / 1024).toFixed(2) + ' GB';
+    }
+    return mb.toFixed(1) + ' MB';
+  };
+
+  const formatUptime = (seconds?: number) => {
+    if (!seconds) return 'N/A';
     const d = Math.floor(seconds / (3600 * 24));
     const h = Math.floor((seconds % (3600 * 24)) / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
-    return `${d > 0 ? `${d}d ` : ''}${h}h ${m}m ${s}s`;
+    return `${d > 0 ? `${d} ngày ` : ''}${h} giờ ${m} phút ${s}s`;
   };
 
-  const StatusBadge = ({ status }: { status: string }) => {
-    const isHealthy = status === 'healthy' || status === 'ok';
-    return (
-      <span
-        className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${
-          isHealthy
-            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-        }`}
-      >
-        {status}
-      </span>
-    );
-  };
+  const isHealthy = data?.status === 'healthy' || data?.status === 'ok';
+  const dbLatency = data?.database?.latency_ms ?? 0;
+  const memUsed = data?.system?.memory?.heapUsed || 0;
+  const memTotal = data?.system?.memory?.heapTotal || 1;
+  const memPercent = Math.min(Math.round((memUsed / memTotal) * 100), 100);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-              <Icons.Progress className="w-6 h-6 text-white" />
+    <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-['Be_Vietnam_Pro'] text-stone-900 dark:text-stone-100 p-4 md:p-10 lg:p-12">
+      <div className="max-w-[1600px] mx-auto relative z-10 space-y-8">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-stone-200 dark:border-stone-800 pb-8">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+              <Activity className="w-4 h-4" />
+              <span>QUẢN TRỊ HỆ THỐNG • SYSTEM HEALTH & OBSERVABILITY</span>
             </div>
-            <h1 className="text-4xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
-              Hệ thống Health
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight text-stone-950 dark:text-white flex items-center gap-3">
+              Giám sát <span className="text-amber-500">Hệ thống</span>
+              <span
+                className={cn(
+                  'text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 align-middle',
+                  isHealthy
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                )}
+              >
+                <span className={cn('w-2 h-2 rounded-full', isHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500')} />
+                {isHealthy ? 'Hoạt động tốt' : 'Cần kiểm tra'}
+              </span>
             </h1>
+            <p className="text-xs text-stone-500 font-medium">
+              Theo dõi tình trạng thời gian thực của Cơ sở dữ liệu Supabase, Server Node.js và các dịch vụ nền tảng
+            </p>
           </div>
-          <p className="text-stone-500 font-medium tracking-wide first-letter:uppercase">
-            Giám sát trạng thái thời gian thực của các dịch vụ cốt lõi
-          </p>
-        </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-stone-100 dark:bg-stone-900 p-2 rounded-xl">
-            <span className="text-xs font-bold text-stone-500 uppercase tracking-widest px-2">
-              Auto-refresh
-            </span>
+          {/* Action & Auto Refresh Controls */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-sm text-xs font-bold">
+              <Radio className={cn('w-3.5 h-3.5', autoRefresh ? 'text-emerald-500 animate-pulse' : 'text-stone-400')} />
+              <span className="text-stone-600 dark:text-stone-300">Tự động làm mới (20s):</span>
+              <button
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                className={cn(
+                  'px-2 py-0.5 rounded-lg text-[10px] font-black uppercase transition-all',
+                  autoRefresh
+                    ? 'bg-emerald-500 text-white shadow-sm'
+                    : 'bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400'
+                )}
+              >
+                {autoRefresh ? 'BẬT' : 'TẮT'}
+              </button>
+            </div>
+
             <button
-              onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`w-10 h-6 rounded-full transition-colors relative ${
-                autoRefresh ? 'bg-blue-600' : 'bg-stone-300'
-              }`}
+              onClick={fetchHealth}
+              disabled={loading}
+              className="px-4 py-2.5 rounded-2xl bg-stone-900 hover:bg-stone-800 dark:bg-amber-500 dark:hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50"
             >
-              <div
-                className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                  autoRefresh ? 'translate-x-5' : 'translate-x-1'
-                }`}
-              />
+              <RefreshCw className={cn('w-3.5 h-3.5', loading && 'animate-spin')} />
+              Làm mới ngay
             </button>
           </div>
-          <Button
-            onClick={() => refetch()}
-            disabled={loading}
-            className="rounded-xl px-6 py-4 bg-stone-900 text-white font-bold uppercase tracking-widest text-xs hover:bg-stone-800 active:scale-95 transition-all"
-          >
-            {loading ? <Icons.Progress className="w-4 h-4 animate-spin" /> : 'Làm mới'}
-          </Button>
+        </div>
+
+        {error && (
+          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center gap-3 text-xs font-bold">
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Top Bento Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Database Metric */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                Cơ sở dữ liệu Supabase
+              </span>
+              <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-500">
+                <Database className="w-5 h-5" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <h3 className="text-2xl font-black text-stone-950 dark:text-white">
+                  {dbLatency} <span className="text-sm font-bold text-stone-400">ms</span>
+                </h3>
+                <span
+                  className={cn(
+                    'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase',
+                    dbLatency < 200
+                      ? 'bg-emerald-500/10 text-emerald-500'
+                      : dbLatency < 800
+                      ? 'bg-amber-500/10 text-amber-500'
+                      : 'bg-rose-500/10 text-rose-500'
+                  )}
+                >
+                  {dbLatency < 200 ? 'Rất nhanh' : dbLatency < 800 ? 'Bình thường' : 'Chậm'}
+                </span>
+              </div>
+              <p className="text-xs text-stone-400 mt-1">
+                {data?.database?.connected ? 'Kết nối ổn định' : 'Mất kết nối'}
+              </p>
+            </div>
+          </div>
+
+          {/* Memory Heap Metric */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                RAM Node.js Heap
+              </span>
+              <div className="p-2.5 rounded-2xl bg-blue-500/10 text-blue-500">
+                <Cpu className="w-5 h-5" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <h3 className="text-2xl font-black text-stone-950 dark:text-white">
+                  {formatBytes(memUsed)}
+                </h3>
+                <span className="text-xs font-bold text-stone-400">/ {formatBytes(memTotal)}</span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-stone-100 dark:bg-stone-800 mt-3 overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                  style={{ width: `${memPercent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* System Uptime */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                Thời gian Hoạt động
+              </span>
+              <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-500">
+                <Clock className="w-5 h-5" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-stone-950 dark:text-white truncate">
+                {formatUptime(data?.system?.uptime)}
+              </h3>
+              <p className="text-xs text-stone-400 mt-1">Node.js {data?.system?.nodeVersion || 'v20+'}</p>
+            </div>
+          </div>
+
+          {/* Overall Health Status */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                Môi trường & Trạng thái
+              </span>
+              <div className="p-2.5 rounded-2xl bg-sky-500/10 text-sky-500">
+                <Server className="w-5 h-5" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-stone-950 dark:text-white uppercase tracking-tight">
+                {data?.system?.env || 'Production'}
+              </h3>
+              <p className="text-xs text-stone-400 mt-1 font-mono">
+                Cập nhật lúc: {lastRefreshed.toLocaleTimeString('vi-VN')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Diagnostic Testing Suite */}
+        <div className="p-8 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-black text-stone-950 dark:text-white flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-500" />
+                Kiểm thử Chẩn đoán Dịch vụ Thời gian thực (Diagnostics)
+              </h3>
+              <p className="text-xs text-stone-500">
+                Chủ động gửi ping và kiểm tra khả năng phản hồi của từng phân hệ độc lập
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Test 1: Health Ping */}
+            <div className="p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-white/5 flex flex-col justify-between gap-4">
+              <div>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-sm text-stone-900 dark:text-white">API Health Endpoint</h4>
+                  <span className="text-[10px] font-mono text-stone-400">/api/health</span>
+                </div>
+                <p className="text-xs text-stone-500 mt-1">Kiểm tra đường truyền trực tiếp đến server Next.js.</p>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-stone-200/60 dark:border-white/5">
+                <span className="text-xs font-bold text-stone-600 dark:text-stone-300">
+                  {testResults['health']?.note || 'Chưa chạy test'}
+                </span>
+                <button
+                  onClick={() => runDiagnosticTest('health', '/api/health')}
+                  disabled={testingEndpoint === 'health'}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  {testingEndpoint === 'health' ? 'Đang test...' : 'Chạy test'}
+                </button>
+              </div>
+            </div>
+
+            {/* Test 2: Role Permissions API */}
+            <div className="p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-white/5 flex flex-col justify-between gap-4">
+              <div>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-sm text-stone-900 dark:text-white">Phân quyền RBAC</h4>
+                  <span className="text-[10px] font-mono text-stone-400">/api/admin/roles</span>
+                </div>
+                <p className="text-xs text-stone-500 mt-1">Kiểm tra kết nối truy xuất ma trận quyền và vai trò.</p>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-stone-200/60 dark:border-white/5">
+                <span className="text-xs font-bold text-stone-600 dark:text-stone-300">
+                  {testResults['roles']?.note || 'Chưa chạy test'}
+                </span>
+                <button
+                  onClick={() => runDiagnosticTest('roles', '/api/admin/roles')}
+                  disabled={testingEndpoint === 'roles'}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  {testingEndpoint === 'roles' ? 'Đang test...' : 'Chạy test'}
+                </button>
+              </div>
+            </div>
+
+            {/* Test 3: Academic Timelines */}
+            <div className="p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-white/5 flex flex-col justify-between gap-4">
+              <div>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-sm text-stone-900 dark:text-white">Học vụ & Năm học</h4>
+                  <span className="text-[10px] font-mono text-stone-400">/api/academic-years</span>
+                </div>
+                <p className="text-xs text-stone-500 mt-1">Kiểm tra khả năng truy vấn cấu hình học vụ cốt lõi.</p>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-stone-200/60 dark:border-white/5">
+                <span className="text-xs font-bold text-stone-600 dark:text-stone-300">
+                  {testResults['academic']?.note || 'Chưa chạy test'}
+                </span>
+                <button
+                  onClick={() => runDiagnosticTest('academic', '/api/academic-years')}
+                  disabled={testingEndpoint === 'academic'}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  {testingEndpoint === 'academic' ? 'Đang test...' : 'Chạy test'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Security & Infrastructure Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="w-5 h-5 text-emerald-500" />
+              <h4 className="font-bold text-sm text-stone-900 dark:text-white">Bảo mật & Rate Limiting</h4>
+            </div>
+            <p className="text-xs text-stone-500 leading-relaxed">
+              Hệ thống áp dụng cơ chế <strong>Token Bucket Rate Limit</strong> và mã hóa JWT phiên đăng nhập. 
+              Các thao tác nhạy cảm của Quản trị hệ thống đều được lưu vết đầy đủ trong Nhật ký kiểm toán (Audit Logs).
+            </p>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <HardDrive className="w-5 h-5 text-amber-500" />
+              <h4 className="font-bold text-sm text-stone-900 dark:text-white">Sao lưu & Dự phòng</h4>
+            </div>
+            <p className="text-xs text-stone-500 leading-relaxed">
+              Cơ sở dữ liệu Supabase được sao lưu liên tục (Point-in-Time Recovery). 
+              Bạn có thể tải về bản sao lưu JSON toàn diện bất kỳ lúc nào tại mục{' '}
+              <a href="/dashboard/admin/backup" className="text-amber-500 font-bold hover:underline">
+                Sao lưu & Dữ liệu
+              </a>.
+            </p>
+          </div>
         </div>
       </div>
-
-      {error ? (
-        <Card className="border-2 border-red-500/20 bg-red-500/5 p-8 rounded-[40px]">
-          <div className="flex items-center gap-4 text-red-600 font-bold">
-            <Icons.Warning className="w-8 h-8" />
-            <p>Không thể tải dữ liệu sức khỏe hệ thống: {error}</p>
-          </div>
-        </Card>
-      ) : data ? (
-        <>
-          {/* Main Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Database Health */}
-            <Card className="rounded-[40px] border-none bg-white dark:bg-stone-900 shadow-xl overflow-hidden group">
-              <div className="p-8 space-y-6">
-                <div className="flex items-start justify-between">
-                  <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Icons.Classes className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <StatusBadge status={data.database?.status || 'unknown'} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                    Cơ sở dữ liệu
-                  </h3>
-                  <p className="text-stone-500 text-sm font-medium mt-1">
-                    Supabase PostgreSQL Connection
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex items-end justify-between">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-                      Độ trễ
-                    </p>
-                    <p className="text-2xl font-black text-blue-600">
-                      {data.database?.latency_ms}ms
-                    </p>
-                  </div>
-                  {data.database?.connected && (
-                    <Icons.Success className="w-6 h-6 text-green-500 mb-1" />
-                  )}
-                </div>
-                {data.database?.error && (
-                  <p className="text-xs text-red-500 font-mono italic break-words p-3 bg-red-50 rounded-xl">
-                    {data.database.error}
-                  </p>
-                )}
-              </div>
-            </Card>
-
-            {/* Network Health */}
-            <Card className="rounded-[40px] border-none bg-white dark:bg-stone-900 shadow-xl overflow-hidden group">
-              <div className="p-8 space-y-6">
-                <div className="flex items-start justify-between">
-                  <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Icons.History className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <StatusBadge status={data.external?.status || 'unknown'} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                    Kết nối mạng
-                  </h3>
-                  <p className="text-stone-500 text-sm font-medium mt-1">
-                    External API & Google Connectivity
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex items-end justify-between">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-                      Trung bình
-                    </p>
-                    <p className="text-2xl font-black text-blue-600">
-                      {data.external?.latency_ms}ms
-                    </p>
-                  </div>
-                  <Icons.TrendUp className="w-6 h-6 text-blue-500 mb-1" />
-                </div>
-              </div>
-            </Card>
-
-            {/* Overall Latency */}
-            <Card className="rounded-[40px] border-none bg-stone-900 shadow-2xl overflow-hidden relative group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 blur-[80px] rounded-full" />
-              <div className="p-8 space-y-6 relative">
-                <div className="flex items-start justify-between">
-                  <div className="w-14 h-14 bg-white/10 rounded-3xl flex items-center justify-center">
-                    <Icons.Settings className="w-8 h-8 text-white" />
-                  </div>
-                  <StatusBadge status={data.status} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-white uppercase tracking-tight">
-                    Tổng thể
-                  </h3>
-                  <p className="text-stone-400 text-sm font-medium mt-1">
-                    API Response & Execution Time
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-white/10 flex items-end justify-between">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest">
-                      Thời gian phản hồi
-                    </p>
-                    <p className="text-3xl font-black text-white">{data.duration_total_ms}ms</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* System Info */}
-            <Card className="rounded-[40px] border-none bg-white dark:bg-stone-900 shadow-xl p-10">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center">
-                  <Icons.Info className="w-5 h-5 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                  Thông tin hệ thống
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-                    Node Version
-                  </p>
-                  <p className="text-lg font-bold text-stone-800 dark:text-stone-200">
-                    {data.system?.nodeVersion}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-                    Environment
-                  </p>
-                  <p className="text-lg font-bold text-stone-800 dark:text-stone-200 uppercase">
-                    {data.system?.env}
-                  </p>
-                </div>
-                <div className="space-y-1 col-span-2">
-                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-                    Uptime
-                  </p>
-                  <p className="text-lg font-bold text-stone-800 dark:text-stone-200">
-                    {formatUptime(data.system?.uptime || 0)}
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Memory Allocation */}
-            <Card className="rounded-[40px] border-none bg-white dark:bg-stone-900 shadow-xl p-10">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center">
-                  <Icons.Chart className="w-5 h-5 text-emerald-600" />
-                </div>
-                <h3 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                  Sử dụng bộ nhớ
-                </h3>
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[10px] font-black text-stone-500 uppercase tracking-widest">
-                    <span>Heap Used / Total</span>
-                    <span>
-                      {formatBytes(data.system?.memory.heapUsed || 0)} /{' '}
-                      {formatBytes(data.system?.memory.heapTotal || 0)}
-                    </span>
-                  </div>
-                  <div className="h-3 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 transition-all duration-500"
-                      style={{
-                        width: `${((data.system?.memory.heapUsed || 0) / (data.system?.memory.heapTotal || 1)) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-                    RSS (Resident Set Size)
-                  </p>
-                  <p className="text-lg font-bold text-stone-800 dark:text-stone-200">
-                    {formatBytes(data.system?.memory.rss || 0)}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </>
-      ) : (
-        <div className="py-20 text-center space-y-4">
-          <Icons.Progress className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
-          <p className="text-stone-500 font-bold uppercase tracking-widest text-xs">
-            Đang kiểm tra sức khỏe hệ thống...
-          </p>
-        </div>
-      )}
     </div>
   );
 }

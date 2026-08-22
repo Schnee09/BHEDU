@@ -15,10 +15,13 @@ export const PUT = createApiHandler(
     const supabase = createServiceClient();
     const repository = new TimetableRepository(supabase);
 
-    // Conflict check (exclude self)
-    const conflictError = await repository.checkConflicts(body as any, id);
-    if (conflictError) {
-      throw new ConflictError(conflictError);
+    // Only run conflict check when scheduling fields are being changed
+    const hasSchedulingFields = body.day_of_week !== undefined || body.start_time !== undefined || body.end_time !== undefined || body.room !== undefined || body.teacher_id !== undefined;
+    if (hasSchedulingFields) {
+      const conflictError = await repository.checkConflicts(body as any, id);
+      if (conflictError) {
+        throw new ConflictError(conflictError);
+      }
     }
 
     const slot = await repository.update(id, body);

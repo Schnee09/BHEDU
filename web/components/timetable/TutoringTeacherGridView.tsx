@@ -89,16 +89,19 @@ export default function TutoringTeacherGridView({
                       </div>
                     </td>
                     {DAYS.map((_, dayIndex) => {
-                      const isAvailable = session.days.includes(dayIndex);
-                      const slot = isAvailable
-                        ? slots.find(
+                      const isAvailable = session.days?.includes(dayIndex) ?? true;
+                      const cellSlots = isAvailable
+                        ? slots.filter(
                             (s) =>
                               s.teacher?.id === tutor.id &&
                               s.day_of_week === dayIndex &&
                               s.start_time?.substring(0, 5) === session.start &&
                               (!s.room || s.room === 'Linh hoạt')
                           )
-                        : null;
+                        : [];
+
+                      const hasSlots = cellSlots.length > 0;
+                      const primarySlot = cellSlots[0];
 
                       return (
                         <td
@@ -116,20 +119,38 @@ export default function TutoringTeacherGridView({
                                 Off
                               </span>
                             </div>
-                          ) : slot ? (
+                          ) : hasSlots ? (
                             <div
-                              className="h-full p-3 bg-white/80 dark:bg-white/5 backdrop-blur-sm border-l-4 border-emerald-500 rounded-2xl shadow-sm hover:shadow-xl transition-all cursor-pointer group/card relative overflow-hidden"
-                              onClick={() => onEditSlot(slot)}
+                              className="h-full p-2.5 bg-white/80 dark:bg-white/5 backdrop-blur-sm border-l-4 border-emerald-500 rounded-2xl shadow-sm hover:shadow-xl transition-all cursor-pointer group/card relative overflow-hidden flex flex-col justify-between"
+                              onClick={() => onEditSlot(primarySlot!)}
                             >
-                              <div className="font-black text-stone-900 dark:text-stone-100 text-[11px] line-clamp-2 leading-tight mb-1.5">
-                                {slot.class?.name || slot.student?.full_name || slot.subject?.name}
+                              <div>
+                                {cellSlots.length > 1 ? (
+                                  <div className="space-y-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                        Nhóm {cellSlots.length} em
+                                      </span>
+                                      <span className="text-[9px] text-stone-400 font-bold">
+                                        {primarySlot?.subject?.name}
+                                      </span>
+                                    </div>
+                                    <div className="text-[10px] font-black text-stone-800 dark:text-stone-200 line-clamp-1">
+                                      {cellSlots.map((s) => s.student?.full_name || 'HS').join(', ')}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="font-black text-stone-900 dark:text-stone-100 text-[11px] line-clamp-2 leading-tight mb-1">
+                                    {primarySlot?.student?.full_name || primarySlot?.class?.name || primarySlot?.subject?.name}
+                                  </div>
+                                )}
                               </div>
-                              <div className="flex items-center gap-2 mt-auto pt-1.5 border-t border-stone-200/30 dark:border-white/5">
-                                {(slot.weekly_note || slot.notes) && (
+                              <div className="flex items-center gap-1.5 mt-auto pt-1 border-t border-stone-200/30 dark:border-white/5">
+                                {(primarySlot?.weekly_note || primarySlot?.notes) && (
                                   <ClipboardList className="w-2.5 h-2.5 text-stone-400 flex-shrink-0" />
                                 )}
                                 <span className="text-[9px] text-stone-400 font-bold truncate">
-                                  {slot.weekly_note ?? slot.notes}
+                                  {primarySlot?.weekly_note ?? primarySlot?.notes ?? primarySlot?.subject?.name}
                                 </span>
                               </div>
                             </div>

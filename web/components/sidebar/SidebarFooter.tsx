@@ -12,7 +12,7 @@ interface SidebarFooterProps {
 
 export const SidebarFooter = memo(function SidebarFooter({ onLogout, isCollapsed }: SidebarFooterProps) {
   return (
-    <div className="p-5 mt-auto border-t border-stone-100 dark:border-white/5 bg-stone-50/30 dark:bg-white/2 backdrop-blur-sm">
+    <div className="p-4 mt-auto shrink-0 border-t border-stone-100 dark:border-white/5 bg-stone-50/30 dark:bg-white/2 backdrop-blur-sm">
       {/* Mobile-only Theme Toggle Row */}
       {!isCollapsed && (
         <div className="lg:hidden flex items-center justify-between px-3.5 py-2.5 mb-4 rounded-2xl bg-stone-100/50 dark:bg-white/5 border border-stone-200/50 dark:border-white/5">

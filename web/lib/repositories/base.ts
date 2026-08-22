@@ -54,17 +54,23 @@ export abstract class BaseRepository<T, CreateInput, UpdateInput>
     protected readonly supabase: SupabaseClient;
     protected abstract readonly tableName: string;
     protected abstract readonly primaryKey: string;
+    protected readonly useSoftDelete: boolean = false;
 
     constructor(supabase: SupabaseClient) {
         this.supabase = supabase;
     }
 
     async findById(id: string): Promise<T | null> {
-        const { data, error } = await this.supabase
+        let query = this.supabase
             .from(this.tableName)
             .select("*")
-            .eq(this.primaryKey, id)
-            .single();
+            .eq(this.primaryKey, id);
+
+        if (this.useSoftDelete && typeof (query as any).is === "function") {
+            query = (query as any).is("deleted_at", null);
+        }
+
+        const { data, error } = await query.single();
 
         if (error) {
             if (error.code === "PGRST116") return null; // Not found
@@ -82,10 +88,15 @@ export abstract class BaseRepository<T, CreateInput, UpdateInput>
         const start = (page - 1) * pageSize;
         const end = start + pageSize - 1;
 
-        const { data, error, count } = await this.supabase
+        let query = this.supabase
             .from(this.tableName)
-            .select("*", { count: "exact" })
-            .range(start, end);
+            .select("*", { count: "exact" });
+
+        if (this.useSoftDelete && typeof (query as any).is === "function") {
+            query = (query as any).is("deleted_at", null);
+        }
+
+        const { data, error, count } = await query.range(start, end);
 
         if (error) {
             throw new Error(
@@ -136,10 +147,20 @@ export abstract class BaseRepository<T, CreateInput, UpdateInput>
     }
 
     async delete(id: string): Promise<void> {
-        const { error } = await this.supabase
-            .from(this.tableName)
-            .delete()
-            .eq(this.primaryKey, id);
+        let query;
+        const fromBuilder = this.supabase.from(this.tableName);
+
+        if (this.useSoftDelete && typeof (fromBuilder as any).update === "function") {
+            query = (fromBuilder as any)
+                .update({ deleted_at: new Date().toISOString() } as any)
+                .eq(this.primaryKey, id);
+        } else {
+            query = (fromBuilder as any)
+                .delete()
+                .eq(this.primaryKey, id);
+        }
+
+        const { error } = await query;
 
         if (error) {
             throw new Error(

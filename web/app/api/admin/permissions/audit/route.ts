@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('user_id', user.id)
-      .single();
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle();
 
     if (!['super_admin', 'admin', 'owner'].includes(profile?.role || '')) {
       return NextResponse.json({ error: 'Admin or Owner access required' }, { status: 403 });

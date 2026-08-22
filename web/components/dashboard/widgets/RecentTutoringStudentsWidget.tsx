@@ -98,53 +98,88 @@ export default function RecentTutoringStudentsWidget() {
             Chưa gán học sinh kèm nào
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-stone-50 dark:bg-white/2 border-b border-stone-200/40 dark:border-white/5 text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">
-                  <th className="p-4 text-left pl-6">Học sinh</th>
-                  <th className="p-4 text-left">Môn học kèm</th>
-                  <th className="p-4 text-left">Phòng học</th>
-                  <th className="p-4 text-left pr-6">Ghi chú</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100 dark:divide-white/5 font-medium text-stone-700 dark:text-stone-300 text-sm">
-                {studentsList.map((student) => (
-                  <tr
-                    key={student.id}
-                    className="hover:bg-stone-500/2 dark:hover:bg-white/1 transition-colors"
-                  >
-                    <td className="p-4 pl-6">
-                      <div className="font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                        {student.full_name}
-                      </div>
-                      <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-0.5">
-                        Mã HS: {student.student_code}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-400">
-                        <BookOpen className="w-3.5 h-3.5 text-amber-500" />
-                        {student.subjects || 'N/A'}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-400">
-                        <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                        {student.rooms || 'Linh hoạt'}
-                      </div>
-                    </td>
-                    <td
-                      className="p-4 pr-6 text-xs text-stone-400 dark:text-stone-500 italic max-w-[200px] truncate"
-                      title={student.latestNotes}
-                    >
-                      {student.latestNotes}
-                    </td>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-stone-50/50 dark:bg-white/2 border-b border-stone-200/40 dark:border-white/5 text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+                    <th className="p-4 text-left pl-6">Học sinh</th>
+                    <th className="p-4 text-left">Môn học kèm</th>
+                    <th className="p-4 text-left">Phòng học</th>
+                    <th className="p-4 text-left pr-6">Ghi chú</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-stone-100 dark:divide-white/5 font-medium text-stone-700 dark:text-stone-300 text-sm">
+                  {studentsList.map((student) => (
+                    <tr
+                      key={student.id}
+                      className="hover:bg-stone-500/5 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <td className="p-4 pl-6">
+                        <div className="font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                          {student.full_name}
+                        </div>
+                        <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-0.5">
+                          Mã HS: {student.student_code}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-400">
+                          <BookOpen className="w-3.5 h-3.5 text-amber-500" />
+                          {student.subjects || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-400">
+                          <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                          {student.rooms || 'Linh hoạt'}
+                        </div>
+                      </td>
+                      <td
+                        className="p-4 pr-6 text-xs text-stone-400 dark:text-stone-500 italic max-w-[200px] truncate"
+                        title={student.latestNotes}
+                      >
+                        {student.latestNotes}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="md:hidden divide-y divide-stone-100 dark:divide-white/5">
+              {studentsList.map((student) => (
+                <div key={student.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-black text-stone-900 dark:text-white uppercase tracking-tight text-sm">
+                        {student.full_name}
+                      </h4>
+                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                        Mã: {student.student_code}
+                      </span>
+                    </div>
+                    {student.rooms && (
+                      <span className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                        {student.rooms}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-400">
+                    <BookOpen className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span>{student.subjects || 'Môn học tự do'}</span>
+                  </div>
+                  {student.latestNotes && student.latestNotes !== '-' && (
+                    <p className="text-xs text-stone-500 dark:text-stone-400 italic bg-stone-50 dark:bg-white/5 p-2 rounded-xl border border-stone-200/40 dark:border-white/5">
+                      Ghi chú: {student.latestNotes}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </CardBody>
     </Card>

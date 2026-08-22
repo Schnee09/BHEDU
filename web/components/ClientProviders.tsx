@@ -26,7 +26,6 @@ export default function ClientProviders({ children }: { children: React.ReactNod
         <Suspense fallback={null}>
           <ToastBoot />
         </Suspense>
-        <CommandPalette />
         <KeyboardShortcutsHelp />
         {children}
       </ToastProvider>

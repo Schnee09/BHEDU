@@ -19,8 +19,9 @@ export class TimetableRepository extends BaseRepository<
   CreateTimetableSlotInput,
   UpdateTimetableSlotInput
 > {
-  protected tableName = 'timetable_slots';
-  protected primaryKey = 'id';
+  protected override readonly tableName = 'timetable_slots';
+  protected override readonly primaryKey = 'id';
+  protected override readonly useSoftDelete = true;
 
   constructor(supabase: SupabaseClient) {
     super(supabase);
@@ -119,7 +120,7 @@ export class TimetableRepository extends BaseRepository<
           start_time, 
           end_time, 
           class:classes(name),
-          student:profiles(full_name)
+          student:profiles!timetable_slots_student_id_fkey(full_name)
         `
         )
         .eq('room', room)
@@ -143,7 +144,7 @@ export class TimetableRepository extends BaseRepository<
       }
     }
 
-    // Teacher Conflict
+    // Teacher / Tutor Conflict
     if (teacher_id) {
       const { data: activeSemester } = await this.supabase
         .from('semesters')
@@ -156,11 +157,13 @@ export class TimetableRepository extends BaseRepository<
         .select(
           `
           id, 
+          class_id,
+          student_id,
           room, 
           start_time, 
           end_time,
           class:classes(name),
-          student:profiles(full_name)
+          student:profiles!timetable_slots_student_id_fkey(full_name)
         `
         )
         .eq('teacher_id', teacher_id)
@@ -176,13 +179,74 @@ export class TimetableRepository extends BaseRepository<
 
       const { data: teacherConflicts } = await query;
       if (teacherConflicts && teacherConflicts.length > 0) {
-        const first = teacherConflicts[0] as any;
-        const holder = first.class?.name || first.student?.full_name || 'Tiết học khác';
-        return `Giáo viên đã có lịch dạy "${holder}" vào khung giờ này (tại "${
-          first?.room ?? ''
-        }" - Tiết: ${first?.start_time?.substring(0, 5) ?? ''}-${
-          first?.end_time?.substring(0, 5) ?? ''
-        }).`;
+        const isNewTutoring = !!data.student_id && (!room || room === 'Linh hoạt');
+
+        if (isNewTutoring) {
+          // Check if all existing conflicts are also tutoring sessions in the exact same time window
+          const allSameTutoringWindow = teacherConflicts.every(
+            (s: any) =>
+              !!s.student_id &&
+              !s.class_id &&
+              s.start_time?.substring(0, 5) === start_time?.substring(0, 5) &&
+              s.end_time?.substring(0, 5) === end_time?.substring(0, 5)
+          );
+
+          if (allSameTutoringWindow) {
+            // Allow micro-group of up to 4 students per session
+            if (teacherConflicts.length >= 4) {
+              return `Gia sư đã nhận tối đa 4 học sinh trong ca kèm này.`;
+            }
+            // Valid micro-group (2-3 em) -> no teacher conflict
+          } else {
+            const first = teacherConflicts[0] as any;
+            const holder = first.class?.name || first.student?.full_name || 'Tiết học khác';
+            return `Gia sư đã có lịch "${holder}" vào khung giờ này (tại "${
+              first?.room ?? ''
+            }" - Tiết: ${first?.start_time?.substring(0, 5) ?? ''}-${
+              first?.end_time?.substring(0, 5) ?? ''
+            }).`;
+          }
+        } else {
+          // Formal class conflict
+          const first = teacherConflicts[0] as any;
+          const holder = first.class?.name || first.student?.full_name || 'Tiết học khác';
+          return `Giáo viên đã có lịch dạy "${holder}" vào khung giờ này (tại "${
+            first?.room ?? ''
+          }" - Tiết: ${first?.start_time?.substring(0, 5) ?? ''}-${
+            first?.end_time?.substring(0, 5) ?? ''
+          }).`;
+        }
+      }
+    }
+
+    // Student Conflict (Prevent student double-booking)
+    if (data.student_id) {
+      const { data: activeSemester } = await this.supabase
+        .from('semesters')
+        .select('id')
+        .eq('is_active', true)
+        .maybeSingle();
+
+      let studentQuery = this.supabase
+        .from('timetable_slots')
+        .select('id, start_time, end_time, teacher:profiles!timetable_slots_teacher_id_fkey(full_name)')
+        .eq('student_id', data.student_id)
+        .eq('day_of_week', day_of_week)
+        .gt('end_time', start_time)
+        .lt('start_time', end_time);
+
+      if (activeSemester?.id) {
+        studentQuery = studentQuery.or(`semester_id.eq.${activeSemester.id},semester_id.is.null`);
+      }
+      if (excludeSlotId) studentQuery = studentQuery.neq('id', excludeSlotId);
+
+      const { data: studentConflicts } = await studentQuery;
+      if (studentConflicts && studentConflicts.length > 0) {
+        const first = studentConflicts[0] as any;
+        const teacherName = first.teacher?.full_name || 'Gia sư / Giáo viên khác';
+        return `Học sinh này đã có lịch học kèm với "${teacherName}" vào khung giờ này (Tiết: ${
+          first?.start_time?.substring(0, 5) ?? ''
+        }-${first?.end_time?.substring(0, 5) ?? ''}).`;
       }
     }
 
@@ -200,12 +264,22 @@ export class TimetableRepository extends BaseRepository<
       .eq('is_active', true)
       .maybeSingle();
 
+    const insertPayload: Record<string, any> = {
+      class_id: data.class_id || null,
+      student_id: data.student_id || null,
+      teacher_id: data.teacher_id || null,
+      subject_id: data.subject_id || null,
+      room: data.room || null,
+      day_of_week: data.day_of_week,
+      start_time: data.start_time,
+      end_time: data.end_time,
+      notes: data.notes || null,
+      semester_id: activeSemester?.id || null,
+    };
+
     const { data: slot, error } = await this.supabase
       .from('timetable_slots')
-      .insert({
-        ...data,
-        semester_id: activeSemester?.id || null,
-      })
+      .insert(insertPayload)
       .select(
         `
             id,
@@ -225,6 +299,10 @@ export class TimetableRepository extends BaseRepository<
       .single();
 
     if (error) throw error;
+
+    // Auto sync room and schedule to settings
+    await this.syncRoomAndSchedule(slot);
+
     return slot;
   }
 
@@ -248,7 +326,7 @@ export class TimetableRepository extends BaseRepository<
         .from('enrollments')
         .select('class_id, classes(id, name)')
         .eq('student_id', userId)
-        .in('status', ['enrolled', 'active']); // Include 'active' status
+        .in('status', ['enrolled']); // Include 'enrolled' status
 
       const classIds = enrollments?.map((e) => e.class_id) || [];
       classes = enrollments?.map((e: any) => e.classes).filter(Boolean) || [];
@@ -471,5 +549,158 @@ export class TimetableRepository extends BaseRepository<
       .eq('week_start_date', weekStartDate);
 
     if (error) throw error;
+  }
+
+  /**
+   * Update Slot and sync room/schedule to settings
+   */
+  override async update(id: string, input: UpdateTimetableSlotInput): Promise<TimetableSlot> {
+    const cleanPayload: Record<string, any> = {};
+    const allowedKeys: (keyof UpdateTimetableSlotInput)[] = [
+      'class_id',
+      'teacher_id',
+      'student_id',
+      'subject_id',
+      'room',
+      'day_of_week',
+      'start_time',
+      'end_time',
+      'notes',
+    ];
+    for (const key of allowedKeys) {
+      if (input[key] !== undefined) {
+        cleanPayload[key] = input[key];
+      }
+    }
+
+    const slot = await super.update(id, cleanPayload as any);
+    await this.syncRoomAndSchedule(slot);
+    return slot;
+  }
+
+  /**
+   * Sync Room and Schedule to Settings
+   */
+  private async syncRoomAndSchedule(slot: any) {
+    if (!slot) return;
+    const { room, start_time, end_time } = slot;
+
+    try {
+      // 1. Sync Room and Branch/Campus
+      if (room && typeof room === 'string' && room.trim() !== '' && room !== 'Linh hoạt') {
+        const roomVal = room.trim();
+        let branchName = '';
+        let roomName = '';
+
+        if (roomVal.includes(' - ')) {
+          const parts = roomVal.split(' - ');
+          branchName = parts[0]?.trim() || '';
+          roomName = parts[1]?.trim() || '';
+        } else if (roomVal.includes('-')) {
+          const parts = roomVal.split('-');
+          branchName = parts[0]?.trim() || '';
+          roomName = parts[1]?.trim() || '';
+        } else {
+          roomName = roomVal;
+        }
+
+        // Sync Room Name
+        if (roomName) {
+          const { data: roomSetting } = await this.supabase
+            .from('settings')
+            .select('value_json')
+            .eq('key', 'center_rooms')
+            .maybeSingle();
+
+          let roomsObj: Record<string, string[]> = {};
+          if (roomSetting && roomSetting.value_json && typeof roomSetting.value_json === 'object' && !Array.isArray(roomSetting.value_json)) {
+            roomsObj = roomSetting.value_json as Record<string, string[]>;
+          } else if (roomSetting && Array.isArray(roomSetting.value_json)) {
+            roomsObj = { "Cơ sở khác": roomSetting.value_json as string[] };
+          }
+
+          const targetBranch = branchName || "Cơ sở khác";
+          if (!roomsObj[targetBranch]) {
+            roomsObj[targetBranch] = [];
+          }
+
+          const roomExists = roomsObj[targetBranch].some(r => r.toLowerCase() === roomName.toLowerCase());
+          if (!roomExists) {
+            roomsObj[targetBranch].push(roomName);
+            await this.supabase
+              .from('settings')
+              .upsert({
+                key: 'center_rooms',
+                value_json: roomsObj,
+                category: 'resource',
+                is_public: true,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'key' });
+          }
+        }
+
+        // Sync Branch Name
+        if (branchName) {
+          const { data: branchSetting } = await this.supabase
+            .from('settings')
+            .select('value_json')
+            .eq('key', 'center_branches')
+            .maybeSingle();
+
+          let branchesList: string[] = [];
+          if (branchSetting && Array.isArray(branchSetting.value_json)) {
+            branchesList = branchSetting.value_json as string[];
+          }
+
+          const branchExists = branchesList.some(b => b.toLowerCase() === branchName.toLowerCase());
+          if (!branchExists) {
+            branchesList.push(branchName);
+            await this.supabase
+              .from('settings')
+              .upsert({
+                key: 'center_branches',
+                value_json: branchesList,
+                category: 'resource',
+                is_public: true,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'key' });
+          }
+        }
+      }
+
+      // 2. Sync Schedule / Shift (strictly as time range, e.g. "08:00 - 09:30")
+      if (start_time && end_time && typeof start_time === 'string' && typeof end_time === 'string') {
+        const start = start_time.substring(0, 5);
+        const end = end_time.substring(0, 5);
+        const timeStr = `${start} - ${end}`;
+
+        const { data: scheduleSetting } = await this.supabase
+          .from('settings')
+          .select('value_json')
+          .eq('key', 'center_schedules')
+          .maybeSingle();
+
+        let schedulesList: string[] = [];
+        if (scheduleSetting && Array.isArray(scheduleSetting.value_json)) {
+          schedulesList = scheduleSetting.value_json as string[];
+        }
+
+        const scheduleExists = schedulesList.some(s => s.includes(timeStr));
+        if (!scheduleExists) {
+          schedulesList.push(timeStr);
+          await this.supabase
+            .from('settings')
+            .upsert({
+              key: 'center_schedules',
+              value_json: schedulesList,
+              category: 'resource',
+              is_public: true,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'key' });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to sync room/schedule/branch to settings:', err);
+    }
   }
 }

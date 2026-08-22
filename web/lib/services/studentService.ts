@@ -34,7 +34,7 @@ export interface StudentWithEnrollments extends Student {
     classes: {
       id: string;
       name: string;
-      course_id: string;
+      subject_id: string;
     };
   }>;
 }

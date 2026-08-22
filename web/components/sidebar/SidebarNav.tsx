@@ -23,15 +23,20 @@ export const SidebarNav = memo(function SidebarNav({
 }: SidebarNavProps) {
   const pathname = usePathname();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const isLinkActive = (linkHref: string) => {
+    if (!pathname) return false;
+    if (linkHref === '/dashboard' || linkHref === '/') {
+      return pathname === linkHref;
+    }
+    return pathname === linkHref || pathname.startsWith(`${linkHref}/`);
+  };
 
   // Auto-expand groups that contain active links
   useEffect(() => {
     const activeGroups = new Set<string>();
     navSections.forEach((section) => {
       section.groups?.forEach((group) => {
-        const hasActiveLink = group.links.some(
-          (link) => pathname === link.href || pathname?.startsWith(link.href + '/')
-        );
+        const hasActiveLink = group.links.some((link) => isLinkActive(link.href));
         if (hasActiveLink) {
           activeGroups.add(group.label);
         }
@@ -59,7 +64,7 @@ export const SidebarNav = memo(function SidebarNav({
   };
 
   const renderNavLink = (link: NavLink, inGroup = false) => {
-    const isActive = pathname === link.href || pathname?.startsWith(link.href + '/');
+    const isActive = isLinkActive(link.href);
     const label = getNavLabel(link, role);
 
     return (
@@ -116,9 +121,7 @@ export const SidebarNav = memo(function SidebarNav({
 
   const renderNavGroup = (group: NavGroup) => {
     const isExpanded = expandedGroups.has(group.label);
-    const hasActiveLink = group.links.some(
-      (link) => pathname === link.href || pathname?.startsWith(link.href + '/')
-    );
+    const hasActiveLink = group.links.some((link) => isLinkActive(link.href));
 
     return (
       <div key={group.label} className="space-y-1">
@@ -188,7 +191,7 @@ export const SidebarNav = memo(function SidebarNav({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto py-6 space-y-8 custom-scrollbar scroll-smooth">
+    <div className="flex-1 min-h-0 overflow-y-auto py-4 space-y-6 custom-scrollbar scroll-smooth">
       {navSections.map((section) => (
         <div key={section.title} className="space-y-1">
           {/* Section Title */}

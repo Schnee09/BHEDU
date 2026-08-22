@@ -89,7 +89,7 @@ export async function POST(
         )
       `)
       .eq('student_id', resolvedParams.id)
-      .eq('status', 'active')
+      .eq('status', 'enrolled')
       .order('created_at', { ascending: false })
       .limit(1)
       .single();

@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { createGetHandler } from "@/lib/api";
 import { createServiceClient } from "@/lib/supabase/server";
+import { SYSTEM_PERMISSION_DEFINITIONS } from "@/lib/auth/core";
 
 // GET /api/admin/permissions - Get all permission definitions
 export const GET = createGetHandler(
@@ -22,17 +23,21 @@ export const GET = createGetHandler(
       const supabase = createServiceClient();
 
       // Get permission definitions
-      const { data: definitions, error: defError } = await supabase
-        .from("permission_definitions")
-        .select("*")
-        .order("category")
-        .order("code");
+      let definitions: any[] = [];
+      try {
+        const { data, error: defError } = await supabase
+          .from("permission_definitions")
+          .select("*")
+          .order("category")
+          .order("code");
 
-      if (defError) {
-        console.error("Failed to fetch definitions:", defError);
-        return NextResponse.json({ error: "Failed to fetch permissions" }, {
-          status: 500,
-        });
+        if (!defError && data && data.length > 0) {
+          definitions = data;
+        } else {
+          definitions = SYSTEM_PERMISSION_DEFINITIONS;
+        }
+      } catch {
+        definitions = SYSTEM_PERMISSION_DEFINITIONS;
       }
 
       // Get role permissions
@@ -41,7 +46,7 @@ export const GET = createGetHandler(
         .select("*");
 
       return NextResponse.json({
-        definitions: definitions || [],
+        definitions,
         rolePermissions: rolePerms || [],
       });
     } catch (error) {

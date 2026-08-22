@@ -312,7 +312,7 @@ export default function GuardianManagement({ studentId }: { studentId: string })
 
       {/* Add/Edit Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[2000] animate-in fade-in duration-300 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[2000] transition-opacity duration-150 overflow-y-auto">
           <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] max-w-2xl w-full p-10 shadow-ultra border border-stone-200 dark:border-white/5 animate-in zoom-in-95 duration-500 my-8">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-14 h-14 bg-amber-500 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-amber-500/20">
@@ -475,7 +475,7 @@ export default function GuardianManagement({ studentId }: { studentId: string })
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[2000] animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[2000] transition-opacity duration-150">
           <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] max-w-md w-full p-10 shadow-ultra border border-stone-200 dark:border-white/5 animate-in zoom-in-95 duration-500">
             <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mb-6">
               <Icons.Archive className="w-8 h-8 text-red-500" />

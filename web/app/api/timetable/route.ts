@@ -45,7 +45,7 @@ export const POST = createApiHandler(
     // We can use ability check or role check.
     // V2 auth typically checks permission.
     // Let's map 'adminAuth' roles (admin/staff/teacher?) to a permission or allowedRoles.
-    allowedRoles: ['admin', 'owner'], // Teacher might need to create slots?
+    allowedRoles: ['admin', 'owner', 'super_admin'],
     // Original: "const authResult = await adminAuth(req)" -> Staff/Admin/Owner.
     bodySchema: createTimetableSlotSchema,
   },

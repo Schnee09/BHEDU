@@ -403,7 +403,7 @@ h6 {
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.2;
-  color: var(--text-primary);
+  color: inherit;
 }
 
 h1 {
@@ -433,7 +433,7 @@ h6 {
 p {
   line-height: 1.7;
   max-width: 70ch;
-  color: var(--text-secondary);
+  color: inherit;
 }
 
 :focus-visible {

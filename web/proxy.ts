@@ -19,7 +19,6 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: PermissionCode }[] = [
   { prefix: '/dashboard/admin/subjects', permission: 'classes.view' },
   { prefix: '/dashboard/admin/enrollments', permission: 'students.edit' },
   { prefix: '/dashboard/admin/invitations', permission: 'users.view' },
-  { prefix: '/dashboard/admin/data', permission: 'reports.export' },
   { prefix: '/dashboard/admin/health', permission: 'system.settings' },
   { prefix: '/dashboard/classes', permission: 'classes.view' },
   { prefix: '/dashboard/students', permission: 'students.view' },

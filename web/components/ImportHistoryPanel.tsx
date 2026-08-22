@@ -101,7 +101,7 @@ export default function ImportHistoryPanel() {
           <Icons.History className="w-6 h-6 text-amber-500" /> Lịch sử Nhập liệu (Bulk Import)
         </h2>
         <p className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest mt-1">
-          Báo cáo kết quả kiểm soát và chi tiết lỗi từ các đợt nhập học viên hàng loạt.
+          Báo cáo kết quả kiểm soát và chi tiết lỗi từ các đợt nhập học sinh hàng loạt.
         </p>
       </div>
 

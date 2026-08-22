@@ -17,6 +17,7 @@ export class UserRepository extends BaseRepository<
 > {
   protected readonly tableName = "profiles";
   protected readonly primaryKey = "id";
+  protected override readonly useSoftDelete = true;
 
   constructor(supabase: SupabaseClient) {
     super(supabase);
@@ -37,6 +38,10 @@ export class UserRepository extends BaseRepository<
       .from(this.tableName)
       .select("*", { count: "exact" });
 
+    if (this.useSoftDelete && typeof (query as any).is === "function") {
+      query = query.is("deleted_at", null);
+    }
+
     // Apply sorting
     if (filters.sort) {
       query = query.order(filters.sort, {
@@ -48,17 +53,26 @@ export class UserRepository extends BaseRepository<
 
     // Apply Filters
     if (filters.role && filters.role !== "all") {
-      query = query.eq("role", filters.role);
+      if (filters.role === "instructors" || filters.role === "class_teachers") {
+        query = query.in("role", ["teacher", "admin", "owner", "super_admin"]);
+      } else if (filters.role === "tutoring_staff" || filters.role === "tutors") {
+        query = query.in("role", ["tutor", "teacher", "admin", "owner", "super_admin"]);
+      } else if (filters.role.includes(",")) {
+        const roles = filters.role.split(",").map((r: string) => r.trim()).filter(Boolean);
+        query = query.in("role", roles);
+      } else {
+        query = query.eq("role", filters.role);
+      }
     }
 
     if (filters.status && filters.status !== "all") {
-      query = query.eq("status", filters.status); // Check if 'status' column exists or mapped from is_active?
-      // Note: profiles usually have 'is_active'. 'status' might be a derived field or new column?
-      // Based on common.ts, userRoleSchema etc.
-      // If status is 'active'/'inactive', we might need to map to is_active boolean if 'status' column doesn't exist.
+      if (filters.status === "active") {
+        query = query.eq("is_active", true);
+      } else if (filters.status === "inactive") {
+        query = query.eq("is_active", false);
+      }
     }
 
-    // If 'status' column doesn't exist, we might map logical status
     if (filters.is_active === true || filters.is_active === false) {
       query = query.eq("is_active", filters.is_active);
     }
@@ -68,9 +82,9 @@ export class UserRepository extends BaseRepository<
     }
 
     if (filters.search) {
-      // Search email or full_name
+      // Search email, full_name, phone, student_code, teacher_code
       query = query.or(
-        `email.ilike.%${filters.search}%,full_name.ilike.%${filters.search}%`,
+        `email.ilike.%${filters.search}%,full_name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%,student_code.ilike.%${filters.search}%,teacher_code.ilike.%${filters.search}%`
       );
     }
 
@@ -106,21 +120,48 @@ export class UserRepository extends BaseRepository<
       return rpcStats;
     }
 
-    // Fallback if RPC fails
-    const { count: total } = await this.supabase.from(this.tableName).select(
-      "*",
-      { count: "exact", head: true },
-    );
-    const { count: active } = await this.supabase.from(this.tableName).select(
-      "*",
-      { count: "exact", head: true },
-    ).eq("is_active", true);
+    // Fallback: Fetch count & role distributions directly
+    let query = this.supabase.from(this.tableName).select("role, is_active, created_at");
+    if (this.useSoftDelete) {
+      query = query.is("deleted_at", null);
+    }
+    const { data: rows } = await query;
+
+    let total = 0;
+    let active = 0;
+    let student_count = 0;
+    let teacher_count = 0;
+    let tutor_count = 0;
+    let parent_count = 0;
+    let admin_count = 0;
+    let recent_signups = 0;
+
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    if (rows) {
+      total = rows.length;
+      for (const u of rows) {
+        if (u.is_active !== false) active++;
+        if (u.role === 'student') student_count++;
+        else if (u.role === 'teacher') teacher_count++;
+        else if (u.role === 'tutor') tutor_count++;
+        else if (u.role === 'parent') parent_count++;
+        else if (u.role === 'admin' || u.role === 'super_admin' || u.role === 'owner') admin_count++;
+
+        if (u.created_at && u.created_at >= oneWeekAgo) recent_signups++;
+      }
+    }
 
     return {
-      total_users: total || 0,
-      active_users: active || 0,
-      inactive_users: (total || 0) - (active || 0),
-      recent_signups: 0,
+      total_users: total,
+      active_users: active,
+      inactive_users: total - active,
+      student_count,
+      teacher_count,
+      tutor_count,
+      parent_count,
+      admin_count,
+      recent_signups,
     };
   }
 }

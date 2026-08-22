@@ -50,7 +50,7 @@ const Button = <T extends React.ElementType = 'button'>({
   const actualRightIcon = rightIcon || (icon && iconPosition === 'right' ? icon : null);
 
   const baseClasses =
-    'inline-flex items-center justify-center gap-2 font-semibold rounded-xl md:rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.96] dark:focus:ring-offset-gray-900';
+    'inline-flex items-center justify-center gap-2 font-semibold rounded-xl md:rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.96] dark:focus:ring-offset-gray-900 shrink-0';
 
   const variantClasses: Record<ButtonVariant, string> = {
     primary: `
@@ -145,7 +145,7 @@ export function IconButton({
   ...props
 }: IconButtonProps) {
   const baseClasses =
-    'inline-flex items-center justify-center rounded-xl md:rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.94] dark:focus:ring-offset-gray-900';
+    'inline-flex items-center justify-center rounded-xl md:rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.94] dark:focus:ring-offset-gray-900 shrink-0';
 
   const variantClasses = {
     primary: `

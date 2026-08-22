@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { Edit3, MapPin, Users, BookOpen, Clock, CalendarDays, Plus } from 'lucide-react';
+import { Edit3, MapPin, Users, BookOpen, Clock, CalendarDays, Plus, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getDisplayName } from '@/lib/utils/names';
 
@@ -71,12 +71,35 @@ export default function MobileTimetableList({
     if (distance < -50 && currentDay > 0) handleDayChange(currentDay - 1);
   };
 
+  // Group slots into sessions or flexible time blocks for current day
+  const currentDaySlots = slots.filter((s) => s.day_of_week === currentDay);
+  
   const dailySlots = sessions.map((session) => {
-    const sessionSlots = slots.filter(
-      (s) => s.day_of_week === currentDay && s.start_time?.startsWith(session.start)
-    );
-    return { session, slots: sessionSlots };
+    const sessionStart = session.start || '00:00';
+    const sessionEnd = session.end || '23:59';
+    const sessionStartHour = parseInt(sessionStart.split(':')[0] || '0', 10);
+    const sessionEndHour = parseInt(sessionEnd.split(':')[0] || '23', 10);
+
+    const matchedSlots = currentDaySlots.filter((s) => {
+      if (!s.start_time) return false;
+      const slotHour = parseInt(s.start_time.split(':')[0] || '0', 10);
+      // Match exact start or hour range
+      return s.start_time.startsWith(sessionStart) || (slotHour >= sessionStartHour && slotHour <= sessionEndHour);
+    });
+
+    return { session, slots: matchedSlots };
   });
+
+  // Also gather any orphan slots that didn't match standard sessions
+  const matchedSlotIds = new Set(dailySlots.flatMap((d) => d.slots.map((s) => s.id)));
+  const orphanSlots = currentDaySlots.filter((s) => !matchedSlotIds.has(s.id));
+  if (orphanSlots.length > 0) {
+    dailySlots.push({
+      session: { id: 'other', label: 'Khung giờ khác', time: 'Linh hoạt', start: '00:00', end: '23:59' },
+      slots: orphanSlots,
+    });
+  }
+
 
   const getSlotStyles = (slot: any) => {
     if (viewMode === 'tutoring') return 'border-l-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10';
@@ -239,25 +262,49 @@ export default function MobileTimetableList({
                               <div className="font-black text-stone-900 dark:text-stone-100 text-lg leading-tight tracking-tight line-clamp-2">
                                 {slot.class?.name || getDisplayName(slot.student) || 'N/A'}
                               </div>
+
+                              {/* Status Badge */}
+                              <div className="mt-1.5 flex items-center gap-2">
+                                <span className={cn(
+                                  "px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border",
+                                  slot.status === 'completed' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" :
+                                  slot.status === 'cancelled' ? "bg-red-500/10 text-red-600 border-red-500/30" :
+                                  slot.status === 'makeup' ? "bg-sky-500/10 text-sky-600 border-sky-500/30" :
+                                  "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                                )}>
+                                  {slot.status === 'completed' ? '🟢 Hoàn thành' :
+                                   slot.status === 'cancelled' ? '🔴 Hủy ca' :
+                                   slot.status === 'makeup' ? '🔵 Học bù' : '🟡 Đã xếp'}
+                                </span>
+                              </div>
                             </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditSlot(slot);
-                              }}
-                              className="w-10 h-10 rounded-2xl bg-white dark:bg-white/5 flex items-center justify-center text-stone-400 shadow-sm border border-stone-200/50 dark:border-white/5 active:bg-amber-500 active:text-white transition-all"
-                            >
-                              <Edit3 size={18} />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              {slot.teacher?.phone && (
+                                <a
+                                  href={`tel:${slot.teacher.phone}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-sm border border-emerald-500/20 active:scale-95 transition-all"
+                                  title="Gọi cho Giáo viên"
+                                >
+                                  <Phone size={16} />
+                                </a>
+                              )}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEditSlot(slot);
+                                }}
+                                className="w-10 h-10 rounded-2xl bg-white dark:bg-white/5 flex items-center justify-center text-stone-400 shadow-sm border border-stone-200/50 dark:border-white/5 active:bg-amber-500 active:text-white transition-all"
+                              >
+                                <Edit3 size={18} />
+                              </button>
+                            </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-stone-200/50 dark:border-white/5">
                             {slot.subject && (
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-                                  <BookOpen className="w-3.5 h-3.5 text-amber-500" />
-                                </div>
-                                <span className="truncate font-black text-[10px] uppercase text-stone-500 dark:text-stone-400">
+                              <div className="flex items-center gap-1.5">
+                                <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 font-black text-[11px] uppercase tracking-wider border border-amber-500/20 truncate">
                                   {slot.subject.name}
                                 </span>
                               </div>

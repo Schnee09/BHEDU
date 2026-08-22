@@ -35,6 +35,7 @@ export * from "./requests/timetable";
 export * from "./requests/analytics";
 export * from "./requests/auth";
 export * from "./requests/links";
+export * from "./requests/finance";
 
 // ============================================
 // DOMAIN RESPONSE SCHEMAS

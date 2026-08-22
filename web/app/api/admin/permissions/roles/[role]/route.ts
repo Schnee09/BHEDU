@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
-import { UserRole } from '@/lib/auth/core';
+import { UserRole, BASE_ROLE_PERMISSIONS, SYSTEM_PERMISSION_DEFINITIONS } from '@/lib/auth/core';
 
 interface RouteContext {
   params: Promise<{ role: string }>;
@@ -28,10 +28,10 @@ async function getSuperAdminProfile(request: NextRequest) {
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, role')
-    .eq('user_id', user.id)
-    .single();
+    .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+    .maybeSingle();
 
-  if (profile?.role !== 'super_admin') return null;
+  if (profile?.role !== 'super_admin' && profile?.role !== 'owner') return null;
   return profile;
 }
 
@@ -50,13 +50,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
+      .select('id, role')
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle();
 
-    // Allow super_admin to read; others cannot access role configuration
-    if (profile?.role !== 'super_admin') {
-      return NextResponse.json({ error: 'Super Admin access required' }, { status: 403 });
+    if (!['super_admin', 'owner', 'admin'].includes(profile?.role || '')) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const serviceClient = createServiceClient();
@@ -72,16 +71,27 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Failed to fetch overrides' }, { status: 500 });
     }
 
-    // Also return the base role_permissions (code defaults seeded to DB)
-    const { data: basePerms } = await serviceClient
-      .from('role_permissions')
-      .select('permission_code')
-      .eq('role', role);
+    // Also return the base role_permissions (code defaults with fallback)
+    let basePermissions: string[] = [];
+    if (role === 'super_admin') {
+      basePermissions = SYSTEM_PERMISSION_DEFINITIONS.map((p) => p.code);
+    } else {
+      const { data: basePerms } = await serviceClient
+        .from('role_permissions')
+        .select('permission_code')
+        .eq('role', role);
+
+      if (basePerms && basePerms.length > 0) {
+        basePermissions = basePerms.map((p) => p.permission_code);
+      } else {
+        basePermissions = (BASE_ROLE_PERMISSIONS[role as UserRole] || []).map((p) => String(p));
+      }
+    }
 
     return NextResponse.json({
       role,
       overrides: overrides || [],
-      basePermissions: (basePerms || []).map((p) => p.permission_code),
+      basePermissions,
     });
   } catch (err) {
     console.error('[Role Perms API] GET error:', err);
@@ -94,8 +104,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { role } = await context.params;
 
-    if (!VALID_ROLES.includes(role as UserRole)) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    if (!role || !/^[a-z0-9_-]+$/i.test(role)) {
+      return NextResponse.json({ error: 'Invalid role code format' }, { status: 400 });
     }
 
     const adminProfile = await getSuperAdminProfile(request);

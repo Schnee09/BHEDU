@@ -196,7 +196,7 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
       await enrollStudent(studentId, selectedClassId);
 
       showToast.dismiss(toastId);
-      showToast.success('Ghi danh học viên thành công!');
+      showToast.success('Ghi danh học sinh thành công!');
       setSelectedClassId('');
       setScheduleConflicts([]);
       setCapacityWarning(null);
@@ -262,7 +262,7 @@ export default function EnrollmentManager({ studentId }: EnrollmentManagerProps)
               <Icons.Classes className="w-6 h-6 text-amber-500" /> Quản lý Ghi danh
             </h2>
             <p className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">
-              Ghi danh học viên vào các lớp học đang hoạt động.
+              Ghi danh học sinh vào các lớp học đang hoạt động.
             </p>
           </div>
           {!showAddDropdown && (

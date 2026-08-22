@@ -113,7 +113,7 @@ export class ClassService {
           .from("enrollments")
           .select("class_id")
           .eq("student_id", profileId)
-          .eq("status", "active");
+          .eq("status", "enrolled");
 
         const classIds = (enrollmentData || []).map((e) => e.class_id);
         if (classIds.length === 0) {
@@ -175,7 +175,7 @@ export class ClassService {
       .from("enrollments")
       .select("*", { count: "exact", head: true })
       .eq("class_id", id)
-      .eq("status", "active");
+      .eq("status", "enrolled");
 
     return {
       ...data,
@@ -222,6 +222,7 @@ export class ClassService {
         schedule: input.schedule || null,
         room: input.room || null,
         capacity: input.capacity || null,
+        max_capacity: input.capacity || null,
         status: input.status,
       })
       .select()
@@ -294,7 +295,7 @@ export class ClassService {
     // Check if class exists
     await this.getClassById(id);
 
-    // Check if class has any enrollments
+    // Check if class has enrollments
     const { data: enrollments } = await this.supabase
       .from("enrollments")
       .select("id")
@@ -303,11 +304,14 @@ export class ClassService {
 
     if (enrollments && enrollments.length > 0) {
       throw new ValidationError(
-        "Cannot delete class with existing enrollments",
+        "Cannot delete class with existing enrollments. Remove enrollments first."
       );
     }
 
-    const { error } = await this.supabase.from("classes").delete().eq("id", id);
+    const { error } = await this.supabase
+      .from("classes")
+      .delete()
+      .eq("id", id);
 
     if (error) {
       console.error("Failed to delete class:", error);
@@ -337,7 +341,7 @@ export class ClassService {
         )
       `)
       .eq("class_id", classId)
-      .eq("status", "active")
+      .eq("status", "enrolled")
       .order("student(last_name)"); // Note: Specific join ordering syntax might vary
 
     if (error) {

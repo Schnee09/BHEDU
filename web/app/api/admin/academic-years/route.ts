@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Academic Years API
  * GET /api/admin/academic-years - Get all academic years
  * POST /api/admin/academic-years - Create academic year
@@ -76,21 +76,38 @@ export async function POST(request: Request) {
       await supabase
         .from('academic_years')
         .update({ is_current: false })
-        .eq('is_current', true)
+        .eq('is_current', true);
+    }
+
+    // Check if user exists in users table before setting created_by
+    let validUserId: string | undefined = undefined;
+    if (authResult.userId) {
+      const { data: userExists } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', authResult.userId)
+        .maybeSingle();
+      if (userExists) {
+        validUserId = userExists.id;
+      }
+    }
+
+    const insertData: Record<string, any> = {
+      name,
+      start_date,
+      end_date,
+      is_current: is_current || false,
+      terms: terms || [],
+    };
+    if (validUserId) {
+      insertData.created_by = validUserId;
     }
 
     const { data: year, error } = await supabase
       .from('academic_years')
-      .insert({
-        name,
-        start_date,
-        end_date,
-        is_current: is_current || false,
-        terms: terms || [],
-        created_by: authResult.userId
-      })
+      .insert(insertData)
       .select()
-      .single()
+      .single();
 
     if (error) {
       console.error('Error creating academic year:', error)

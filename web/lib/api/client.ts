@@ -486,7 +486,7 @@ export interface ClassListParams extends PaginationParams {
   search?: string;
   teacher_id?: string;
   grade?: string;
-  course_id?: string;
+  subject_id?: string;
   status?: string;
 }
 

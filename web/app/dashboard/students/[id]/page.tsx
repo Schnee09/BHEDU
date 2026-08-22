@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 
 import StudentStatusPanel from '../../../../components/StudentStatusPanel';
 import ImportHistoryPanel from '../../../../components/ImportHistoryPanel';
+import { ZaloCopyButton } from '@/components/ui/ZaloCopyButton';
+import { generateAttendanceZaloMessage } from '@/lib/utils/zaloTemplates';
 
 /**
  * Fetch student data using the provided Supabase client.
@@ -567,6 +569,17 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                     </p>
                   </div>
                 )}
+                <div className="pt-2 flex justify-end">
+                  <ZaloCopyButton
+                    message={generateAttendanceZaloMessage({
+                      studentName: profile?.full_name || 'Học sinh',
+                      className: a.classes?.name ?? a.class_id,
+                      dateStr: new Date(a.date).toLocaleDateString('vi-VN'),
+                      status: a.status,
+                      notes: a.notes,
+                    })}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -587,6 +600,9 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                   </th>
                   <th className="text-left px-6 py-4 font-black text-stone-400 uppercase tracking-widest text-[10px]">
                     Ghi chú hệ thống
+                  </th>
+                  <th className="text-right px-6 py-4 font-black text-stone-400 uppercase tracking-widest text-[10px]">
+                    Báo cáo Zalo
                   </th>
                 </tr>
               </thead>
@@ -626,6 +642,17 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                     </td>
                     <td className="px-6 py-4 text-stone-500 italic text-xs group-hover:text-stone-900 dark:group-hover:text-stone-300 transition-colors">
                       {a.notes ?? '—'}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <ZaloCopyButton
+                        message={generateAttendanceZaloMessage({
+                          studentName: profile?.full_name || 'Học sinh',
+                          className: a.classes?.name ?? a.class_id,
+                          dateStr: new Date(a.date).toLocaleDateString('vi-VN'),
+                          status: a.status,
+                          notes: a.notes,
+                        })}
+                      />
                     </td>
                   </tr>
                 ))}

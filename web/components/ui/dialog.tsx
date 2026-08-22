@@ -51,7 +51,7 @@ const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
       aria-modal="true"
     >
       <div
-        className="fixed inset-0 bg-black/60 dark:bg-black/75 backdrop-blur-md transition-all duration-300"
+        className="fixed inset-0 bg-black/60 dark:bg-black/80 transition-opacity duration-150"
         onClick={() => onOpenChange?.(false)}
         aria-hidden="true"
       />

@@ -48,6 +48,11 @@ export const routes = {
       list: () => '/dashboard/admin/students',
       detail: (id: string) => `/dashboard/admin/students/${id}`,
     },
+
+    finance: {
+      dashboard: () => '/dashboard/admin/finance',
+      tuitionMatrix: () => '/dashboard/admin/finance/tuition-matrix',
+    },
   },
 
   // User management routes

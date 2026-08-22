@@ -27,3 +27,11 @@ export {
   type EnrollmentFilters,
   EnrollmentRepository,
 } from "./EnrollmentRepository";
+export {
+  FinanceRepository,
+  type Invoice,
+  type Payment,
+  type StudentAccount,
+  type FinanceOverview,
+  type InvoiceFilters,
+} from "./FinanceRepository";

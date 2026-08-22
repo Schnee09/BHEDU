@@ -12,48 +12,41 @@ export default function ThemeToggle() {
     setMounted(true);
   }, []);
 
-  const isDark = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark =
+    theme === 'dark' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    // Correct toggle: if currently dark (explicit or via system), switch to light, else dark
+    setTheme(isDark ? 'light' : 'dark');
   };
 
   // Prevent hydration mismatch
   if (!mounted) {
     return (
-      <div className="w-11 h-11 rounded-2xl bg-gray-200 dark:bg-gray-700" />
+      <div className="w-11 h-11 rounded-2xl bg-stone-100 dark:bg-stone-800" />
     );
   }
 
   return (
     <button
       onClick={toggleTheme}
-      className={`relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-500 cursor-pointer group overflow-hidden
+      className={`relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 cursor-pointer group
         ${isDark
-          ? 'bg-[#1C1A16] border border-white/5 shadow-inner'
-          : 'bg-stone-100/80 border border-stone-200 shadow-inner'
+          ? 'bg-[#1C1A16] hover:bg-[#26231E] border border-stone-800 text-amber-400 hover:border-amber-500/40'
+          : 'bg-stone-100 hover:bg-stone-200/80 border border-stone-200 text-stone-700 hover:border-amber-500/40'
         }`}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      title={isDark ? "Chế độ sáng" : "Chế độ tối"}
+      aria-label={isDark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+      title={isDark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
     >
-      {/* Dynamic Background Glow */}
-      <div className={`absolute inset-0 transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 blur-xl" />
-      </div>
-      <div className={`absolute inset-0 transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 to-orange-500/20 blur-xl" />
-      </div>
-
-      {/* Sun Icon (Light Mode) */}
-      <div className={`absolute transition-all duration-500 ease-out transform
-        ${isDark ? 'translate-y-8 opacity-0 rotate-90' : 'translate-y-0 opacity-100 rotate-0'}`}>
-        <SunIcon className="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-      </div>
-
-      {/* Moon Icon (Dark Mode) */}
-      <div className={`absolute transition-all duration-500 ease-out transform
-        ${isDark ? 'translate-y-0 opacity-100 rotate-0' : '-translate-y-8 opacity-0 -rotate-90'}`}>
-        <MoonIcon className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+      <div className="relative w-5 h-5 flex items-center justify-center">
+        {isDark ? (
+          <MoonIcon className="w-5 h-5 text-amber-400 transform transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12" />
+        ) : (
+          <SunIcon className="w-5 h-5 text-amber-500 transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-45" />
+        )}
       </div>
     </button>
   );

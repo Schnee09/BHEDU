@@ -24,7 +24,11 @@ export async function GET(request: Request) {
     let { data: profile, error } = await serviceSupabase
       .from('profiles')
       .select(
-        'id, user_id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, personal_email, photo_url'
+        `id, user_id, full_name, first_name, last_name, role, email, phone, address,
+         date_of_birth, personal_email, photo_url, created_at,
+         student_code, student_id, grade_level,
+         teacher_code, department,
+         teacher_profiles(teacher_type, department, specialization)`
       )
       .eq('user_id', user.id)
       .maybeSingle();
@@ -35,7 +39,11 @@ export async function GET(request: Request) {
       const result = await serviceSupabase
         .from('profiles')
         .select(
-          'id, user_id, full_name, first_name, last_name, role, email, phone, address, date_of_birth, personal_email, photo_url'
+          `id, user_id, full_name, first_name, last_name, role, email, phone, address,
+         date_of_birth, personal_email, photo_url, created_at,
+         student_code, student_id, grade_level,
+         teacher_code, department,
+         teacher_profiles(teacher_type, department, specialization)`
         )
         .eq('id', user.id)
         .maybeSingle();

@@ -184,7 +184,7 @@ export class ReportsRepository {
                 );
             }
             if (filters.courseId) {
-                classQuery = classQuery.eq("course_id", filters.courseId); // Assuming course_id
+                classQuery = classQuery.eq("subject_id", filters.courseId);
             }
 
             const { data: classes } = await classQuery;
@@ -291,7 +291,7 @@ export class ReportsRepository {
         filters: {
             academic_year_id?: string;
             class_id?: string;
-            course_id?: string;
+            subject_id?: string;
             limit?: number;
         },
     ) {
@@ -307,7 +307,7 @@ export class ReportsRepository {
             query = query.eq("academic_year_id", filters.academic_year_id);
         }
         if (filters.class_id) query = query.eq("class_id", filters.class_id);
-        if (filters.course_id) query = query.eq("course_id", filters.course_id); // Assuming course_id column exists
+        if (filters.subject_id) query = query.eq("subject_id", filters.subject_id);
 
         // Fetch rows
         // Note: The original code used .limit(limit) only if CSV.

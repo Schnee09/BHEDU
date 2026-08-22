@@ -12,6 +12,8 @@ import {
   Shield,
   GraduationCap,
   Building,
+  BookOpen,
+  Briefcase,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -117,19 +119,11 @@ export default function MobileUserList({
         return (
           <div
             key={user.id}
-            className={cn(`
-                            glass-crystal rounded-[2.5rem] p-6 shadow-ultra border transition-all animate-fade-in-up press-effect
-                            ${!user.is_active ? 'opacity-70 grayscale-[0.3]' : 'border-stone-100 dark:border-white/5'}
-                        `)}
-            style={{ animationDelay: `${index * 50}ms` }}
+            className={cn(
+              'bg-white dark:bg-[#14120E] rounded-3xl p-6 shadow-md border transition-all',
+              !user.is_active ? 'opacity-70 grayscale-[0.3] border-stone-200 dark:border-stone-800' : 'border-stone-200/80 dark:border-stone-800'
+            )}
           >
-            {/* Status Bloom */}
-            <div
-              className={cn(
-                'absolute -top-10 -right-10 w-24 h-24 blur-3xl opacity-20 rounded-full',
-                user.is_active ? 'bg-green-500' : 'bg-stone-500'
-              )}
-            />
 
             <div className="flex justify-between items-start gap-3 mb-4 relative z-10">
               <div className="flex-1 min-w-0">
@@ -206,14 +200,64 @@ export default function MobileUserList({
                   </div>
                 </div>
               )}
-              {user.department && (
+              {user.role === 'student' && user.grade_level && (
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 bg-white dark:bg-stone-800 rounded-lg shadow-sm">
+                    <GraduationCap className="w-3.5 h-3.5 text-blue-500" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-stone-400 tracking-wider leading-none mb-1 uppercase">
+                      Khối lớp
+                    </span>
+                    <span className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                      {user.grade_level}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {(user.role === 'teacher' || user.role === 'tutor') && user.department && (
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 bg-white dark:bg-stone-800 rounded-lg shadow-sm">
+                    <BookOpen className="w-3.5 h-3.5 text-amber-500" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-stone-400 tracking-wider leading-none mb-1 uppercase">
+                      Môn học phụ trách
+                    </span>
+                    <span className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                      {user.department}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {user.role === 'parent' && (user as any).occupation && (
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 bg-white dark:bg-stone-800 rounded-lg shadow-sm">
+                    <Briefcase className="w-3.5 h-3.5 text-emerald-500" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-stone-400 tracking-wider leading-none mb-1 uppercase">
+                      Nghề nghiệp
+                    </span>
+                    <span className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                      {(user as any).occupation}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {(user.role === 'admin' || user.role === 'owner' || user.role === 'super_admin') && user.department && (
                 <div className="flex items-center gap-3">
                   <div className="p-1.5 bg-white dark:bg-stone-800 rounded-lg shadow-sm">
                     <Building className="w-3.5 h-3.5 text-stone-400" />
                   </div>
-                  <span className="text-xs font-medium text-stone-600 dark:text-stone-400 truncate">
-                    {user.department}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-stone-400 tracking-wider leading-none mb-1 uppercase">
+                      Phòng ban phụ trách
+                    </span>
+                    <span className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                      {user.department}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

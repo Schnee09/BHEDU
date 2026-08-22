@@ -14,6 +14,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useFetch, useMutation, usePagination, useDebounce, useToast, useUser } from '@/hooks';
 import { apiFetch, bulkArchiveStudents, deleteStudent } from '@/lib/api/client';
@@ -37,8 +38,9 @@ import { ToastContainer } from '@/components/ui/Toast';
 import { logger } from '@/lib/logger';
 import { createAuditLog, AuditActions } from '@/lib/audit';
 import { routes } from '@/lib/routes';
-import { Copy, Check, ChevronDown } from 'lucide-react';
+import { Copy, Check, ChevronDown, Plus, LayoutGrid, List, MessageSquare, Award, Phone } from 'lucide-react';
 import MobileStudentList from '@/components/students/MobileStudentList';
+import StudentGridView from '@/components/students/StudentGridView';
 import StudentQuickActions from '@/components/students/StudentQuickActions';
 import { cn } from '@/lib/utils';
 import { showToast } from '@/components/ToastProvider';
@@ -56,6 +58,9 @@ interface StudentStats {
 export default function StudentsPage() {
   const toast = useToast();
   const { user, hasAdminAccess, isTeacher: _isTeacher } = useUser();
+
+  // View mode (Desktop table vs Grid cards)
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   // Search with debounce
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,6 +87,12 @@ export default function StudentsPage() {
   // Drawer states
   const [showDrawer, setShowDrawer] = useState(false);
   const [selectedStudentForDrawer, setSelectedStudentForDrawer] = useState<Student | null>(null);
+
+  const handleCopy = (text: string, label: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    showToast.success(`Đã sao chép ${label}: ${text}`);
+  };
 
   // Fetch students with pagination and search
   const queryParams = new URLSearchParams({
@@ -399,11 +410,11 @@ export default function StudentsPage() {
   const renderStatistics = () => {
     if (loading && !statistics) {
       return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className="h-32 bg-stone-100 dark:bg-stone-800 rounded-3xl skeleton-shimmer"
+              className="h-20 sm:h-28 bg-stone-100 dark:bg-stone-800 rounded-2xl skeleton-shimmer"
             />
           ))}
         </div>
@@ -413,49 +424,68 @@ export default function StudentsPage() {
     if (!statistics) return null;
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 stagger-children">
-        <StatCard
-          label="Tổng học sinh"
-          value={statistics.total_students}
-          icon={<Icons.Students className="w-5 h-5" />}
-          trend={{ value: 0, isPositive: true }}
-          subtitle="Hồ sơ toàn hệ thống"
-          color="blue"
-          className="shadow-md"
-        />
+      <div className="mb-4">
+        {/* Mobile Mini Stats Pill Bar */}
+        <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto pb-1 text-xs font-black">
+          <div className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0">
+            <span>👥 Tổng: <strong className="font-mono text-stone-900 dark:text-white">{statistics.total_students}</strong></span>
+          </div>
+          <div className="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center gap-1.5 shrink-0">
+            <span>✓ Đang học: <strong className="font-mono text-emerald-800 dark:text-emerald-200">{statistics.active_students}</strong></span>
+          </div>
+          <div className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-500 flex items-center gap-1.5 shrink-0">
+            <span>⏸ Lưu trữ: <strong className="font-mono">{statistics.inactive_students}</strong></span>
+          </div>
+          <div className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/30 flex items-center gap-1.5 shrink-0">
+            <span>📚 {Object.keys(statistics.by_grade || {}).length} khối</span>
+          </div>
+        </div>
 
-        <StatCard
-          label="Đang học"
-          value={statistics.active_students}
-          icon={<Icons.Success className="w-5 h-5" />}
-          trend={{
-            value: Math.round((statistics.active_students / statistics.total_students) * 100),
-            isPositive: true,
-          }}
-          subtitle="Tỉ lệ hiện diện"
-          color="emerald"
-          className="shadow-md"
-        />
+        {/* Desktop & Tablet Full Stat Cards */}
+        <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
+          <StatCard
+            label="Tổng học sinh"
+            value={statistics.total_students}
+            icon={<Icons.Students className="w-4 h-4" />}
+            trend={{ value: 0, isPositive: true }}
+            subtitle="Hồ sơ toàn hệ thống"
+            color="blue"
+            className="shadow-xs"
+          />
 
-        <StatCard
-          label="Lưu trữ"
-          value={statistics.inactive_students}
-          icon={<Icons.Error className="w-5 h-5" />}
-          trend={{ value: 0, isPositive: false }}
-          subtitle="Hồ sơ tạm ngưng"
-          color="slate"
-          className="shadow-md"
-        />
+          <StatCard
+            label="Đang học"
+            value={statistics.active_students}
+            icon={<Icons.Success className="w-4 h-4" />}
+            trend={{
+              value: Math.round((statistics.active_students / statistics.total_students) * 100),
+              isPositive: true,
+            }}
+            subtitle="Tỉ lệ hiện diện"
+            color="emerald"
+            className="shadow-xs"
+          />
 
-        <StatCard
-          label="Khối đào tạo"
-          value={Object.keys(statistics.by_grade || {}).length}
-          icon={<Icons.Classes className="w-5 h-5" />}
-          trend={{ value: 0, isPositive: true }}
-          subtitle="Các cấp độ học thuật"
-          color="amber"
-          className="shadow-md"
-        />
+          <StatCard
+            label="Lưu trữ"
+            value={statistics.inactive_students}
+            icon={<Icons.Error className="w-4 h-4" />}
+            trend={{ value: 0, isPositive: false }}
+            subtitle="Hồ sơ tạm ngưng"
+            color="slate"
+            className="shadow-xs"
+          />
+
+          <StatCard
+            label="Khối đào tạo"
+            value={Object.keys(statistics.by_grade || {}).length}
+            icon={<Icons.Classes className="w-4 h-4" />}
+            trend={{ value: 0, isPositive: true }}
+            subtitle="Các cấp độ học thuật"
+            color="amber"
+            className="shadow-xs"
+          />
+        </div>
       </div>
     );
   };
@@ -487,263 +517,328 @@ export default function StudentsPage() {
   }
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-10 relative overflow-x-hidden animate-in fade-in duration-1000">
-      <div className="max-w-[1600px] mx-auto relative z-10">
+    <div className="min-h-screen py-3 sm:py-6 px-2.5 sm:px-6 lg:px-8 relative overflow-x-hidden animate-in fade-in duration-700">
+      <div className="max-w-[1600px] mx-auto space-y-3 sm:space-y-4">
         {/* Toast Container */}
         <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
 
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-stone-200/50 dark:border-white/5 mb-8">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-amber-500 rounded-full shadow-accent-glow" />
-              <h1 className="text-3xl md:text-5xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
-                Quản lý <span className="text-amber-500">Học sinh</span>
-              </h1>
+        {/* ── ULTRA-COMPACT UNIFIED CONTROL HEADER ── */}
+        <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-white/10 p-3 sm:p-4 shadow-xs space-y-3">
+          {/* Row 1: Title + Counter + Quick Actions */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            {/* Title & Count */}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="p-1.5 bg-amber-500/10 rounded-xl text-amber-500 shrink-0">
+                <Icons.Students className="w-4 h-4" />
+              </div>
+              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                <h1 className="text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-none whitespace-nowrap">
+                  Quản lý Học sinh
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold whitespace-nowrap">
+                  {data?.total !== undefined ? data.total : students.length} hồ sơ
+                </span>
+                {loading && (
+                  <span className="text-[10px] font-bold text-amber-500 animate-pulse uppercase ml-1 hidden sm:inline-block">
+                    ● Đang tải
+                  </span>
+                )}
+              </div>
             </div>
-            <p className="text-xs font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] pl-4">
-              Hệ thống lưu trữ và điều phối hồ sơ giáo dục
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <PermissionGuard permissions="students.import">
-              <Link href="/dashboard/students/bulk">
-                <Button
-                  variant="outline"
-                  size="md"
-                  className="font-black uppercase tracking-widest text-[10px]"
+
+            {/* Top Action Buttons */}
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+              {/* View Mode Toggle (Table / Grid) */}
+              <div className="hidden sm:flex items-center bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl border border-stone-200/60 dark:border-white/5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('table')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap',
+                    viewMode === 'table'
+                      ? 'bg-white dark:bg-stone-700 text-amber-600 dark:text-amber-400 shadow-xs'
+                      : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
+                  )}
+                  title="Chế độ xem bảng chi tiết"
                 >
-                  Tạo hàng loạt
+                  <List className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Bảng</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap',
+                    viewMode === 'grid'
+                      ? 'bg-white dark:bg-stone-700 text-amber-600 dark:text-amber-400 shadow-xs'
+                      : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
+                  )}
+                  title="Chế độ xem thẻ học sinh"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Thẻ</span>
+                </button>
+              </div>
+
+              <PermissionGuard permissions="students.create">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowAddModal(true)}
+                  className="rounded-xl px-3 py-1.5 text-xs font-semibold shadow-xs cursor-pointer whitespace-nowrap"
+                  leftIcon={<Plus className="w-3.5 h-3.5" />}
+                >
+                  Thêm học sinh
                 </Button>
-              </Link>
-            </PermissionGuard>
-            <PermissionGuard permissions="students.create">
-              <Button
-                variant="primary"
-                onClick={() => setShowAddModal(true)}
-                className="font-black uppercase tracking-widest text-[10px] shadow-amber-glow"
+              </PermissionGuard>
+
+              <PermissionGuard permissions="students.import">
+                <Link href="/dashboard/students/bulk" className="hidden sm:inline-block">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl px-2.5 py-1.5 text-xs font-semibold border-stone-200 dark:border-white/10"
+                  >
+                    Tạo hàng loạt
+                  </Button>
+                </Link>
+              </PermissionGuard>
+
+              {/* Filter Toggle */}
+              <button
+                type="button"
+                onClick={() => setShowFilters((prev) => !prev)}
+                className={cn(
+                  'p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap',
+                  showFilters || filters.gradeLevel || filters.status || filters.gender
+                    ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700'
+                    : 'bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-white/10 hover:border-amber-400'
+                )}
+                title="Lọc nâng cao"
               >
-                Thêm Học sinh mới
-              </Button>
-            </PermissionGuard>
+                <Icons.Filter className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Bộ lọc</span>
+                {(filters.gradeLevel || filters.status || filters.gender) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                )}
+              </button>
+
+              <PermissionGuard permissions="reports.export">
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  disabled={students.length === 0}
+                  className="p-1.5 sm:px-2.5 sm:py-1.5 bg-stone-50 hover:bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded-xl text-xs font-semibold border border-stone-200 dark:border-white/10 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                  title="Trích xuất file CSV"
+                >
+                  <Icons.Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="hidden md:inline">Xuất CSV</span>
+                </button>
+              </PermissionGuard>
+
+              {/* Bulk Archive button */}
+              {selectedIds.size > 0 && (
+                <PermissionGuard permissions="students.delete">
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={handleBulkArchive}
+                    isLoading={archiving}
+                    className="rounded-xl px-2.5 py-1.5 text-xs font-semibold"
+                  >
+                    <Icons.Archive className="w-3.5 h-3.5 mr-1" />
+                    <span>({selectedIds.size})</span>
+                  </Button>
+                </PermissionGuard>
+              )}
+            </div>
           </div>
+
+          {/* Row 2: Search Bar + Refresh */}
+          <div className="flex items-center gap-2 pt-2 border-t border-stone-100 dark:border-white/5">
+            <div className="relative flex-1">
+              <Icons.Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên, mã UID/CID hoặc email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-xl text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={refetch}
+              disabled={loading}
+              className="p-1.5 sm:px-2.5 sm:py-1.5 bg-stone-50 hover:bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded-xl text-xs font-semibold border border-stone-200 dark:border-white/10 flex items-center gap-1.5 cursor-pointer shrink-0"
+              title="Làm mới dữ liệu"
+            >
+              <Icons.Refresh className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Làm mới</span>
+            </button>
+          </div>
+
+          {/* Row 3: Swipeable Quick Chips for Grade Level & Status */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-0.5">
+            <button
+              type="button"
+              onClick={() => setFilters({ ...filters, gradeLevel: '' })}
+              className={cn(
+                'px-3 py-1 rounded-lg text-xs font-medium transition-all border cursor-pointer whitespace-nowrap shrink-0',
+                !filters.gradeLevel
+                  ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                  : 'bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-white/10 hover:border-amber-400'
+              )}
+            >
+              Tất cả khối
+            </button>
+            {[6, 7, 8, 9, 10, 11, 12].map((g) => {
+              const grade = `Lớp ${g}`;
+              const isSelected = filters.gradeLevel === grade;
+              return (
+                <button
+                  key={grade}
+                  type="button"
+                  onClick={() => setFilters({ ...filters, gradeLevel: isSelected ? '' : grade })}
+                  className={cn(
+                    'px-3 py-1 rounded-lg text-xs font-medium transition-all border cursor-pointer whitespace-nowrap shrink-0',
+                    isSelected
+                      ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                      : 'bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-white/10 hover:border-amber-400'
+                  )}
+                >
+                  {grade}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Row 4 (Collapsible): Advanced Status & Gender filter panel */}
+          {showFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-stone-100 dark:border-white/5 animate-fade-in">
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                className="w-full px-2.5 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-xl text-xs font-medium text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              >
+                <option value="">Trạng thái: Tất cả</option>
+                <option value="active">Đang học tập</option>
+                <option value="inactive">Đã nghỉ học</option>
+                <option value="graduated">Đã tốt nghiệp</option>
+                <option value="suspended">Đang đình chỉ</option>
+              </select>
+
+              <select
+                value={filters.gender}
+                onChange={(e) => setFilters({ ...filters, gender: e.target.value })}
+                className="w-full px-2.5 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-xl text-xs font-medium text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              >
+                <option value="">Giới tính: Tất cả</option>
+                <option value="male">Nam</option>
+                <option value="female">Nữ</option>
+                <option value="other">Khác</option>
+              </select>
+
+              {(filters.gradeLevel || filters.status || filters.gender) && (
+                <button
+                  type="button"
+                  onClick={() => setFilters({ gradeLevel: '', status: '', gender: '' })}
+                  className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-black border border-rose-200 dark:border-rose-900/40 transition-all cursor-pointer"
+                >
+                  Xóa tất cả bộ lọc
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Statistics */}
         {renderStatistics()}
 
-        {/* Filters and Actions */}
-        <div className="flex gap-6 mb-6">
-          {/* Filter Sidebar */}
-          {showFilters && (
-            <div className="w-72 flex-shrink-0 animate-in slide-in-from-left-4 duration-300">
-              <Card className="bg-stone-50/50 dark:bg-white/5 border-stone-200/50 dark:border-white/5">
-                <CardHeader
-                  title="Bộ lọc chuyên sâu"
-                  className="font-serif italic text-sm font-black uppercase tracking-widest text-stone-500"
-                />
-                <div className="space-y-6 pt-2">
-                  {/* Grade Level Filter */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest ml-1">
-                      Khối đào tạo
-                    </label>
-                    <div className="relative group">
-                      <select
-                        value={filters.gradeLevel}
-                        onChange={(e) => setFilters({ ...filters, gradeLevel: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-sm font-bold text-stone-700 dark:text-stone-200 appearance-none transition-all shadow-sm"
-                      >
-                        <option value="">Tất cả các lớp</option>
-                        {[...Array(12)].map((_, i) => (
-                          <option key={i + 1} value={`Lớp ${i + 1}`}>{`Lớp ${i + 1}`}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none group-hover:text-amber-500 transition-colors" />
-                    </div>
-                  </div>
-
-                  {/* Status Filter */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest ml-1">
-                      Trạng thái hồ sơ
-                    </label>
-                    <div className="relative group">
-                      <select
-                        value={filters.status}
-                        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-sm font-bold text-stone-700 dark:text-stone-200 appearance-none transition-all shadow-sm"
-                      >
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="active">Đang học tập</option>
-                        <option value="inactive">Đã nghỉ học</option>
-                        <option value="graduated">Đã tốt nghiệp</option>
-                        <option value="suspended">Đang đình chỉ</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none group-hover:text-amber-500 transition-colors" />
-                    </div>
-                  </div>
-
-                  {/* Clear Filters */}
-                  <Button
-                    variant="outline"
-                    fullWidth
-                    onClick={() => setFilters({ gradeLevel: '', status: '', gender: '' })}
-                    className="font-black uppercase tracking-widest text-[10px] py-3 mt-4 border-stone-200 hover:border-amber-500/50 hover:bg-white dark:hover:bg-white/5"
-                  >
-                    Xóa tất cả bộ lọc
-                  </Button>
-                </div>
-              </Card>
+        {/* Error State */}
+        {error && (
+          <Card className="mb-4 border-red-500">
+            <div className="text-red-600">
+              <p className="font-semibold">Lỗi khi tải danh sách học sinh</p>
+              <p className="text-sm mt-1">{error}</p>
+              <Button variant="outline" onClick={refetch} className="mt-3">
+                Thử lại
+              </Button>
             </div>
-          )}
+          </Card>
+        )}
 
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            <Card
-              padding="p-2"
-              className="mb-6 bg-stone-50/50 dark:bg-white/5 border-stone-200/50 dark:border-white/10 shadow-sm"
-            >
-              <div className="p-2 flex flex-col lg:flex-row gap-4">
-                <div className="relative flex-1 group">
-                  <Icons.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
-                  <input
-                    type="text"
-                    placeholder="Truy vấn học sinh theo tên, mã hoặc email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none font-bold text-stone-800 dark:text-white text-sm placeholder:text-stone-400 transition-all shadow-sm"
-                  />
-                </div>
-
-                <div className="flex gap-2 items-center flex-wrap">
-                  <Button
-                    variant="outline"
-                    onClick={refetch}
-                    className="h-11 px-6 font-black uppercase tracking-widest text-[10px] border-stone-200"
-                    disabled={loading}
-                  >
-                    <Icons.Search className="w-3.5 h-3.5 mr-2" /> Làm mới
+        {/* Empty State */}
+        {!loading && students.length === 0 && !error && (
+          <EmptyState
+            icon={<Icons.Students className="w-12 h-12 text-gray-400" />}
+            title="Không tìm thấy học sinh nào"
+            description={
+              debouncedSearch
+                ? 'Hãy thử điều chỉnh từ khóa tìm kiếm'
+                : 'Bắt đầu bằng cách nhập hoặc thêm học sinh'
+            }
+            action={
+              <div className="flex gap-2">
+                <Link href={routes.students.import()}>
+                  <Button variant="primary">Nhập học sinh</Button>
+                </Link>
+                {debouncedSearch && (
+                  <Button variant="outline" onClick={() => setSearchQuery('')}>
+                    Xóa tìm kiếm
                   </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={cn(
-                      'h-11 px-6 font-black uppercase tracking-widest text-[10px] border-stone-200',
-                      showFilters && 'bg-amber-500/10 border-amber-500/30 text-amber-600'
-                    )}
-                  >
-                    {showFilters ? (
-                      <Icons.Close className="w-3.5 h-3.5 mr-2" />
-                    ) : (
-                      <Icons.Filter className="w-3.5 h-3.5 mr-2" />
-                    )}
-                    {showFilters ? 'Ẩn bộ lọc' : 'Lọc hồ sơ'}
-                  </Button>
-
-                  <div className="h-8 w-px bg-stone-200 dark:bg-stone-800 mx-2 hidden lg:block" />
-
-                  <PermissionGuard permissions="reports.export">
-                    <Button
-                      variant="success"
-                      onClick={handleExportCSV}
-                      className="h-11 px-6 font-black uppercase tracking-widest text-[10px] shadow-emerald-glow"
-                      disabled={students.length === 0}
-                    >
-                      <Icons.Download className="w-3.5 h-3.5 mr-2" /> Trích xuất CSV
-                    </Button>
-                  </PermissionGuard>
-
-                  <PermissionGuard permissions="students.delete">
-                    {selectedIds.size > 0 && (
-                      <Button
-                        variant="danger"
-                        onClick={handleBulkArchive}
-                        isLoading={archiving}
-                        className="h-11 px-6 font-black uppercase tracking-widest text-[10px]"
-                      >
-                        <Icons.Archive className="w-3.5 h-3.5 mr-2" /> Lưu trữ ({selectedIds.size})
-                      </Button>
-                    )}
-                  </PermissionGuard>
-                </div>
-              </div>
-
-              {/* Results info */}
-              <div className="mt-3 text-sm text-slate-600 flex items-center gap-2">
-                <span>
-                  Hiển thị {students.length} trong tổng số {data?.total || 0} học sinh
-                </span>
-                {selectedIds.size > 0 && (
-                  <>
-                    <span>•</span>
-                    <Badge variant="info">{selectedIds.size} đã chọn</Badge>
-                  </>
-                )}
-                {(filters.gradeLevel || filters.status || filters.gender) && (
-                  <>
-                    <span>•</span>
-                    <Badge variant="warning">Bộ lọc đang hoạt động</Badge>
-                  </>
                 )}
               </div>
-            </Card>
+            }
+          />
+        )}
 
-            {/* Error State */}
-            {error && (
-              <Card className="mb-6 border-red-500">
-                <div className="text-red-600">
-                  <p className="font-semibold">Lỗi khi tải danh sách học sinh</p>
-                  <p className="text-sm mt-1">{error}</p>
-                  <Button variant="outline" onClick={refetch} className="mt-3">
-                    Thử lại
-                  </Button>
-                </div>
-              </Card>
-            )}
-
-            {/* Empty State */}
-            {!loading && students.length === 0 && !error && (
-              <EmptyState
-                icon={<Icons.Students className="w-12 h-12 text-gray-400" />}
-                title="Không tìm thấy học sinh nào"
-                description={
-                  debouncedSearch
-                    ? 'Hãy thử điều chỉnh từ khóa tìm kiếm'
-                    : 'Bắt đầu bằng cách nhập hoặc thêm học sinh'
-                }
-                action={
-                  <div className="flex gap-2">
-                    <Link href={routes.students.import()}>
-                      <Button variant="primary">Nhập học sinh</Button>
-                    </Link>
-                    {debouncedSearch && (
-                      <Button variant="outline" onClick={() => setSearchQuery('')}>
-                        Xóa tìm kiếm
-                      </Button>
-                    )}
-                  </div>
-                }
-              />
-            )}
-
-            {/* Students Table */}
-            {students.length > 0 && (
-              <>
-                <MobileStudentList
+        {/* Students List (Mobile Cards & Desktop Table) */}
+        {students.length > 0 && (
+          <>
+            <MobileStudentList
+              students={students}
+              onEdit={setEditingStudent}
+              onArchive={handleArchiveOne}
+              selectedIds={selectedIds}
+              onSelect={handleSelectOne}
+              hasAdminAccess={hasAdminAccess}
+              onViewDetails={(student) => {
+                setSelectedStudentForDrawer(student);
+                setShowDrawer(true);
+              }}
+            />
+            {/* Desktop & Tablet: Grid Cards or Table View */}
+            <div className="hidden md:block">
+              {viewMode === 'grid' ? (
+                <StudentGridView
                   students={students}
                   onEdit={setEditingStudent}
                   onArchive={handleArchiveOne}
                   selectedIds={selectedIds}
                   onSelect={handleSelectOne}
                   hasAdminAccess={hasAdminAccess}
+                  onViewDetails={(student) => {
+                    setSelectedStudentForDrawer(student);
+                    setShowDrawer(true);
+                  }}
+                  onToggleStatus={handleInlineStatusToggle}
                 />
-                <div className="hidden md:block">
-                  <Card
-                    padding="none"
-                    className="rounded-[2.5rem] overflow-hidden border-none shadow-ultra glass-crystal p-0"
-                  >
+              ) : (
+                <Card
+                  padding="none"
+                  className="rounded-2xl overflow-hidden border border-stone-200/80 dark:border-white/10 bg-white dark:bg-stone-900 shadow-xs p-0"
+                >
+                  <div className="overflow-x-auto">
                     <Table
                       data={students}
                       keyExtractor={(student) => student.id}
@@ -753,9 +848,8 @@ export default function StudentsPage() {
                       }}
                       rowClassName={(student) =>
                         cn(
-                          'transition-all duration-200',
-                          student.status !== 'active' &&
-                            'opacity-65 saturate-50 bg-red-500/[0.01] border-l-4 border-red-500/50'
+                          'transition-all duration-150 hover:bg-stone-50/80 dark:hover:bg-white/[0.02] cursor-pointer',
+                          student.status !== 'active' && 'opacity-60 bg-stone-50/30 dark:bg-stone-950/20'
                         )
                       }
                       columns={[
@@ -767,7 +861,7 @@ export default function StudentsPage() {
                               checked={students.length > 0 && selectedIds.size === students.length}
                               onChange={handleSelectAll}
                               onClick={(e) => e.stopPropagation()}
-                              className="w-4.5 h-4.5 rounded-lg border-stone-300 dark:border-stone-700 text-amber-600 focus:ring-amber-500 bg-transparent cursor-pointer"
+                              className="w-4 h-4 rounded border-stone-300 dark:border-stone-700 text-amber-600 focus:ring-amber-500 bg-transparent cursor-pointer"
                             />
                           ) as any,
                           width: '45px',
@@ -785,22 +879,22 @@ export default function StudentsPage() {
                                 setSelectedIds(next);
                               }}
                               onClick={(e) => e.stopPropagation()}
-                              className="w-4.5 h-4.5 rounded-lg border-stone-300 dark:border-stone-700 text-amber-600 focus:ring-amber-500 bg-transparent cursor-pointer"
+                              className="w-4 h-4 rounded border-stone-300 dark:border-stone-700 text-amber-600 focus:ring-amber-500 bg-transparent cursor-pointer"
                             />
                           ),
                         },
                         {
                           key: 'full_name',
-                          header: 'HỌC SINH',
+                          header: 'Học sinh',
                           render: (student) => (
-                            <div className="flex items-center gap-4 py-2">
-                              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-stone-100 to-stone-50 dark:from-white/5 dark:to-white/2 flex items-center justify-center font-bold text-stone-400 border border-stone-100 dark:border-white/5 group-hover:scale-105 transition-transform">
-                                {student.full_name?.charAt(0)}
+                            <div className="flex items-center gap-2.5 py-1">
+                              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                                {student.full_name?.charAt(0) || 'H'}
                               </div>
-                              <div>
+                              <div className="min-w-0">
                                 <p
                                   className={cn(
-                                    'font-bold tracking-tight transition-all',
+                                    'font-bold tracking-tight text-xs transition-colors hover:text-amber-500 truncate',
                                     student.status !== 'active'
                                       ? 'text-stone-400 dark:text-stone-500 line-through'
                                       : 'text-stone-900 dark:text-white'
@@ -808,8 +902,8 @@ export default function StudentsPage() {
                                 >
                                   {student.full_name}
                                 </p>
-                                <p className="text-xs text-stone-400 font-medium">
-                                  {student.email || '—'}
+                                <p className="text-[11px] text-stone-400 font-normal truncate">
+                                  {student.email || 'Chưa có email'}
                                 </p>
                               </div>
                             </div>
@@ -817,42 +911,60 @@ export default function StudentsPage() {
                         },
                         {
                           key: 'student_code',
-                          header: 'UID (MÃ TRUY CẬP)',
+                          header: 'Mã UID',
                           render: (student) => (
-                            <span className="text-stone-600 dark:text-stone-400 font-mono text-xs font-bold bg-stone-100 dark:bg-white/5 px-2 py-0.5 rounded border border-stone-200/50 dark:border-white/10">
-                              {student.student_code || '-'}
-                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopy(student.student_code || '', 'UID');
+                              }}
+                              className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-mono text-[11px] font-semibold bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/40 hover:bg-blue-100 transition-colors cursor-pointer"
+                              title="Click sao chép UID"
+                            >
+                              <span>{student.student_code || '—'}</span>
+                              <Copy className="w-2.5 h-2.5 opacity-60" />
+                            </button>
                           ),
                         },
                         {
                           key: 'student_id',
-                          header: 'CID (MÃ ĐỊNH DANH)',
+                          header: 'Mã CID',
                           render: (student) => (
-                            <span className="text-amber-600 dark:text-amber-400 font-mono text-xs font-black px-2 py-0.5 rounded bg-amber-500/5 border border-amber-500/10">
-                              {student.student_id || '-'}
-                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopy(student.student_id || '', 'CID');
+                              }}
+                              className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 font-mono text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-800/40 hover:bg-amber-100 transition-colors cursor-pointer"
+                              title="Click sao chép CID"
+                            >
+                              <span>{student.student_id || '—'}</span>
+                              <Copy className="w-2.5 h-2.5 opacity-60" />
+                            </button>
                           ),
                         },
                         {
                           key: 'grade_level',
-                          header: 'KHỐI LỚP',
+                          header: 'Khối lớp',
                           render: (student) => (
                             <DropdownMenu
                               trigger={
                                 <button
                                   onClick={(e) => e.stopPropagation()}
-                                  className="cursor-pointer active:scale-95 transition-all px-2.5 py-1 rounded-full border-none shadow-sm font-bold text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
-                                  title="Click để đổi khối lớp nhanh"
+                                  className="cursor-pointer active:scale-95 transition-all px-2.5 py-1 rounded-lg border border-stone-200 dark:border-white/10 font-bold text-xs bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:border-amber-400"
+                                  title="Click đổi khối lớp nhanh"
                                 >
-                                  {student.grade_level || 'Chưa xếp lớp'}
+                                  {student.grade_level || 'Chưa xếp khối'}
                                 </button>
                               }
                             >
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
+                              {[6, 7, 8, 9, 10, 11, 12].map((g) => (
                                 <DropdownItem
                                   key={g}
                                   onClick={() => handleInlineGradeUpdate(student, `Lớp ${g}`)}
-                                  className="font-bold py-2 text-xs"
+                                  className="font-bold py-1.5 text-xs cursor-pointer"
                                 >
                                   Lớp {g}
                                 </DropdownItem>
@@ -862,16 +974,37 @@ export default function StudentsPage() {
                         },
                         {
                           key: 'phone',
-                          header: 'SỐ ĐIỆN THOẠI',
-                          render: (student) => (
-                            <span className="text-stone-700 dark:text-stone-300 text-xs font-bold">
-                              {student.phone || '-'}
-                            </span>
-                          ),
+                          header: 'Liên hệ',
+                          render: (student) => {
+                            if (!student.phone) {
+                              return <span className="text-stone-400 text-xs">—</span>;
+                            }
+                            const cleanPhone = student.phone.replace(/[^0-9+]/g, '');
+                            return (
+                              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <a
+                                  href={`tel:${student.phone}`}
+                                  className="text-stone-800 dark:text-stone-200 text-xs font-semibold hover:text-blue-500 transition-colors flex items-center gap-1"
+                                >
+                                  <Phone className="w-3 h-3 text-blue-500" />
+                                  <span>{student.phone}</span>
+                                </a>
+                                <a
+                                  href={`https://zalo.me/${cleanPhone}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold uppercase hover:bg-blue-500/20 transition-all"
+                                  title="Nhắn tin Zalo"
+                                >
+                                  Zalo
+                                </a>
+                              </div>
+                            );
+                          },
                         },
                         {
                           key: 'status',
-                          header: 'TRẠNG THÁI',
+                          header: 'Trạng thái',
                           render: (student) => {
                             const isActive = student.status === 'active';
                             return (
@@ -881,72 +1014,58 @@ export default function StudentsPage() {
                                   handleInlineStatusToggle(student);
                                 }}
                                 className={cn(
-                                  'cursor-pointer active:scale-95 transition-all px-3 py-1 rounded-full border-none shadow-sm font-bold text-xs ring-1 ring-stone-900/5 dark:ring-white/10',
+                                  'cursor-pointer active:scale-95 transition-all px-2.5 py-0.5 rounded-full font-semibold text-[10px]',
                                   isActive
-                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
-                                    : 'bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20'
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100'
+                                    : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-white/10 hover:bg-stone-200'
                                 )}
-                                title="Click để đổi nhanh trạng thái"
+                                title="Click để chuyển trạng thái"
                               >
-                                {isActive
-                                  ? 'Đang học'
-                                  : student.status === 'inactive'
-                                    ? 'Nghỉ học'
-                                    : student.status || 'Khóa'}
+                                {isActive ? 'Đang học' : 'Lưu trữ'}
                               </button>
                             );
                           },
                         },
                         {
-                          key: 'created_at',
-                          header: 'NGÀY THAM GIA',
-                          render: (student) => (
-                            <span className="text-stone-500 dark:text-stone-500 text-[10px] font-black uppercase tracking-widest">
-                              {new Date(student.created_at).toLocaleDateString('vi-VN')}
-                            </span>
-                          ),
-                        },
-                        {
                           key: 'actions',
-                          header: '',
+                          header: 'Thao tác',
                           render: (student) => (
                             <div
-                              className="flex justify-end items-center gap-1.5 pr-2"
+                              className="flex justify-end items-center gap-1"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity duration-200 mr-2">
+                              <Link
+                                href={`/dashboard/students/${student.id}`}
+                                className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-white/10 dark:hover:text-white transition-all"
+                                title="Xem hồ sơ chi tiết"
+                              >
+                                <Icons.Eye className="w-4 h-4" />
+                              </Link>
+                              <Link
+                                href={`/dashboard/students/${student.id}/transcript`}
+                                className="p-1.5 rounded-lg text-stone-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all"
+                                title="Bảng điểm học sinh"
+                              >
+                                <Award className="w-4 h-4" />
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => setEditingStudent(student)}
+                                className="p-1.5 rounded-lg text-stone-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-all cursor-pointer"
+                                title="Chỉnh sửa thông tin"
+                              >
+                                <Icons.Edit className="w-4 h-4" />
+                              </button>
+                              {hasAdminAccess && (
                                 <button
-                                  onClick={() => setEditingStudent(student)}
-                                  className="w-8 h-8 rounded-xl bg-stone-50 dark:bg-white/5 text-stone-600 dark:text-stone-400 hover:text-amber-600 flex items-center justify-center border border-stone-200/50 dark:border-white/5 active:scale-90 transition-all"
-                                  title="Chỉnh sửa hồ sơ"
+                                  type="button"
+                                  onClick={() => handleArchiveOne(student)}
+                                  className="p-1.5 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
+                                  title="Lưu trữ học sinh"
                                 >
-                                  <Icons.Edit className="w-4 h-4" />
+                                  <Icons.Archive className="w-4 h-4" />
                                 </button>
-                                <Link
-                                  href={`/dashboard/students/${student.id}/transcript`}
-                                  className="w-8 h-8 rounded-xl bg-stone-50 dark:bg-white/5 text-stone-600 dark:text-stone-400 hover:text-blue-500 flex items-center justify-center border border-stone-200/50 dark:border-white/5 active:scale-90 transition-all"
-                                  title="Xem bảng điểm"
-                                >
-                                  <Icons.Grades className="w-4 h-4" />
-                                </Link>
-                                <button
-                                  onClick={() => handleInlineStatusToggle(student)}
-                                  className={cn(
-                                    'w-8 h-8 rounded-xl bg-stone-50 dark:bg-white/5 flex items-center justify-center border border-stone-200/50 dark:border-white/5 active:scale-90 transition-all',
-                                    student.status === 'active'
-                                      ? 'text-stone-600 dark:text-stone-400 hover:text-red-500'
-                                      : 'text-red-500 hover:text-emerald-500'
-                                  )}
-                                  title={student.status === 'active' ? 'Lưu trữ' : 'Kích hoạt'}
-                                >
-                                  {student.status === 'active' ? (
-                                    <Icons.Error className="w-4 h-4" />
-                                  ) : (
-                                    <Icons.Success className="w-4 h-4" />
-                                  )}
-                                </button>
-                              </div>
-
+                              )}
                               <StudentQuickActions
                                 studentId={student.id}
                                 studentName={student.full_name}
@@ -956,10 +1075,12 @@ export default function StudentsPage() {
                         },
                       ]}
                     />
-                  </Card>
-                </div>
-              </>
-            )}
+                  </div>
+                </Card>
+              )}
+            </div>
+          </>
+        )}
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
@@ -985,8 +1106,6 @@ export default function StudentsPage() {
                 </Button>
               </div>
             )}
-          </div>
-        </div>
 
         {/* Add/Edit Student Modal */}
         <StudentFormModal
@@ -1011,21 +1130,21 @@ export default function StudentsPage() {
 
         {/* Floating Bulk Action Bar */}
         {selectedIds.size > 0 && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[1150] bg-stone-900 dark:bg-stone-950 text-white rounded-3xl px-8 py-4 flex flex-col sm:flex-row items-center gap-6 shadow-2xl shadow-black/40 border border-stone-800 dark:border-stone-850 animate-slide-in-bottom">
-            <div className="flex items-center gap-3">
-              <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse" />
-              <span className="text-sm font-bold tracking-tight">
+          <div className="fixed bottom-4 sm:bottom-6 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[1150] bg-stone-900 dark:bg-stone-950 text-white rounded-2xl sm:rounded-3xl p-3 sm:px-6 sm:py-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl border border-stone-800 animate-slide-in-bottom max-w-xl sm:w-auto">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              <span className="text-xs sm:text-sm font-bold tracking-tight">
                 Đã chọn {selectedIds.size} học sinh
               </span>
             </div>
-            <div className="h-px w-full sm:h-5 sm:w-px bg-stone-800 dark:bg-stone-850" />
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleExportCSV}
-                className="h-10 px-4 text-xs font-black uppercase tracking-widest text-white border-stone-800 hover:bg-stone-900 rounded-xl"
+                className="h-8 px-3 text-xs font-semibold text-white border-stone-700 hover:bg-stone-800 rounded-xl"
               >
-                Trích xuất CSV
+                Xuất CSV
               </Button>
 
               <div className="relative group">
@@ -1036,31 +1155,33 @@ export default function StudentsPage() {
                       e.target.value = ''; // reset
                     }
                   }}
-                  className="h-10 px-4 pr-8 text-xs font-black uppercase tracking-widest bg-transparent hover:bg-stone-900 text-white border border-stone-800 rounded-xl outline-none cursor-pointer appearance-none"
+                  className="h-8 px-3 pr-7 text-xs font-semibold bg-stone-800 hover:bg-stone-700 text-white border border-stone-700 rounded-xl outline-none cursor-pointer appearance-none"
                 >
                   <option value="" className="bg-stone-900 text-white">
-                    Chuyển khối lớp
+                    Đổi khối lớp
                   </option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
+                  {[6, 7, 8, 9, 10, 11, 12].map((g) => (
                     <option key={g} value={`Lớp ${g}`} className="bg-stone-900 text-white">
                       Lớp {g}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-stone-400 pointer-events-none" />
               </div>
 
               <Button
                 variant="danger"
+                size="sm"
                 onClick={handleBulkArchive}
-                className="h-10 px-4 text-xs font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white rounded-xl border-none shadow-md"
+                className="h-8 px-3 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-xl border-none shadow-xs"
               >
-                Lưu trữ hồ sơ
+                Lưu trữ
               </Button>
               <Button
                 variant="ghost"
+                size="sm"
                 onClick={() => setSelectedIds(new Set())}
-                className="h-10 px-4 text-xs font-black uppercase tracking-widest text-stone-400 hover:text-white rounded-xl"
+                className="h-8 px-2 text-xs font-semibold text-stone-400 hover:text-white rounded-xl"
               >
                 Bỏ chọn
               </Button>
@@ -1106,6 +1227,11 @@ function StudentDrawer({
   onArchive,
 }: StudentDrawerProps) {
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (student) {
@@ -1113,21 +1239,30 @@ function StudentDrawer({
     }
   }, [student]);
 
-  if (!activeStudent) return null;
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!mounted || !activeStudent) return null;
 
   const isActive = activeStudent.status === 'active';
 
-  return (
+  return createPortal(
     <div
       className={cn(
-        'fixed inset-0 z-[1200] flex justify-end transition-all duration-300',
+        'fixed inset-0 z-[99999] flex justify-end transition-all duration-300',
         isOpen ? 'pointer-events-auto' : 'pointer-events-none'
       )}
     >
       {/* Backdrop with fade effect */}
       <div
         className={cn(
-          'fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300',
+          'fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300',
           isOpen ? 'opacity-100' : 'opacity-0'
         )}
         onClick={onClose}
@@ -1135,36 +1270,37 @@ function StudentDrawer({
       {/* Panel with slide-in transition */}
       <div
         className={cn(
-          'relative w-full max-w-lg bg-white dark:bg-[#1C1917] border-l border-stone-200 dark:border-stone-800 shadow-2xl p-8 sm:p-10 flex flex-col h-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'relative w-full max-w-md sm:max-w-lg bg-white dark:bg-stone-900 border-l border-stone-200/80 dark:border-white/10 shadow-2xl p-5 sm:p-6 flex flex-col h-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden',
           isOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
         {/* Drawer Header */}
-        <div className="flex items-start justify-between border-b border-stone-100 dark:border-white/5 pb-6 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-[20px] bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-serif text-3xl font-black shadow-lg shadow-amber-500/20">
-              {activeStudent.full_name?.charAt(0)}
+        <div className="flex items-center justify-between border-b border-stone-100 dark:border-white/5 pb-4 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold text-lg shadow-xs shrink-0">
+              {activeStudent.full_name?.charAt(0) || 'H'}
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-stone-900 dark:text-white tracking-tight">
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-tight truncate">
                 {activeStudent.full_name}
               </h2>
-              <p className="text-sm text-stone-400 font-medium">
-                {activeStudent.email || 'Không có email'}
+              <p className="text-xs text-stone-400 font-normal truncate mt-0.5">
+                {activeStudent.email || 'Chưa cập nhật email'}
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 text-stone-400 hover:text-stone-950 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/10 rounded-full transition-all duration-200"
+            className="p-2 text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/10 rounded-xl transition-all cursor-pointer shrink-0 ml-2"
             aria-label="Đóng"
           >
             <svg
-              className="w-6 h-6"
+              className="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
-              strokeWidth={2.5}
+              strokeWidth={2}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -1172,52 +1308,59 @@ function StudentDrawer({
         </div>
 
         {/* Scrollable details container */}
-        <div className="flex-1 overflow-y-auto py-8 space-y-8 pr-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto py-5 space-y-6 pr-1 custom-scrollbar">
           {/* Quick Info Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-stone-50 dark:bg-white/[0.02] p-4 rounded-2xl border border-stone-100 dark:border-white/5">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block mb-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-stone-50 dark:bg-white/[0.02] p-3 rounded-xl border border-stone-100 dark:border-white/5">
+              <span className="text-[11px] font-medium text-stone-400 block mb-1">
                 Khối lớp
               </span>
-              <Badge variant="info" className="font-bold text-xs">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 {activeStudent.grade_level || 'Chưa phân khối'}
-              </Badge>
+              </span>
             </div>
-            <div className="bg-stone-50 dark:bg-white/[0.02] p-4 rounded-2xl border border-stone-100 dark:border-white/5">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block mb-1">
+            <div className="bg-stone-50 dark:bg-white/[0.02] p-3 rounded-xl border border-stone-100 dark:border-white/5">
+              <span className="text-[11px] font-medium text-stone-400 block mb-1">
                 Trạng thái
               </span>
-              <Badge variant={isActive ? 'success' : 'default'} className="font-bold text-xs">
+              <span
+                className={cn(
+                  'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold',
+                  isActive
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-stone-200 dark:bg-stone-800 text-stone-500'
+                )}
+              >
                 {isActive
                   ? 'Đang học'
                   : activeStudent.status === 'inactive'
                     ? 'Nghỉ học'
                     : activeStudent.status || 'Khóa'}
-              </Badge>
+              </span>
             </div>
           </div>
 
           {/* Academic Info */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 dark:border-white/5 pb-2">
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider border-b border-stone-100 dark:border-white/5 pb-1.5">
               Thông tin học thuật & Định danh
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-stone-500 font-medium">Mã truy cập (UID):</span>
-                <code className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-mono font-bold text-sm">
+                <span className="text-stone-500">Mã truy cập (UID):</span>
+                <code className="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded font-mono font-bold">
                   {activeStudent.student_code || 'Chưa cấp'}
                 </code>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-stone-500 font-medium">Mã định danh (CID):</span>
-                <code className="bg-amber-500/10 text-amber-600 dark:text-amber-500 px-2 py-0.5 rounded font-mono font-bold text-sm">
+                <span className="text-stone-500">Mã định danh (CID):</span>
+                <code className="bg-amber-500/10 text-amber-600 dark:text-amber-500 px-2 py-0.5 rounded font-mono font-bold">
                   {activeStudent.student_id || 'Chưa cấp'}
                 </code>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-stone-500 font-medium">Giới tính:</span>
-                <span className="text-sm text-stone-900 dark:text-white font-bold">
+                <span className="text-stone-500">Giới tính:</span>
+                <span className="text-stone-900 dark:text-white font-semibold">
                   {activeStudent.gender === 'male'
                     ? 'Nam'
                     : activeStudent.gender === 'female'
@@ -1226,8 +1369,8 @@ function StudentDrawer({
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-stone-500 font-medium">Ngày sinh:</span>
-                <span className="text-sm text-stone-900 dark:text-white font-bold">
+                <span className="text-stone-500">Ngày sinh:</span>
+                <span className="text-stone-900 dark:text-white font-semibold">
                   {activeStudent.date_of_birth
                     ? new Date(activeStudent.date_of_birth).toLocaleDateString('vi-VN')
                     : '—'}
@@ -1237,21 +1380,28 @@ function StudentDrawer({
           </div>
 
           {/* Contact Details */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 dark:border-white/5 pb-2">
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider border-b border-stone-100 dark:border-white/5 pb-1.5">
               Thông tin liên hệ
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-stone-500 font-medium">Số điện thoại:</span>
-                <span className="text-sm text-stone-900 dark:text-white font-bold">
-                  {activeStudent.phone || '—'}
-                </span>
+                <span className="text-stone-500">Số điện thoại:</span>
+                {activeStudent.phone ? (
+                  <a
+                    href={`tel:${activeStudent.phone}`}
+                    className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                  >
+                    {activeStudent.phone}
+                  </a>
+                ) : (
+                  <span className="text-stone-400">—</span>
+                )}
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-stone-500 font-medium">Địa chỉ cư trú:</span>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-stone-500 shrink-0">Địa chỉ cư trú:</span>
                 <span
-                  className="text-sm text-stone-900 dark:text-white font-bold text-right truncate max-w-[200px]"
+                  className="text-stone-900 dark:text-white font-semibold text-right truncate"
                   title={activeStudent.address || ''}
                 >
                   {activeStudent.address || '—'}
@@ -1261,14 +1411,14 @@ function StudentDrawer({
           </div>
 
           {/* System Info */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-black text-stone-400 uppercase tracking-widest border-b border-stone-100 dark:border-white/5 pb-2">
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider border-b border-stone-100 dark:border-white/5 pb-1.5">
               Hệ thống
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-stone-500 font-medium">Ngày tham gia hệ thống:</span>
-                <span className="text-sm text-stone-900 dark:text-white font-bold text-right">
+                <span className="text-stone-500">Ngày khởi tạo:</span>
+                <span className="text-stone-800 dark:text-stone-200 font-medium">
                   {new Date(activeStudent.created_at).toLocaleDateString('vi-VN')}{' '}
                   {new Date(activeStudent.created_at).toLocaleTimeString('vi-VN', {
                     hour: '2-digit',
@@ -1281,37 +1431,40 @@ function StudentDrawer({
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-stone-100 dark:border-white/5 pt-6 flex flex-col gap-3 shrink-0">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="border-t border-stone-100 dark:border-white/5 pt-4 flex flex-col gap-2 shrink-0">
+          <div className="grid grid-cols-2 gap-2">
             <Button
               onClick={() => {
                 onClose();
                 onEdit(activeStudent);
               }}
-              className="rounded-xl h-12 text-xs font-black uppercase tracking-widest shadow-amber-glow"
-              leftIcon={<Icons.Edit className="w-4 h-4" />}
+              size="sm"
+              className="rounded-xl h-9 text-xs font-semibold"
+              leftIcon={<Icons.Edit className="w-3.5 h-3.5" />}
             >
               Sửa thông tin
             </Button>
             <Link href={`/dashboard/students/${activeStudent.id}`} className="w-full">
               <Button
                 variant="outline"
-                className="w-full rounded-xl h-12 text-xs font-black uppercase tracking-widest border-stone-200 dark:border-stone-850"
-                leftIcon={<Icons.Users className="w-4 h-4" />}
+                size="sm"
+                className="w-full rounded-xl h-9 text-xs font-semibold border-stone-200 dark:border-stone-800"
+                leftIcon={<Icons.Users className="w-3.5 h-3.5" />}
               >
                 Hồ sơ chi tiết
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5">
             <Link
               href={`/dashboard/students/${activeStudent.id}/transcript`}
               className="w-full col-span-1"
             >
               <Button
                 variant="outline"
-                className="w-full rounded-xl h-12 text-xs font-black uppercase tracking-widest border-stone-200 dark:border-stone-850 text-amber-600"
-                leftIcon={<Icons.Grades className="w-4 h-4" />}
+                size="sm"
+                className="w-full rounded-xl h-8.5 text-xs font-medium border-stone-200 dark:border-stone-800 text-amber-600 hover:bg-amber-50"
+                leftIcon={<Icons.Grades className="w-3.5 h-3.5" />}
               >
                 Điểm số
               </Button>
@@ -1322,14 +1475,16 @@ function StudentDrawer({
             >
               <Button
                 variant="outline"
-                className="w-full rounded-xl h-12 text-xs font-black uppercase tracking-widest border-stone-200 dark:border-stone-850 text-blue-600"
-                leftIcon={<Icons.History className="w-4 h-4" />}
+                size="sm"
+                className="w-full rounded-xl h-8.5 text-xs font-medium border-stone-200 dark:border-stone-800 text-blue-600 hover:bg-blue-50"
+                leftIcon={<Icons.History className="w-3.5 h-3.5" />}
               >
                 Tiến độ
               </Button>
             </Link>
             <Button
               variant="outline"
+              size="sm"
               onClick={async () => {
                 await handleToggleStatus(activeStudent);
                 setActiveStudent((prev) =>
@@ -1338,12 +1493,12 @@ function StudentDrawer({
                     : null
                 );
               }}
-              className="rounded-xl h-12 text-xs font-black uppercase tracking-widest border-stone-200 dark:border-stone-850 text-red-500"
+              className="rounded-xl h-8.5 text-xs font-medium border-stone-200 dark:border-stone-800 text-rose-600 hover:bg-rose-50"
               leftIcon={
                 isActive ? (
-                  <Icons.Error className="w-4 h-4" />
+                  <Icons.Error className="w-3.5 h-3.5" />
                 ) : (
-                  <Icons.Success className="w-4 h-4" />
+                  <Icons.Success className="w-3.5 h-3.5" />
                 )
               }
             >
@@ -1352,6 +1507,7 @@ function StudentDrawer({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

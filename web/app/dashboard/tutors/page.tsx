@@ -14,9 +14,10 @@ import {
     Phone,
     Mail,
     BookOpen,
-    DollarSign,
-    X
+    DollarSign
 } from "lucide-react";
+
+import UserFormModal from "@/components/users/UserFormModal";
 
 interface Tutor {
     id: string;
@@ -31,11 +32,6 @@ interface Tutor {
     bio: string | null;
 }
 
-interface Subject {
-    id: string;
-    name: string;
-}
-
 export default function TutorsPage() {
     return (
         <PageGuard permissions="users.view">
@@ -48,23 +44,12 @@ function TutorsContent() {
     const { profile, loading: profileLoading } = useProfile();
     const { isAdmin: isSystemAdmin, isStaff } = usePermissions();
     const [tutors, setTutors] = useState<Tutor[]>([]);
-    const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
 
-    // Modal state
-    const [showModal, setShowModal] = useState(false);
+    // User Form Modal state
+    const [showUserModal, setShowUserModal] = useState(false);
     const [editingTutor, setEditingTutor] = useState<Tutor | null>(null);
-    const [saving, setSaving] = useState(false);
-    const [formData, setFormData] = useState({
-        full_name: "",
-        email: "",
-        phone: "",
-        specialization: "",
-        teaching_subjects: [] as string[],
-        hourly_rate: "",
-        bio: ""
-    });
 
     // Check if user can manage tutors (isAdmin or isStaff)
     const canManage = isSystemAdmin || isStaff;
@@ -82,83 +67,18 @@ function TutorsContent() {
         }
     };
 
-    const fetchSubjects = async () => {
-        try {
-            const response = await apiFetch("/api/subjects");
-            const data = await response.json();
-            setSubjects(data.subjects || []);
-        } catch (error) {
-            console.error("Failed to fetch subjects:", error);
-        }
-    };
-
     useEffect(() => {
         fetchTutors();
-        fetchSubjects();
     }, []);
 
     const openCreateModal = () => {
         setEditingTutor(null);
-        setFormData({
-            full_name: "",
-            email: "",
-            phone: "",
-            specialization: "",
-            teaching_subjects: [],
-            hourly_rate: "",
-            bio: ""
-        });
-        setShowModal(true);
+        setShowUserModal(true);
     };
 
     const openEditModal = (tutor: Tutor) => {
         setEditingTutor(tutor);
-        setFormData({
-            full_name: tutor.full_name || "",
-            email: tutor.email || "",
-            phone: tutor.phone || "",
-            specialization: tutor.specialization || "",
-            teaching_subjects: tutor.teaching_subjects || [],
-            hourly_rate: tutor.hourly_rate?.toString() || "",
-            bio: tutor.bio || ""
-        });
-        setShowModal(true);
-    };
-
-    const saveTutor = async () => {
-        if (!formData.full_name.trim()) {
-            alert("Vui lòng nhập tên gia sư");
-            return;
-        }
-
-        setSaving(true);
-        try {
-            const url = editingTutor ? `/api/tutors/${editingTutor.id}` : "/api/tutors";
-            const method = editingTutor ? "PUT" : "POST";
-
-            const response = await apiFetch(url, {
-                method,
-                body: JSON.stringify({
-                    ...formData,
-                    hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null
-                }),
-                headers: { "Content-Type": "application/json" }
-            });
-
-            const result = await response.json();
-            if (!result.success) {
-                throw new Error(result.error || "Failed to save");
-            }
-
-            await fetchTutors();
-            setShowModal(false);
-            setEditingTutor(null);
-        } catch (error) {
-            console.error("Failed to save tutor:", error);
-            alert("Không thể lưu gia sư. Vui lòng thử lại.");
-        } finally {
-            setSaving(false);
-        }
+        setShowUserModal(true);
     };
 
     const deleteTutor = async (id: string) => {
@@ -173,15 +93,6 @@ function TutorsContent() {
         } catch (error) {
             console.error("Failed to delete tutor:", error);
         }
-    };
-
-    const toggleSubject = (subjectId: string) => {
-        setFormData(prev => ({
-            ...prev,
-            teaching_subjects: prev.teaching_subjects.includes(subjectId)
-                ? prev.teaching_subjects.filter(id => id !== subjectId)
-                : [...prev.teaching_subjects, subjectId]
-        }));
     };
 
     const filteredTutors = tutors.filter(tutor =>
@@ -355,153 +266,21 @@ function TutorsContent() {
                 </div>
             )}
 
-            {/* Modal */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white">
-                            <h2 className="text-lg font-semibold">
-                                {editingTutor ? "Chỉnh sửa gia sư" : "Thêm gia sư mới"}
-                            </h2>
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="p-1 hover:bg-gray-100 rounded"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-6 space-y-4">
-                            {/* Name */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Họ và tên *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.full_name}
-                                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-                                    placeholder="Nguyễn Văn A"
-                                />
-                            </div>
-
-                            {/* Contact */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                        placeholder="email@example.com"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Số điện thoại
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg"
-                                        placeholder="0901234567"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Specialization */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Môn có thể dạy
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.specialization}
-                                    onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                    placeholder="Toán, Lý, Hóa..."
-                                />
-                            </div>
-
-                            {/* Teaching Subjects (checkboxes) */}
-                            {subjects.length > 0 && (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Chọn môn từ danh sách
-                                    </label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {subjects.map(subject => (
-                                            <button
-                                                key={subject.id}
-                                                type="button"
-                                                onClick={() => toggleSubject(subject.id)}
-                                                className={`px-3 py-1.5 rounded-full text-sm transition-colors ${formData.teaching_subjects.includes(subject.id)
-                                                    ? 'bg-emerald-600 text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                    }`}
-                                            >
-                                                {subject.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Hourly Rate */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Mức lương (VNĐ/giờ)
-                                </label>
-                                <input
-                                    type="number"
-                                    value={formData.hourly_rate}
-                                    onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg"
-                                    placeholder="50000"
-                                />
-                            </div>
-
-                            {/* Bio */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Giới thiệu
-                                </label>
-                                <textarea
-                                    value={formData.bio}
-                                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg resize-none"
-                                    rows={3}
-                                    placeholder="Sinh viên năm 3, chuyên ngành..."
-                                />
-                            </div>
-                        </div>
-
-                        <div className="p-6 border-t flex justify-end gap-3 sticky bottom-0 bg-white">
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                onClick={saveTutor}
-                                disabled={saving || !formData.full_name.trim()}
-                                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                {saving && (
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                )}
-                                {saving ? "Đang lưu..." : editingTutor ? "Cập nhật" : "Thêm"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Standard User Form Modal for Tutors */}
+            <UserFormModal
+                isOpen={showUserModal}
+                onClose={() => {
+                    setShowUserModal(false);
+                    setEditingTutor(null);
+                }}
+                onSuccess={() => {
+                    setShowUserModal(false);
+                    setEditingTutor(null);
+                    fetchTutors();
+                }}
+                initialRole="tutor"
+                user={editingTutor}
+            />
         </div>
     );
 }

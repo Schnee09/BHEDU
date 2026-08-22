@@ -206,7 +206,7 @@ function ReportsPageContent() {
       params.set('format', 'csv');
       if (selectedAcademicYear) params.set('academic_year_id', selectedAcademicYear);
       if (selectedClassFilter) params.set('class_id', selectedClassFilter);
-      if (selectedCourseFilter) params.set('course_id', selectedCourseFilter);
+      if (selectedCourseFilter) params.set('subject_id', selectedCourseFilter);
 
       if (type === 'students') {
         // Server-side CSV export to avoid client fetching large datasets
@@ -340,7 +340,7 @@ function ReportsPageContent() {
             <Icons.Chart className="w-8 h-8 text-stone-600" />
             Báo cáo
           </h1>
-          <p className="text-stone-500 mt-1">Tạo và tải xuống báo cáo toàn diện của trường</p>
+          <p className="text-stone-500 mt-1">Tạo và tải xuống báo cáo toàn diện của trung tâm</p>
         </div>
       </div>
 

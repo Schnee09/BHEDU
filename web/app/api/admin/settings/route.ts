@@ -1,7 +1,20 @@
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
+
+const updateSettingsSchema = z.object({
+  settings: z
+    .array(
+      z.object({
+        key: z.string().min(1, 'Key is required'),
+        value: z.any().transform((v) => (v === null || v === undefined ? '' : String(v))),
+        description: z.string().optional(),
+      })
+    )
+    .min(1, 'Settings must be an array with at least one item'),
+});
 
 /**
  * School Settings API
@@ -12,7 +25,7 @@ export const dynamic = 'force-dynamic';
 export const GET = createGetHandler({ allowedRoles: ['admin', 'super_admin'] }, async () => {
   const supabase = createServiceClient();
 
-  const { data: settings, error } = await supabase.from('school_settings').select('*').order('key');
+  const { data: settings, error } = await supabase.from('settings').select('*').order('key');
 
   if (error) {
     console.error('Error fetching settings:', error);
@@ -23,28 +36,33 @@ export const GET = createGetHandler({ allowedRoles: ['admin', 'super_admin'] }, 
 });
 
 export const PUT = createApiHandler(
-  { allowedRoles: ['admin', 'super_admin'] },
+  {
+    allowedRoles: ['admin', 'super_admin'],
+    bodySchema: updateSettingsSchema,
+  },
   async ({ body, user }) => {
-    const { settings } = body as { settings: Array<{ key: string; value: string }> };
-
-    if (!Array.isArray(settings) || settings.length === 0) {
-      throw new Error('Settings must be an array with at least one item');
-    }
+    const { settings } = body;
 
     const supabase = createServiceClient();
     const results = [];
 
-    // Update each setting
+    // Update or insert each setting
     for (const setting of settings) {
       const { key, value } = setting;
+      const category = (key === 'academic_year' || key === 'semester' || key === 'grading_scale') ? 'academic' : 'school';
 
       const { error } = await supabase
-        .from('school_settings')
-        .update({
-          value,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('key', key);
+        .from('settings')
+        .upsert(
+          {
+            key,
+            value,
+            category,
+            is_public: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'key' }
+        );
 
       if (error) {
         console.error(`Error updating setting ${key}:`, error);
@@ -54,14 +72,16 @@ export const PUT = createApiHandler(
       }
     }
 
-    // Log activity (optional, but keep for consistency)
+    // Log activity (optional, non-fatal)
     try {
       await supabase
-        .from('audit_logs') // Using the centralized audit_logs table
+        .from('audit_logs')
         .insert({
           user_id: user.id,
+          user_email: user.email,
+          user_role: user.role,
           action: 'UPDATE_SETTINGS',
-          entity_type: 'SCHOOL_SETTINGS',
+          resource_type: 'SCHOOL_SETTINGS',
           metadata: { updated_settings: settings.map((s) => s.key) },
         });
     } catch (auditError) {

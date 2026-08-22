@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, memo } from 'react';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from './ThemeToggle';
@@ -14,6 +15,10 @@ import {
   Bars3Icon,
   XMarkIcon,
   BellIcon,
+  AcademicCapIcon,
+  BanknotesIcon,
+  MegaphoneIcon,
+  BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import { routes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
@@ -33,6 +38,8 @@ interface HeaderProps {
     last_name?: string | null;
     email?: string | null;
     role?: string;
+    avatar_url?: string | null;
+    photo_url?: string | null;
   } | null;
   onMenuToggle?: () => void;
   isMenuOpen?: boolean;
@@ -56,7 +63,7 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
 
   // Dynamic Portal Title & Greetings
   const portalTitle = useMemo(() => {
-    if (isAdmin) return { main: 'Hệ thống', sub: 'QUẢN TRỊ' };
+    if (isAdmin) return { main: 'Cổng Quản trị', sub: 'HỆ THỐNG' };
     if (isOwner) return { main: 'Cổng quản lý', sub: 'CHỦ TRUNG TÂM' };
     if (isStaff) return { main: 'Cổng nội bộ', sub: 'NHÂN SỰ' };
     if (isTeacher) return { main: 'Cổng công cụ', sub: 'GIÁO VIÊN' };
@@ -106,45 +113,99 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
   const quickActions = useMemo(
     () =>
       [
-        { label: 'Điểm danh', icon: CheckIcon, href: routes.attendance.list(), show: true },
-        { label: 'Điểm của tôi', icon: ChartBarIcon, href: routes.grades.list(), show: isStudent },
+        // Học vụ & Đào tạo
         {
-          label: 'Thêm học sinh',
+          label: 'Thêm học sinh mới',
+          sub: 'Tạo hồ sơ và mã học sinh',
+          category: 'Học vụ & Đào tạo',
           icon: UserPlusIcon,
           href: `${routes.students.list()}?action=add`,
           show: can('students.create'),
         },
         {
-          label: 'Nhập điểm',
+          label: 'Tạo lớp học mới',
+          sub: 'Thêm lớp và phân công giáo viên',
+          category: 'Học vụ & Đào tạo',
+          icon: AcademicCapIcon,
+          href: `${routes.classes.list()}`,
+          show: can('classes.create'),
+        },
+        {
+          label: 'Điểm danh hôm nay',
+          sub: 'Ghi nhận chuyên cần lớp học',
+          category: 'Học vụ & Đào tạo',
+          icon: CheckIcon,
+          href: routes.attendance.list(),
+          show: can('attendance.mark') || isTeacher || isAdmin || isOwner,
+        },
+        {
+          label: 'Nhập điểm học tập',
+          sub: 'Vào điểm thi và kiểm tra',
+          category: 'Học vụ & Đào tạo',
           icon: ClipboardDocumentListIcon,
           href: routes.grades.entry(),
           show: can('grades.entry'),
         },
         {
-          label: 'Xem phân tích',
-          icon: ChartBarIcon,
-          href: routes.grades.analytics(),
-          show: can('reports.view'),
-        },
-        {
-          label: 'Nhập học sinh',
+          label: 'Nhập học sinh từ Excel',
+          sub: 'Tải danh sách hàng loạt',
+          category: 'Học vụ & Đào tạo',
           icon: ArrowDownTrayIcon,
           href: routes.students.import(),
           show: can('users.bulk_import'),
         },
+
+        // Tài chính & Học phí
         {
-          label: 'Kết nối con em',
+          label: 'Lập hóa đơn học phí',
+          sub: 'Tạo phiếu thu học phí mới',
+          category: 'Tài chính & Học phí',
+          icon: BanknotesIcon,
+          href: '/dashboard/finance',
+          show: can('finance.manage') || isAdmin || isOwner,
+        },
+
+        // Dạy kèm & Tương tác
+        {
+          label: 'Đăng thông báo trung tâm',
+          sub: 'Gửi tin tức đến toàn trường',
+          category: 'Tương tác & Lịch dạy',
+          icon: MegaphoneIcon,
+          href: '/dashboard/admin/announcements',
+          show: can('announcements.manage') || isAdmin || isOwner,
+        },
+        {
+          label: 'Lịch dạy kèm Gia sư',
+          sub: 'Đặt lịch và theo dõi kèm 1-1',
+          category: 'Tương tác & Lịch dạy',
+          icon: BookOpenIcon,
+          href: '/dashboard/tutoring/schedule',
+          show: can('tutoring.sessions.view') || isTeacher,
+        },
+
+        // Dành cho Học sinh / Phụ huynh
+        {
+          label: 'Bảng điểm của tôi',
+          sub: 'Xem điểm và đánh giá học lực',
+          category: 'Cá nhân',
+          icon: ChartBarIcon,
+          href: routes.grades.list(),
+          show: isStudent,
+        },
+        {
+          label: 'Kết nối hồ sơ con em',
+          sub: 'Liên kết mã học sinh con',
+          category: 'Cá nhân',
           icon: UserPlusIcon,
           href: routes.parent.linkStudent(),
           show: isParent,
         },
       ].filter((action) => action.show),
-    [isStudent, can, isParent]
+    [isStudent, can, isParent, isTeacher, isAdmin, isOwner]
   );
 
   return (
-    <header className="sticky top-0 h-16 z-[100] overflow-visible shrink-0">
-      <div className="absolute inset-0 bg-white/80 dark:bg-stone-950/80 backdrop-blur-xl border-b border-stone-200/60 dark:border-white/8" />
+    <header className="sticky top-0 h-16 z-[100] overflow-visible shrink-0 bg-white dark:bg-[#12110E] border-b border-stone-200 dark:border-stone-800 shadow-sm transition-colors duration-200">
       <div className="relative w-full h-full flex items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-6 relative z-10 flex-1 min-w-0">
           <button
@@ -159,22 +220,33 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
           </button>
 
           <div
-            className="flex flex-col group cursor-pointer shrink-0"
+            className="flex items-center gap-3 group cursor-pointer shrink-0"
             onClick={() => router.push('/dashboard')}
           >
-            <h1 className="text-base md:text-xl font-black tracking-tighter leading-none flex items-center gap-2 whitespace-nowrap">
-              <span className="text-stone-900 dark:text-stone-100 font-serif italic transition-colors group-hover:text-amber-600 drop-shadow-sm">
-                {portalTitle.main}
-              </span>
-              <span className="hidden md:inline-flex text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2 py-1 rounded-xl text-[10px] border border-amber-500/20 font-black tracking-widest uppercase shadow-sm">
-                {portalTitle.sub}
-              </span>
-            </h1>
-            <div className="hidden lg:flex items-center gap-1.5 mt-2 opacity-30 group-hover:opacity-100 transition-opacity">
-              <div className="h-0.5 w-6 bg-amber-500 rounded-full"></div>
-              <p className="text-[8px] font-black uppercase tracking-[0.4em] text-stone-500 dark:text-stone-400">
-                UNI-V DATA CORE
-              </p>
+            <div className="relative w-9 h-9 rounded-xl bg-stone-100 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 p-1 flex items-center justify-center shrink-0 lg:hidden overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
+              <Image
+                src="/logo.png"
+                alt="BH-EDU Logo"
+                fill
+                sizes="36px"
+                className="object-contain p-0.5 drop-shadow-[0_2px_4px_rgba(217,119,6,0.25)]"
+              />
+            </div>
+            <div className="flex flex-col">
+              <h1 className="text-base md:text-xl font-black tracking-tighter leading-none flex items-center gap-2 whitespace-nowrap">
+                <span className="text-stone-900 dark:text-stone-100 font-serif italic transition-colors group-hover:text-amber-600 drop-shadow-sm">
+                  {portalTitle.main}
+                </span>
+                <span className="hidden md:inline-flex text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2 py-1 rounded-xl text-[10px] border border-amber-500/20 font-black tracking-widest uppercase shadow-sm">
+                  {portalTitle.sub}
+                </span>
+              </h1>
+              <div className="hidden lg:flex items-center gap-1.5 mt-2 opacity-30 group-hover:opacity-100 transition-opacity">
+                <div className="h-0.5 w-6 bg-amber-500 rounded-full"></div>
+                <p className="text-[8px] font-black uppercase tracking-[0.4em] text-stone-500 dark:text-stone-400">
+                  BH-EDU CORE SYSTEM
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -184,17 +256,17 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
           <div className="relative group w-full max-w-[520px]">
             <button
               onClick={() => setOpenPanel('search')}
-              className="flex items-center gap-4 px-6 h-12 w-full rounded-2xl transition-all duration-300 cursor-pointer relative overflow-hidden
-              bg-stone-50/50 dark:bg-white/5 border border-stone-200/50 dark:border-white/5
-              hover:border-amber-500/40 hover:bg-white dark:hover:bg-white/10 hover:shadow-md hover:scale-[1.01]
-              text-stone-500 dark:text-stone-400 group-hover:text-amber-600 shadow-sm backdrop-blur-md"
+              className="flex items-center gap-4 px-6 h-12 w-full rounded-2xl transition-all duration-200 cursor-pointer relative
+              bg-stone-100/90 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800
+              hover:border-amber-500/50 hover:bg-white dark:hover:bg-[#25221D] hover:shadow-sm
+              text-stone-600 dark:text-stone-300 group-hover:text-amber-600 shadow-sm"
             >
-              <MagnifyingGlassIcon className="w-4 h-4 text-stone-400 group-hover:scale-110 transition-transform duration-300" />
+              <MagnifyingGlassIcon className="w-4 h-4 text-stone-400 group-hover:scale-110 transition-transform duration-200" />
               <span className="text-xs font-black uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">
                 Truy vấn hệ thống...
               </span>
-              <div className="ml-auto flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                <span className="text-[10px] bg-white dark:bg-black/20 border border-stone-200 dark:border-white/10 px-2 py-0.5 rounded-lg shadow-sm font-black text-stone-500 dark:text-stone-300 flex items-center gap-0.5">
+              <div className="ml-auto flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity duration-200">
+                <span className="text-[10px] bg-white dark:bg-[#12110E] border border-stone-200 dark:border-stone-800 px-2 py-0.5 rounded-lg shadow-sm font-black text-stone-500 dark:text-stone-300 flex items-center gap-0.5">
                   <kbd>CTRL</kbd>+<kbd>K</kbd>
                 </span>
               </div>
@@ -205,7 +277,7 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
         <div className="flex items-center justify-end gap-3 md:gap-4 flex-1 min-w-0">
           <button
             onClick={() => setOpenPanel('search')}
-            className="hidden md:block lg:hidden p-3 rounded-full bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-300 active:scale-95 hover:scale-105 transition-all border border-transparent hover:border-amber-500/20"
+            className="hidden md:block lg:hidden p-3 rounded-2xl bg-stone-100 dark:bg-[#1C1A16] text-stone-600 dark:text-stone-300 active:scale-95 hover:scale-105 transition-all border border-stone-200/80 dark:border-stone-800 hover:border-amber-500/30"
           >
             <MagnifyingGlassIcon className="w-5 h-5" strokeWidth={2.5} />
           </button>
@@ -223,10 +295,10 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
             <button
               onClick={() => setOpenPanel(openPanel === 'notifications' ? null : 'notifications')}
               className={cn(
-                'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer relative border',
+                'w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer relative border',
                 showNotifications
                   ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20 scale-105'
-                  : 'bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-300 border-transparent hover:border-amber-500/30 hover:bg-white dark:hover:bg-white/10 hover:shadow-sm hover:scale-105'
+                  : 'bg-stone-100 dark:bg-[#1C1A16] text-stone-600 dark:text-stone-300 border-stone-200/80 dark:border-stone-800 hover:border-amber-500/30 hover:bg-stone-50 dark:hover:bg-[#25221D] hover:shadow-sm hover:scale-105'
               )}
             >
               <BellIcon
@@ -236,7 +308,7 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
                 )}
               />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 border-2 border-white dark:border-[#1A1410] rounded-full w-4 h-4 bg-red-500 text-[9px] font-black text-white flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 border-2 border-white dark:border-[#12110E] rounded-full w-4 h-4 bg-red-500 text-[9px] font-black text-white flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -254,9 +326,7 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
           </div>
 
           <div className="hidden sm:block">
-            <div className="w-11 h-11 rounded-full bg-stone-100 dark:bg-white/5 border border-transparent hover:border-amber-500/30 hover:bg-white dark:hover:bg-white/10 hover:shadow-sm flex items-center justify-center hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden">
-              <ThemeToggle />
-            </div>
+            <ThemeToggle />
           </div>
 
           <UserMenu

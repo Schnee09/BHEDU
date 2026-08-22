@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { apiFetch, updateClass, deleteClass } from "@/lib/api/client";
-import { Card, LoadingState, Button, Modal, Input, Textarea } from "@/components/ui";
+import { CENTER_ROOMS, STANDARD_SCHEDULES } from "@/lib/config/resources";
+import { Modal } from "@/components/ui";
 import {
     ChevronLeft,
     Save,
@@ -15,10 +15,16 @@ import {
     MapPin,
     User,
     AlertTriangle,
-    Info,
     BadgeInfo,
-    Layout,
-    Calendar
+    Calendar,
+    CheckCircle,
+    PauseCircle,
+    XCircle,
+    Loader2,
+    ChevronDown,
+    Hash,
+    FileText,
+    GraduationCap,
 } from "lucide-react";
 import { useToast } from "@/hooks";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -35,6 +41,11 @@ interface ClassData {
     schedule?: string;
     room?: string;
     teacher_id?: string;
+    subject_id?: string;
+    academic_year_id?: string;
+    capacity?: number | null;
+    max_capacity?: number | null;
+    status?: "active" | "inactive" | "completed";
     teacher?: {
         id: string;
         full_name: string;
@@ -50,6 +61,143 @@ interface Teacher {
     first_name?: string | null;
     last_name?: string | null;
     email: string;
+    role?: string;
+}
+
+const INSTRUCTOR_ROLE_LABELS: Record<string, string> = {
+    owner: 'Chủ trung tâm',
+    admin: 'Quản lý',
+    super_admin: 'Quản trị hệ thống',
+    teacher: 'Giáo viên',
+    tutor: 'Gia sư',
+};
+
+const STATUS_OPTIONS = [
+    {
+        value: "active",
+        label: "Hoạt động",
+        icon: CheckCircle,
+        color: "text-emerald-600",
+        activeBg: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500",
+        dot: "bg-emerald-500",
+    },
+    {
+        value: "inactive",
+        label: "Tạm ngưng",
+        icon: PauseCircle,
+        color: "text-amber-600",
+        activeBg: "bg-amber-50 dark:bg-amber-500/10 border-amber-500",
+        dot: "bg-amber-500",
+    },
+    {
+        value: "completed",
+        label: "Hoàn thành",
+        icon: XCircle,
+        color: "text-stone-500",
+        activeBg: "bg-stone-50 dark:bg-stone-500/10 border-stone-400",
+        dot: "bg-stone-400",
+    },
+];
+
+function SelectField({
+    label,
+    icon: Icon,
+    iconColor = "text-stone-500",
+    value,
+    onChange,
+    children,
+    hint,
+}: {
+    label: string;
+    icon: React.ElementType;
+    iconColor?: string;
+    value: string;
+    onChange: (v: string) => void;
+    children: React.ReactNode;
+    hint?: string;
+}) {
+    return (
+        <div className="space-y-1.5">
+            <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-stone-500 dark:text-stone-400 px-1">
+                {label}
+            </label>
+            <div className="relative">
+                <div className={cn("absolute left-4 top-1/2 -translate-y-1/2 z-10 pointer-events-none", iconColor)}>
+                    <Icon className="w-4.5 h-4.5" />
+                </div>
+                <select
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className={cn(
+                        "w-full pl-11 pr-10 py-2 rounded-2xl font-bold text-sm appearance-none outline-none transition-all",
+                        "bg-stone-50 dark:bg-stone-900/50",
+                        "border border-stone-200 dark:border-stone-700",
+                        "focus:border-stone-900 dark:focus:border-stone-400",
+                        "text-stone-800 dark:text-stone-200",
+                        "focus:ring-2 focus:ring-stone-900/10 dark:focus:ring-stone-400/10",
+                        "h-[50px]"
+                    )}
+                >
+                    {children}
+                </select>
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
+                    <ChevronDown className="w-4 h-4" />
+                </div>
+            </div>
+            {hint && <p className="text-[10px] text-stone-400 px-1 italic">{hint}</p>}
+        </div>
+    );
+}
+
+function TextInput({
+    label,
+    icon: Icon,
+    iconColor = "text-stone-500",
+    value,
+    onChange,
+    placeholder,
+    type = "text",
+    required,
+}: {
+    label: string;
+    icon: React.ElementType;
+    iconColor?: string;
+    value: string | number;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    type?: string;
+    required?: boolean;
+}) {
+    return (
+        <div className="space-y-1.5">
+            <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-stone-500 dark:text-stone-400 px-1">
+                {label}
+                {required && <span className="text-red-500 ml-0.5">*</span>}
+            </label>
+            <div className="relative">
+                <div className={cn("absolute left-4 top-1/2 -translate-y-1/2 z-10 pointer-events-none", iconColor)}>
+                    <Icon className="w-4.5 h-4.5" />
+                </div>
+                <input
+                    type={type}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={placeholder}
+                    required={required}
+                    className={cn(
+                        "w-full pl-11 pr-4 py-3.5 rounded-2xl font-bold text-sm outline-none transition-all",
+                        "bg-stone-50 dark:bg-stone-900/50",
+                        "border border-stone-200 dark:border-stone-700",
+                        "focus:border-stone-900 dark:focus:border-stone-400",
+                        "text-stone-800 dark:text-stone-200",
+                        "placeholder:text-stone-400 dark:placeholder:text-stone-600",
+                        "focus:ring-2 focus:ring-stone-900/10 dark:focus:ring-stone-400/10",
+                        "h-[50px]"
+                    )}
+                />
+            </div>
+        </div>
+    );
 }
 
 export default function EditClassPage() {
@@ -64,20 +212,28 @@ export default function EditClassPage() {
     const [courses, setCourses] = useState<{ id: string; name: string; code: string }[]>([]);
     const [academicYears, setAcademicYears] = useState<{ id: string; name: string }[]>([]);
     const [formData, setFormData] = useState({
-        name: '',
-        code: '',
-        description: '',
-        schedule: '',
-        room: '',
-        teacher_id: '',
-        course_id: '',
-        academic_year_id: '',
+        name: "",
+        code: "",
+        description: "",
+        schedule: "",
+        room: "",
+        teacher_id: "",
+        subject_id: "",
+        academic_year_id: "",
+        capacity: 40,
+        status: "active",
     });
 
-    const { can } = usePermissions();
-    const canDelete = can('classes.delete');
+    const [customRoom, setCustomRoom] = useState("");
+    const [useCustomRoom, setUseCustomRoom] = useState(false);
+    const [customSchedule, setCustomSchedule] = useState("");
+    const [useCustomSchedule, setUseCustomSchedule] = useState(false);
+    const [dynamicRooms, setDynamicRooms] = useState<string[]>(CENTER_ROOMS);
+    const [dynamicSchedules, setDynamicSchedules] = useState<string[]>(STANDARD_SCHEDULES);
 
-    // Delete state
+    const { can } = usePermissions();
+    const canDelete = can("classes.delete");
+
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
@@ -85,87 +241,133 @@ export default function EditClassPage() {
         const fetchData = async () => {
             try {
                 setLoading(true);
+                const [classRes, teachersRes, coursesRes, academicYearsRes, roomsRes, schedulesRes] =
+                    await Promise.all([
+                        apiFetch(`/api/classes/${classId}`),
+                        apiFetch("/api/admin/users?role=instructors&limit=1000"),
+                        apiFetch("/api/subjects"),
+                        apiFetch("/api/academic-years"),
+                        apiFetch("/api/settings?key=center_rooms"),
+                        apiFetch("/api/settings?key=center_schedules"),
+                    ]);
 
-                // Fetch class data directly by ID (optimized), teachers, and courses in parallel
-                const [classRes, teachersRes, coursesRes, academicYearsRes] = await Promise.all([
-                    apiFetch(`/api/classes/${classId}`),
-                    apiFetch('/api/admin/users?role=teacher&limit=1000'),
-                    apiFetch('/api/admin/courses?limit=1000'),
-                    apiFetch('/api/academic-years')
-                ]);
-
-                if (!classRes.ok) {
-                    throw new Error('Failed to fetch class');
-                }
+                if (!classRes.ok) throw new Error("Failed to fetch class");
 
                 const classJson = await classRes.json();
-                // Handle V2 response structure { success: true, class: { ... } }
-                const classData = classJson.class || classJson.data;
+                const classData: ClassData = classJson.class || classJson.data;
 
                 if (!classData) {
-                    toast.error('Lỗi', 'Không tìm thấy lớp học');
+                    toast.error("Lỗi", "Không tìm thấy lớp học");
                     router.push(routes.classes.list());
                     return;
                 }
 
+                let currentRooms = CENTER_ROOMS;
+                if (roomsRes.ok) {
+                    const roomsJson = await roomsRes.json();
+                    const setting = roomsJson.setting;
+                    if (setting && setting.value_json) {
+                        const rawRooms = setting.value_json;
+                        if (rawRooms && typeof rawRooms === 'object' && !Array.isArray(rawRooms)) {
+                            const flatRooms: string[] = [];
+                            for (const [branch, rms] of Object.entries(rawRooms)) {
+                                if (Array.isArray(rms)) {
+                                    rms.forEach(r => {
+                                        flatRooms.push(`${branch} - ${r}`);
+                                    });
+                                }
+                            }
+                            setDynamicRooms(flatRooms);
+                            currentRooms = flatRooms;
+                        } else if (Array.isArray(rawRooms)) {
+                            setDynamicRooms(rawRooms);
+                            currentRooms = rawRooms;
+                        }
+                    }
+                }
+
+                let currentSchedules = STANDARD_SCHEDULES;
+                if (schedulesRes.ok) {
+                    const schedulesJson = await schedulesRes.json();
+                    const setting = schedulesJson.setting;
+                    if (setting && Array.isArray(setting.value_json)) {
+                        setDynamicSchedules(setting.value_json);
+                        currentSchedules = setting.value_json;
+                    }
+                }
+
+                const fetchedRoom = classData.room || "";
+                const isRoomPredefined = currentRooms.includes(fetchedRoom);
+                const hasRoom = fetchedRoom !== "";
+
+                const fetchedSchedule = classData.schedule || "";
+                const isSchedulePredefined = currentSchedules.includes(fetchedSchedule);
+                const hasSchedule = fetchedSchedule !== "";
+
                 setFormData({
-                    name: classData.name || '',
-                    code: classData.code || '',
-                    description: classData.description || '',
-                    schedule: classData.schedule || '',
-                    room: classData.room || '',
-                    teacher_id: classData.teacher_id || classData.teacher?.id || '',
-                    course_id: classData.course_id || classData.course?.id || '',
-                    academic_year_id: classData.academic_year_id || '',
+                    name: classData.name || "",
+                    code: classData.code || "",
+                    description: classData.description || "",
+                    schedule: hasSchedule && isSchedulePredefined ? fetchedSchedule : "",
+                    room: hasRoom && isRoomPredefined ? fetchedRoom : "",
+                    teacher_id: classData.teacher_id || classData.teacher?.id || "",
+                    subject_id: classData.subject_id || "",
+                    academic_year_id: classData.academic_year_id || "",
+                    capacity: classData.capacity ?? classData.max_capacity ?? 40,
+                    status: classData.status || "active",
                 });
 
+                if (hasRoom && !isRoomPredefined) {
+                    setUseCustomRoom(true);
+                    setCustomRoom(fetchedRoom);
+                }
+                if (hasSchedule && !isSchedulePredefined) {
+                    setUseCustomSchedule(true);
+                    setCustomSchedule(fetchedSchedule);
+                }
+
                 if (teachersRes.ok) {
-                    const teachersJson = await teachersRes.json();
-                    setTeachers(teachersJson.users || teachersJson.data || []);
+                    const j = await teachersRes.json();
+                    setTeachers(j.users || j.data || []);
                 }
-
                 if (coursesRes.ok) {
-                    const coursesJson = await coursesRes.json();
-                    setCourses(coursesJson.courses || coursesJson.data || []);
+                    const j = await coursesRes.json();
+                    setCourses(j.subjects || j.courses || j.data || []);
                 }
-
                 if (academicYearsRes.ok) {
-                    const ayJson = await academicYearsRes.json();
-                    setAcademicYears(ayJson.data || ayJson.academicYears || []);
+                    const j = await academicYearsRes.json();
+                    setAcademicYears(j.data || j.academicYears || []);
                 }
             } catch (err) {
-                console.error('Error loading class:', err);
-                toast.error('Lỗi', 'Không thể tải thông tin lớp học');
+                console.error("Error loading class:", err);
+                toast.error("Lỗi", "Không thể tải thông tin lớp học");
             } finally {
                 setLoading(false);
             }
         };
 
-        if (classId) {
-            fetchData();
-        }
-    }, [classId]); // Removed router, toast as they trigger loops
+        if (classId) fetchData();
+    }, [classId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleDelete = async () => {
         setDeleting(true);
         try {
             await deleteClass(classId);
-
-            toast.success('Thành công', 'Đã xóa lớp học');
+            toast.success("Thành công", "Đã xóa lớp học");
             router.push(routes.classes.list());
         } catch (err) {
-            console.error('Delete error:', err);
-            toast.error('Lỗi', 'Không thể xóa lớp học');
+            console.error("Delete error:", err);
+            toast.error("Lỗi", "Không thể xóa lớp học");
             setDeleting(false);
             setShowDeleteModal(false);
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
 
         if (!formData.name.trim()) {
-            toast.warning('Thiếu thông tin', 'Vui lòng nhập tên lớp học');
+            toast.warning("Thiếu thông tin", "Vui lòng nhập tên lớp học");
             return;
         }
 
@@ -175,20 +377,24 @@ export default function EditClassPage() {
                 name: formData.name.trim(),
                 code: formData.code.trim() || undefined,
                 description: formData.description.trim() || undefined,
-                schedule: formData.schedule.trim() || undefined,
-                room: formData.room.trim() || undefined,
+                schedule: useCustomSchedule
+                    ? customSchedule.trim() || undefined
+                    : formData.schedule.trim() || undefined,
+                room: useCustomRoom ? customRoom.trim() || undefined : formData.room.trim() || undefined,
                 teacher_id: formData.teacher_id || undefined,
-                course_id: formData.course_id || undefined,
+                subject_id: formData.subject_id || undefined,
                 academic_year_id: formData.academic_year_id || undefined,
+                capacity: formData.capacity,
+                status: formData.status,
             });
 
-            toast.success('Thành công', 'Đã cập nhật lớp học');
+            toast.success("Thành công", "Đã cập nhật lớp học");
             setTimeout(() => {
                 router.push(routes.classes.detail(classId));
-            }, 1000);
+            }, 800);
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Cập nhật thất bại';
-            toast.error('Lỗi', message);
+            const message = err instanceof Error ? err.message : "Cập nhật thất bại";
+            toast.error("Lỗi", message);
         } finally {
             setSaving(false);
         }
@@ -196,233 +402,426 @@ export default function EditClassPage() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[600px] gap-8">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
                 <div className="relative">
-                    <div className="w-20 h-20 border-8 border-blue-500/20 border-t-blue-600 rounded-full animate-spin" />
+                    <div className="w-16 h-16 border-4 border-stone-200 dark:border-stone-800 border-t-stone-900 dark:border-t-stone-100 rounded-full animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Settings className="w-8 h-8 text-blue-600 animate-pulse" />
+                        <Settings className="w-6 h-6 text-stone-900 dark:text-stone-100 animate-pulse" />
                     </div>
                 </div>
                 <div className="text-center">
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tighter">Đang trích xuất dữ liệu</h2>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Hệ thống đang tải cấu hình lớp học...</p>
+                    <h2 className="text-lg font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                        Đang tải dữ liệu
+                    </h2>
+                    <p className="text-xs font-medium text-stone-400 mt-1">Vui lòng chờ trong giây lát...</p>
                 </div>
             </div>
         );
     }
 
+    const activeStatus = STATUS_OPTIONS.find((s) => s.value === formData.status) ?? STATUS_OPTIONS[0]!;
+
     return (
-        <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-700">
+        <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
             <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
 
-            {/* Premium Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+            {/* ───────────── HEADER ───────────── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-500/10 rounded-full mb-3">
-                        <BadgeInfo className="w-3.5 h-3.5 text-blue-600" />
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Chỉnh sửa lớp học</span>
-                    </div>
-                    <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
-                        Cấu hình <span className="text-blue-600">{formData.name}</span>
-                    </h1>
-                    <p className="text-sm text-gray-400 mt-2 font-bold uppercase tracking-widest">Mã lớp: {formData.code || 'CHƯA CÓ'}</p>
-                </div>
-                <div className="flex gap-3">
                     <button
+                        type="button"
                         onClick={() => router.push(routes.classes.detail(classId))}
-                        className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-400 font-bold rounded-2xl hover:text-gray-900 transition-all flex items-center gap-2"
+                        className="inline-flex items-center gap-1.5 text-sm font-bold text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors mb-3"
                     >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-4 h-4" />
+                        Quay lại lớp học
+                    </button>
+                    <h1 className="text-3xl md:text-4xl font-black text-stone-900 dark:text-white tracking-tight">
+                        Chỉnh sửa{" "}
+                        <span className="text-[var(--color-primary,#e11d48)]">{formData.name || "Lớp học"}</span>
+                    </h1>
+                    {formData.code && (
+                        <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">
+                            Mã lớp: {formData.code}
+                        </p>
+                    )}
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                    <button
+                        type="button"
+                        onClick={() => router.push(routes.classes.detail(classId))}
+                        className="px-5 py-2.5 text-sm font-bold text-stone-500 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-xl transition-all"
+                    >
                         Hủy bỏ
                     </button>
                     <button
-                        onClick={handleSubmit}
+                        type="button"
+                        onClick={() => handleSubmit()}
                         disabled={saving}
-                        className="px-8 py-3 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50"
+                        className="px-6 py-2.5 bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-black rounded-xl hover:opacity-90 transition-all shadow-lg shadow-stone-900/20 flex items-center gap-2 disabled:opacity-50"
                     >
-                        {saving ? (
-                            <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <Save className="w-5 h-5" />
-                        )}
-                        Lưu cấu hình
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        Lưu thay đổi
                     </button>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Column: Essential Info */}
-                <div className="lg:col-span-8 space-y-8">
-                    <div className="bg-white dark:bg-gray-800 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-xl p-10 space-y-8 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8">
-                            <Layout className="w-12 h-12 text-blue-500/5" />
+            {/* ───────────── FORM ───────────── */}
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* LEFT: 2/3 — Thông tin chính */}
+                <div className="lg:col-span-2 space-y-6">
+
+                    {/* Block 1: Thông tin định danh */}
+                    <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-100 dark:border-stone-800 p-6 md:p-8 space-y-6">
+                        <div className="flex items-center gap-3 pb-2 border-b border-stone-100 dark:border-stone-800">
+                            <div className="w-8 h-8 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
+                                <BookOpen className="w-4 h-4 text-stone-600 dark:text-stone-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider">
+                                    Thông tin cơ bản
+                                </h2>
+                                <p className="text-[10px] text-stone-400 uppercase tracking-widest">
+                                    Định danh lớp học
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="border-l-4 border-blue-500 pl-6">
-                            <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Thông tin cơ bản</h2>
-                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Định danh và quản lý chính</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <Input
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <TextInput
                                 label="Tên lớp học"
+                                icon={BookOpen}
+                                iconColor="text-stone-500"
                                 value={formData.name}
-                                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                onChange={(v) => setFormData((p) => ({ ...p, name: v }))}
                                 placeholder="VD: Lớp 10A1"
                                 required
-                                leftIcon={<BookOpen className="w-5 h-5" />}
                             />
-                            <Input
+                            <TextInput
                                 label="Mã lớp"
+                                icon={Hash}
+                                iconColor="text-stone-400"
                                 value={formData.code}
-                                onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
+                                onChange={(v) => setFormData((p) => ({ ...p, code: v }))}
                                 placeholder="VD: 10A1"
-                                leftIcon={<BadgeInfo className="w-5 h-5" />}
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="block text-sm font-black text-gray-900 dark:text-white mb-2 uppercase tracking-widest leading-none" style={{ fontFamily: 'Fredoka, sans-serif' }}>
-                                Giáo viên chủ nhiệm
-                            </label>
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 transition-transform group-hover:scale-110">
-                                    <User className="w-5 h-5" />
-                                </div>
-                                <select
-                                    value={formData.teacher_id}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, teacher_id: e.target.value }))}
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-500 rounded-[1.5rem] font-bold text-gray-700 dark:text-gray-300 transition-all outline-none appearance-none"
-                                >
-                                    <option value="">-- Chọn giáo viên --</option>
-                                    {teachers.map((teacher) => (
-                                        <option key={teacher.id} value={teacher.id}>
-                                            {getDisplayName(teacher)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <p className="text-[10px] text-gray-400 font-bold italic px-2">Giáo viên sẽ nhận được thông báo khi có thay đổi trong lớp này.</p>
+                        <SelectField
+                            label="Giáo viên phụ trách"
+                            icon={User}
+                            iconColor="text-stone-500"
+                            value={formData.teacher_id}
+                            onChange={(v) => setFormData((p) => ({ ...p, teacher_id: v }))}
+                            hint="Giáo viên sẽ được thông báo khi có thay đổi liên quan tới lớp."
+                        >
+                            <option value="">— Chưa phân công —</option>
+                            {teachers.map((t) => (
+                                <option key={t.id} value={t.id}>
+                                    {getDisplayName(t)} {t.role && t.role !== 'teacher' ? `(${INSTRUCTOR_ROLE_LABELS[t.role] || t.role})` : ''}
+                                </option>
+                            ))}
+                        </SelectField>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <SelectField
+                                label="Khóa học"
+                                icon={GraduationCap}
+                                iconColor="text-stone-500"
+                                value={formData.subject_id}
+                                onChange={(v) => setFormData((p) => ({ ...p, subject_id: v }))}
+                            >
+                                <option value="">— Chưa gán khóa học —</option>
+                                {courses.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.name} ({c.code})
+                                    </option>
+                                ))}
+                            </SelectField>
+
+                            <SelectField
+                                label="Năm học"
+                                icon={Calendar}
+                                iconColor="text-stone-500"
+                                value={formData.academic_year_id}
+                                onChange={(v) => setFormData((p) => ({ ...p, academic_year_id: v }))}
+                            >
+                                <option value="">— Chưa gán năm học —</option>
+                                {academicYears.map((ay) => (
+                                    <option key={ay.id} value={ay.id}>
+                                        {ay.name}
+                                    </option>
+                                ))}
+                            </SelectField>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="block text-sm font-black text-gray-900 dark:text-white mb-2 uppercase tracking-widest leading-none" style={{ fontFamily: 'Fredoka, sans-serif' }}>
-                                Khóa học
+                        {/* Description */}
+                        <div className="space-y-1.5">
+                            <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-stone-500 dark:text-stone-400 px-1">
+                                Mô tả lớp học
                             </label>
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 transition-transform group-hover:scale-110">
-                                    <BookOpen className="w-5 h-5" />
-                                </div>
-                                <select
-                                    value={formData.course_id}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, course_id: e.target.value }))}
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-500 rounded-[1.5rem] font-bold text-gray-700 dark:text-gray-300 transition-all outline-none appearance-none"
-                                >
-                                    <option value="">-- Chọn khóa học --</option>
-                                    {courses.map((course) => (
-                                        <option key={course.id} value={course.id}>
-                                            {course.name} ({course.code})
-                                        </option>
-                                    ))}
-                                </select>
+                            <div className="relative">
+                                <FileText className="absolute left-4 top-4 w-4 h-4 text-stone-400 pointer-events-none" />
+                                <textarea
+                                    value={formData.description}
+                                    onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
+                                    placeholder="Mô tả mục tiêu hoặc đặc điểm của lớp..."
+                                    rows={3}
+                                    className={cn(
+                                        "w-full pl-11 pr-4 py-3.5 rounded-2xl font-medium text-sm outline-none transition-all resize-none",
+                                        "bg-stone-50 dark:bg-stone-900/50",
+                                        "border border-stone-200 dark:border-stone-700",
+                                        "focus:border-stone-900 dark:focus:border-stone-400",
+                                        "text-stone-800 dark:text-stone-200",
+                                        "placeholder:text-stone-400",
+                                        "focus:ring-2 focus:ring-stone-900/10 dark:focus:ring-stone-400/10"
+                                    )}
+                                />
                             </div>
                         </div>
-
-                        <div className="space-y-2">
-                            <label className="block text-sm font-black text-gray-900 dark:text-white mb-2 uppercase tracking-widest leading-none" style={{ fontFamily: 'Fredoka, sans-serif' }}>
-                                Năm học
-                            </label>
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 transition-transform group-hover:scale-110">
-                                    <Calendar className="w-5 h-5" />
-                                </div>
-                                <select
-                                    value={formData.academic_year_id}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, academic_year_id: e.target.value }))}
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-500 rounded-[1.5rem] font-bold text-gray-700 dark:text-gray-300 transition-all outline-none appearance-none"
-                                >
-                                    <option value="">-- Chọn năm học --</option>
-                                    {academicYears.map((ay) => (
-                                        <option key={ay.id} value={ay.id}>
-                                            {ay.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <Textarea
-                            label="Mô tả lớp học"
-                            value={formData.description}
-                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                            placeholder="Mô tả mục tiêu hoặc đặc điểm của lớp..."
-                            rows={4}
-                        />
                     </div>
 
-                    {/* Schedule Section */}
-                    <div className="bg-white dark:bg-gray-800 rounded-[3rem] border border-gray-100 dark:border-gray-700 shadow-xl p-10 space-y-8 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8">
-                            <Clock className="w-12 h-12 text-emerald-500/5" />
+                    {/* Block 2: Lịch biểu & Địa điểm */}
+                    <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-100 dark:border-stone-800 p-6 md:p-8 space-y-6">
+                        <div className="flex items-center gap-3 pb-2 border-b border-stone-100 dark:border-stone-800">
+                            <div className="w-8 h-8 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
+                                <Clock className="w-4 h-4 text-stone-600 dark:text-stone-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider">
+                                    Lịch biểu &amp; Địa điểm
+                                </h2>
+                                <p className="text-[10px] text-stone-400 uppercase tracking-widest">
+                                    Thời gian và phòng học
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="border-l-4 border-emerald-500 pl-6">
-                            <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Lịch biểu & Địa điểm</h2>
-                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Thời gian và không gian học tập</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* ROOM PICKER */}
+                            <div className="space-y-2">
+                                {!useCustomRoom ? (
+                                    <SelectField
+                                        label="Phòng học"
+                                        icon={MapPin}
+                                        iconColor="text-stone-500"
+                                        value={formData.room}
+                                        onChange={(v) => {
+                                            if (v === "custom") {
+                                                setUseCustomRoom(true);
+                                                setFormData((p) => ({ ...p, room: "" }));
+                                            } else {
+                                                setFormData((p) => ({ ...p, room: v }));
+                                            }
+                                        }}
+                                    >
+                                        <option value="">— Chưa chọn phòng —</option>
+                                        {dynamicRooms.map((r) => (
+                                            <option key={r} value={r}>{r}</option>
+                                        ))}
+                                        <option value="custom">✏️ Tự nhập phòng khác...</option>
+                                    </SelectField>
+                                ) : (
+                                    <div className="space-y-1.5">
+                                        <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-stone-500 dark:text-stone-400 px-1">
+                                            Phòng học (Tự nhập)
+                                        </label>
+                                        <div className="relative">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10 pointer-events-none text-stone-400">
+                                                <MapPin className="w-4.5 h-4.5" />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={customRoom}
+                                                onChange={(e) => setCustomRoom(e.target.value)}
+                                                placeholder="VD: Phòng đặc biệt A"
+                                                className={cn(
+                                                    "w-full pl-11 pr-32 py-3.5 rounded-2xl font-bold text-sm outline-none transition-all",
+                                                    "bg-stone-50 dark:bg-stone-900/50",
+                                                    "border border-stone-200 dark:border-stone-700",
+                                                    "focus:border-stone-900 dark:focus:border-stone-400",
+                                                    "text-stone-800 dark:text-stone-200",
+                                                    "focus:ring-2 focus:ring-stone-900/10 dark:focus:ring-stone-400/10",
+                                                    "h-[50px]"
+                                                )}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setUseCustomRoom(false);
+                                                    setCustomRoom("");
+                                                    setFormData((p) => ({ ...p, room: "" }));
+                                                }}
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 px-2.5 py-1 text-[10px] font-bold text-stone-500 hover:text-stone-955 dark:text-stone-400 dark:hover:text-stone-100 bg-stone-100 dark:bg-stone-800/80 hover:bg-stone-200/80 dark:hover:bg-stone-700/80 rounded-xl transition-all border border-stone-200/50 dark:border-stone-700/50 shadow-sm"
+                                            >
+                                                Chọn danh sách
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* SCHEDULE PICKER */}
+                            <div className="space-y-2">
+                                {!useCustomSchedule ? (
+                                    <SelectField
+                                        label="Lịch học"
+                                        icon={Clock}
+                                        iconColor="text-stone-500"
+                                        value={formData.schedule}
+                                        onChange={(v) => {
+                                            if (v === "custom") {
+                                                setUseCustomSchedule(true);
+                                                setFormData((p) => ({ ...p, schedule: "" }));
+                                            } else {
+                                                setFormData((p) => ({ ...p, schedule: v }));
+                                            }
+                                        }}
+                                    >
+                                        <option value="">— Chưa chọn lịch —</option>
+                                        {dynamicSchedules.map((s) => (
+                                            <option key={s} value={s}>{s}</option>
+                                        ))}
+                                        <option value="custom">✏️ Tự nhập lịch học khác...</option>
+                                    </SelectField>
+                                ) : (
+                                    <div className="space-y-1.5">
+                                        <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-stone-500 dark:text-stone-400 px-1">
+                                            Lịch học (Tự nhập)
+                                        </label>
+                                        <div className="relative">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10 pointer-events-none text-stone-400">
+                                                <Clock className="w-4.5 h-4.5" />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={customSchedule}
+                                                onChange={(e) => setCustomSchedule(e.target.value)}
+                                                placeholder="VD: Thứ 2-6, 7:00 - 11:30"
+                                                className={cn(
+                                                    "w-full pl-11 pr-32 py-3.5 rounded-2xl font-bold text-sm outline-none transition-all",
+                                                    "bg-stone-50 dark:bg-stone-900/50",
+                                                    "border border-stone-200 dark:border-stone-700",
+                                                    "focus:border-stone-900 dark:focus:border-stone-400",
+                                                    "text-stone-800 dark:text-stone-200",
+                                                    "focus:ring-2 focus:ring-stone-900/10 dark:focus:ring-stone-400/10",
+                                                    "h-[50px]"
+                                                )}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setUseCustomSchedule(false);
+                                                    setCustomSchedule("");
+                                                    setFormData((p) => ({ ...p, schedule: "" }));
+                                                }}
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 px-2.5 py-1 text-[10px] font-bold text-stone-500 hover:text-stone-955 dark:text-stone-400 dark:hover:text-stone-100 bg-stone-100 dark:bg-stone-800/80 hover:bg-stone-200/80 dark:hover:bg-stone-700/80 rounded-xl transition-all border border-stone-200/50 dark:border-stone-700/50 shadow-sm"
+                                            >
+                                                Chọn danh sách
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <Input
-                                label="Phòng học"
-                                value={formData.room}
-                                onChange={(e) => setFormData(prev => ({ ...prev, room: e.target.value }))}
-                                placeholder="VD: A101"
-                                leftIcon={<MapPin className="w-5 h-5" />}
-                            />
-                            <Input
-                                label="Lịch học"
-                                value={formData.schedule}
-                                onChange={(e) => setFormData(prev => ({ ...prev, schedule: e.target.value }))}
-                                placeholder="VD: Thứ 2-6, 7:00-11:30"
-                                leftIcon={<Clock className="w-5 h-5" />}
-                            />
-                        </div>
+                        {/* Sĩ số */}
+                        <TextInput
+                            label="Sĩ số tối đa"
+                            icon={BadgeInfo}
+                            iconColor="text-stone-500"
+                            value={formData.capacity}
+                            onChange={(v) => setFormData((p) => ({ ...p, capacity: parseInt(v) || 0 }))}
+                            placeholder="VD: 40"
+                            type="number"
+                            required
+                        />
                     </div>
                 </div>
 
-                {/* Right Column: Actions & Danger Zone */}
-                <div className="lg:col-span-4 space-y-8">
-                    <div className="bg-gray-900 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-[60px] rounded-full" />
-                        <h3 className="text-lg font-black text-white mb-6 uppercase tracking-widest flex items-center gap-3">
-                            <Info className="w-5 h-5 text-blue-500" />
-                            Hướng dẫn
-                        </h3>
-                        <ul className="space-y-4">
-                            <li className="flex gap-3 text-xs text-gray-400 leading-relaxed font-bold">
-                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0 mt-1" />
-                                Tên lớp cần ngắn gọn, dễ nhận diện.
-                            </li>
-                            <li className="flex gap-3 text-xs text-gray-400 leading-relaxed font-bold">
-                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0 mt-1" />
-                                Lịch học sẽ tự động đồng bộ vào lịch biểu của giáo viên và học sinh.
-                            </li>
-                        </ul>
+                {/* RIGHT: 1/3 — Trạng thái + Action */}
+                <div className="lg:col-span-1 space-y-5">
+
+                    {/* Trạng thái lớp — Badge Radio */}
+                    <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-100 dark:border-stone-800 p-6 space-y-4">
+                        <div className="flex items-center gap-2 pb-2 border-b border-stone-100 dark:border-stone-800">
+                            <activeStatus.icon className={cn("w-4 h-4", activeStatus?.color ?? "text-stone-500")} />
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-stone-500 dark:text-stone-400">
+                                Trạng thái lớp
+                            </h3>
+                        </div>
+                        <div className="space-y-2">
+                            {STATUS_OPTIONS.map((opt) => {
+                                const isActive = formData.status === opt.value;
+                                return (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => setFormData((p) => ({ ...p, status: opt.value }))}
+                                        className={cn(
+                                            "w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all font-bold text-sm",
+                                            isActive
+                                                ? opt.activeBg
+                                                : "border-stone-100 dark:border-stone-800 text-stone-500 dark:text-stone-400 hover:border-stone-200 dark:hover:border-stone-700"
+                                        )}
+                                    >
+                                        <opt.icon className={cn("w-4 h-4 flex-shrink-0", isActive ? opt.color : "text-stone-400")} />
+                                        <span className={isActive ? opt.color : ""}>{opt.label}</span>
+                                        {isActive && (
+                                            <div className={cn("ml-auto w-2 h-2 rounded-full", opt.dot)} />
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
+                    {/* Save action card */}
+                    <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-150 dark:border-stone-800 p-6 space-y-4 shadow-sm">
+                        <div className="flex items-center gap-2 pb-2 border-b border-stone-100 dark:border-stone-800/80">
+                            <Save className="w-4 h-4 text-stone-500 dark:text-stone-400" />
+                            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-stone-500 dark:text-stone-400">
+                                Lưu thay đổi
+                            </span>
+                        </div>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                            Thay đổi sẽ được cập nhật ngay lập tức và đồng bộ với giáo viên, học sinh.
+                        </p>
+                        <div className="space-y-2 pt-2">
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="w-full py-2.5 bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-bold rounded-xl hover:bg-stone-850 dark:hover:bg-stone-50 transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                {saving ? "Đang lưu..." : "Lưu thay đổi"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => router.push(routes.classes.detail(classId))}
+                                className="w-full py-2 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 text-xs font-bold rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 transition-all text-center"
+                            >
+                                Hủy bỏ, quay lại
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Danger Zone */}
                     {canDelete && (
-                        <div className="bg-white dark:bg-gray-800 p-10 rounded-[3rem] border-2 border-red-50 dark:border-red-900/20 shadow-xl space-y-6">
-                            <h3 className="text-lg font-black text-red-600 flex items-center gap-2 uppercase tracking-tighter">
-                                <Trash2 className="w-5 h-5" />
-                                Vùng nguy hiểm
-                            </h3>
-                            <p className="text-xs font-bold text-gray-400 leading-relaxed">
-                                Hành động xóa lớp học sẽ xóa vĩnh viễn dữ liệu ghi danh và không thể khôi phục.
+                        <div className="bg-white dark:bg-stone-900 rounded-2xl border border-red-100 dark:border-red-950/30 p-6 space-y-4 shadow-sm">
+                            <div className="flex items-center gap-2 pb-2 border-b border-red-100/50 dark:border-red-950/20">
+                                <AlertTriangle className="w-4 h-4 text-red-500" />
+                                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-red-500">
+                                    Thao tác nguy hiểm
+                                </span>
+                            </div>
+                            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                                Xóa vĩnh viễn lớp học và toàn bộ dữ liệu ghi danh. Hành động này không thể khôi phục.
                             </p>
                             <button
                                 type="button"
                                 onClick={() => setShowDeleteModal(true)}
-                                className="w-full py-4 bg-red-50 dark:bg-red-500/10 text-red-600 font-black rounded-2xl hover:bg-red-600 hover:text-white transition-all active:scale-95"
+                                className="w-full py-2.5 text-xs font-bold text-red-600 bg-red-50/50 dark:bg-red-500/10 rounded-xl hover:bg-red-100 dark:hover:bg-red-500/20 transition-all border border-red-100 dark:border-red-500/10"
                             >
                                 Xóa lớp học này
                             </button>
@@ -431,37 +830,38 @@ export default function EditClassPage() {
                 </div>
             </form>
 
-            {/* Modal Xóa - Modernized */}
-            <Modal
-                isOpen={showDeleteModal}
-                onClose={() => setShowDeleteModal(false)}
-                title=""
-            >
-                <div className="p-8 text-center space-y-8 animate-in zoom-in duration-300">
-                    <div className="w-24 h-24 bg-red-50 dark:bg-red-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl shadow-red-500/10">
-                        <AlertTriangle className="w-12 h-12 text-red-500" />
+            {/* DELETE MODAL */}
+            <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="">
+                <div className="p-8 text-center space-y-6 animate-in zoom-in duration-200">
+                    <div className="w-20 h-20 bg-red-50 dark:bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-red-500/10">
+                        <AlertTriangle className="w-10 h-10 text-red-500" />
                     </div>
 
                     <div>
-                        <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Xác nhận xóa lớp?</h2>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed max-w-xs mx-auto">
-                            Bạn đang thực hiện xóa lớp <span className="font-black text-red-600 underline">{formData.name}</span>. Hành động này sẽ được ghi lại trong nhật ký hệ thống.
+                        <h2 className="text-xl font-black text-stone-900 dark:text-white mb-2 tracking-tight">
+                            Xác nhận xóa lớp?
+                        </h2>
+                        <p className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed max-w-xs mx-auto">
+                            Bạn đang xóa lớp{" "}
+                            <span className="font-black text-red-600">{formData.name}</span>. Hành động này sẽ được
+                            ghi lại trong nhật ký hệ thống.
                         </p>
                     </div>
 
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2">
                         <button
                             onClick={handleDelete}
                             disabled={deleting}
-                            className="w-full py-4 bg-red-600 text-white font-black rounded-2xl shadow-xl shadow-red-600/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                            className="w-full py-3.5 bg-red-600 text-white font-black rounded-2xl shadow-xl shadow-red-600/20 hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                            {deleting ? "Đang xử lý..." : "Xác nhận xóa vĩnh viễn"}
+                            {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {deleting ? "Đang xóa..." : "Xác nhận xóa vĩnh viễn"}
                         </button>
                         <button
                             onClick={() => setShowDeleteModal(false)}
-                            className="w-full py-4 bg-gray-50 dark:bg-gray-700 text-gray-400 font-black rounded-2xl hover:bg-gray-100 transition-all font-bold"
+                            className="w-full py-3 text-sm text-stone-500 font-bold hover:text-stone-900 dark:hover:text-white transition-colors"
                         >
-                            Nhấn để quay lại
+                            Quay lại, không xóa
                         </button>
                     </div>
                 </div>

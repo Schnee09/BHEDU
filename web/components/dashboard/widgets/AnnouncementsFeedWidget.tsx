@@ -69,7 +69,7 @@ export default function AnnouncementsFeedWidget() {
               Bảng tin thông báo
             </h3>
             <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest mt-0.5">
-              Cập nhật mới nhất từ nhà trường
+              Cập nhật mới nhất từ trung tâm
             </p>
           </div>
         </div>

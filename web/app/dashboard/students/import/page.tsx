@@ -428,7 +428,7 @@ export default function BulkImportPage() {
               </h2>
               <p className="text-stone-500 dark:text-stone-400 font-medium mb-12 max-w-lg mx-auto leading-relaxed text-sm">
                 Hệ thống đã hoàn tất xử lý tệp tin. Toàn bộ hồ sơ hợp lệ đã được tích hợp vào cơ sở
-                dữ liệu học sinh của trường.
+                dữ liệu học sinh của trung tâm.
               </p>
 
               {importResults && (

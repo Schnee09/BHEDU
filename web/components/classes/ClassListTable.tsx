@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GraduationCap, Users, MapPin, Calendar, Search, Plus } from "lucide-react";
+import { GraduationCap, Users, MapPin, Calendar, Search, Edit3 } from "lucide-react";
 import { PermissionGuard } from "@/hooks/usePermissions";
 import { Icons } from "@/components/ui/Icons";
 import { routes } from "@/lib/routes";
@@ -33,86 +33,98 @@ interface ClassListTableProps {
 export default function ClassListTable({ classes, searchQuery }: ClassListTableProps) {
   const filtered = classes.filter(
     (c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.code.toLowerCase().includes(searchQuery.toLowerCase())
+      (c.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.code || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  if (filtered.length === 0) {
+    return (
+      <div className="text-center py-12 bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800">
+        <p className="text-stone-500 dark:text-stone-400 text-sm font-medium">
+          {searchQuery ? `Không tìm thấy lớp học phù hợp với từ khóa "${searchQuery}"` : "Không có lớp học nào"}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden overflow-x-auto">
+    <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 shadow-sm overflow-hidden overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="bg-gray-50 dark:bg-gray-900/50">
-            <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Lớp học</th>
-            <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Khóa học</th>
-            <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Giáo viên</th>
-            <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Sĩ số</th>
-            <th className="px-8 py-6 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Phòng/Lịch</th>
-            <th className="px-8 py-6 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Thao tác</th>
+          <tr className="bg-stone-50 dark:bg-stone-900/50">
+            <th className="px-6 py-4 text-left text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">Lớp học</th>
+            <th className="px-6 py-4 text-left text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">Khóa học</th>
+            <th className="px-6 py-4 text-left text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">Giáo viên</th>
+            <th className="px-6 py-4 text-left text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">Sĩ số</th>
+            <th className="px-6 py-4 text-left text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">Phòng/Lịch</th>
+            <th className="px-6 py-4 text-right text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">Thao tác</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+        <tbody className="divide-y divide-stone-50 dark:divide-stone-800/80">
           {filtered.map((cls) => (
-            <tr key={cls.id} className="group hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
-              <td className="px-8 py-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-2xl text-blue-600">
+            <tr key={cls.id} className="group hover:bg-stone-50 dark:hover:bg-stone-900/30 transition-colors">
+              <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400">
                     <GraduationCap className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-900 dark:text-white">{cls.name}</p>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{cls.code || cls.course?.code || 'N/A'}</p>
+                    <Link href={routes.classes.detail(cls.id)} className="text-sm font-bold text-stone-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                      {cls.name}
+                    </Link>
+                    <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest">{cls.code || cls.course?.code || 'Chưa thiết lập'}</p>
                   </div>
                 </div>
               </td>
-              <td className="px-8 py-6">
+              <td className="px-6 py-4">
                 {cls.course ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <Icons.Classes className="w-4 h-4 text-emerald-500" />
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{cls.course.name}</span>
+                    <span className="text-sm font-semibold text-stone-700 dark:text-stone-300">{cls.course.name}</span>
                   </div>
                 ) : (
-                  <span className="text-xs text-gray-400 italic">N/A</span>
+                  <span className="text-xs text-stone-450 dark:text-stone-500 italic">Chưa chọn</span>
                 )}
               </td>
-              <td className="px-8 py-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold text-[10px] text-gray-500">
-                    {cls.teacher ? cls.teacher.full_name.charAt(0) : "?"}
+              <td className="px-6 py-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 flex items-center justify-center font-bold text-[10px] text-stone-550 dark:text-stone-450">
+                    {cls.teacher ? getDisplayName(cls.teacher).charAt(0).toUpperCase() : "?"}
                   </div>
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                  <span className="text-sm font-semibold text-stone-700 dark:text-stone-300">
                     {cls.teacher ? getDisplayName(cls.teacher) : "Chưa giao"}
                   </span>
                 </div>
               </td>
-              <td className="px-8 py-6">
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-50 dark:bg-green-500/10 text-green-600 text-xs font-black rounded-full">
+              <td className="px-6 py-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold rounded-lg">
                   <Users className="w-3.5 h-3.5" />
                   {cls.enrollment_count || 0}
                 </span>
               </td>
-              <td className="px-8 py-6">
+              <td className="px-6 py-4">
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <MapPin className="w-3.5 h-3.5" />
-                    {cls.room || "N/A"}
+                  <div className="flex items-center gap-1.5 text-xs text-stone-550 dark:text-stone-400">
+                    <MapPin className="w-3.5 h-3.5 text-stone-400" />
+                    <span>{cls.room || "Chưa xếp phòng"}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {cls.schedule || "N/A"}
+                  <div className="flex items-center gap-1.5 text-xs text-stone-550 dark:text-stone-400">
+                    <Calendar className="w-3.5 h-3.5 text-stone-400" />
+                    <span>{cls.schedule || "Chưa xếp lịch"}</span>
                   </div>
                 </div>
               </td>
-              <td className="px-8 py-6 text-right">
+              <td className="px-6 py-4 text-right">
                 <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Link href={routes.classes.detail(cls.id)}>
-                    <button className="p-2.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-gray-600 hover:text-blue-600 shadow-sm transition-all">
+                  <Link href={routes.classes.detail(cls.id)} title="Chi tiết lớp học">
+                    <button className="p-2 bg-white dark:bg-stone-800 border border-stone-100 dark:border-stone-700/60 rounded-xl text-stone-500 hover:text-blue-600 hover:border-blue-500/30 dark:hover:text-blue-400 shadow-sm transition-all">
                       <Search className="w-4 h-4" />
                     </button>
                   </Link>
                   <PermissionGuard permissions="classes.manage">
-                    <Link href={routes.classes.edit(cls.id)}>
-                      <button className="p-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold shadow-lg transition-all">
-                        <Plus className="w-4 h-4" />
+                    <Link href={routes.classes.edit(cls.id)} title="Chỉnh sửa lớp học">
+                      <button className="p-2 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded-xl font-bold shadow-md hover:scale-105 transition-all">
+                        <Edit3 className="w-4 h-4" />
                       </button>
                     </Link>
                   </PermissionGuard>

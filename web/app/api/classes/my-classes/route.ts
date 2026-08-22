@@ -83,7 +83,7 @@ export async function GET(request: Request) {
         .from("enrollments")
         .select("class_id")
         .eq("student_id", profileId)
-        .eq("status", "active");
+        .eq("status", "enrolled");
 
       if (enrollError) {
         logger.error("Failed to fetch enrollments", {

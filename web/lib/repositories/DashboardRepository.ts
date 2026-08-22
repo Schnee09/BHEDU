@@ -48,7 +48,7 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
         .from('enrollments')
         .select('class_id')
         .eq('student_id', profileId)
-        .in('status', ['enrolled', 'active']);
+        .in('status', ['enrolled']);
       studentClassIds = data?.map((e: any) => e.class_id) || [];
     }
 
@@ -149,9 +149,10 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
         `
         id,
         action,
-        entity_type,
-        entity_id,
-        metadata,
+        resource_type,
+        resource_id,
+        new_data,
+        old_data,
         created_at,
         profiles (full_name, photo_url)
       `,
@@ -169,7 +170,7 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
       query = query.eq('action', filters.action);
     }
     if (filters.entityType) {
-      query = query.eq('entity_type', filters.entityType);
+      query = query.eq('resource_type', filters.entityType);
     }
 
     // Pagination
@@ -183,7 +184,12 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
     }
 
     const items = (data || []).map((item: any) => ({
-      ...item,
+      id: item.id,
+      action: item.action,
+      entity_type: item.resource_type,
+      entity_id: item.resource_id,
+      metadata: item.new_data || item.old_data || {},
+      created_at: item.created_at,
       full_name: item.profiles?.full_name || null,
       photo_url: item.profiles?.photo_url || null,
     }));
@@ -260,7 +266,7 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
         .from('enrollments')
         .select('student_id')
         .in('class_id', classIds)
-        .in('status', ['enrolled', 'active']);
+        .in('status', ['enrolled']);
       const studentIds = enrollmentsData?.map((e: any) => e.student_id) || [];
       myStudentCount = new Set(studentIds).size;
     }
@@ -334,7 +340,7 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
       .from('enrollments')
       .select('class_id')
       .eq('student_id', studentId)
-      .in('status', ['enrolled', 'active']);
+      .in('status', ['enrolled']);
     const classIds = enrollments?.map((e: any) => e.class_id) || [];
     const totalClasses = classIds.length;
 

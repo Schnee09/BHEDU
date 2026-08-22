@@ -91,25 +91,73 @@ export class TeacherService {
      * Lists tutors with their profiles and teacher details
      */
     async getTutors(filters?: { search?: string }) {
-        // Tutors are just a type of teacher, the repository can handle this or specialized query
-        const result = await this.repository.findTeachersWithStats({
-            search: filters?.search,
-            teacher_type: "tutor",
-            limit: 100,
-        });
+        let query = this.supabase
+            .from("profiles")
+            .select(`
+                *,
+                teacher_profiles (
+                    teacher_type,
+                    department,
+                    specialization,
+                    teaching_subjects,
+                    hourly_rate,
+                    bio
+                )
+            `)
+            .in("role", ["tutor", "teacher"])
+            .is("deleted_at", null);
 
-        return result.data.map((item) => ({
-            id: item.id,
-            full_name: item.full_name,
-            email: item.email,
-            phone: item.phone,
-            photo_url: (item as any).photo_url,
-            teacher_type: item.teacher_type,
-            specialization: item.specialization,
-            teaching_subjects: (item as any).teaching_subjects || [],
-            hourly_rate: item.hourly_rate,
-            bio: (item as any).bio,
-        }));
+        if (filters?.search) {
+            query = query.or(
+                `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+            );
+        }
+
+        const { data, error } = await query
+            .order("full_name", { ascending: true })
+            .limit(100);
+
+        if (error) {
+            console.error("Error fetching tutors:", error);
+            const fallback = await this.repository.findTeachersWithStats({
+                search: filters?.search,
+                teacher_type: "tutor",
+                limit: 100,
+            });
+            return fallback.data.map((item) => ({
+                id: item.id,
+                full_name: item.full_name,
+                email: item.email,
+                phone: item.phone,
+                photo_url: (item as any).photo_url,
+                teacher_type: item.teacher_type,
+                specialization: item.specialization,
+                teaching_subjects: (item as any).teaching_subjects || [],
+                hourly_rate: item.hourly_rate,
+                bio: (item as any).bio,
+            }));
+        }
+
+        return (data || [])
+            .filter((item: any) => {
+                const tp = Array.isArray(item.teacher_profiles) ? item.teacher_profiles[0] : item.teacher_profiles;
+                return item.role === "tutor" || tp?.teacher_type === "tutor";
+            })
+            .map((item: any) => {
+                const tp = Array.isArray(item.teacher_profiles) ? item.teacher_profiles[0] : item.teacher_profiles;
+                return {
+                    id: item.id,
+                    full_name: item.full_name,
+                    email: item.email,
+                    phone: item.phone,
+                    photo_url: item.photo_url || null,
+                    teacher_type: tp?.teacher_type || (item.role === "tutor" ? "tutor" : "part_time"),
+                    specialization: tp?.specialization || item.department || null,
+                    teaching_subjects: tp?.teaching_subjects || [],
+                    hourly_rate: tp?.hourly_rate || null,
+                    bio: tp?.bio || item.notes || null,
+                };
+            });
     }
 
     /**
@@ -123,7 +171,7 @@ export class TeacherService {
                 full_name: input.full_name,
                 email: input.email || null,
                 phone: input.phone || null,
-                role: "teacher",
+                role: "tutor",
                 is_active: true,
             })
             .select()

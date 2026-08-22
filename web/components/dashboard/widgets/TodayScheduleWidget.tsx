@@ -182,18 +182,30 @@ const TodayScheduleWidget = memo(function TodayScheduleWidget({ role, studentId 
                   {/* Actions / Status */}
                   <div className="flex items-center gap-3 justify-end sm:justify-start">
                     {active && (
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        Đang diễn ra
                       </span>
                     )}
 
                     {role === 'teacher' && slot.class_id && (
                       <Link
                         href={`/dashboard/attendance/mark?classId=${slot.class_id}`}
-                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-stone-900 text-xs font-black rounded-xl transition-all shadow-sm active:scale-95 uppercase tracking-wider"
+                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-stone-950 text-xs font-black rounded-xl transition-all shadow-sm active:scale-95 uppercase tracking-wider"
                       >
                         Điểm danh
+                      </Link>
+                    )}
+
+                    {role === 'tutor' && (
+                      <Link
+                        href="/dashboard/my-schedule"
+                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-stone-950 text-xs font-black rounded-xl transition-all shadow-sm active:scale-95 uppercase tracking-wider"
+                      >
+                        Nhật ký ca
                       </Link>
                     )}
                   </div>

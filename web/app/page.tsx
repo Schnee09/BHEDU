@@ -40,7 +40,7 @@ export default function LandingPage() {
               >
                 Cổng Thông Tin <br className="hidden sm:block" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
-                  Bùi Hoàng Education
+                  Trung tâm Giáo dục Bùi Hoàng
                 </span>
               </h1>
 
@@ -140,7 +140,7 @@ export default function LandingPage() {
               <div className="space-y-8">
                 <div>
                   <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                    Về Bùi Hoàng Education
+                    Về Trung tâm Giáo dục Bùi Hoàng
                   </h2>
                   <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
                     Chúng tôi cam kết mang đến môi trường giáo dục chất lượng cao, nơi mỗi học sinh
@@ -158,7 +158,7 @@ export default function LandingPage() {
                       <p className="font-semibold text-gray-900 dark:text-white">
                         Địa chỉ trung tâm
                       </p>
-                      <p className="text-sm text-gray-500">TP. Hồ Chí Minh, Việt Nam</p>
+                      <p className="text-sm text-gray-500">76 Ngô Quyền, TP. Thủ Đức, TP. Hồ Chí Minh</p>
                     </div>
                   </div>
 
@@ -168,7 +168,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white">Hotline liên hệ</p>
-                      <p className="text-sm text-gray-500">0123 456 789</p>
+                      <p className="text-sm text-gray-500">0899 060 686</p>
                     </div>
                   </div>
 
@@ -178,7 +178,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white">Email hỗ trợ</p>
-                      <p className="text-sm text-gray-500">contact@buihoang.edu.vn</p>
+                      <p className="text-sm text-gray-500">contact@bhedu.vn</p>
                     </div>
                   </div>
                 </div>
@@ -198,7 +198,7 @@ export default function LandingPage() {
                     />
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                    Bùi Hoàng Education
+                    Trung tâm Giáo dục Bùi Hoàng
                   </h3>
                   <p className="text-amber-600 dark:text-amber-400 font-medium">
                     Chất lượng - Đam mê - Sáng tạo

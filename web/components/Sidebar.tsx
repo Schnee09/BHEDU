@@ -119,7 +119,7 @@ const Sidebar = memo(function Sidebar({
       {/* Mobile Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+          className="lg:hidden fixed inset-0 bg-stone-900/60 z-40 transition-opacity duration-200"
           onClick={() => setIsMobileMenuOpen?.(false)}
           aria-hidden="true"
         />
@@ -133,8 +133,8 @@ const Sidebar = memo(function Sidebar({
           'fixed inset-y-0 left-0 flex flex-col transition-all duration-300 ease-in-out',
           // Desktop: floating pill
           'lg:inset-y-auto lg:top-4 lg:bottom-4 lg:left-4 lg:rounded-3xl lg:h-[calc(100vh-32px)]',
-          // Glass background
-          'bg-white/90 dark:bg-stone-950/90 backdrop-blur-xl',
+          // Solid background
+          'bg-white dark:bg-[#14120E]',
           // Border & shadow
           'border-r lg:border border-stone-200/80 dark:border-white/10',
           'shadow-xl shadow-stone-900/8 dark:shadow-black/25',

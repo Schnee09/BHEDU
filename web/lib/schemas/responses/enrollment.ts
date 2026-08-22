@@ -26,7 +26,7 @@ export interface EnrollmentResponse {
     class?: {
         id: string;
         name: string;
-        course_id?: string | null;
+        subject_id?: string | null;
         teacher_id?: string | null;
     };
 }

@@ -13,6 +13,7 @@ import { Icons } from '@/components/ui/Icons';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { QRCode } from '@/components/ui/QRCode';
 
 // Lazy-loaded PDF components - @react-pdf only loads when needed
 import {
@@ -341,54 +342,132 @@ export default function TranscriptPage({ params }: { params: Promise<{ id: strin
           </Card>
 
           {/* Action Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-8 bg-white dark:bg-stone-900 rounded-[2rem] shadow-xl border border-stone-200 dark:border-white/5">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-8 bg-white dark:bg-stone-900 rounded-[2rem] shadow-xl border border-stone-200 dark:border-white/5 print:hidden">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600">
                 <Icons.Save className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">
-                  Xuất dữ liệu
+                  Xuất dữ liệu & Tương tác
                 </p>
                 <p className="font-serif font-black text-stone-900 dark:text-white uppercase">
-                  Cung cấp bản sao pháp lý
+                  Bản sao học bạ & Báo cáo Zalo
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <button
-                onClick={() => setShowPreview(!showPreview)}
-                className="flex-1 sm:flex-none px-8 py-3 bg-stone-100 dark:bg-white/5 text-stone-900 dark:text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-stone-200 dark:hover:bg-white/10 transition-all shadow-lg"
+                type="button"
+                onClick={() => {
+                  if (!student || !transcriptData) return;
+                  const semLabel = SEMESTERS.find((s) => s.value === selectedSemester)?.label || selectedSemester;
+                  const yearName = academicYears.find((y) => y.id === selectedYear)?.name || '';
+                  const reportUrl = typeof window !== 'undefined' ? window.location.href : '';
+
+                  const textToCopy = `[TRUNG TÂM GIÁO DỤC BÙI HOÀNG - BÁO CÁO HỌC TẬP]
+Kính gửi Quý Phụ huynh học sinh ${student.full_name},
+Trung tâm xin gửi kết quả học tập kỳ ${semLabel} (${yearName}):
+- Điểm trung bình (GPA): ${transcriptData.gpa.toFixed(2)}/10
+- Hạnh kiểm: ${transcriptData.conduct}
+- Tỷ lệ chuyên cần: ${transcriptData.attendance_rate.toFixed(1)}%
+- Số môn học: ${transcriptData.subjects.length} môn
+- Tra cứu chi tiết học bạ tại: ${reportUrl}
+(Mọi thắc mắc xin vui lòng liên hệ Hotline trung tâm: 0899 060 686).`;
+
+                  navigator.clipboard.writeText(textToCopy);
+                  alert('Đã sao chép mẫu tin nhắn Zalo gửi phụ huynh!');
+                }}
+                className="px-6 py-3 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-500/30 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-amber-100 transition-all flex items-center gap-2"
               >
-                {showPreview ? 'Đóng xem trước' : 'Xem trước PDF'}
+                <span>Sao chép Zalo/SMS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-6 py-3 bg-stone-100 dark:bg-white/5 text-stone-900 dark:text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-stone-200 dark:hover:bg-white/10 transition-all shadow-sm"
+              >
+                In phiếu báo điểm
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowPreview(!showPreview)}
+                className="px-6 py-3 bg-stone-100 dark:bg-white/5 text-stone-900 dark:text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-stone-200 dark:hover:bg-white/10 transition-all shadow-sm"
+              >
+                {showPreview ? 'Đóng PDF' : 'Xem trước PDF'}
               </button>
 
               <PDFDownloadLink
                 document={<HocBaDocument data={transcriptData} />}
                 fileName={`hoc-ba-${student.student_code}-${selectedSemester}-${selectedYear}.pdf`}
-                className="flex-1 sm:flex-none"
               >
                 {({ loading }) => (
                   <button
                     disabled={loading}
-                    className="w-full px-8 py-3 bg-amber-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                    className="px-6 py-3 bg-amber-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                   >
-                    {loading ? 'Đang chuẩn bị...' : 'Tải học bạ (.PDF)'}
+                    {loading ? 'Đang chuẩn bị...' : 'Tải PDF'}
                   </button>
                 )}
               </PDFDownloadLink>
             </div>
           </div>
 
+          {/* Printable Official Signatures & QR Section for Print View */}
+          <div className="hidden print:block space-y-6 pt-6 border-t-2 border-black">
+            <div className="flex justify-between items-center bg-stone-50 p-4 border border-stone-300 rounded-xl">
+              <div className="space-y-1 text-xs">
+                <p className="font-bold text-black uppercase">
+                  Tra cứu học bạ điện tử & Xác thực kết quả:
+                </p>
+                <p className="text-[11px] text-stone-700">
+                  Quét mã QR bằng điện thoại để đối soát trực tiếp trên hệ thống BH-EDU
+                </p>
+                <p className="text-[10px] text-stone-500 font-mono">
+                  Ngày xuất phiếu: {new Date().toLocaleDateString('vi-VN')}
+                </p>
+              </div>
+              <div className="w-20 h-20 bg-white p-1 border border-stone-400 rounded-lg shrink-0 flex items-center justify-center">
+                <QRCode
+                  value={typeof window !== 'undefined' ? window.location.href : ''}
+                  size={72}
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8 text-center pt-8">
+              <div className="space-y-16">
+                <p className="text-xs font-bold uppercase text-black">
+                  Phụ huynh học sinh
+                </p>
+                <p className="text-[11px] text-stone-600 italic">
+                  (Ký và ghi rõ họ tên)
+                </p>
+              </div>
+              <div className="space-y-16">
+                <p className="text-xs font-bold uppercase text-black">
+                  Cán bộ phụ trách / Giáo vụ
+                </p>
+                <p className="text-[11px] text-stone-600 italic">
+                  (Ký, ghi rõ họ tên & đóng dấu)
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* PDF Preview */}
           {showPreview && (
-            <Card className="p-0 overflow-hidden border-none shadow-2xl bg-stone-100 animate-in zoom-in-95 duration-500">
+            <Card className="p-0 overflow-hidden border-none shadow-2xl bg-stone-100 animate-in zoom-in-95 duration-500 print:hidden">
               <div className="p-4 bg-stone-900 text-white border-b border-white/10 flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase tracking-widest">
                   Preview Mode (PDF Rendering)
                 </span>
                 <button
+                  type="button"
                   onClick={() => setShowPreview(false)}
                   className="hover:text-amber-500 transition-colors"
                 >

@@ -340,7 +340,7 @@ export default function StudentFormModal({
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Chọn khối lớp</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((grade) => (
+                {[6, 7, 8, 9, 10, 11, 12].map((grade) => (
                   <option key={grade} value={`Lớp ${grade}`}>
                     Lớp {grade}
                   </option>

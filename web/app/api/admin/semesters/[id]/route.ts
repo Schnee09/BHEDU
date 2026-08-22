@@ -1,6 +1,7 @@
 /**
  * Admin Semester Detail API
- * PUT /api/admin/semesters/[id] - Update semester
+ * PUT /api/admin/semesters/[id] - Update semester (full or partial)
+ * PATCH /api/admin/semesters/[id] - Update semester (partial)
  * DELETE /api/admin/semesters/[id] - Delete semester
  */
 
@@ -9,7 +10,7 @@ import { adminAuth } from "@/lib/auth/adminAuth";
 import { getDataClient } from "@/lib/auth/dataClient";
 import { logger } from "@/lib/logger";
 
-export async function PUT(
+async function handleUpdate(
     request: Request,
     { params }: { params: Promise<{ id: string }> },
 ) {
@@ -27,15 +28,25 @@ export async function PUT(
         const body = await request.json();
         const { name, code, start_date, end_date, is_active } = body;
 
-        if (!name || !code || !start_date || !end_date) {
+        const updateData: Record<string, any> = {
+            updated_at: new Date().toISOString(),
+        };
+
+        if (name !== undefined) updateData.name = name;
+        if (code !== undefined) updateData.code = code;
+        if (start_date !== undefined) updateData.start_date = start_date;
+        if (end_date !== undefined) updateData.end_date = end_date;
+        if (is_active !== undefined) updateData.is_active = Boolean(is_active);
+
+        if (Object.keys(updateData).length <= 1) {
             return NextResponse.json(
-                { error: "Missing required fields" },
+                { error: "No fields provided to update" },
                 { status: 400 },
             );
         }
 
         // If updating as active, deactivate others
-        if (is_active) {
+        if (updateData.is_active) {
             await supabase
                 .from("semesters")
                 .update({ is_active: false })
@@ -44,14 +55,7 @@ export async function PUT(
 
         const { data: semester, error } = await supabase
             .from("semesters")
-            .update({
-                name,
-                code,
-                start_date,
-                end_date,
-                is_active: !!is_active,
-                updated_at: new Date().toISOString(),
-            })
+            .update(updateData)
             .eq("id", id)
             .select()
             .single();
@@ -70,13 +74,16 @@ export async function PUT(
             message: "Semester updated successfully",
         });
     } catch (error: any) {
-        logger.error("Error in PUT /api/admin/semesters/[id]:", error);
+        logger.error("Error in PUT/PATCH /api/admin/semesters/[id]:", error);
         return NextResponse.json(
             { error: "Internal server error", details: error.message },
             { status: 500 },
         );
     }
 }
+
+export const PUT = handleUpdate;
+export const PATCH = handleUpdate;
 
 export async function DELETE(
     request: Request,

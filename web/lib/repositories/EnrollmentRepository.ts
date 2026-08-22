@@ -54,8 +54,9 @@ export class EnrollmentRepository
   extends BaseRepository<Enrollment, CreateEnrollmentInput, UpdateEnrollmentInput>
   implements IEnrollmentRepository
 {
-  protected readonly tableName = 'enrollments';
-  protected readonly primaryKey = 'id';
+  protected override readonly tableName = 'enrollments';
+  protected override readonly primaryKey = 'id';
+  protected override readonly useSoftDelete = true;
 
   constructor(supabase: SupabaseClient) {
     super(supabase);
@@ -66,29 +67,51 @@ export class EnrollmentRepository
    */
   async findByIdWithDetails(id: string): Promise<EnrollmentWithDetails | null> {
     // 1. Fetch base enrollment
-    const enrollmentQuery = this.supabase.from(this.tableName).select('*').eq('id', id).single();
+    let enrollmentQuery = this.supabase.from(this.tableName).select('*').eq('id', id);
 
-    const { data: enrollment, error } = await enrollmentQuery;
+    if (this.useSoftDelete && typeof (enrollmentQuery as any).is === "function") {
+      enrollmentQuery = enrollmentQuery.is('deleted_at', null);
+    }
+
+    const { data: enrollment, error } = await (typeof (enrollmentQuery as any).maybeSingle === "function"
+      ? (enrollmentQuery as any).maybeSingle()
+      : (enrollmentQuery as any).single());
 
     if (error) {
       if (error.code === 'PGRST116') return null;
       throw new Error(`Failed to find enrollment: ${error.message}`);
     }
 
+    if (!enrollment) return null;
+
     const enr = enrollment as Enrollment;
 
     // 2. Fetch related details in parallel
+    let studentQuery = this.supabase
+      .from('profiles')
+      .select('id, first_name, last_name, full_name, email')
+      .eq('id', enr.student_id);
+
+    if (typeof (studentQuery as any).is === "function") {
+      studentQuery = (studentQuery as any).is('deleted_at', null);
+    }
+
+    let classQuery = this.supabase
+      .from('classes')
+      .select('id, name, subject_id, teacher_id')
+      .eq('id', enr.class_id);
+
+    if (typeof (classQuery as any).is === "function") {
+      classQuery = (classQuery as any).is('deleted_at', null);
+    }
+
     const [studentResult, classResult] = await Promise.all([
-      this.supabase
-        .from('profiles')
-        .select('id, first_name, last_name, full_name, email')
-        .eq('id', enr.student_id)
-        .single(),
-      this.supabase
-        .from('classes')
-        .select('id, name, course_id, teacher_id')
-        .eq('id', enr.class_id)
-        .single(),
+      typeof (studentQuery as any).maybeSingle === "function"
+        ? (studentQuery as any).maybeSingle()
+        : (studentQuery as any).single(),
+      typeof (classQuery as any).maybeSingle === "function"
+        ? (classQuery as any).maybeSingle()
+        : (classQuery as any).single(),
     ]);
 
     return {
@@ -108,6 +131,10 @@ export class EnrollmentRepository
     const end = start + pageSize - 1;
 
     let query = this.supabase.from(this.tableName).select('*', { count: 'exact' });
+
+    if (this.useSoftDelete) {
+      query = query.is('deleted_at', null);
+    }
 
     // Apply filters
     if (filters.student_id) {
@@ -151,7 +178,7 @@ export class EnrollmentRepository
    * Find all enrollments for a student with detailed class and teacher info
    */
   async findByStudent(studentId: string): Promise<EnrollmentWithDetails[]> {
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from(this.tableName)
       .select(
         `
@@ -161,7 +188,7 @@ export class EnrollmentRepository
           name,
           code,
           schedule,
-          course_id,
+          subject_id,
           teacher_id,
           teacher:profiles!classes_teacher_id_fkey (
             id,
@@ -170,8 +197,13 @@ export class EnrollmentRepository
         )
       `
       )
-      .eq('student_id', studentId)
-      .order('enrollment_date', { ascending: false });
+      .eq('student_id', studentId);
+
+    if (this.useSoftDelete && typeof (query as any).is === "function") {
+      query = query.is('deleted_at', null);
+    }
+
+    const { data, error } = await query.order('enrollment_date', { ascending: false });
 
     if (error) {
       throw new Error(`Failed to fetch student enrollments: ${error.message}`);
@@ -184,7 +216,7 @@ export class EnrollmentRepository
    * Find all enrollments for a class with student details
    */
   async findByClass(classId: string): Promise<EnrollmentWithDetails[]> {
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from(this.tableName)
       .select(
         `
@@ -199,8 +231,13 @@ export class EnrollmentRepository
       `
       )
       .eq('class_id', classId)
-      .eq('status', 'enrolled')
-      .order('created_at', { ascending: true });
+      .eq('status', 'enrolled');
+
+    if (this.useSoftDelete && typeof (query as any).is === "function") {
+      query = query.is('deleted_at', null);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: true });
 
     if (error) {
       throw new Error(`Failed to fetch class enrollments: ${error.message}`);
@@ -213,12 +250,19 @@ export class EnrollmentRepository
    * Find enrollment by student and class
    */
   async findByStudentAndClass(studentId: string, classId: string): Promise<Enrollment | null> {
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from(this.tableName)
       .select('*')
       .eq('student_id', studentId)
-      .eq('class_id', classId)
-      .maybeSingle();
+      .eq('class_id', classId);
+
+    if (this.useSoftDelete && typeof (query as any).is === "function") {
+      query = query.is('deleted_at', null);
+    }
+
+    const { data, error } = await (typeof (query as any).maybeSingle === "function"
+      ? (query as any).maybeSingle()
+      : (query as any).single());
 
     if (error) {
       throw new Error(`Failed to find enrollment: ${error.message}`);

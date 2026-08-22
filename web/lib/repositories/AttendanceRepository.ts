@@ -63,8 +63,9 @@ export class AttendanceRepository
   extends BaseRepository<Attendance, CreateAttendanceInput, UpdateAttendanceInput>
   implements IAttendanceRepository
 {
-  protected readonly tableName = 'attendance';
-  protected readonly primaryKey = 'id';
+  protected override readonly tableName = 'attendance';
+  protected override readonly primaryKey = 'id';
+  protected override readonly useSoftDelete = true;
 
   constructor(supabase: SupabaseClient) {
     super(supabase);
@@ -74,7 +75,7 @@ export class AttendanceRepository
    * Find attendance by ID with student and class details
    */
   async findByIdWithDetails(id: string): Promise<AttendanceWithDetails | null> {
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from(this.tableName)
       .select(
         `
@@ -91,8 +92,13 @@ export class AttendanceRepository
         )
       `
       )
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+
+    if (this.useSoftDelete) {
+      query = query.is('deleted_at', null);
+    }
+
+    const { data, error } = await query.maybeSingle();
 
     if (error) {
       if (error.code === 'PGRST116') return null;
@@ -130,6 +136,10 @@ export class AttendanceRepository
       `,
       { count: 'exact' }
     );
+
+    if (this.useSoftDelete) {
+      query = query.is('deleted_at', null);
+    }
 
     // Apply filters
     if (filters.student_id) {
@@ -182,6 +192,10 @@ export class AttendanceRepository
   ): Promise<Attendance[]> {
     let query = this.supabase.from(this.tableName).select('*').eq('student_id', studentId);
 
+    if (this.useSoftDelete) {
+      query = query.is('deleted_at', null);
+    }
+
     if (filters.class_id) {
       query = query.eq('class_id', filters.class_id);
     }
@@ -224,6 +238,10 @@ export class AttendanceRepository
       `
       )
       .eq('class_id', classId);
+
+    if (this.useSoftDelete) {
+      query = query.is('deleted_at', null);
+    }
 
     if (date) {
       query = query.eq('date', date);

@@ -25,7 +25,7 @@ export const userQuerySchema = z.object({
     'created_at'
   ).shape,
   search: z.string().optional(),
-  role: userRoleSchema.optional().or(z.literal('all')),
+  role: z.string().optional(),
   status: z.enum(['active', 'inactive', 'suspended']).optional().or(z.literal('all')),
   is_active: booleanStringSchema,
   department: z.string().optional(),
@@ -57,6 +57,8 @@ export const createUserSchema = z.object({
   student_id: z.string().max(50).optional(),
   student_code: z.string().max(50).optional(),
   grade_level: z.string().max(50).optional(),
+  school_name: z.string().max(100).optional(),
+  occupation: z.string().max(100).optional(),
   department: z.string().max(100).optional(),
   teacher_type: z.enum(['full_time', 'part_time', 'tutor']).optional(),
   specialization: z.string().max(100).optional(),

@@ -499,29 +499,28 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[1100] overflow-y-auto">
-      {/* Backdrop with blur */}
+    <div className="fixed inset-0 z-[1100] overflow-y-auto print:static print:inset-auto print:z-auto print:overflow-visible print:p-0">
+      {/* Backdrop */}
       <div
         className={`
-          fixed inset-0 transition-all duration-200
-          bg-black/60 backdrop-blur-sm
-          dark:bg-black/70 dark:backdrop-blur-md
-          ${isClosing ? 'opacity-0' : 'animate-backdrop-enter'}
+          fixed inset-0 transition-opacity duration-150
+          bg-black/60 dark:bg-black/80 print:hidden
+          ${isClosing ? 'opacity-0' : 'opacity-100'}
         `}
         onClick={handleClose}
         aria-hidden="true"
       />
 
       {/* Modal Container */}
-      <div className="flex min-h-full items-center justify-center p-4 sm:p-6 md:items-center items-end sm:items-center">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6 print:p-0 print:min-h-0 print:block">
         <div
           className={`
             relative w-full ${sizes[size]}
-            ${isClosing ? 'animate-modal-exit' : 'animate-modal-enter'}
-            
-            /* Premium Academic Crystal Style */
-            glass-crystal rounded-3xl overflow-hidden
-            shadow-ultra
+            ${isClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
+            transition-all duration-150 ease-out
+            bg-white dark:bg-[#14120E] border border-stone-200 dark:border-stone-800
+            rounded-3xl overflow-hidden shadow-2xl
+            print:rounded-none print:border-none print:shadow-none print:bg-transparent print:max-w-none print:w-full print:p-0
             ${className}
           `}
           role="dialog"
@@ -533,9 +532,9 @@ export const Modal: React.FC<ModalProps> = ({
           <div
             className="
             flex items-center justify-between px-8 py-5
-            border-b border-stone-200/50 dark:border-white/5
-            bg-white/50 dark:bg-black/20
-            rounded-t-3xl
+            border-b border-stone-100 dark:border-stone-800
+            bg-stone-50/80 dark:bg-stone-900/50
+            rounded-t-3xl print:hidden
           "
           >
             <h3
@@ -567,7 +566,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
 
           {/* Body */}
-          <div className="px-6 py-5 max-h-[65vh] overflow-y-auto">{children}</div>
+          <div className="px-6 py-5 max-h-[65vh] overflow-y-auto print:max-h-none print:overflow-visible print:p-0">{children}</div>
 
           {/* Footer */}
           {footer && (
@@ -577,7 +576,7 @@ export const Modal: React.FC<ModalProps> = ({
               border-t border-stone-200/50 dark:border-white/5
               bg-white/30 dark:bg-black/10
               rounded-b-3xl 
-              flex gap-3 justify-end
+              flex gap-3 justify-end print:hidden
             "
             >
               {footer}

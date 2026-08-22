@@ -35,10 +35,14 @@ export async function GET(request: Request) {
         // Redirect based on role
         const role = existingProfile?.role || user.user_metadata?.role || 'student'
         
-        if (role === 'admin' || role === 'staff') {
+        if (role === 'super_admin' || role === 'owner' || role === 'admin') {
           return NextResponse.redirect(`${origin}/dashboard`)
-        } else if (role === 'teacher') {
-          return NextResponse.redirect(`${origin}/dashboard/classes`)
+        } else if (role === 'teacher' || role === 'tutor') {
+          return NextResponse.redirect(`${origin}/dashboard/timetable`)
+        } else if (role === 'parent') {
+          return NextResponse.redirect(`${origin}/dashboard/parent`)
+        } else if (role === 'student') {
+          return NextResponse.redirect(`${origin}/dashboard/grades`)
         }
       }
       

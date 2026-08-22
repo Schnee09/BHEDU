@@ -33,6 +33,8 @@ interface UseUserResult {
   isStaff: boolean;
   isTeacher: boolean;
   isStudent: boolean;
+  isParent: boolean;
+  isTutor: boolean;
   /** Returns true if user is admin or staff (has admin-level access) */
   hasAdminAccess: boolean;
   /** Returns true if user can perform teacher functions (admin, staff, teacher, or higher) */
@@ -94,11 +96,13 @@ export function useUser(): UseUserResult {
 
   const isSuperAdmin = user?.role === 'super_admin';
   const isOwner = user?.role === 'owner';
-  const isAdmin = user?.role === 'admin';
-  const isStaff = user?.role === 'admin';
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'owner' || user?.role === 'admin';
+  const isStaff = user?.role === 'super_admin' || user?.role === 'owner' || user?.role === 'admin';
   const isTeacher = user?.role === 'teacher';
   const isStudent = user?.role === 'student';
-  const hasAdminAccess = isSuperAdmin || isOwner || isAdmin || isStaff;
+  const isParent = user?.role === 'parent';
+  const isTutor = user?.role === 'tutor';
+  const hasAdminAccess = isSuperAdmin || isOwner || user?.role === 'admin';
   /** Returns true if user can perform teacher functions (admin, staff, teacher, or higher) */
   const hasTeacherCapabilities = hasAdminAccess || isTeacher;
 
@@ -112,6 +116,8 @@ export function useUser(): UseUserResult {
     isStaff,
     isTeacher,
     isStudent,
+    isParent,
+    isTutor,
     hasAdminAccess,
     hasTeacherCapabilities,
     refetch: fetchUser,

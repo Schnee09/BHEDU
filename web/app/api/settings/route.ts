@@ -1,10 +1,127 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { adminAuth } from "@/lib/auth/adminAuth";
 
 // GET: Get a setting by key or all settings
 export async function GET(request: NextRequest) {
-    // ... (rest of GET)
+    try {
+        const { searchParams } = new URL(request.url);
+        const key = searchParams.get("key");
+        const category = searchParams.get("category");
+        const includeCounts = searchParams.get("include_counts") === "true";
+
+        const supabase = createServiceClient();
+
+        let query = supabase.from("settings").select("*");
+
+        if (key) {
+            query = query.eq("key", key);
+        }
+        if (category) {
+            query = query.eq("category", category);
+        }
+
+        const { data: dbSettings, error } = await query;
+        if (error) throw error;
+
+        // Map database settings to key-value
+        const settingsMap: Record<string, any> = {};
+        dbSettings?.forEach((item) => {
+            settingsMap[item.key] = {
+                value: item.value,
+                value_json: item.value_json,
+                description: item.description,
+                category: item.category,
+                is_public: item.is_public
+            };
+        });
+
+        // Add defaults if they are missing
+        const defaults = getDefaultSettings(key, category);
+        const result: Record<string, any> = {};
+
+        // Merge defaults
+        for (const [k, v] of Object.entries(defaults)) {
+            result[k] = settingsMap[k] || {
+                value: v,
+                value_json: null,
+                category: k === "academic_year" || k === "semester" || k === "grading_scale" ? "academic" : "school",
+                is_public: true
+            };
+        }
+
+        // Add any database-only settings (like custom rooms or schedules)
+        dbSettings?.forEach((item) => {
+            if (!result[item.key]) {
+                result[item.key] = {
+                    value: item.value,
+                    value_json: item.value_json,
+                    description: item.description,
+                    category: item.category,
+                    is_public: item.is_public
+                };
+            }
+        });
+
+        // Compute slot counts if requested
+        let slotCounts: { rooms: Record<string, number>, schedules: Record<string, number>, branches: Record<string, number> } | undefined;
+        if (includeCounts) {
+            const { data: slots, error: slotsError } = await supabase
+                .from("timetable_slots")
+                .select("room, start_time, end_time");
+            
+            if (!slotsError && slots) {
+                const roomsMap: Record<string, number> = {};
+                const schedulesMap: Record<string, number> = {};
+                const branchesMap: Record<string, number> = {};
+
+                slots.forEach((slot) => {
+                    if (slot.room) {
+                        const parts = slot.room.split(" - ");
+                        if (parts.length === 2) {
+                            const branch = parts[0].trim();
+                            const room = parts[1].trim();
+                            branchesMap[branch] = (branchesMap[branch] || 0) + 1;
+                            roomsMap[room] = (roomsMap[room] || 0) + 1;
+                        } else {
+                            const room = slot.room.trim();
+                            roomsMap[room] = (roomsMap[room] || 0) + 1;
+                        }
+                    }
+
+                    if (slot.start_time && slot.end_time) {
+                        const start = slot.start_time.substring(0, 5);
+                        const end = slot.end_time.substring(0, 5);
+                        const sched = `${start} - ${end}`;
+                        schedulesMap[sched] = (schedulesMap[sched] || 0) + 1;
+                    }
+                });
+
+                slotCounts = {
+                    rooms: roomsMap,
+                    schedules: schedulesMap,
+                    branches: branchesMap
+                };
+            }
+        }
+
+        // If a specific key was requested and it's not found in result, return 404
+        if (key) {
+            const single = result[key];
+            if (!single) {
+                return NextResponse.json({ error: "Setting not found" }, { status: 404 });
+            }
+            return NextResponse.json({ success: true, setting: { key, ...single } });
+        }
+
+        return NextResponse.json({ success: true, settings: result, slotCounts });
+    } catch (error) {
+        console.error("Settings fetch error:", error);
+        return NextResponse.json(
+            { error: "Failed to fetch settings" },
+            { status: 500 },
+        );
+    }
 }
 
 // PUT: Update a setting (admin only)
@@ -23,7 +140,7 @@ export async function PUT(request: NextRequest) {
             );
         }
 
-        const supabase = await createClient();
+        const supabase = createServiceClient();
 
         const body = await request.json();
         const { key, value, value_json, description, category, is_public } =

@@ -42,7 +42,7 @@ export async function getDataClient(request?: Request) {
           const { data: viewer } = await authClient
             .from('profiles')
             .select('role')
-            .eq('user_id', user.id)
+            .or(`id.eq.${user.id},user_id.eq.${user.id}`)
             .maybeSingle();
           viewerRole = (viewer as { role?: string } | null)?.role ?? null;
           console.log(`[getDataClient] Slow path: fetched role: ${viewerRole}`);

@@ -77,11 +77,15 @@ export function handleApiError(error: unknown): Response {
 
   // Handle Zod validation errors
   if (error && typeof error === 'object' && 'issues' in error) {
+    const issues = (error as { issues: Array<{ path?: Array<string | number>; message: string }> }).issues;
+    const firstIssue = issues?.[0];
+    const fieldPath = firstIssue?.path?.join('.');
+    const message = fieldPath ? `${fieldPath}: ${firstIssue?.message}` : (firstIssue?.message || 'Validation failed');
     return Response.json(
       {
         success: false,
-        error: 'Validation failed',
-        issues: (error as { issues: unknown[] }).issues,
+        error: message,
+        issues,
       },
       { status: 400 }
     );

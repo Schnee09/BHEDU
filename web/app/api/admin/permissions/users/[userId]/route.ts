@@ -37,8 +37,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { data: adminProfile, error: profileError } = await supabase
       .from("profiles")
       .select("id, role")
-      .eq("user_id", user.id)
-      .single();
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle();
 
     if (profileError) {
       console.error("[Permissions API] Profile fetch error:", profileError);
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       }, { status: 500 });
     }
 
-    if (!["admin", "super_admin", "owner"].includes(adminProfile?.role || "")) {
+    if (!adminProfile || !["admin", "super_admin", "owner"].includes(adminProfile.role || "")) {
       return NextResponse.json({ error: "Admin access required" }, {
         status: 403,
       });
@@ -166,8 +166,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const { data: adminProfile, error: profileError } = await supabase
       .from("profiles")
       .select("id, role")
-      .eq("user_id", user.id)
-      .single();
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle();
 
     if (profileError) {
       console.error("[Permissions API] Profile error:", profileError);
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       }, { status: 500 });
     }
 
-    if (!["admin", "super_admin", "owner"].includes(adminProfile?.role || "")) {
+    if (!adminProfile || !["admin", "super_admin", "owner"].includes(adminProfile.role || "")) {
       return NextResponse.json({ error: "Admin access required" }, {
         status: 403,
       });
@@ -266,10 +266,10 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { data: adminProfile } = await supabase
       .from("profiles")
       .select("id, role")
-      .eq("user_id", user.id)
-      .single();
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle();
 
-    if (!["admin", "super_admin", "owner"].includes(adminProfile?.role || "")) {
+    if (!adminProfile || !["admin", "super_admin", "owner"].includes(adminProfile.role || "")) {
       return NextResponse.json({ error: "Admin access required" }, {
         status: 403,
       });

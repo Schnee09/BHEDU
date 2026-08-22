@@ -760,3 +760,84 @@
   pointer-events: none;
   z-index: 50;
 }
+
+/* Prevent buttons and icon buttons from shrinking in flex rows */
+button,
+.btn,
+.button {
+  flex-shrink: 0;
+}
+
+/* =============================================
+ * PRINT STYLES — Flawless A4/A5 Printing
+ * ============================================= */
+@media print {
+  @page {
+    margin: 10mm 12mm;
+    size: auto;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 100% !important;
+  }
+
+  /* Reset all modal fixed/overlay positioning and scroll constraints */
+  .fixed,
+  [role="dialog"],
+  [role="dialog"] > div,
+  [role="dialog"] .overflow-y-auto {
+    position: static !important;
+    inset: auto !important;
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  /* Hide backdrop overlays, close buttons, navigation, sidebars and headers */
+  .fixed.inset-0.bg-black\/60,
+  .fixed.inset-0.bg-black\/80,
+  [aria-hidden="true"],
+  nav,
+  aside,
+  header,
+  [id="modal-title"],
+  button[aria-label="Đóng"],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Force exact background colors and border colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Printable Account Card / Slips styling */
+  .printable-account-card {
+    border: 1.5px solid #000000 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    width: 100% !important;
+  }
+}

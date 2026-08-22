@@ -23,7 +23,7 @@ export async function GET() {
   ];
 
   const { data: settings, error } = await supabase
-    .from('school_settings')
+    .from('settings')
     .select('key, value')
     .in('key', publicKeys);
 

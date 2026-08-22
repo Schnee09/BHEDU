@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/icons/icon-192x192.png",
   },
-  keywords: ["giáo dục", "quản lý học sinh", "phần mềm trường học", "BH-EDU", "EMS"],
+  keywords: ["giáo dục", "quản lý học sinh", "phần mềm quản lý trung tâm", "BH-EDU", "EMS"],
 };
 
 export const viewport: Viewport = {

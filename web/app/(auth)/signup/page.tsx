@@ -1,425 +1,538 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import GuestGuard from '@/components/GuestGuard';
-import { UserRole } from '@/lib/role-utils';
-import { logger } from '@/lib/logger';
-import { usePerformanceMonitor } from '@/lib/performanceMonitor';
-import { Button, Input, LoadingSpinner } from '@/components/ui';
-import { Icons } from '@/components/ui/Icons';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Users,
+  GraduationCap,
+  Lock,
+  Eye,
+  EyeOff,
+  Phone,
+  Mail,
+  User,
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle,
+  CheckCircle2,
+  Sparkles,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-function SignupPageContent() {
+function SignupContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Mode: 'parent_signup' | 'student_activation'
+  const [signupType, setSignupType] = useState<'parent' | 'student_activate'>('parent');
+
+  // Fields: Parent
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [role, setRole] = useState<UserRole>('parent');
-  const [inviteToken, setInviteToken] = useState<string | null>(null);
-  const [inviterName, setInviterName] = useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [childStudentCode, setChildStudentCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [personalEmail, setPersonalEmail] = useState('');
 
-  usePerformanceMonitor('SignupPage');
+  // Fields: Student activation
+  const [studentCode, setStudentCode] = useState('');
+  const [initialPassword, setInitialPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
+  // Invite token support
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [invitedRole, setInvitedRole] = useState<string | null>(null);
+
+  // States
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const token = searchParams.get('token');
     if (token) {
       setInviteToken(token);
-      verifyInvite(token);
+      verifyInviteToken(token);
     }
   }, [searchParams]);
 
-  interface InviteResponse {
-    success: boolean;
-    invite?: {
-      email: string;
-      phone: string;
-      role: string;
-      invitedBy: string;
-    };
-    error?: string;
-  }
-
-  const verifyInvite = async (token: string) => {
+  const verifyInviteToken = async (token: string) => {
     try {
       const res = await fetch(`/api/auth/verify-invite?token=${token}`);
-      const data = (await res.json()) as InviteResponse;
-      if (data.success && data.invite) {
-        logger.info('Invite verified successfully', { token: token.slice(-6) });
-        if (data.invite.email) setEmail(data.invite.email);
-        if (data.invite.phone) setPhone(data.invite.phone);
-        if (data.invite.role) setRole(data.invite.role as UserRole);
-        if (data.invite.invitedBy) setInviterName(data.invite.invitedBy);
+      const data = await res.json();
+      if (res.ok && data.success && data.invite) {
+        setEmail(data.invite.email || '');
+        setPhone(data.invite.phone || '');
+        setInvitedRole(data.invite.role || 'parent');
+        setSuccessMessage(`Bạn đang đăng ký theo lời mời từ Quản trị viên.`);
       } else {
-        setError(data.error || 'Mã mời không hợp lệ');
+        setError(data.error || 'Mã mời không hợp lệ hoặc đã hết hạn.');
       }
-    } catch (err) {
-      console.error('Error verifying invite:', err);
-      logger.error('Error verifying invite', err);
+    } catch {
+      setError('Không thể kiểm tra mã mời.');
     }
   };
 
-  const signUp = async (e: React.FormEvent) => {
+  // 1. Parent Registration
+  const handleParentRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
-    setMessage(null);
+    setSuccessMessage(null);
 
-    // Validate phone if provided
-    if (phone && !/^0\d{9,10}$/.test(phone)) {
-      setError('Số điện thoại không hợp lệ. Vui lòng nhập đúng định dạng (VD: 0987123456)');
-      setLoading(false);
+    if (!fullName.trim()) {
+      setError('Vui lòng nhập Họ và tên của bạn');
       return;
     }
 
-    if (!email && !phone) {
-      setError('Vui lòng cung cấp Email hoặc Số điện thoại');
-      setLoading(false);
+    if (!email.trim() && !phone.trim()) {
+      setError('Vui lòng cung cấp Địa chỉ Email hoặc Số điện thoại để liên lạc');
       return;
     }
-
-    logger.info('Attempting signup', { role, hasInvite: !!inviteToken });
 
     if (password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự');
-      setLoading(false);
+      setError('Mật khẩu phải có độ dài tối thiểu 6 ký tự');
       return;
     }
 
-    const authOptions = {
-      email: email || undefined,
-      phone: phone ? (phone.startsWith('0') ? `+84${phone.substring(1)}` : phone) : undefined,
-      password,
-      options: {
-        data: {
-          full_name: name,
-          role: role,
-          invite_token: inviteToken,
-          personal_email: personalEmail || undefined,
-        },
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-      },
-    };
-
-    const { data, error } = await (phone && !email
-      ? supabase.auth.signUp({
-          phone: authOptions.phone!,
-          password: authOptions.password,
-          options: authOptions.options,
-        })
-      : supabase.auth.signUp({
-          email: authOptions.email!,
-          password: authOptions.password,
-          options: authOptions.options,
-        }));
-
-    if (error) {
-      setError(error.message);
-      logger.error('Signup failed', error);
-    } else {
-      logger.info('Signup successful', { phone: !!phone, email: !!email });
-      if (phone && !email) {
-        setMessage('Kiểm tra điện thoại của bạn để nhận mã xác nhận!');
-      } else {
-        setMessage('Kiểm tra email của bạn để xác nhận tài khoản!');
-      }
+    if (password !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp');
+      return;
     }
-    setLoading(false);
+
+    setLoading(true);
+
+    try {
+      const registerEmail = email.trim() || `${phone.replace(/\D/g, '')}@parent.bhedu.vn`;
+      const formattedPhone = phone.startsWith('0') ? `+84${phone.substring(1)}` : phone;
+
+      const { data: authData, error: authErr } = await supabase.auth.signUp({
+        email: registerEmail,
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            role: invitedRole || 'parent',
+            phone: formattedPhone || undefined,
+            personal_email: email.trim() || undefined,
+            child_student_code: childStudentCode.trim().toUpperCase() || undefined,
+          },
+        },
+      });
+
+      if (authErr) {
+        const lower = authErr.message.toLowerCase();
+        if (lower.includes('already registered')) {
+          setError('Email hoặc Số điện thoại này đã được đăng ký tài khoản.');
+        } else {
+          setError(authErr.message);
+        }
+      } else {
+        setSuccessMessage(
+          'Đăng ký tài khoản Phụ huynh thành công! Đang chuyển hướng vào hệ thống...'
+        );
+        setTimeout(() => {
+          router.replace('/dashboard/parent');
+        }, 1500);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Đã xảy ra lỗi trong quá trình tạo tài khoản.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const signUpWithGoogle = async () => {
-    setGoogleLoading(true);
+  // 2. Student Account Activation
+  const handleStudentActivate = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
-    logger.info('Initiating Google signup');
+    setSuccessMessage(null);
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    });
+    const code = studentCode.trim().toUpperCase();
+    if (!code) {
+      setError('Vui lòng nhập Mã học sinh (UID) do trung tâm cấp (VD: HS20260001)');
+      return;
+    }
 
-    if (error) {
-      setError(error.message);
-      setGoogleLoading(false);
-      logger.error('Google signup failed', error);
+    if (!initialPassword) {
+      setError('Vui lòng nhập mật khẩu ban đầu được cấp');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('Mật khẩu mới phải có tối thiểu 6 ký tự');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 1. Resolve student login email
+      const lookupRes = await fetch('/api/auth/lookup-identifier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: code }),
+      });
+      const lookupData = await lookupRes.json();
+      const studentEmail =
+        lookupRes.ok && lookupData.success && lookupData.data?.email
+          ? lookupData.data.email
+          : `${code.toLowerCase()}@student.bhedu.vn`;
+
+      // 2. Sign in with initial password
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: studentEmail,
+        password: initialPassword,
+      });
+
+      if (signInErr) {
+        setError('Mã học sinh hoặc mật khẩu ban đầu không chính xác. Vui lòng kiểm tra lại.');
+        setLoading(false);
+        return;
+      }
+
+      // 3. Update to new password
+      const { error: updateErr } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateErr) {
+        setError(`Đã xác thực nhưng không thể đổi mật khẩu mới: ${updateErr.message}`);
+      } else {
+        setSuccessMessage('Kích hoạt tài khoản & đổi mật khẩu thành công! Đang chuyển hướng...');
+        setTimeout(() => {
+          router.replace('/dashboard/grades');
+        }, 1500);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Đã xảy ra lỗi khi kích hoạt tài khoản.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <GuestGuard>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="w-full max-w-[480px] relative z-10"
-      >
-        <div className="glass-premium rounded-[40px] shadow-ultra border border-white/20 dark:border-white/5 p-8 sm:p-12 w-full">
-          {/* Invitation Banner */}
-          <AnimatePresence>
-            {inviterName && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="mb-8"
-              >
-                <div className="glass-crystal rounded-3xl p-1 shadow-ultra border-primary/20">
-                  <div className="bg-primary/5 dark:bg-white/5 rounded-2xl px-5 py-4 flex items-center gap-4">
-                    <div className="bg-primary text-white p-2.5 rounded-xl shadow-lg">
-                      <Icons.Security className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">
-                        Lời mời từ hệ thống
-                      </p>
-                      <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
-                        <span className="font-bold text-stone-900 dark:text-white">
-                          {inviterName}
-                        </span>{' '}
-                        đã mời bạn làm{' '}
-                        <span className="font-bold text-stone-900 dark:text-white capitalize">
-                          {role}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Logo and Header */}
-          <div className="text-center mb-10">
-            <div className="flex justify-center mb-6">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="bg-primary p-5 rounded-[28px] shadow-2xl shadow-primary/30"
-              >
-                <Icons.User className="w-12 h-12 text-white" />
-              </motion.div>
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 bg-stone-100 dark:bg-[#0E0D0B] text-stone-900 dark:text-stone-100 selection:bg-amber-500/30">
+      {/* Main Card */}
+      <div className="w-full max-w-md bg-white dark:bg-[#14120E] border border-stone-200 dark:border-stone-800 rounded-3xl shadow-xl p-6 sm:p-8 space-y-6">
+        {/* Header & Logo */}
+        <div className="text-center space-y-3">
+          <Link href="/" className="inline-block group">
+            <div className="relative inline-flex items-center justify-center w-20 h-20 sm:w-22 sm:h-22 rounded-3xl bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-500/15 dark:via-white/5 dark:to-transparent border border-amber-500/25 dark:border-amber-500/30 shadow-2xl shadow-amber-500/20 group-hover:shadow-amber-500/35 group-hover:scale-105 group-hover:border-amber-500/40 transition-all duration-300 p-2.5 backdrop-blur-md">
+              <Image
+                src="/logo.png"
+                alt="BH-EDU Logo"
+                width={72}
+                height={72}
+                className="object-contain w-full h-full drop-shadow-[0_4px_10px_rgba(217,119,6,0.35)]"
+                priority
+              />
             </div>
-            <h2 className="text-4xl font-serif font-bold text-stone-900 dark:text-white mb-2 italic tracking-tight uppercase">
-              Đăng ký
-            </h2>
-            <p className="text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-[0.4em] font-sans">
-              Join our Academic Community
+          </Link>
+
+          <div className="space-y-1">
+            <span className="inline-flex items-center gap-1.5 text-[9.5px] font-black uppercase tracking-[0.25em] text-amber-700 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-500/15 px-3 py-1 rounded-full border border-amber-500/20">
+              TRUNG TÂM GIÁO DỤC BÙI HOÀNG
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-stone-950 dark:text-white pt-1">
+              {inviteToken
+                ? 'Đăng Ký Theo Lời Mời'
+                : signupType === 'parent'
+                ? 'Đăng Ký Phụ Huynh'
+                : 'Kích Hoạt Học Sinh'}
+            </h1>
+            <p className="text-xs text-stone-500 dark:text-stone-400">
+              Hệ thống Quản lý & Học tập Trực tuyến
             </p>
           </div>
+        </div>
 
-          {/* Google Sign Up Button */}
-          {!inviteToken && (
-            <div className="mb-10">
-              <Button
-                variant="secondary"
-                onClick={signUpWithGoogle}
-                disabled={googleLoading || loading}
-                fullWidth
-                className="bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 h-14"
-              >
-                {googleLoading ? (
-                  <LoadingSpinner size="sm" className="mr-2" />
-                ) : (
-                  <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                )}
-                <span className="text-sm font-bold uppercase tracking-wider">
-                  Đăng ký với Google
-                </span>
-              </Button>
+        {/* Alert Error / Success */}
+        {error && (
+          <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 flex items-start gap-2.5 text-rose-700 dark:text-rose-300 text-xs font-semibold animate-in fade-in duration-200">
+            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <span>{error}</span>
+            </div>
+          </div>
+        )}
 
-              <div className="relative my-10">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-stone-200/50 dark:border-white/5"></div>
+        {successMessage && (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 flex items-start gap-2.5 text-emerald-700 dark:text-emerald-300 text-xs font-semibold animate-in fade-in duration-200">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <span>{successMessage}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Selection (only if not using fixed invite token) */}
+        {!inviteToken && (
+          <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-stone-100 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800">
+            <button
+              type="button"
+              onClick={() => {
+                setSignupType('parent');
+                setError(null);
+              }}
+              className={cn(
+                'py-2 px-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5',
+                signupType === 'parent'
+                  ? 'bg-white dark:bg-[#25221D] text-stone-900 dark:text-white shadow-xs'
+                  : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-300'
+              )}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Phụ huynh</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSignupType('student_activate');
+                setError(null);
+              }}
+              className={cn(
+                'py-2 px-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5',
+                signupType === 'student_activate'
+                  ? 'bg-white dark:bg-[#25221D] text-stone-900 dark:text-white shadow-xs'
+                  : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-300'
+              )}
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>Kích hoạt Học sinh</span>
+            </button>
+          </div>
+        )}
+
+        {/* 1. Parent Signup Form */}
+        {signupType === 'parent' && (
+          <form onSubmit={handleParentRegister} className="space-y-3.5">
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                Họ và tên Phụ huynh *
+              </label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Nguyễn Văn A"
+                  className="w-full h-10 pl-10 pr-4 rounded-xl bg-stone-50 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 text-xs font-semibold placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                  Số điện thoại *
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="0987xxxxxx"
+                    className="w-full h-10 pl-10 pr-4 rounded-xl bg-stone-50 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 text-xs font-semibold placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                  />
                 </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="px-6 bg-transparent text-stone-400 dark:text-stone-500 font-bold uppercase tracking-widest leading-none">
-                    Hoặc sử dụng biểu mẫu
-                  </span>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                  Email cá nhân
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="email@gmail.com"
+                    className="w-full h-10 pl-10 pr-4 rounded-xl bg-stone-50 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 text-xs font-semibold placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                  />
                 </div>
               </div>
             </div>
-          )}
 
-          <form onSubmit={signUp} className="space-y-6">
-            <Input
-              label="Họ và tên"
-              placeholder="Nguyễn Văn A"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              leftIcon={<Icons.User className="w-4 h-4" />}
-            />
-
-            <div className="space-y-6">
-              <Input
-                label="Địa chỉ Email"
-                type="email"
-                placeholder="ban@example.com"
-                required={!phone}
-                disabled={!!inviteToken && !!email}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                leftIcon={<Icons.Mail className="w-4 h-4" />}
-              />
-
-              {!email && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                >
-                  <Input
-                    label="Email cá nhân (Tùy chọn)"
-                    type="email"
-                    placeholder="gmail@example.com"
-                    value={personalEmail}
-                    onChange={(e) => setPersonalEmail(e.target.value)}
-                    leftIcon={<Icons.Mail className="w-4 h-4" />}
-                  />
-                </motion.div>
-              )}
-
-              <Input
-                label="Số điện thoại"
-                type="tel"
-                placeholder="0987xxx..."
-                required={!email}
-                disabled={!!inviteToken && !!phone}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                leftIcon={<Icons.Phone className="w-4 h-4" />}
-              />
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                Mã học sinh của con (UID)
+              </label>
+              <div className="relative">
+                <GraduationCap className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <input
+                  type="text"
+                  value={childStudentCode}
+                  onChange={(e) => setChildStudentCode(e.target.value.toUpperCase())}
+                  placeholder="HS2026... (nếu con đã có tài khoản)"
+                  className="w-full h-10 pl-10 pr-4 rounded-xl bg-stone-50 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 text-xs font-semibold placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Input
-                label="Mật khẩu"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Ít nhất 6 ký tự"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                leftIcon={<Icons.Lock className="w-4 h-4" />}
-                rightIcon={
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                  Mật khẩu *
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Tối thiểu 6 ký tự"
+                    className="w-full h-10 pl-10 pr-9 rounded-xl bg-stone-50 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 text-xs font-semibold placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                  />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
                   >
-                    {showPassword ? (
-                      <Icons.EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Icons.Eye className="w-4 h-4" />
-                    )}
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
-                }
-              />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                  Xác nhận MK *
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Nhập lại mật khẩu"
+                    className="w-full h-10 pl-10 pr-4 rounded-xl bg-stone-50 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 text-xs font-semibold placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                  />
+                </div>
+              </div>
             </div>
 
-            {!inviteToken && (
-              <div className="bg-stone-50 dark:bg-stone-900/40 border-l-4 border-primary p-4 rounded-xl">
-                <p className="text-[10px] font-bold text-stone-600 dark:text-stone-400 uppercase tracking-widest leading-relaxed">
-                  <span className="text-primary">Lưu ý:</span> Bạn đang đăng ký vai trò{' '}
-                  <b>Phụ huynh</b>. Liên hệ Quản trị viên để nhận mã mời cho các vai trò khác.
-                </p>
-              </div>
-            )}
-
-            <Button
+            <button
               type="submit"
-              variant="primary"
-              isLoading={loading || googleLoading}
-              fullWidth
-              className="h-14 mt-4 shadow-xl shadow-primary/20"
+              disabled={loading}
+              className="w-full h-11 mt-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-950 font-black text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-amber-500/20 disabled:opacity-50 cursor-pointer"
             >
-              <span className="text-sm font-bold uppercase tracking-widest">
-                {loading ? 'Đang tạo tài khoản...' : 'Hoàn tất đăng ký'}
-              </span>
-              {!loading && <Icons.ArrowRight className="w-5 h-5 ml-2" />}
-            </Button>
+              <span>{loading ? 'Đang khởi tạo tài khoản...' : 'Hoàn tất Đăng ký'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </form>
+        )}
 
-          <AnimatePresence>
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-8 p-5 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-xl"
-              >
-                <div className="text-red-800 dark:text-red-300 text-xs font-bold flex items-center gap-3">
-                  <Icons.Error className="w-5 h-5 flex-shrink-0" />
-                  {error}
-                </div>
-              </motion.div>
-            )}
-            {message && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-8 p-5 bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 rounded-xl"
-              >
-                <p className="text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-3">
-                  <Icons.Success className="w-5 h-5 flex-shrink-0" />
-                  {message}
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* 2. Student Activation Form */}
+        {signupType === 'student_activate' && (
+          <form onSubmit={handleStudentActivate} className="space-y-3.5">
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                Mã học sinh (UID) do trung tâm cấp *
+              </label>
+              <div className="relative">
+                <GraduationCap className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <input
+                  type="text"
+                  required
+                  value={studentCode}
+                  onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
+                  placeholder="HS20260001"
+                  className="w-full h-10 pl-10 pr-4 rounded-xl bg-stone-50 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 text-xs font-semibold font-mono placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                />
+              </div>
+            </div>
 
-          <p className="text-center text-[11px] font-bold mt-10 text-stone-500 dark:text-stone-400 uppercase tracking-widest">
-            Đã có tài khoản?{' '}
-            <a
-              href="/login"
-              className="text-primary dark:text-white hover:underline underline-offset-4"
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                Mật khẩu ban đầu được cấp *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <input
+                  type="password"
+                  required
+                  value={initialPassword}
+                  onChange={(e) => setInitialPassword(e.target.value)}
+                  placeholder="Mật khẩu tạm thời trên phiếu tài khoản"
+                  className="w-full h-10 pl-10 pr-4 rounded-xl bg-stone-50 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 text-xs font-semibold placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                Đặt mật khẩu cá nhân mới *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Nhập mật khẩu mới bạn muốn đặt (>= 6 ký tự)"
+                  className="w-full h-10 pl-10 pr-9 rounded-xl bg-stone-50 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 text-xs font-semibold placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 mt-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-950 font-black text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-amber-500/20 disabled:opacity-50 cursor-pointer"
             >
-              Đăng nhập
-            </a>
+              <span>{loading ? 'Đang kích hoạt...' : 'Kích hoạt & Đăng nhập ngay'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </form>
+        )}
+
+        {/* Footer Navigation */}
+        <div className="pt-3 border-t border-stone-100 dark:border-stone-800/80 text-center space-y-2">
+          <p className="text-xs text-stone-500 dark:text-stone-400">
+            Đã có tài khoản?{' '}
+            <Link
+              href="/login"
+              className="font-bold text-amber-600 dark:text-amber-400 hover:underline"
+            >
+              Đăng nhập ngay
+            </Link>
+          </p>
+
+          <p className="text-[10px] text-stone-400 dark:text-stone-500">
+            © {new Date().getFullYear()} Trung tâm Giáo dục BH. Bảo mật thông tin học sinh chuẩn EdTech.
           </p>
         </div>
-      </motion.div>
-    </GuestGuard>
+      </div>
+    </div>
   );
 }
 
 export default function SignupPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center p-12">
-          <LoadingSpinner size="lg" />
-        </div>
-      }
-    >
-      <SignupPageContent />
-    </Suspense>
+    <GuestGuard>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Đang tải...</div>}>
+        <SignupContent />
+      </Suspense>
+    </GuestGuard>
   );
 }

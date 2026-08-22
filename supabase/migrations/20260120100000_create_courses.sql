@@ -92,12 +92,4 @@ CREATE TRIGGER courses_updated_at
 -- Comment on table
 COMMENT ON TABLE courses IS 'Stores course/curriculum information for the school';
 
--- Insert sample courses for Vietnamese education
-INSERT INTO courses (code, name, name_vi, grade_level, is_required, hours_per_week) VALUES
-  ('TOAN-6', 'Mathematics Grade 6', 'Toán 6', 6, TRUE, 4),
-  ('VAN-6', 'Literature Grade 6', 'Ngữ văn 6', 6, TRUE, 4),
-  ('ANH-6', 'English Grade 6', 'Tiếng Anh 6', 6, TRUE, 3),
-  ('TOAN-7', 'Mathematics Grade 7', 'Toán 7', 7, TRUE, 4),
-  ('VAN-7', 'Literature Grade 7', 'Ngữ văn 7', 7, TRUE, 4),
-  ('ANH-7', 'English Grade 7', 'Tiếng Anh 7', 7, TRUE, 3)
-ON CONFLICT (code) DO NOTHING;
+-- NOTE: Sample courses removed — add real courses via the UI or seed.sql

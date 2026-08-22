@@ -40,7 +40,7 @@ export const GET = createGetHandler(
 // PUT /api/subjects/[id]
 export const PUT = createApiHandler(
   {
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'owner', 'super_admin'],
     bodySchema: updateSubjectSchema,
   },
   async ({ params, body }) => {
@@ -63,7 +63,7 @@ export const PUT = createApiHandler(
 // DELETE /api/subjects/[id]
 export const DELETE = createGetHandler(
   {
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'owner', 'super_admin'],
   },
   async ({ params, searchParams }) => {
     const id = params.id as string;

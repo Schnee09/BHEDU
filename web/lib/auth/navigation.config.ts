@@ -8,6 +8,8 @@
  */
 
 import {
+  Activity,
+  Award,
   BarChart2,
   Bell,
   BookOpen,
@@ -16,14 +18,18 @@ import {
   CalendarDays,
   CheckCircle,
   Clock,
-  Download,
+  CreditCard,
+  Database,
   FileText,
   GraduationCap,
   Home,
+  Mail,
+  Receipt,
   Settings,
   Shield,
   TrendingUp,
   User,
+  UserCheck,
   UserPlus,
   Users,
 } from 'lucide-react';
@@ -64,14 +70,14 @@ export interface NavSection {
 
 export const ALL_NAV_ITEMS: NavSection[] = [
   {
-    title: 'Trang chủ',
+    title: 'Tổng quan',
     links: [
       { href: '/dashboard', label: 'Bảng điều khiển', icon: Home },
       { href: '/dashboard/notifications', label: 'Thông báo', icon: Bell },
     ],
   },
   {
-    title: 'Học vụ',
+    title: 'Học vụ & Đào tạo',
     links: [
       {
         href: '/dashboard/classes',
@@ -86,9 +92,21 @@ export const ALL_NAV_ITEMS: NavSection[] = [
         permissions: ['students.view'],
       },
       {
+        href: '/dashboard/admin/enrollments',
+        label: 'Ghi danh học sinh',
+        icon: UserCheck,
+        permissions: ['enrollments.view'],
+      },
+      {
         href: '/dashboard/timetable',
         label: 'Thời khóa biểu',
         icon: Clock,
+        permissions: ['timetable.view'],
+      },
+      {
+        href: '/dashboard/tutoring',
+        label: 'Quản lý Học kèm',
+        icon: GraduationCap,
         permissions: ['timetable.view'],
       },
       {
@@ -186,95 +204,106 @@ export const ALL_NAV_ITEMS: NavSection[] = [
     ],
   },
   {
-    title: 'Quản trị',
-    groups: [
+    title: 'Tài chính',
+    links: [
       {
-        label: 'Người dùng',
-        icon: Shield,
-        permissions: ['users.view'],
-        links: [
-          {
-            href: '/dashboard/users',
-            label: 'Quản lý tài khoản',
-            icon: Users,
-            permissions: ['users.view'],
-          },
-          {
-            href: '/dashboard/tutors',
-            label: 'Gia sư',
-            icon: GraduationCap,
-            permissions: ['users.view'],
-          },
-          {
-            href: '/dashboard/admin/permissions',
-            label: 'Phân quyền',
-            icon: Shield,
-            permissions: ['permissions.manage'],
-          },
-        ],
+        href: '/dashboard/admin/finance',
+        label: 'Học phí & Hóa đơn',
+        icon: Receipt,
+        permissions: ['finance.view'],
       },
       {
-        label: 'Hệ thống',
-        icon: Building,
+        href: '/dashboard/admin/finance/tuition-matrix',
+        label: 'Lưới học phí',
+        icon: CreditCard,
+        permissions: ['finance.manage'],
+      },
+    ],
+  },
+  {
+    title: 'Nhân sự & Người dùng',
+    links: [
+      {
+        href: '/dashboard/users',
+        label: 'Quản lý tài khoản',
+        icon: Users,
+        permissions: ['users.view'],
+      },
+      {
+        href: '/dashboard/tutors',
+        label: 'Đội ngũ Gia sư',
+        icon: GraduationCap,
+        permissions: ['users.view'],
+      },
+      {
+        href: '/dashboard/admin/invitations',
+        label: 'Lời mời tham gia',
+        icon: Mail,
+        permissions: ['users.view'],
+      },
+    ],
+  },
+  {
+    title: 'Cấu hình Học vụ',
+    links: [
+      {
+        href: '/dashboard/admin/academic-years',
+        label: 'Năm học & Học kỳ',
+        icon: Calendar,
         permissions: ['classes.view'],
-        links: [
-          {
-            href: '/dashboard/admin/announcements',
-            label: 'Bảng tin',
-            icon: Bell,
-            permissions: ['users.view'],
-          },
-          {
-            href: '/dashboard/admin/semesters',
-            label: 'Học kỳ',
-            icon: Calendar,
-            permissions: ['classes.view'],
-          },
-          {
-            href: '/dashboard/admin/subjects',
-            label: 'Môn học',
-            icon: BookOpen,
-            permissions: ['classes.view'],
-          },
-          {
-            href: '/dashboard/admin/enrollments',
-            label: 'Ghi danh',
-            icon: Users,
-            permissions: ['enrollments.view'],
-          },
-          {
-            href: '/dashboard/admin/invitations',
-            label: 'Lời mời hệ thống',
-            icon: CheckCircle,
-            permissions: ['users.view'],
-          },
-          {
-            href: '/dashboard/admin/data',
-            label: 'Quản trị dữ liệu tập trung',
-            icon: Download,
-            permissions: ['reports.export'],
-          },
-          {
-            href: '/dashboard/admin/health',
-            label: 'Sức khỏe hệ thống',
-            icon: BarChart2,
-            permissions: ['system.settings'],
-          },
-        ],
+      },
+      {
+        href: '/dashboard/admin/grading-scales',
+        label: 'Thang điểm & Xếp loại',
+        icon: Award,
+        permissions: ['classes.view'],
+      },
+      {
+        href: '/dashboard/admin/subjects',
+        label: 'Quản lý Môn học',
+        icon: BookOpen,
+        permissions: ['classes.view'],
+      },
+      {
+        href: '/dashboard/admin/announcements',
+        label: 'Bảng tin trung tâm',
+        icon: Bell,
+        permissions: ['users.view'],
+      },
+    ],
+  },
+  {
+    title: 'Quản trị Hệ thống',
+    links: [
+      {
+        href: '/dashboard/settings',
+        label: 'Cài đặt trung tâm',
+        icon: Settings,
+        permissions: ['system.settings'],
+      },
+      {
+        href: '/dashboard/admin/permissions',
+        label: 'Phân quyền & Vai trò',
+        icon: Shield,
+        permissions: ['permissions.manage'],
+      },
+      {
+        href: '/dashboard/admin/health',
+        label: 'Sức khỏe & Giám sát',
+        icon: Activity,
+        permissions: ['system.settings'],
+      },
+      {
+        href: '/dashboard/admin/backup',
+        label: 'Sao lưu & Dữ liệu',
+        icon: Database,
+        permissions: ['system.settings'],
       },
     ],
   },
   {
     title: 'Cài đặt',
-    links: [
-      { href: '/dashboard/profile', label: 'Hồ sơ cá nhân', icon: User },
-      {
-        href: '/dashboard/settings',
-        label: 'Cài đặt hệ thống',
-        icon: Settings,
-        permissions: ['system.settings'],
-      },
-    ],
+    links: [{ href: '/dashboard/profile', label: 'Hồ sơ cá nhân', icon: User }],
   },
 ];
 
@@ -285,12 +314,6 @@ export const ALL_NAV_ITEMS: NavSection[] = [
 /**
  * Curated sidebar for each role, designed around their actual workflow.
  * super_admin falls back to ALL_NAV_ITEMS (sees everything).
- *
- * Each preset uses section titles that match the role's mental model:
- * - Admin/Owner: operational language ("Quản trị", "Vận hành")
- * - Teacher: action language ("Công việc hàng ngày", "Xem lại")
- * - Student: personal language ("Học tập", "Kết quả")
- * - Parent: family language ("Con của tôi")
  */
 const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
   // ── OWNER: Strategic oversight ──
@@ -303,7 +326,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
       ],
     },
     {
-      title: 'Vận hành',
+      title: 'Học vụ & Đào tạo',
       links: [
         {
           href: '/dashboard/classes',
@@ -319,8 +342,8 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
         },
         {
           href: '/dashboard/admin/enrollments',
-          label: 'Ghi danh',
-          icon: Users,
+          label: 'Ghi danh học sinh',
+          icon: UserCheck,
           permissions: ['enrollments.view'],
         },
         {
@@ -329,10 +352,22 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
           icon: Clock,
           permissions: ['timetable.view'],
         },
+        {
+          href: '/dashboard/tutoring',
+          label: 'Quản lý Học kèm',
+          icon: GraduationCap,
+          permissions: ['timetable.view'],
+        },
+        {
+          href: '/dashboard/admin/students/parent-links',
+          label: 'Duyệt kết nối PH',
+          icon: UserPlus,
+          permissions: ['parent_links.view'],
+        },
       ],
     },
     {
-      title: 'Báo cáo & Phân tích',
+      title: 'Báo cáo & Đánh giá',
       groups: [
         {
           label: 'Điểm danh',
@@ -347,7 +382,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
             },
             {
               href: '/dashboard/attendance/reports',
-              label: 'Báo cáo',
+              label: 'Báo cáo chuyên cần',
               icon: BarChart2,
               permissions: ['attendance.reports'],
             },
@@ -366,7 +401,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
             },
             {
               href: routes.grades.analytics(),
-              label: 'Phân tích',
+              label: 'Phân tích học lực',
               icon: TrendingUp,
               permissions: ['grades.analytics'],
             },
@@ -375,75 +410,100 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
       ],
     },
     {
-      title: 'Quản trị',
-      groups: [
+      title: 'Tài chính',
+      links: [
         {
-          label: 'Người dùng',
-          icon: Shield,
-          permissions: ['users.view'],
-          links: [
-            {
-              href: '/dashboard/users',
-              label: 'Quản lý tài khoản',
-              icon: Users,
-              permissions: ['users.view'],
-            },
-            {
-              href: '/dashboard/tutors',
-              label: 'Gia sư',
-              icon: GraduationCap,
-              permissions: ['users.view'],
-            },
-            {
-              href: '/dashboard/admin/permissions',
-              label: 'Phân quyền',
-              icon: Shield,
-              permissions: ['permissions.manage'],
-            },
-            {
-              href: '/dashboard/admin/students/parent-links',
-              label: 'Duyệt kết nối PH',
-              icon: UserPlus,
-              permissions: ['parent_links.view'],
-            },
-          ],
+          href: '/dashboard/admin/finance',
+          label: 'Học phí & Hóa đơn',
+          icon: Receipt,
+          permissions: ['finance.view'],
         },
         {
-          label: 'Hệ thống',
-          icon: Building,
+          href: '/dashboard/admin/finance/tuition-matrix',
+          label: 'Lưới học phí',
+          icon: CreditCard,
+          permissions: ['finance.manage'],
+        },
+      ],
+    },
+    {
+      title: 'Nhân sự & Người dùng',
+      links: [
+        {
+          href: '/dashboard/users',
+          label: 'Quản lý tài khoản',
+          icon: Users,
+          permissions: ['users.view'],
+        },
+        {
+          href: '/dashboard/tutors',
+          label: 'Đội ngũ Gia sư',
+          icon: GraduationCap,
+          permissions: ['users.view'],
+        },
+        {
+          href: '/dashboard/admin/invitations',
+          label: 'Lời mời tham gia',
+          icon: Mail,
+          permissions: ['users.view'],
+        },
+      ],
+    },
+    {
+      title: 'Cấu hình Học vụ',
+      links: [
+        {
+          href: '/dashboard/admin/academic-years',
+          label: 'Năm học & Học kỳ',
+          icon: Calendar,
           permissions: ['classes.view'],
-          links: [
-            {
-              href: '/dashboard/admin/announcements',
-              label: 'Bảng tin',
-              icon: Bell,
-              permissions: ['users.view'],
-            },
-            {
-              href: '/dashboard/admin/semesters',
-              label: 'Học kỳ',
-              icon: Calendar,
-              permissions: ['classes.view'],
-            },
-            {
-              href: '/dashboard/admin/subjects',
-              label: 'Môn học',
-              icon: BookOpen,
-              permissions: ['classes.view'],
-            },
-            {
-              href: '/dashboard/admin/invitations',
-              label: 'Lời mời',
-              icon: CheckCircle,
-              permissions: ['users.view'],
-            },
-            {
-              href: '/dashboard/admin/data',
-              label: 'Dữ liệu tập trung',
-              icon: Download,
-              permissions: ['reports.export'],
-            },
-          ],
+        },
+        {
+          href: '/dashboard/admin/grading-scales',
+          label: 'Thang điểm & Xếp loại',
+          icon: Award,
+          permissions: ['classes.view'],
+        },
+        {
+          href: '/dashboard/admin/subjects',
+          label: 'Quản lý Môn học',
+          icon: BookOpen,
+          permissions: ['classes.view'],
+        },
+        {
+          href: '/dashboard/admin/announcements',
+          label: 'Bảng tin trung tâm',
+          icon: Bell,
+          permissions: ['users.view'],
+        },
+      ],
+    },
+    {
+      title: 'Quản trị Hệ thống',
+      links: [
+        {
+          href: '/dashboard/settings',
+          label: 'Cài đặt trung tâm',
+          icon: Settings,
+          permissions: ['system.settings'],
+        },
+        {
+          href: '/dashboard/admin/permissions',
+          label: 'Phân quyền & Vai trò',
+          icon: Shield,
+          permissions: ['permissions.manage'],
+        },
+        {
+          href: '/dashboard/admin/health',
+          label: 'Sức khỏe & Giám sát',
+          icon: Activity,
+          permissions: ['system.settings'],
+        },
+        {
+          href: '/dashboard/admin/backup',
+          label: 'Sao lưu & Dữ liệu',
+          icon: Database,
+          permissions: ['system.settings'],
         },
       ],
     },
@@ -463,7 +523,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
       ],
     },
     {
-      title: 'Học vụ',
+      title: 'Học vụ & Đào tạo',
       links: [
         {
           href: '/dashboard/classes',
@@ -479,14 +539,20 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
         },
         {
           href: '/dashboard/admin/enrollments',
-          label: 'Ghi danh',
-          icon: Users,
+          label: 'Ghi danh học sinh',
+          icon: UserCheck,
           permissions: ['enrollments.view'],
         },
         {
           href: '/dashboard/timetable',
           label: 'Quản lý lịch học tập',
           icon: Clock,
+          permissions: ['timetable.view'],
+        },
+        {
+          href: '/dashboard/tutoring',
+          label: 'Quản lý Học kèm',
+          icon: GraduationCap,
           permissions: ['timetable.view'],
         },
         {
@@ -514,13 +580,13 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
             },
             {
               href: '/dashboard/attendance/history',
-              label: 'Lịch sử',
+              label: 'Lịch sử điểm danh',
               icon: FileText,
               permissions: ['attendance.view'],
             },
             {
               href: '/dashboard/attendance/reports',
-              label: 'Báo cáo',
+              label: 'Báo cáo chuyên cần',
               icon: BarChart2,
               permissions: ['attendance.reports'],
             },
@@ -554,69 +620,71 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
       ],
     },
     {
-      title: 'Quản trị',
-      groups: [
+      title: 'Tài chính',
+      links: [
         {
-          label: 'Người dùng',
-          icon: Shield,
-          permissions: ['users.view'],
-          links: [
-            {
-              href: '/dashboard/users',
-              label: 'Quản lý tài khoản',
-              icon: Users,
-              permissions: ['users.view'],
-            },
-            {
-              href: '/dashboard/tutors',
-              label: 'Gia sư',
-              icon: GraduationCap,
-              permissions: ['users.view'],
-            },
-            {
-              href: '/dashboard/admin/permissions',
-              label: 'Phân quyền',
-              icon: Shield,
-              permissions: ['permissions.manage'],
-            },
-          ],
+          href: '/dashboard/admin/finance',
+          label: 'Học phí & Hóa đơn',
+          icon: Receipt,
+          permissions: ['finance.view'],
         },
         {
-          label: 'Hệ thống',
-          icon: Building,
+          href: '/dashboard/admin/finance/tuition-matrix',
+          label: 'Lưới học phí',
+          icon: CreditCard,
+          permissions: ['finance.manage'],
+        },
+      ],
+    },
+    {
+      title: 'Nhân sự & Người dùng',
+      links: [
+        {
+          href: '/dashboard/users',
+          label: 'Quản lý tài khoản',
+          icon: Users,
+          permissions: ['users.view'],
+        },
+        {
+          href: '/dashboard/tutors',
+          label: 'Đội ngũ Gia sư',
+          icon: GraduationCap,
+          permissions: ['users.view'],
+        },
+        {
+          href: '/dashboard/admin/invitations',
+          label: 'Lời mời tham gia',
+          icon: Mail,
+          permissions: ['users.view'],
+        },
+      ],
+    },
+    {
+      title: 'Cấu hình Học vụ',
+      links: [
+        {
+          href: '/dashboard/admin/academic-years',
+          label: 'Năm học & Học kỳ',
+          icon: Calendar,
           permissions: ['classes.view'],
-          links: [
-            {
-              href: '/dashboard/admin/announcements',
-              label: 'Bảng tin',
-              icon: Bell,
-              permissions: ['users.view'],
-            },
-            {
-              href: '/dashboard/admin/semesters',
-              label: 'Học kỳ',
-              icon: Calendar,
-              permissions: ['classes.view'],
-            },
-            {
-              href: '/dashboard/admin/subjects',
-              label: 'Môn học',
-              icon: BookOpen,
-              permissions: ['classes.view'],
-            },
-            {
-              href: '/dashboard/admin/invitations',
-              label: 'Lời mời',
-              icon: CheckCircle,
-              permissions: ['users.view'],
-            },
-            {
-              href: '/dashboard/admin/data',
-              label: 'Dữ liệu tập trung',
-              icon: Download,
-              permissions: ['reports.export'],
-            },
-          ],
+        },
+        {
+          href: '/dashboard/admin/grading-scales',
+          label: 'Thang điểm & Xếp loại',
+          icon: Award,
+          permissions: ['classes.view'],
+        },
+        {
+          href: '/dashboard/admin/subjects',
+          label: 'Quản lý Môn học',
+          icon: BookOpen,
+          permissions: ['classes.view'],
+        },
+        {
+          href: '/dashboard/admin/announcements',
+          label: 'Bảng tin trung tâm',
+          icon: Bell,
+          permissions: ['users.view'],
         },
       ],
     },
@@ -700,7 +768,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
     },
   ],
 
-  // ── TUTOR: Minimal — own students only ──
+  // ── TUTOR: Tutoring sessions & schedule ──
   tutor: [
     {
       title: 'Trang chủ',
@@ -714,6 +782,12 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
       links: [
         { href: '/dashboard/tutor/students', label: 'Học sinh kèm', icon: Users },
         { href: '/dashboard/my-schedule', label: 'Lịch của tôi', icon: Clock },
+        {
+          href: '/dashboard/timetable',
+          label: 'Thời khóa biểu',
+          icon: Calendar,
+          permissions: ['timetable.view'],
+        },
       ],
     },
     {

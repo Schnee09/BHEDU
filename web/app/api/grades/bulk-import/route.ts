@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       .from('enrollments')
       .select('student_id, profiles!enrollments_student_id_fkey(id, student_id, full_name)')
       .eq('class_id', class_id)
-      .in('status', ['active', 'enrolled']);
+      .in('status', ['enrolled']);
 
     const studentMap = new Map<string, string>();
     enrollments?.forEach((e: any) => {

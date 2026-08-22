@@ -175,8 +175,8 @@ export default function StudentStatusPanel({
         <ul className="space-y-3">
           {[
             { tag: 'Ngưng học', note: 'Thường được dùng cho học sinh đã nghỉ học hoặc bị xóa tạm. Hồ sơ sẽ bị ẩn khỏi danh sách lớp.' },
-            { tag: 'Đình chỉ', note: 'Áp dụng cho các trường hợp vi phạm chính sách của trường. Quyền truy cập có thể bị hạn chế.' },
-            { tag: 'Tốt nghiệp', note: 'Lưu giữ hồ sơ học tập trọn đời sau khi học sinh hoàn thành chương trình tại trường.' }
+            { tag: 'Đình chỉ', note: 'Áp dụng cho các trường hợp vi phạm chính sách của trung tâm. Quyền truy cập có thể bị hạn chế.' },
+            { tag: 'Tốt nghiệp', note: 'Lưu giữ hồ sơ học tập trọn đời sau khi học sinh hoàn thành chương trình tại trung tâm.' }
           ].map((item, idx) => (
             <li key={idx} className="flex items-start gap-4 text-[11px] leading-relaxed group">
               <span className="w-1.5 h-1.5 rounded-full bg-stone-300 group-hover:bg-amber-500 mt-1.5 transition-colors" />

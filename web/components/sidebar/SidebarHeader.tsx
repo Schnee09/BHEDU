@@ -2,6 +2,7 @@
 
 import { useEffect, useState, memo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { getDisplayName } from '@/lib/utils/names';
@@ -65,16 +66,22 @@ export const SidebarHeader = memo(function SidebarHeader({ profile, isCollapsed 
           isCollapsed && 'flex-col px-0 gap-2'
         )}
       >
-        <div
+        <Link
+          href="/dashboard"
           className={cn(
-            'shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-white to-stone-50 dark:from-stone-800 dark:to-stone-900 border border-stone-200 dark:border-white/10 shadow-lg flex items-center justify-center p-2 hover:rotate-6 transition-all duration-500 group cursor-pointer',
+            'relative shrink-0 w-12 h-12 rounded-2xl bg-white dark:bg-[#1C1A16] border border-stone-200/90 dark:border-white/10 shadow-md shadow-amber-500/10 hover:shadow-amber-500/20 flex items-center justify-center p-1.5 hover:rotate-3 transition-all duration-300 group cursor-pointer overflow-hidden',
             isCollapsed && 'w-11 h-11'
           )}
         >
-          <div className="flex items-center justify-center w-full h-full text-amber-500 font-serif font-black text-2xl italic tracking-tighter drop-shadow-sm">
-            BH
-          </div>
-        </div>
+          <Image
+            src="/logo.png"
+            alt="BH-EDU Logo"
+            fill
+            sizes="48px"
+            className="object-contain p-0.5 drop-shadow-[0_2px_6px_rgba(217,119,6,0.25)] group-hover:scale-110 transition-transform duration-300"
+            priority
+          />
+        </Link>
 
         {!isCollapsed && (
           <div className="flex flex-col min-w-0 flex-1 justify-center py-1">

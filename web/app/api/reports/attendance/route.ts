@@ -15,7 +15,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request }) =
   const dateTo = url.searchParams.get('date_to') || undefined;
   const academicYearId = url.searchParams.get('academic_year_id') || undefined;
   const classId = url.searchParams.get('class_id') || undefined;
-  const courseId = url.searchParams.get('course_id') || undefined;
+  const courseId = url.searchParams.get('subject_id') || undefined;
   const limit = Math.min(
     10000,
     Math.max(100, parseInt(url.searchParams.get('limit') || '5000', 10))

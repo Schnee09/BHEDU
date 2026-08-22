@@ -18,15 +18,22 @@ export const GET = createGetHandler({ allowedRoles: ['tutor'] }, async ({ user }
       .from('timetable_slots')
       .select(
         `
+        id,
         student_id,
         day_of_week,
+        start_time,
+        end_time,
+        notes,
+        status,
+        subject:subjects (id, name),
         student:profiles!student_id (
           id,
           first_name,
           last_name,
           full_name,
           email,
-          student_profiles (student_code)
+          phone,
+          student_code
         )
       `
       )

@@ -234,6 +234,74 @@ export default function EnrollmentsPage() {
     }
   };
 
+  const handleCSVImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) return;
+
+      const rows = text.split('\n').map((line) => line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, '')));
+      if (rows.length < 2) {
+        toast.warning('File rỗng', 'Không có dữ liệu trong file CSV.');
+        return;
+      }
+
+      const firstRow = rows[0];
+      if (!firstRow) {
+        toast.warning('File không hợp lệ', 'Không thể đọc dòng tiêu đề của file CSV.');
+        return;
+      }
+
+      const headers = firstRow.map(h => h.toLowerCase().trim());
+      const emailIdx = headers.indexOf('email');
+      const codeIdx = headers.indexOf('student_code') !== -1 ? headers.indexOf('student_code') : headers.indexOf('ma_hs');
+
+      const lookups = new Set<string>();
+      
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0 || !row[0]) continue;
+        
+        const emailVal = emailIdx !== -1 && row[emailIdx] ? row[emailIdx] : undefined;
+        const codeVal = codeIdx !== -1 && row[codeIdx] ? row[codeIdx] : undefined;
+
+        if (emailVal) {
+          lookups.add(emailVal.toLowerCase());
+        }
+        if (codeVal) {
+          lookups.add(codeVal.toLowerCase());
+        }
+        if (emailIdx === -1 && codeIdx === -1 && row[0]) {
+          lookups.add(row[0].toLowerCase());
+        }
+      }
+
+      const matchedIds: string[] = [];
+      availableStudents.forEach((student) => {
+        if (
+          (student.email && lookups.has(student.email.toLowerCase())) ||
+          (student.student_code && lookups.has(student.student_code.toLowerCase()))
+        ) {
+          matchedIds.push(student.id);
+        }
+      });
+
+      if (matchedIds.length === 0) {
+        toast.error('Lỗi', 'Không tìm thấy học sinh nào khớp mã số hoặc email trong file CSV.');
+      } else {
+        const newSelection = new Set(selectedToEnroll);
+        matchedIds.forEach(id => newSelection.add(id));
+        setSelectedToEnroll(newSelection);
+        toast.success('Nhập file thành công', `Đã khớp thành công ${matchedIds.length} học sinh từ file CSV.`);
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
   // Filter available students
   const enrolledIds = new Set(enrolledStudents.map((e) => e.student_id));
   const filteredStudents = availableStudents.filter((s) => {
@@ -288,7 +356,7 @@ export default function EnrollmentsPage() {
             <option value="">Chọn lớp...</option>
             {classes.map((cls) => (
               <option key={cls.id} value={cls.id}>
-                {cls.name} ({cls.code || cls.course?.code || 'Không có mã'}) -{' '}
+                {cls.name} ({cls.code || (cls as any).subject?.code || 'Không có mã'}) -{' '}
                 {cls._count?.enrollments || cls.enrollment_count || 0} HS
               </option>
             ))}
@@ -514,8 +582,8 @@ export default function EnrollmentsPage() {
                 </p>
               </div>
 
-              {/* Search */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              {/* Search & CSV Import */}
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
                 <div className="relative">
                   <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
@@ -525,6 +593,18 @@ export default function EnrollmentsPage() {
                     placeholder="Tìm theo tên, email, mã HS..."
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
                   />
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-lg border border-gray-100 dark:border-gray-700">
+                  <span>Hoặc chọn file danh sách học sinh:</span>
+                  <label className="cursor-pointer px-3 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-green-600 hover:bg-gray-50 font-bold transition-colors">
+                    Nhập từ CSV
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleCSVImport}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               </div>
 

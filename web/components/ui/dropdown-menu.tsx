@@ -25,7 +25,7 @@ export function DropdownMenu({ trigger, children, align = "right", className = "
     const [coords, setCoords] = useState({ top: 0, left: 0 });
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: MouseEvent | TouchEvent) => {
             if (
                 dropdownRef.current &&
                 !dropdownRef.current.contains(event.target as Node) &&
@@ -35,8 +35,16 @@ export function DropdownMenu({ trigger, children, align = "right", className = "
             }
         };
 
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setIsOpen(false);
+            }
+        };
+
         if (isOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
+            document.addEventListener("pointerdown", handleClickOutside);
+            document.addEventListener("touchstart", handleClickOutside);
+            document.addEventListener("keydown", handleKeyDown);
             // Calculate position
             if (triggerRef.current) {
                 const rect = triggerRef.current.getBoundingClientRect();
@@ -51,7 +59,9 @@ export function DropdownMenu({ trigger, children, align = "right", className = "
         }
 
         return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("pointerdown", handleClickOutside);
+            document.removeEventListener("touchstart", handleClickOutside);
+            document.removeEventListener("keydown", handleKeyDown);
         };
     }, [isOpen, align]);
 

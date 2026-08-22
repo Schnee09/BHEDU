@@ -4,6 +4,7 @@ import React from 'react';
 import { Plus, Trash2, Edit3, Search, ClipboardList } from 'lucide-react';
 import { TimetableSlot } from '@/lib/timetable/types';
 import { DAYS, ALL_SESSIONS } from '@/lib/timetable/constants';
+import { cn } from '@/lib/utils';
 
 interface TutoringListViewProps {
   slots: TimetableSlot[];
@@ -11,6 +12,7 @@ interface TutoringListViewProps {
   onEditSlot: (slot: TimetableSlot) => void;
   onDeleteSlot: (slotId: string) => void;
   onCreateSlot: (dayIndex: number, session: any, room: string) => void;
+  onUpdateStatus?: (slotId: string, newStatus: 'scheduled' | 'completed' | 'cancelled' | 'makeup') => void;
 }
 
 export default function TutoringListView({
@@ -19,6 +21,7 @@ export default function TutoringListView({
   onEditSlot,
   onDeleteSlot,
   onCreateSlot,
+  onUpdateStatus,
 }: TutoringListViewProps) {
   const tutoringSlots = slots.filter((s) => !s.room || s.room === 'Linh hoạt');
 
@@ -65,7 +68,7 @@ export default function TutoringListView({
                 Môn học
               </th>
               <th className="p-5 text-left text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em]">
-                Ghi chú
+                Trạng thái
               </th>
               <th className="p-5 text-center text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] w-32">
                 Thao tác
@@ -128,12 +131,39 @@ export default function TutoringListView({
                     {slot.subject?.name}
                   </td>
                   <td className="p-5">
-                    <div
-                      className="text-xs text-stone-400 dark:text-stone-500 font-medium italic line-clamp-1 max-w-[200px]"
-                      title={slot.notes || ''}
-                    >
-                      {slot.notes || '-'}
-                    </div>
+                    {onUpdateStatus ? (
+                      <select
+                        value={slot.status || 'scheduled'}
+                        onChange={(e) =>
+                          onUpdateStatus(slot.id, e.target.value as any)
+                        }
+                        className={cn(
+                          'px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider outline-none border transition-all cursor-pointer',
+                          slot.status === 'completed'
+                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30 dark:text-emerald-400'
+                            : slot.status === 'cancelled'
+                            ? 'bg-red-500/10 text-red-600 border-red-500/30 dark:text-red-400'
+                            : slot.status === 'makeup'
+                            ? 'bg-sky-500/10 text-sky-600 border-sky-500/30 dark:text-sky-400'
+                            : 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400'
+                        )}
+                      >
+                        <option value="scheduled">🟡 Đã xếp</option>
+                        <option value="completed">🟢 Hoàn thành</option>
+                        <option value="cancelled">🔴 Hủy ca</option>
+                        <option value="makeup">🔵 Học bù</option>
+                      </select>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                        {slot.status === 'completed'
+                          ? 'Hoàn thành'
+                          : slot.status === 'cancelled'
+                          ? 'Hủy ca'
+                          : slot.status === 'makeup'
+                          ? 'Học bù'
+                          : 'Đã xếp'}
+                      </span>
+                    )}
                   </td>
                   <td className="p-5">
                     <div className="flex gap-2 justify-center opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">

@@ -33,7 +33,7 @@ interface TimetableSlot {
 
 const DAY_NAMES = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
-function aggregateStudents(slots: TimetableSlot[]): TutoringStudent[] {
+function aggregateStudents(slots: any[]): TutoringStudent[] {
   const jsDay = new Date().getDay();
   const todayIdx = jsDay === 0 ? 6 : jsDay - 1;
 
@@ -42,14 +42,14 @@ function aggregateStudents(slots: TimetableSlot[]): TutoringStudent[] {
     if (!slot.student_id || !slot.student) continue;
     const s = slot.student;
     const id = slot.student_id;
-    const code = s.student_profiles?.[0]?.student_code ?? null;
+    const code = s.student_code || s.student_profiles?.[0]?.student_code || null;
 
     if (!map.has(id)) {
       map.set(id, {
         student_id: id,
         first_name: s.first_name,
         last_name: s.last_name,
-        full_name: s.full_name ?? `${s.last_name} ${s.first_name}`,
+        full_name: s.full_name ?? `${s.last_name || ''} ${s.first_name || ''}`.trim(),
         email: s.email,
         student_code: code,
         sessions_today: 0,
@@ -147,19 +147,18 @@ function StudentCard({ s, index }: { s: TutoringStudent; index: number }) {
         ))}
       </div>
 
-      {/* Footer stats */}
-      <div className="flex items-center justify-between pt-1 border-t border-stone-100 dark:border-stone-800">
+      {/* Footer stats & Actions */}
+      <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-800">
         <div className="text-sm text-stone-500 dark:text-stone-400">
           <span className="font-black text-stone-800 dark:text-stone-100">{s.sessions_total}</span>
           <span className="ml-1">buổi/tuần</span>
         </div>
-        <a
-          href={`mailto:${s.email}`}
-          className="text-xs font-semibold text-stone-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-200 truncate max-w-[160px]"
-          onClick={(e) => e.stopPropagation()}
+        <Link
+          href={`/dashboard/students/${s.student_id}/transcript`}
+          className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500 text-amber-600 hover:text-white dark:text-amber-400 dark:hover:text-stone-900 text-xs font-black transition-all"
         >
-          {s.email}
-        </a>
+          Xem học bạ
+        </Link>
       </div>
     </div>
   );

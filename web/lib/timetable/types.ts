@@ -2,6 +2,7 @@ export interface TimetableSlot {
   id: string;
   class_id: string;
   student_id?: string;
+  teacher_id?: string;
   subject: { id: string; name: string; code: string } | null;
   teacher: { id: string; full_name: string; phone?: string } | null;
   student?: { id: string; full_name: string } | null;
@@ -13,12 +14,13 @@ export interface TimetableSlot {
   notes: string | null; // Default notes
   weekly_note?: string | null; // Week-specific notes
   has_weekly_note?: boolean; // Flag for visual indicator
+  status?: 'scheduled' | 'completed' | 'cancelled' | 'makeup';
 }
 
 export interface ClassOption {
   id: string;
   name: string;
-  course_id?: string;
+  subject_id?: string;
   course?: {
     id: string;
     name: string;
@@ -49,6 +51,7 @@ export interface TeacherOption {
   id: string;
   full_name: string;
   phone?: string;
+  role?: string;
 }
 
 export interface StudentOption {

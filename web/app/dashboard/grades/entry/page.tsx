@@ -47,7 +47,6 @@ interface ClassOption {
   id: string;
   name: string;
   subject_id?: string;
-  course_id?: string;
   subject_code?: string;
 }
 
@@ -448,10 +447,10 @@ function GradeEntryPageContent() {
         {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-stone-900 dark:text-white">
-            Nhập điểm học tập
+            Theo dõi điểm số trên trường (GK & CK)
           </h1>
           <p className="mt-2 text-stone-500 font-medium text-sm">
-            Cập nhật kết quả điểm Giữa kỳ và Cuối kỳ (trọng số 50:50) cho học sinh
+            Ghi nhận kết quả điểm Giữa kỳ và Cuối kỳ của học sinh tại trường phổ thông để theo dõi tiến độ và đánh giá hiệu quả bồi dưỡng của trung tâm
           </p>
         </div>
 
@@ -649,9 +648,9 @@ function GradeEntryPageContent() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
-                Save
+              <AlertDialogCancel className="font-bold">Hủy bỏ</AlertDialogCancel>
+              <AlertDialogAction onClick={handleSave} className="bg-amber-500 hover:bg-amber-600 font-black">
+                Xác nhận lưu
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -725,6 +724,8 @@ const StudentRow = React.memo(function StudentRow({
           value={studentGrades[EvaluationType.MIDTERM] ?? ''}
           onBlur={handleMidtermBlur}
           error={midtermError}
+          rowIndex={index}
+          colIndex={0}
         />
       </td>
       <td className="px-6 py-4">
@@ -732,6 +733,8 @@ const StudentRow = React.memo(function StudentRow({
           value={studentGrades[EvaluationType.FINAL] ?? ''}
           onBlur={handleFinalBlur}
           error={finalError}
+          rowIndex={index}
+          colIndex={1}
         />
       </td>
       <td className="px-6 py-4 text-center bg-emerald-50/30 dark:bg-emerald-500/5">
@@ -750,10 +753,14 @@ const GradeInput = React.memo(function GradeInput({
   value,
   onBlur,
   error,
+  rowIndex,
+  colIndex,
 }: {
   value: string | number;
   onBlur: (val: string) => void;
   error?: string;
+  rowIndex: number;
+  colIndex: number;
 }) {
   const [localValue, setLocalValue] = useState(value);
 
@@ -769,7 +776,58 @@ const GradeInput = React.memo(function GradeInput({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      (e.target as HTMLInputElement).blur();
+      e.preventDefault();
+      // Move down on Enter
+      const nextInput = document.querySelector(`input[data-row="${rowIndex + 1}"][data-col="${colIndex}"]`) as HTMLInputElement;
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.select();
+      } else {
+        (e.target as HTMLInputElement).blur();
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextInput = document.querySelector(`input[data-row="${rowIndex + 1}"][data-col="${colIndex}"]`) as HTMLInputElement;
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.select();
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prevInput = document.querySelector(`input[data-row="${rowIndex - 1}"][data-col="${colIndex}"]`) as HTMLInputElement;
+      if (prevInput) {
+        prevInput.focus();
+        prevInput.select();
+      }
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      let nextCol = colIndex + 1;
+      let nextRow = rowIndex;
+      if (nextCol > 1) {
+        nextCol = 0;
+        nextRow = rowIndex + 1;
+      }
+      const nextInput = document.querySelector(`input[data-row="${nextRow}"][data-col="${nextCol}"]`) as HTMLInputElement;
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.select();
+      }
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      let prevCol = colIndex - 1;
+      let prevRow = rowIndex;
+      if (prevCol < 0) {
+        prevCol = 1;
+        prevRow = rowIndex - 1;
+      }
+      const prevInput = document.querySelector(`input[data-row="${prevRow}"][data-col="${prevCol}"]`) as HTMLInputElement;
+      if (prevInput) {
+        prevInput.focus();
+        prevInput.select();
+      }
     }
   };
 
@@ -785,6 +843,8 @@ const GradeInput = React.memo(function GradeInput({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder="Điểm"
+        data-row={rowIndex}
+        data-col={colIndex}
         className={cn(
           'w-32 h-12 text-center text-lg font-bold rounded-xl transition-all',
           'bg-stone-50 dark:bg-white/5 border-stone-200 dark:border-white/10',

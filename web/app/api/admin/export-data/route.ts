@@ -4,7 +4,6 @@ import { adminAuth } from "@/lib/auth/adminAuth";
 
 export async function GET(request: Request) {
   try {
-    // Use the centralized adminAuth helper which supports super_admin via inheritance
     const auth = await adminAuth(request);
     if (!auth.authorized) {
       return NextResponse.json({ error: auth.reason || "Forbidden" }, {
@@ -14,36 +13,79 @@ export async function GET(request: Request) {
 
     const { userId, userEmail } = auth;
     const supabase = await createClient();
+    const { searchParams } = new URL(request.url);
+    const moduleParam = searchParams.get('module');
+    const tableParam = searchParams.get('table');
 
-    // Fetch all data from main tables
-    const [students, classes, grades, attendance, profiles] = await Promise.all(
-      [
-        supabase.from("students").select("*"),
-        supabase.from("classes").select("*"),
-        supabase.from("grades").select("*"),
-        supabase.from("attendance").select("*"),
-        supabase.from("profiles").select("*"),
-      ],
-    );
+    // Single Table Export
+    if (tableParam) {
+      const { data, error } = await supabase.from(tableParam).select('*').limit(5000);
+      if (error) {
+        return NextResponse.json({ error: `Không thể xuất dữ liệu bảng ${tableParam}: ${error.message}` }, { status: 400 });
+      }
+      return NextResponse.json({
+        table: tableParam,
+        exportedAt: new Date().toISOString(),
+        exportedBy: userEmail,
+        count: data?.length || 0,
+        data: data || [],
+      });
+    }
+
+    // Module or Full Export
+    const exportPayload: Record<string, any> = {};
+    const counts: Record<string, number> = {};
+
+    const tableList = moduleParam === 'students'
+      ? ['profiles', 'students', 'guardians', 'enrollments']
+      : moduleParam === 'academic'
+      ? ['classes', 'courses', 'lessons', 'academic_years', 'grading_scales']
+      : moduleParam === 'grades'
+      ? ['grades', 'assignments', 'grading_scales']
+      : moduleParam === 'attendance'
+      ? ['attendance']
+      : moduleParam === 'finance'
+      ? ['fee_types', 'invoices', 'invoice_items', 'payments', 'payment_allocations']
+      : moduleParam === 'system'
+      ? ['audit_logs', 'school_settings', 'role_permission_overrides']
+      : [
+          'profiles',
+          'students',
+          'classes',
+          'enrollments',
+          'attendance',
+          'grades',
+          'assignments',
+          'courses',
+          'lessons',
+          'academic_years',
+          'grading_scales',
+          'fee_types',
+          'invoices',
+          'invoice_items',
+          'payments',
+          'school_settings',
+          'audit_logs',
+        ];
+
+    const fetchPromises = tableList.map(async (table) => {
+      const res = await supabase.from(table).select('*').limit(5000);
+      return { table, data: res.data || [], count: res.data?.length || 0 };
+    });
+
+    const results = await Promise.all(fetchPromises);
+    results.forEach((r) => {
+      exportPayload[r.table] = r.data;
+      counts[r.table] = r.count;
+    });
 
     const exportData = {
       exportedAt: new Date().toISOString(),
       exportedBy: userEmail,
-      version: "1.0",
-      data: {
-        students: students.data || [],
-        classes: classes.data || [],
-        grades: grades.data || [],
-        attendance: attendance.data || [],
-        profiles: profiles.data || [],
-      },
-      counts: {
-        students: students.data?.length || 0,
-        classes: classes.data?.length || 0,
-        grades: grades.data?.length || 0,
-        attendance: attendance.data?.length || 0,
-        profiles: profiles.data?.length || 0,
-      },
+      scope: moduleParam || 'full_database',
+      version: '2.0',
+      counts,
+      data: exportPayload,
     };
 
     // Log audit entry
@@ -52,14 +94,14 @@ export async function GET(request: Request) {
       user_email: userEmail,
       action: "export",
       resource_type: "backup",
-      new_data: { counts: exportData.counts },
+      new_data: { scope: moduleParam || 'full_database', counts },
     });
 
     return NextResponse.json(exportData);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Export data error:", error);
     return NextResponse.json(
-      { error: "Failed to export data" },
+      { error: error?.message || "Failed to export data" },
       { status: 500 },
     );
   }

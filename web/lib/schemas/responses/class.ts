@@ -9,7 +9,7 @@ export interface ClassResponse {
     code?: string | null;
     description?: string | null;
     teacher_id?: string | null;
-    course_id?: string | null;
+    subject_id?: string | null;
     room?: string | null;
     schedule?: string | null;
     capacity?: number | null;
@@ -27,7 +27,7 @@ export interface ClassResponse {
         full_name: string;
         email: string;
     } | null;
-    course?: {
+    subject?: {
         id: string;
         name: string;
         code: string;

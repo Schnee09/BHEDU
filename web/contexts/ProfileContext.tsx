@@ -2,6 +2,7 @@
 
 import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import type { UserRole } from '@/lib/auth/core';
 
 export type Profile = {
@@ -12,6 +13,7 @@ export type Profile = {
   last_name: string | null;
   role: UserRole;
   photo_url?: string | null;
+  avatar_url?: string | null;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
@@ -43,13 +45,19 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        console.log('[ProfileProvider] No session found');
         setProfile(null);
         setLoading(false);
         return;
       }
 
-      const response = await fetch('/api/profile');
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      const response = await fetch('/api/profile', {
+        headers,
+      });
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -76,7 +84,18 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (data) {
-        setProfile(data as Profile);
+        const photoUrl =
+          data.photo_url ||
+          session.user.user_metadata?.photo_url ||
+          session.user.user_metadata?.avatar_url ||
+          null;
+
+        const resolvedProfile: Profile = {
+          ...data,
+          photo_url: photoUrl,
+          avatar_url: photoUrl,
+        };
+        setProfile(resolvedProfile);
       }
     } catch (err) {
       console.error('[ProfileProvider] Unexpected error:', err);
@@ -86,7 +105,26 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     fetchProfile();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (!mounted) return;
+      if (session?.user) {
+        fetchProfile();
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (

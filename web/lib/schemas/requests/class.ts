@@ -28,12 +28,14 @@ export const classQuerySchema = z.object({
 export const createClassSchema = z.object({
     name: z.string().min(1, "Class name is required").max(100),
     teacher_id: uuidSchema.optional().nullable(),
-    course_id: uuidSchema.optional().nullable(),
+    subject_id: uuidSchema.optional().nullable(),
     room: z.string().max(50).optional().nullable(),
     schedule: z.string().max(200).optional().nullable(),
     capacity: z.number().int().positive().optional().default(40),
     academic_year_id: uuidSchema.optional().nullable(),
     status: z.enum(["active", "inactive", "completed"]).default("active"),
+    days_of_week: z.array(z.number().min(0).max(6)).optional(),
+    auto_schedule: z.boolean().optional(),
 });
 
 /**

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Grading Scales API
  * GET /api/admin/grading-scales - Get all grading scales
  * POST /api/admin/grading-scales - Create grading scale
@@ -86,17 +86,34 @@ export async function POST(request: Request) {
         .eq('is_default', true)
     }
 
+    // Check if user exists in users table before setting created_by
+    let validUserId: string | undefined = undefined;
+    if (authResult.userId) {
+      const { data: userExists } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', authResult.userId)
+        .maybeSingle();
+      if (userExists) {
+        validUserId = userExists.id;
+      }
+    }
+
+    const insertData: Record<string, any> = {
+      name,
+      description,
+      scale,
+      is_default: is_default || false,
+    };
+    if (validUserId) {
+      insertData.created_by = validUserId;
+    }
+
     const { data: gradingScale, error } = await supabase
       .from('grading_scales')
-      .insert({
-        name,
-        description,
-        scale,
-        is_default: is_default || false,
-        created_by: authResult.userId
-      })
+      .insert(insertData)
       .select()
-      .single()
+      .single();
 
     if (error) {
       console.error('Error creating grading scale:', error)

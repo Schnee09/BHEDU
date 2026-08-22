@@ -139,18 +139,20 @@ export function createApiHandler<TBody = unknown>(
 
         // Check allowed roles if specified (supports hierarchy and dynamic bypasses)
         if (config.allowedRoles && auth.role) {
-          const hasAccess = config.allowedRoles.some((allowedRole) => {
-            // Owner has access to admin operational routes if they possess the required permission
-            if (allowedRole === 'admin' && auth.role === 'owner') return true;
+          if (auth.role !== 'super_admin') {
+            const hasAccess = config.allowedRoles.some((allowedRole) => {
+              // Owner has access to admin operational routes if they possess the required permission
+              if (allowedRole === 'admin' && auth.role === 'owner') return true;
 
-            // Custom user overrides also bypass hardcoded admin checks
-            if (allowedRole === 'admin' && auth.isCustomOverride) return true;
+              // Custom user overrides also bypass hardcoded admin checks
+              if (allowedRole === 'admin' && auth.isCustomOverride) return true;
 
-            return isAtLeast(auth.role as UserRole, allowedRole);
-          });
+              return isAtLeast(auth.role as UserRole, allowedRole);
+            });
 
-          if (!hasAccess) {
-            throw new AuthorizationError('Bạn không có quyền thực hiện thao tác này');
+            if (!hasAccess) {
+              throw new AuthorizationError('Bạn không có quyền thực hiện thao tác này');
+            }
           }
         }
 
@@ -162,28 +164,37 @@ export function createApiHandler<TBody = unknown>(
         };
       }
 
-      // 2. Parse & Validate Body (for POST, PUT, PATCH)
+      // 2. Parse & Validate Body (for POST, PUT, PATCH, DELETE)
       let body = {} as TBody;
-      if (config.bodySchema) {
+      const method = request.method.toUpperCase();
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
         try {
-          const rawBody = await request.json();
-          const result = config.bodySchema.safeParse(rawBody);
+          const rawBody = await request.clone().json();
+          if (config.bodySchema) {
+            const result = config.bodySchema.safeParse(rawBody);
 
-          if (!result.success) {
-            const firstError = result.error.issues[0];
-            if (!firstError) {
-              throw new ValidationError('Dữ liệu gửi lên không hợp lệ');
+            if (!result.success) {
+              const firstError = result.error.issues[0];
+              if (!firstError) {
+                throw new ValidationError('Dữ liệu gửi lên không hợp lệ');
+              }
+              const fieldName = firstError.path.join('.');
+              const message = fieldName ? `${fieldName}: ${firstError.message}` : firstError.message;
+              throw new ValidationError(message);
             }
-            const fieldName = firstError.path.join('.');
-            const message = fieldName ? `${fieldName}: ${firstError.message}` : firstError.message;
-            throw new ValidationError(message);
-          }
 
-          body = result.data;
+            body = result.data;
+          } else {
+            body = (rawBody ?? {}) as TBody;
+          }
         } catch (e) {
           if (e instanceof ValidationError) throw e;
-          // JSON parse error
-          throw new ValidationError('Dữ liệu gửi lên không hợp lệ');
+          // If bodySchema is explicitly provided, JSON parsing failure is a ValidationError
+          if (config.bodySchema) {
+            throw new ValidationError('Dữ liệu gửi lên không hợp lệ');
+          }
+          // Otherwise leave body as empty object
+          body = {} as TBody;
         }
       }
 

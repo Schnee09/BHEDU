@@ -1,19 +1,13 @@
 export const CAMPUSES = [
   {
-    id: 'NQ',
+    id: 'Ngô Quyền',
     name: 'Ngô Quyền',
-    rooms: ['P.1', 'P.2', 'P.3', 'P.4', 'P.5', 'P.6', 'P.7', 'P.8', 'P.9', 'P.10'],
+    rooms: ['P.01', 'P.02', 'P.03', 'P.04', 'P.05', 'P.06', 'P.07', 'P.08'],
   },
   {
-    id: 'DVB',
+    id: 'Đặng Văn Bi',
     name: 'Đặng Văn Bi',
-    rooms: ['P.1', 'P.2', 'P.3', 'P.4'],
-  },
-  {
-    id: 'HK',
-    name: 'Học kèm',
-    rooms: ['Linh hoạt'],
-    isFlexible: true,
+    rooms: ['P.01', 'P.02', 'P.03', 'P.04'],
   },
 ];
 

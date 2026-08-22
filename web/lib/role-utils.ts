@@ -46,9 +46,9 @@ export interface RoleConfig {
  */
 export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
   super_admin: {
-    label: 'Super Admin',
+    label: 'Quản trị Hệ thống',
     labelEn: 'Super Administrator',
-    description: 'Toàn quyền hệ thống, quản lý kỹ thuật',
+    description: 'Toàn quyền cấu hình, bảo mật và quản trị kỹ thuật hệ thống',
     color: 'black',
     bgClass: 'bg-gray-900 text-white',
     bgClassDark: 'dark:bg-gray-100 dark:text-gray-900',

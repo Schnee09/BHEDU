@@ -713,7 +713,7 @@ export default function AcademicCalendarPage() {
                     </div>
 
                     {!formData.is_all_day && (
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Input
                                 label="Giờ bắt đầu"
                                 type="time"

@@ -39,1634 +39,2522 @@ export type Database = {
   };
   public: {
     Tables: {
-      academic_years: {
+      payments: {
         Row: {
-          created_at: string | null;
-          end_date: string | null;
           id: string;
-          is_current: boolean | null;
-          name: string;
-          start_date: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          end_date?: string | null;
-          id?: string;
-          is_current?: boolean | null;
-          name: string;
-          start_date?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          end_date?: string | null;
-          id?: string;
-          is_current?: boolean | null;
-          name?: string;
-          start_date?: string | null;
-          updated_at?: string | null;
-        };
-        Relationships: [];
-      };
-      attendance: {
-        Row: {
-          check_in_time: string | null;
-          check_out_time: string | null;
-          class_id: string;
-          created_at: string | null;
-          date: string;
-          id: string;
-          marked_by: string | null;
-          notes: string | null;
-          status: string | null;
           student_id: string;
-        };
-        Insert: {
-          check_in_time?: string | null;
-          check_out_time?: string | null;
-          class_id: string;
-          created_at?: string | null;
-          date: string;
-          id?: string;
-          marked_by?: string | null;
-          notes?: string | null;
-          status?: string | null;
-          student_id: string;
-        };
-        Update: {
-          check_in_time?: string | null;
-          check_out_time?: string | null;
-          class_id?: string;
-          created_at?: string | null;
-          date?: string;
-          id?: string;
-          marked_by?: string | null;
-          notes?: string | null;
-          status?: string | null;
-          student_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "attendance_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "classes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "attendance_marked_by_fkey";
-            columns: ["marked_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "attendance_student_id_fkey";
-            columns: ["student_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      attendance_reports: {
-        Row: {
-          absent_count: number | null;
-          attendance_rate: number | null;
-          class_id: string | null;
-          created_at: string | null;
-          date_from: string;
-          date_to: string;
-          excused_count: number | null;
-          generated_at: string | null;
-          generated_by: string | null;
-          id: string;
-          late_count: number | null;
-          present_count: number | null;
-          report_data: Json | null;
-          report_type: string;
-          student_id: string | null;
-          total_days: number | null;
-        };
-        Insert: {
-          absent_count?: number | null;
-          attendance_rate?: number | null;
-          class_id?: string | null;
-          created_at?: string | null;
-          date_from: string;
-          date_to: string;
-          excused_count?: number | null;
-          generated_at?: string | null;
-          generated_by?: string | null;
-          id?: string;
-          late_count?: number | null;
-          present_count?: number | null;
-          report_data?: Json | null;
-          report_type: string;
-          student_id?: string | null;
-          total_days?: number | null;
-        };
-        Update: {
-          absent_count?: number | null;
-          attendance_rate?: number | null;
-          class_id?: string | null;
-          created_at?: string | null;
-          date_from?: string;
-          date_to?: string;
-          excused_count?: number | null;
-          generated_at?: string | null;
-          generated_by?: string | null;
-          id?: string;
-          late_count?: number | null;
-          present_count?: number | null;
-          report_data?: Json | null;
-          report_type?: string;
-          student_id?: string | null;
-          total_days?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "attendance_reports_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "classes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "attendance_reports_generated_by_fkey";
-            columns: ["generated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "attendance_reports_student_id_fkey";
-            columns: ["student_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      calendar_events: {
-        Row: {
-          class_id: string | null;
-          color: string | null;
-          created_at: string | null;
-          created_by: string | null;
-          description: string | null;
-          end_date: string | null;
-          end_time: string | null;
-          event_type: string | null;
-          id: string;
-          is_all_day: boolean | null;
-          semester_id: string | null;
-          start_date: string;
-          start_time: string | null;
-          title: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          class_id?: string | null;
-          color?: string | null;
-          created_at?: string | null;
-          created_by?: string | null;
-          description?: string | null;
-          end_date?: string | null;
-          end_time?: string | null;
-          event_type?: string | null;
-          id?: string;
-          is_all_day?: boolean | null;
-          semester_id?: string | null;
-          start_date: string;
-          start_time?: string | null;
-          title: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          class_id?: string | null;
-          color?: string | null;
-          created_at?: string | null;
-          created_by?: string | null;
-          description?: string | null;
-          end_date?: string | null;
-          end_time?: string | null;
-          event_type?: string | null;
-          id?: string;
-          is_all_day?: boolean | null;
-          semester_id?: string | null;
-          start_date?: string;
-          start_time?: string | null;
-          title?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "calendar_events_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "classes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calendar_events_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calendar_events_semester_id_fkey";
-            columns: ["semester_id"];
-            isOneToOne: false;
-            referencedRelation: "semesters";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      classes: {
-        Row: {
-          academic_year_id: string | null;
-          capacity: number | null;
-          class_type: string | null;
-          course_id: string | null;
-          created_at: string | null;
-          grade_level: string | null;
-          id: string;
-          max_capacity: number | null;
-          name: string;
-          room: string | null;
-          schedule: string | null;
-          sessions_per_week: number | null;
-          status: string | null;
-          subject_group_id: string | null;
-          teacher_id: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          academic_year_id?: string | null;
-          capacity?: number | null;
-          class_type?: string | null;
-          course_id?: string | null;
-          created_at?: string | null;
-          grade_level?: string | null;
-          id?: string;
-          max_capacity?: number | null;
-          name: string;
-          room?: string | null;
-          schedule?: string | null;
-          sessions_per_week?: number | null;
-          status?: string | null;
-          subject_group_id?: string | null;
-          teacher_id?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          academic_year_id?: string | null;
-          capacity?: number | null;
-          class_type?: string | null;
-          course_id?: string | null;
-          created_at?: string | null;
-          grade_level?: string | null;
-          id?: string;
-          max_capacity?: number | null;
-          name?: string;
-          room?: string | null;
-          schedule?: string | null;
-          sessions_per_week?: number | null;
-          status?: string | null;
-          subject_group_id?: string | null;
-          teacher_id?: string | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "classes_academic_year_id_fkey";
-            columns: ["academic_year_id"];
-            isOneToOne: false;
-            referencedRelation: "academic_years";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "classes_course_id_fkey";
-            columns: ["course_id"];
-            isOneToOne: false;
-            referencedRelation: "courses";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "classes_teacher_id_fkey";
-            columns: ["teacher_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      courses: {
-        Row: {
-          academic_year_id: string | null;
-          class_id: string | null;
-          code: string | null;
-          created_at: string | null;
-          description: string | null;
-          grade_level: number | null;
-          hours_per_week: number | null;
-          id: string;
-          is_active: boolean | null;
-          is_required: boolean | null;
-          name: string;
-          name_vi: string | null;
-          semester: number | null;
-          subject_id: string | null;
-          teacher_id: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          academic_year_id?: string | null;
-          class_id?: string | null;
-          code?: string | null;
-          created_at?: string | null;
-          description?: string | null;
-          grade_level?: number | null;
-          hours_per_week?: number | null;
-          id?: string;
-          is_active?: boolean | null;
-          is_required?: boolean | null;
-          name: string;
-          name_vi?: string | null;
-          semester?: number | null;
-          subject_id?: string | null;
-          teacher_id?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          academic_year_id?: string | null;
-          class_id?: string | null;
-          code?: string | null;
-          created_at?: string | null;
-          description?: string | null;
-          grade_level?: number | null;
-          hours_per_week?: number | null;
-          id?: string;
-          is_active?: boolean | null;
-          is_required?: boolean | null;
-          name?: string;
-          name_vi?: string | null;
-          semester?: number | null;
-          subject_id?: string | null;
-          teacher_id?: string | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "courses_academic_year_id_fkey";
-            columns: ["academic_year_id"];
-            isOneToOne: false;
-            referencedRelation: "academic_years";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "courses_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "classes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "courses_subject_id_fkey";
-            columns: ["subject_id"];
-            isOneToOne: false;
-            referencedRelation: "subjects";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "courses_teacher_id_fkey";
-            columns: ["teacher_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      enrollments: {
-        Row: {
-          class_id: string;
-          enrollment_date: string | null;
-          id: string;
-          status: string | null;
-          student_id: string;
-        };
-        Insert: {
-          class_id: string;
-          enrollment_date?: string | null;
-          id?: string;
-          status?: string | null;
-          student_id: string;
-        };
-        Update: {
-          class_id?: string;
-          enrollment_date?: string | null;
-          id?: string;
-          status?: string | null;
-          student_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "enrollments_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "classes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "enrollments_student_id_fkey";
-            columns: ["student_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      evaluation_types: {
-        Row: {
-          code: string;
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          name: string;
-          updated_at: string | null;
-          weight: number;
-        };
-        Insert: {
-          code: string;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name: string;
-          updated_at?: string | null;
-          weight?: number;
-        };
-        Update: {
-          code?: string;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name?: string;
-          updated_at?: string | null;
-          weight?: number;
-        };
-        Relationships: [];
-      };
-      fee_assignments: {
-        Row: {
-          academic_year_id: string;
+          invoice_id: string;
+          payment_method_id: string;
           amount: number;
-          class_id: string | null;
+          reference_number: string;
+          payment_date: string;
+          received_by: string;
+          notes: string;
+          status: string;
           created_at: string;
-          description: string | null;
-          fee_type_id: string;
-          id: string;
-          is_active: boolean | null;
           updated_at: string;
         };
         Insert: {
-          academic_year_id: string;
-          amount: number;
-          class_id?: string | null;
-          created_at?: string;
-          description?: string | null;
-          fee_type_id: string;
           id?: string;
-          is_active?: boolean | null;
+          student_id: string;
+          invoice_id: string;
+          payment_method_id: string;
+          amount: number;
+          reference_number: string;
+          payment_date: string;
+          received_by: string;
+          notes: string;
+          status: string;
+          created_at?: string;
           updated_at?: string;
         };
         Update: {
-          academic_year_id?: string;
+          id?: string;
+          student_id?: string;
+          invoice_id?: string;
+          payment_method_id?: string;
           amount?: number;
-          class_id?: string | null;
+          reference_number?: string;
+          payment_date?: string;
+          received_by?: string;
+          notes?: string;
+          status?: string;
           created_at?: string;
-          description?: string | null;
-          fee_type_id?: string;
-          id?: string;
-          is_active?: boolean | null;
           updated_at?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "fee_assignments_academic_year_id_fkey";
-            columns: ["academic_year_id"];
-            isOneToOne: false;
-            referencedRelation: "academic_years";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "fee_assignments_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "classes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "fee_assignments_fee_type_id_fkey";
-            columns: ["fee_type_id"];
-            isOneToOne: false;
-            referencedRelation: "fee_types";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
-      fee_types: {
+      all_teachers: {
         Row: {
-          category: string;
-          code: string;
-          created_at: string;
-          description: string | null;
           id: string;
-          is_active: boolean | null;
-          name: string;
-          updated_at: string;
+          user_id: string;
+          full_name: string;
+          email: string;
+          phone: string;
+          photo_url: string;
+          department: string;
+          teacher_type: string;
+          specialization: string;
+          teaching_subjects: any[];
+          hourly_rate: number;
+          bio: string;
+          display_type: string;
         };
         Insert: {
-          category?: string;
-          code: string;
-          created_at?: string;
-          description?: string | null;
           id?: string;
-          is_active?: boolean | null;
-          name: string;
-          updated_at?: string;
+          user_id: string;
+          full_name: string;
+          email: string;
+          phone: string;
+          photo_url: string;
+          department: string;
+          teacher_type: string;
+          specialization: string;
+          teaching_subjects: any[];
+          hourly_rate: number;
+          bio: string;
+          display_type: string;
         };
         Update: {
-          category?: string;
-          code?: string;
-          created_at?: string;
-          description?: string | null;
           id?: string;
-          is_active?: boolean | null;
-          name?: string;
-          updated_at?: string;
+          user_id?: string;
+          full_name?: string;
+          email?: string;
+          phone?: string;
+          photo_url?: string;
+          department?: string;
+          teacher_type?: string;
+          specialization?: string;
+          teaching_subjects?: any[];
+          hourly_rate?: number;
+          bio?: string;
+          display_type?: string;
         };
         Relationships: [];
       };
       grades: {
         Row: {
-          academic_year_id: string | null;
-          assignment_id: string | null;
-          category_id: string | null;
-          class_id: string | null;
-          component_type: string | null;
-          created_at: string | null;
-          feedback: string | null;
-          graded_at: string | null;
-          graded_by: string | null;
           id: string;
-          points_earned: number | null;
-          score: number | null;
-          semester: string | null;
+          assignment_id: string;
           student_id: string;
-          subject_id: string | null;
-          updated_at: string | null;
+          score: number;
+          feedback: string;
+          graded_at: string;
+          graded_by: string;
+          created_at: string;
+          updated_at: string;
+          points_earned: number;
+          component_type: string;
+          semester: string;
+          academic_year_id: string;
+          category_id: string;
+          subject_id: string;
+          class_id: string;
         };
         Insert: {
-          academic_year_id?: string | null;
-          assignment_id?: string | null;
-          category_id?: string | null;
-          class_id?: string | null;
-          component_type?: string | null;
-          created_at?: string | null;
-          feedback?: string | null;
-          graded_at?: string | null;
-          graded_by?: string | null;
           id?: string;
-          points_earned?: number | null;
-          score?: number | null;
-          semester?: string | null;
+          assignment_id: string;
           student_id: string;
-          subject_id?: string | null;
-          updated_at?: string | null;
+          score: number;
+          feedback: string;
+          graded_at: string;
+          graded_by: string;
+          created_at?: string;
+          updated_at?: string;
+          points_earned: number;
+          component_type: string;
+          semester: string;
+          academic_year_id: string;
+          category_id: string;
+          subject_id: string;
+          class_id: string;
         };
         Update: {
-          academic_year_id?: string | null;
-          assignment_id?: string | null;
-          category_id?: string | null;
-          class_id?: string | null;
-          component_type?: string | null;
-          created_at?: string | null;
-          feedback?: string | null;
-          graded_at?: string | null;
-          graded_by?: string | null;
           id?: string;
-          points_earned?: number | null;
-          score?: number | null;
-          semester?: string | null;
+          assignment_id?: string;
           student_id?: string;
-          subject_id?: string | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "grades_academic_year_id_fkey";
-            columns: ["academic_year_id"];
-            isOneToOne: false;
-            referencedRelation: "academic_years";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "grades_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "classes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "grades_graded_by_fkey";
-            columns: ["graded_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "grades_student_id_fkey";
-            columns: ["student_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "grades_subject_id_fkey";
-            columns: ["subject_id"];
-            isOneToOne: false;
-            referencedRelation: "subjects";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      import_errors: {
-        Row: {
-          created_at: string | null;
-          error_message: string;
-          error_type: string | null;
-          field_name: string | null;
-          id: string;
-          import_log_id: string;
-          row_data: Json | null;
-          row_number: number;
-          severity: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          error_message: string;
-          error_type?: string | null;
-          field_name?: string | null;
-          id?: string;
-          import_log_id: string;
-          row_data?: Json | null;
-          row_number: number;
-          severity?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          error_message?: string;
-          error_type?: string | null;
-          field_name?: string | null;
-          id?: string;
-          import_log_id?: string;
-          row_data?: Json | null;
-          row_number?: number;
-          severity?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "import_errors_import_log_id_fkey";
-            columns: ["import_log_id"];
-            isOneToOne: false;
-            referencedRelation: "import_logs";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      import_logs: {
-        Row: {
-          completed_at: string | null;
-          created_at: string | null;
-          duration_seconds: number | null;
-          error_count: number;
-          error_summary: string | null;
-          file_name: string | null;
-          file_size: number | null;
-          id: string;
-          import_type: string;
-          imported_by: string;
-          processed_rows: number;
-          started_at: string | null;
-          status: string;
-          success_count: number;
-          total_rows: number;
-          warning_count: number;
-        };
-        Insert: {
-          completed_at?: string | null;
-          created_at?: string | null;
-          duration_seconds?: number | null;
-          error_count?: number;
-          error_summary?: string | null;
-          file_name?: string | null;
-          file_size?: number | null;
-          id?: string;
-          import_type: string;
-          imported_by: string;
-          processed_rows?: number;
-          started_at?: string | null;
-          status?: string;
-          success_count?: number;
-          total_rows?: number;
-          warning_count?: number;
-        };
-        Update: {
-          completed_at?: string | null;
-          created_at?: string | null;
-          duration_seconds?: number | null;
-          error_count?: number;
-          error_summary?: string | null;
-          file_name?: string | null;
-          file_size?: number | null;
-          id?: string;
-          import_type?: string;
-          imported_by?: string;
-          processed_rows?: number;
-          started_at?: string | null;
-          status?: string;
-          success_count?: number;
-          total_rows?: number;
-          warning_count?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "import_logs_imported_by_fkey";
-            columns: ["imported_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      invoice_items: {
-        Row: {
-          created_at: string;
-          description: string;
-          fee_type_id: string | null;
-          id: string;
-          invoice_id: string;
-          quantity: number | null;
-          total_price: number;
-          unit_price: number;
-        };
-        Insert: {
+          score?: number;
+          feedback?: string;
+          graded_at?: string;
+          graded_by?: string;
           created_at?: string;
-          description: string;
-          fee_type_id?: string | null;
-          id?: string;
-          invoice_id: string;
-          quantity?: number | null;
-          total_price: number;
-          unit_price: number;
-        };
-        Update: {
-          created_at?: string;
-          description?: string;
-          fee_type_id?: string | null;
-          id?: string;
-          invoice_id?: string;
-          quantity?: number | null;
-          total_price?: number;
-          unit_price?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "invoice_items_fee_type_id_fkey";
-            columns: ["fee_type_id"];
-            isOneToOne: false;
-            referencedRelation: "fee_types";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      payment_allocations: {
-        Row: {
-          amount: number;
-          created_at: string;
-          id: string;
-          invoice_id: string;
-          notes: string | null;
-          payment_id: string;
-        };
-        Insert: {
-          amount: number;
-          created_at?: string;
-          id?: string;
-          invoice_id: string;
-          notes?: string | null;
-          payment_id: string;
-        };
-        Update: {
-          amount?: number;
-          created_at?: string;
-          id?: string;
-          invoice_id?: string;
-          notes?: string | null;
-          payment_id?: string;
+          updated_at?: string;
+          points_earned?: number;
+          component_type?: string;
+          semester?: string;
+          academic_year_id?: string;
+          category_id?: string;
+          subject_id?: string;
+          class_id?: string;
         };
         Relationships: [];
       };
-      payment_methods: {
+      class_statistics: {
         Row: {
-          created_at: string;
-          description: string | null;
+          class_id: string;
+          class_name: string;
+          total_students: any;
+          total_attendance_records: any;
+          present_count: any;
+          attendance_rate: number;
+        };
+        Insert: {
+          class_id: string;
+          class_name: string;
+          total_students: any;
+          total_attendance_records: any;
+          present_count: any;
+          attendance_rate: number;
+        };
+        Update: {
+          class_id?: string;
+          class_name?: string;
+          total_students?: any;
+          total_attendance_records?: any;
+          present_count?: any;
+          attendance_rate?: number;
+        };
+        Relationships: [];
+      };
+      parent_student_links: {
+        Row: {
           id: string;
-          is_active: boolean | null;
-          name: string;
-          requires_reference: boolean | null;
-          type: string;
+          parent_id: string;
+          student_id: string;
+          relationship: string;
+          status: string;
+          requested_at: string;
+          reviewed_at: string;
+          reviewed_by: string;
+          rejection_reason: string;
+          can_view_grades: boolean;
+          can_view_attendance: boolean;
+          can_view_finance: boolean;
+          can_view_schedule: boolean;
+          notes: string;
+          created_at: string;
           updated_at: string;
         };
         Insert: {
-          created_at?: string;
-          description?: string | null;
           id?: string;
-          is_active?: boolean | null;
-          name: string;
-          requires_reference?: boolean | null;
-          type: string;
+          parent_id: string;
+          student_id: string;
+          relationship: string;
+          status: string;
+          requested_at: string;
+          reviewed_at: string;
+          reviewed_by: string;
+          rejection_reason: string;
+          can_view_grades: boolean;
+          can_view_attendance: boolean;
+          can_view_finance: boolean;
+          can_view_schedule: boolean;
+          notes: string;
+          created_at?: string;
           updated_at?: string;
         };
         Update: {
-          created_at?: string;
-          description?: string | null;
           id?: string;
-          is_active?: boolean | null;
-          name?: string;
-          requires_reference?: boolean | null;
-          type?: string;
+          parent_id?: string;
+          student_id?: string;
+          relationship?: string;
+          status?: string;
+          requested_at?: string;
+          reviewed_at?: string;
+          reviewed_by?: string;
+          rejection_reason?: string;
+          can_view_grades?: boolean;
+          can_view_attendance?: boolean;
+          can_view_finance?: boolean;
+          can_view_schedule?: boolean;
+          notes?: string;
+          created_at?: string;
           updated_at?: string;
         };
         Relationships: [];
       };
-      payment_schedule_installments: {
+      assignments: {
         Row: {
+          id: string;
+          class_id: string;
+          category_id: string;
+          title: string;
+          description: string;
+          due_date: string;
+          max_points: number;
+          teacher_id: string;
           created_at: string;
-          description: string | null;
-          due_date: string;
-          id: string | null;
-          installment_number: number;
-          percentage: number;
-          schedule_id: string;
+          updated_at: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
         };
         Insert: {
-          created_at?: string;
-          description?: string | null;
+          id?: string;
+          class_id: string;
+          category_id: string;
+          title: string;
+          description: string;
           due_date: string;
-          id?: string | null;
-          installment_number: number;
-          percentage: number;
-          schedule_id: string;
+          max_points: number;
+          teacher_id: string;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
         };
         Update: {
-          created_at?: string;
-          description?: string | null;
+          id?: string;
+          class_id?: string;
+          category_id?: string;
+          title?: string;
+          description?: string;
           due_date?: string;
-          id?: string | null;
-          installment_number?: number;
-          percentage?: number;
-          schedule_id?: string;
+          max_points?: number;
+          teacher_id?: string;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
         };
         Relationships: [];
-      };
-      permission_audit_logs: {
-        Row: {
-          action: string;
-          created_at: string | null;
-          id: string;
-          ip_address: unknown;
-          new_value: Json | null;
-          old_value: Json | null;
-          performed_by: string;
-          permission_code: string;
-          reason: string | null;
-          user_agent: string | null;
-          user_id: string;
-        };
-        Insert: {
-          action: string;
-          created_at?: string | null;
-          id?: string;
-          ip_address?: unknown;
-          new_value?: Json | null;
-          old_value?: Json | null;
-          performed_by: string;
-          permission_code: string;
-          reason?: string | null;
-          user_agent?: string | null;
-          user_id: string;
-        };
-        Update: {
-          action?: string;
-          created_at?: string | null;
-          id?: string;
-          ip_address?: unknown;
-          new_value?: Json | null;
-          old_value?: Json | null;
-          performed_by?: string;
-          permission_code?: string;
-          reason?: string | null;
-          user_agent?: string | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "permission_audit_logs_performer_fkey";
-            columns: ["performed_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "permission_audit_logs_user_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      permission_definitions: {
-        Row: {
-          action: string;
-          category: string | null;
-          code: string;
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          is_system: boolean | null;
-          name: string;
-          resource: string;
-        };
-        Insert: {
-          action: string;
-          category?: string | null;
-          code: string;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          is_system?: boolean | null;
-          name: string;
-          resource: string;
-        };
-        Update: {
-          action?: string;
-          category?: string | null;
-          code?: string;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          is_system?: boolean | null;
-          name?: string;
-          resource?: string;
-        };
-        Relationships: [];
-      };
-      profiles: {
-        Row: {
-          address: string | null;
-          created_at: string | null;
-          created_by: string | null;
-          date_of_birth: string | null;
-          department: string | null;
-          email: string | null;
-          emergency_contact: string | null;
-          enrollment_date: string | null;
-          first_name: string | null;
-          full_name: string | null;
-          gender: string | null;
-          grade_level: string | null;
-          id: string;
-          is_active: boolean | null;
-          last_name: string | null;
-          notes: string | null;
-          phone: string | null;
-          photo_url: string | null;
-          role: string | null;
-          status: string | null;
-          student_code: string | null;
-          student_id: string | null;
-          subject_id: string | null;
-          updated_at: string | null;
-          user_id: string | null;
-        };
-        Insert: {
-          address?: string | null;
-          created_at?: string | null;
-          created_by?: string | null;
-          date_of_birth?: string | null;
-          department?: string | null;
-          email?: string | null;
-          emergency_contact?: string | null;
-          enrollment_date?: string | null;
-          first_name?: string | null;
-          full_name?: string | null;
-          gender?: string | null;
-          grade_level?: string | null;
-          id?: string;
-          is_active?: boolean | null;
-          last_name?: string | null;
-          notes?: string | null;
-          phone?: string | null;
-          photo_url?: string | null;
-          role?: string | null;
-          status?: string | null;
-          student_code?: string | null;
-          student_id?: string | null;
-          subject_id?: string | null;
-          updated_at?: string | null;
-          user_id?: string | null;
-        };
-        Update: {
-          address?: string | null;
-          created_at?: string | null;
-          created_by?: string | null;
-          date_of_birth?: string | null;
-          department?: string | null;
-          email?: string | null;
-          emergency_contact?: string | null;
-          enrollment_date?: string | null;
-          first_name?: string | null;
-          full_name?: string | null;
-          gender?: string | null;
-          grade_level?: string | null;
-          id?: string;
-          is_active?: boolean | null;
-          last_name?: string | null;
-          notes?: string | null;
-          phone?: string | null;
-          photo_url?: string | null;
-          role?: string | null;
-          status?: string | null;
-          student_code?: string | null;
-          student_id?: string | null;
-          subject_id?: string | null;
-          updated_at?: string | null;
-          user_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "profiles_subject_id_fkey";
-            columns: ["subject_id"];
-            isOneToOne: false;
-            referencedRelation: "subjects";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      qr_codes: {
-        Row: {
-          class_id: string | null;
-          created_at: string | null;
-          id: string;
-          token: string;
-          used_at: string | null;
-          valid_until: string;
-        };
-        Insert: {
-          class_id?: string | null;
-          created_at?: string | null;
-          id?: string;
-          token: string;
-          used_at?: string | null;
-          valid_until: string;
-        };
-        Update: {
-          class_id?: string | null;
-          created_at?: string | null;
-          id?: string;
-          token?: string;
-          used_at?: string | null;
-          valid_until?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "qr_codes_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "classes";
-            referencedColumns: ["id"];
-          },
-        ];
       };
       role_permissions: {
         Row: {
-          created_at: string | null;
           id: string;
-          permission_code: string;
           role: string;
-        };
-        Insert: {
-          created_at?: string | null;
-          id?: string;
           permission_code: string;
-          role: string;
-        };
-        Update: {
-          created_at?: string | null;
-          id?: string;
-          permission_code?: string;
-          role?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "role_permissions_permission_fkey";
-            columns: ["permission_code"];
-            isOneToOne: false;
-            referencedRelation: "permission_definitions";
-            referencedColumns: ["code"];
-          },
-        ];
-      };
-      school_settings: {
-        Row: {
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          key: string;
-          updated_at: string | null;
-          value: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          key: string;
-          updated_at?: string | null;
-          value?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          key?: string;
-          updated_at?: string | null;
-          value?: string | null;
-        };
-        Relationships: [];
-      };
-      semesters: {
-        Row: {
-          code: string;
-          created_at: string | null;
-          end_date: string;
-          id: string;
-          is_active: boolean | null;
-          name: string;
-          start_date: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          code: string;
-          created_at?: string | null;
-          end_date: string;
-          id?: string;
-          is_active?: boolean | null;
-          name: string;
-          start_date: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          code?: string;
-          created_at?: string | null;
-          end_date?: string;
-          id?: string;
-          is_active?: boolean | null;
-          name?: string;
-          start_date?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [];
-      };
-      student_accounts: {
-        Row: {
-          academic_year_id: string;
-          balance: number;
           created_at: string;
-          id: string;
-          notes: string | null;
-          status: string;
-          student_id: string;
-          total_fees: number;
-          total_paid: number;
-          updated_at: string;
         };
         Insert: {
-          academic_year_id: string;
-          balance?: number;
-          created_at?: string;
           id?: string;
-          notes?: string | null;
-          status?: string;
-          student_id: string;
-          total_fees?: number;
-          total_paid?: number;
-          updated_at?: string;
+          role: string;
+          permission_code: string;
+          created_at?: string;
         };
         Update: {
-          academic_year_id?: string;
-          balance?: number;
+          id?: string;
+          role?: string;
+          permission_code?: string;
           created_at?: string;
-          id?: string;
-          notes?: string | null;
-          status?: string;
-          student_id?: string;
-          total_fees?: number;
-          total_paid?: number;
-          updated_at?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "student_accounts_academic_year_id_fkey";
-            columns: ["academic_year_id"];
-            isOneToOne: false;
-            referencedRelation: "academic_years";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "student_accounts_student_id_fkey";
-            columns: ["student_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      student_conducts: {
-        Row: {
-          academic_year_id: string;
-          comments: string | null;
-          created_at: string | null;
-          evaluated_at: string | null;
-          evaluated_by: string | null;
-          id: string;
-          rating: string;
-          student_id: string;
-          term: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          academic_year_id: string;
-          comments?: string | null;
-          created_at?: string | null;
-          evaluated_at?: string | null;
-          evaluated_by?: string | null;
-          id?: string;
-          rating: string;
-          student_id: string;
-          term: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          academic_year_id?: string;
-          comments?: string | null;
-          created_at?: string | null;
-          evaluated_at?: string | null;
-          evaluated_by?: string | null;
-          id?: string;
-          rating?: string;
-          student_id?: string;
-          term?: string;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "student_conducts_evaluator_fkey";
-            columns: ["evaluated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "student_conducts_student_fkey";
-            columns: ["student_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "student_conducts_year_fkey";
-            columns: ["academic_year_id"];
-            isOneToOne: false;
-            referencedRelation: "academic_years";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       student_profiles: {
         Row: {
-          created_at: string | null;
-          enrollment_date: string | null;
-          grade_level: string | null;
           id: string;
-          notes: string | null;
-          parent_name: string | null;
-          parent_phone: string | null;
           profile_id: string;
-          student_code: string | null;
-          updated_at: string | null;
+          student_code: string;
+          grade_level: string;
+          enrollment_date: string;
+          parent_name: string;
+          parent_phone: string;
+          notes: string;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
         };
         Insert: {
-          created_at?: string | null;
-          enrollment_date?: string | null;
-          grade_level?: string | null;
           id?: string;
-          notes?: string | null;
-          parent_name?: string | null;
-          parent_phone?: string | null;
           profile_id: string;
-          student_code?: string | null;
-          updated_at?: string | null;
+          student_code: string;
+          grade_level: string;
+          enrollment_date: string;
+          parent_name: string;
+          parent_phone: string;
+          notes: string;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
         };
         Update: {
-          created_at?: string | null;
-          enrollment_date?: string | null;
-          grade_level?: string | null;
           id?: string;
-          notes?: string | null;
-          parent_name?: string | null;
-          parent_phone?: string | null;
           profile_id?: string;
-          student_code?: string | null;
-          updated_at?: string | null;
+          student_code?: string;
+          grade_level?: string;
+          enrollment_date?: string;
+          parent_name?: string;
+          parent_phone?: string;
+          notes?: string;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "student_profiles_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
-      subject_group_subjects: {
+      timetable_slots: {
         Row: {
-          created_at: string | null;
           id: string;
-          is_mandatory: boolean | null;
-          subject_group_id: string;
+          class_id: string;
           subject_id: string;
+          teacher_id: string;
+          semester_id: string;
+          day_of_week: any;
+          start_time: string;
+          end_time: string;
+          room: string;
+          notes: string;
+          created_at: string;
+          updated_at: string;
+          student_id: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
         };
         Insert: {
-          created_at?: string | null;
           id?: string;
-          is_mandatory?: boolean | null;
-          subject_group_id: string;
+          class_id: string;
           subject_id: string;
+          teacher_id: string;
+          semester_id: string;
+          day_of_week: any;
+          start_time: string;
+          end_time: string;
+          room: string;
+          notes: string;
+          created_at?: string;
+          updated_at?: string;
+          student_id: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
         };
         Update: {
-          created_at?: string | null;
           id?: string;
-          is_mandatory?: boolean | null;
-          subject_group_id?: string;
+          class_id?: string;
           subject_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "subject_group_subjects_group_fkey";
-            columns: ["subject_group_id"];
-            isOneToOne: false;
-            referencedRelation: "subject_groups";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "subject_group_subjects_subject_fkey";
-            columns: ["subject_id"];
-            isOneToOne: false;
-            referencedRelation: "subjects";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      subject_groups: {
-        Row: {
-          code: string;
-          created_at: string | null;
-          description: string | null;
-          grade_level: string | null;
-          id: string;
-          name: string;
-          updated_at: string | null;
-        };
-        Insert: {
-          code: string;
-          created_at?: string | null;
-          description?: string | null;
-          grade_level?: string | null;
-          id?: string;
-          name: string;
-          updated_at?: string | null;
-        };
-        Update: {
-          code?: string;
-          created_at?: string | null;
-          description?: string | null;
-          grade_level?: string | null;
-          id?: string;
-          name?: string;
-          updated_at?: string | null;
+          teacher_id?: string;
+          semester_id?: string;
+          day_of_week?: any;
+          start_time?: string;
+          end_time?: string;
+          room?: string;
+          notes?: string;
+          created_at?: string;
+          updated_at?: string;
+          student_id?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
         };
         Relationships: [];
       };
       subjects: {
         Row: {
-          code: string | null;
-          created_at: string | null;
-          description: string | null;
           id: string;
           name: string;
-          updated_at: string | null;
+          code: string;
+          description: string;
+          created_at: string;
+          updated_at: string;
+          credits: any;
+          is_active: boolean;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
         };
         Insert: {
-          code?: string | null;
-          created_at?: string | null;
-          description?: string | null;
           id?: string;
           name: string;
-          updated_at?: string | null;
+          code: string;
+          description: string;
+          created_at?: string;
+          updated_at?: string;
+          credits: any;
+          is_active: boolean;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
         };
         Update: {
-          code?: string | null;
-          created_at?: string | null;
-          description?: string | null;
           id?: string;
           name?: string;
-          updated_at?: string | null;
+          code?: string;
+          description?: string;
+          created_at?: string;
+          updated_at?: string;
+          credits?: any;
+          is_active?: boolean;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
+        };
+        Relationships: [];
+      };
+      evaluation_types: {
+        Row: {
+          id: string;
+          name: string;
+          code: string;
+          weight: any;
+          description: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          code: string;
+          weight: any;
+          description: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          code?: string;
+          weight?: any;
+          description?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      payment_methods: {
+        Row: {
+          id: string;
+          name: string;
+          description: string;
+          requires_reference: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          type: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description: string;
+          requires_reference: boolean;
+          is_active: boolean;
+          created_at?: string;
+          updated_at?: string;
+          type: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string;
+          requires_reference?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          type?: string;
+        };
+        Relationships: [];
+      };
+      classes: {
+        Row: {
+          id: string;
+          name: string;
+          teacher_id: string;
+          created_at: string;
+          grade_level: string;
+          academic_year_id: string;
+          subject_group_id: string;
+          max_capacity: any;
+          sessions_per_week: any;
+          class_type: string;
+          course_id: string;
+          status: string;
+          room: string;
+          schedule: string;
+          capacity: any;
+          updated_at: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          teacher_id: string;
+          created_at?: string;
+          grade_level: string;
+          academic_year_id: string;
+          subject_group_id: string;
+          max_capacity: any;
+          sessions_per_week: any;
+          class_type: string;
+          course_id: string;
+          status: string;
+          room: string;
+          schedule: string;
+          capacity: any;
+          updated_at?: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          teacher_id?: string;
+          created_at?: string;
+          grade_level?: string;
+          academic_year_id?: string;
+          subject_group_id?: string;
+          max_capacity?: any;
+          sessions_per_week?: any;
+          class_type?: string;
+          course_id?: string;
+          status?: string;
+          room?: string;
+          schedule?: string;
+          capacity?: any;
+          updated_at?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
+        };
+        Relationships: [];
+      };
+      assignment_categories: {
+        Row: {
+          id: string;
+          name: string;
+          weight: number;
+          class_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          weight: number;
+          class_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          weight?: number;
+          class_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      school_settings: {
+        Row: {
+          id: string;
+          key: string;
+          value: string;
+          description: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          key: string;
+          value: string;
+          description: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          key?: string;
+          value?: string;
+          description?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      payment_schedules: {
+        Row: {
+          id: string;
+          name: string;
+          description: string;
+          academic_year_id: string;
+          schedule_type: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description: string;
+          academic_year_id: string;
+          schedule_type: string;
+          is_active: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string;
+          academic_year_id?: string;
+          schedule_type?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          first_name: string;
+          last_name: string;
+          full_name: string;
+          email: string;
+          date_of_birth: string;
+          phone: string;
+          address: string;
+          emergency_contact: string;
+          role: string;
+          created_at: string;
+          updated_at: string;
+          student_id: string;
+          grade_level: string;
+          gender: string;
+          enrollment_date: string;
+          status: string;
+          photo_url: string;
+          department: string;
+          is_active: boolean;
+          created_by: string;
+          notes: string;
+          student_code: string;
+          subject_id: string;
+          phone_verified: boolean;
+          preferred_auth_method: string;
+          account_status: string;
+          status_changed_at: string;
+          status_changed_by: string;
+          status_note: string;
+          is_managed: boolean;
+          deleted_at: string;
+          updated_by: string;
+          personal_email: string;
+          teacher_code: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          first_name: string;
+          last_name: string;
+          full_name: string;
+          email: string;
+          date_of_birth: string;
+          phone: string;
+          address: string;
+          emergency_contact: string;
+          role: string;
+          created_at?: string;
+          updated_at?: string;
+          student_id: string;
+          grade_level: string;
+          gender: string;
+          enrollment_date: string;
+          status: string;
+          photo_url: string;
+          department: string;
+          is_active: boolean;
+          created_by: string;
+          notes: string;
+          student_code: string;
+          subject_id: string;
+          phone_verified: boolean;
+          preferred_auth_method: string;
+          account_status: string;
+          status_changed_at: string;
+          status_changed_by: string;
+          status_note: string;
+          is_managed: boolean;
+          deleted_at: string;
+          updated_by: string;
+          personal_email: string;
+          teacher_code: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          first_name?: string;
+          last_name?: string;
+          full_name?: string;
+          email?: string;
+          date_of_birth?: string;
+          phone?: string;
+          address?: string;
+          emergency_contact?: string;
+          role?: string;
+          created_at?: string;
+          updated_at?: string;
+          student_id?: string;
+          grade_level?: string;
+          gender?: string;
+          enrollment_date?: string;
+          status?: string;
+          photo_url?: string;
+          department?: string;
+          is_active?: boolean;
+          created_by?: string;
+          notes?: string;
+          student_code?: string;
+          subject_id?: string;
+          phone_verified?: boolean;
+          preferred_auth_method?: string;
+          account_status?: string;
+          status_changed_at?: string;
+          status_changed_by?: string;
+          status_note?: string;
+          is_managed?: boolean;
+          deleted_at?: string;
+          updated_by?: string;
+          personal_email?: string;
+          teacher_code?: string;
+        };
+        Relationships: [];
+      };
+      payment_allocations: {
+        Row: {
+          id: string;
+          payment_id: string;
+          invoice_id: string;
+          amount: number;
+          notes: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          payment_id: string;
+          invoice_id: string;
+          amount: number;
+          notes: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          payment_id?: string;
+          invoice_id?: string;
+          amount?: number;
+          notes?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      weekly_notes: {
+        Row: {
+          id: string;
+          slot_id: string;
+          week_start_date: string;
+          notes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slot_id: string;
+          week_start_date: string;
+          notes: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slot_id?: string;
+          week_start_date?: string;
+          notes?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      settings: {
+        Row: {
+          id: string;
+          key: string;
+          value: string;
+          value_json: Json;
+          description: string;
+          category: string;
+          is_public: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          key: string;
+          value: string;
+          value_json: Json;
+          description: string;
+          category: string;
+          is_public: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          key?: string;
+          value?: string;
+          value_json?: Json;
+          description?: string;
+          category?: string;
+          is_public?: boolean;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
       teacher_profiles: {
         Row: {
-          bio: string | null;
-          created_at: string | null;
-          department: string | null;
-          hourly_rate: number | null;
           id: string;
           profile_id: string;
-          specialization: string | null;
-          teaching_subjects: string[] | null;
+          department: string;
+          specialization: string;
+          teaching_subjects: any[];
+          hourly_rate: number;
+          bio: string;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
           teacher_type: string;
-          updated_at: string | null;
         };
         Insert: {
-          bio?: string | null;
-          created_at?: string | null;
-          department?: string | null;
-          hourly_rate?: number | null;
           id?: string;
           profile_id: string;
-          specialization?: string | null;
-          teaching_subjects?: string[] | null;
-          teacher_type?: string;
-          updated_at?: string | null;
+          department: string;
+          specialization: string;
+          teaching_subjects: any[];
+          hourly_rate: number;
+          bio: string;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+          teacher_type: string;
         };
         Update: {
-          bio?: string | null;
-          created_at?: string | null;
-          department?: string | null;
-          hourly_rate?: number | null;
           id?: string;
           profile_id?: string;
-          specialization?: string | null;
-          teaching_subjects?: string[] | null;
+          department?: string;
+          specialization?: string;
+          teaching_subjects?: any[];
+          hourly_rate?: number;
+          bio?: string;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
           teacher_type?: string;
-          updated_at?: string | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: "teacher_profiles_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
-      timetable_slots: {
+      attendance_reports: {
         Row: {
-          class_id: string | null;
-          created_at: string | null;
-          day_of_week: number;
-          end_time: string;
           id: string;
-          notes: string | null;
-          room: string | null;
-          semester_id: string | null;
-          start_time: string;
-          subject_id: string | null;
-          teacher_id: string | null;
-          updated_at: string | null;
+          report_type: string;
+          class_id: string;
+          student_id: string;
+          date_from: string;
+          date_to: string;
+          total_days: any;
+          present_count: any;
+          absent_count: any;
+          late_count: any;
+          excused_count: any;
+          attendance_rate: number;
+          report_data: Json;
+          generated_at: string;
+          generated_by: string;
+          created_at: string;
         };
         Insert: {
-          class_id?: string | null;
-          created_at?: string | null;
-          day_of_week: number;
-          end_time: string;
           id?: string;
-          notes?: string | null;
-          room?: string | null;
-          semester_id?: string | null;
-          start_time: string;
-          subject_id?: string | null;
-          teacher_id?: string | null;
-          updated_at?: string | null;
+          report_type: string;
+          class_id: string;
+          student_id: string;
+          date_from: string;
+          date_to: string;
+          total_days: any;
+          present_count: any;
+          absent_count: any;
+          late_count: any;
+          excused_count: any;
+          attendance_rate: number;
+          report_data: Json;
+          generated_at: string;
+          generated_by: string;
+          created_at?: string;
         };
         Update: {
-          class_id?: string | null;
-          created_at?: string | null;
-          day_of_week?: number;
-          end_time?: string;
           id?: string;
-          notes?: string | null;
-          room?: string | null;
-          semester_id?: string | null;
-          start_time?: string;
-          subject_id?: string | null;
-          teacher_id?: string | null;
-          updated_at?: string | null;
+          report_type?: string;
+          class_id?: string;
+          student_id?: string;
+          date_from?: string;
+          date_to?: string;
+          total_days?: any;
+          present_count?: any;
+          absent_count?: any;
+          late_count?: any;
+          excused_count?: any;
+          attendance_rate?: number;
+          report_data?: Json;
+          generated_at?: string;
+          generated_by?: string;
+          created_at?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "timetable_slots_class_id_fkey";
-            columns: ["class_id"];
-            isOneToOne: false;
-            referencedRelation: "classes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "timetable_slots_semester_id_fkey";
-            columns: ["semester_id"];
-            isOneToOne: false;
-            referencedRelation: "semesters";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "timetable_slots_subject_id_fkey";
-            columns: ["subject_id"];
-            isOneToOne: false;
-            referencedRelation: "subjects";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "timetable_slots_teacher_id_fkey";
-            columns: ["teacher_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
+      };
+      invoice_items: {
+        Row: {
+          id: string;
+          invoice_id: string;
+          fee_type_id: string;
+          description: string;
+          quantity: any;
+          unit_price: number;
+          total_price: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          invoice_id: string;
+          fee_type_id: string;
+          description: string;
+          quantity: any;
+          unit_price: number;
+          total_price: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          invoice_id?: string;
+          fee_type_id?: string;
+          description?: string;
+          quantity?: any;
+          unit_price?: number;
+          total_price?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      grading_scales: {
+        Row: {
+          id: string;
+          name: string;
+          description: string;
+          scale: Json;
+          is_default: boolean;
+          created_at: string;
+          updated_at: string;
+          created_by: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description: string;
+          scale: Json;
+          is_default: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string;
+          scale?: Json;
+          is_default?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string;
+        };
+        Relationships: [];
+      };
+      user_invitations: {
+        Row: {
+          id: string;
+          email: string;
+          phone: string;
+          role: string;
+          token: string;
+          expires_at: string;
+          invited_by: string;
+          used_at: string;
+          used_by: string;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          phone: string;
+          role: string;
+          token: string;
+          expires_at: string;
+          invited_by: string;
+          used_at: string;
+          used_by: string;
+          metadata: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          phone?: string;
+          role?: string;
+          token?: string;
+          expires_at?: string;
+          invited_by?: string;
+          used_at?: string;
+          used_by?: string;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      import_errors: {
+        Row: {
+          id: string;
+          import_log_id: string;
+          row_number: any;
+          field_name: string;
+          error_type: string;
+          error_message: string;
+          row_data: Json;
+          severity: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          import_log_id: string;
+          row_number: any;
+          field_name: string;
+          error_type: string;
+          error_message: string;
+          row_data: Json;
+          severity: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          import_log_id?: string;
+          row_number?: any;
+          field_name?: string;
+          error_type?: string;
+          error_message?: string;
+          row_data?: Json;
+          severity?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      semesters: {
+        Row: {
+          id: string;
+          name: string;
+          code: string;
+          start_date: string;
+          end_date: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          code: string;
+          start_date: string;
+          end_date: string;
+          is_active: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          code?: string;
+          start_date?: string;
+          end_date?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
+        };
+        Relationships: [];
+      };
+      payment_schedule_installments: {
+        Row: {
+          id: string;
+          schedule_id: string;
+          installment_number: any;
+          due_date: string;
+          percentage: number;
+          description: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          schedule_id: string;
+          installment_number: any;
+          due_date: string;
+          percentage: number;
+          description: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          schedule_id?: string;
+          installment_number?: any;
+          due_date?: string;
+          percentage?: number;
+          description?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      teacher_workload: {
+        Row: {
+          teacher_id: string;
+          full_name: string;
+          classes_assigned: any;
+          total_slots: any;
+          total_hours_per_week: number;
+        };
+        Insert: {
+          teacher_id: string;
+          full_name: string;
+          classes_assigned: any;
+          total_slots: any;
+          total_hours_per_week: number;
+        };
+        Update: {
+          teacher_id?: string;
+          full_name?: string;
+          classes_assigned?: any;
+          total_slots?: any;
+          total_hours_per_week?: number;
+        };
+        Relationships: [];
+      };
+      fee_assignments: {
+        Row: {
+          id: string;
+          academic_year_id: string;
+          fee_type_id: string;
+          class_id: string;
+          amount: number;
+          description: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          academic_year_id: string;
+          fee_type_id: string;
+          class_id: string;
+          amount: number;
+          description: string;
+          is_active: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          academic_year_id?: string;
+          fee_type_id?: string;
+          class_id?: string;
+          amount?: number;
+          description?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      announcements: {
+        Row: {
+          id: string;
+          title: string;
+          content: string;
+          type: string;
+          is_published: boolean;
+          published_at: string;
+          expires_at: string;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          content: string;
+          type: string;
+          is_published: boolean;
+          published_at: string;
+          expires_at: string;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          content?: string;
+          type?: string;
+          is_published?: boolean;
+          published_at?: string;
+          expires_at?: string;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      student_conducts: {
+        Row: {
+          id: string;
+          student_id: string;
+          academic_year_id: string;
+          term: string;
+          rating: string;
+          comments: string;
+          evaluated_by: string;
+          evaluated_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          academic_year_id: string;
+          term: string;
+          rating: string;
+          comments: string;
+          evaluated_by: string;
+          evaluated_at: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          academic_year_id?: string;
+          term?: string;
+          rating?: string;
+          comments?: string;
+          evaluated_by?: string;
+          evaluated_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      invoices: {
+        Row: {
+          id: string;
+          invoice_number: string;
+          student_id: string;
+          student_account_id: string;
+          academic_year_id: string;
+          issue_date: string;
+          due_date: string;
+          total_amount: number;
+          paid_amount: number;
+          status: string;
+          notes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          invoice_number: string;
+          student_id: string;
+          student_account_id: string;
+          academic_year_id: string;
+          issue_date: string;
+          due_date: string;
+          total_amount: number;
+          paid_amount: number;
+          status: string;
+          notes: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          invoice_number?: string;
+          student_id?: string;
+          student_account_id?: string;
+          academic_year_id?: string;
+          issue_date?: string;
+          due_date?: string;
+          total_amount?: number;
+          paid_amount?: number;
+          status?: string;
+          notes?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      academic_years: {
+        Row: {
+          id: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          is_current: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          is_current: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          start_date?: string;
+          end_date?: string;
+          is_current?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      student_notes: {
+        Row: {
+          id: string;
+          student_id: string;
+          content: string;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          content: string;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          content?: string;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      student_documents: {
+        Row: {
+          id: string;
+          student_id: string;
+          name: string;
+          type: string;
+          url: string;
+          size: any;
+          storage_path: string;
+          uploaded_by: string;
+          uploaded_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          name: string;
+          type: string;
+          url: string;
+          size: any;
+          storage_path: string;
+          uploaded_by: string;
+          uploaded_at: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          name?: string;
+          type?: string;
+          url?: string;
+          size?: any;
+          storage_path?: string;
+          uploaded_by?: string;
+          uploaded_at?: string;
+        };
+        Relationships: [];
+      };
+      tutors: {
+        Row: {
+          id: string;
+          user_id: string;
+          full_name: string;
+          email: string;
+          phone: string;
+          photo_url: string;
+          teacher_type: string;
+          specialization: string;
+          teaching_subjects: any[];
+          hourly_rate: number;
+          bio: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          full_name: string;
+          email: string;
+          phone: string;
+          photo_url: string;
+          teacher_type: string;
+          specialization: string;
+          teaching_subjects: any[];
+          hourly_rate: number;
+          bio: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          full_name?: string;
+          email?: string;
+          phone?: string;
+          photo_url?: string;
+          teacher_type?: string;
+          specialization?: string;
+          teaching_subjects?: any[];
+          hourly_rate?: number;
+          bio?: string;
+        };
+        Relationships: [];
+      };
+      fee_types: {
+        Row: {
+          id: string;
+          name: string;
+          code: string;
+          description: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          category: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          code: string;
+          description: string;
+          is_active: boolean;
+          created_at?: string;
+          updated_at?: string;
+          category: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          code?: string;
+          description?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          category?: string;
+        };
+        Relationships: [];
+      };
+      student_performance_summary: {
+        Row: {
+          student_id: string;
+          full_name: string;
+          student_code: string;
+          class_id: string;
+          class_name: string;
+          subjects_count: any;
+          average_score: number;
+        };
+        Insert: {
+          student_id: string;
+          full_name: string;
+          student_code: string;
+          class_id: string;
+          class_name: string;
+          subjects_count: any;
+          average_score: number;
+        };
+        Update: {
+          student_id?: string;
+          full_name?: string;
+          student_code?: string;
+          class_id?: string;
+          class_name?: string;
+          subjects_count?: any;
+          average_score?: number;
+        };
+        Relationships: [];
+      };
+      teacher_subjects: {
+        Row: {
+          id: string;
+          profile_id: string;
+          subject_id: string;
+          is_primary: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          subject_id: string;
+          is_primary: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string;
+          subject_id?: string;
+          is_primary?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      permission_audit_logs: {
+        Row: {
+          id: string;
+          action: string;
+          user_id: string;
+          permission_code: string;
+          performed_by: string;
+          old_value: Json;
+          new_value: Json;
+          reason: string;
+          ip_address: string;
+          user_agent: string;
+          created_at: string;
+          scope: string;
+        };
+        Insert: {
+          id?: string;
+          action: string;
+          user_id: string;
+          permission_code: string;
+          performed_by: string;
+          old_value: Json;
+          new_value: Json;
+          reason: string;
+          ip_address: string;
+          user_agent: string;
+          created_at?: string;
+          scope: string;
+        };
+        Update: {
+          id?: string;
+          action?: string;
+          user_id?: string;
+          permission_code?: string;
+          performed_by?: string;
+          old_value?: Json;
+          new_value?: Json;
+          reason?: string;
+          ip_address?: string;
+          user_agent?: string;
+          created_at?: string;
+          scope?: string;
+        };
+        Relationships: [];
+      };
+      qr_codes: {
+        Row: {
+          id: string;
+          class_id: string;
+          token: string;
+          valid_until: string;
+          used_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          class_id: string;
+          token: string;
+          valid_until: string;
+          used_at: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          class_id?: string;
+          token?: string;
+          valid_until?: string;
+          used_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      permission_definitions: {
+        Row: {
+          id: string;
+          code: string;
+          name: string;
+          description: string;
+          resource: string;
+          action: string;
+          category: string;
+          is_system: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          name: string;
+          description: string;
+          resource: string;
+          action: string;
+          category: string;
+          is_system: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          name?: string;
+          description?: string;
+          resource?: string;
+          action?: string;
+          category?: string;
+          is_system?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      attendance: {
+        Row: {
+          id: string;
+          student_id: string;
+          class_id: string;
+          date: string;
+          status: string;
+          remarks: string;
+          marked_by: string;
+          created_at: string;
+          timetable_slot_id: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          class_id: string;
+          date: string;
+          status: string;
+          remarks: string;
+          marked_by: string;
+          created_at?: string;
+          timetable_slot_id: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          class_id?: string;
+          date?: string;
+          status?: string;
+          remarks?: string;
+          marked_by?: string;
+          created_at?: string;
+          timetable_slot_id?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      user_permissions: {
+        Row: {
+          id: string;
+          user_id: string;
+          permission_code: string;
+          granted_by: string;
+          granted_at: string;
+          expires_at: string;
+          is_denied: boolean;
+          notes: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          permission_code: string;
+          granted_by: string;
+          granted_at: string;
+          expires_at: string;
+          is_denied: boolean;
+          notes: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          permission_code?: string;
+          granted_by?: string;
+          granted_at?: string;
+          expires_at?: string;
+          is_denied?: boolean;
+          notes?: string;
+        };
+        Relationships: [];
+      };
+      student_accounts: {
+        Row: {
+          id: string;
+          student_id: string;
+          academic_year_id: string;
+          balance: number;
+          total_fees: number;
+          total_paid: number;
+          notes: string;
+          created_at: string;
+          updated_at: string;
+          status: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          academic_year_id: string;
+          balance: number;
+          total_fees: number;
+          total_paid: number;
+          notes: string;
+          created_at?: string;
+          updated_at?: string;
+          status: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          academic_year_id?: string;
+          balance?: number;
+          total_fees?: number;
+          total_paid?: number;
+          notes?: string;
+          created_at?: string;
+          updated_at?: string;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      enrollments: {
+        Row: {
+          id: string;
+          student_id: string;
+          class_id: string;
+          enrollment_date: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+          updated_at: string;
+          status: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          class_id: string;
+          enrollment_date: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+          updated_at?: string;
+          status: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          class_id?: string;
+          enrollment_date?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
+          updated_at?: string;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      import_logs: {
+        Row: {
+          id: string;
+          imported_by: string;
+          import_type: string;
+          file_name: string;
+          file_size: any;
+          total_rows: any;
+          processed_rows: any;
+          success_count: any;
+          error_count: any;
+          warning_count: any;
+          status: string;
+          error_summary: string;
+          started_at: string;
+          completed_at: string;
+          duration_seconds: any;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          imported_by: string;
+          import_type: string;
+          file_name: string;
+          file_size: any;
+          total_rows: any;
+          processed_rows: any;
+          success_count: any;
+          error_count: any;
+          warning_count: any;
+          status: string;
+          error_summary: string;
+          started_at: string;
+          completed_at: string;
+          duration_seconds: any;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          imported_by?: string;
+          import_type?: string;
+          file_name?: string;
+          file_size?: any;
+          total_rows?: any;
+          processed_rows?: any;
+          success_count?: any;
+          error_count?: any;
+          warning_count?: any;
+          status?: string;
+          error_summary?: string;
+          started_at?: string;
+          completed_at?: string;
+          duration_seconds?: any;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          message: string;
+          type: string;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          message: string;
+          type: string;
+          is_read: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          message?: string;
+          type?: string;
+          is_read?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      calendar_events: {
+        Row: {
+          id: string;
+          title: string;
+          description: string;
+          event_type: string;
+          start_date: string;
+          end_date: string;
+          start_time: string;
+          end_time: string;
+          is_all_day: boolean;
+          semester_id: string;
+          class_id: string;
+          color: string;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description: string;
+          event_type: string;
+          start_date: string;
+          end_date: string;
+          start_time: string;
+          end_time: string;
+          is_all_day: boolean;
+          semester_id: string;
+          class_id: string;
+          color: string;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string;
+          event_type?: string;
+          start_date?: string;
+          end_date?: string;
+          start_time?: string;
+          end_time?: string;
+          is_all_day?: boolean;
+          semester_id?: string;
+          class_id?: string;
+          color?: string;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       tuition_config: {
         Row: {
-          class_type: string;
-          created_at: string | null;
-          description: string | null;
           id: string;
-          is_active: boolean | null;
+          class_type: string;
+          sessions_per_week: any;
           monthly_fee: number;
-          sessions_per_week: number;
-          updated_at: string | null;
+          description: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
-          class_type: string;
-          created_at?: string | null;
-          description?: string | null;
           id?: string;
-          is_active?: boolean | null;
+          class_type: string;
+          sessions_per_week: any;
           monthly_fee: number;
-          sessions_per_week: number;
-          updated_at?: string | null;
+          description: string;
+          is_active: boolean;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
-          class_type?: string;
-          created_at?: string | null;
-          description?: string | null;
           id?: string;
-          is_active?: boolean | null;
+          class_type?: string;
+          sessions_per_week?: any;
           monthly_fee?: number;
-          sessions_per_week?: number;
-          updated_at?: string | null;
+          description?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      role_permission_overrides: {
+        Row: {
+          id: string;
+          role: string;
+          permission_code: string;
+          is_denied: boolean;
+          granted_by: string;
+          notes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          role: string;
+          permission_code: string;
+          is_denied: boolean;
+          granted_by: string;
+          notes: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          role?: string;
+          permission_code?: string;
+          is_denied?: boolean;
+          granted_by?: string;
+          notes?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      audit_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          user_email: string;
+          action: string;
+          resource_type: string;
+          resource_id: string;
+          created_at: string;
+          old_data: Json;
+          new_data: Json;
+          ip_address: string;
+          user_agent: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          user_email: string;
+          action: string;
+          resource_type: string;
+          resource_id: string;
+          created_at?: string;
+          old_data: Json;
+          new_data: Json;
+          ip_address: string;
+          user_agent: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          user_email?: string;
+          action?: string;
+          resource_type?: string;
+          resource_id?: string;
+          created_at?: string;
+          old_data?: Json;
+          new_data?: Json;
+          ip_address?: string;
+          user_agent?: string;
+        };
+        Relationships: [];
+      };
+      courses: {
+        Row: {
+          id: string;
+          code: string;
+          name: string;
+          name_vi: string;
+          description: string;
+          subject_id: string;
+          grade_level: any;
+          credits: any;
+          hours_per_week: any;
+          is_required: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          semester: any;
+          academic_year_id: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          name: string;
+          name_vi: string;
+          description: string;
+          subject_id: string;
+          grade_level: any;
+          credits: any;
+          hours_per_week: any;
+          is_required: boolean;
+          is_active: boolean;
+          created_at?: string;
+          updated_at?: string;
+          semester: any;
+          academic_year_id: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          name?: string;
+          name_vi?: string;
+          description?: string;
+          subject_id?: string;
+          grade_level?: any;
+          credits?: any;
+          hours_per_week?: any;
+          is_required?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          semester?: any;
+          academic_year_id?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
         };
         Relationships: [];
       };
     };
     Views: {
-      [_ in never]: never;
+      v_active_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          first_name: string;
+          last_name: string;
+          full_name: string;
+          email: string;
+          date_of_birth: string;
+          phone: string;
+          address: string;
+          emergency_contact: string;
+          role: string;
+          created_at: string;
+          updated_at: string;
+          student_id: string;
+          grade_level: string;
+          gender: string;
+          enrollment_date: string;
+          status: string;
+          photo_url: string;
+          department: string;
+          is_active: boolean;
+          created_by: string;
+          notes: string;
+          student_code: string;
+          subject_id: string;
+          phone_verified: boolean;
+          preferred_auth_method: string;
+          account_status: string;
+          status_changed_at: string;
+          status_changed_by: string;
+          status_note: string;
+          is_managed: boolean;
+          deleted_at: string;
+          updated_by: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          first_name?: string;
+          last_name?: string;
+          full_name?: string;
+          email?: string;
+          date_of_birth?: string;
+          phone?: string;
+          address?: string;
+          emergency_contact?: string;
+          role?: string;
+          created_at?: string;
+          updated_at?: string;
+          student_id?: string;
+          grade_level?: string;
+          gender?: string;
+          enrollment_date?: string;
+          status?: string;
+          photo_url?: string;
+          department?: string;
+          is_active?: boolean;
+          created_by?: string;
+          notes?: string;
+          student_code?: string;
+          subject_id?: string;
+          phone_verified?: boolean;
+          preferred_auth_method?: string;
+          account_status?: string;
+          status_changed_at?: string;
+          status_changed_by?: string;
+          status_note?: string;
+          is_managed?: boolean;
+          deleted_at?: string;
+          updated_by?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          first_name?: string;
+          last_name?: string;
+          full_name?: string;
+          email?: string;
+          date_of_birth?: string;
+          phone?: string;
+          address?: string;
+          emergency_contact?: string;
+          role?: string;
+          created_at?: string;
+          updated_at?: string;
+          student_id?: string;
+          grade_level?: string;
+          gender?: string;
+          enrollment_date?: string;
+          status?: string;
+          photo_url?: string;
+          department?: string;
+          is_active?: boolean;
+          created_by?: string;
+          notes?: string;
+          student_code?: string;
+          subject_id?: string;
+          phone_verified?: boolean;
+          preferred_auth_method?: string;
+          account_status?: string;
+          status_changed_at?: string;
+          status_changed_by?: string;
+          status_note?: string;
+          is_managed?: boolean;
+          deleted_at?: string;
+          updated_by?: string;
+        };
+        Relationships: [];
+      };
+      v_teacher_subjects: {
+        Row: {
+          profile_id: string;
+          full_name: string;
+          email: string;
+          subject_id: string;
+          subject_name: string;
+          subject_code: string;
+          is_primary: boolean;
+          created_at: string;
+        };
+        Insert: {
+          profile_id?: string;
+          full_name?: string;
+          email?: string;
+          subject_id?: string;
+          subject_name?: string;
+          subject_code?: string;
+          is_primary?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          profile_id?: string;
+          full_name?: string;
+          email?: string;
+          subject_id?: string;
+          subject_name?: string;
+          subject_code?: string;
+          is_primary?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      v_active_classes: {
+        Row: {
+          id: string;
+          name: string;
+          teacher_id: string;
+          created_at: string;
+          grade_level: string;
+          academic_year_id: string;
+          subject_group_id: string;
+          max_capacity: any;
+          sessions_per_week: any;
+          class_type: string;
+          course_id: string;
+          status: string;
+          room: string;
+          schedule: string;
+          capacity: any;
+          updated_at: string;
+          deleted_at: string;
+          created_by: string;
+          updated_by: string;
+          course_name: string;
+          teacher_name: string;
+        };
+        Insert: {
+          id?: string;
+          name?: string;
+          teacher_id?: string;
+          created_at?: string;
+          grade_level?: string;
+          academic_year_id?: string;
+          subject_group_id?: string;
+          max_capacity?: any;
+          sessions_per_week?: any;
+          class_type?: string;
+          course_id?: string;
+          status?: string;
+          room?: string;
+          schedule?: string;
+          capacity?: any;
+          updated_at?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
+          course_name?: string;
+          teacher_name?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          teacher_id?: string;
+          created_at?: string;
+          grade_level?: string;
+          academic_year_id?: string;
+          subject_group_id?: string;
+          max_capacity?: any;
+          sessions_per_week?: any;
+          class_type?: string;
+          course_id?: string;
+          status?: string;
+          room?: string;
+          schedule?: string;
+          capacity?: any;
+          updated_at?: string;
+          deleted_at?: string;
+          created_by?: string;
+          updated_by?: string;
+          course_name?: string;
+          teacher_name?: string;
+        };
+        Relationships: [];
+      };
+      v_active_students: {
+        Row: {
+          id: string;
+          user_id: string;
+          first_name: string;
+          last_name: string;
+          full_name: string;
+          email: string;
+          date_of_birth: string;
+          phone: string;
+          address: string;
+          emergency_contact: string;
+          role: string;
+          created_at: string;
+          updated_at: string;
+          student_id: string;
+          grade_level: string;
+          gender: string;
+          enrollment_date: string;
+          status: string;
+          photo_url: string;
+          department: string;
+          is_active: boolean;
+          created_by: string;
+          notes: string;
+          student_code: string;
+          subject_id: string;
+          phone_verified: boolean;
+          preferred_auth_method: string;
+          account_status: string;
+          status_changed_at: string;
+          status_changed_by: string;
+          status_note: string;
+          is_managed: boolean;
+          deleted_at: string;
+          updated_by: string;
+          sp_student_code: string;
+          sp_grade_level: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          first_name?: string;
+          last_name?: string;
+          full_name?: string;
+          email?: string;
+          date_of_birth?: string;
+          phone?: string;
+          address?: string;
+          emergency_contact?: string;
+          role?: string;
+          created_at?: string;
+          updated_at?: string;
+          student_id?: string;
+          grade_level?: string;
+          gender?: string;
+          enrollment_date?: string;
+          status?: string;
+          photo_url?: string;
+          department?: string;
+          is_active?: boolean;
+          created_by?: string;
+          notes?: string;
+          student_code?: string;
+          subject_id?: string;
+          phone_verified?: boolean;
+          preferred_auth_method?: string;
+          account_status?: string;
+          status_changed_at?: string;
+          status_changed_by?: string;
+          status_note?: string;
+          is_managed?: boolean;
+          deleted_at?: string;
+          updated_by?: string;
+          sp_student_code?: string;
+          sp_grade_level?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          first_name?: string;
+          last_name?: string;
+          full_name?: string;
+          email?: string;
+          date_of_birth?: string;
+          phone?: string;
+          address?: string;
+          emergency_contact?: string;
+          role?: string;
+          created_at?: string;
+          updated_at?: string;
+          student_id?: string;
+          grade_level?: string;
+          gender?: string;
+          enrollment_date?: string;
+          status?: string;
+          photo_url?: string;
+          department?: string;
+          is_active?: boolean;
+          created_by?: string;
+          notes?: string;
+          student_code?: string;
+          subject_id?: string;
+          phone_verified?: boolean;
+          preferred_auth_method?: string;
+          account_status?: string;
+          status_changed_at?: string;
+          status_changed_by?: string;
+          status_note?: string;
+          is_managed?: boolean;
+          deleted_at?: string;
+          updated_by?: string;
+          sp_student_code?: string;
+          sp_grade_level?: string;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       auth_profile_id: { Args: never; Returns: string };

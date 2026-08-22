@@ -7,6 +7,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { routes } from "@/lib/routes";
 import { useToast } from "@/hooks";
 import { usePermissions, PermissionGuard } from "@/hooks/usePermissions";
 import { getClasses } from "@/lib/api/client";
@@ -61,7 +63,14 @@ interface ClassStats {
 
 export default function ClassesPage() {
   const toast = useToast();
-  const { can, isStudent, isTeacher, loading: permissionsLoading, role } = usePermissions();
+  const router = useRouter();
+  const { can, isStudent, isTeacher, isExactTeacher, loading: permissionsLoading, role } = usePermissions();
+
+  useEffect(() => {
+    if (!permissionsLoading && isExactTeacher) {
+      router.replace(routes.teacher.classes());
+    }
+  }, [isExactTeacher, permissionsLoading, router]);
 
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [statistics, setStatistics] = useState<ClassStats | undefined>(undefined);
@@ -210,7 +219,7 @@ export default function ClassesPage() {
             {[
               { label: "Tổng lớp học", value: statistics.total_classes, icon: <ListIcon className="w-5 h-5" />, color: "bg-blue-500/10 text-blue-500" },
               { label: "Tổng học sinh", value: statistics.total_students, icon: <Icons.Users className="w-5 h-5" />, color: "bg-emerald-500/10 text-emerald-500" },
-              { label: "Sĩ số TB", value: statistics.average_enrollment.toFixed(1), icon: <Icons.Classes className="w-5 h-5" />, color: "bg-emerald-500/10 text-emerald-500" },
+              { label: "Sĩ số TB", value: (Number(statistics.average_enrollment) || 0).toFixed(1), icon: <Icons.Classes className="w-5 h-5" />, color: "bg-emerald-500/10 text-emerald-500" },
               { label: "Giáo viên", value: Object.keys(statistics.by_teacher || {}).length, icon: <Icons.Users className="w-5 h-5" />, color: "bg-amber-500/10 text-amber-500" },
             ].map((stat) => (
               <div key={stat.label} className="glass-crystal rounded-2xl p-5 hover:-translate-y-0.5 transition-all duration-300">

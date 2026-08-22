@@ -28,8 +28,9 @@ export interface TeacherFilters {
 }
 
 export class TeacherRepository extends BaseRepository<any, any, any> {
-    protected readonly tableName = "profiles";
-    protected readonly primaryKey = "id";
+    protected override readonly tableName = "profiles";
+    protected override readonly primaryKey = "id";
+    protected override readonly useSoftDelete = true;
 
     constructor(supabase: SupabaseClient) {
         super(supabase);
@@ -65,6 +66,10 @@ export class TeacherRepository extends BaseRepository<any, any, any> {
             )
             .in("role", roles);
 
+        if (this.useSoftDelete && typeof (query as any).is === "function") {
+            query = query.is("deleted_at", null);
+        }
+
         if (filters.search) {
             query = query.or(
                 `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,teacher_code.ilike.%${filters.search}%`,
@@ -94,10 +99,16 @@ export class TeacherRepository extends BaseRepository<any, any, any> {
         // Get class counts for each teacher
         const teachersWithStats = await Promise.all(
             (data || []).map(async (item: any) => {
-                const { count: classCount } = await this.supabase
+                let classQuery = this.supabase
                     .from("classes")
                     .select("id", { count: "exact", head: true })
                     .eq("teacher_id", item.id);
+
+                if (typeof (classQuery as any).is === "function") {
+                    classQuery = (classQuery as any).is("deleted_at", null);
+                }
+
+                const { count: classCount } = await classQuery;
 
                 const profile = item.teacher_profiles?.[0] || {};
 

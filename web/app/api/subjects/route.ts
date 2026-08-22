@@ -1,21 +1,20 @@
 /**
- * Subjects API (REFACTORED)
+ * Subjects API
  *
- * Uses caching for subjects list.
- *
- * GET /api/subjects - Fetch subjects
- * POST /api/subjects - Create a new subject
+ * GET /api/subjects  — public (with cache)
+ * POST /api/subjects — admin / owner / super_admin
  */
 
 import { NextResponse } from "next/server";
-import { apiSuccess, createApiHandler, createGetHandler } from "@/lib/api";
-import { createSubjectSchema } from "@/lib/schemas";
+import { NextRequest } from "next/server";
+import { createClientFromRequest, createServiceClient } from "@/lib/supabase/server";
 import { subjectService } from "@/lib/services";
 import { CACHE_KEYS, CACHE_TTL, cached, invalidateCache } from "@/lib/cache";
-import { createClientFromRequest } from "@/lib/supabase/server";
-import { NextRequest } from "next/server";
+import { adminAuth } from "@/lib/auth/adminAuth";
 
-// GET /api/subjects - Public with caching
+const ALLOWED_ROLES = ["admin", "owner", "super_admin"];
+
+// GET /api/subjects — accessible by all authenticated users
 export async function GET(req: NextRequest) {
   try {
     const subjects = await cached(
@@ -32,7 +31,7 @@ export async function GET(req: NextRequest) {
           return [];
         }
 
-        // Deduplicate by code (keep first entry)
+        // Deduplicate by code
         const seenCodes = new Set<string>();
         return (data || []).filter((s) => {
           const code = s.code?.toLowerCase();
@@ -53,19 +52,47 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/subjects - Admin only
-export const POST = createApiHandler(
-  {
-    allowedRoles: ["admin"],
-    bodySchema: createSubjectSchema,
-  },
-  async ({ body }) => {
-    const subject = await subjectService.createSubject(body);
+// POST /api/subjects — admin / owner / super_admin
+export async function POST(req: NextRequest) {
+  try {
+    const auth = await adminAuth(req);
+    if (!auth.authorized || !ALLOWED_ROLES.includes(auth.userRole ?? "")) {
+      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+    }
 
-    // Invalidate cache
-    invalidateCache("subjects:");
+    const body = await req.json();
+    const { name, code, description, is_active = true } = body;
+
+    if (!name || !code) {
+      return NextResponse.json(
+        { success: false, error: "Thiếu tên hoặc mã môn học" },
+        { status: 400 },
+      );
+    }
+
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from("subjects")
+      .insert({ name, code: code.toUpperCase(), description: description || null, is_active })
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { success: false, error: "Mã môn học đã tồn tại" },
+          { status: 409 },
+        );
+      }
+      throw error;
+    }
+
     invalidateCache(CACHE_KEYS.SUBJECTS_ALL);
+    invalidateCache("subjects:");
 
-    return apiSuccess(subject, { _status: 201 });
-  },
-);
+    return NextResponse.json({ success: true, subject: data }, { status: 201 });
+  } catch (error: any) {
+    console.error("[POST /api/subjects]", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

@@ -46,7 +46,7 @@ export interface StudentWithEnrollments extends Student {
     classes: {
       id: string;
       name: string;
-      course_id: string | null;
+      subject_id: string | null;
     };
   }>;
 }
@@ -116,8 +116,9 @@ export interface IStudentRepository {
 export class StudentRepository
   extends BaseRepository<Student, CreateStudentInput, UpdateStudentInput>
   implements IStudentRepository {
-  protected readonly tableName = "profiles";
-  protected readonly primaryKey = "id";
+  protected override readonly tableName = "profiles";
+  protected override readonly primaryKey = "id";
+  protected override readonly useSoftDelete = true;
 
   constructor(supabase: SupabaseClient) {
     super(supabase);
@@ -129,8 +130,8 @@ export class StudentRepository
   async findByIdWithEnrollments(
     id: string,
   ): Promise<StudentWithEnrollments | null> {
-    // 1. Fetch student profile with student_profiles join
-    const studentQuery = this.supabase
+    // 1. Fetch student profile
+    let studentQuery = this.supabase
       .from(this.tableName)
       .select(`
         id,
@@ -153,32 +154,41 @@ export class StudentRepository
         student_id
       `)
       .eq("id", id)
-      .eq("role", "student")
-      .single();
+      .eq("role", "student");
+
+    if (this.useSoftDelete && typeof (studentQuery as any).is === "function") {
+      studentQuery = (studentQuery as any).is("deleted_at", null);
+    }
 
     // 2. Fetch enrollments with class details (Parallel)
-    const enrollmentsQuery = this.supabase
+    let enrollmentsQuery = this.supabase
       .from("enrollments")
       .select(`
         id,
         class_id,
         enrollment_date,
         status,
-        classes (
+        classes!inner(
           id,
           name,
-          course_id
+          subject_id
         )
       `)
       .eq("student_id", id);
 
+    if (this.useSoftDelete && typeof (enrollmentsQuery as any).is === "function") {
+      enrollmentsQuery = (enrollmentsQuery as any).is("deleted_at", null);
+    }
+
     const [studentResult, enrollmentsResult] = await Promise.all([
-      studentQuery,
+      typeof (studentQuery as any).maybeSingle === "function"
+        ? (studentQuery as any).maybeSingle()
+        : (studentQuery as any).single(),
       enrollmentsQuery,
     ]);
 
     if (studentResult.error) {
-      if (studentResult.error.code === "PGRST116") return null;
+      if (studentResult.error.code === "PGRST116" || !studentResult.data) return null;
       throw new Error(`Failed to find student: ${studentResult.error.message}`);
     }
 
@@ -196,7 +206,7 @@ export class StudentRepository
   }
 
   /**
-   * Find all students with filters and pagination
+   * Find all students with pagination and basic filters
    */
   async findAll(
     filters: StudentFilters = {},
@@ -232,6 +242,10 @@ export class StudentRepository
         { count: "exact" },
       )
       .eq("role", "student");
+
+    if (this.useSoftDelete && typeof (query as any).is === "function") {
+      query = query.is("deleted_at", null);
+    }
 
     // Apply filters
     if (filters.search) {
@@ -316,8 +330,12 @@ export class StudentRepository
         { count: "exact" },
       )
       .eq("role", "student")
-      .eq("enrollments.status", "active")
+      .eq("enrollments.status", "enrolled")
       .eq("enrollments.classes.teacher_id", teacherId);
+
+    if (this.useSoftDelete && typeof (query as any).is === "function") {
+      query = query.is("deleted_at", null);
+    }
 
     // Apply filters
     if (filters.search) {

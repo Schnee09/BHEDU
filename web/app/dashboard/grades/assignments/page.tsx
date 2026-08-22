@@ -427,37 +427,39 @@ export default function AssignmentManagementPage() {
 
         {/* Create Category Modal */}
         {showCategoryForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Create Category</h2>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-md w-full p-8 shadow-2xl border border-stone-200 dark:border-white/5 animate-in zoom-in-95 duration-200">
+              <h2 className="text-xl font-bold text-stone-900 dark:text-white mb-4">Thêm danh mục điểm</h2>
               <form onSubmit={handleCreateCategory}>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name *
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+                      Tên danh mục <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={categoryForm.name}
                       onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-white text-sm"
+                      placeholder="VD: Kiểm tra 15 phút, Giữa kỳ..."
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+                      Mô tả
                     </label>
                     <textarea
                       value={categoryForm.description}
                       onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-white text-sm resize-none"
                       rows={3}
+                      placeholder="Mô tả danh mục đánh giá..."
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Weight (%)
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+                      Trọng số (%)
                     </label>
                     <input
                       type="number"
@@ -465,22 +467,23 @@ export default function AssignmentManagementPage() {
                       max="100"
                       value={categoryForm.weight}
                       onChange={(e) => setCategoryForm({ ...categoryForm, weight: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-white text-sm"
+                      placeholder="VD: 20"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Drop Lowest
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+                      Bỏ điểm thấp nhất
                     </label>
                     <input
                       type="number"
                       min="0"
                       value={categoryForm.drop_lowest}
                       onChange={(e) => setCategoryForm({ ...categoryForm, drop_lowest: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-white text-sm"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Number of lowest grades to drop from this category
+                    <p className="text-xs text-stone-400 mt-1">
+                      Số đầu điểm thấp nhất được bỏ qua khi tính trung bình
                     </p>
                   </div>
                 </div>
@@ -488,15 +491,15 @@ export default function AssignmentManagementPage() {
                   <button
                     type="button"
                     onClick={() => setShowCategoryForm(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                    className="flex-1 px-4 py-2.5 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-bold rounded-2xl hover:bg-stone-50 dark:hover:bg-stone-800 text-xs uppercase tracking-wider"
                   >
-                    Cancel
+                    Hủy bỏ
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-2xl shadow-md text-xs uppercase tracking-wider transition-all"
                   >
-                    Create
+                    Tạo danh mục
                   </button>
                 </div>
               </form>
@@ -506,44 +509,46 @@ export default function AssignmentManagementPage() {
 
         {/* Create Assignment Modal */}
         {showAssignmentForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Create Assignment</h2>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-md w-full p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 dark:border-white/5 animate-in zoom-in-95 duration-200">
+              <h2 className="text-xl font-bold text-stone-900 dark:text-white mb-4">Thêm bài kiểm tra / Cột điểm</h2>
               <form onSubmit={handleCreateAssignment}>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Title *
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+                      Tên bài kiểm tra <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={assignmentForm.title}
                       onChange={(e) => setAssignmentForm({ ...assignmentForm, title: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-white text-sm"
+                      placeholder="VD: Kiểm tra 1 tiết Đại số..."
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+                      Mô tả / Yêu cầu
                     </label>
                     <textarea
                       value={assignmentForm.description}
                       onChange={(e) => setAssignmentForm({ ...assignmentForm, description: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-white text-sm resize-none"
                       rows={3}
+                      placeholder="Chi tiết nội dung hoặc ghi chú..."
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Category
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+                      Danh mục điểm
                     </label>
                     <select
                       value={assignmentForm.category_id}
                       onChange={(e) => setAssignmentForm({ ...assignmentForm, category_id: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-white text-sm"
                     >
-                      <option value="">-- No category --</option>
+                      <option value="">-- Không phân loại --</option>
                       {categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
                           {cat.name} ({cat.weight}%)
@@ -552,39 +557,39 @@ export default function AssignmentManagementPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Total Points *
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+                      Điểm tối đa <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
                       min="1"
                       value={assignmentForm.total_points}
                       onChange={(e) => setAssignmentForm({ ...assignmentForm, total_points: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-white text-sm"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Due Date
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+                      Ngày kiểm tra / Hạn nộp
                     </label>
                     <input
                       type="datetime-local"
                       value={assignmentForm.due_date}
                       onChange={(e) => setAssignmentForm({ ...assignmentForm, due_date: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-white text-sm"
                     />
                   </div>
-                  <div className="flex items-center">
+                  <div className="flex items-center pt-2">
                     <input
                       type="checkbox"
                       id="published"
                       checked={assignmentForm.published}
                       onChange={(e) => setAssignmentForm({ ...assignmentForm, published: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-stone-300 rounded"
                     />
-                    <label htmlFor="published" className="ml-2 block text-sm text-gray-700">
-                      Publish immediately (students can see it)
+                    <label htmlFor="published" className="ml-2 block text-xs font-bold text-stone-700 dark:text-stone-300">
+                      Công khai ngay (học sinh & phụ huynh có thể xem)
                     </label>
                   </div>
                 </div>
@@ -592,15 +597,15 @@ export default function AssignmentManagementPage() {
                   <button
                     type="button"
                     onClick={() => setShowAssignmentForm(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                    className="flex-1 px-4 py-2.5 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-bold rounded-2xl hover:bg-stone-50 dark:hover:bg-stone-800 text-xs uppercase tracking-wider"
                   >
-                    Cancel
+                    Hủy bỏ
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-2xl shadow-md text-xs uppercase tracking-wider transition-all"
                   >
-                    Create
+                    Tạo bài kiểm tra
                   </button>
                 </div>
               </form>

@@ -20,7 +20,8 @@ export interface Class {
   id: string;
   name: string;
   teacher_id: string | null;
-  course_id: string | null;
+  subject_id: string | null;
+  course_id?: string | null;
   room: string | null;
   schedule: string | null;
   capacity: number | null;
@@ -34,10 +35,15 @@ export interface Class {
 export interface ClassWithDetails extends Class {
   teacher?: {
     id: string;
-    first_name: string;
-    last_name: string;
-    full_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    full_name?: string | null;
     email?: string;
+  } | null;
+  subject?: {
+    id: string;
+    name: string;
+    code: string;
   } | null;
   course?: {
     id: string;
@@ -52,7 +58,7 @@ export interface ClassWithDetails extends Class {
     enrollments: number;
   };
   enrollment_count?: number; // Backward compatibility
-  code?: string | null; // Flattened from course.code
+  code?: string | null; // Flattened from course/subject code
 }
 
 export interface ClassFilters extends PaginationParams {
@@ -65,17 +71,21 @@ export interface ClassFilters extends PaginationParams {
 export interface CreateClassInput {
   name: string;
   teacher_id?: string | null;
+  subject_id?: string | null;
   course_id?: string | null;
   room?: string | null;
   schedule?: string | null;
   capacity?: number | null;
   academic_year_id?: string | null;
   status?: "active" | "inactive";
+  days_of_week?: number[];
+  auto_schedule?: boolean;
 }
 
 export interface UpdateClassInput {
   name?: string;
   teacher_id?: string | null;
+  subject_id?: string | null;
   course_id?: string | null;
   room?: string | null;
   schedule?: string | null;
@@ -111,8 +121,9 @@ export interface IClassRepository {
 export class ClassRepository
   extends BaseRepository<Class, CreateClassInput, UpdateClassInput>
   implements IClassRepository {
-  protected readonly tableName = "classes";
-  protected readonly primaryKey = "id";
+  protected override readonly tableName = "classes";
+  protected override readonly primaryKey = "id";
+  protected override readonly useSoftDelete = false;
 
   constructor(supabase: SupabaseClient) {
     super(supabase);
@@ -120,94 +131,137 @@ export class ClassRepository
 
   /**
    * Find class by ID with teacher and course details
-   */
-  /**
-   * Find class by ID with teacher and course details
-   * Optimized to use parallel queries instead of single deep join for better performance
+   * Optimized to use parallel queries for maximum resilience
    */
   async findByIdWithDetails(id: string): Promise<ClassWithDetails | null> {
-    // 1. Fetch base class data
-    const classQuery = this.supabase
+    const { data: cls, error } = await this.supabase
       .from(this.tableName)
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
-    // 2. Fetch enrollment count (parallel)
-    const countQuery = this.supabase
-      .from("enrollments")
-      .select("id", { count: "exact", head: true })
-      .eq("class_id", id)
-      .eq("status", "enrolled");
+    if (error || !cls) return null;
 
-    const [classResult, countResult] = await Promise.all([
-      classQuery,
-      countQuery,
+    const subjectOrCourseId = cls.subject_id || cls.course_id;
+
+    const [teacherRes, subjectRes, academicYearRes, countRes] = await Promise.all([
+      cls.teacher_id
+        ? this.supabase
+            .from("profiles")
+            .select("id, first_name, last_name, full_name, email")
+            .eq("id", cls.teacher_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      subjectOrCourseId
+        ? this.supabase
+            .from("subjects")
+            .select("id, name, code")
+            .eq("id", subjectOrCourseId)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      cls.academic_year_id
+        ? this.supabase
+            .from("academic_years")
+            .select("id, name")
+            .eq("id", cls.academic_year_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      this.supabase
+        .from("enrollments")
+        .select("id", { count: "exact", head: true })
+        .eq("class_id", id),
     ]);
 
-    if (classResult.error) {
-      if (classResult.error.code === "PGRST116") return null;
-      throw new Error(`Failed to find class: ${classResult.error.message}`);
-    }
-
-    const cls = classResult.data as Class;
-
-    // 3. Fetch related details in parallel if IDs exist
-    const promises: Promise<any>[] = [];
-
-    // Teacher promise
-    if (cls.teacher_id) {
-      promises.push(
-        this.supabase
-          .from("profiles")
-          .select("id, first_name, last_name, full_name, email")
-          .eq("id", cls.teacher_id)
-          .single()
-          .then((res) => res) as Promise<any>,
-      );
-    } else {
-      promises.push(Promise.resolve({ data: null }));
-    }
-
-    // Course promise
-    if (cls.course_id) {
-      promises.push(
-        this.supabase
-          .from("courses")
-          .select("id, name, code")
-          .eq("id", cls.course_id)
-          .single()
-          .then((res) => res) as Promise<any>,
-      );
-    } else {
-      promises.push(Promise.resolve({ data: null }));
-    }
-
-    // Academic Year promise
-    if (cls.academic_year_id) {
-      promises.push(
-        this.supabase
-          .from("academic_years")
-          .select("id, name")
-          .eq("id", cls.academic_year_id)
-          .single()
-          .then((res) => res) as Promise<any>,
-      );
-    } else {
-      promises.push(Promise.resolve({ data: null }));
-    }
-
-    const [teacherRes, courseRes, academicYearRes] = await Promise.all(
-      promises,
-    );
+    const subject = subjectRes.data || null;
 
     return {
       ...cls,
       teacher: teacherRes.data || null,
-      course: courseRes.data || null,
+      subject,
+      course: subject,
+      code: cls.code || subject?.code || null,
       academic_year: academicYearRes.data || null,
-      _count: { enrollments: countResult.count || 0 },
+      enrollment_count: countRes.count || 0,
+      _count: { enrollments: countRes.count || 0 },
     } as ClassWithDetails;
+  }
+
+  /**
+   * Helper to enrich an array of raw classes with relations
+   */
+  private async enrichClasses(classesList: any[]): Promise<ClassWithDetails[]> {
+    if (classesList.length === 0) return [];
+
+    const teacherIds = Array.from(
+      new Set(classesList.map((c) => c.teacher_id).filter(Boolean)),
+    );
+    const subjectIds = Array.from(
+      new Set(
+        classesList
+          .map((c) => c.subject_id || c.course_id)
+          .filter(Boolean),
+      ),
+    );
+    const academicYearIds = Array.from(
+      new Set(classesList.map((c) => c.academic_year_id).filter(Boolean)),
+    );
+    const classIds = classesList.map((c) => c.id);
+
+    const [teachersRes, subjectsRes, yearsRes, enrollmentsRes] = await Promise.all([
+      teacherIds.length > 0
+        ? this.supabase
+            .from("profiles")
+            .select("id, first_name, last_name, full_name, email")
+            .in("id", teacherIds)
+        : Promise.resolve({ data: [] }),
+      subjectIds.length > 0
+        ? this.supabase
+            .from("subjects")
+            .select("id, name, code")
+            .in("id", subjectIds)
+        : Promise.resolve({ data: [] }),
+      academicYearIds.length > 0
+        ? this.supabase
+            .from("academic_years")
+            .select("id, name")
+            .in("id", academicYearIds)
+        : Promise.resolve({ data: [] }),
+      classIds.length > 0
+        ? this.supabase
+            .from("enrollments")
+            .select("class_id")
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const teacherMap = new Map((teachersRes.data || []).map((t: any) => [t.id, t]));
+    const subjectMap = new Map((subjectsRes.data || []).map((s: any) => [s.id, s]));
+    const yearMap = new Map((yearsRes.data || []).map((y: any) => [y.id, y]));
+
+    const countMap = new Map<string, number>();
+    (enrollmentsRes.data || []).forEach((e: any) => {
+      countMap.set(e.class_id, (countMap.get(e.class_id) || 0) + 1);
+    });
+
+    return classesList.map((cls: any) => {
+      const teacher = cls.teacher_id ? teacherMap.get(cls.teacher_id) || null : null;
+      const subjectOrCourseId = cls.subject_id || cls.course_id;
+      const subject = subjectOrCourseId ? subjectMap.get(subjectOrCourseId) || null : null;
+      const academicYear = cls.academic_year_id
+        ? yearMap.get(cls.academic_year_id) || null
+        : null;
+      const enrollmentCount = countMap.get(cls.id) || 0;
+
+      return {
+        ...cls,
+        teacher,
+        subject,
+        course: subject,
+        academic_year: academicYear,
+        code: cls.code || subject?.code || null,
+        enrollment_count: enrollmentCount,
+        _count: { enrollments: enrollmentCount },
+      };
+    }) as ClassWithDetails[];
   }
 
   /**
@@ -223,35 +277,7 @@ export class ClassRepository
 
     let query = this.supabase
       .from(this.tableName)
-      .select(
-        `
-        *,
-        teacher:profiles!classes_teacher_id_fkey (
-          id,
-          first_name,
-          last_name,
-          full_name,
-          email,
-          subject_id,
-          subjects!profiles_subject_id_fkey (
-            id,
-            name,
-            code
-          )
-        ),
-        course:courses!classes_course_id_fkey (
-          id,
-          name,
-          code
-        ),
-        academic_year:academic_years!classes_academic_year_id_fkey (
-          id,
-          name
-        ),
-        enrollments (count)
-      `,
-        { count: "exact" },
-      );
+      .select("*", { count: "exact" });
 
     // Apply filters
     if (filters.search) {
@@ -278,18 +304,10 @@ export class ClassRepository
       throw new Error(`Failed to fetch classes: ${error.message}`);
     }
 
-    const resultData = (data || []).map((item: any) => {
-      const enrollmentCount = item.enrollments?.[0]?.count || 0;
-      return {
-        ...item,
-        code: item.code || item.course?.code || null,
-        enrollment_count: enrollmentCount,
-        _count: { enrollments: enrollmentCount },
-      };
-    });
+    const resultData = await this.enrichClasses(data || []);
 
     return {
-      data: resultData as ClassWithDetails[],
+      data: resultData,
       total: count || 0,
       page,
       pageSize,
@@ -298,14 +316,13 @@ export class ClassRepository
   }
 
   /**
-   * Find all classes for a specific teacher
+   * Find classes assigned to a teacher
    */
   async findByTeacher(teacherId: string): Promise<Class[]> {
     const { data, error } = await this.supabase
       .from(this.tableName)
       .select("*")
       .eq("teacher_id", teacherId)
-      .eq("status", "active")
       .order("name", { ascending: true });
 
     if (error) {
@@ -348,31 +365,7 @@ export class ClassRepository
 
     let query = this.supabase
       .from(this.tableName)
-      .select(
-        `
-        *,
-        teacher:profiles!classes_teacher_id_fkey (
-          id,
-          first_name,
-          last_name,
-          full_name,
-          email,
-          subject_id,
-          subjects!profiles_subject_id_fkey (
-            id,
-            name,
-            code
-          )
-        ),
-        course:courses!classes_course_id_fkey (
-          id,
-          name,
-          code
-        ),
-        enrollments (count)
-      `,
-        { count: "exact" },
-      )
+      .select("*", { count: "exact" })
       .in("id", classIds);
 
     // Apply filters matching findAll
@@ -400,23 +393,140 @@ export class ClassRepository
       throw new Error(`Failed to fetch student classes: ${error.message}`);
     }
 
-    const resultData = (data || []).map((item: any) => {
-      const enrollmentCount = item.enrollments?.[0]?.count || 0;
-      return {
-        ...item,
-        code: item.code || item.course?.code || null,
-        enrollment_count: enrollmentCount,
-        _count: { enrollments: enrollmentCount },
-      };
-    });
+    const resultData = await this.enrichClasses(data || []);
 
     return {
-      data: resultData as ClassWithDetails[],
+      data: resultData,
       total: count || 0,
       page,
       pageSize,
       totalPages: Math.ceil((count || 0) / pageSize),
     };
+  }
+
+  private sanitizeClassPayload(data: Record<string, any>) {
+    const payload: Record<string, any> = {};
+
+    if (data.name !== undefined) payload.name = data.name;
+    if (data.teacher_id !== undefined) payload.teacher_id = data.teacher_id;
+    if (data.subject_id !== undefined) payload.subject_id = data.subject_id;
+    if (data.academic_year_id !== undefined) payload.academic_year_id = data.academic_year_id;
+    if (data.room !== undefined) payload.room = data.room;
+    if (data.schedule !== undefined) payload.schedule = data.schedule;
+    if (data.status !== undefined) payload.status = data.status;
+    if (data.grade_level !== undefined) payload.grade_level = data.grade_level;
+
+    const capacityVal = data.capacity !== undefined ? data.capacity : data.max_capacity;
+    if (capacityVal !== undefined) {
+      payload.capacity = capacityVal;
+      payload.max_capacity = capacityVal;
+    }
+
+    return payload;
+  }
+
+  override async create(data: CreateClassInput): Promise<Class> {
+    const dbData = this.sanitizeClassPayload(data as any);
+
+    const { data: created, error } = await this.supabase
+      .from(this.tableName)
+      .insert(dbData)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create class: ${error.message}`);
+    }
+
+    const createdClass = created as Class;
+
+    // Auto-create timetable slots if schedule is defined and auto_schedule is not disabled
+    if (data.schedule && data.auto_schedule !== false) {
+      try {
+        const timeMatch = data.schedule.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+        if (timeMatch && timeMatch[1] && timeMatch[2]) {
+          const startTime = timeMatch[1].padStart(5, '0') + ':00';
+          const endTime = timeMatch[2].padStart(5, '0') + ':00';
+          const daysToSchedule: number[] = Array.isArray(data.days_of_week) && data.days_of_week.length > 0
+            ? data.days_of_week
+            : [0, 2, 4]; // Default: T2, T4, T6
+
+          const { data: activeSemester } = await this.supabase
+            .from('semesters')
+            .select('id')
+            .eq('is_active', true)
+            .maybeSingle();
+
+          const slotsToInsert = daysToSchedule.map((day: number) => ({
+            class_id: createdClass.id,
+            subject_id: data.subject_id || null,
+            teacher_id: data.teacher_id || null,
+            room: data.room || null,
+            day_of_week: day,
+            start_time: startTime,
+            end_time: endTime,
+            semester_id: activeSemester?.id || null,
+          }));
+
+          await this.supabase.from('timetable_slots').insert(slotsToInsert);
+        }
+      } catch (slotErr) {
+        console.warn('[ClassRepository] Auto timetable slot generation failed:', slotErr);
+      }
+    }
+
+    return createdClass;
+  }
+
+  /**
+   * Delete class with cleanup for related records
+   */
+  override async delete(id: string): Promise<void> {
+    const now = new Date().toISOString();
+
+    // Clean up associated enrollments and timetable slots
+    await Promise.allSettled([
+      this.supabase
+        .from("enrollments")
+        .update({ status: "cancelled" })
+        .eq("class_id", id),
+      this.supabase
+        .from("timetable_slots")
+        .delete()
+        .eq("class_id", id),
+    ]);
+
+    await super.delete(id);
+  }
+
+  override async update(id: string, data: UpdateClassInput): Promise<Class> {
+    const dbData = this.sanitizeClassPayload(data as any);
+
+    const { data: updated, error } = await this.supabase
+      .from(this.tableName)
+      .update(dbData)
+      .eq(this.primaryKey, id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update class: ${error.message}`);
+    }
+
+    // Cascade updates to existing timetable_slots for this class
+    const slotUpdates: Record<string, any> = {};
+    if ('teacher_id' in data) slotUpdates.teacher_id = data.teacher_id || null;
+    if ('subject_id' in data) slotUpdates.subject_id = data.subject_id || null;
+    if ('room' in data) slotUpdates.room = data.room || null;
+
+    if (Object.keys(slotUpdates).length > 0) {
+      await this.supabase
+        .from("timetable_slots")
+        .update(slotUpdates)
+        .eq("class_id", id);
+    }
+
+    return updated as Class;
   }
 
   /**
@@ -427,7 +537,7 @@ export class ClassRepository
       .from("enrollments")
       .select("id", { count: "exact", head: true })
       .eq("class_id", classId)
-      .eq("status", "enrolled");
+      .in("status", ["enrolled", "active"]);
 
     if (error) {
       throw new Error(`Failed to count enrollments: ${error.message}`);
@@ -462,13 +572,15 @@ export class ClassRepository
     }
 
     // Flatten for consistent API response
-    return (enrollments || []).map((e) => ({
-      id: e.student_id,
-      student_id: e.student_id,
-      enrollment_id: e.id,
-      status: e.status || "active",
-      enrollment_date: e.enrollment_date,
-      ...(e.profiles as any),
-    })).filter((s) => s.full_name);
+    return (enrollments || [])
+      .map((e) => ({
+        id: e.student_id,
+        student_id: e.student_id,
+        enrollment_id: e.id,
+        status: e.status || "active",
+        enrollment_date: e.enrollment_date,
+        ...(e.profiles as any),
+      }))
+      .filter((s) => s.full_name);
   }
 }

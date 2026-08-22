@@ -46,3 +46,5 @@ async function executeMigration(filePath: string) {
 const migrationFile =
     "e:/TTGDBH/BH-EDU/supabase/migrations/20260207103000_golden_schema_overhaul.sql";
 executeMigration(migrationFile);
+
+

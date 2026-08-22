@@ -45,4 +45,7 @@ next-env.d.ts
 *.log
 debug-*.json
 test-*.cjs
+scratch/
 *.png
+!public/**/*.png
+!public/*.png

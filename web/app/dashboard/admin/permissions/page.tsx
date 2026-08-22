@@ -20,9 +20,16 @@ import {
   Lock,
   Unlock,
   RefreshCw,
+  Plus,
+  Edit3,
+  Trash2,
+  Sparkles,
+  Users,
+  Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/useToast';
+import { CreateRoleModal } from '@/components/admin/permissions/CreateRoleModal';
 
 // ──────────────────────────────────────────────
 // TYPES
@@ -73,6 +80,16 @@ interface RolePermissionData {
   basePermissions: string[];
 }
 
+export interface RoleInfo {
+  code: string;
+  name: string;
+  description: string;
+  color: string;
+  is_system: boolean;
+  user_count: number;
+  permission_count: number;
+}
+
 interface AuditLog {
   id: string;
   action: string;
@@ -108,8 +125,8 @@ interface PendingRolePermAction {
 // CONSTANTS
 // ──────────────────────────────────────────────
 
-const ROLE_OPTIONS = [
-  { value: 'super_admin', label: 'Super Admin', color: 'bg-black text-white dark:bg-white/10' },
+const DEFAULT_ROLE_OPTIONS = [
+  { value: 'super_admin', label: 'Quản trị Hệ thống', color: 'bg-black text-white dark:bg-white/10' },
   {
     value: 'owner',
     label: 'Chủ trung tâm',
@@ -117,7 +134,7 @@ const ROLE_OPTIONS = [
   },
   {
     value: 'admin',
-    label: 'Admin',
+    label: 'Quản trị viên',
     color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   },
   {
@@ -141,9 +158,6 @@ const ROLE_OPTIONS = [
     color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
   },
 ];
-
-// Roles that super_admin can configure via DB overrides
-const CONFIGURABLE_ROLES = ['owner', 'admin', 'teacher', 'tutor', 'parent', 'student'];
 
 const CATEGORY_LABELS: Record<string, string> = {
   system: 'Hệ Thống',
@@ -200,29 +214,29 @@ function ConfirmModal({
   onConfirm: () => void;
   title: string;
   message: string;
-  confirmText: string;
+  confirmText?: string;
   confirmVariant?: 'primary' | 'danger' | 'warning';
   loading?: boolean;
 }) {
-  const [mounted, setMounted] = useState(false);
+  if (!isOpen) return null;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!isOpen || !mounted) return null;
+  const btnVariants = {
+    primary: 'bg-primary text-white hover:bg-primary/90',
+    danger: 'bg-red-600 text-white hover:bg-red-700',
+    warning: 'bg-amber-600 text-white hover:bg-amber-700',
+  };
 
   return createPortal(
-    <div className="fixed inset-0 z-[1100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 max-w-md w-full mx-4 z-[1100]">
-        <h3 className="text-lg font-semibold mb-2">{title}</h3>
-        <p className="text-muted-foreground mb-6">{message}</p>
-        <div className="flex gap-3 justify-end">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-surface rounded-xl border border-border p-6 shadow-xl max-w-md w-full mx-4 z-10">
+        <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
+        <p className="text-sm text-muted-foreground mb-6">{message}</p>
+        <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
           >
             Hủy
           </button>
@@ -230,18 +244,12 @@ function ConfirmModal({
             onClick={onConfirm}
             disabled={loading}
             className={cn(
-              'px-4 py-2 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2',
-              confirmVariant === 'danger'
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : confirmVariant === 'warning'
-                  ? 'bg-amber-500 text-white hover:bg-amber-600'
-                  : 'bg-primary text-white hover:bg-primary/90'
+              'px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2',
+              btnVariants[confirmVariant]
             )}
           >
-            {loading && (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            )}
-            {confirmText}
+            {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
+            {confirmText || 'Xác nhận'}
           </button>
         </div>
       </div>
@@ -303,12 +311,18 @@ export default function PermissionsPage() {
 }
 
 function PermissionsContent() {
-  const [activeTab, setActiveTab] = useState<Tab>('roles');
   const { role: currentUserRole } = usePermissions();
-  const isSuperAdmin = currentUserRole === 'super_admin';
+  const canManageRoles = currentUserRole === 'super_admin' || currentUserRole === 'owner';
+  const [activeTab, setActiveTab] = useState<Tab>(canManageRoles ? 'roles' : 'users');
+
+  useEffect(() => {
+    if (!canManageRoles && activeTab === 'roles') {
+      setActiveTab('users');
+    }
+  }, [canManageRoles, activeTab]);
 
   const tabs = [
-    { id: 'roles' as Tab, label: 'Cấu hình Vai trò', icon: Settings, superAdminOnly: true },
+    { id: 'roles' as Tab, label: 'Cấu hình Vai trò & Quyền', icon: Settings, superAdminOnly: true },
     { id: 'users' as Tab, label: 'Cấu hình Người dùng', icon: UserCog, superAdminOnly: false },
     { id: 'audit' as Tab, label: 'Nhật ký thay đổi', icon: History, superAdminOnly: false },
   ];
@@ -320,10 +334,10 @@ function PermissionsContent() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Shield className="w-8 h-8" />
-            Quản lý Quyền
+            Quản lý Quyền & Vai Trò
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Cấu hình quyền theo vai trò và từng người dùng (RBAC 3 lớp)
+            Cấu hình quyền theo vai trò (hệ thống & tùy biến) và từng người dùng (RBAC 3 lớp)
           </p>
         </div>
 
@@ -331,7 +345,7 @@ function PermissionsContent() {
         <div className="flex gap-1 p-1 bg-muted/50 rounded-xl mb-6 w-fit">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const isDisabled = tab.superAdminOnly && !isSuperAdmin;
+            const isDisabled = tab.superAdminOnly && !canManageRoles;
             return (
               <button
                 key={tab.id}
@@ -349,7 +363,7 @@ function PermissionsContent() {
                 {tab.label}
                 {tab.superAdminOnly && (
                   <span className="text-xs px-1.5 py-0.5 rounded bg-black text-white dark:bg-white/10">
-                    SA
+                    SA/Owner
                   </span>
                 )}
               </button>
@@ -358,7 +372,7 @@ function PermissionsContent() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'roles' && isSuperAdmin && <RolePermissionsTab />}
+        {activeTab === 'roles' && canManageRoles && <RolePermissionsTab />}
         {activeTab === 'users' && <UserPermissionsTab />}
         {activeTab === 'audit' && <AuditLogTab />}
       </div>
@@ -367,21 +381,46 @@ function PermissionsContent() {
 }
 
 // ──────────────────────────────────────────────
-// TAB 1: ROLE PERMISSIONS (Super Admin only)
+// TAB 1: ROLE PERMISSIONS & CUSTOM ROLES (Super Admin only)
 // ──────────────────────────────────────────────
 
 function RolePermissionsTab() {
-  const [selectedRole, setSelectedRole] = useState('owner');
+  const [roles, setRoles] = useState<RoleInfo[]>([]);
+  const [selectedRoleCode, setSelectedRoleCode] = useState('owner');
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   const [roleData, setRoleData] = useState<RolePermissionData | null>(null);
   const [loadingPerms, setLoadingPerms] = useState(true);
   const [loadingRole, setLoadingRole] = useState(false);
+  const [loadingRolesList, setLoadingRolesList] = useState(true);
   const [saving, setSaving] = useState(false);
   const [permSearch, setPermSearch] = useState('');
   const [pending, setPending] = useState<PendingRolePermAction | null>(null);
+
+  // Custom Role Modal state
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [editingRole, setEditingRole] = useState<RoleInfo | null>(null);
+  const [deletingRole, setDeletingRole] = useState<RoleInfo | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const toast = useToast();
 
+  const fetchRolesList = async () => {
+    setLoadingRolesList(true);
+    try {
+      const res = await apiFetch('/api/admin/roles');
+      if (res.ok) {
+        const data = await res.json();
+        setRoles(data.roles || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch roles:', err);
+    } finally {
+      setLoadingRolesList(false);
+    }
+  };
+
   useEffect(() => {
+    fetchRolesList();
     apiFetch('/api/admin/permissions')
       .then((r) => r.json())
       .then((d) => setAllPermissions(d.definitions || []))
@@ -406,8 +445,8 @@ function RolePermissionsTab() {
   }, []);
 
   useEffect(() => {
-    loadRoleData(selectedRole);
-  }, [selectedRole, loadRoleData]);
+    loadRoleData(selectedRoleCode);
+  }, [selectedRoleCode, loadRoleData]);
 
   const handleConfirmAction = async () => {
     if (!pending) return;
@@ -432,6 +471,7 @@ function RolePermissionsTab() {
 
       if (res.ok) {
         await loadRoleData(pending.role);
+        fetchRolesList();
         const actionLabel =
           pending.type === 'grant' ? 'cấp' : pending.type === 'deny' ? 'từ chối' : 'đặt lại';
         toast.success(
@@ -450,6 +490,32 @@ function RolePermissionsTab() {
     }
   };
 
+  const handleDeleteRole = async () => {
+    if (!deletingRole) return;
+    setDeleting(true);
+    try {
+      const res = await apiFetch(`/api/admin/roles/${deletingRole.code}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success('Thành công', `Đã xóa vai trò "${deletingRole.name}"`);
+        setDeletingRole(null);
+        setSelectedRoleCode('owner');
+        fetchRolesList();
+      } else {
+        toast.error('Không thể xóa', data.error || 'Thao tác thất bại');
+      }
+    } catch {
+      toast.error('Lỗi', 'Đã xảy ra lỗi khi xóa vai trò');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const currentRoleInfo = roles.find((r) => r.code === selectedRoleCode);
+
   const permsByCategory = allPermissions
     .filter(
       (p) =>
@@ -465,91 +531,174 @@ function RolePermissionsTab() {
     }, {});
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      {/* Role Selector */}
-      <div className="lg:col-span-1 bg-surface rounded-xl border border-border p-4">
-        <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wider">
-          Vai trò
-        </h3>
-        <div className="space-y-1">
-          {CONFIGURABLE_ROLES.map((role) => {
-            const opt = ROLE_OPTIONS.find((o) => o.value === role);
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Role Selector & Custom Role List */}
+      <div className="lg:col-span-4 bg-white dark:bg-[#14120E] rounded-3xl border border-stone-200 dark:border-stone-800 p-5 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between gap-2 pb-1">
+          <h3 className="font-bold text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 shrink-0">
+            Danh sách Vai trò ({roles.length})
+          </h3>
+          <button
+            onClick={() => {
+              setEditingRole(null);
+              setShowRoleModal(true);
+            }}
+            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-950 text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" /> Thêm vai trò
+          </button>
+        </div>
+
+        {/* Roles list */}
+        <div className="space-y-2 max-h-[580px] overflow-y-auto custom-scrollbar pr-1">
+          {roles.map((r) => {
+            const isSelected = selectedRoleCode === r.code;
+
             return (
               <button
-                key={role}
-                onClick={() => setSelectedRole(role)}
+                key={r.code}
+                onClick={() => setSelectedRoleCode(r.code)}
                 className={cn(
-                  'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                  selectedRole === role ? 'bg-primary text-white' : 'hover:bg-muted text-foreground'
+                  'w-full text-left p-3.5 rounded-2xl transition-all border flex flex-col gap-1.5 cursor-pointer',
+                  isSelected
+                    ? 'bg-amber-50/80 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/30 text-stone-950 dark:text-white font-bold shadow-xs'
+                    : 'border-stone-200/60 dark:border-stone-800/60 hover:bg-stone-50 dark:hover:bg-[#1C1A16] text-stone-600 dark:text-stone-400'
                 )}
               >
-                {opt?.label || role}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-black truncate">{r.name}</span>
+                  <span
+                    className={cn(
+                      'text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0',
+                      r.color
+                    )}
+                  >
+                    {r.is_system ? 'Hệ thống' : 'Tùy biến'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-stone-400 dark:text-stone-500">
+                  <span className="font-mono">{r.code}</span>
+                  <span>•</span>
+                  <span>{r.user_count} tài khoản</span>
+                </div>
               </button>
             );
           })}
         </div>
 
-        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-          <p className="text-xs text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-            Chỉ Super Admin mới có thể thay đổi cấu hình vai trò. Thay đổi áp dụng cho tất cả người
-            dùng có vai trò này.
+        <div className="p-3.5 bg-amber-50/80 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-900/40">
+          <p className="text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2 leading-relaxed">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            Thay đổi quyền hạn vai trò sẽ tự động cập nhật ngay lập tức cho toàn bộ tài khoản thuộc vai trò đó.
           </p>
         </div>
       </div>
 
       {/* Permission Editor */}
-      <div className="lg:col-span-3 bg-surface rounded-xl border border-border p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold">
-              {ROLE_OPTIONS.find((o) => o.value === selectedRole)?.label || selectedRole}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Cấu hình quyền mặc định cho vai trò này
+      <div className="lg:col-span-8 bg-white dark:bg-[#14120E] rounded-3xl border border-stone-200 dark:border-stone-800 p-6 space-y-6 shadow-sm">
+        {/* Role Header Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-stone-200 dark:border-stone-800">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-foreground">
+                {currentRoleInfo?.name || selectedRoleCode}
+              </h2>
+              <span
+                className={cn(
+                  'text-xs font-bold px-2.5 py-0.5 rounded-full uppercase',
+                  currentRoleInfo?.color
+                )}
+              >
+                {currentRoleInfo?.code}
+              </span>
+              {!currentRoleInfo?.is_system && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-black uppercase">
+                  Vai trò Tùy biến
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {currentRoleInfo?.description || 'Cấu hình quyền hạn phân cấp cho vai trò này.'}
             </p>
           </div>
-          <button
-            onClick={() => loadRoleData(selectedRole)}
-            disabled={loadingRole}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            <RefreshCw className={cn('w-4 h-4', loadingRole && 'animate-spin')} />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {!currentRoleInfo?.is_system && (
+              <>
+                <button
+                  onClick={() => {
+                    setEditingRole(currentRoleInfo || null);
+                    setShowRoleModal(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-muted hover:bg-stone-200 dark:hover:bg-stone-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-amber-500" /> Sửa vai trò
+                </button>
+                <button
+                  onClick={() => setDeletingRole(currentRoleInfo || null)}
+                  className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Xóa
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => loadRoleData(selectedRoleCode)}
+              disabled={loadingRole}
+              className="p-2 rounded-xl hover:bg-muted transition-colors border border-border cursor-pointer"
+              title="Tải lại"
+            >
+              <RefreshCw className={cn('w-4 h-4', loadingRole && 'animate-spin')} />
+            </button>
+          </div>
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap gap-3 mb-4 text-xs">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-            <span className="text-muted-foreground">Mặc định (code)</span>
+        {/* Super admin God mode banner */}
+        {selectedRoleCode === 'super_admin' && (
+          <div className="p-4 rounded-2xl bg-stone-900 dark:bg-stone-950 border border-stone-800 text-stone-200 flex items-center gap-3">
+            <Shield className="w-5 h-5 text-amber-400 shrink-0" />
+            <div className="text-xs">
+              <span className="font-bold text-white">Toàn quyền Hệ thống (God Mode):</span>{' '}
+              Quản trị Hệ thống sở hữu tất cả các quyền hạn và không thể bị từ chối quyền.
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-            <span className="text-muted-foreground">Đã cấp thêm (DB)</span>
+        )}
+
+        {/* Search & Legend */}
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm quyền theo tên hoặc mã..."
+              value={permSearch}
+              onChange={(e) => setPermSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-            <span className="text-muted-foreground">Đã từ chối (DB)</span>
+
+          <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-blue-500" /> Mặc định
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500" /> Cấp thêm
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-red-500" /> Từ chối
+            </span>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-4">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Tìm kiếm quyền..."
-            value={permSearch}
-            onChange={(e) => setPermSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-sm"
-          />
-        </div>
-
-        {loadingRole ? (
-          <div className="text-center py-8 text-muted-foreground">Đang tải...</div>
+        {/* Permissions List */}
+        {loadingPerms || loadingRole ? (
+          <div className="text-center py-12 text-muted-foreground flex flex-col items-center gap-2">
+            <RefreshCw className="w-6 h-6 animate-spin text-amber-500" />
+            <span className="text-xs">Đang tải ma trận quyền hạn...</span>
+          </div>
         ) : (
-          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
             {Object.entries(permsByCategory).map(([cat, perms]) => (
               <RolePermCategory
                 key={cat}
@@ -559,7 +708,7 @@ function RolePermissionsTab() {
                 onAction={(type, code, name) =>
                   setPending({
                     type,
-                    role: selectedRole,
+                    role: selectedRoleCode,
                     permissionCode: code,
                     permissionName: name,
                   })
@@ -571,6 +720,7 @@ function RolePermissionsTab() {
         )}
       </div>
 
+      {/* Confirmation Modal for Permissions Action */}
       <ConfirmModal
         isOpen={pending !== null}
         onClose={() => setPending(null)}
@@ -585,10 +735,10 @@ function RolePermissionsTab() {
         }
         message={
           pending?.type === 'grant'
-            ? `Cấp thêm quyền "${pending?.permissionName}" cho tất cả người dùng có vai trò này?`
+            ? `Cấp thêm quyền "${pending?.permissionName}" cho tất cả người dùng có vai trò "${currentRoleInfo?.name}"?`
             : pending?.type === 'deny'
-              ? `Từ chối quyền "${pending?.permissionName}" cho tất cả người dùng có vai trò này? (Ghi đè cả quyền mặc định)`
-              : `Đặt lại quyền "${pending?.permissionName}" về mặc định code (xóa cấu hình DB)?`
+              ? `Từ chối quyền "${pending?.permissionName}" cho tất cả người dùng có vai trò "${currentRoleInfo?.name}"?`
+              : `Đặt lại quyền "${pending?.permissionName}" về mặc định?`
         }
         confirmText={
           pending?.type === 'grant' ? 'Cấp quyền' : pending?.type === 'deny' ? 'Từ chối' : 'Đặt lại'
@@ -596,6 +746,30 @@ function RolePermissionsTab() {
         confirmVariant={
           pending?.type === 'deny' ? 'danger' : pending?.type === 'reset' ? 'warning' : 'primary'
         }
+      />
+
+      {/* Confirmation Modal for Role Deletion */}
+      <ConfirmModal
+        isOpen={deletingRole !== null}
+        onClose={() => setDeletingRole(null)}
+        onConfirm={handleDeleteRole}
+        loading={deleting}
+        title={`Xác nhận xóa vai trò "${deletingRole?.name}"`}
+        message={`Bạn có chắc chắn muốn xóa vai trò "${deletingRole?.name}" (${deletingRole?.code})? Toàn bộ cấu hình quyền của vai trò này sẽ bị xóa bỏ.`}
+        confirmText="Xóa vai trò"
+        confirmVariant="danger"
+      />
+
+      {/* Create / Edit Custom Role Modal */}
+      <CreateRoleModal
+        isOpen={showRoleModal}
+        onClose={() => setShowRoleModal(false)}
+        onSuccess={() => {
+          fetchRolesList();
+          loadRoleData(selectedRoleCode);
+        }}
+        editingRole={editingRole}
+        allPermissions={allPermissions}
       />
     </div>
   );
@@ -615,16 +789,20 @@ function RolePermCategory({
   saving: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const isSuperAdminRole =
+    roleData?.role === 'super_admin' || (roleData?.basePermissions || []).includes('*');
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <div className="border border-border rounded-xl overflow-hidden bg-background">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors bg-muted/20"
+        className="w-full flex items-center justify-between p-3.5 hover:bg-muted/50 transition-colors bg-muted/20 cursor-pointer"
       >
-        <span className="font-medium text-sm">{CATEGORY_LABELS[category] || category}</span>
+        <span className="font-bold text-xs uppercase tracking-wider text-foreground">
+          {CATEGORY_LABELS[category] || category}
+        </span>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{permissions.length}</span>
+          <span className="text-xs font-mono text-muted-foreground">{permissions.length} quyền</span>
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
@@ -632,41 +810,48 @@ function RolePermCategory({
       {expanded && (
         <div className="divide-y divide-border">
           {permissions.map((perm) => {
-            const isBase = roleData?.basePermissions.includes(perm.code);
-            const override = roleData?.overrides.find((o) => o.permission_code === perm.code);
+            const isBase =
+              isSuperAdminRole || (roleData?.basePermissions || []).includes(perm.code);
+            const override = (roleData?.overrides || []).find(
+              (o) => o.permission_code === perm.code
+            );
             const isGrantedExtra = override && !override.is_denied;
-            const isDenied = override?.is_denied;
-            const isEffectivelyGranted = (isBase || isGrantedExtra) && !isDenied;
+            const isDenied = !isSuperAdminRole && override && override.is_denied;
+            const isEffectivelyGranted = isSuperAdminRole || (isBase && !isDenied) || isGrantedExtra;
 
             return (
               <div
                 key={perm.code}
-                className="flex items-center justify-between py-2.5 px-4 hover:bg-muted/20"
+                className="flex items-center justify-between py-2.5 px-4 hover:bg-muted/20 text-xs"
               >
                 <div className="flex-1 min-w-0 pr-4">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-sm">{perm.name}</p>
+                    <p className="font-bold text-foreground">{perm.name}</p>
+                    <span className="font-mono text-[10px] text-muted-foreground opacity-70">
+                      {perm.code}
+                    </span>
                     {isBase && !isDenied && (
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                        Mặc định
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold">
+                        {isSuperAdminRole ? 'Toàn quyền' : 'Mặc định'}
                       </span>
                     )}
                     {isGrantedExtra && (
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                        Cấp thêm
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold">
+                        Cấp thêm (DB)
                       </span>
                     )}
                     {isDenied && (
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
-                        Từ chối
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-bold">
+                        Từ chối (DB)
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{perm.code}</p>
+                  {perm.description && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{perm.description}</p>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Status icon */}
+                <div className="flex items-center gap-2 shrink-0">
                   <div
                     className={cn(
                       'w-5 h-5 rounded-full flex items-center justify-center',
@@ -686,36 +871,40 @@ function RolePermCategory({
                     )}
                   </div>
 
-                  {/* Action buttons */}
-                  {!isBase && !isGrantedExtra && !isDenied && (
-                    <button
-                      onClick={() => onAction('grant', perm.code, perm.name)}
-                      disabled={saving}
-                      title="Cấp thêm quyền này"
-                      className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 transition-colors disabled:opacity-50"
-                    >
-                      <Unlock className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  {!isDenied && (
-                    <button
-                      onClick={() => onAction('deny', perm.code, perm.name)}
-                      disabled={saving}
-                      title="Từ chối quyền này"
-                      className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 transition-colors disabled:opacity-50"
-                    >
-                      <Lock className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  {override && (
-                    <button
-                      onClick={() => onAction('reset', perm.code, perm.name)}
-                      disabled={saving}
-                      title="Đặt lại về mặc định"
-                      className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors disabled:opacity-50"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                    </button>
+                  {/* Action buttons (Disabled for super_admin) */}
+                  {!isSuperAdminRole && (
+                    <>
+                      {!isBase && !isGrantedExtra && !isDenied && (
+                        <button
+                          onClick={() => onAction('grant', perm.code, perm.name)}
+                          disabled={saving}
+                          title="Cấp thêm quyền này"
+                          className="p-1 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 transition-colors disabled:opacity-50 cursor-pointer"
+                        >
+                          <Unlock className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {!isDenied && (
+                        <button
+                          onClick={() => onAction('deny', perm.code, perm.name)}
+                          disabled={saving}
+                          title="Từ chối quyền này"
+                          className="p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 transition-colors disabled:opacity-50 cursor-pointer"
+                        >
+                          <Lock className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {override && (
+                        <button
+                          onClick={() => onAction('reset', perm.code, perm.name)}
+                          disabled={saving}
+                          title="Đặt lại về mặc định"
+                          className="p-1 rounded-lg hover:bg-muted text-muted-foreground transition-colors disabled:opacity-50 cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -736,6 +925,7 @@ function UserPermissionsTab() {
   const [selectedUser, setSelectedUser] = useState<UserForPermissions | null>(null);
   const [userPermData, setUserPermData] = useState<UserPermissionData | null>(null);
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<RoleInfo[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [permissionSearch, setPermissionSearch] = useState('');
@@ -751,6 +941,11 @@ function UserPermissionsTab() {
   const { isAdmin: isCurrentAdmin } = usePermissions();
 
   useEffect(() => {
+    apiFetch('/api/admin/roles')
+      .then((r) => r.json())
+      .then((d) => setAvailableRoles(d.roles || []))
+      .catch(console.error);
+
     apiFetch('/api/admin/permissions')
       .then((r) => r.json())
       .then((d) => setAllPermissions(d.definitions || d.permissions || []))
@@ -761,23 +956,26 @@ function UserPermissionsTab() {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
       setPage(1);
-    }, 500);
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  useEffect(() => {
-    async function loadUsers() {
-      if (page === 1) setLoading(true);
-      else setLoadingMore(true);
+  const loadUsers = useCallback(
+    async (pageToLoad: number, append = false) => {
+      if (append) setLoadingMore(true);
+      else setLoading(true);
       try {
-        const params = new URLSearchParams({ limit: '50', page: page.toString() });
+        const params = new URLSearchParams({ page: pageToLoad.toString(), limit: '20' });
         if (debouncedSearch) params.append('search', debouncedSearch);
-        const res = await apiFetch(`/api/admin/users?${params}`);
+        const res = await apiFetch(`/api/admin/permissions/users?${params}`);
         if (res.ok) {
           const data = await res.json();
-          const newUsers = data.data || data.users || [];
-          setUsers((prev) => (page === 1 ? newUsers : [...prev, ...newUsers]));
-          setHasMore(newUsers.length === 50);
+          const newUsers = data.users || [];
+          setUsers((prev) => (append ? [...prev, ...newUsers] : newUsers));
+          setHasMore(data.pagination ? pageToLoad < data.pagination.totalPages : false);
+          if (!append && newUsers.length > 0 && !selectedUser) {
+            setSelectedUser(newUsers[0]);
+          }
         }
       } catch {
         toast.error('Lỗi', 'Không thể tải danh sách người dùng');
@@ -785,26 +983,40 @@ function UserPermissionsTab() {
         setLoading(false);
         setLoadingMore(false);
       }
-    }
-    loadUsers();
-  }, [debouncedSearch, page]);
+    },
+    [debouncedSearch]
+  );
 
   useEffect(() => {
-    if (!selectedUser) {
-      setUserPermData(null);
-      return;
-    }
-    apiFetch(`/api/admin/permissions/users/${selectedUser.id}`)
-      .then((r) => r.json())
-      .then(setUserPermData)
-      .catch(() => toast.error('Lỗi', 'Không thể tải quyền người dùng'));
-  }, [selectedUser]);
+    loadUsers(page, page > 1);
+  }, [page, debouncedSearch, loadUsers]);
 
-  const handleToggleClick = (code: string, name: string, currentlyHas: boolean) => {
+  const loadUserPerms = useCallback(async (userId: string) => {
+    try {
+      const res = await apiFetch(`/api/admin/permissions/users/${userId}`);
+      if (res.ok) {
+        setUserPermData(await res.json());
+      }
+    } catch {
+      toast.error('Lỗi', 'Không thể tải quyền người dùng');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedUser) {
+      loadUserPerms(selectedUser.id);
+    }
+  }, [selectedUser, loadUserPerms]);
+
+  const handleTogglePermission = (
+    permissionCode: string,
+    permissionName: string,
+    currentlyHas: boolean
+  ) => {
     setPendingAction({
       type: currentlyHas ? 'revoke' : 'grant',
-      permissionCode: code,
-      permissionName: name,
+      permissionCode,
+      permissionName,
     });
   };
 
@@ -813,21 +1025,24 @@ function UserPermissionsTab() {
     setSaving(true);
     try {
       let res: Response;
-      if (pendingAction.type === 'grant') {
-        res = await apiFetch(`/api/admin/permissions/users/${selectedUser.id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ permission_code: pendingAction.permissionCode }),
-        });
-      } else {
+      if (pendingAction.type === 'revoke') {
         res = await apiFetch(
           `/api/admin/permissions/users/${selectedUser.id}?permission_code=${pendingAction.permissionCode}`,
           { method: 'DELETE' }
         );
+      } else {
+        res = await apiFetch(`/api/admin/permissions/users/${selectedUser.id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            permission_code: pendingAction.permissionCode,
+            is_denied: false,
+          }),
+        });
       }
+
       if (res.ok) {
-        const refreshRes = await apiFetch(`/api/admin/permissions/users/${selectedUser.id}`);
-        if (refreshRes.ok) setUserPermData(await refreshRes.json());
+        await loadUserPerms(selectedUser.id);
         toast.success(
           'Thành công',
           pendingAction.type === 'grant'
@@ -846,12 +1061,12 @@ function UserPermissionsTab() {
     }
   };
 
-  const handleRoleChange = (newRole: string) => {
-    if (!userPermData || !selectedUser || newRole === userPermData.user.role) return;
+  const handleRoleSelect = (newRole: string) => {
+    if (!selectedUser || selectedUser.role === newRole) return;
     setPendingRoleChange({
       userId: selectedUser.id,
-      userName: userPermData.user.full_name || userPermData.user.email,
-      currentRole: userPermData.user.role,
+      userName: selectedUser.full_name || selectedUser.email,
+      currentRole: selectedUser.role,
       newRole,
     });
   };
@@ -861,22 +1076,24 @@ function UserPermissionsTab() {
     setSavingRole(true);
     try {
       const res = await apiFetch(`/api/admin/users/${pendingRoleChange.userId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: pendingRoleChange.newRole }),
       });
+
       if (res.ok) {
-        const updatedUser = { ...selectedUser!, role: pendingRoleChange.newRole };
-        setSelectedUser(updatedUser);
-        setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
-        const refreshRes = await apiFetch(
-          `/api/admin/permissions/users/${pendingRoleChange.userId}`
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === pendingRoleChange.userId ? { ...u, role: pendingRoleChange.newRole } : u
+          )
         );
-        if (refreshRes.ok) setUserPermData(await refreshRes.json());
-        toast.success('Thành công', `Đã thay đổi vai trò của ${pendingRoleChange.userName}`);
+        if (selectedUser?.id === pendingRoleChange.userId) {
+          setSelectedUser((prev) => (prev ? { ...prev, role: pendingRoleChange.newRole } : null));
+        }
+        toast.success('Thành công', `Đã đổi vai trò sang ${pendingRoleChange.newRole.toUpperCase()}`);
       } else {
         const d = await res.json();
-        toast.error('Lỗi', d.error || 'Không thể thay đổi vai trò');
+        toast.error('Lỗi', d.error || 'Không thể đổi vai trò');
       }
     } catch {
       toast.error('Lỗi', 'Đã xảy ra lỗi');
@@ -886,7 +1103,7 @@ function UserPermissionsTab() {
     }
   };
 
-  const permsByCategory = allPermissions
+  const userPermsByCategory = allPermissions
     .filter(
       (p) =>
         permissionSearch === '' ||
@@ -901,109 +1118,97 @@ function UserPermissionsTab() {
     }, {});
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* User List */}
-      <div className="lg:col-span-1 bg-surface rounded-xl border border-border p-4">
-        <div className="mb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Tìm người dùng..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-sm"
-            />
-          </div>
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* User Search & List */}
+      <div className="lg:col-span-1 bg-surface rounded-2xl border border-border p-4">
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Tìm người dùng..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
         </div>
 
-        <div className="space-y-1 max-h-[600px] overflow-y-auto pr-1">
-          {loading && page === 1 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">Đang tải...</div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground italic text-sm">
-              Không tìm thấy người dùng
-            </div>
-          ) : (
-            <>
-              {users.map((user) => {
-                const roleOpt = ROLE_OPTIONS.find((o) => o.value === user.role);
-                return (
-                  <button
-                    key={user.id}
-                    onClick={() => setSelectedUser(user)}
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">Đang tải...</div>
+        ) : (
+          <div className="space-y-1 max-h-[600px] overflow-y-auto custom-scrollbar">
+            {users.map((user) => {
+              const roleOpt = availableRoles.find((r) => r.code === user.role);
+
+              return (
+                <button
+                  key={user.id}
+                  onClick={() => setSelectedUser(user)}
+                  className={cn(
+                    'w-full text-left p-2.5 rounded-xl text-sm transition-colors',
+                    selectedUser?.id === user.id ? 'bg-primary text-white' : 'hover:bg-muted'
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold truncate">{user.full_name || 'Chưa đặt tên'}</p>
+                    <span
+                      className={cn(
+                        'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase',
+                        selectedUser?.id === user.id
+                          ? 'bg-white/20 text-white'
+                          : roleOpt?.color || 'bg-gray-100 text-gray-700'
+                      )}
+                    >
+                      {roleOpt?.name || user.role}
+                    </span>
+                  </div>
+                  <p
                     className={cn(
-                      'w-full text-left p-3 rounded-lg transition-colors',
-                      selectedUser?.id === user.id ? 'bg-primary text-white' : 'hover:bg-muted'
+                      'text-xs truncate mt-0.5',
+                      selectedUser?.id === user.id ? 'text-white/80' : 'text-muted-foreground'
                     )}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                        <User className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">
-                          {user.full_name || 'Chưa có tên'}
-                        </p>
-                        <p
-                          className={cn(
-                            'text-xs truncate',
-                            selectedUser?.id === user.id ? 'text-white/70' : 'text-muted-foreground'
-                          )}
-                        >
-                          {roleOpt?.label || user.role}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-              {hasMore && (
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={loadingMore}
-                  className="w-full py-2 text-sm text-primary hover:bg-primary/5 rounded-lg border border-dashed border-primary/30 transition-colors disabled:opacity-50"
-                >
-                  {loadingMore ? 'Đang tải thêm...' : 'Tải thêm'}
+                    {user.email}
+                  </p>
                 </button>
-              )}
-            </>
-          )}
-        </div>
+              );
+            })}
+
+            {hasMore && (
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={loadingMore}
+                className="w-full py-2 text-xs text-primary hover:underline font-bold"
+              >
+                {loadingMore ? 'Đang tải thêm...' : 'Tải thêm'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Permission Editor */}
-      <div className="lg:col-span-2 bg-surface rounded-xl border border-border p-6">
-        {!selectedUser ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Chọn một người dùng để quản lý quyền</p>
-          </div>
-        ) : !userPermData ? (
-          <div className="text-center py-16 text-muted-foreground">Đang tải quyền...</div>
-        ) : (
-          <div className="space-y-5">
-            {/* User Header */}
-            <div className="flex items-start gap-4 pb-4 border-b border-border">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <User className="w-6 h-6 text-primary" />
+      {/* User Permission Matrix */}
+      <div className="lg:col-span-3 bg-surface rounded-2xl border border-border p-6 space-y-6">
+        {selectedUser ? (
+          <>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+              <div>
+                <h2 className="text-xl font-bold">{selectedUser.full_name || selectedUser.email}</h2>
+                <p className="text-xs text-muted-foreground">{selectedUser.email}</p>
               </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-semibold">{userPermData.user.full_name}</h2>
-                <p className="text-muted-foreground text-sm">{userPermData.user.email}</p>
-              </div>
+
+              {/* Role Dropdown */}
               {isCurrentAdmin && (
-                <div className="flex items-center gap-2 shrink-0">
-                  <UserCog className="w-4 h-4 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-muted-foreground">Vai trò:</span>
                   <select
-                    value={userPermData.user.role}
-                    onChange={(e) => handleRoleChange(e.target.value)}
+                    value={selectedUser.role}
+                    onChange={(e) => handleRoleSelect(e.target.value)}
                     disabled={savingRole}
-                    className="px-3 py-1.5 border border-border rounded-lg bg-background text-sm font-medium focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50"
+                    className="px-3 py-1.5 text-xs font-bold border border-border rounded-xl bg-background"
                   >
-                    {ROLE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
+                    {availableRoles.map((r) => (
+                      <option key={r.code} value={r.code}>
+                        {r.name} ({r.code})
                       </option>
                     ))}
                   </select>
@@ -1011,41 +1216,36 @@ function UserPermissionsTab() {
               )}
             </div>
 
-            {/* Admin notice */}
-            {['super_admin'].includes(userPermData.user.role) && (
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-yellow-700 dark:text-yellow-400 text-sm">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>Super Admin có tất cả quyền theo mặc định</span>
-              </div>
-            )}
-
-            {/* Permission Search */}
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Tìm kiếm quyền..."
+                placeholder="Lọc quyền hạn..."
                 value={permissionSearch}
                 onChange={(e) => setPermissionSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-sm"
+                className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
 
-            {/* Permissions */}
-            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-              {Object.entries(permsByCategory).map(([cat, perms]) => (
+            <div className="space-y-3 max-h-[550px] overflow-y-auto pr-1 custom-scrollbar">
+              {Object.entries(userPermsByCategory).map(([cat, perms]) => (
                 <UserPermCategory
                   key={cat}
                   category={cat}
                   permissions={perms}
-                  rolePermissions={userPermData.rolePermissions}
-                  customPermissions={userPermData.customPermissions}
-                  userRole={userPermData.user.role}
-                  onToggle={handleToggleClick}
+                  rolePermissions={userPermData?.rolePermissions || []}
+                  customPermissions={userPermData?.customPermissions || []}
+                  userRole={selectedUser.role}
+                  onToggle={handleTogglePermission}
                   saving={saving}
                 />
               ))}
             </div>
+          </>
+        ) : (
+          <div className="text-center py-16 text-muted-foreground">
+            <User className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>Chọn người dùng từ danh sách bên trái để cấu hình quyền</p>
           </div>
         )}
       </div>
@@ -1101,14 +1301,16 @@ function UserPermCategory({
 }) {
   const [expanded, setExpanded] = useState(true);
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <div className="border border-border rounded-xl overflow-hidden bg-background">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors bg-muted/20"
+        className="w-full flex items-center justify-between p-3.5 hover:bg-muted/50 transition-colors bg-muted/20"
       >
-        <span className="font-medium text-sm">{CATEGORY_LABELS[category] || category}</span>
+        <span className="font-bold text-xs uppercase tracking-wider text-foreground">
+          {CATEGORY_LABELS[category] || category}
+        </span>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{permissions.length}</span>
+          <span className="text-xs font-mono text-muted-foreground">{permissions.length} quyền</span>
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
@@ -1127,33 +1329,35 @@ function UserPermCategory({
             return (
               <div
                 key={perm.code}
-                className="flex items-center justify-between py-2.5 px-4 hover:bg-muted/20"
+                className="flex items-center justify-between py-2.5 px-4 hover:bg-muted/20 text-xs"
               >
                 <div className="flex-1 min-w-0 pr-4">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-sm">{perm.name}</p>
+                    <p className="font-bold text-foreground">{perm.name}</p>
                     {isGlobalAdmin && (
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-black text-white dark:bg-white/10">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-black text-white dark:bg-white/10">
                         SA
                       </span>
                     )}
                     {hasFromRole && !isGlobalAdmin && !isDenied && (
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                         Vai trò
                       </span>
                     )}
                     {hasCustom && (
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                         Tùy chỉnh
                       </span>
                     )}
                     {isDenied && (
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
                         Từ chối
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{perm.description}</p>
+                  {perm.description && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{perm.description}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -1237,13 +1441,13 @@ function AuditLogTab() {
   };
 
   return (
-    <div className="bg-surface rounded-xl border border-border p-6">
+    <div className="bg-surface rounded-2xl border border-border p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-semibold">Nhật ký thay đổi quyền</h2>
-          <p className="text-sm text-muted-foreground">{total} bản ghi</p>
+          <h2 className="text-lg font-bold text-foreground">Nhật ký thay đổi quyền</h2>
+          <p className="text-xs text-muted-foreground">{total} bản ghi được lưu vết</p>
         </div>
-        <button onClick={loadLogs} className="p-2 rounded-lg hover:bg-muted transition-colors">
+        <button onClick={loadLogs} className="p-2 rounded-xl hover:bg-muted transition-colors border border-border">
           <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
         </button>
       </div>
@@ -1256,7 +1460,7 @@ function AuditLogTab() {
             setScopeFilter(e.target.value);
             setPage(1);
           }}
-          className="px-3 py-1.5 border border-border rounded-lg bg-background text-sm"
+          className="px-3 py-1.5 border border-border rounded-xl bg-background text-xs font-bold"
         >
           <option value="">Tất cả phạm vi</option>
           <option value="user">Người dùng</option>
@@ -1268,7 +1472,7 @@ function AuditLogTab() {
             setActionFilter(e.target.value);
             setPage(1);
           }}
-          className="px-3 py-1.5 border border-border rounded-lg bg-background text-sm"
+          className="px-3 py-1.5 border border-border rounded-xl bg-background text-xs font-bold"
         >
           <option value="">Tất cả hành động</option>
           <option value="grant">Cấp quyền</option>
@@ -1278,11 +1482,11 @@ function AuditLogTab() {
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-muted-foreground">Đang tải...</div>
+        <div className="text-center py-8 text-muted-foreground text-xs">Đang tải...</div>
       ) : logs.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <History className="w-10 h-10 mx-auto mb-3 opacity-40" />
-          <p>Không có nhật ký</p>
+        <div className="text-center py-12 text-muted-foreground">
+          <History className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-xs">Không có nhật ký</p>
         </div>
       ) : (
         <>
@@ -1290,12 +1494,12 @@ function AuditLogTab() {
             {logs.map((log) => (
               <div
                 key={log.id}
-                className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/20 transition-colors"
+                className="flex items-start gap-3 p-3 rounded-xl border border-border hover:bg-muted/20 transition-colors text-xs"
               >
                 <div className="shrink-0 mt-0.5">
                   <span
                     className={cn(
-                      'text-xs px-2 py-0.5 rounded-full font-medium',
+                      'text-[10px] px-2 py-0.5 rounded-full font-bold uppercase',
                       actionColors[log.action] || 'bg-gray-100 text-gray-700'
                     )}
                   >
@@ -1304,10 +1508,10 @@ function AuditLogTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-medium">{log.permission_code}</p>
+                    <p className="font-bold">{log.permission_code}</p>
                     <span
                       className={cn(
-                        'text-xs px-1.5 py-0.5 rounded',
+                        'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
                         log.scope === 'role'
                           ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
                           : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
@@ -1316,14 +1520,14 @@ function AuditLogTab() {
                       {log.scope === 'role' ? 'Vai trò' : 'Người dùng'}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     {log.user?.full_name || 'N/A'} • Bởi: {log.performer?.full_name || 'N/A'}
                   </p>
                   {log.reason && (
-                    <p className="text-xs text-muted-foreground italic mt-0.5">"{log.reason}"</p>
+                    <p className="text-[11px] text-muted-foreground italic mt-0.5">"{log.reason}"</p>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground shrink-0">
+                <p className="text-[11px] text-muted-foreground shrink-0 font-mono">
                   {new Date(log.created_at).toLocaleString('vi-VN')}
                 </p>
               </div>
@@ -1335,15 +1539,15 @@ function AuditLogTab() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1 || loading}
-              className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-muted disabled:opacity-50 transition-colors"
+              className="px-3 py-1.5 text-xs font-bold border border-border rounded-xl hover:bg-muted disabled:opacity-50 transition-colors"
             >
               Trước
             </button>
-            <span className="text-sm text-muted-foreground">Trang {page}</span>
+            <span className="text-xs text-muted-foreground font-mono">Trang {page}</span>
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={logs.length < 30 || loading}
-              className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-muted disabled:opacity-50 transition-colors"
+              className="px-3 py-1.5 text-xs font-bold border border-border rounded-xl hover:bg-muted disabled:opacity-50 transition-colors"
             >
               Tiếp
             </button>

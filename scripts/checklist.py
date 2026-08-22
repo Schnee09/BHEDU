@@ -3,6 +3,13 @@ import sys
 import subprocess
 import json
 
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass
+
 def run_command(command, cwd=None):
     try:
         # Read raw bytes and decode manually to handle UTF-8/emoji output safely on Windows
