@@ -113,7 +113,7 @@ async function main() {
     console.log(`   Processing: ${teacherName} (${email})`);
 
     // Find or create auth user
-    let { data: existingUser } = await supabase
+    const { data: existingUser } = await supabase
       .from("profiles")
       .select("id")
       .eq("email", email)
