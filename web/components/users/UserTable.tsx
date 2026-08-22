@@ -106,7 +106,8 @@ export function UserTable({
       case 'teacher':
         return {
           label: 'Giáo viên',
-          className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
+          className:
+            'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
         };
       case 'tutor':
         return {
@@ -295,8 +296,11 @@ export function UserTable({
                               {user.full_name || 'Chưa đặt tên'}
                             </span>
                             {user.is_managed && (
-                              <span className="px-1.5 py-0.2 rounded text-[8.5px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
-                                Quản lý bởi HT
+                              <span
+                                className="px-1.5 py-0.5 rounded-md text-[9px] font-bold tracking-tight bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/50 shrink-0 whitespace-nowrap"
+                                title="Tài khoản nội bộ do Quản trị viên khởi tạo và quản lý"
+                              >
+                                Tài khoản hệ thống
                               </span>
                             )}
                           </div>
@@ -343,10 +347,7 @@ export function UserTable({
                     </td>
 
                     {/* Active toggle */}
-                    <td
-                      className="py-3.5 px-4 shrink-0"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                    <td className="py-3.5 px-4 shrink-0" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => onToggleActive(user)}
                         title={user.is_active ? 'Bấm để vô hiệu hóa' : 'Bấm để kích hoạt'}

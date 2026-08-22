@@ -80,12 +80,15 @@ function UserManagementContent() {
       const pagination = data.data?.pagination || data.pagination || {};
 
       setUsers(userList);
-      setTotalPages(pagination.totalPages || Math.ceil((pagination.total || userList.length) / pageSize) || 1);
+      setTotalPages(
+        pagination.totalPages || Math.ceil((pagination.total || userList.length) / pageSize) || 1
+      );
       setTotalCount(pagination.total || userList.length);
 
       // If stats returned inside API response
-      if (data.statistics || data.data?.statistics) {
-        setStats(data.statistics || data.data.statistics);
+      const inlineStats = data.statistics || data.data?.statistics || data.meta?.statistics;
+      if (inlineStats) {
+        setStats(inlineStats);
         setStatsLoading(false);
       }
     } catch (err: any) {
@@ -103,8 +106,9 @@ function UserManagementContent() {
       const res = await apiFetch('/api/admin/users/stats');
       if (res.ok) {
         const data = await res.json();
-        if (data.success && data.data) {
-          setStats(data.data);
+        const statData = data.data?.data || data.data || data.statistics;
+        if (statData) {
+          setStats(statData);
         }
       }
     } catch {
@@ -165,9 +169,7 @@ function UserManagementContent() {
 
       if (!res.ok) throw new Error('Không thể thay đổi trạng thái');
 
-      setUsers((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, is_active: nextStatus } : u))
-      );
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, is_active: nextStatus } : u)));
       if (drawerUser?.id === user.id) {
         setDrawerUser((prev) => (prev ? { ...prev, is_active: nextStatus } : null));
       }
@@ -226,16 +228,22 @@ function UserManagementContent() {
   };
 
   const handleExportCSV = () => {
-    const exportData = selectedIds.size > 0
-      ? users.filter((u) => selectedIds.has(u.id))
-      : users;
+    const exportData = selectedIds.size > 0 ? users.filter((u) => selectedIds.has(u.id)) : users;
 
     if (exportData.length === 0) {
       toast.info('Không có dữ liệu', 'Không có người dùng nào để xuất.');
       return;
     }
 
-    const headers = ['ID', 'Ho_va_ten', 'Email', 'Vai_tro', 'So_dien_thoai', 'Trang_thai', 'Ma_dinh_danh'];
+    const headers = [
+      'ID',
+      'Ho_va_ten',
+      'Email',
+      'Vai_tro',
+      'So_dien_thoai',
+      'Trang_thai',
+      'Ma_dinh_danh',
+    ];
     const csvRows = exportData.map((u) => [
       u.id,
       `"${u.full_name || ''}"`,
@@ -292,11 +300,7 @@ function UserManagementContent() {
       <UserStatsHero stats={stats} loading={statsLoading} />
 
       {/* 2. Segmented Role Tabs */}
-      <UserRoleTabs
-        activeTab={roleTab}
-        onTabChange={(tab) => setRoleTab(tab)}
-        stats={stats}
-      />
+      <UserRoleTabs activeTab={roleTab} onTabChange={(tab) => setRoleTab(tab)} stats={stats} />
 
       {/* 3. Command Bar (Search & Quick Actions) */}
       <UserCommandBar

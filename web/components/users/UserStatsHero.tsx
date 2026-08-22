@@ -37,10 +37,14 @@ export function UserStatsHero({ stats, loading }: UserStatsHeroProps) {
 
   const total = stats?.total_users || 0;
   const active = stats?.active_users || 0;
-  const activeRate = total > 0 ? Math.round((active / total) * 100) : 100;
-  const students = stats?.student_count || 0;
-  const teachers = (stats?.teacher_count || 0) + (stats?.tutor_count || 0);
-  const adminsAndParents = (stats?.admin_count || 0) + (stats?.parent_count || 0);
+  const activeRate = total > 0 ? Math.round((active / total) * 100) : 0;
+  const students = (stats?.student_count ?? (stats as any)?.students) || 0;
+  const teachers =
+    ((stats?.teacher_count ?? (stats as any)?.teachers) || 0) +
+    ((stats?.tutor_count ?? (stats as any)?.tutors) || 0);
+  const adminsAndParents =
+    ((stats?.admin_count ?? (stats as any)?.admins) || 0) +
+    ((stats?.parent_count ?? (stats as any)?.parents) || 0);
 
   // Distribution calculations
   const studentPct = total > 0 ? Math.round((students / total) * 100) : 0;
@@ -109,11 +113,19 @@ export function UserStatsHero({ stats, loading }: UserStatsHeroProps) {
                 'bg-white dark:bg-[#14120E] border border-stone-200 dark:border-stone-800 shadow-sm hover:shadow-md hover:border-stone-300 dark:hover:border-stone-700'
               )}
             >
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 truncate">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <span
+                  className="text-[11px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 leading-tight"
+                  title={card.label}
+                >
                   {card.label}
                 </span>
-                <div className={cn('w-7 h-7 rounded-xl flex items-center justify-center shrink-0', card.bgColor)}>
+                <div
+                  className={cn(
+                    'w-7 h-7 rounded-xl flex items-center justify-center shrink-0',
+                    card.bgColor
+                  )}
+                >
                   <Icon className={cn('w-4 h-4', card.color)} />
                 </div>
               </div>
@@ -145,10 +157,12 @@ export function UserStatsHero({ stats, loading }: UserStatsHeroProps) {
                 <span className="w-2 h-2 rounded-full bg-blue-500" /> Học sinh ({studentPct}%)
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-teal-500" /> Giáo viên/Gia sư ({teacherPct}%)
+                <span className="w-2 h-2 rounded-full bg-teal-500" /> Giáo viên/Gia sư ({teacherPct}
+                %)
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-amber-500" /> Quản trị & Khác ({adminParentPct}%)
+                <span className="w-2 h-2 rounded-full bg-amber-500" /> Quản trị & Khác (
+                {adminParentPct}%)
               </span>
             </div>
           </div>

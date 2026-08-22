@@ -29,12 +29,23 @@ export function defineAbilitiesFor(context: PermissionContext): AbilityRule[] {
   }
 
   // ============================================
-  // OWNER - Strategic business oversight
+  // OWNER - Strategic business oversight & Center ownership
   // ============================================
   if (role === 'owner') {
     rules.push(
       // Read everything for oversight
       { action: 'read', subject: 'all' },
+      // Academic & Center Management
+      { action: 'manage', subject: 'Class' },
+      { action: 'manage', subject: 'Subject' },
+      { action: 'manage', subject: 'Student' },
+      { action: 'manage', subject: 'Teacher' },
+      { action: 'manage', subject: 'Enrollment' },
+      { action: 'manage', subject: 'User' },
+      { action: 'manage', subject: 'Setting' },
+      { action: 'manage', subject: 'Grade' },
+      { action: 'manage', subject: 'Attendance' },
+      { action: 'manage', subject: 'TutoringSession' },
       // Finance — full control
       { action: 'manage', subject: 'Finance' },
       { action: 'manage', subject: 'Invoice' },
@@ -43,9 +54,6 @@ export function defineAbilitiesFor(context: PermissionContext): AbilityRule[] {
       { action: 'export', subject: 'Report' },
       // Announcements — center-wide comms
       { action: 'manage', subject: 'Announcement' },
-      // User/staff management (hiring/firing)
-      { action: ['create', 'update', 'delete'], subject: 'User' },
-      { action: ['create', 'update', 'delete'], subject: 'Teacher' },
       // Audit oversight (read only)
       { action: 'read', subject: 'Audit' }
     );

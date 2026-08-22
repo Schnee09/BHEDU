@@ -436,10 +436,10 @@ export class StudentRepository
    * Update student with recomputed full_name if names change
    */
   async update(id: string, input: UpdateStudentInput): Promise<Student> {
-    const updates: Record<string, unknown> = { ...input };
     const anyInput = input as any;
+    const updates: Record<string, unknown> = {};
 
-    // If full_name is provided, compute first_name and last_name
+    // 1. If full_name is provided, compute first_name and last_name
     if (anyInput.full_name) {
       const parts = splitFullName(anyInput.full_name);
       updates.first_name = input.first_name || parts.first_name;
@@ -454,31 +454,52 @@ export class StudentRepository
       }
     }
 
-    const { data, error } = await this.supabase
-      .from(this.tableName)
-      .update(updates)
-      .eq('id', id)
-      .eq('role', 'student')
-      .select()
-      .single();
+    // 2. Profile table fields
+    if (input.email !== undefined) updates.email = input.email;
+    if (input.phone !== undefined) updates.phone = input.phone;
+    if (input.address !== undefined) updates.address = input.address;
+    if (input.date_of_birth !== undefined) updates.date_of_birth = input.date_of_birth;
+    if (input.gender !== undefined) updates.gender = input.gender;
+    if (input.status !== undefined) {
+      updates.status = input.status;
+      updates.is_active = input.status === 'active';
+    }
+    if (anyInput.is_active !== undefined) updates.is_active = anyInput.is_active;
 
-    if (error) {
-      throw new Error(`Failed to update student: ${error.message}`);
+    let updatedRecord: any = null;
+
+    if (Object.keys(updates).length > 0) {
+      const { data, error } = await this.supabase
+        .from(this.tableName)
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(`Failed to update student: ${error.message}`);
+      }
+      updatedRecord = data;
     }
 
-    // Sync student_profiles if student_code or grade_level was updated
+    if (!updatedRecord) {
+      updatedRecord = await this.findById(id);
+    }
+
+    // 3. Sync student_profiles if student_code or grade_level was updated
     if (anyInput.student_code !== undefined || anyInput.grade_level !== undefined) {
-      await this.supabase.from('student_profiles').upsert(
-        {
-          profile_id: id,
-          student_code: anyInput.student_code || (data as any)?.student_code,
-          grade_level: anyInput.grade_level || (data as any)?.grade_level,
-        },
-        { onConflict: 'profile_id' }
-      );
+      const studentProfilePayload: Record<string, any> = { profile_id: id };
+      if (anyInput.student_code !== undefined)
+        studentProfilePayload.student_code = anyInput.student_code;
+      if (anyInput.grade_level !== undefined)
+        studentProfilePayload.grade_level = anyInput.grade_level;
+
+      await this.supabase
+        .from('student_profiles')
+        .upsert(studentProfilePayload, { onConflict: 'profile_id' });
     }
 
-    return data as Student;
+    return (updatedRecord || { id, ...input }) as Student;
   }
 
   /**

@@ -16,7 +16,17 @@ import { generateUserEmailSlug, splitFullName, formatVietnameseName } from '@/li
 import { generateStudentCode } from '@/lib/students/studentCode';
 import { logger } from '@/lib/logger';
 
-const MANAGED_DOMAINS = ['@id.bhedu.vn', '@student.bhedu.vn', '@parent.bhedu.vn', '@fake.bhedu.vn'];
+const MANAGED_DOMAINS = [
+  '@bhedu.vn',
+  '@id.bhedu.vn',
+  '@student.bhedu.vn',
+  '@teacher.bhedu.vn',
+  '@tutor.bhedu.vn',
+  '@parent.bhedu.vn',
+  '@staff.bhedu.vn',
+  '@admin.bhedu.vn',
+  '@fake.bhedu.vn',
+];
 
 export interface UserProfile {
   id: string;
@@ -153,7 +163,11 @@ export class UserService {
 
     try {
       // 4. Determine if managed
-      const isManaged = MANAGED_DOMAINS.some((domain) => email.toLowerCase().endsWith(domain));
+      const isManaged =
+        input.is_managed !== undefined
+          ? Boolean(input.is_managed)
+          : MANAGED_DOMAINS.some((domain) => email.toLowerCase().endsWith(domain)) ||
+            email.toLowerCase().endsWith('bhedu.vn');
       const isStudent = input.role === 'student';
       const isTeacherOrTutor = input.role === 'teacher' || input.role === 'tutor';
       const isStaffOrAdmin = ['admin', 'owner', 'super_admin', 'staff'].includes(
@@ -317,6 +331,10 @@ export class UserService {
       personal_email: input.personal_email,
     };
 
+    if (input.is_managed !== undefined) {
+      updatePayload.is_managed = input.is_managed;
+    }
+
     if (input.role) {
       updatePayload.role = input.role;
     }
@@ -365,10 +383,16 @@ export class UserService {
 
     // 2. Role-specific updates
     if (profile.role === 'student') {
-      await studentService.updateStudent(id, {
-        student_code: input.student_code,
-        grade_level: input.grade_level,
-      });
+      if (input.student_code !== undefined || input.grade_level !== undefined) {
+        const studentProfilePayload: Record<string, any> = { profile_id: id };
+        if (input.student_code !== undefined)
+          studentProfilePayload.student_code = input.student_code;
+        if (input.grade_level !== undefined) studentProfilePayload.grade_level = input.grade_level;
+
+        await this.supabase
+          .from('student_profiles')
+          .upsert(studentProfilePayload, { onConflict: 'profile_id' });
+      }
     } else if (profile.role === 'teacher' || profile.role === 'tutor') {
       await teacherService.syncTeacherProfile(id, {
         teacher_type: input.teacher_type,
