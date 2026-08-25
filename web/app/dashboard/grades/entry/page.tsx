@@ -704,12 +704,12 @@ function GradeEntryPageContent() {
             </div>
 
             {/* Save Button Floating / Sticky Bar */}
-            <div className="sticky bottom-4 z-20 flex justify-end pt-2">
+            <div className="sticky bottom-20 md:bottom-4 z-20 flex justify-end pt-2">
               <Button
                 variant="success"
                 onClick={() => setShowConfirm(true)}
                 disabled={!hasGrades || hasErrors || saving}
-                className="px-6 h-10 rounded-xl shadow-lg shadow-emerald-500/20 font-black uppercase text-xs cursor-pointer"
+                className="w-full sm:w-auto px-6 h-11 sm:h-10 rounded-xl shadow-lg shadow-emerald-500/20 font-black uppercase text-xs cursor-pointer press-effect"
                 leftIcon={<Icons.Save className="w-4 h-4" />}
               >
                 {saving ? 'Đang lưu...' : 'Lưu bảng điểm'}

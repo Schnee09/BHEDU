@@ -3,11 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { usePermissions } from '@/hooks/usePermissions';
-import { supabase } from '@/lib/supabase/client';
 import { StatCard } from '@/components/ui/Card';
 import Link from 'next/link';
-import { Loader2, UserPlus, GraduationCap, ChevronRight, AlertCircle } from 'lucide-react';
+import {
+  UserPlus,
+  GraduationCap,
+  ChevronRight,
+  AlertCircle,
+  CalendarCheck,
+  Award,
+  CreditCard,
+  FileText,
+  User,
+} from 'lucide-react';
 import EmptyState from '@/components/EmptyState';
+import ChildAttendanceTodayWidget from '@/components/dashboard/widgets/ChildAttendanceTodayWidget';
+import { cn } from '@/lib/utils';
 
 interface LinkedStudent {
   student_id: string;
@@ -20,6 +31,7 @@ export default function ParentDashboardPage() {
   const { profile, loading: profileLoading } = useProfile();
   const { isParent, isAdmin } = usePermissions();
   const [students, setStudents] = useState<LinkedStudent[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +45,6 @@ export default function ParentDashboardPage() {
 
       if (!res.ok) throw new Error(data.error || 'Failed to fetch');
 
-      // Transform LinkService response to match UI needs
       const transformed = (data.data || []).map((link: any) => ({
         student_id: link.student.id,
         student_name: link.student.full_name,
@@ -42,6 +53,9 @@ export default function ParentDashboardPage() {
       }));
 
       setStudents(transformed);
+      if (transformed.length > 0) {
+        setSelectedChildId(transformed[0].student_id);
+      }
     } catch (err: any) {
       console.error('Error fetching linked students:', err);
       setError('Không thể tải danh sách học sinh. Vui lòng thử lại sau.');
@@ -63,18 +77,19 @@ export default function ParentDashboardPage() {
 
   if (profileLoading || (loading && !error)) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+        <div className="w-10 h-10 border-3 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+        <p className="text-stone-400 font-bold text-xs">Đang tải cổng phụ huynh...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-center gap-4 text-red-700">
-          <AlertCircle className="w-6 h-6 flex-shrink-0" />
-          <p className="font-medium">{error}</p>
+      <div className="p-4 sm:p-8 max-w-lg mx-auto">
+        <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 rounded-2xl p-4 sm:p-6 flex items-center gap-3 text-rose-700 dark:text-rose-400">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          <p className="text-xs font-bold">{error}</p>
         </div>
       </div>
     );
@@ -82,10 +97,10 @@ export default function ParentDashboardPage() {
 
   if (!students || students.length === 0) {
     return (
-      <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-[60vh] flex flex-col items-center justify-center">
+      <div className="p-4 sm:p-8 max-w-2xl mx-auto min-h-[60vh] flex flex-col items-center justify-center">
         <EmptyState
-          title="Chưa có học sinh liên kết"
-          description="Bạn chưa có học sinh nào được liên kết với tài khoản này. Vui lòng thêm học sinh để bắt đầu theo dõi kết quả học tập."
+          title="Chưa kết nối học sinh"
+          description="Bạn chưa liên kết tài khoản học sinh nào. Vui lòng nhập mã học sinh để bắt đầu theo dõi chuyên cần và kết quả học tập."
           action={{
             label: 'Kết nối học sinh ngay',
             href: '/dashboard/parent/link-student',
@@ -95,97 +110,199 @@ export default function ParentDashboardPage() {
     );
   }
 
+  const selectedChild = students.find((s) => s.student_id === selectedChildId) || students[0];
+
   return (
-    <main className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8">
+    <main className="py-3 sm:py-6 px-2.5 sm:px-6 lg:px-10 max-w-7xl mx-auto space-y-4 sm:space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-200/60 dark:border-white/5">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Chào mừng, {profile?.full_name}
+          <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
+            Cổng thông tin Phụ huynh
           </h1>
-          <p className="text-slate-600 dark:text-gray-400 mt-1">
-            Quản lý thông tin học tập của con em bạn
+          <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 font-medium">
+            Kính chào{' '}
+            <strong className="text-stone-900 dark:text-white">{profile?.full_name}</strong> • Theo
+            dõi học tập và chuyên cần của con
           </p>
         </div>
+
         <Link
           href="/dashboard/parent/link-student"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/25"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-amber-500/20 active:scale-95 self-start sm:self-auto"
         >
-          <UserPlus className="w-5 h-5" />
-          Kết nối thêm học sinh
+          <UserPlus className="w-4 h-4" />
+          <span>Kết nối thêm học sinh</span>
         </Link>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard
-          label="Học sinh đang theo dõi"
-          value={students.length}
-          icon={<GraduationCap className="w-6 h-6" />}
-          color="blue"
-        />
-      </div>
+      {/* Child Switcher (If multiple children) */}
+      {students.length > 1 && (
+        <div className="flex items-center gap-2 p-1.5 bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-x-auto">
+          {students.map((child) => {
+            const isSelected = child.student_id === selectedChildId;
+            return (
+              <button
+                key={child.student_id}
+                onClick={() => setSelectedChildId(child.student_id)}
+                className={cn(
+                  'flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer',
+                  isSelected
+                    ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-xs'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+                )}
+              >
+                <div className="w-5 h-5 rounded-md bg-amber-500/10 text-amber-600 flex items-center justify-center text-[10px] font-black">
+                  {child.student_name.charAt(0)}
+                </div>
+                <span>{child.student_name}</span>
+                <span className="text-[10px] opacity-60 font-mono">({child.student_code})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
-      {/* Students List */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          Học sinh của tôi
-        </h2>
-
-        {students.length === 0 ? (
-          <div className="bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-[40px] p-12 text-center border border-slate-200 dark:border-white/10 shadow-xl animate-in fade-in zoom-in-95 duration-500">
-            <div className="bg-blue-100 dark:bg-blue-900/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <GraduationCap className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+      {/* Selected Child Hero & Quick Actions */}
+      {selectedChild && (
+        <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-4 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-stone-100 dark:border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black text-lg">
+                {selectedChild.student_name.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-base font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                  {selectedChild.student_name}
+                </h2>
+                <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  <span className="font-mono font-bold text-[11px] bg-stone-100 dark:bg-stone-800 px-1.5 py-0.5 rounded text-stone-700 dark:text-stone-300">
+                    UID: {selectedChild.student_code}
+                  </span>
+                  <span>•</span>
+                  <span>
+                    Quan hệ:{' '}
+                    <strong className="text-stone-900 dark:text-white">
+                      {selectedChild.relationship || 'Phụ huynh'}
+                    </strong>
+                  </span>
+                </div>
+              </div>
             </div>
-            <h3 className="text-xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
-              Chưa kết nối học sinh
-            </h3>
-            <p className="text-stone-500 dark:text-stone-400 mt-3 max-w-sm mx-auto font-medium">
-              Bạn cần kết nối với tài khoản của học sinh bằng mã số học sinh để theo dõi kết quả học
-              tập.
-            </p>
+
             <Link
-              href="/dashboard/parent/link-student"
-              className="mt-8 inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold hover:gap-3 transition-all uppercase tracking-widest text-xs"
+              href={`/dashboard/students/${selectedChild.student_id}`}
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 font-bold text-xs rounded-xl transition-all"
             >
-              Bắt đầu kết nối ngay <ChevronRight className="w-4 h-4" />
+              <span>Xem hồ sơ chi tiết</span>
+              <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {students.map((student) => (
-              <Link
-                key={student.student_id}
-                href={`/dashboard/students/${student.student_id}`}
-                className="group relative bg-white/60 dark:bg-stone-900/40 backdrop-blur-xl rounded-[32px] p-6 border border-white/20 dark:border-white/5 hover:border-blue-500/50 shadow-xl hover:shadow-blue-500/10 transition-all duration-500 press-effect overflow-hidden block"
-              >
-                <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full group-hover:bg-blue-500/10 transition-colors" />
 
-                <div className="flex items-center gap-5 relative z-10">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-500/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-                    {student.student_name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-black text-stone-900 dark:text-stone-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate uppercase tracking-tight text-lg">
-                      {student.student_name}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <span className="text-[10px] font-black font-mono bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 px-2 py-0.5 rounded uppercase tracking-widest border border-stone-200 dark:border-stone-700">
-                        {student.student_code}
-                      </span>
-                      <span className="text-xs text-stone-400 dark:text-stone-500 font-bold uppercase tracking-tighter">
-                        • {student.relationship}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/5 flex items-center justify-center text-stone-400 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500">
-                    <ChevronRight className="w-6 h-6" />
-                  </div>
-                </div>
-              </Link>
-            ))}
+          {/* Quick Hub Tiles */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <Link
+              href={`/dashboard/parent/attendance?child_id=${selectedChild.student_id}`}
+              className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/60 dark:border-white/5 hover:border-emerald-500/40 transition-all group flex flex-col justify-between gap-3 shadow-2xs"
+            >
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 w-fit">
+                <CalendarCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-xs text-stone-900 dark:text-white block group-hover:text-emerald-600 transition-colors">
+                  Chuyên cần
+                </span>
+                <span className="text-[10px] text-stone-400 block mt-0.5">Lịch sử điểm danh</span>
+              </div>
+            </Link>
+
+            <Link
+              href={`/dashboard/parent/grades?child_id=${selectedChild.student_id}`}
+              className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/60 dark:border-white/5 hover:border-amber-500/40 transition-all group flex flex-col justify-between gap-3 shadow-2xs"
+            >
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 w-fit">
+                <Award className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-xs text-stone-900 dark:text-white block group-hover:text-amber-600 transition-colors">
+                  Bảng điểm
+                </span>
+                <span className="text-[10px] text-stone-400 block mt-0.5">Điểm các môn học</span>
+              </div>
+            </Link>
+
+            <Link
+              href={`/dashboard/students/${selectedChild.student_id}/transcript`}
+              className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/60 dark:border-white/5 hover:border-blue-500/40 transition-all group flex flex-col justify-between gap-3 shadow-2xs"
+            >
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 w-fit">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-xs text-stone-900 dark:text-white block group-hover:text-blue-600 transition-colors">
+                  Phiếu kết quả
+                </span>
+                <span className="text-[10px] text-stone-400 block mt-0.5">Kết quả học tập kỳ</span>
+              </div>
+            </Link>
+
+            <Link
+              href={`/dashboard/admin/finance/invoices?student_id=${selectedChild.student_id}`}
+              className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/60 dark:border-white/5 hover:border-stone-400 transition-all group flex flex-col justify-between gap-3 shadow-2xs"
+            >
+              <div className="p-2 rounded-xl bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300 w-fit">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-xs text-stone-900 dark:text-white block">
+                  Học phí
+                </span>
+                <span className="text-[10px] text-stone-400 block mt-0.5">Hóa đơn & Đóng phí</span>
+              </div>
+            </Link>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Attendance Today Widget */}
+      {selectedChild && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 px-1">
+            Trạng thái điểm danh hôm nay
+          </h3>
+          <ChildAttendanceTodayWidget childId={selectedChild.student_id} />
+        </div>
+      )}
+
+      {/* All Connected Children List */}
+      <div className="space-y-3 pt-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 px-1">
+          Tất cả con em đã kết nối ({students.length})
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {students.map((student) => (
+            <Link
+              key={student.student_id}
+              href={`/dashboard/students/${student.student_id}`}
+              className="p-4 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-white/10 hover:border-amber-500/50 shadow-2xs transition-all flex items-center justify-between gap-3 group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black text-sm shrink-0">
+                  {student.student_name.charAt(0)}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold text-xs text-stone-900 dark:text-white truncate group-hover:text-amber-600 transition-colors">
+                    {student.student_name}
+                  </p>
+                  <p className="text-[10px] text-stone-400 font-mono mt-0.5">
+                    {student.student_code} • {student.relationship}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-stone-400 group-hover:translate-x-1 transition-transform shrink-0" />
+            </Link>
+          ))}
+        </div>
       </div>
     </main>
   );

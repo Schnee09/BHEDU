@@ -31,6 +31,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/ui/Icons';
 import { cn } from '@/lib/utils';
+import PageGuard from '@/components/PageGuard';
 
 import { AcademicMatrix } from '@/components/Academic/AcademicMatrix';
 
@@ -73,7 +74,19 @@ const CHART_COLORS = {
   grades: ['#10b981', '#22c55e', '#3b82f6', '#eab308', '#f97316', '#ef4444'],
 };
 
-export default function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
+export default function StudentProgressPageGuarded({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <PageGuard permissions="students.view">
+      <StudentProgressPage params={params} />
+    </PageGuard>
+  );
+}
+
+function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
   const [progress, setProgress] = useState<StudentProgress | null>(null);
@@ -90,9 +103,9 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
       setLoading(true);
       const [progressRes, gradesRes] = await Promise.all([
         apiFetch(`/api/students/${resolvedParams.id}/progress`),
-        apiFetch(`/api/grades?student_id=${resolvedParams.id}`)
+        apiFetch(`/api/grades?student_id=${resolvedParams.id}`),
       ]);
-      
+
       const progressData = await progressRes.json();
       const gradesData = await gradesRes.json();
 
@@ -180,7 +193,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
       {/* Header */}
       <div className="bg-white dark:bg-stone-900 rounded-[2rem] shadow-xl p-8 border border-stone-200 dark:border-white/5 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full -mr-32 -mt-32" />
-        
+
         <div className="flex flex-col lg:flex-row items-start justify-between gap-8 relative z-10">
           <div className="flex-1 space-y-6">
             <div className="flex flex-wrap items-center gap-4">
@@ -196,14 +209,16 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                 className="group flex items-center gap-2 px-6 py-2 bg-stone-900 dark:bg-amber-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:scale-105 transition-all duration-300"
               >
                 <Icons.Grades className="w-3 h-3" />
-                In học bạ
+                Xem phiếu kết quả
               </button>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-5 bg-amber-500 rounded-full" />
-                <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-[0.2em]">Phân tích kết quả</span>
+                <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-[0.2em]">
+                  Phân tích kết quả
+                </span>
               </div>
               <h1 className="text-4xl md:text-5xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight">
                 Tiến độ học tập
@@ -216,7 +231,12 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                   <Icons.Students className="w-6 h-6 font-black" />
                 </div>
                 <div>
-                  <Badge variant="success" className="px-3 py-1 font-black text-[9px] uppercase tracking-widest">Hoàn thành</Badge>
+                  <Badge
+                    variant="success"
+                    className="px-3 py-1 font-black text-[9px] uppercase tracking-widest"
+                  >
+                    Hoàn thành
+                  </Badge>
                   <p className="font-serif font-black text-stone-800 dark:text-white uppercase truncate max-w-[200px]">
                     {progress.student_name}
                   </p>
@@ -228,7 +248,9 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                   <Icons.Magic className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">UID (Mã truy cập)</p>
+                  <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">
+                    UID (Mã truy cập)
+                  </p>
                   <p className="font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">
                     {progress.student_code}
                   </p>
@@ -240,20 +262,30 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                   <Icons.Users className="w-3 h-3" />
                 </div>
                 <div>
-                  <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">CID (Mã định danh)</p>
+                  <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">
+                    CID (Mã định danh)
+                  </p>
                   <p className="font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tight">
                     {progress.student_id}
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex flex-wrap gap-4 pt-2">
-              <Badge variant="default" className="px-4 py-1.5 border-stone-200 dark:border-white/10 text-stone-500 dark:text-stone-400 font-black uppercase tracking-widest text-[10px]">
-                Lớp: <span className="text-stone-900 dark:text-white ml-1">{progress.class_name}</span>
+              <Badge
+                variant="default"
+                className="px-4 py-1.5 border-stone-200 dark:border-white/10 text-stone-500 dark:text-stone-400 font-black uppercase tracking-widest text-[10px]"
+              >
+                Lớp:{' '}
+                <span className="text-stone-900 dark:text-white ml-1">{progress.class_name}</span>
               </Badge>
-              <Badge variant="default" className="px-4 py-1.5 border-stone-200 dark:border-white/10 text-stone-500 dark:text-stone-400 font-black uppercase tracking-widest text-[10px]">
-                Khối: <span className="text-stone-900 dark:text-white ml-1">{progress.grade_level}</span>
+              <Badge
+                variant="default"
+                className="px-4 py-1.5 border-stone-200 dark:border-white/10 text-stone-500 dark:text-stone-400 font-black uppercase tracking-widest text-[10px]"
+              >
+                Khối:{' '}
+                <span className="text-stone-900 dark:text-white ml-1">{progress.grade_level}</span>
               </Badge>
             </div>
           </div>
@@ -264,20 +296,28 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-700">
                 <Icons.Progress className="w-24 h-24" />
               </div>
-              
-              <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-6">Xu hướng tổng thể</p>
-              
+
+              <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-6">
+                Xu hướng tổng thể
+              </p>
+
               <div className="flex items-center gap-6">
-                <div className={cn(
-                  "w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-xl",
-                  trend.direction === 'up' ? "bg-emerald-500/20 text-emerald-400" : 
-                  trend.direction === 'down' ? "bg-rose-500/20 text-rose-400" : "bg-stone-500/20 text-stone-400"
-                )}>
+                <div
+                  className={cn(
+                    'w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-xl',
+                    trend.direction === 'up'
+                      ? 'bg-emerald-500/20 text-emerald-400'
+                      : trend.direction === 'down'
+                        ? 'bg-rose-500/20 text-rose-400'
+                        : 'bg-stone-500/20 text-stone-400'
+                  )}
+                >
                   {trend.direction === 'up' ? '↗' : trend.direction === 'down' ? '↘' : '→'}
                 </div>
                 <div>
                   <div className="text-4xl font-serif font-black tracking-tighter">
-                    {trend.value > 0 ? '+' : ''}{trend.value.toFixed(2)}
+                    {trend.value > 0 ? '+' : ''}
+                    {trend.value.toFixed(2)}
                   </div>
                   <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">
                     {trend.percentage}% Cải thiện
@@ -308,14 +348,21 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                     Năm học {semester.academic_year}
                   </p>
                 </div>
-                <Badge className={cn("px-3 py-1 font-black uppercase tracking-widest text-[9px]", classification.color)}>
+                <Badge
+                  className={cn(
+                    'px-3 py-1 font-black uppercase tracking-widest text-[9px]',
+                    classification.color
+                  )}
+                >
                   {classification.label}
                 </Badge>
               </div>
 
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-stone-50 dark:bg-white/5 rounded-xl border border-stone-100 dark:border-white/5">
-                  <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Điểm TB học kỳ</span>
+                  <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                    Điểm TB học kỳ
+                  </span>
                   <span className="text-2xl font-serif font-black text-amber-600">
                     {semester.gpa.toFixed(2)}
                   </span>
@@ -323,20 +370,33 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 bg-stone-50 dark:bg-white/5 rounded-xl border border-stone-100 dark:border-white/5 text-center">
-                    <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1">Hạnh kiểm</p>
-                    <p className="font-black text-stone-800 dark:text-white uppercase text-sm">{semester.conduct}</p>
+                    <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1">
+                      Hạnh kiểm
+                    </p>
+                    <p className="font-black text-stone-800 dark:text-white uppercase text-sm">
+                      {semester.conduct}
+                    </p>
                   </div>
                   <div className="p-3 bg-stone-50 dark:bg-white/5 rounded-xl border border-stone-100 dark:border-white/5 text-center">
-                    <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1">Chuyên cần</p>
-                    <p className="font-black text-emerald-600 uppercase text-sm">{semester.attendance_rate}%</p>
+                    <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1">
+                      Chuyên cần
+                    </p>
+                    <p className="font-black text-emerald-600 uppercase text-sm">
+                      {semester.attendance_rate}%
+                    </p>
                   </div>
                 </div>
 
                 {semester.rank_in_class && (
                   <div className="pt-4 border-t border-stone-100 dark:border-white/5 flex justify-between items-center">
-                    <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Xếp hạng lớp</span>
+                    <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                      Xếp hạng lớp
+                    </span>
                     <span className="font-black text-stone-900 dark:text-white">
-                      {semester.rank_in_class} <span className="text-stone-400 text-xs font-medium">/ {semester.total_students}</span>
+                      {semester.rank_in_class}{' '}
+                      <span className="text-stone-400 text-xs font-medium">
+                        / {semester.total_students}
+                      </span>
                     </span>
                   </div>
                 )}
@@ -347,11 +407,7 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* Subject-wise Performance Table - Now Using AcademicMatrix */}
-      <div className="space-y-6">
-        {!loading && (
-          <AcademicMatrix grades={grades} />
-        )}
-      </div>
+      <div className="space-y-6">{!loading && <AcademicMatrix grades={grades} />}</div>
 
       {/* Performance Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -365,15 +421,19 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
               <h2 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight">
                 Xu hướng điểm TB (GPA)
               </h2>
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">Sự tiến bộ qua các kỳ học</p>
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">
+                Sự tiến bộ qua các kỳ học
+              </p>
             </div>
           </div>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={progress.semesters.map((s) => ({
-                name: s.semester,
-                gpa: parseFloat(s.gpa.toFixed(2)),
-              }))}>
+              <AreaChart
+                data={progress.semesters.map((s) => ({
+                  name: s.semester,
+                  gpa: parseFloat(s.gpa.toFixed(2)),
+                }))}
+              >
                 <defs>
                   <linearGradient id="gpaGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#d97706" stopOpacity={0.8} />
@@ -381,31 +441,50 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 10, fontWeight: 700 }} />
-                <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 10, fontWeight: 700 }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1c1917', 
-                    borderRadius: '1rem', 
-                    border: 'none', 
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#a8a29e', fontSize: 10, fontWeight: 700 }}
+                />
+                <YAxis
+                  domain={[0, 10]}
+                  ticks={[0, 2, 4, 6, 8, 10]}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#a8a29e', fontSize: 10, fontWeight: 700 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1c1917',
+                    borderRadius: '1rem',
+                    border: 'none',
                     padding: '1rem',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                   }}
-                  itemStyle={{ 
-                    color: '#f59e0b', 
-                    fontWeight: 900, 
+                  itemStyle={{
+                    color: '#f59e0b',
+                    fontWeight: 900,
                     fontSize: '14px',
-                    textTransform: 'uppercase'
+                    textTransform: 'uppercase',
                   }}
-                  labelStyle={{ 
-                    color: '#a8a29e', 
-                    fontSize: '10px', 
-                    fontWeight: 900, 
+                  labelStyle={{
+                    color: '#a8a29e',
+                    fontSize: '10px',
+                    fontWeight: 900,
                     marginBottom: '0.5rem',
-                    textTransform: 'uppercase'
+                    textTransform: 'uppercase',
                   }}
                 />
-                <Area type="monotone" dataKey="gpa" stroke="#d97706" strokeWidth={4} fillOpacity={1} fill="url(#gpaGradient)" animationDuration={2000} />
+                <Area
+                  type="monotone"
+                  dataKey="gpa"
+                  stroke="#d97706"
+                  strokeWidth={4}
+                  fillOpacity={1}
+                  fill="url(#gpaGradient)"
+                  animationDuration={2000}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -421,27 +500,37 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
               <h2 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight">
                 Thế mạnh môn học
               </h2>
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">Phân tích đa chiều học kỳ cuối</p>
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">
+                Phân tích đa chiều học kỳ cuối
+              </p>
             </div>
           </div>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={(progress.semesters[progress.semesters.length - 1]?.subjects ?? [])
-                .filter(s => s.final_grade !== null)
-                .slice(0, 7)
-                .map(s => ({
-                  subject: s.subject_name.length > 8 ? s.subject_name.substring(0, 6) + '..' : s.subject_name,
-                  grade: s.final_grade
-                }))}>
+              <RadarChart
+                data={(progress.semesters[progress.semesters.length - 1]?.subjects ?? [])
+                  .filter((s) => s.final_grade !== null)
+                  .slice(0, 7)
+                  .map((s) => ({
+                    subject:
+                      s.subject_name.length > 8
+                        ? s.subject_name.substring(0, 6) + '..'
+                        : s.subject_name,
+                    grade: s.final_grade,
+                  }))}
+              >
                 <PolarGrid stroke="#e7e5e4" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: '#78716c', fontSize: 10, fontWeight: 900 }} />
+                <PolarAngleAxis
+                  dataKey="subject"
+                  tick={{ fill: '#78716c', fontSize: 10, fontWeight: 900 }}
+                />
                 <PolarRadiusAxis domain={[0, 10]} ticks={[0, 5, 10] as any} tick={false} />
-                <Radar 
-                  name="Điểm môn" 
-                  dataKey="grade" 
-                  stroke="#d97706" 
-                  fill="#d97706" 
-                  fillOpacity={0.6} 
+                <Radar
+                  name="Điểm môn"
+                  dataKey="grade"
+                  stroke="#d97706"
+                  fill="#d97706"
+                  fillOpacity={0.6}
                   animationDuration={2500}
                 />
               </RadarChart>
@@ -459,7 +548,9 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
               <h2 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight">
                 Phân bổ điểm theo xếp loại
               </h2>
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">Tỉ lệ phần trăm các nhóm điểm</p>
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">
+                Tỉ lệ phần trăm các nhóm điểm
+              </p>
             </div>
           </div>
           <div className="h-[300px]">
@@ -476,18 +567,34 @@ export default function StudentProgressPage({ params }: { params: Promise<{ id: 
                   animationDuration={1500}
                 >
                   {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={
-                      entry.name.includes('Giỏi') ? '#10b981' : 
-                      entry.name.includes('Khá') ? '#d97706' : 
-                      entry.name.includes('TB') ? '#78716c' : '#ef4444'
-                    } stroke="none" />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={
+                        entry.name.includes('Giỏi')
+                          ? '#10b981'
+                          : entry.name.includes('Khá')
+                            ? '#d97706'
+                            : entry.name.includes('TB')
+                              ? '#78716c'
+                              : '#ef4444'
+                      }
+                      stroke="none"
+                    />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1c1917', borderRadius: '1rem', border: 'none', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1c1917',
+                    borderRadius: '1rem',
+                    border: 'none',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                  }}
                   itemStyle={{ fontWeight: 900, fontSize: '12px', textTransform: 'uppercase' }}
                 />
-                <Legend iconType="circle" wrapperStyle={{ paddingTop: '2rem', fontStyle: 'italic' }} />
+                <Legend
+                  iconType="circle"
+                  wrapperStyle={{ paddingTop: '2rem', fontStyle: 'italic' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>

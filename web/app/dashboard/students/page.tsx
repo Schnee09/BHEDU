@@ -31,6 +31,7 @@ import {
   Modal,
 } from '@/components/ui';
 import { PermissionGuard } from '@/hooks/usePermissions';
+import PageGuard from '@/components/PageGuard';
 import { StatCard } from '@/components/ui/Card';
 import { Icons } from '@/components/ui/Icons';
 import { PageHeader } from '@/components/Breadcrumb';
@@ -114,7 +115,15 @@ interface StudentStats {
   by_grade: Record<string, number>;
 }
 
-export default function StudentsPage() {
+export default function StudentsPageGuarded() {
+  return (
+    <PageGuard permissions="students.view">
+      <StudentsPage />
+    </PageGuard>
+  );
+}
+
+function StudentsPage() {
   const toast = useToast();
   const { user, hasAdminAccess, isTeacher: _isTeacher } = useUser();
 
@@ -759,7 +768,7 @@ export default function StudentsPage() {
           </div>
 
           {/* Row 3: Swipeable Quick Chips for Grade Level & Status */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-0.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-0.5 no-scrollbar">
             <button
               type="button"
               onClick={() => setFilters({ ...filters, gradeLevel: '' })}

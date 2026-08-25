@@ -54,7 +54,7 @@ const REPORT_OPTIONS: ReportOption[] = [
   {
     id: 'report_card',
     title: 'Report Card',
-    titleVi: 'Học Bạ',
+    titleVi: 'Phiếu Kết Quả Học Tập',
     description: 'Bảng điểm cá nhân của học sinh theo từng học kỳ cụ thể.',
     icon: <FileText className="w-6 h-6" />,
   },

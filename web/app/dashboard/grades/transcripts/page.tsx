@@ -129,8 +129,8 @@ export default function TranscriptsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <h1 className="text-3xl font-black text-stone-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
-              <GraduationCap className="w-8 h-8 text-blue-500" />
-              Học bạ điện tử
+              <GraduationCap className="w-8 h-8 text-amber-500" />
+              Phiếu kết quả học tập
             </h1>
             {selectedStudent && (
               <div className="flex items-center gap-2 mt-2">

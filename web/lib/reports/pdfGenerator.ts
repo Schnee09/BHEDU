@@ -1,9 +1,9 @@
 /**
  * PDF Generator Service
- * 
+ *
  * Generates PDF documents for various report types using browser print-to-PDF.
  * This approach is more compatible and doesn't require external dependencies.
- * 
+ *
  * Supported report types:
  * - Student Report Card (Học bạ)
  * - Attendance Summary (Báo cáo điểm danh)
@@ -72,11 +72,10 @@ export interface AttendanceReportData {
 /**
  * Generate HTML for Report Card
  */
-export function generateReportCardHTML(
-  data: ReportCardData,
-  config: ReportConfig
-): string {
-  const subjectsRows = data.subjects.map((subject, i) => `
+export function generateReportCardHTML(data: ReportCardData, config: ReportConfig): string {
+  const subjectsRows = data.subjects
+    .map(
+      (subject, i) => `
     <tr class="${i % 2 === 0 ? 'bg-gray-50' : ''}">
       <td class="border px-3 py-2 text-left">${subject.name}</td>
       <td class="border px-3 py-2 text-center">${subject.oralScore?.toFixed(1) || '-'}</td>
@@ -87,7 +86,9 @@ export function generateReportCardHTML(
       <td class="border px-3 py-2 text-center font-semibold">${subject.averageScore.toFixed(2)}</td>
       <td class="border px-3 py-2 text-center">${subject.letterGrade}</td>
     </tr>
-  `).join('');
+  `
+    )
+    .join('');
 
   return `
 <!DOCTYPE html>
@@ -95,7 +96,7 @@ export function generateReportCardHTML(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Học Bạ - ${data.studentName}</title>
+  <title>Phiếu Kết Quả Học Tập - ${data.studentName}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @page {
@@ -113,7 +114,7 @@ export function generateReportCardHTML(
   <div class="text-center mb-6">
     <h1 class="text-xl font-bold uppercase">${config.schoolName}</h1>
     ${config.schoolAddress ? `<p class="text-sm text-gray-600">${config.schoolAddress}</p>` : ''}
-    <h2 class="text-2xl font-bold mt-4 text-blue-800">HỌC BẠ</h2>
+    <h2 class="text-2xl font-bold mt-4 text-amber-700">PHIẾU KẾT QUẢ HỌC TẬP</h2>
     <p class="text-lg">${config.academicYear} ${config.semester ? `- ${config.semester}` : ''}</p>
   </div>
 
@@ -170,12 +171,16 @@ export function generateReportCardHTML(
   </div>
 
   <!-- Teacher Comment -->
-  ${data.teacherComment ? `
+  ${
+    data.teacherComment
+      ? `
   <div class="mb-6 border-2 border-gray-300 rounded-lg p-4">
     <h4 class="font-bold text-blue-800 mb-2">NHẬN XÉT CỦA GIÁO VIÊN</h4>
     <p class="italic">${data.teacherComment}</p>
   </div>
-  ` : ''}
+  `
+      : ''
+  }
 
   <!-- Signatures -->
   <div class="grid grid-cols-3 gap-4 mt-8 text-center">
@@ -213,7 +218,9 @@ export function generateAttendanceReportHTML(
   data: AttendanceReportData,
   config: ReportConfig
 ): string {
-  const studentRows = data.students.map((student, i) => `
+  const studentRows = data.students
+    .map(
+      (student, i) => `
     <tr class="${i % 2 === 0 ? 'bg-gray-50' : ''}">
       <td class="border px-3 py-2">${i + 1}</td>
       <td class="border px-3 py-2">${student.studentName}</td>
@@ -225,7 +232,9 @@ export function generateAttendanceReportHTML(
       <td class="border px-3 py-2 text-center">${student.totalDays}</td>
       <td class="border px-3 py-2 text-center font-semibold ${student.attendanceRate >= 90 ? 'text-green-600' : student.attendanceRate >= 80 ? 'text-yellow-600' : 'text-red-600'}">${student.attendanceRate.toFixed(1)}%</td>
     </tr>
-  `).join('');
+  `
+    )
+    .join('');
 
   return `
 <!DOCTYPE html>
@@ -307,8 +316,11 @@ export function generateTranscriptHTML(
   transcript: StudentTranscript,
   config: ReportConfig
 ): string {
-  const semesterBlocks = transcript.semesters.map(semester => {
-    const courseRows = semester.courses.map((course, i) => `
+  const semesterBlocks = transcript.semesters
+    .map((semester) => {
+      const courseRows = semester.courses
+        .map(
+          (course, i) => `
       <tr class="${i % 2 === 0 ? 'bg-gray-50' : ''}">
         <td class="border px-2 py-1">${course.courseName}</td>
         <td class="border px-2 py-1 text-center">${course.credits}</td>
@@ -316,9 +328,11 @@ export function generateTranscriptHTML(
         <td class="border px-2 py-1 text-center">${course.letterGrade}</td>
         <td class="border px-2 py-1 text-center ${course.status === 'passed' ? 'text-green-600' : 'text-red-600'}">${course.status === 'passed' ? 'Đạt' : course.status === 'failed' ? 'Chưa đạt' : 'Đang học'}</td>
       </tr>
-    `).join('');
+    `
+        )
+        .join('');
 
-    return `
+      return `
       <div class="mb-6">
         <h4 class="font-bold bg-blue-100 px-3 py-2">${semester.semesterName} - ${semester.academicYear}</h4>
         <table class="w-full border-collapse text-sm">
@@ -345,7 +359,8 @@ export function generateTranscriptHTML(
         </table>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   return `
 <!DOCTYPE html>

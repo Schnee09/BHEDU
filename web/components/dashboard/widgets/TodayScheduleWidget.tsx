@@ -43,7 +43,10 @@ interface TodayScheduleWidgetProps {
   studentId?: string; // Option for parent view to filter a specific student
 }
 
-const TodayScheduleWidget = memo(function TodayScheduleWidget({ role, studentId }: TodayScheduleWidgetProps) {
+const TodayScheduleWidget = memo(function TodayScheduleWidget({
+  role,
+  studentId,
+}: TodayScheduleWidgetProps) {
   // Fetch slots from my timetable
   const { data, loading, error } = useFetch<{
     slots: TimetableSlot[];
@@ -110,33 +113,33 @@ const TodayScheduleWidget = memo(function TodayScheduleWidget({ role, studentId 
           </div>
         </div>
       </CardHeader>
-      <CardBody className="p-6">
+      <CardBody className="p-3 sm:p-5">
         {loading ? (
-          <div className="space-y-4">
-            <div className="h-16 w-full bg-stone-100 dark:bg-stone-800 animate-pulse rounded-2xl" />
-            <div className="h-16 w-full bg-stone-100 dark:bg-stone-800 animate-pulse rounded-2xl" />
+          <div className="space-y-3">
+            <div className="h-14 w-full bg-stone-100 dark:bg-stone-800 animate-pulse rounded-2xl" />
+            <div className="h-14 w-full bg-stone-100 dark:bg-stone-800 animate-pulse rounded-2xl" />
           </div>
         ) : todaySlots.length === 0 ? (
-          <div className="py-12 text-center text-stone-500 dark:text-stone-400 font-bold uppercase tracking-widest text-xs">
+          <div className="py-8 text-center text-stone-500 dark:text-stone-400 font-bold uppercase tracking-widest text-xs">
             Hôm nay không có tiết học nào
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2.5 sm:space-y-3.5">
             {todaySlots.map((slot) => {
               const active = isSlotActive(slot.start_time, slot.end_time);
               return (
                 <div
                   key={slot.id}
                   className={cn(
-                    'flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl border transition-all duration-300 gap-4',
+                    'flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border transition-all duration-300 gap-3',
                     active
                       ? 'bg-amber-500/5 border-amber-500/30 dark:border-amber-500/20 shadow-md shadow-amber-500/5'
                       : 'bg-white/45 dark:bg-stone-900/40 border-stone-200/60 dark:border-white/5 hover:border-stone-300 dark:hover:border-white/10'
                   )}
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3">
                     {/* Time block */}
-                    <div className="flex flex-col items-center justify-center bg-stone-100 dark:bg-white/5 rounded-xl px-3 py-2 min-w-[70px]">
+                    <div className="flex flex-col items-center justify-center bg-stone-100 dark:bg-white/5 rounded-xl px-2.5 py-1.5 min-w-[58px]">
                       <span className="text-xs font-black text-stone-800 dark:text-stone-200 tracking-tighter">
                         {formatTime(slot.start_time)}
                       </span>

@@ -69,11 +69,12 @@ export class EnrollmentRepository
     // 1. Fetch base enrollment
     let enrollmentQuery = this.supabase.from(this.tableName).select('*').eq('id', id);
 
-    if (this.useSoftDelete && typeof (enrollmentQuery as any).is === "function") {
+    if (this.useSoftDelete && typeof (enrollmentQuery as any).is === 'function') {
       enrollmentQuery = enrollmentQuery.is('deleted_at', null);
     }
 
-    const { data: enrollment, error } = await (typeof (enrollmentQuery as any).maybeSingle === "function"
+    const { data: enrollment, error } = await (typeof (enrollmentQuery as any).maybeSingle ===
+    'function'
       ? (enrollmentQuery as any).maybeSingle()
       : (enrollmentQuery as any).single());
 
@@ -92,7 +93,7 @@ export class EnrollmentRepository
       .select('id, first_name, last_name, full_name, email')
       .eq('id', enr.student_id);
 
-    if (typeof (studentQuery as any).is === "function") {
+    if (typeof (studentQuery as any).is === 'function') {
       studentQuery = (studentQuery as any).is('deleted_at', null);
     }
 
@@ -101,15 +102,15 @@ export class EnrollmentRepository
       .select('id, name, subject_id, teacher_id')
       .eq('id', enr.class_id);
 
-    if (typeof (classQuery as any).is === "function") {
+    if (typeof (classQuery as any).is === 'function') {
       classQuery = (classQuery as any).is('deleted_at', null);
     }
 
     const [studentResult, classResult] = await Promise.all([
-      typeof (studentQuery as any).maybeSingle === "function"
+      typeof (studentQuery as any).maybeSingle === 'function'
         ? (studentQuery as any).maybeSingle()
         : (studentQuery as any).single(),
-      typeof (classQuery as any).maybeSingle === "function"
+      typeof (classQuery as any).maybeSingle === 'function'
         ? (classQuery as any).maybeSingle()
         : (classQuery as any).single(),
     ]);
@@ -186,7 +187,6 @@ export class EnrollmentRepository
         class:classes (
           id,
           name,
-          code,
           schedule,
           subject_id,
           teacher_id,
@@ -199,7 +199,7 @@ export class EnrollmentRepository
       )
       .eq('student_id', studentId);
 
-    if (this.useSoftDelete && typeof (query as any).is === "function") {
+    if (this.useSoftDelete && typeof (query as any).is === 'function') {
       query = query.is('deleted_at', null);
     }
 
@@ -233,7 +233,7 @@ export class EnrollmentRepository
       .eq('class_id', classId)
       .eq('status', 'enrolled');
 
-    if (this.useSoftDelete && typeof (query as any).is === "function") {
+    if (this.useSoftDelete && typeof (query as any).is === 'function') {
       query = query.is('deleted_at', null);
     }
 
@@ -256,11 +256,11 @@ export class EnrollmentRepository
       .eq('student_id', studentId)
       .eq('class_id', classId);
 
-    if (this.useSoftDelete && typeof (query as any).is === "function") {
+    if (this.useSoftDelete && typeof (query as any).is === 'function') {
       query = query.is('deleted_at', null);
     }
 
-    const { data, error } = await (typeof (query as any).maybeSingle === "function"
+    const { data, error } = await (typeof (query as any).maybeSingle === 'function'
       ? (query as any).maybeSingle()
       : (query as any).single());
 

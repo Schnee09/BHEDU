@@ -24,7 +24,7 @@ const ChildSwitcher = memo(function ChildSwitcher({
   if (childrenList.length <= 1) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-3 p-2 bg-white/40 dark:bg-stone-900/40 backdrop-blur-md border border-stone-200/50 dark:border-white/5 rounded-3xl w-fit">
+    <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-white/10 rounded-2xl overflow-x-auto max-w-full swipe-container">
       {childrenList.map((child) => {
         const isSelected = child.id === selectedChildId;
         return (
@@ -32,26 +32,26 @@ const ChildSwitcher = memo(function ChildSwitcher({
             key={child.id}
             onClick={() => onSelectChild(child.id)}
             className={cn(
-              'flex items-center gap-3 px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-300 active:scale-95',
+              'flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 active:scale-95 shrink-0 press-effect',
               isSelected
-                ? 'bg-amber-500 text-stone-900 shadow-lg shadow-amber-500/20'
-                : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
+                ? 'bg-amber-500 text-stone-950 shadow-xs'
+                : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white bg-stone-50 dark:bg-stone-800/60'
             )}
           >
             <div
               className={cn(
-                'w-6 h-6 rounded-lg flex items-center justify-center font-black text-[10px]',
-                isSelected ? 'bg-stone-900 text-amber-500' : 'bg-stone-100 dark:bg-white/5'
+                'w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[10px] shrink-0',
+                isSelected ? 'bg-stone-950 text-amber-400' : 'bg-stone-200/70 dark:bg-stone-700'
               )}
             >
               <User className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <p className="leading-none text-left">{child.full_name}</p>
+            <div className="text-left min-w-0">
+              <p className="leading-tight truncate max-w-[120px]">{child.full_name}</p>
               <p
                 className={cn(
-                  'text-[9px] font-bold mt-0.5 tracking-normal lowercase',
-                  isSelected ? 'text-stone-900/60' : 'text-stone-400'
+                  'text-[9px] font-semibold tracking-normal',
+                  isSelected ? 'text-stone-950/70' : 'text-stone-400'
                 )}
               >
                 {child.student_code}

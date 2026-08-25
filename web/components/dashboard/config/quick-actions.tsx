@@ -68,7 +68,7 @@ export const studentQuickActions: QuickActionItem[] = [
   {
     href: routes.grades.transcripts(),
     icon: <Icons.Grades />,
-    title: 'Học bạ',
+    title: 'Kết quả học tập',
     color: 'emerald',
   },
   {

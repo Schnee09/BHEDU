@@ -6,140 +6,111 @@
  * Vietnamese education system focused
  */
 
-import { NextResponse } from "next/server";
-import { createClientFromRequest } from "@/lib/supabase/server";
-import { teacherAuth } from "@/lib/auth/adminAuth";
+import { NextResponse } from 'next/server';
+import { createClientFromRequest } from '@/lib/supabase/server';
+import { teacherAuth } from '@/lib/auth/adminAuth';
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
     const authResult = await teacherAuth(request);
     if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
     }
 
     const supabase = createClientFromRequest(request as any);
-    const { searchParams } = new URL(request.url);
-    const _academicYear = searchParams.get("academic_year");
 
-    // Get student basic info
+    // 1. Get student basic info
     const { data: student, error: studentError } = await supabase
-      .from("profiles")
-      .select(`
-        id,
-        full_name,
-        student_id,
-        student_code,
-        grade_level
-      `)
-      .eq("id", resolvedParams.id)
-      .eq("role", "student")
+      .from('profiles')
+      .select('id, full_name, student_id, student_code, grade_level')
+      .eq('id', resolvedParams.id)
       .single();
 
     if (studentError || !student) {
-      return NextResponse.json(
-        { error: "Student not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    // Parallelize data fetching
-    const [enrollmentsResponse, gradesResponse, attendanceResponse] =
-      await Promise.all([
-        // Get student's class enrollments
-        supabase
-          .from("enrollments")
-          .select(`
-          class_id,
-          enrollment_date,
-          classes:classes!inner(
-            id,
-            name
-          )
-        `)
-          .eq("student_id", resolvedParams.id)
-          .eq("status", "enrolled"),
-
-        // Get all grades for the student
-        supabase
-          .from("grades")
-          .select(`
-          id,
-          score,
-          feedback,
-          graded_at,
-          assignment:assignments!inner(
-            id,
-            title,
-            max_points,
+    // 2. Parallelize data fetching
+    const [enrollmentsResponse, gradesResponse, attendanceResponse] = await Promise.all([
+      supabase
+        .from('enrollments')
+        .select(
+          `
             class_id,
-            class:classes!inner(
-              id,
-              name
-            ),
-            category:assignment_categories(
+            enrollment_date,
+            classes:classes(
               id,
               name
             )
-          )
-        `)
-          .eq("student_id", resolvedParams.id)
-          .order("graded_at", { ascending: true }),
+          `
+        )
+        .eq('student_id', resolvedParams.id)
+        .eq('status', 'enrolled'),
 
-        // Get attendance data
-        supabase
-          .from("attendance")
-          .select(`
-          id,
-          status,
-          date,
-          class_id
-        `)
-          .eq("student_id", resolvedParams.id),
-      ]);
+      supabase
+        .from('grades')
+        .select(
+          `
+            id,
+            score,
+            points_earned,
+            component_type,
+            semester,
+            academic_year_id,
+            class_id,
+            created_at,
+            subject:subjects(id, name, code),
+            class:classes(id, name)
+          `
+        )
+        .eq('student_id', resolvedParams.id)
+        .order('created_at', { ascending: true }),
+
+      supabase
+        .from('attendance')
+        .select('id, status, date, class_id')
+        .eq('student_id', resolvedParams.id),
+    ]);
 
     const enrollments = enrollmentsResponse.data;
     const grades = gradesResponse.data;
     const attendance = attendanceResponse.data;
 
-    // Process data by class (since classes don't have academic_year_id in schema)
+    // Process data by class / semester
     const classMap = new Map<string, any>();
 
-    // Group grades by class
-    if (grades) {
+    // Group grades by class / semester
+    if (grades && grades.length > 0) {
       grades.forEach((grade: any) => {
-        const assignment = grade.assignment;
-        if (!assignment || !assignment.class) return;
+        const className =
+          grade.class?.name || (enrollments?.[0] as any)?.classes?.name || 'Lớp học';
+        const classId = grade.class_id || 'default';
+        const semester = grade.semester || 'HK1';
+        const key = `${classId}-${semester}`;
 
-        const className = assignment.class.name;
-        const classId = assignment.class.id;
-
-        if (!classMap.has(classId)) {
-          classMap.set(classId, {
-            semester: "HK1", // Default semester
-            academic_year: "2024-2025", // Default year
+        if (!classMap.has(key)) {
+          classMap.set(key, {
+            semester,
+            academic_year: '2024-2025',
             class_name: className,
             subjects: new Map(),
-            total_grades: [],
-            attendance_records: [],
+            total_grades: [] as number[],
+            attendance_records: [] as string[],
           });
         }
 
-        const classData = classMap.get(classId);
-        const subjectName = assignment.category?.name || className;
-        const subjectCode = assignment.category?.id || classId;
+        const classData = classMap.get(key);
+        const subjectObj = grade.subject || { name: 'Môn học', code: 'GEN' };
+        const subjectName = subjectObj.name || 'Môn học';
+        const subjectCode = subjectObj.code || subjectObj.id || 'GEN';
+        const scoreVal = grade.score ?? grade.points_earned;
 
         if (!classData.subjects.has(subjectCode)) {
           classData.subjects.set(subjectCode, {
             subject_name: subjectName,
             subject_code: subjectCode,
-            grades: [],
+            grades: [] as number[],
             semester_1_grade: null,
             semester_2_grade: null,
             final_grade: null,
@@ -147,9 +118,9 @@ export async function GET(
           });
         }
 
-        if (grade.score != null) {
-          classData.subjects.get(subjectCode).grades.push(grade.score);
-          classData.total_grades.push(grade.score);
+        if (scoreVal != null) {
+          classData.subjects.get(subjectCode).grades.push(scoreVal);
+          classData.total_grades.push(scoreVal);
         }
       });
     }
@@ -157,99 +128,103 @@ export async function GET(
     // Add attendance data
     if (attendance) {
       attendance.forEach((record: any) => {
-        const classId = record.class_id;
-        if (classMap.has(classId)) {
-          classMap.get(classId).attendance_records.push(record.status);
+        for (const data of classMap.values()) {
+          data.attendance_records.push(record.status);
         }
+      });
+    }
+
+    // If no grades yet, create an empty semester representation
+    if (classMap.size === 0) {
+      const className = (enrollments?.[0] as any)?.classes?.name || 'Chưa xếp lớp';
+      classMap.set('default-HK1', {
+        semester: 'HK1',
+        academic_year: '2024-2025',
+        class_name: className,
+        subjects: new Map(),
+        total_grades: [],
+        attendance_records: attendance ? attendance.map((a: any) => a.status) : [],
       });
     }
 
     // Calculate class statistics
     const semesters = Array.from(classMap.entries()).map(([_key, data]) => {
-      // Calculate subject averages
-      const subjects = Array.from(data.subjects.values()).map(
-        (subject: any) => {
-          const avg = subject.grades.length > 0
-            ? subject.grades.reduce((a: number, b: number) => a + b, 0) /
-              subject.grades.length
+      const subjects = Array.from(data.subjects.values()).map((subject: any) => {
+        const avg =
+          subject.grades.length > 0
+            ? Math.round(
+                (subject.grades.reduce((a: number, b: number) => a + b, 0) /
+                  subject.grades.length) *
+                  10
+              ) / 10
             : 0;
 
-          return {
-            ...subject,
-            final_grade: avg,
-            semester_1_grade: avg, // In real system, split by HK1/HK2
-            semester_2_grade: null,
-            grades: undefined, // Remove raw grades from response
-          };
-        },
-      );
+        return {
+          ...subject,
+          final_grade: avg,
+          semester_1_grade: avg,
+          semester_2_grade: null,
+          grades: undefined,
+        };
+      });
 
-      // Calculate GPA
-      const gpa = data.total_grades.length > 0
-        ? data.total_grades.reduce((a: number, b: number) => a + b, 0) /
-          data.total_grades.length
-        : 0;
+      const gpa =
+        data.total_grades.length > 0
+          ? Math.round(
+              (data.total_grades.reduce((a: number, b: number) => a + b, 0) /
+                data.total_grades.length) *
+                10
+            ) / 10
+          : 0;
 
-      // Calculate attendance rate
       const totalAttendance = data.attendance_records.length;
-      const presentCount = data.attendance_records.filter((s: string) =>
-        s === "present"
+      const presentCount = data.attendance_records.filter(
+        (s: string) => s === 'present' || s === 'late'
       ).length;
-      const attendanceRate = totalAttendance > 0
-        ? (presentCount / totalAttendance) * 100
-        : 100;
+      const attendanceRate =
+        totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 100;
 
-      // Determine conduct based on attendance and grades
-      let conduct = "Tốt";
-      if (attendanceRate < 80 || gpa < 5) {
-        conduct = "Yếu";
-      } else if (attendanceRate < 90 || gpa < 6.5) {
-        conduct = "Trung bình";
+      let conduct = 'Tốt';
+      if (attendanceRate < 80 || (gpa > 0 && gpa < 5)) {
+        conduct = 'Yếu';
+      } else if (attendanceRate < 90 || (gpa > 0 && gpa < 6.5)) {
+        conduct = 'Trung bình';
       } else if (gpa >= 8 && attendanceRate >= 95) {
-        conduct = "Xuất sắc";
+        conduct = 'Xuất sắc';
       }
 
       return {
         semester: data.semester,
         academic_year: data.academic_year,
-        gpa: Math.round(gpa * 100) / 100,
+        gpa,
         conduct,
-        attendance_rate: Math.round(attendanceRate * 10) / 10,
+        attendance_rate: attendanceRate,
         subjects,
-        rank_in_class: null, // Can be calculated if needed
+        rank_in_class: null,
         total_students: null,
       };
     });
 
-    // Sort by academic year and semester
-    semesters.sort((a, b) => {
-      const yearCompare = a.academic_year.localeCompare(b.academic_year);
-      if (yearCompare !== 0) return yearCompare;
-      return a.semester.localeCompare(b.semester);
-    });
-
-    // Get current class info
-    const currentClass = enrollments && enrollments.length > 0
-      ? (enrollments[0] as any).classes
-      : null;
+    const currentClass =
+      enrollments && enrollments.length > 0 ? (enrollments[0] as any).classes : null;
 
     return NextResponse.json({
       success: true,
       data: {
-        student_uu_id: student.id, // Internal UUID
+        student_uu_id: student.id,
         student_name: student.full_name,
-        student_code: student.student_code || "N/A",
-        student_id: student.student_id || "N/A",
-        class_name: currentClass?.name || "Chưa có lớp",
-        grade_level: student.grade_level || "N/A",
+        student_code: student.student_code || 'N/A',
+        student_id: student.student_id || 'N/A',
+        class_name: currentClass?.name || 'Chưa có lớp',
+        grade_level: student.grade_level || 'N/A',
         semesters,
       },
     });
   } catch (error: any) {
-    console.error("Error fetching student progress:", error);
+    console.error('Error fetching student progress:', error);
     return NextResponse.json(
-      { error: "Internal server error", details: error.message },
-      { status: 500 },
+      { error: 'Internal server error', details: error.message },
+      { status: 500 }
     );
   }
 }

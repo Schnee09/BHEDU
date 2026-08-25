@@ -13,6 +13,8 @@ import {
   EyeOff,
   Phone,
   ArrowRight,
+  ArrowLeft,
+  Globe,
   ShieldCheck,
   AlertCircle,
   Sparkles,
@@ -235,32 +237,47 @@ export default function LoginPage() {
 
   return (
     <GuestGuard>
-      <div className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 bg-stone-100 dark:bg-[#0E0D0B] text-stone-900 dark:text-stone-100 selection:bg-amber-500/30">
+      <div className="min-h-screen flex flex-col justify-center items-center p-3 sm:p-6 bg-stone-100 dark:bg-[#0E0D0B] text-stone-900 dark:text-stone-100 selection:bg-amber-500/30">
+        {/* Return to Landing Page Button */}
+        <div className="w-full max-w-md mb-3 flex items-center justify-between px-1">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400 transition-colors group"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span>Về Trang giới thiệu</span>
+          </Link>
+          <span className="text-[10px] font-mono text-stone-400 flex items-center gap-1">
+            <Globe className="w-3 h-3 text-amber-500" />
+            Cổng thông tin BH-EDU
+          </span>
+        </div>
+
         {/* Main Card */}
-        <div className="w-full max-w-md bg-white dark:bg-[#14120E] border border-stone-200 dark:border-stone-800 rounded-3xl shadow-xl p-6 sm:p-8 space-y-6">
+        <div className="w-full max-w-md bg-white dark:bg-[#14120E] border border-stone-200 dark:border-stone-800 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-8 space-y-4 sm:space-y-6">
           {/* Header & Logo */}
-          <div className="text-center space-y-3">
-            <Link href="/" className="inline-block group">
-              <div className="relative inline-flex items-center justify-center w-20 h-20 sm:w-22 sm:h-22 rounded-3xl bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-500/15 dark:via-white/5 dark:to-transparent border border-amber-500/25 dark:border-amber-500/30 shadow-2xl shadow-amber-500/20 group-hover:shadow-amber-500/35 group-hover:scale-105 group-hover:border-amber-500/40 transition-all duration-300 p-2.5 backdrop-blur-md">
+          <div className="text-center space-y-2 sm:space-y-3">
+            <Link href="/" title="Về Trang giới thiệu" className="inline-block group">
+              <div className="relative inline-flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-500/15 dark:via-white/5 dark:to-transparent border border-amber-500/25 dark:border-amber-500/30 shadow-xl shadow-amber-500/20 group-hover:shadow-amber-500/35 group-hover:scale-105 group-hover:border-amber-500/40 transition-all duration-300 p-2 backdrop-blur-md">
                 <Image
                   src="/logo.png"
                   alt="BH-EDU Logo"
-                  width={72}
-                  height={72}
+                  width={60}
+                  height={60}
                   className="object-contain w-full h-full drop-shadow-[0_4px_10px_rgba(217,119,6,0.35)]"
                   priority
                 />
               </div>
             </Link>
 
-            <div className="space-y-1">
-              <span className="inline-flex items-center gap-1.5 text-[9.5px] font-black uppercase tracking-[0.25em] text-amber-700 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-500/15 px-3 py-1 rounded-full border border-amber-500/20">
+            <div className="space-y-0.5 sm:space-y-1">
+              <span className="inline-flex items-center gap-1 text-[8.5px] sm:text-[9.5px] font-black uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/20">
                 TRUNG TÂM GIÁO DỤC BÙI HOÀNG
               </span>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-stone-950 dark:text-white pt-1">
+              <h1 className="text-xl sm:text-3xl font-black tracking-tight text-stone-950 dark:text-white pt-0.5">
                 Đăng Nhập BH-EDU
               </h1>
-              <p className="text-xs text-stone-500 dark:text-stone-400">
+              <p className="text-[11px] sm:text-xs text-stone-500 dark:text-stone-400">
                 Hệ thống Quản lý & Học tập Trực tuyến
               </p>
             </div>
@@ -444,8 +461,8 @@ export default function LoginPage() {
                   {loading
                     ? 'Đang xử lý...'
                     : otpSent
-                    ? 'Xác nhận OTP & Đăng nhập'
-                    : 'Gửi mã xác thực OTP'}
+                      ? 'Xác nhận OTP & Đăng nhập'
+                      : 'Gửi mã xác thực OTP'}
                 </span>
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -486,7 +503,9 @@ export default function LoginPage() {
                 d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"
               />
             </svg>
-            <span>{googleLoading ? 'Đang kết nối Google...' : 'Đăng nhập bằng tài khoản Google'}</span>
+            <span>
+              {googleLoading ? 'Đang kết nối Google...' : 'Đăng nhập bằng tài khoản Google'}
+            </span>
           </button>
 
           {/* Footer Navigation */}

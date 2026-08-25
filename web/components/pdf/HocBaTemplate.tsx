@@ -239,7 +239,7 @@ export const HocBaDocument: React.FC<{ data: TranscriptData }> = ({ data }) => {
           {data.school_address && (
             <Text style={{ fontSize: 9, marginBottom: 5 }}>{data.school_address}</Text>
           )}
-          <Text style={styles.title}>HỌC BẠ HỌC SINH</Text>
+          <Text style={styles.title}>PHIẾU KẾT QUẢ HỌC TẬP</Text>
           <Text style={styles.subtitle}>
             Năm học {data.academic_year} - {data.semester}
           </Text>

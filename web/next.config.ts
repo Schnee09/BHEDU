@@ -7,6 +7,9 @@ const withAnalyzer = withBundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  // Disable dev indicators overlay in local dev mode to prevent overlapping mobile bottom bar
+  devIndicators: false,
+
   // Tree-shake barrel exports from heavy icon/chart libraries
   experimental: {
     optimizePackageImports: [

@@ -17,16 +17,18 @@ import Badge from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import PageGuard from '@/components/PageGuard';
-import { 
-  CheckCircleIcon, 
-  XCircleIcon, 
-  ArrowLeftIcon, 
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  ArrowLeftIcon,
   ClipboardDocumentCheckIcon,
   Squares2X2Icon,
   UserGroupIcon,
   CheckBadgeIcon,
   ExclamationCircleIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
@@ -57,9 +59,13 @@ interface AttendanceSummary {
 export default function AttendanceMarkingPage() {
   return (
     <PageGuard permissions="attendance.mark">
-      <Suspense fallback={<div className="min-h-screen bg-transparent flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full shadow-lg" />
-      </div>}>
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-transparent flex items-center justify-center">
+            <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full shadow-lg" />
+          </div>
+        }
+      >
         <AttendanceMarkingPageContent />
       </Suspense>
     </PageGuard>
@@ -116,7 +122,7 @@ function AttendanceMarkingPageContent() {
       const res = await getClasses({ limit: 100 });
       const classList = (res.data || []) as any[];
       setClasses(classList.map((c) => ({ id: c.id, name: c.name })));
-      
+
       if (!selectedClass && classList.length > 0) {
         setSelectedClass(classList[0].id);
       }
@@ -234,6 +240,45 @@ function AttendanceMarkingPageContent() {
     }
   };
 
+  // Generate & copy Zalo report for class group
+  const copyZaloReport = () => {
+    const currentClass = classes.find((c) => c.id === selectedClass);
+    const className = currentClass?.name || 'Lớp học';
+    const total = students.length;
+    const presentStudents = students.filter((s) => s.status === AttendanceStatus.PRESENT);
+    const absentStudents = students.filter((s) => s.status === AttendanceStatus.ABSENT);
+    const lateStudents = students.filter((s) => s.status === AttendanceStatus.LATE);
+
+    const absentNames = absentStudents.map((s) => s.studentName).join(', ');
+    const lateNames = lateStudents.map((s) => s.studentName).join(', ');
+
+    const dateObj = new Date(date);
+    const dateFormatted = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
+
+    let report = `📢 [TRUNG TÂM GIÁO DỤC BÙI HOÀNG]\n`;
+    report += `📋 BÁO CÁO ĐIỂM DANH: ${className.toUpperCase()}\n`;
+    report += `📅 Ngày học: ${dateFormatted}\n`;
+    report += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    report += `👥 Sĩ số lớp: ${total} học sinh\n`;
+    report += `✅ Có mặt: ${presentStudents.length} học sinh\n`;
+    if (absentStudents.length > 0) {
+      report += `❌ Vắng mặt (${absentStudents.length}): ${absentNames}\n`;
+    }
+    if (lateStudents.length > 0) {
+      report += `⏰ Đi muộn (${lateStudents.length}): ${lateNames}\n`;
+    }
+    if (absentStudents.length === 0 && lateStudents.length === 0) {
+      report += `🎉 Lớp đi học đầy đủ 100%!\n`;
+    }
+    report += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    report += `Kính gửi Quý phụ huynh theo dõi tình hình học tập của các con. Trân trọng!`;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(report);
+      toast.success('Đã sao chép mẫu báo cáo Zalo!');
+    }
+  };
+
   // Filter students based on search query
   const filteredStudents = students.filter((s) => {
     if (!studentSearch.trim()) return true;
@@ -304,20 +349,40 @@ function AttendanceMarkingPageContent() {
             <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 pt-1 border-t border-stone-100 dark:border-white/5 text-xs font-black">
               <div className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0">
                 <UserGroupIcon className="w-3.5 h-3.5 text-stone-500" />
-                <span>{t('attendance.mark.summary.total')}: <strong className="font-mono text-stone-900 dark:text-white">{summary.totalStudents}</strong></span>
+                <span>
+                  {t('attendance.mark.summary.total')}:{' '}
+                  <strong className="font-mono text-stone-900 dark:text-white">
+                    {summary.totalStudents}
+                  </strong>
+                </span>
               </div>
               <div className="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center gap-1.5 shrink-0">
                 <CheckBadgeIcon className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{t('attendance.mark.summary.present')}: <strong className="font-mono text-emerald-800 dark:text-emerald-200">{summary.presentCount}</strong></span>
+                <span>
+                  {t('attendance.mark.summary.present')}:{' '}
+                  <strong className="font-mono text-emerald-800 dark:text-emerald-200">
+                    {summary.presentCount}
+                  </strong>
+                </span>
               </div>
               <div className="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/30 flex items-center gap-1.5 shrink-0">
                 <XCircleIcon className="w-3.5 h-3.5 text-rose-600" />
-                <span>{t('attendance.mark.summary.absent')}: <strong className="font-mono text-rose-800 dark:text-rose-200">{summary.absentCount}</strong></span>
+                <span>
+                  {t('attendance.mark.summary.absent')}:{' '}
+                  <strong className="font-mono text-rose-800 dark:text-rose-200">
+                    {summary.absentCount}
+                  </strong>
+                </span>
               </div>
               {summary.unmarkedCount > 0 && (
                 <div className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/30 flex items-center gap-1.5 shrink-0">
                   <ExclamationCircleIcon className="w-3.5 h-3.5 text-amber-600" />
-                  <span>{t('attendance.mark.summary.unmarked')}: <strong className="font-mono text-amber-800 dark:text-amber-200">{summary.unmarkedCount}</strong></span>
+                  <span>
+                    {t('attendance.mark.summary.unmarked')}:{' '}
+                    <strong className="font-mono text-amber-800 dark:text-amber-200">
+                      {summary.unmarkedCount}
+                    </strong>
+                  </span>
                 </div>
               )}
               <div className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/30 flex items-center gap-1.5 shrink-0 ml-auto">
@@ -330,7 +395,7 @@ function AttendanceMarkingPageContent() {
 
         {/* ── STICKY FAST ACTION & QUICK-MARK BAR ── */}
         {students.length > 0 && (
-          <div className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-200/80 dark:border-white/10 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl flex flex-wrap items-center justify-between gap-2.5 sticky top-3 sm:top-6 z-30 shadow-md">
+          <div className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-200/80 dark:border-white/10 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl flex flex-wrap items-center justify-between gap-2.5 sticky top-16 z-30 shadow-md">
             {/* Quick Mark All Buttons */}
             <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
               <Button
@@ -363,7 +428,9 @@ function AttendanceMarkingPageContent() {
                   placeholder="Tìm học sinh..."
                   className="w-full pl-7 pr-2.5 py-1 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-xl text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                 />
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">🔍</span>
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">
+                  🔍
+                </span>
               </div>
 
               {hasUnsavedChanges && (
@@ -374,6 +441,17 @@ function AttendanceMarkingPageContent() {
                   </span>
                 </div>
               )}
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={copyZaloReport}
+                className="rounded-xl border-blue-200/80 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 uppercase text-[10px] font-black tracking-wider px-3 h-8 shadow-xs cursor-pointer whitespace-nowrap"
+                title="Sao chép mẫu báo cáo điểm danh gửi Zalo phụ huynh"
+              >
+                <ChatBubbleLeftRightIcon className="w-3.5 h-3.5 mr-1 text-blue-600 dark:text-blue-400" />
+                <span>Báo cáo Zalo</span>
+              </Button>
 
               <Button
                 onClick={saveAttendance}
@@ -419,8 +497,8 @@ function AttendanceMarkingPageContent() {
                       isPresent
                         ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/10'
                         : isAbsent
-                        ? 'border-rose-200 dark:border-rose-900/50 bg-rose-50/10'
-                        : 'border-stone-200/80 dark:border-white/10'
+                          ? 'border-rose-200 dark:border-rose-900/50 bg-rose-50/10'
+                          : 'border-stone-200/80 dark:border-white/10'
                     }`}
                   >
                     {/* Top Row: Index + Student Info + Status Badge */}
@@ -463,7 +541,9 @@ function AttendanceMarkingPageContent() {
                     <div className="grid grid-cols-3 gap-1.5 p-1 bg-stone-100 dark:bg-stone-800/80 rounded-xl">
                       <button
                         type="button"
-                        onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.PRESENT)}
+                        onClick={() =>
+                          updateStudentStatus(student.studentId, AttendanceStatus.PRESENT)
+                        }
                         className={`h-10 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer ${
                           isPresent
                             ? 'bg-emerald-600 text-white shadow-sm'
@@ -475,7 +555,9 @@ function AttendanceMarkingPageContent() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.ABSENT)}
+                        onClick={() =>
+                          updateStudentStatus(student.studentId, AttendanceStatus.ABSENT)
+                        }
                         className={`h-10 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer ${
                           isAbsent
                             ? 'bg-rose-600 text-white shadow-sm'
@@ -570,7 +652,9 @@ function AttendanceMarkingPageContent() {
                             <div className="inline-flex p-0.5 bg-stone-100 dark:bg-stone-800 rounded-xl gap-1">
                               <button
                                 type="button"
-                                onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.PRESENT)}
+                                onClick={() =>
+                                  updateStudentStatus(student.studentId, AttendanceStatus.PRESENT)
+                                }
                                 className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
                                   isPresent
                                     ? 'bg-emerald-600 text-white shadow-xs'
@@ -582,7 +666,9 @@ function AttendanceMarkingPageContent() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => updateStudentStatus(student.studentId, AttendanceStatus.ABSENT)}
+                                onClick={() =>
+                                  updateStudentStatus(student.studentId, AttendanceStatus.ABSENT)
+                                }
                                 className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
                                   isAbsent
                                     ? 'bg-rose-600 text-white shadow-xs'
@@ -615,7 +701,9 @@ function AttendanceMarkingPageContent() {
                                 const newVal = e.target.value;
                                 setStudents((prev) =>
                                   prev.map((s) =>
-                                    s.studentId === student.studentId ? { ...s, remarks: newVal } : s
+                                    s.studentId === student.studentId
+                                      ? { ...s, remarks: newVal }
+                                      : s
                                   )
                                 );
                                 setHasUnsavedChanges(true);

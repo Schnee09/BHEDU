@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import PageGuard from '@/components/PageGuard';
 
 // --- Types ---
 interface ClassDetail {
@@ -112,7 +113,18 @@ function StudentRow({ s, index }: { s: Student; index: number }) {
 }
 
 // --- Main Page ---
-export default function TeacherClassDetailPage() {
+export default function TeacherClassDetailPageGuarded() {
+  return (
+    <PageGuard
+      permissions={['attendance.mark', 'grades.entry', 'classes.manage']}
+      requireAll={false}
+    >
+      <TeacherClassDetailPage />
+    </PageGuard>
+  );
+}
+
+function TeacherClassDetailPage() {
   const params = useParams<{ classId: string }>();
   const classId = params.classId;
 

@@ -1156,7 +1156,32 @@ export default function UserFormModal({
       {createdUserInfo ? (
         renderAccountHandoverPass()
       ) : (
-        <div className="space-y-6">
+        <form
+          autoComplete="off"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit(e);
+          }}
+          className="space-y-6"
+        >
+          {/* Anti-autofill decoy fields to block browser password managers from injecting admin credentials */}
+          <input
+            type="text"
+            name="bhedu_prevent_autofill_username"
+            style={{ display: 'none', position: 'absolute', opacity: 0, height: 0, width: 0 }}
+            tabIndex={-1}
+            autoComplete="off"
+            readOnly
+          />
+          <input
+            type="password"
+            name="bhedu_prevent_autofill_password"
+            style={{ display: 'none', position: 'absolute', opacity: 0, height: 0, width: 0 }}
+            tabIndex={-1}
+            autoComplete="new-password"
+            readOnly
+          />
+
           {/* Error Banner */}
           {formError && (
             <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 flex items-start gap-3 text-rose-700 dark:text-rose-300 text-xs font-semibold animate-fade-in shadow-sm">
@@ -1343,6 +1368,8 @@ export default function UserFormModal({
                       leftIcon={<User className="w-4 h-4 text-stone-400" />}
                       className="font-bold"
                       autoFocus
+                      autoComplete="off"
+                      name="bhedu_user_full_name"
                     />
                   </div>
 
@@ -1365,6 +1392,8 @@ export default function UserFormModal({
                       setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })
                     }
                     leftIcon={<Phone className="w-4 h-4 text-stone-400" />}
+                    autoComplete="off"
+                    name="bhedu_user_phone"
                   />
                   <Input
                     label="Địa chỉ thường trú"
@@ -1372,6 +1401,8 @@ export default function UserFormModal({
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     leftIcon={<MapPin className="w-4 h-4 text-stone-400" />}
+                    autoComplete="off"
+                    name="bhedu_user_address"
                   />
                 </div>
               </div>
@@ -1726,6 +1757,8 @@ export default function UserFormModal({
                       )
                     }
                     hint={isEdit ? 'Tên đăng nhập hệ thống cố định.' : undefined}
+                    autoComplete="off"
+                    name="bhedu_sys_email"
                   />
 
                   <Input
@@ -1735,6 +1768,8 @@ export default function UserFormModal({
                     onChange={(e) => setFormData({ ...formData, personal_email: e.target.value })}
                     leftIcon={<Inbox className="w-4 h-4 text-stone-400" />}
                     hint="Nhận kết quả điểm, biên lai học phí & khôi phục tài khoản"
+                    autoComplete="off"
+                    name="bhedu_personal_email"
                   />
                 </div>
 
@@ -1748,6 +1783,8 @@ export default function UserFormModal({
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       leftIcon={<Lock className="w-4 h-4 text-stone-400" />}
                       hint="Nhập tối thiểu 8 ký tự nếu muốn cấp lại mật khẩu mới cho người dùng này."
+                      autoComplete="new-password"
+                      name="bhedu_user_new_password"
                       rightIcon={
                         <button
                           type="button"
@@ -1774,6 +1811,8 @@ export default function UserFormModal({
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       leftIcon={<Lock className="w-4 h-4 text-stone-400" />}
                       hint="Tối thiểu 8 ký tự. Bạn có thể nhấn biểu tượng làm mới để tự sinh mật khẩu mạnh ngẫu nhiên."
+                      autoComplete="new-password"
+                      name="bhedu_user_init_password"
                       rightIcon={
                         <div className="flex items-center gap-1">
                           <button
@@ -1815,7 +1854,7 @@ export default function UserFormModal({
               </div>
             </div>
           )}
-        </div>
+        </form>
       )}
     </Modal>
   );

@@ -141,14 +141,14 @@ export default function MobileStudentList({
                 type="button"
                 onClick={() => onSelect(student.id)}
                 className={cn(
-                  'w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 cursor-pointer',
+                  'w-6 h-6 min-w-[24px] min-h-[24px] max-w-[24px] max-h-[24px] aspect-square self-start rounded-lg border flex items-center justify-center transition-all shrink-0 cursor-pointer',
                   isSelected
                     ? 'bg-amber-500 border-amber-500 text-white shadow-xs'
-                    : 'border-stone-300 dark:border-stone-700 text-transparent hover:border-amber-400'
+                    : 'border-stone-300 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 text-transparent hover:border-amber-400'
                 )}
                 title="Chọn học sinh"
               >
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -181,17 +181,17 @@ export default function MobileStudentList({
             <div className="flex items-center gap-1.5 pt-1">
               <Link
                 href={`/dashboard/students/${student.id}`}
-                className="flex-1 h-9 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-all cursor-pointer"
+                className="flex-1 h-9 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer"
               >
                 <Eye className="w-3.5 h-3.5 text-stone-500" />
                 <span>Xem hồ sơ</span>
               </Link>
               <Link
                 href={`/dashboard/students/${student.id}/transcript`}
-                className="px-2.5 h-9 bg-stone-50 hover:bg-blue-50 dark:bg-stone-800 dark:hover:bg-blue-950/40 text-stone-600 hover:text-blue-600 dark:text-stone-300 rounded-xl text-xs font-black border border-stone-200/60 dark:border-white/5 flex items-center justify-center transition-all"
+                className="w-9 h-9 shrink-0 bg-stone-50 hover:bg-blue-50 dark:bg-stone-800 dark:hover:bg-blue-950/40 text-stone-600 hover:text-blue-600 dark:text-stone-300 rounded-xl text-xs font-black border border-stone-200/60 dark:border-white/5 flex items-center justify-center transition-all"
                 title="Bảng điểm"
               >
-                <Award className="w-3.5 h-3.5" />
+                <Award className="w-4 h-4" />
               </Link>
               <button
                 type="button"
@@ -199,7 +199,7 @@ export default function MobileStudentList({
                   e.stopPropagation();
                   onEdit(student);
                 }}
-                className="px-3 h-9 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-black uppercase border border-amber-200/60 dark:border-amber-800/40 flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap"
+                className="px-3.5 h-9 shrink-0 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-black uppercase border border-amber-200/60 dark:border-amber-800/40 flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap"
               >
                 <Edit className="w-3.5 h-3.5" />
                 <span>Sửa</span>
@@ -211,7 +211,7 @@ export default function MobileStudentList({
                     e.stopPropagation();
                     onArchive(student);
                   }}
-                  className="px-2.5 h-9 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-black border border-rose-200/60 dark:border-rose-800/40 flex items-center justify-center transition-all cursor-pointer"
+                  className="w-9 h-9 shrink-0 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-black border border-rose-200/60 dark:border-rose-800/40 flex items-center justify-center transition-all cursor-pointer"
                   title="Lưu trữ học sinh"
                 >
                   <Archive className="w-3.5 h-3.5" />

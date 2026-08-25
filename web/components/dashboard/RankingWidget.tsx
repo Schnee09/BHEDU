@@ -91,43 +91,43 @@ export default function RankingWidget({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-3 sm:space-y-4 animate-in fade-in duration-500">
       {/* Top Performers */}
       <Card padding="p-0">
         <CardHeader className="flex items-center justify-between border-b border-stone-100 dark:border-white/5 bg-stone-50/30 dark:bg-white/5">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-500/10 rounded-xl shadow-accent-glow">
-              <Award className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-amber-500/10 rounded-xl shadow-accent-glow">
+              <Award className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             </div>
-            <h3 className="font-serif font-black text-lg text-stone-900 dark:text-white uppercase tracking-tight">
+            <h3 className="font-serif font-black text-sm sm:text-base text-stone-900 dark:text-white uppercase tracking-tight">
               Học sinh xuất sắc
             </h3>
           </div>
           <button
             onClick={refetch}
             className={cn(
-              'p-2 hover:bg-stone-100 dark:hover:bg-white/10 rounded-lg transition-all',
+              'p-1.5 hover:bg-stone-100 dark:hover:bg-white/10 rounded-lg transition-all',
               loading && 'opacity-50 pointer-events-none'
             )}
             disabled={loading}
           >
-            <RefreshCw className={cn('w-4 h-4 text-stone-400', loading && 'animate-spin')} />
+            <RefreshCw className={cn('w-3.5 h-3.5 text-stone-400', loading && 'animate-spin')} />
           </button>
         </CardHeader>
 
         <div className="divide-y divide-stone-50 dark:divide-white/5">
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="px-6 py-4 flex items-center gap-4">
-                <div className="w-8 h-8 rounded-full bg-stone-100 dark:bg-white/5 animate-pulse" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-1/2 bg-stone-100 dark:bg-white/5 rounded animate-pulse" />
-                  <div className="h-3 w-1/4 bg-stone-100 dark:bg-white/5 rounded animate-pulse" />
+              <div key={i} className="px-3.5 sm:px-5 py-3 flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-stone-100 dark:bg-white/5 animate-pulse" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-1/2 bg-stone-100 dark:bg-white/5 rounded animate-pulse" />
+                  <div className="h-2.5 w-1/4 bg-stone-100 dark:bg-white/5 rounded animate-pulse" />
                 </div>
               </div>
             ))
           ) : topStudents.length === 0 ? (
-            <div className="px-6 py-10 text-center text-stone-500 dark:text-stone-400 font-medium">
+            <div className="px-4 py-8 text-center text-stone-500 dark:text-stone-400 text-xs font-medium">
               Chưa có dữ liệu xếp hạng
             </div>
           ) : (
@@ -135,19 +135,19 @@ export default function RankingWidget({
               <Link
                 key={student.studentId}
                 href={`/dashboard/students/${student.studentId}`}
-                className="group flex items-center gap-4 px-6 py-4 hover:bg-stone-50 dark:hover:bg-white/5 transition-all duration-300"
+                className="group flex items-center gap-3 px-3.5 sm:px-5 py-2.5 sm:py-3 hover:bg-stone-50 dark:hover:bg-white/5 transition-all duration-200"
               >
                 {getRankIcon(student.rank)}
                 <div className="flex-1 min-w-0">
-                  <p className="font-black text-stone-900 dark:text-white truncate group-hover:text-amber-600 transition-colors uppercase text-sm tracking-tight">
+                  <p className="font-black text-stone-900 dark:text-white truncate group-hover:text-amber-600 transition-colors uppercase text-xs sm:text-sm tracking-tight">
                     {student.studentName}
                   </p>
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
+                  <p className="text-[9.5px] sm:text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5 truncate">
                     {student.className}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tighter">
+                <div className="text-right shrink-0">
+                  <p className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tighter">
                     {student.average.toFixed(1)}
                   </p>
                   {getChangeIndicator(student.change)}

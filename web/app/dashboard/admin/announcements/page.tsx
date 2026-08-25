@@ -11,6 +11,7 @@ import {
   Trash,
   CheckCircle,
   XCircle,
+  Calendar,
 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/useToast';
@@ -83,61 +84,83 @@ export default function AnnouncementsManagementPage() {
     }
   };
 
-  const getTypeLabel = (type: string) => {
+  const getTypeBadge = (type: string) => {
     switch (type) {
       case 'info':
-        return { label: 'Thông tin', variant: 'info' as const };
+        return (
+          <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-bold uppercase tracking-wider">
+            Thông tin
+          </span>
+        );
       case 'event':
-        return { label: 'Sự kiện', variant: 'warning' as const };
+        return (
+          <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[10px] font-bold uppercase tracking-wider">
+            Sự kiện
+          </span>
+        );
       case 'holiday':
-        return { label: 'Nghỉ lễ', variant: 'success' as const };
+        return (
+          <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider">
+            Nghỉ lễ
+          </span>
+        );
       case 'urgent':
-        return { label: 'Khẩn cấp', variant: 'danger' as const };
+        return (
+          <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[10px] font-bold uppercase tracking-wider">
+            Khẩn cấp
+          </span>
+        );
       default:
-        return { label: 'Thông tin', variant: 'default' as const };
+        return (
+          <span className="px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 text-[10px] font-bold uppercase tracking-wider">
+            Thông tin
+          </span>
+        );
     }
   };
 
   if (!canManage) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card variant="glass" className="max-w-md text-center p-8">
-          <AlertCircle className="w-16 h-16 text-warning mx-auto mb-6 opacity-80" />
-          <h1 className="text-2xl font-bold mb-2">Không có quyền truy cập</h1>
-          <p className="text-muted mb-6">
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-2xl text-center p-6 space-y-4">
+          <AlertCircle className="w-12 h-12 text-amber-500 mx-auto opacity-80" />
+          <h1 className="text-lg font-bold text-stone-900 dark:text-white">
+            Không có quyền truy cập
+          </h1>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             Bạn không có quyền quản lý bảng tin. Vui lòng liên hệ quản trị viên.
           </p>
-          <Button variant="outline" onClick={() => window.history.back()}>
+          <Button variant="outline" size="sm" onClick={() => window.history.back()}>
             Quay lại
           </Button>
-        </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/50 p-4 sm:p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-transparent py-3 sm:py-6 px-2.5 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white dark:bg-gray-800/80 p-8 rounded-3xl border border-gray-100 dark:border-white/5 shadow-premium backdrop-blur-md">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Megaphone className="w-6 h-6 text-primary" />
-              </div>
-              <Badge variant="info">Hệ thống</Badge>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-200/60 dark:border-white/5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-6 bg-amber-500 rounded-full" />
+              <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                Bảng tin Trung tâm
+              </h1>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">Bảng tin Trung tâm</h1>
-            <p className="text-muted mt-2 max-w-lg">
-              Quản lý các thông báo, sự kiện và tin tức hiển thị trên Cổng Thông Tin.
+            <p className="text-xs text-stone-500 dark:text-stone-400 pl-3.5">
+              Quản lý các thông báo, sự kiện và tin tức hiển thị cho toàn trường
             </p>
           </div>
-          <Link href="/dashboard/admin/announcements/create">
+
+          <Link href="/dashboard/admin/announcements/create" className="self-start sm:self-auto">
             <Button
-              variant="primary"
-              size="lg"
-              leftIcon={<Plus className="w-5 h-5" />}
-              className="rounded-2xl"
+              variant="gold"
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4" />}
+              className="rounded-xl text-xs font-bold shadow-sm"
             >
               Thêm bản tin mới
             </Button>
@@ -146,11 +169,11 @@ export default function AnnouncementsManagementPage() {
 
         {/* List Section */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="h-48 bg-white/50 dark:bg-white/5 rounded-3xl animate-pulse border border-gray-100 dark:border-white/5"
+                className="h-36 bg-white dark:bg-stone-900 rounded-2xl animate-pulse border border-stone-200/80 dark:border-white/5"
               />
             ))}
           </div>
@@ -161,50 +184,61 @@ export default function AnnouncementsManagementPage() {
             icon={<Megaphone className="w-12 h-12" />}
             action={
               <Link href="/dashboard/admin/announcements/create">
-                <Button>Thêm bản tin</Button>
+                <Button variant="gold" size="sm">
+                  Thêm bản tin
+                </Button>
               </Link>
             }
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {announcements.map((announcement) => {
-              const typeInfo = getTypeLabel(announcement.type);
               return (
-                <Card
+                <div
                   key={announcement.id}
-                  variant="glass"
-                  className="group relative flex flex-col overflow-hidden transition-all duration-300 hover:scale-[1.02]"
+                  className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-white/10 p-3.5 sm:p-4.5 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-xs hover:border-amber-500/40 transition-all group"
                 >
-                  <div className="flex-1 p-6 space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <Badge variant={typeInfo.variant} className="mb-2">
-                          {typeInfo.label}
-                        </Badge>
-                        <h3 className="text-xl font-bold line-clamp-1">{announcement.title}</h3>
+                  <div className="space-y-2">
+                    {/* Badges Row */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        {getTypeBadge(announcement.type)}
                       </div>
-                      <div>
-                        {announcement.is_published ? (
-                          <Badge variant="success" className="flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" /> Đã đăng
-                          </Badge>
-                        ) : (
-                          <Badge variant="default" className="flex items-center gap-1">
-                            <XCircle className="w-3 h-3" /> Bản nháp
-                          </Badge>
-                        )}
-                      </div>
+                      {announcement.is_published ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                          <CheckCircle className="w-3 h-3" /> Đã đăng
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-500 text-[10px] font-bold">
+                          <XCircle className="w-3 h-3" /> Bản nháp
+                        </span>
+                      )}
                     </div>
 
-                    <div className="text-sm text-muted bg-gray-50 dark:bg-white/5 p-3 rounded-xl border border-gray-100 dark:border-white/5">
-                      Đã đăng lúc:{' '}
-                      {announcement.published_at
-                        ? new Date(announcement.published_at).toLocaleString('vi-VN')
-                        : 'Chưa đăng'}
+                    {/* Title with multi-line wrap */}
+                    <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-white leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
+                      {announcement.title}
+                    </h3>
+
+                    {/* Date subtitle */}
+                    <div className="flex items-center gap-1.5 text-[11px] text-stone-400 font-medium pt-0.5">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>
+                        {announcement.published_at
+                          ? new Date(announcement.published_at).toLocaleString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })
+                          : 'Chưa xuất bản'}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 px-6 pb-6 mt-auto">
+                  {/* Actions Row */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-stone-100 dark:border-white/5">
                     <Link
                       href={`/dashboard/admin/announcements/${announcement.id}/edit`}
                       className="flex-1"
@@ -212,25 +246,26 @@ export default function AnnouncementsManagementPage() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="w-full rounded-xl"
-                        leftIcon={<Edit className="w-4 h-4" />}
+                        className="w-full h-8 rounded-xl text-xs font-bold justify-center"
+                        leftIcon={<Edit className="w-3.5 h-3.5" />}
                       >
                         Chỉnh sửa
                       </Button>
                     </Link>
                     <Button
-                      variant="danger"
+                      variant="ghost"
                       size="sm"
-                      className="px-3 rounded-xl"
+                      className="h-8 px-2.5 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                       onClick={() => {
                         setAnnouncementToDelete(announcement);
                         setShowDeleteModal(true);
                       }}
+                      title="Xóa bản tin"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
@@ -241,33 +276,35 @@ export default function AnnouncementsManagementPage() {
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title="Xác nhận xóa"
+        title="Xác nhận xóa bản tin"
         size="sm"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setShowDeleteModal(false)}>
-              Hủy
+      >
+        <div className="space-y-4 pt-1">
+          <p className="text-xs text-stone-600 dark:text-stone-300">
+            Bạn có chắc chắn muốn xóa bản tin{' '}
+            <strong>&quot;{announcementToDelete?.title}&quot;</strong>? Hành động này không thể hoàn
+            tác.
+          </p>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100 dark:border-white/5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={submitting}
+            >
+              Hủy bỏ
             </Button>
             <Button
               variant="danger"
+              size="sm"
               isLoading={submitting}
               onClick={handleDelete}
-              leftIcon={<Trash className="w-4 h-4" />}
+              leftIcon={<Trash className="w-3.5 h-3.5" />}
             >
               Xóa ngay
             </Button>
-          </>
-        }
-      >
-        <div className="text-center p-4">
-          <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-6">
-            <AlertCircle className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold mb-2">Bạn có chắc chắn?</h3>
-          <p className="text-muted">
-            Hành động này không thể hoàn tác. Bản tin <strong>{announcementToDelete?.title}</strong>{' '}
-            sẽ bị xóa vĩnh viễn khỏi hệ thống.
-          </p>
         </div>
       </Modal>
     </div>

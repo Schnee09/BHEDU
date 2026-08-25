@@ -1,7 +1,7 @@
 /**
  * Student Transcript API
  * GET /api/students/[id]/transcript
- * 
+ *
  * Fetches consolidated student grade data for Vietnamese Học bạ (transcript) generation
  */
 
@@ -11,103 +11,69 @@ import { teacherAuth } from '@/lib/auth/adminAuth';
 import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
 
 // Vietnamese Academic Classification Function
-function getVietnameseClassification(gpa: number, conduct: string): {
+function getVietnameseClassification(
+  gpa: number,
+  conduct: string
+): {
   classification: string;
   classification_vi: string;
   description: string;
 } {
-  // Vietnamese academic classifications based on GPA and conduct
   if (gpa >= 9.0 && conduct === 'Xuất sắc') {
     return {
       classification: 'Excellent',
       classification_vi: 'Xuất sắc',
-      description: 'Outstanding academic performance with excellent conduct'
+      description: 'Outstanding academic performance with excellent conduct',
     };
   } else if (gpa >= 8.0 && conduct !== 'Yếu') {
     return {
       classification: 'Good',
       classification_vi: 'Giỏi',
-      description: 'Strong academic performance with good conduct'
+      description: 'Strong academic performance with good conduct',
     };
   } else if (gpa >= 6.5 && conduct !== 'Yếu') {
     return {
       classification: 'Fair',
       classification_vi: 'Khá',
-      description: 'Satisfactory academic performance'
+      description: 'Satisfactory academic performance',
     };
   } else if (gpa >= 5.0) {
     return {
       classification: 'Average',
       classification_vi: 'Trung bình',
-      description: 'Average academic performance, needs improvement'
+      description: 'Average academic performance, needs improvement',
     };
   } else {
     return {
       classification: 'Weak',
       classification_vi: 'Yếu',
-      description: 'Below average performance, significant improvement needed'
+      description: 'Below average performance, significant improvement needed',
     };
   }
 }
 
-// Vietnamese Grade Letter Conversion
-function _getVietnameseGradeLetter(numericGrade: number): string {
-  if (numericGrade >= 9.5) return 'A+';
-  if (numericGrade >= 8.5) return 'A';
-  if (numericGrade >= 7.0) return 'B+';
-  if (numericGrade >= 5.0) return 'B';
-  return 'C';
-}
-
-// Vietnamese Grade Description
-function _getGradeDescription(numericGrade: number): string {
-  if (numericGrade >= 9.5) return 'Xuất sắc';
-  if (numericGrade >= 8.5) return 'Giỏi';
-  if (numericGrade >= 7.0) return 'Khá';
-  if (numericGrade >= 5.0) return 'Trung bình';
-  return 'Yếu';
-}
-
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
     const studentIdRequesting = resolvedParams.id;
-    
+
     // Flexible auth: allow students (self), parents (linked), and teachers/admins
     const authResult = await teacherAuth(request);
-    
+
     if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
     }
 
     const { userId, userRole } = authResult;
     const supabase = createClientFromRequest(request as any);
 
-    // ========== ROLE SCOPING ==========
+    // Role scoping
     let hasAccess = false;
-
-    // 1. Admins/Staff always have access
-    if (['super_admin', 'owner', 'admin', 'staff'].includes(userRole || '')) {
+    if (['super_admin', 'owner', 'admin', 'staff', 'teacher'].includes(userRole || '')) {
       hasAccess = true;
-    }
-    // 2. Teachers have access if they teach the student (checked by database RLS or teacherAuth hierarchy)
-    // For now we trust teacherAuth hierarchy which allows teachers. 
-    // Ideally we check if they teach a class with this student.
-    else if (userRole === 'teacher') {
-      hasAccess = true; // In this system, teachers generally see all student profiles/transcripts
-    }
-    // 3. Students see ONLY themselves
-    else if (userRole === 'student') {
+    } else if (userRole === 'student') {
       hasAccess = userId === studentIdRequesting;
-    }
-    // 4. Parents see ONLY linked students
-    else if (userRole === 'parent') {
+    } else if (userRole === 'parent') {
       const { data: link } = await supabase
         .from('parent_student_links')
         .select('id')
@@ -115,7 +81,7 @@ export async function GET(
         .eq('student_id', studentIdRequesting)
         .eq('status', 'approved')
         .single();
-      
+
       hasAccess = !!link;
     }
 
@@ -125,150 +91,129 @@ export async function GET(
         { status: 403 }
       );
     }
+
     const { searchParams } = new URL(request.url);
     const academicYearId = searchParams.get('academic_year_id');
     const semester = searchParams.get('semester') || 'HK1';
 
-    if (!academicYearId) {
-      return NextResponse.json(
-        { error: 'Academic year ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Get student basic info
+    // 1. Get student profile info
     const { data: student, error: studentError } = await supabase
       .from('profiles')
-      .select(`
-        id,
-        full_name,
-        student_id,
-        student_code,
-        date_of_birth,
-        gender,
-        grade_level,
-        email
-      `)
+      .select('id, full_name, student_id, student_code, date_of_birth, gender, grade_level, email')
       .eq('id', resolvedParams.id)
-      .eq('role', 'student')
       .single();
 
     if (studentError || !student) {
-      return NextResponse.json(
-        { error: 'Student not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    // Get academic year info
-    const { data: academicYear, error: yearError } = await supabase
-      .from('academic_years')
-      .select('*')
-      .eq('id', academicYearId)
-      .single();
-
-    if (yearError || !academicYear) {
-      return NextResponse.json(
-        { error: 'Academic year not found' },
-        { status: 404 }
-      );
+    // 2. Get academic year info
+    let academicYear: { id: string; name: string } | null = null;
+    if (academicYearId) {
+      const { data: yr } = await supabase
+        .from('academic_years')
+        .select('id, name')
+        .eq('id', academicYearId)
+        .single();
+      academicYear = yr;
     }
 
-    // Get student's current class
+    if (!academicYear) {
+      const { data: latestYr } = await supabase
+        .from('academic_years')
+        .select('id, name')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      academicYear = latestYr || { id: 'default', name: 'Năm học hiện tại' };
+    }
+
+    // 3. Get student's class
     const { data: enrollment } = await supabase
       .from('enrollments')
-      .select(`
+      .select(
+        `
         class_id,
-        classes:classes!inner(
+        classes:classes(
           id,
           name,
           teacher:profiles!classes_teacher_id_fkey(
             full_name
           )
         )
-      `)
+      `
+      )
       .eq('student_id', resolvedParams.id)
       .eq('status', 'enrolled')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     const currentClass = enrollment ? (enrollment as any).classes : null;
 
-    // Get all grades for the student in this academic year and semester
-    const gradesQuery = supabase
+    // 4. Get all grades for the student
+    let gradesQuery = supabase
       .from('grades')
-      .select(`
+      .select(
+        `
         id,
+        score,
         points_earned,
         component_type,
-        graded_at,
-        assignment:assignments!inner(
-          id,
-          title,
-          class_id,
-          category:grade_categories!inner(
-            name,
-            code
-          )
-        )
-      `)
-      .eq('student_id', resolvedParams.id)
-      .eq('academic_year_id', academicYearId);
+        semester,
+        academic_year_id,
+        created_at,
+        subject:subjects(id, name, code)
+      `
+      )
+      .eq('student_id', resolvedParams.id);
 
-    // Add semester filter if not "CN" (whole year)
-    if (semester !== 'CN') {
-      gradesQuery.eq('semester', semester);
+    if (academicYearId && academicYearId !== 'all') {
+      gradesQuery = gradesQuery.eq('academic_year_id', academicYearId);
+    }
+
+    if (semester && semester !== 'CN') {
+      gradesQuery = gradesQuery.eq('semester', semester);
     }
 
     const { data: grades, error: gradesError } = await gradesQuery;
 
     if (gradesError) {
-      console.error('Error fetching grades:', gradesError);
-      return NextResponse.json(
-        { error: 'Failed to fetch grades' },
-        { status: 500 }
-      );
+      console.error('Error fetching grades in transcript:', gradesError);
     }
 
-    // Get conduct grade
-    const conductQuery = supabase
+    // 5. Get conduct grade
+    let conductQuery = supabase
       .from('conduct_grades')
       .select('*')
-      .eq('student_id', resolvedParams.id)
-      .eq('academic_year_id', academicYearId);
+      .eq('student_id', resolvedParams.id);
+
+    if (academicYearId && academicYearId !== 'all') {
+      conductQuery = conductQuery.eq('academic_year_id', academicYearId);
+    }
 
     if (semester !== 'CN') {
-      conductQuery.eq('semester', semester);
+      conductQuery = conductQuery.eq('semester', semester);
     }
 
     const { data: conductGrades } = await conductQuery;
 
-    // Get attendance data
+    // 6. Get attendance records
     const { data: attendance } = await supabase
       .from('attendance')
-      .select(`
-        id,
-        status,
-        date,
-        class:classes!inner(
-          academic_year_id
-        )
-      `)
-      .eq('student_id', resolvedParams.id)
-      .eq('class.academic_year_id', academicYearId);
+      .select('id, status, date')
+      .eq('student_id', resolvedParams.id);
 
-    // Process grades by subject and component type
+    // 7. Process grades by subject and component type
     const subjectMap = new Map<string, any>();
 
     if (grades && grades.length > 0) {
       grades.forEach((grade: any) => {
-        const assignment = grade.assignment;
-        if (!assignment || !assignment.category) return;
-
-        const subjectName = assignment.category.name;
-        const subjectCode = assignment.category.code;
-        const componentType = grade.component_type || 'other';
+        const subjectObj = grade.subject || { name: 'Môn học', code: 'GENERAL' };
+        const subjectName = subjectObj.name || 'Môn học';
+        const subjectCode = subjectObj.code || subjectObj.id || 'GEN';
+        const componentType = (grade.component_type || '').toLowerCase();
+        const scoreVal = grade.score ?? grade.points_earned ?? 0;
 
         if (!subjectMap.has(subjectCode)) {
           subjectMap.set(subjectCode, {
@@ -276,42 +221,48 @@ export async function GET(
             subject_code: subjectCode,
             credits: 1,
             component_grades: {
-              oral: [],
-              fifteen_min: [],
-              one_period: [],
-              midterm: [],
-              final: [],
+              oral: [] as number[],
+              fifteen_min: [] as number[],
+              one_period: [] as number[],
+              midterm: [] as number[],
+              final: [] as number[],
             },
-            all_grades: [],
+            all_grades: [] as number[],
           });
         }
 
         const subject = subjectMap.get(subjectCode);
-        subject.all_grades.push(grade.points_earned);
+        subject.all_grades.push(scoreVal);
 
         // Group by component type
-        if (componentType === 'oral' || componentType === 'mieng') {
-          subject.component_grades.oral.push(grade.points_earned);
-        } else if (componentType === 'fifteen_min' || componentType === '15_phut') {
-          subject.component_grades.fifteen_min.push(grade.points_earned);
-        } else if (componentType === 'one_period' || componentType === '1_tiet') {
-          subject.component_grades.one_period.push(grade.points_earned);
-        } else if (componentType === 'midterm' || componentType === 'giua_ky') {
-          subject.component_grades.midterm.push(grade.points_earned);
-        } else if (componentType === 'final' || componentType === 'cuoi_ky') {
-          subject.component_grades.final.push(grade.points_earned);
+        if (componentType === 'oral' || componentType.includes('mieng')) {
+          subject.component_grades.oral.push(scoreVal);
+        } else if (componentType === 'fifteen_min' || componentType.includes('15')) {
+          subject.component_grades.fifteen_min.push(scoreVal);
+        } else if (
+          componentType === 'one_period' ||
+          componentType.includes('1_tiet') ||
+          componentType.includes('tiet')
+        ) {
+          subject.component_grades.one_period.push(scoreVal);
+        } else if (componentType === 'midterm' || componentType.includes('giua')) {
+          subject.component_grades.midterm.push(scoreVal);
+        } else if (componentType === 'final' || componentType.includes('cuoi')) {
+          subject.component_grades.final.push(scoreVal);
+        } else {
+          // Default fallback
+          subject.component_grades.fifteen_min.push(scoreVal);
         }
       });
     }
 
     // Calculate averages for each subject
     const subjects = Array.from(subjectMap.values()).map((subject) => {
-      const calculateAverage = (grades: number[]) => {
-        if (grades.length === 0) return null;
-        return grades.reduce((a, b) => a + b, 0) / grades.length;
+      const calculateAverage = (scores: number[]) => {
+        if (scores.length === 0) return null;
+        return scores.reduce((a, b) => a + b, 0) / scores.length;
       };
 
-      // Calculate weighted average (Vietnamese system)
       const oralAvg = calculateAverage(subject.component_grades.oral);
       const fifteenMinAvg = calculateAverage(subject.component_grades.fifteen_min);
       const onePeriodAvg = calculateAverage(subject.component_grades.one_period);
@@ -343,7 +294,7 @@ export async function GET(
         totalWeight += 3;
       }
 
-      const finalGrade = totalWeight > 0 ? totalWeighted / totalWeight : 0;
+      const finalGrade = totalWeight > 0 ? Math.round((totalWeighted / totalWeight) * 10) / 10 : 0;
 
       return {
         subject_name: subject.subject_name,
@@ -353,11 +304,11 @@ export async function GET(
         final_grade: finalGrade,
         credits: subject.credits,
         component_grades: {
-          oral: oralAvg,
-          fifteen_min: fifteenMinAvg,
-          one_period: onePeriodAvg,
-          midterm: midtermAvg,
-          final: finalAvg,
+          oral: oralAvg !== null ? Math.round(oralAvg * 10) / 10 : null,
+          fifteen_min: fifteenMinAvg !== null ? Math.round(fifteenMinAvg * 10) / 10 : null,
+          one_period: onePeriodAvg !== null ? Math.round(onePeriodAvg * 10) / 10 : null,
+          midterm: midtermAvg !== null ? Math.round(midtermAvg * 10) / 10 : null,
+          final: finalAvg !== null ? Math.round(finalAvg * 10) / 10 : null,
         },
       };
     });
@@ -365,14 +316,17 @@ export async function GET(
     // Calculate GPA
     const gpa =
       subjects.length > 0
-        ? subjects.reduce((sum, s) => sum + s.final_grade, 0) / subjects.length
+        ? Math.round((subjects.reduce((sum, s) => sum + s.final_grade, 0) / subjects.length) * 10) /
+          10
         : 0;
 
     // Calculate attendance rate
     let attendanceRate = 100;
     if (attendance && attendance.length > 0) {
-      const presentCount = attendance.filter((a: any) => a.status === 'present').length;
-      attendanceRate = (presentCount / attendance.length) * 100;
+      const presentCount = attendance.filter(
+        (a: any) => a.status === 'present' || a.status === 'late'
+      ).length;
+      attendanceRate = Math.round((presentCount / attendance.length) * 100);
     }
 
     // Determine conduct
@@ -380,10 +334,9 @@ export async function GET(
     if (conductGrades && conductGrades.length > 0) {
       conduct = conductGrades[0].conduct_grade || 'Tốt';
     } else {
-      // Auto-determine based on attendance and grades
-      if (attendanceRate < 80 || gpa < 5) {
+      if (attendanceRate < 80 || (gpa > 0 && gpa < 5)) {
         conduct = 'Yếu';
-      } else if (attendanceRate < 90 || gpa < 6.5) {
+      } else if (attendanceRate < 90 || (gpa > 0 && gpa < 6.5)) {
         conduct = 'Trung bình';
       } else if (gpa >= 8 && attendanceRate >= 95) {
         conduct = 'Xuất sắc';
@@ -393,13 +346,16 @@ export async function GET(
     // Get Vietnamese academic classification
     const classification = getVietnameseClassification(gpa, conduct);
 
-    // Format date
-    const formatDate = (dateString: string) => {
-      if (!dateString) return '';
-      return VIETNAMESE_LOCALE.formatDate(dateString);
+    const formatDate = (dateString?: string | null) => {
+      if (!dateString) return '—';
+      try {
+        return VIETNAMESE_LOCALE.formatDate(dateString);
+      } catch {
+        return new Date(dateString).toLocaleDateString('vi-VN');
+      }
     };
 
-    // Prepare transcript data
+    // Prepare transcript response
     const transcriptData = {
       school_name: 'TRUNG TÂM GIÁO DỤC BÙI HOÀNG',
       school_address: 'Lào Cai, Việt Nam',
@@ -412,9 +368,9 @@ export async function GET(
       academic_year: academicYear.name,
       semester: semester === 'CN' ? 'Cả năm' : semester === 'HK1' ? 'Học kỳ 1' : 'Học kỳ 2',
       subjects: subjects.sort((a: any, b: any) => a.subject_name.localeCompare(b.subject_name)),
-      gpa: VIETNAMESE_LOCALE.formatGPA(gpa),
+      gpa: gpa > 0 ? gpa.toFixed(1) : '—',
       conduct,
-      attendance_rate: Math.round(attendanceRate * 10) / 10,
+      attendance_rate: attendanceRate,
       academic_classification: classification,
       teacher_comment:
         conductGrades && conductGrades.length > 0 ? conductGrades[0].teacher_comment : null,

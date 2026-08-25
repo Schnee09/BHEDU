@@ -7,6 +7,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import AuthGuard from '@/components/AuthGuard';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SkipToMainContent } from '@/lib/a11y';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import { ReactNode, useState } from 'react';
 import { useSwipe } from '@/hooks/useSwipe';
 
@@ -26,10 +27,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
     <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
       <SkipToMainContent />
 
-      <div
-        {...swipeHandlers}
-        className="flex h-screen overflow-hidden bg-stone-50 dark:bg-[#0e0c0a]"
-      >
+      <div className="flex h-[100dvh] min-h-[100dvh] overflow-hidden bg-stone-50 dark:bg-[#0e0c0a]">
         <Sidebar
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
@@ -49,7 +47,7 @@ function DashboardContent({ children }: { children: ReactNode }) {
 
           <main
             id="main-content"
-            className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 pb-safe"
+            className="flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6 pb-20 lg:pb-6 pb-safe overscroll-y-contain"
             role="main"
           >
             <div className="w-full mx-auto max-w-[1600px]">
@@ -59,8 +57,14 @@ function DashboardContent({ children }: { children: ReactNode }) {
               >
                 {children}
               </ErrorBoundary>
+
+              {/* Physical Mobile Bottom Spacer so floating nav bar NEVER covers content */}
+              <div className="h-20 lg:hidden pointer-events-none" aria-hidden="true" />
             </div>
           </main>
+
+          {/* App-like Mobile Bottom Navigation Bar */}
+          <MobileBottomNav />
         </div>
       </div>
     </ErrorBoundary>

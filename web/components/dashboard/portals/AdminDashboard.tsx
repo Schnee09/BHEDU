@@ -97,22 +97,20 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-transparent relative overflow-x-hidden">
       <div className="max-w-[1600px] mx-auto px-2.5 sm:px-4 lg:px-6 py-3 sm:py-5 space-y-4 sm:space-y-6 relative z-10">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-200/50 dark:border-white/5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <div className="w-1.5 h-6 bg-amber-500 rounded-full shadow-accent-glow" />
-              <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60 dark:border-white/5">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-5 bg-amber-500 rounded-full" />
+              <h1 className="text-lg sm:text-2xl font-black text-stone-900 dark:text-stone-100 tracking-tight">
                 Dashboard <span className="text-amber-500">{getRoleTitle()}</span>
               </h1>
             </div>
-            <div className="flex items-center gap-2 pl-3">
-              <span className="text-xs font-bold text-stone-500 dark:text-stone-400">
-                Chào mừng trở lại,{' '}
-                <span className="text-stone-900 dark:text-stone-100 font-black">
-                  {profile?.full_name ?? 'User'}
-                </span>
+            <p className="text-xs text-stone-500 dark:text-stone-400 pl-3">
+              Chào mừng trở lại,{' '}
+              <span className="text-stone-800 dark:text-stone-200 font-bold">
+                {profile?.full_name ?? 'User'}
               </span>
-            </div>
+            </p>
           </div>
 
           <div className="hidden sm:flex items-center gap-3 bg-white/40 dark:bg-stone-900/40 backdrop-blur-md px-4 py-2 rounded-xl border border-stone-200/50 dark:border-white/5 shadow-xs">

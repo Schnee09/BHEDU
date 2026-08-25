@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import PageGuard from '@/components/PageGuard';
 
 interface ClassItem {
   id: string;
@@ -53,6 +55,7 @@ function StatPill({
 }
 
 function ClassCard({ cls }: { cls: ClassItem }) {
+  const router = useRouter();
   const subject = cls.teacher?.subjects?.name ?? 'Môn học';
   const studentCount = cls._count?.enrollments ?? 0;
   const capacity = cls.capacity ?? '—';
@@ -61,15 +64,14 @@ function ClassCard({ cls }: { cls: ClassItem }) {
     : null;
 
   return (
-    <Link
-      href={routes.teacher.classDetail(cls.id)}
+    <div
+      onClick={() => router.push(routes.teacher.classDetail(cls.id))}
       className={cn(
-        'group relative flex flex-col gap-5 p-6 rounded-[28px]',
-        'bg-white/70 dark:bg-stone-900/50 backdrop-blur-xl',
-        'border border-stone-200/60 dark:border-white/[0.06]',
-        'shadow-sm hover:shadow-[0_20px_60px_-20px_rgba(245,158,11,0.18)]',
-        'transition-all duration-500 hover:-translate-y-1',
-        'hover:border-amber-400/40',
+        'group relative flex flex-col gap-4 p-5 sm:p-6 rounded-2xl sm:rounded-3xl',
+        'bg-white/80 dark:bg-stone-900/60 backdrop-blur-xl',
+        'border border-stone-200/80 dark:border-white/10',
+        'shadow-xs hover:shadow-md transition-all duration-300',
+        'hover:border-amber-500/40',
         'overflow-hidden cursor-pointer'
       )}
     >
@@ -133,7 +135,25 @@ function ClassCard({ cls }: { cls: ClassItem }) {
           </div>
         </div>
       )}
-    </Link>
+
+      {/* Quick 1-Tap Action Buttons for Teachers */}
+      <div className="flex items-center gap-2 pt-2 border-t border-stone-100 dark:border-white/5 relative z-20">
+        <Link
+          href={`/dashboard/attendance/mark?class=${cls.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex-1 py-2 px-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-xl text-center text-xs font-bold transition-all border border-emerald-200/60 dark:border-emerald-800/40"
+        >
+          Điểm danh
+        </Link>
+        <Link
+          href={`/dashboard/grades/entry?class=${cls.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex-1 py-2 px-2.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-xl text-center text-xs font-bold transition-all border border-amber-200/60 dark:border-amber-800/40"
+        >
+          Sổ điểm
+        </Link>
+      </div>
+    </div>
   );
 }
 
@@ -167,7 +187,18 @@ function EmptyState() {
   );
 }
 
-export default function TeacherClassesPage() {
+export default function TeacherClassesPageGuarded() {
+  return (
+    <PageGuard
+      permissions={['attendance.mark', 'grades.entry', 'classes.manage']}
+      requireAll={false}
+    >
+      <TeacherClassesPage />
+    </PageGuard>
+  );
+}
+
+function TeacherClassesPage() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

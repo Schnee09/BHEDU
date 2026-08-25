@@ -4,31 +4,25 @@
  * - Admin-only fetches are isolated inside modals (lazy-loaded on open)
  */
 
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { routes } from "@/lib/routes";
-import { useToast } from "@/hooks";
-import { usePermissions, PermissionGuard } from "@/hooks/usePermissions";
-import { getClasses } from "@/lib/api/client";
-import {
-  Search,
-  LayoutGrid,
-  List as ListIcon,
-  Plus,
-  RefreshCw,
-} from "lucide-react";
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { routes } from '@/lib/routes';
+import { useToast } from '@/hooks';
+import { usePermissions, PermissionGuard } from '@/hooks/usePermissions';
+import { getClasses } from '@/lib/api/client';
+import { Search, LayoutGrid, List as ListIcon, Plus, RefreshCw } from 'lucide-react';
 
-import { Card, Button, EmptyState } from "@/components/ui";
-import { Icons } from "@/components/ui/Icons";
-import { ToastContainer } from "@/components/ui/Toast";
-import { logger } from "@/lib/logger";
+import { Card, Button, EmptyState } from '@/components/ui';
+import { Icons } from '@/components/ui/Icons';
+import { ToastContainer } from '@/components/ui/Toast';
+import { logger } from '@/lib/logger';
 
-import ClassListGrid from "@/components/classes/ClassListGrid";
-import ClassListTable from "@/components/classes/ClassListTable";
-import CreateClassModal from "@/components/classes/CreateClassModal";
-import EnrollmentModal from "@/components/classes/EnrollmentModal";
+import ClassListGrid from '@/components/classes/ClassListGrid';
+import ClassListTable from '@/components/classes/ClassListTable';
+import CreateClassModal from '@/components/classes/CreateClassModal';
+import EnrollmentModal from '@/components/classes/EnrollmentModal';
 
 interface Teacher {
   id: string;
@@ -64,7 +58,14 @@ interface ClassStats {
 export default function ClassesPage() {
   const toast = useToast();
   const router = useRouter();
-  const { can, isStudent, isTeacher, isExactTeacher, loading: permissionsLoading, role } = usePermissions();
+  const {
+    can,
+    isStudent,
+    isTeacher,
+    isExactTeacher,
+    loading: permissionsLoading,
+    role,
+  } = usePermissions();
 
   useEffect(() => {
     if (!permissionsLoading && isExactTeacher) {
@@ -77,22 +78,22 @@ export default function ClassesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [enrollTarget, setEnrollTarget] = useState<ClassData | null>(null);
 
-  const canManageClasses = can("classes.create") || can("classes.edit");
-  const canEnrollStudents = can("classes.enroll");
+  const canManageClasses = can('classes.create') || can('classes.edit');
+  const canEnrollStudents = can('classes.enroll');
 
   const fetchClasses = useCallback(async () => {
     if (permissionsLoading) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await getClasses({ limit: 50 }) as any;
+      const res = (await getClasses({ limit: 50 })) as any;
       const classesData = (res.data || res.classes || []) as ClassData[];
       setClasses(classesData);
 
@@ -114,10 +115,10 @@ export default function ClassesPage() {
         }
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error fetching classes";
+      const msg = err instanceof Error ? err.message : 'Error fetching classes';
       setError(msg);
-      toast.error("Lỗi", msg);
-      logger.error("[ClassesPage]", err);
+      toast.error('Lỗi', msg);
+      logger.error('[ClassesPage]', err);
     } finally {
       setLoading(false);
     }
@@ -163,51 +164,54 @@ export default function ClassesPage() {
   // ─── Main render ────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-transparent relative overflow-x-hidden">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8 relative z-10">
+      <div className="max-w-[1600px] mx-auto px-2.5 sm:px-6 lg:px-10 py-3 sm:py-6 relative z-10">
         <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
 
         {/* Control Bar */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8 bg-white/50 dark:bg-stone-900/50 backdrop-blur-md p-4 rounded-[2rem] border border-white/60 dark:border-white/10 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-4 mb-4 sm:mb-6 bg-white dark:bg-stone-900 p-3 sm:p-4 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-xs">
           <div className="relative flex-1 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 group-focus-within:text-blue-500 transition-colors" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên lớp..."
+              placeholder="Tìm kiếm theo tên lớp, mã lớp..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-stone-50/80 dark:bg-stone-900/50 border border-stone-100 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500/30 outline-none transition-all text-stone-900 dark:text-stone-100 placeholder:text-stone-400"
+              className="w-full pl-10 pr-3 py-2 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/20 outline-none transition-all text-xs sm:text-sm font-medium text-stone-900 dark:text-stone-100 placeholder:text-stone-400"
             />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* View toggle */}
-            <div className="flex items-center p-1.5 bg-stone-100/80 dark:bg-stone-900/50 rounded-2xl border border-stone-200/50 dark:border-white/10">
+            <div className="flex items-center p-1 bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-200/60 dark:border-white/5">
               <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-xl transition-all ${viewMode === "grid" ? "bg-white dark:bg-stone-800 shadow-sm text-blue-600" : "text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"}`}
+                onClick={() => setViewMode('grid')}
+                aria-label="Xem dạng thẻ"
+                className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-stone-700 shadow-2xs text-amber-600 dark:text-amber-400' : 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'}`}
               >
-                <LayoutGrid className="w-5 h-5" />
+                <LayoutGrid className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setViewMode("table")}
-                className={`p-2 rounded-xl transition-all ${viewMode === "table" ? "bg-white dark:bg-stone-800 shadow-sm text-blue-600" : "text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"}`}
+                onClick={() => setViewMode('table')}
+                aria-label="Xem dạng bảng"
+                className={`p-2 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-stone-700 shadow-2xs text-amber-600 dark:text-amber-400' : 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'}`}
               >
-                <ListIcon className="w-5 h-5" />
+                <ListIcon className="w-4 h-4" />
               </button>
             </div>
             <button
               onClick={fetchClasses}
               disabled={loading}
-              className="p-3.5 bg-white dark:bg-stone-800 border border-stone-100 dark:border-stone-700 rounded-2xl text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700 transition-all shadow-sm disabled:opacity-50"
+              aria-label="Làm mới"
+              className="p-2 bg-stone-50 hover:bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-600 dark:text-stone-300 transition-all shadow-2xs disabled:opacity-50"
             >
-              <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <PermissionGuard permissions="classes.create">
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-500/20"
+                className="flex items-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs rounded-xl transition-all shadow-xs press-effect ml-auto sm:ml-0"
               >
-                <Plus className="w-5 h-5" />
-                <span className="hidden sm:inline">Tạo lớp học</span>
+                <Plus className="w-4 h-4" />
+                <span>Tạo lớp học</span>
               </button>
             </PermissionGuard>
           </div>
@@ -215,19 +219,48 @@ export default function ClassesPage() {
 
         {/* Statistics */}
         {statistics && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-4 sm:mb-6">
             {[
-              { label: "Tổng lớp học", value: statistics.total_classes, icon: <ListIcon className="w-5 h-5" />, color: "bg-blue-500/10 text-blue-500" },
-              { label: "Tổng học sinh", value: statistics.total_students, icon: <Icons.Users className="w-5 h-5" />, color: "bg-emerald-500/10 text-emerald-500" },
-              { label: "Sĩ số TB", value: (Number(statistics.average_enrollment) || 0).toFixed(1), icon: <Icons.Classes className="w-5 h-5" />, color: "bg-emerald-500/10 text-emerald-500" },
-              { label: "Giáo viên", value: Object.keys(statistics.by_teacher || {}).length, icon: <Icons.Users className="w-5 h-5" />, color: "bg-amber-500/10 text-amber-500" },
+              {
+                label: 'Tổng lớp học',
+                value: statistics.total_classes,
+                icon: <ListIcon className="w-4 h-4" />,
+                color: 'bg-blue-500/10 text-blue-500',
+              },
+              {
+                label: 'Tổng học sinh',
+                value: statistics.total_students,
+                icon: <Icons.Users className="w-4 h-4" />,
+                color: 'bg-emerald-500/10 text-emerald-500',
+              },
+              {
+                label: 'Sĩ số TB',
+                value: (Number(statistics.average_enrollment) || 0).toFixed(1),
+                icon: <Icons.Classes className="w-4 h-4" />,
+                color: 'bg-emerald-500/10 text-emerald-500',
+              },
+              {
+                label: 'Giáo viên',
+                value: Object.keys(statistics.by_teacher || {}).length,
+                icon: <Icons.Users className="w-4 h-4" />,
+                color: 'bg-amber-500/10 text-amber-500',
+              },
             ].map((stat) => (
-              <div key={stat.label} className="glass-crystal rounded-2xl p-5 hover:-translate-y-0.5 transition-all duration-300">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 ${stat.color} rounded-xl shrink-0`}>{stat.icon}</div>
+              <div
+                key={stat.label}
+                className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-white/10 rounded-2xl p-3 sm:p-4 shadow-xs"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 sm:p-2.5 ${stat.color} rounded-xl shrink-0`}>
+                    {stat.icon}
+                  </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em] mb-1 truncate">{stat.label}</p>
-                    <p className="text-3xl font-black text-stone-900 dark:text-stone-100 leading-none">{stat.value}</p>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-0.5 truncate">
+                      {stat.label}
+                    </p>
+                    <p className="text-xl sm:text-2xl font-black text-stone-900 dark:text-stone-100 leading-none">
+                      {stat.value}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -241,7 +274,9 @@ export default function ClassesPage() {
             <div className="text-error">
               <p className="font-semibold">Error loading classes</p>
               <p className="text-sm mt-1">{error}</p>
-              <Button variant="outline" onClick={fetchClasses} className="mt-3">Retry</Button>
+              <Button variant="outline" onClick={fetchClasses} className="mt-3">
+                Retry
+              </Button>
             </div>
           </Card>
         )}
@@ -252,24 +287,24 @@ export default function ClassesPage() {
             icon={<Icons.Classes className="w-16 h-16 text-stone-400" />}
             title={
               canManageClasses
-                ? "Không tìm thấy lớp học"
+                ? 'Không tìm thấy lớp học'
                 : isStudent
-                ? "Không có lớp học đã đăng ký"
-                : "Không có lớp học được giao"
+                  ? 'Không có lớp học đã đăng ký'
+                  : 'Không có lớp học được giao'
             }
             description={
               canManageClasses
-                ? "Chưa có lớp học nào được tạo"
+                ? 'Chưa có lớp học nào được tạo'
                 : isStudent
-                ? "Bạn chưa đăng ký lớp học nào. Liên hệ quản trị viên để được đăng ký."
-                : "Bạn chưa được giao lớp học nào. Liên hệ quản trị viên để được giao lớp học."
+                  ? 'Bạn chưa đăng ký lớp học nào. Liên hệ quản trị viên để được đăng ký.'
+                  : 'Bạn chưa được giao lớp học nào. Liên hệ quản trị viên để được giao lớp học.'
             }
           />
         )}
 
         {/* Class list */}
-        {classes.length > 0 && (
-          viewMode === "grid" ? (
+        {classes.length > 0 &&
+          (viewMode === 'grid' ? (
             <ClassListGrid
               classes={classes}
               searchQuery={searchQuery}
@@ -277,12 +312,8 @@ export default function ClassesPage() {
               onEnrollClick={(cls) => setEnrollTarget(cls)}
             />
           ) : (
-            <ClassListTable
-              classes={classes}
-              searchQuery={searchQuery}
-            />
-          )
-        )}
+            <ClassListTable classes={classes} searchQuery={searchQuery} />
+          ))}
 
         {/* Modals — rendered conditionally; admin data only fetched when opened */}
         <PermissionGuard permissions="classes.create">

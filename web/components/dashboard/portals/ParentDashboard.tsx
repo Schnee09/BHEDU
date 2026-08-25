@@ -41,9 +41,19 @@ export default function ParentDashboard() {
   // Fetch linked students (approved links only)
   const { data: linksData, loading: linksLoading } = useFetch<any>('/api/parent/links');
 
-  const links: LinkRecord[] = (linksData?.items || []).filter(
-    (link: any) => link.status === 'approved'
-  );
+  const rawLinks = linksData?.data || linksData?.items || [];
+  const links: LinkRecord[] = rawLinks
+    .filter((link: any) => link.status === 'approved' || link.status === 'active' || !link.status)
+    .map((link: any) => ({
+      id: link.id,
+      student_id: link.student?.id || link.student_id,
+      parent_id: link.parent_id,
+      status: link.status || 'approved',
+      student: link.student || {
+        full_name: link.student_name || 'Học sinh',
+        student_code: link.student_code || 'N/A',
+      },
+    }));
 
   const [selectedChildId, setSelectedChildId] = useState<string>('');
 

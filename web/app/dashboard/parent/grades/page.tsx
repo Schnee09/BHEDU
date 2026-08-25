@@ -108,7 +108,7 @@ export default function ParentGradesPage() {
             Bảng điểm của con
           </h1>
           <p className="text-stone-500 dark:text-stone-400 text-sm mt-1">
-            Theo dõi kết quả học tập chi tiết và học bạ điện tử của các con
+            Theo dõi kết quả học tập chi tiết và phiếu kết quả học tập của các con
           </p>
         </div>
       </div>
@@ -164,7 +164,7 @@ export default function ParentGradesPage() {
             <div className="flex items-center justify-between px-2">
               <h2 className="text-lg font-black uppercase tracking-widest text-stone-850 dark:text-white flex items-center gap-3">
                 <div className="w-1.5 h-6 bg-amber-500 rounded-full" />
-                Học bạ điện tử: {activeChild?.full_name}
+                Phiếu kết quả học tập: {activeChild?.full_name}
               </h2>
               {gradesLoading && <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />}
             </div>

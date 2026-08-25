@@ -24,31 +24,38 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const { data: notes, error } = await supabase
       .from('student_notes')
-      .select(
-        `
-        id,
-        content,
-        created_at,
-        created_by,
-        profiles!student_notes_created_by_fkey (full_name)
-      `
-      )
+      .select('id, content, created_at, created_by')
       .eq('student_id', id)
       .order('created_at', { ascending: false });
 
     if (error) {
-      // If table doesn't exist, return empty array
-      if (error.code === '42P01') {
+      // If table doesn't exist, return empty array gracefully
+      if (error.code === '42P01' || error.code === 'PGRST205') {
         return NextResponse.json({ notes: [] });
       }
       throw error;
+    }
+
+    // Fetch author names in resilient parallel query
+    const creatorIds = Array.from(
+      new Set((notes || []).map((n: any) => n.created_by).filter(Boolean))
+    );
+    let authorMap: Record<string, string> = {};
+    if (creatorIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', creatorIds);
+      if (profiles) {
+        authorMap = Object.fromEntries(profiles.map((p) => [p.id, p.full_name]));
+      }
     }
 
     const formattedNotes = (notes || []).map((n: any) => ({
       id: n.id,
       content: n.content,
       created_at: n.created_at,
-      created_by: n.profiles ? { full_name: n.profiles.full_name } : null,
+      created_by: n.created_by ? { full_name: authorMap[n.created_by] || 'Thành viên' } : null,
     }));
 
     return NextResponse.json({ notes: formattedNotes });
@@ -85,10 +92,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .single();
 
     if (error) {
-      // If table doesn't exist, create it inline
-      if (error.code === '42P01') {
+      if (error.code === '42P01' || error.code === 'PGRST205') {
         return NextResponse.json(
-          { error: 'Bảng student_notes chưa được tạo. Vui lòng chạy migration.' },
+          { error: 'Bảng student_notes chưa sẵn sàng trên cơ sở dữ liệu.' },
           { status: 500 }
         );
       }

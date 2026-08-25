@@ -73,7 +73,7 @@ export default function MobileTimetableList({
 
   // Group slots into sessions or flexible time blocks for current day
   const currentDaySlots = slots.filter((s) => s.day_of_week === currentDay);
-  
+
   const dailySlots = sessions.map((session) => {
     const sessionStart = session.start || '00:00';
     const sessionEnd = session.end || '23:59';
@@ -84,7 +84,10 @@ export default function MobileTimetableList({
       if (!s.start_time) return false;
       const slotHour = parseInt(s.start_time.split(':')[0] || '0', 10);
       // Match exact start or hour range
-      return s.start_time.startsWith(sessionStart) || (slotHour >= sessionStartHour && slotHour <= sessionEndHour);
+      return (
+        s.start_time.startsWith(sessionStart) ||
+        (slotHour >= sessionStartHour && slotHour <= sessionEndHour)
+      );
     });
 
     return { session, slots: matchedSlots };
@@ -95,14 +98,20 @@ export default function MobileTimetableList({
   const orphanSlots = currentDaySlots.filter((s) => !matchedSlotIds.has(s.id));
   if (orphanSlots.length > 0) {
     dailySlots.push({
-      session: { id: 'other', label: 'Khung giờ khác', time: 'Linh hoạt', start: '00:00', end: '23:59' },
+      session: {
+        id: 'other',
+        label: 'Khung giờ khác',
+        time: 'Linh hoạt',
+        start: '00:00',
+        end: '23:59',
+      },
       slots: orphanSlots,
     });
   }
 
-
   const getSlotStyles = (slot: any) => {
-    if (viewMode === 'tutoring') return 'border-l-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10';
+    if (viewMode === 'tutoring')
+      return 'border-l-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10';
     if (viewMode === 'teacher')
       return 'border-l-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10';
     if (viewMode === 'class') return 'border-l-amber-600 bg-amber-600/5 dark:bg-amber-600/10';
@@ -112,13 +121,13 @@ export default function MobileTimetableList({
   const currentDate = weekDates[currentDay] ?? new Date();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] md:hidden bg-transparent -mx-4 sm:-mx-6">
+    <div className="flex flex-col h-[calc(100vh-140px)] md:hidden bg-transparent -mx-2.5 sm:-mx-6">
       {/* Day Selector - Premium Sticky */}
       <div className="sticky top-0 z-30 space-y-0.5">
-        <div className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-xl border-b border-stone-200/50 dark:border-white/5 py-3">
+        <div className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-xl border-b border-stone-200/50 dark:border-white/5 py-2.5">
           <div
             ref={scrollRef}
-            className="flex overflow-x-auto px-4 gap-3 no-scrollbar scroll-smooth"
+            className="flex overflow-x-auto px-3 gap-2 no-scrollbar scroll-smooth"
           >
             {days.map((day, index) => {
               const date = weekDates[index];
@@ -131,10 +140,10 @@ export default function MobileTimetableList({
                   key={day}
                   onClick={() => handleDayChange(index)}
                   className={cn(
-                    'flex flex-col items-center justify-center min-w-[64px] h-[76px] rounded-[24px] transition-all duration-300 relative press-effect tap-target',
+                    'flex flex-col items-center justify-center min-w-[56px] h-[68px] rounded-2xl transition-all duration-200 relative press-effect shrink-0',
                     isSelected
-                      ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 scale-105'
-                      : 'bg-stone-500/5 dark:bg-white/5 text-stone-500 dark:text-stone-400 border border-stone-200/50 dark:border-white/5',
+                      ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20 scale-102 font-black'
+                      : 'bg-stone-100 dark:bg-white/5 text-stone-500 dark:text-stone-400 border border-stone-200/60 dark:border-white/5',
                     isToday &&
                       !isSelected &&
                       'ring-2 ring-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-500'
@@ -142,17 +151,17 @@ export default function MobileTimetableList({
                 >
                   <span
                     className={cn(
-                      'text-[10px] font-black uppercase tracking-[0.15em] mb-1 opacity-70',
-                      isSelected ? 'text-amber-50' : ''
+                      'text-[9.5px] font-bold uppercase tracking-wider mb-0.5 opacity-80',
+                      isSelected ? 'text-stone-950' : ''
                     )}
                   >
                     {day}
                   </span>
-                  <span className="text-xl font-black">{format(date, 'dd')}</span>
+                  <span className="text-lg font-black">{format(date, 'dd')}</span>
 
-                  {/* Active Glow */}
+                  {/* Active Indicator */}
                   {isSelected && (
-                    <div className="absolute -bottom-1 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_10px_white]" />
+                    <div className="absolute -bottom-0.5 w-1.5 h-1.5 bg-stone-950 rounded-full" />
                   )}
                 </button>
               );
@@ -265,16 +274,25 @@ export default function MobileTimetableList({
 
                               {/* Status Badge */}
                               <div className="mt-1.5 flex items-center gap-2">
-                                <span className={cn(
-                                  "px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border",
-                                  slot.status === 'completed' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" :
-                                  slot.status === 'cancelled' ? "bg-red-500/10 text-red-600 border-red-500/30" :
-                                  slot.status === 'makeup' ? "bg-sky-500/10 text-sky-600 border-sky-500/30" :
-                                  "bg-amber-500/10 text-amber-600 border-amber-500/30"
-                                )}>
-                                  {slot.status === 'completed' ? '🟢 Hoàn thành' :
-                                   slot.status === 'cancelled' ? '🔴 Hủy ca' :
-                                   slot.status === 'makeup' ? '🔵 Học bù' : '🟡 Đã xếp'}
+                                <span
+                                  className={cn(
+                                    'px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border',
+                                    slot.status === 'completed'
+                                      ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                                      : slot.status === 'cancelled'
+                                        ? 'bg-red-500/10 text-red-600 border-red-500/30'
+                                        : slot.status === 'makeup'
+                                          ? 'bg-sky-500/10 text-sky-600 border-sky-500/30'
+                                          : 'bg-amber-500/10 text-amber-600 border-amber-500/30'
+                                  )}
+                                >
+                                  {slot.status === 'completed'
+                                    ? '🟢 Hoàn thành'
+                                    : slot.status === 'cancelled'
+                                      ? '🔴 Hủy ca'
+                                      : slot.status === 'makeup'
+                                        ? '🔵 Học bù'
+                                        : '🟡 Đã xếp'}
                                 </span>
                               </div>
                             </div>

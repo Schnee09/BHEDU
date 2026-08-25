@@ -191,14 +191,14 @@ export const SidebarNav = memo(function SidebarNav({
   };
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto py-4 space-y-6 custom-scrollbar scroll-smooth">
+    <div className="flex-1 min-h-0 overflow-y-auto py-3 space-y-4 custom-scrollbar scroll-smooth">
       {navSections.map((section) => (
-        <div key={section.title} className="space-y-1">
+        <div key={section.title} className="space-y-0.5">
           {/* Section Title */}
           {!isCollapsed && (
-            <div className="flex items-center gap-3 px-6 mb-2 mt-1">
-              <div className="w-1 h-1 bg-amber-500/60 rounded-full shadow-accent-glow"></div>
-              <h3 className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-[0.15em] font-sans">
+            <div className="flex items-center gap-2 px-4 mb-1.5 mt-1">
+              <div className="w-1.5 h-1.5 bg-amber-500 rounded-full shadow-2xs"></div>
+              <h3 className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest font-sans">
                 {section.title}
               </h3>
             </div>

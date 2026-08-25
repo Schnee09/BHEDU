@@ -34,15 +34,15 @@ export const Card = memo(function Card({
     <Component
       onClick={onClick}
       className={cn(
-        'rounded-3xl transition-all duration-500 glass-premium text-foreground',
+        'rounded-2xl sm:rounded-3xl transition-all duration-300 glass-premium text-foreground',
         borderStyle === 'dashed'
           ? 'border-2 border-dashed border-stone-200 dark:border-white/10'
-          : 'border border-stone-100 dark:border-white/5',
+          : 'border border-stone-200/80 dark:border-white/5',
         hover || isClickable
-          ? 'hover:shadow-ultra hover:-translate-y-1 hover:border-primary/20'
-          : 'shadow-sm',
+          ? 'hover:shadow-md hover:-translate-y-0.5 hover:border-amber-500/30'
+          : 'shadow-2xs',
         isClickable ? 'cursor-pointer active:scale-[0.98]' : '',
-        padding || 'p-4 sm:p-6',
+        padding || 'p-3.5 sm:p-5 lg:p-6',
         className
       )}
       role={isClickable ? 'button' : undefined}
@@ -64,7 +64,7 @@ interface CardHeaderProps {
 export const CardHeader = memo(({ children, className = '', title, subtitle }: CardHeaderProps) => {
   return (
     <div
-      className={`px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100/10 dark:border-white/5 ${className}`}
+      className={`px-3.5 sm:px-5 lg:px-6 py-2.5 sm:py-3.5 border-b border-stone-100 dark:border-white/5 ${className}`}
     >
       {title && <CardTitle>{title}</CardTitle>}
       {subtitle && <CardDescription>{subtitle}</CardDescription>}
@@ -79,20 +79,10 @@ interface CardBodyProps {
   className?: string;
 }
 
-interface CardBodyProps {
-  children: ReactNode;
-  className?: string;
-}
-
 export const CardBody = memo(({ children, className = '' }: CardBodyProps) => {
-  return <div className={`px-4 sm:px-6 py-4 sm:py-5 ${className}`}>{children}</div>;
+  return <div className={`px-3.5 sm:px-5 lg:px-6 py-3 sm:py-4.5 ${className}`}>{children}</div>;
 });
 CardBody.displayName = 'CardBody';
-
-interface CardContentProps {
-  children: ReactNode;
-  className?: string;
-}
 
 interface CardContentProps {
   children: ReactNode;
@@ -103,14 +93,9 @@ export const CardContent = memo(function CardContent({
   children,
   className = '',
 }: CardContentProps) {
-  return <div className={`px-4 sm:px-6 py-4 sm:py-5 ${className}`}>{children}</div>;
+  return <div className={`px-3.5 sm:px-5 lg:px-6 py-3 sm:py-4.5 ${className}`}>{children}</div>;
 });
 CardContent.displayName = 'CardContent';
-
-interface CardDescriptionProps {
-  children: ReactNode;
-  className?: string;
-}
 
 interface CardDescriptionProps {
   children: ReactNode;
@@ -121,14 +106,9 @@ export const CardDescription = memo(function CardDescription({
   children,
   className = '',
 }: CardDescriptionProps) {
-  return <p className={`text-sm text-muted-foreground ${className}`}>{children}</p>;
+  return <p className={`text-xs text-stone-500 dark:text-stone-400 ${className}`}>{children}</p>;
 });
 CardDescription.displayName = 'CardDescription';
-
-interface CardTitleProps {
-  children: ReactNode;
-  className?: string;
-}
 
 interface CardTitleProps {
   children: ReactNode;
@@ -139,7 +119,7 @@ export const CardTitle = memo(function CardTitle({ children, className = '' }: C
   return (
     <h3
       className={cn(
-        'text-xl font-serif font-black leading-none tracking-tight text-stone-900 dark:text-white transition-colors duration-300',
+        'text-base sm:text-lg font-serif font-black leading-tight tracking-tight text-stone-900 dark:text-white transition-colors duration-200',
         className
       )}
     >
@@ -235,10 +215,10 @@ export const StatCard = memo(function StatCard({
     <div
       onClick={onClick}
       className={cn(
-        'group relative overflow-hidden rounded-3xl transition-all duration-500',
-        'glass-premium',
-        'border border-stone-200/60 dark:border-white/5',
-        'hover:border-primary/40 hover:-translate-y-1.5 hover:shadow-ultra',
+        'group relative overflow-hidden rounded-2xl sm:rounded-3xl transition-all duration-300',
+        'bg-white dark:bg-[#14120E]',
+        'border border-stone-200/80 dark:border-white/10 shadow-xs',
+        'hover:border-primary/40 hover:-translate-y-1 hover:shadow-md',
         onClick ? 'cursor-pointer active:scale-[0.97]' : '',
         className
       )}
@@ -246,24 +226,24 @@ export const StatCard = memo(function StatCard({
       {/* Dynamic Gradient Background */}
       <div
         className={cn(
-          'absolute inset-0 bg-gradient-to-br transition-opacity duration-500 opacity-30 group-hover:opacity-60',
+          'absolute inset-0 bg-gradient-to-br transition-opacity duration-300 opacity-20 group-hover:opacity-40',
           styles.gradient
         )}
         aria-hidden="true"
       />
 
-      <div className="p-5 flex items-start justify-between relative z-10">
-        <div className="flex-1 space-y-1.5 font-sans">
-          <p className="text-[10px] font-black text-stone-900/60 dark:text-stone-400 uppercase tracking-widest">
+      <div className="p-3 sm:p-4 md:p-5 flex items-start justify-between gap-2 relative z-10">
+        <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1 font-sans">
+          <p className="text-[10px] sm:text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider truncate">
             {label}
           </p>
           <div className="flex items-baseline gap-1">
-            <p className="text-2xl font-serif font-black text-stone-900 dark:text-white tabular-nums tracking-tighter transition-transform duration-500 group-hover:translate-x-0.5">
+            <p className="text-lg sm:text-xl md:text-2xl font-black text-stone-900 dark:text-white tabular-nums tracking-tight transition-transform duration-300 group-hover:translate-x-0.5">
               {value}
             </p>
           </div>
           {subtitle && (
-            <p className="text-[10px] font-bold text-stone-500/60 dark:text-stone-400/60 uppercase tracking-tight">
+            <p className="text-[9.5px] sm:text-[11px] font-medium text-stone-400 dark:text-stone-500 tracking-tight truncate">
               {subtitle}
             </p>
           )}
@@ -286,7 +266,7 @@ export const StatCard = memo(function StatCard({
         {icon && (
           <div
             className={cn(
-              'w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 shadow-sm group-hover:scale-110 group-hover:rotate-2',
+              'w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 shadow-2xs group-hover:scale-105',
               styles.icon
             )}
           >

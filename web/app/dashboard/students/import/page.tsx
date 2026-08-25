@@ -19,8 +19,17 @@ import {
 import { Button, Card, CardHeader, Badge } from '@/components/ui';
 import { Icons } from '@/components/ui/Icons';
 import { cn } from '@/lib/utils';
+import PageGuard from '@/components/PageGuard';
 
-export default function BulkImportPage() {
+export default function BulkImportPageGuarded() {
+  return (
+    <PageGuard permissions="students.import">
+      <BulkImportPage />
+    </PageGuard>
+  );
+}
+
+function BulkImportPage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);

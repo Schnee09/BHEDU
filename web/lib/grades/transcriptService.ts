@@ -243,7 +243,7 @@ export function calculateClassRankings(
  */
 export function formatTranscriptSummary(transcript: StudentTranscript): string {
   const lines = [
-    `HỌC BẠ - ${transcript.fullName}`,
+    `PHIẾU KẾT QUẢ HỌC TẬP - ${transcript.fullName}`,
     `Mã học sinh: ${transcript.studentCode}`,
     `Lớp: ${transcript.className}`,
     ``,

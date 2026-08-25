@@ -20,12 +20,7 @@ import {
   Tag,
   CalendarDays,
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -205,7 +200,9 @@ export default function AcademicYearsAndSemestersPage() {
 
   // --- Semester Actions ---
   const handleOpenAddSemester = (defaultYear?: AcademicYear) => {
-    const currentYear = defaultYear ? new Date(defaultYear.start_date).getFullYear() : new Date().getFullYear();
+    const currentYear = defaultYear
+      ? new Date(defaultYear.start_date).getFullYear()
+      : new Date().getFullYear();
     setEditingSemester(null);
     setSemesterForm({
       name: 'Học kỳ 1 (HK1)',
@@ -250,10 +247,7 @@ export default function AcademicYearsAndSemestersPage() {
       });
 
       if (response.ok) {
-        toast.success(
-          'Thành công',
-          editingSemester ? 'Đã cập nhật học kỳ' : 'Đã thêm học kỳ mới'
-        );
+        toast.success('Thành công', editingSemester ? 'Đã cập nhật học kỳ' : 'Đã thêm học kỳ mới');
         setShowSemesterModal(false);
         fetchSemesters();
       } else {
@@ -335,9 +329,14 @@ export default function AcademicYearsAndSemestersPage() {
     const start = new Date(semester.start_date);
     const end = new Date(semester.end_date);
 
-    if (now < start) return { label: 'Sắp tới', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' };
-    if (now > end) return { label: 'Đã kết thúc', color: 'bg-stone-100 dark:bg-white/5 text-stone-400' };
-    return { label: 'Đang diễn ra', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' };
+    if (now < start)
+      return { label: 'Sắp tới', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' };
+    if (now > end)
+      return { label: 'Đã kết thúc', color: 'bg-stone-100 dark:bg-white/5 text-stone-400' };
+    return {
+      label: 'Đang diễn ra',
+      color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+    };
   };
 
   const filteredYears = years.filter((y) =>
@@ -362,9 +361,9 @@ export default function AcademicYearsAndSemestersPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-stone-50 dark:bg-[#080808] font-['Be_Vietnam_Pro'] text-stone-900 dark:text-stone-100 p-4 md:p-10 lg:p-12">
+    <div className="relative bg-transparent font-['Be_Vietnam_Pro'] text-stone-900 dark:text-stone-100 py-3 sm:py-6 px-2.5 sm:px-6 lg:px-8">
       <AcademicBackground />
-      <div className="max-w-[1600px] mx-auto relative z-10 space-y-8">
+      <div className="max-w-[1600px] mx-auto relative z-10 space-y-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-stone-200 dark:border-stone-800 pb-8">
           <div className="space-y-2">
@@ -443,7 +442,7 @@ export default function AcademicYearsAndSemestersPage() {
           </div>
         ) : activeTab === 'hierarchical' ? (
           /* Hierarchical View: Bento Cards for Years with Embedded Semesters */
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {filteredYears.map((year) => {
               const progress = calculateProgress(year.start_date, year.end_date);
               const isCurrent = year.is_current;
@@ -453,48 +452,46 @@ export default function AcademicYearsAndSemestersPage() {
                 <div
                   key={year.id}
                   className={cn(
-                    'group p-8 rounded-[32px] border transition-all duration-500 relative overflow-hidden flex flex-col justify-between space-y-6',
+                    'group p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border transition-all duration-300 relative overflow-hidden flex flex-col justify-between space-y-4 sm:space-y-6',
                     isCurrent
-                      ? 'bg-white dark:bg-stone-900/90 border-amber-500/40 shadow-xl shadow-amber-500/5 ring-2 ring-amber-500/10'
-                      : 'bg-white dark:bg-stone-900/50 border-stone-100 dark:border-white/5 hover:border-stone-300 dark:hover:border-white/20 shadow-sm'
+                      ? 'bg-white dark:bg-stone-900/90 border-amber-500/40 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
+                      : 'bg-white dark:bg-stone-900/50 border-stone-200/80 dark:border-white/5 hover:border-stone-300 dark:hover:border-white/20 shadow-2xs'
                   )}
                 >
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-5">
                     {/* Top Row */}
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div
                           className={cn(
-                            'p-4 rounded-2xl transition-colors',
+                            'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors',
                             isCurrent
-                              ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
+                              ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
                               : 'bg-stone-100 dark:bg-white/5 text-stone-500 group-hover:bg-amber-500/10 group-hover:text-amber-500'
                           )}
                         >
-                          <Calendar className="w-6 h-6" />
+                          <Calendar className="w-5 h-5" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-2xl font-black tracking-tight text-stone-950 dark:text-white">
-                              {year.name}
-                            </h3>
-                          </div>
-                          <p className="text-xs text-stone-500 font-medium mt-1 flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 opacity-60" />
+                        <div className="min-w-0">
+                          <h3 className="text-lg sm:text-xl font-black tracking-tight text-stone-950 dark:text-white truncate">
+                            {year.name}
+                          </h3>
+                          <p className="text-xs text-stone-500 font-medium mt-0.5 flex items-center gap-1.5 truncate">
+                            <Clock className="w-3.5 h-3.5 opacity-60 shrink-0" />
                             {formatDate(year.start_date)} &mdash; {formatDate(year.end_date)}
                           </p>
                         </div>
                       </div>
 
-                      <div className="shrink-0">
+                      <div className="self-start sm:self-auto shrink-0">
                         {isCurrent ? (
-                          <span className="px-3.5 py-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-500/30 flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Năm học hiện tại
+                          <span className="px-2.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-amber-500/30 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Năm học hiện tại
                           </span>
                         ) : (
                           <button
                             onClick={() => handleSetCurrentYear(year.id, year.name)}
-                            className="px-3.5 py-1.5 bg-stone-100 dark:bg-white/5 hover:bg-amber-500/10 hover:text-amber-500 text-stone-400 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors"
+                            className="px-2.5 py-1 bg-stone-100 dark:bg-white/5 hover:bg-amber-500/10 hover:text-amber-500 text-stone-500 text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors"
                           >
                             Đặt hiện tại
                           </button>
@@ -503,17 +500,17 @@ export default function AcademicYearsAndSemestersPage() {
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="space-y-2 bg-stone-50 dark:bg-white/[0.02] p-4 rounded-2xl border border-stone-100 dark:border-white/5">
+                    <div className="space-y-1.5 bg-stone-50 dark:bg-white/[0.02] p-3 sm:p-3.5 rounded-xl border border-stone-100 dark:border-white/5">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-stone-600 dark:text-stone-300 flex items-center gap-1.5">
+                        <span className="font-bold text-stone-600 dark:text-stone-300 flex items-center gap-1.5 text-xs">
                           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                           Tiến độ năm học
                         </span>
-                        <span className="font-mono font-bold text-stone-900 dark:text-white">
+                        <span className="font-mono font-bold text-stone-900 dark:text-white text-xs">
                           {progress}%
                         </span>
                       </div>
-                      <div className="w-full h-2 rounded-full bg-stone-200/60 dark:bg-white/10 overflow-hidden">
+                      <div className="w-full h-1.5 sm:h-2 rounded-full bg-stone-200/60 dark:bg-white/10 overflow-hidden">
                         <div
                           className={cn(
                             'h-full rounded-full transition-all duration-1000',
@@ -527,15 +524,15 @@ export default function AcademicYearsAndSemestersPage() {
                     </div>
 
                     {/* Semesters belonging to this Year */}
-                    <div className="space-y-3 pt-1">
+                    <div className="space-y-2.5 pt-0.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black text-stone-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="text-[10.5px] font-black text-stone-400 uppercase tracking-widest flex items-center gap-1.5">
                           <Layers className="w-3.5 h-3.5 text-amber-500" />
                           Học kỳ trực thuộc ({yearSemesters.length})
                         </span>
                         <button
                           onClick={() => handleOpenAddSemester(year)}
-                          className="text-[11px] font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1"
+                          className="text-[10.5px] font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1"
                         >
                           <Plus className="w-3 h-3" /> Thêm học kỳ
                         </button>
@@ -543,49 +540,47 @@ export default function AcademicYearsAndSemestersPage() {
 
                       <div className="space-y-2">
                         {yearSemesters.map((sem) => {
-                          const status = getSemesterStatus(sem);
-
                           return (
                             <div
                               key={sem.id}
                               className={cn(
-                                'p-3.5 rounded-2xl border flex items-center justify-between gap-3 transition-all',
+                                'p-2.5 sm:p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all',
                                 sem.is_active
                                   ? 'bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20'
                                   : 'bg-stone-50 dark:bg-white/[0.02] border-stone-100 dark:border-white/5'
                               )}
                             >
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-bold text-sm text-stone-900 dark:text-white">
+                              <div className="space-y-0.5 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white">
                                     {sem.name}
                                   </span>
-                                  <span className="px-2 py-0.5 rounded-md bg-stone-200/60 dark:bg-white/10 font-mono text-[10px] font-bold text-stone-600 dark:text-stone-400">
+                                  <span className="px-1.5 py-0.5 rounded-md bg-stone-200/60 dark:bg-white/10 font-mono text-[9.5px] font-bold text-stone-600 dark:text-stone-400">
                                     {sem.code}
                                   </span>
                                   {sem.is_active && (
-                                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase">
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase">
                                       Đang kích hoạt
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-[11px] text-stone-400 font-medium">
+                                <p className="text-[10.5px] text-stone-400 font-medium">
                                   {formatDate(sem.start_date)} &mdash; {formatDate(sem.end_date)}
                                 </p>
                               </div>
 
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
                                 {!sem.is_active && (
                                   <button
                                     onClick={() => handleSetActiveSemester(sem.id, sem.name)}
-                                    className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-stone-200/80 dark:bg-white/10 hover:bg-emerald-500 hover:text-white rounded-lg transition-colors"
+                                    className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-stone-200/80 dark:bg-white/10 hover:bg-emerald-500 hover:text-white rounded-lg transition-colors"
                                   >
                                     Kích hoạt
                                   </button>
                                 )}
                                 <button
                                   onClick={() => handleOpenEditSemester(sem)}
-                                  className="p-1.5 text-stone-400 hover:text-amber-500 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/10 transition-colors"
+                                  className="p-1 text-stone-400 hover:text-amber-500 rounded-lg hover:bg-stone-200/50 dark:hover:bg-white/10 transition-colors"
                                   title="Chỉnh sửa học kỳ"
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
@@ -593,7 +588,7 @@ export default function AcademicYearsAndSemestersPage() {
                                 {!sem.is_active && (
                                   <button
                                     onClick={() => handleDeleteSemester(sem.id, sem.name)}
-                                    className="p-1.5 text-stone-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+                                    className="p-1 text-stone-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
                                     title="Xóa học kỳ"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -605,7 +600,7 @@ export default function AcademicYearsAndSemestersPage() {
                         })}
 
                         {yearSemesters.length === 0 && (
-                          <div className="p-4 rounded-2xl bg-stone-50 dark:bg-white/[0.01] border border-dashed border-stone-200 dark:border-white/5 text-center text-xs text-stone-400">
+                          <div className="p-3 rounded-xl bg-stone-50 dark:bg-white/[0.01] border border-dashed border-stone-200 dark:border-white/5 text-center text-xs text-stone-400">
                             Chưa có học kỳ nào gắn với năm học này.
                           </div>
                         )}
@@ -614,25 +609,25 @@ export default function AcademicYearsAndSemestersPage() {
                   </div>
 
                   {/* Bottom Actions */}
-                  <div className="flex items-center justify-between pt-4 border-t border-stone-100 dark:border-white/5 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 border-t border-stone-100 dark:border-white/5 gap-2 text-xs">
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleOpenEditYear(year)}
-                        className="px-3.5 py-1.5 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-amber-500/10 hover:text-amber-500 text-stone-600 dark:text-stone-300 font-bold transition-colors flex items-center gap-1.5"
+                        className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-amber-500/10 hover:text-amber-500 text-stone-600 dark:text-stone-300 font-bold transition-colors flex items-center gap-1.5 text-xs"
                       >
                         <Edit3 className="w-3.5 h-3.5" /> Sửa năm học
                       </button>
                       {!isCurrent && (
                         <button
                           onClick={() => handleDeleteYear(year.id, year.name)}
-                          className="px-3.5 py-1.5 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-rose-500/10 hover:text-rose-500 text-stone-600 dark:text-stone-300 font-bold transition-colors flex items-center gap-1.5"
+                          className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-rose-500/10 hover:text-rose-500 text-stone-600 dark:text-stone-300 font-bold transition-colors flex items-center gap-1.5 text-xs"
                         >
                           <Trash2 className="w-3.5 h-3.5" /> Xóa
                         </button>
                       )}
                     </div>
 
-                    <span className="text-[11px] font-mono text-stone-400">
+                    <span className="text-[10px] font-mono text-stone-400 self-end sm:self-auto">
                       ID: {year.id.slice(0, 8)}...
                     </span>
                   </div>
@@ -668,7 +663,12 @@ export default function AcademicYearsAndSemestersPage() {
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
                       <div>
-                        <span className={cn('px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block mb-1', status.color)}>
+                        <span
+                          className={cn(
+                            'px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block mb-1',
+                            status.color
+                          )}
+                        >
                           {status.label}
                         </span>
                         <h3 className="text-lg font-black tracking-tight text-stone-900 dark:text-white">

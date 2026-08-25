@@ -57,50 +57,50 @@ interface RecentActivity {
 const navCards: NavCard[] = [
   {
     href: '/dashboard/grades/entry',
-    title: 'Nhập điểm',
-    description: 'Nhập điểm sử dụng thang điểm Việt Nam',
+    title: 'Nhập điểm môn học',
+    description: 'Nhập điểm 15p, 1 tiết, giữa kỳ và cuối kỳ',
     icon: PencilSquareIcon,
     permission: 'grades.entry',
-    color: 'blue',
+    color: 'amber',
+  },
+  {
+    href: '/dashboard/grades/transcripts',
+    title: 'Phiếu kết quả học tập',
+    description: 'Tra cứu bảng điểm tổng hợp của học sinh',
+    icon: AcademicCapIcon,
+    permission: 'grades.view',
+    color: 'amber',
   },
   {
     href: '/dashboard/grades/analytics',
-    title: 'Phân tích điểm',
-    description: 'Xem hiệu suất lớp học và phân bố điểm',
+    title: 'Phân tích học lực',
+    description: 'Biểu đồ phân bố điểm số và GPA toàn trung tâm',
     icon: DocumentChartBarIcon,
     permission: 'grades.analytics',
     color: 'emerald',
   },
   {
     href: '/dashboard/grades/reports',
-    title: 'Báo cáo điểm',
-    description: 'Tạo và xuất báo cáo điểm chi tiết',
+    title: 'Báo cáo & Xuất file',
+    description: 'Tạo và xuất báo cáo điểm số chi tiết',
     icon: DocumentTextIcon,
     permission: 'reports.view',
     color: 'emerald',
   },
-  {
-    href: '/dashboard/students/me/transcript', // Placeholder that we'll handle in-component or update to real ID
-    title: 'Điểm của tôi',
-    description: 'Xem điểm và kết quả bài tập của bạn',
-    icon: AcademicCapIcon,
-    isStudentOnly: true,
-    color: 'blue',
-  },
 ];
 
 const colorClasses: Record<string, { bg: string; hover: string; text: string; icon: string }> = {
-  blue: {
-    bg: 'bg-blue-50',
-    hover: 'group-hover:bg-blue-100',
-    text: 'text-blue-600',
-    icon: 'text-blue-600',
+  amber: {
+    bg: 'bg-amber-500/10',
+    hover: 'group-hover:bg-amber-500/20',
+    text: 'text-amber-600 dark:text-amber-400',
+    icon: 'text-amber-600 dark:text-amber-400',
   },
   emerald: {
-    bg: 'bg-emerald-50',
-    hover: 'group-hover:bg-emerald-100',
-    text: 'text-emerald-600',
-    icon: 'text-emerald-600',
+    bg: 'bg-emerald-500/10',
+    hover: 'group-hover:bg-emerald-500/20',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    icon: 'text-emerald-600 dark:text-emerald-400',
   },
 };
 
@@ -210,33 +210,33 @@ export default function GradesPageModern() {
 
   return (
     <div className="min-h-screen bg-transparent">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1600px] mx-auto px-2.5 sm:px-6 lg:px-8 py-3 sm:py-6">
         {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-1.5 h-8 bg-blue-600 rounded-full" />
-            <h1 className="text-3xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
-              Điểm <span className="text-blue-600">&amp; Bài tập</span>
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-1.5 h-6 bg-amber-500 rounded-full" />
+            <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+              Điểm <span className="text-amber-500">&amp; Bài tập</span>
             </h1>
           </div>
-          <p className="text-sm text-stone-500 dark:text-stone-400 pl-4">
+          <p className="text-xs text-stone-500 dark:text-stone-400 pl-3">
             {isStudent ? 'Xem điểm và tiến độ học tập của bạn' : 'Quản lý điểm, bài tập và báo cáo'}
           </p>
         </div>
 
         {/* Quick Stats Cards for Teachers/Admins */}
         {canSeeStats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-            <div className="glass-crystal rounded-2xl p-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-white/10 rounded-2xl p-3 sm:p-4 shadow-xs">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-500/10 rounded-xl">
-                  <UsersIcon className="w-5 h-5 text-blue-500" />
+                  <UsersIcon className="w-4 h-4 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-stone-900 dark:text-stone-100">
+                  <p className="text-xl sm:text-2xl font-black text-stone-900 dark:text-stone-100 leading-none">
                     {loadingStats ? '-' : stats?.totalStudents || 0}
                   </p>
-                  <p className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                  <p className="text-[9px] sm:text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider mt-1">
                     Học sinh
                   </p>
                 </div>

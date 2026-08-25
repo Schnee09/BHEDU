@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/ui/Icons';
 import { cn } from '@/lib/utils';
+import PageGuard from '@/components/PageGuard';
 
 const gradeOptions = [
   { value: '', label: 'Tùy chọn khối lớp (Để trống nếu chưa rõ)' },
@@ -27,7 +28,15 @@ const gradeOptions = [
   { value: 'Lớp 12', label: 'Lớp 12 - THPT (Luyện thi ĐH)' },
 ];
 
-export default function BulkCreatePage() {
+export default function BulkCreatePageGuarded() {
+  return (
+    <PageGuard permissions="students.create">
+      <BulkCreatePage />
+    </PageGuard>
+  );
+}
+
+function BulkCreatePage() {
   const router = useRouter();
   const toast = useToast();
 

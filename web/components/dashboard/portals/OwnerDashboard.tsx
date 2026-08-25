@@ -88,32 +88,30 @@ export default function OwnerDashboard() {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-x-hidden">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-6 md:py-10 space-y-8 md:space-y-12 relative z-10">
+      <div className="max-w-[1600px] mx-auto px-2.5 sm:px-4 lg:px-6 py-3 sm:py-5 space-y-4 sm:space-y-6 relative z-10">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-stone-200/50 dark:border-white/5">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-amber-500 rounded-full shadow-accent-glow" />
-              <h1 className="text-3xl md:text-5xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60 dark:border-white/5">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-5 bg-amber-500 rounded-full" />
+              <h1 className="text-lg sm:text-2xl font-black text-stone-900 dark:text-stone-100 tracking-tight flex flex-wrap items-center gap-2">
                 Dashboard <span className="text-amber-500">Chủ trung tâm</span>
               </h1>
             </div>
-            <div className="flex items-center gap-2 pl-4">
-              <span className="text-xs font-black text-stone-500 dark:text-stone-400 uppercase tracking-[0.2em] break-words">
-                Chào mừng trở lại,{' '}
-                <span className="text-stone-900 dark:text-stone-100">
-                  {profile?.full_name ?? 'User'}
-                </span>
+            <p className="text-xs text-stone-500 dark:text-stone-400 pl-3">
+              Chào mừng trở lại,{' '}
+              <span className="text-stone-800 dark:text-stone-200 font-bold">
+                {profile?.full_name ?? 'User'}
               </span>
-            </div>
+            </p>
           </div>
 
-          <div className="hidden md:flex items-center gap-4 bg-white/40 dark:bg-stone-900/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-stone-200/50 dark:border-white/5 shadow-sm">
+          <div className="hidden sm:flex items-center gap-3 bg-white/40 dark:bg-stone-900/40 backdrop-blur-md px-4 py-2 rounded-xl border border-stone-200/50 dark:border-white/5 shadow-xs">
             <div className="flex flex-col items-end">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+              <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">
                 Giám sát chiến lược
               </span>
-              <span className="text-sm font-black text-stone-800 dark:text-white uppercase tracking-tight">
+              <span className="text-xs font-black text-stone-800 dark:text-white">
                 {new Date().toLocaleDateString('vi-VN', {
                   weekday: 'long',
                   day: 'numeric',
@@ -125,55 +123,54 @@ export default function OwnerDashboard() {
         </div>
 
         {/* Top Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
           <StatCard
             label="Học sinh hoạt động"
             value={String(currentStats.studentsCount)}
-            icon={<Users className="w-5 h-5 text-blue-500" />}
-            subtitle="Học sinh đăng ký học"
+            icon={<Users className="w-4 h-4 text-blue-500" />}
+            subtitle="Đang theo học"
             trend={{ value: 'Hoạt động', isPositive: true }}
             color="blue"
           />
           <StatCard
             label="Tổng số lớp học"
             value={String(currentStats.classesCount)}
-            icon={<Building className="w-5 h-5 text-emerald-500" />}
-            subtitle="Lớp học đang mở"
+            icon={<Building className="w-4 h-4 text-emerald-500" />}
+            subtitle="Lớp đang mở"
             trend={{ value: 'Đang mở', isPositive: true }}
             color="emerald"
           />
           <StatCard
             label="Đội ngũ giáo viên"
             value={String(currentStats.teachersCount)}
-            icon={<Users className="w-5 h-5 text-amber-500" />}
-            subtitle="Giáo viên giảng dạy"
+            icon={<Users className="w-4 h-4 text-amber-500" />}
+            subtitle="Đang giảng dạy"
             trend={{ value: 'Giảng dạy', isPositive: true }}
             color="amber"
           />
           <StatCard
             label="Đội ngũ gia sư"
             value={String(currentStats.tutorsCount)}
-            icon={<Users className="w-5 h-5 text-orange-500" />}
-            subtitle="Gia sư hỗ trợ học tập"
+            icon={<Users className="w-4 h-4 text-orange-500" />}
+            subtitle="Hỗ trợ kèm 1-1"
             trend={{ value: 'Hỗ trợ', isPositive: true }}
             color="orange"
           />
           <StatCard
             label="Tối ưu lớp học"
             value={`${averageUtilization}%`}
-            icon={<Building className="w-5 h-5 text-stone-500" />}
-            subtitle="Tỷ lệ lấp đầy trung bình"
+            icon={<Building className="w-4 h-4 text-stone-500" />}
+            subtitle="Lấp đầy TB"
             trend={{
               value: averageUtilization >= 80 ? 'Cao' : 'Bình thường',
               isPositive: averageUtilization >= 80,
             }}
-            className="border-stone-500/10"
             color="slate"
           />
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 pb-32 md:pb-12">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6 pb-12">
           {/* Left Column - Operational Charts */}
           <div className="xl:col-span-8 space-y-12">
             {/* Student Enrollment Growth */}

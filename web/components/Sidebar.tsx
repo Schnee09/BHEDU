@@ -117,9 +117,10 @@ const Sidebar = memo(function Sidebar({
   return (
     <>
       {/* Mobile Backdrop */}
+      {/* Mobile Overlay Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-stone-900/60 z-40 transition-opacity duration-200"
+          className="lg:hidden fixed inset-0 bg-stone-950/70 backdrop-blur-xs z-[999] transition-opacity duration-200"
           onClick={() => setIsMobileMenuOpen?.(false)}
           aria-hidden="true"
         />
@@ -146,7 +147,11 @@ const Sidebar = memo(function Sidebar({
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
-        <SidebarHeader profile={profile} isCollapsed={isCollapsed} />
+        <SidebarHeader
+          profile={profile}
+          isCollapsed={isCollapsed}
+          onClose={isMobileMenuOpen ? () => setIsMobileMenuOpen?.(false) : undefined}
+        />
         <SidebarNav
           navSections={navSectionsWithBadges}
           role={profile.role}

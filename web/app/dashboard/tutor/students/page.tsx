@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import PageGuard from '@/components/PageGuard';
 
 interface TutoringStudent {
   student_id: string;
@@ -157,7 +158,7 @@ function StudentCard({ s, index }: { s: TutoringStudent; index: number }) {
           href={`/dashboard/students/${s.student_id}/transcript`}
           className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500 text-amber-600 hover:text-white dark:text-amber-400 dark:hover:text-stone-900 text-xs font-black transition-all"
         >
-          Xem học bạ
+          Xem kết quả
         </Link>
       </div>
     </div>
@@ -200,7 +201,15 @@ function SummaryBar({ students }: { students: TutoringStudent[] }) {
   );
 }
 
-export default function TutorStudentsPage() {
+export default function TutorStudentsPageGuarded() {
+  return (
+    <PageGuard permissions={['tutoring.sessions.view', 'timetable.view']} requireAll={false}>
+      <TutorStudentsPage />
+    </PageGuard>
+  );
+}
+
+function TutorStudentsPage() {
   const [students, setStudents] = useState<TutoringStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

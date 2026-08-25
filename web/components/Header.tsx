@@ -205,45 +205,47 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
   );
 
   return (
-    <header className="sticky top-0 h-16 z-[100] overflow-visible shrink-0 bg-white dark:bg-[#12110E] border-b border-stone-200 dark:border-stone-800 shadow-sm transition-colors duration-200">
-      <div className="relative w-full h-full flex items-center justify-between px-4 md:px-6">
-        <div className="flex items-center gap-6 relative z-10 flex-1 min-w-0">
+    <header className="sticky top-0 h-16 z-[100] overflow-visible shrink-0 bg-white dark:bg-[#12110E] border-b border-stone-200 dark:border-stone-800 shadow-xs transition-colors duration-200">
+      <div className="relative w-full h-full flex items-center justify-between px-3 sm:px-4 md:px-6 gap-2">
+        {/* Left Section: Mobile Menu + Brand / Portal Title */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <button
             onClick={onMenuToggle}
-            className="lg:hidden p-2.5 rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-all active:scale-95 flex items-center justify-center border border-amber-400/50"
+            aria-label="Mở menu"
+            className="lg:hidden p-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 transition-all active:scale-95 flex items-center justify-center border border-stone-200/80 dark:border-stone-700 shrink-0"
           >
             {isMenuOpen ? (
-              <XMarkIcon className="w-6 h-6 stroke-[2.5px]" />
+              <XMarkIcon className="w-5 h-5 stroke-[2.5px]" />
             ) : (
-              <Bars3Icon className="w-6 h-6 stroke-[2.5px]" />
+              <Bars3Icon className="w-5 h-5 stroke-[2.5px]" />
             )}
           </button>
 
           <div
-            className="flex items-center gap-3 group cursor-pointer shrink-0"
+            className="flex items-center gap-2 sm:gap-3 group cursor-pointer min-w-0"
             onClick={() => router.push('/dashboard')}
           >
-            <div className="relative w-9 h-9 rounded-xl bg-stone-100 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 p-1 flex items-center justify-center shrink-0 lg:hidden overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
+            <div className="relative w-8 h-8 rounded-lg bg-stone-100 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800 p-0.5 flex items-center justify-center shrink-0 lg:hidden overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
               <Image
                 src="/logo.png"
                 alt="BH-EDU Logo"
                 fill
-                sizes="36px"
-                className="object-contain p-0.5 drop-shadow-[0_2px_4px_rgba(217,119,6,0.25)]"
+                sizes="32px"
+                className="object-contain p-0.5 drop-shadow-xs"
               />
             </div>
-            <div className="flex flex-col">
-              <h1 className="text-base md:text-xl font-black tracking-tighter leading-none flex items-center gap-2 whitespace-nowrap">
-                <span className="text-stone-900 dark:text-stone-100 font-serif italic transition-colors group-hover:text-amber-600 drop-shadow-sm">
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-sm sm:text-base md:text-xl font-bold tracking-tight leading-none flex items-center gap-1.5">
+                <span className="text-stone-900 dark:text-stone-100 font-serif italic whitespace-nowrap transition-colors group-hover:text-amber-600">
                   {portalTitle.main}
                 </span>
-                <span className="hidden md:inline-flex text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2 py-1 rounded-xl text-[10px] border border-amber-500/20 font-black tracking-widest uppercase shadow-sm">
+                <span className="hidden md:inline-flex text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2 py-1 rounded-xl text-[10px] border border-amber-500/20 font-black tracking-wider uppercase shadow-xs shrink-0">
                   {portalTitle.sub}
                 </span>
               </h1>
-              <div className="hidden lg:flex items-center gap-1.5 mt-2 opacity-30 group-hover:opacity-100 transition-opacity">
-                <div className="h-0.5 w-6 bg-amber-500 rounded-full"></div>
-                <p className="text-[8px] font-black uppercase tracking-[0.4em] text-stone-500 dark:text-stone-400">
+              <div className="hidden lg:flex items-center gap-1.5 mt-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                <div className="h-0.5 w-4 bg-amber-500 rounded-full"></div>
+                <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-stone-500 dark:text-stone-400">
                   BH-EDU CORE SYSTEM
                 </p>
               </div>
@@ -251,22 +253,22 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
           </div>
         </div>
 
-        {/* Central Search Bar - Desktop */}
+        {/* Central Search Bar - Desktop Only */}
         <div className="hidden lg:flex flex-1 justify-center px-8">
           <div className="relative group w-full max-w-[520px]">
             <button
               onClick={() => setOpenPanel('search')}
-              className="flex items-center gap-4 px-6 h-12 w-full rounded-2xl transition-all duration-200 cursor-pointer relative
+              className="flex items-center gap-4 px-6 h-11 w-full rounded-2xl transition-all duration-200 cursor-pointer relative
               bg-stone-100/90 dark:bg-[#1C1A16] border border-stone-200 dark:border-stone-800
-              hover:border-amber-500/50 hover:bg-white dark:hover:bg-[#25221D] hover:shadow-sm
-              text-stone-600 dark:text-stone-300 group-hover:text-amber-600 shadow-sm"
+              hover:border-amber-500/50 hover:bg-white dark:hover:bg-[#25221D] hover:shadow-xs
+              text-stone-600 dark:text-stone-300 group-hover:text-amber-600 shadow-xs"
             >
               <MagnifyingGlassIcon className="w-4 h-4 text-stone-400 group-hover:scale-110 transition-transform duration-200" />
               <span className="text-xs font-black uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">
                 Truy vấn hệ thống...
               </span>
               <div className="ml-auto flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity duration-200">
-                <span className="text-[10px] bg-white dark:bg-[#12110E] border border-stone-200 dark:border-stone-800 px-2 py-0.5 rounded-lg shadow-sm font-black text-stone-500 dark:text-stone-300 flex items-center gap-0.5">
+                <span className="text-[10px] bg-white dark:bg-[#12110E] border border-stone-200 dark:border-stone-800 px-2 py-0.5 rounded-lg shadow-xs font-black text-stone-500 dark:text-stone-300 flex items-center gap-0.5">
                   <kbd>CTRL</kbd>+<kbd>K</kbd>
                 </span>
               </div>
@@ -274,12 +276,14 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 md:gap-4 flex-1 min-w-0">
+        {/* Right Section: Actions + Bell + Theme + User Menu */}
+        <div className="flex items-center justify-end gap-2 sm:gap-3 md:gap-4 shrink-0">
           <button
             onClick={() => setOpenPanel('search')}
-            className="hidden md:block lg:hidden p-3 rounded-2xl bg-stone-100 dark:bg-[#1C1A16] text-stone-600 dark:text-stone-300 active:scale-95 hover:scale-105 transition-all border border-stone-200/80 dark:border-stone-800 hover:border-amber-500/30"
+            aria-label="Tìm kiếm"
+            className="hidden md:block lg:hidden p-2.5 rounded-xl bg-stone-100 dark:bg-[#1C1A16] text-stone-600 dark:text-stone-300 active:scale-95 hover:scale-105 transition-all border border-stone-200/80 dark:border-stone-800 hover:border-amber-500/30"
           >
-            <MagnifyingGlassIcon className="w-5 h-5" strokeWidth={2.5} />
+            <MagnifyingGlassIcon className="w-4 h-4" strokeWidth={2.5} />
           </button>
 
           <div className="hidden md:block">
@@ -294,21 +298,22 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
           <div className="relative group">
             <button
               onClick={() => setOpenPanel(openPanel === 'notifications' ? null : 'notifications')}
+              aria-label="Thông báo"
               className={cn(
-                'w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer relative border',
+                'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer relative border shrink-0',
                 showNotifications
-                  ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20 scale-105'
-                  : 'bg-stone-100 dark:bg-[#1C1A16] text-stone-600 dark:text-stone-300 border-stone-200/80 dark:border-stone-800 hover:border-amber-500/30 hover:bg-stone-50 dark:hover:bg-[#25221D] hover:shadow-sm hover:scale-105'
+                  ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20 scale-105'
+                  : 'bg-stone-100 dark:bg-[#1C1A16] text-stone-600 dark:text-stone-300 border-stone-200/80 dark:border-stone-800 hover:border-amber-500/30 hover:bg-stone-50 dark:hover:bg-[#25221D] hover:shadow-xs'
               )}
             >
               <BellIcon
                 className={cn(
-                  'w-5 h-5 group-hover:animate-swing',
+                  'w-4 h-4 sm:w-5 sm:h-5 group-hover:animate-swing',
                   unreadCount > 0 && 'animate-subtle-pulse'
                 )}
               />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 border-2 border-white dark:border-[#12110E] rounded-full w-4 h-4 bg-red-500 text-[9px] font-black text-white flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 border-2 border-white dark:border-[#12110E] rounded-full w-3.5 h-3.5 bg-red-500 text-[8px] font-black text-white flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
