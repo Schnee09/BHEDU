@@ -29,6 +29,7 @@ import {
   Squares2X2Icon,
   TableCellsIcon,
   UserGroupIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
@@ -230,12 +231,19 @@ function AttendanceHistoryPageContent() {
     return (
       <Badge
         variant={config.variant}
-        className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-xs inline-flex items-center gap-1"
+        className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-xs inline-flex items-center gap-1.5"
       >
-        <Icon className="w-3 h-3" />
+        <Icon className="w-3.5 h-3.5" />
         <span>{config.label}</span>
       </Badge>
     );
+  };
+
+  const getWeekdayName = (dateStr: string) => {
+    const dateObj = new Date(dateStr);
+    const day = dateObj.getDay();
+    const weekdays = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    return weekdays[day] || '';
   };
 
   if (permsLoading) {
@@ -251,29 +259,29 @@ function AttendanceHistoryPageContent() {
   );
 
   return (
-    <div className="min-h-screen bg-transparent py-3 sm:py-6 px-2.5 sm:px-6 lg:px-8 pb-28 md:pb-16">
-      <div className="max-w-[1600px] mx-auto space-y-3 sm:space-y-4 relative z-10">
+    <div className="min-h-screen bg-transparent py-3 sm:py-6 px-2.5 sm:px-6 lg:px-8 pb-28 md:pb-16 font-Be_Vietnam_Pro">
+      <div className="max-w-[1600px] mx-auto space-y-3.5 sm:space-y-4 relative z-10">
         {/* ── HEADER CARD ── */}
-        <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-3.5 sm:p-5 shadow-sm space-y-3">
+        <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-4 sm:p-5 shadow-sm space-y-3.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
                 onClick={() => router.push('/dashboard/attendance')}
-                className="p-2 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl text-stone-600 dark:text-stone-300 transition-all cursor-pointer shrink-0"
+                className="p-2.5 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl text-stone-600 dark:text-stone-300 transition-all cursor-pointer shrink-0"
                 title={t('attendance.mark.backToDashboard')}
               >
                 <ArrowLeftIcon className="w-4 h-4" />
               </button>
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400 shrink-0">
                   <ClockIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h1 className="text-base sm:text-xl font-black tracking-tight text-stone-900 dark:text-white uppercase leading-none truncate">
+                  <h1 className="text-lg sm:text-2xl font-black tracking-tight text-stone-900 dark:text-white uppercase leading-none truncate">
                     {isStudent ? t('attendance.history.title') : t('attendance.history.adminTitle')}
                   </h1>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate max-w-md hidden sm:block">
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 truncate max-w-md">
                     {isStudent
                       ? t('attendance.history.description')
                       : t('attendance.history.adminDescription')}
@@ -291,7 +299,7 @@ function AttendanceHistoryPageContent() {
                   onClick={() => setViewMode('table')}
                   className={cn(
                     'p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
-                    viewMode === 'table'
+                    viewMode === 'table' || viewMode === 'auto'
                       ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs'
                       : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
                   )}
@@ -342,8 +350,8 @@ function AttendanceHistoryPageContent() {
           </div>
 
           {/* KPI Live Metric Bar */}
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 pt-2 border-t border-stone-100 dark:border-white/5 text-xs font-black">
-            <div className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-2 border-t border-stone-100 dark:border-white/5 text-xs font-black">
+            <div className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0 border border-stone-200/40 dark:border-white/5">
               <UserGroupIcon className="w-3.5 h-3.5 text-stone-500" />
               <span>
                 Tổng bản ghi:{' '}
@@ -352,7 +360,7 @@ function AttendanceHistoryPageContent() {
                 </strong>
               </span>
             </div>
-            <div className="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center gap-1.5 shrink-0">
+            <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5 shrink-0">
               <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-600" />
               <span>
                 Có mặt:{' '}
@@ -361,7 +369,7 @@ function AttendanceHistoryPageContent() {
                 </strong>
               </span>
             </div>
-            <div className="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/30 flex items-center gap-1.5 shrink-0">
+            <div className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40 flex items-center gap-1.5 shrink-0">
               <XCircleIcon className="w-3.5 h-3.5 text-rose-600" />
               <span>
                 Vắng:{' '}
@@ -371,7 +379,7 @@ function AttendanceHistoryPageContent() {
               </span>
             </div>
             {metrics.late > 0 && (
-              <div className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/30 flex items-center gap-1.5 shrink-0">
+              <div className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 flex items-center gap-1.5 shrink-0">
                 <ClockIcon className="w-3.5 h-3.5 text-amber-600" />
                 <span>
                   Muộn:{' '}
@@ -382,7 +390,7 @@ function AttendanceHistoryPageContent() {
               </div>
             )}
             {metrics.excused > 0 && (
-              <div className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/30 flex items-center gap-1.5 shrink-0">
+              <div className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40 flex items-center gap-1.5 shrink-0">
                 <ExclamationCircleIcon className="w-3.5 h-3.5 text-blue-600" />
                 <span>
                   Có phép:{' '}
@@ -392,9 +400,10 @@ function AttendanceHistoryPageContent() {
                 </span>
               </div>
             )}
-            <div className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0 ml-auto">
+            <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5 shrink-0 ml-auto">
+              <ChartBarIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Tỷ lệ có mặt:</span>
-              <strong className="text-emerald-600 dark:text-emerald-400 font-mono">
+              <strong className="text-emerald-700 dark:text-emerald-300 font-mono text-sm">
                 {metrics.rate}%
               </strong>
             </div>
@@ -402,8 +411,13 @@ function AttendanceHistoryPageContent() {
         </div>
 
         {/* ── RESPONSIVE FILTERS PANEL ── */}
-        <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-3 sm:p-4 shadow-sm space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-3.5 sm:p-4 shadow-sm space-y-3">
+          <div
+            className={cn(
+              'grid gap-2.5 sm:gap-3',
+              isStudent ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+            )}
+          >
             {!isStudent && (
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
@@ -562,6 +576,7 @@ function AttendanceHistoryPageContent() {
                   const isAbsent = record.status === 'absent';
                   const isLate = record.status === 'late';
                   const noteText = record.notes || record.remarks;
+                  const weekday = getWeekdayName(record.date);
 
                   return (
                     <div
@@ -580,21 +595,32 @@ function AttendanceHistoryPageContent() {
                       {/* Top Header: Student Info + Status Badge */}
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-9 h-9 rounded-xl bg-stone-100 dark:bg-stone-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs shrink-0 uppercase">
-                            {record.student?.full_name?.substring(0, 2) || 'HS'}
-                          </div>
+                          {!isStudent && (
+                            <div className="w-9 h-9 rounded-xl bg-stone-100 dark:bg-stone-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs shrink-0 uppercase">
+                              {record.student?.full_name?.substring(0, 2) || 'HS'}
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <div className="font-black text-stone-900 dark:text-white text-sm uppercase tracking-tight truncate">
-                              {record.student?.full_name || 'Học sinh'}
+                              {isStudent ? (
+                                <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
+                                  <AcademicCapIcon className="w-4 h-4" />
+                                  Lớp {record.class?.name || '10A1'}
+                                </span>
+                              ) : (
+                                record.student?.full_name || 'Học sinh'
+                              )}
                             </div>
-                            <div className="text-[10px] font-bold text-stone-400 font-mono flex items-center gap-1">
-                              <UserCircleIcon className="w-3 h-3" />
-                              <span>
-                                {record.student?.student_code ||
-                                  record.student?.student_id ||
-                                  'BH-ID'}
-                              </span>
-                            </div>
+                            {!isStudent && (
+                              <div className="text-[10px] font-bold text-stone-400 font-mono flex items-center gap-1">
+                                <UserCircleIcon className="w-3 h-3" />
+                                <span>
+                                  {record.student?.student_code ||
+                                    record.student?.student_id ||
+                                    'BH-ID'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -602,7 +628,7 @@ function AttendanceHistoryPageContent() {
                       </div>
 
                       {/* Middle Row: Date & Class */}
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100 dark:border-white/5 text-xs">
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-100 dark:border-white/5 text-xs">
                         <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
                           <CalendarIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                           <span className="font-bold">
@@ -612,13 +638,16 @@ function AttendanceHistoryPageContent() {
                               year: 'numeric',
                             })}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300 truncate">
-                          <AcademicCapIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                          <span className="font-bold uppercase truncate">
-                            {record.class?.name || 'Lớp học'}
+                          <span className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-500 font-semibold text-[10px]">
+                            {weekday}
                           </span>
                         </div>
+                        {!isStudent && (
+                          <div className="flex items-center gap-1 text-stone-600 dark:text-stone-300 truncate font-bold uppercase text-[11px]">
+                            <AcademicCapIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                            <span>{record.class?.name || 'Lớp học'}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Notes (if any) */}
@@ -648,21 +677,21 @@ function AttendanceHistoryPageContent() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-stone-50/90 dark:bg-stone-800/80 border-b border-stone-100 dark:border-white/5">
-                        <th className="px-5 py-3 text-[10px] font-black uppercase tracking-wider text-stone-400">
+                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
                           {t('attendance.history.table.time')}
                         </th>
                         {!isStudent && (
-                          <th className="px-5 py-3 text-[10px] font-black uppercase tracking-wider text-stone-400">
+                          <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
                             {t('attendance.history.table.student')}
                           </th>
                         )}
-                        <th className="px-5 py-3 text-[10px] font-black uppercase tracking-wider text-stone-400">
+                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
                           {t('attendance.history.table.class')}
                         </th>
-                        <th className="px-5 py-3 text-[10px] font-black uppercase tracking-wider text-stone-400 text-center">
+                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400 text-center">
                           {t('attendance.history.table.status')}
                         </th>
-                        <th className="px-5 py-3 text-[10px] font-black uppercase tracking-wider text-stone-400">
+                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
                           {t('attendance.history.table.notes')}
                         </th>
                       </tr>
@@ -670,30 +699,30 @@ function AttendanceHistoryPageContent() {
                     <tbody className="divide-y divide-stone-100 dark:divide-white/5">
                       {filteredRecords.map((record) => {
                         const noteText = record.notes || record.remarks;
+                        const weekday = getWeekdayName(record.date);
+
                         return (
                           <tr
                             key={record.id}
                             className="hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-colors group"
                           >
-                            <td className="px-5 py-3.5">
-                              <div className="flex flex-col">
-                                <span className="text-xs font-black text-stone-900 dark:text-white uppercase">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-stone-900 dark:text-white uppercase font-mono">
                                   {new Date(record.date).toLocaleDateString('vi-VN', {
                                     day: '2-digit',
                                     month: '2-digit',
                                     year: 'numeric',
                                   })}
                                 </span>
-                                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tight">
-                                  {new Date(record.date).toLocaleDateString('vi-VN', {
-                                    weekday: 'short',
-                                  })}
+                                <span className="px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-500 font-bold text-[10px] uppercase">
+                                  {weekday}
                                 </span>
                               </div>
                             </td>
 
                             {!isStudent && (
-                              <td className="px-5 py-3.5">
+                              <td className="px-6 py-4">
                                 <div className="flex items-center gap-2.5">
                                   <div className="w-8 h-8 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-xs uppercase shrink-0">
                                     {record.student?.full_name?.substring(0, 2) || 'HS'}
@@ -715,20 +744,20 @@ function AttendanceHistoryPageContent() {
                               </td>
                             )}
 
-                            <td className="px-5 py-3.5">
-                              <div className="flex items-center gap-2">
-                                <AcademicCapIcon className="w-4 h-4 text-stone-400 shrink-0" />
-                                <span className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase">
+                            <td className="px-6 py-4">
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-stone-100 dark:bg-stone-800/80 text-stone-800 dark:text-stone-200 border border-stone-200/50 dark:border-white/5">
+                                <AcademicCapIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <span className="text-xs font-black uppercase">
                                   {record.class?.name || 'Lớp học'}
                                 </span>
                               </div>
                             </td>
 
-                            <td className="px-5 py-3.5 text-center">
+                            <td className="px-6 py-4 text-center">
                               {getStatusBadge(record.status)}
                             </td>
 
-                            <td className="px-5 py-3.5">
+                            <td className="px-6 py-4">
                               <div className="flex items-center gap-1.5">
                                 <DocumentTextIcon
                                   className={cn(
