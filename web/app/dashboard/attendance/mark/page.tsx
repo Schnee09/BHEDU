@@ -30,6 +30,7 @@ import {
   ChatBubbleLeftRightIcon,
   DocumentDuplicateIcon,
   MagnifyingGlassIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
@@ -298,21 +299,21 @@ function AttendanceMarkingPageContent() {
         <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-3 sm:p-5 shadow-sm space-y-3">
           {/* Row 1: Back + Title + Class & Date Selectors */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-start sm:items-center gap-2 min-w-0">
               <button
                 type="button"
                 onClick={() => router.push('/dashboard/attendance')}
-                className="p-2 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl text-stone-600 dark:text-stone-300 transition-all cursor-pointer shrink-0"
+                className="p-2 sm:p-2.5 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl text-stone-600 dark:text-stone-300 transition-all cursor-pointer shrink-0 mt-0.5 sm:mt-0"
                 title={t('attendance.mark.backToDashboard')}
               >
                 <ArrowLeftIcon className="w-4 h-4" />
               </button>
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="p-1.5 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400 shrink-0">
-                  <ClipboardDocumentCheckIcon className="w-4 h-4" />
+              <div className="flex items-start sm:items-center gap-2 min-w-0">
+                <div className="p-1.5 sm:p-2 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5 sm:mt-0">
+                  <ClipboardDocumentCheckIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900 dark:text-white uppercase leading-none truncate">
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900 dark:text-white uppercase leading-tight sm:leading-none break-words">
                     {t('attendance.mark.title')}
                   </h1>
                 </div>
@@ -324,7 +325,7 @@ function AttendanceMarkingPageContent() {
               <div className="flex-1 sm:w-48">
                 <Select
                   value={selectedClass}
-                  className="rounded-xl border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-stone-800 h-9 text-xs font-bold uppercase tracking-tight"
+                  className="rounded-xl border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-stone-800 h-9 sm:h-10 text-xs font-bold uppercase tracking-tight"
                   onChange={(e: any) => setSelectedClass(e.target.value)}
                 >
                   {classes.map((cls) => (
@@ -340,7 +341,7 @@ function AttendanceMarkingPageContent() {
                   value={date}
                   max={new Date().toISOString().split('T')[0]}
                   onChange={(e) => setDate(e.target.value)}
-                  className="rounded-xl border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-stone-800 h-9 text-xs font-bold uppercase tracking-tight"
+                  className="rounded-xl border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-stone-800 h-9 sm:h-10 text-xs font-bold uppercase tracking-tight"
                 />
               </div>
             </div>
@@ -397,67 +398,74 @@ function AttendanceMarkingPageContent() {
 
         {/* ── STICKY FAST ACTION & QUICK-MARK BAR ── */}
         {students.length > 0 && (
-          <div className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-200/80 dark:border-white/10 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl flex flex-wrap items-center justify-between gap-2.5 sticky top-16 z-30 shadow-md">
+          <div className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-200/80 dark:border-white/10 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl sticky top-16 z-30 shadow-md space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-3">
             {/* Quick Mark All Buttons */}
-            <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+            <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:gap-2 order-2 sm:order-1">
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => markAll(AttendanceStatus.PRESENT)}
-                className="rounded-xl border-emerald-200/80 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 uppercase text-[10px] font-black tracking-wider px-3 h-8 shadow-xs cursor-pointer whitespace-nowrap"
+                className="rounded-xl border-emerald-200/80 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 uppercase text-[10px] font-black tracking-wider px-2.5 sm:px-3 h-8 shadow-xs cursor-pointer justify-center whitespace-nowrap"
               >
-                <CheckCircleIcon className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                <CheckCircleIcon className="w-3.5 h-3.5 mr-1 text-emerald-600 shrink-0" />
                 <span>{t('attendance.mark.actions.allPresent')}</span>
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => markAll(AttendanceStatus.ABSENT)}
-                className="rounded-xl border-rose-200/80 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 uppercase text-[10px] font-black tracking-wider px-3 h-8 shadow-xs cursor-pointer whitespace-nowrap"
+                className="rounded-xl border-rose-200/80 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 uppercase text-[10px] font-black tracking-wider px-2.5 sm:px-3 h-8 shadow-xs cursor-pointer justify-center whitespace-nowrap"
               >
-                <XCircleIcon className="w-3.5 h-3.5 mr-1 text-rose-600" />
+                <XCircleIcon className="w-3.5 h-3.5 mr-1 text-rose-600 shrink-0" />
                 <span>{t('attendance.mark.actions.allAbsent')}</span>
               </Button>
             </div>
 
-            {/* Search Box + Save Button */}
-            <div className="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end">
-              <div className="relative flex-1 sm:w-48">
-                <input
-                  type="text"
-                  value={studentSearch}
-                  onChange={(e) => setStudentSearch(e.target.value)}
-                  placeholder="Tìm học sinh..."
-                  className="w-full pl-8 pr-2.5 py-1 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-xl text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                />
-                <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
-              </div>
-
-              {hasUnsavedChanges && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800/40 shrink-0">
-                  <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping" />
-                  <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase hidden sm:inline">
-                    {t('attendance.mark.actions.unsaved')}
-                  </span>
-                </div>
+            {/* Search Box on Mobile/Desktop */}
+            <div className="relative w-full sm:w-56 order-1 sm:order-2">
+              <input
+                type="text"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                placeholder="Tìm học sinh theo tên, mã..."
+                className="w-full pl-8 pr-7 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-xl text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              />
+              <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+              {studentSearch && (
+                <button
+                  type="button"
+                  onClick={() => setStudentSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-white p-0.5"
+                >
+                  <XMarkIcon className="w-3.5 h-3.5" />
+                </button>
               )}
+            </div>
 
+            {/* Actions: Zalo Report & Save */}
+            <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:gap-2 order-3">
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={copyZaloReport}
-                className="rounded-xl border-blue-200/80 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 uppercase text-[10px] font-black tracking-wider px-3 h-8 shadow-xs cursor-pointer whitespace-nowrap"
+                className="rounded-xl border-blue-200/80 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 uppercase text-[10px] font-black tracking-wider px-2.5 sm:px-3 h-8 shadow-xs cursor-pointer justify-center whitespace-nowrap"
                 title="Sao chép mẫu báo cáo điểm danh gửi Zalo phụ huynh"
               >
-                <ChatBubbleLeftRightIcon className="w-3.5 h-3.5 mr-1 text-blue-600 dark:text-blue-400" />
+                <ChatBubbleLeftRightIcon className="w-3.5 h-3.5 mr-1 text-blue-600 dark:text-blue-400 shrink-0" />
                 <span>Báo cáo Zalo</span>
               </Button>
 
               <Button
                 onClick={saveAttendance}
                 disabled={saving}
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs h-8 px-4 sm:px-6 shadow-md shadow-emerald-500/20 cursor-pointer whitespace-nowrap"
+                className="relative rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs h-8 px-3 sm:px-5 shadow-md shadow-emerald-500/20 cursor-pointer justify-center whitespace-nowrap"
               >
+                {hasUnsavedChanges && (
+                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                  </span>
+                )}
                 {saving ? (
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
