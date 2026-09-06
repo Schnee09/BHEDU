@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClientFromRequest } from '@/lib/supabase/server';
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
 import { studentRequestRepository } from '@/lib/repositories/StudentRequestRepository';
 import { studentRequestService } from '@/lib/services/StudentRequestService';
 import { z } from 'zod';
@@ -30,11 +30,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const serviceSupabase = createServiceClient();
+    let { data: profile } = await serviceSupabase
       .from('profiles')
-      .select('id, role')
-      .eq('id', user.id)
-      .single();
+      .select('id, user_id, role, full_name')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!profile) {
+      const result = await serviceSupabase
+        .from('profiles')
+        .select('id, user_id, role, full_name')
+        .eq('id', user.id)
+        .maybeSingle();
+      profile = result.data;
+    }
 
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
