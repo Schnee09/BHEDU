@@ -139,7 +139,11 @@ export function useTimetableState() {
         teacherData.users;
       setTeachers(Array.isArray(teacherList) ? teacherList : []);
 
-      const tutorList = tutorData.data || tutorData.tutors;
+      const tutorList =
+        tutorData.data?.tutors ||
+        tutorData.tutors ||
+        tutorData.data?.data ||
+        (Array.isArray(tutorData.data) ? tutorData.data : []);
       setTutors(Array.isArray(tutorList) ? tutorList : []);
 
       if (resourceRes.ok) {

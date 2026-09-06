@@ -52,6 +52,20 @@ export interface TeacherOption {
   full_name: string;
   phone?: string;
   role?: string;
+  teacher_code?: string | null;
+  department?: string | null;
+  specialization?: string | null;
+  teacher_type?: string | null;
+  teaching_subjects?: string[];
+  teacher_subjects?: Array<{
+    subject_id: string;
+    is_primary?: boolean;
+    subjects?: {
+      id: string;
+      name: string;
+      code?: string;
+    };
+  }>;
 }
 
 export interface StudentOption {

@@ -32,11 +32,7 @@ import {
   TeacherOption,
   StudentOption,
 } from '@/lib/timetable/types';
-import {
-  CAMPUSES,
-  DAYS,
-  ALL_SESSIONS,
-} from '@/lib/timetable/constants';
+import { CAMPUSES, DAYS, ALL_SESSIONS } from '@/lib/timetable/constants';
 
 const INSTRUCTOR_ROLE_LABELS: Record<string, string> = {
   owner: 'Chủ trung tâm',
@@ -91,7 +87,12 @@ const SearchableSelect = memo(function SearchableSelect<T>({
   const safeOptions = useMemo(() => {
     if (Array.isArray(options)) return options;
     if (options && typeof options === 'object') {
-      const list = (options as any).data || (options as any).users || (options as any).tutors || (options as any).classes || (options as any).subjects;
+      const list =
+        (options as any).data ||
+        (options as any).users ||
+        (options as any).tutors ||
+        (options as any).classes ||
+        (options as any).subjects;
       if (Array.isArray(list)) return list;
     }
     return [];
@@ -105,9 +106,7 @@ const SearchableSelect = memo(function SearchableSelect<T>({
   const filteredOptions = useMemo(() => {
     if (!search.trim()) return safeOptions;
     const lowerSearch = search.toLowerCase();
-    return safeOptions.filter((o) =>
-      getOptionLabel(o).toLowerCase().includes(lowerSearch)
-    );
+    return safeOptions.filter((o) => getOptionLabel(o).toLowerCase().includes(lowerSearch));
   }, [safeOptions, search, getOptionLabel]);
 
   useEffect(() => {
@@ -126,19 +125,26 @@ const SearchableSelect = memo(function SearchableSelect<T>({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={cn(
-          "w-full px-4 py-3 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black flex items-center justify-between outline-none transition-all shadow-sm text-left",
-          isOpen ? "border-amber-500 ring-4 ring-amber-500/10" : "hover:border-stone-300 dark:hover:border-white/20",
-          disabled && "opacity-50 cursor-not-allowed"
+          'w-full px-4 py-3 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black flex items-center justify-between outline-none transition-all shadow-sm text-left',
+          isOpen
+            ? 'border-amber-500 ring-4 ring-amber-500/10'
+            : 'hover:border-stone-300 dark:hover:border-white/20',
+          disabled && 'opacity-50 cursor-not-allowed'
         )}
         disabled={disabled}
       >
         <div className="flex items-center gap-2.5 truncate">
           {icon && <span className="text-stone-400 shrink-0">{icon}</span>}
-          <span className={cn("truncate", !selectedOption && "text-stone-400 font-medium")}>
+          <span className={cn('truncate', !selectedOption && 'text-stone-400 font-medium')}>
             {selectedOption ? getOptionLabel(selectedOption) : placeholder}
           </span>
         </div>
-        <ChevronDown className={cn("w-4 h-4 text-stone-400 transition-transform duration-200 shrink-0 ml-2", isOpen && "rotate-180")} />
+        <ChevronDown
+          className={cn(
+            'w-4 h-4 text-stone-400 transition-transform duration-200 shrink-0 ml-2',
+            isOpen && 'rotate-180'
+          )}
+        />
       </button>
 
       {isOpen && (
@@ -183,10 +189,10 @@ const SearchableSelect = memo(function SearchableSelect<T>({
                       setSearch('');
                     }}
                     className={cn(
-                      "w-full px-4 py-2.5 text-left text-xs font-black flex items-center justify-between transition-colors",
+                      'w-full px-4 py-2.5 text-left text-xs font-black flex items-center justify-between transition-colors',
                       isSelected
-                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                        : "hover:bg-stone-100 dark:hover:bg-white/5 text-stone-700 dark:text-stone-200"
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                        : 'hover:bg-stone-100 dark:hover:bg-white/5 text-stone-700 dark:text-stone-200'
                     )}
                   >
                     <span className="truncate">{optLabel}</span>
@@ -269,7 +275,8 @@ export default function TimetableSlotModal({
   useEffect(() => {
     if (isOpen) {
       if (editingSlot) {
-        const isTutoring = !editingSlot.room || editingSlot.room === 'Linh hoạt' || !!editingSlot.student_id;
+        const isTutoring =
+          !editingSlot.room || editingSlot.room === 'Linh hoạt' || !!editingSlot.student_id;
         setSlotMode(isTutoring ? 'tutoring' : 'class');
         setSelectedStudentIds(editingSlot.student_id ? [editingSlot.student_id] : []);
 
@@ -358,7 +365,8 @@ export default function TimetableSlotModal({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             teacher_id: formData.teacher_id || null,
-            student_id: slotMode === 'tutoring' ? (formData.student_id || selectedStudentIds[0] || null) : null,
+            student_id:
+              slotMode === 'tutoring' ? formData.student_id || selectedStudentIds[0] || null : null,
             room: formData.room || null,
             day_of_week: formData.day_of_week,
             start_time: formData.start_time,
@@ -419,15 +427,16 @@ export default function TimetableSlotModal({
 
     setLoadingOptions(true);
     try {
-      const [classRes, subRes, teacherRes, tutorRes, studentRes, roomsRes, schedulesRes] = await Promise.all([
-        apiFetch('/api/classes'),
-        apiFetch('/api/subjects'),
-        apiFetch('/api/admin/users?role=instructors&limit=1000'),
-        apiFetch('/api/tutors?limit=1000'),
-        apiFetch('/api/admin/users?role=student&limit=1000'),
-        apiFetch('/api/settings?key=center_rooms'),
-        apiFetch('/api/settings?key=center_schedules'),
-      ]);
+      const [classRes, subRes, teacherRes, tutorRes, studentRes, roomsRes, schedulesRes] =
+        await Promise.all([
+          apiFetch('/api/classes'),
+          apiFetch('/api/subjects'),
+          apiFetch('/api/admin/users?role=instructors&limit=1000'),
+          apiFetch('/api/tutors?limit=1000'),
+          apiFetch('/api/admin/users?role=student&limit=1000'),
+          apiFetch('/api/settings?key=center_rooms'),
+          apiFetch('/api/settings?key=center_schedules'),
+        ]);
 
       const classData = await classRes.json();
       const subData = await subRes.json();
@@ -441,10 +450,19 @@ export default function TimetableSlotModal({
       const subRaw = subData.data || subData.subjects;
       const fetchedSubjects: SubjectOption[] = Array.isArray(subRaw) ? subRaw : [];
 
-      const teacherRaw = teacherData.data?.data || teacherData.data || teacherData.users;
+      const teacherRaw =
+        teacherData.data?.teachers ||
+        teacherData.teachers ||
+        teacherData.data?.data ||
+        teacherData.data ||
+        teacherData.users;
       const fetchedTeachers: TeacherOption[] = Array.isArray(teacherRaw) ? teacherRaw : [];
 
-      const tutorRaw = tutorData.data || tutorData.tutors;
+      const tutorRaw =
+        tutorData.data?.tutors ||
+        tutorData.tutors ||
+        tutorData.data?.data ||
+        (Array.isArray(tutorData.data) ? tutorData.data : []);
       const fetchedTutors: TeacherOption[] = Array.isArray(tutorRaw) ? tutorRaw : [];
 
       const studentRaw = studentData.data?.data || studentData.data || studentData.users;
@@ -535,11 +553,31 @@ export default function TimetableSlotModal({
     });
   }, [dynamicSchedules]);
 
+  // Combined tutor options (tutors first, then other teachers/instructors)
+  const availableTutors = useMemo(() => {
+    const map = new Map<string, TeacherOption>();
+    tutors.forEach((t) => {
+      if (t?.id) map.set(t.id, t);
+    });
+    teachers.forEach((tc) => {
+      if (tc?.id && !map.has(tc.id)) {
+        map.set(tc.id, tc);
+      }
+    });
+    return Array.from(map.values());
+  }, [tutors, teachers]);
+
   const handleSave = async () => {
     if (slotMode === 'tutoring') {
       const effectiveStudents = editingSlot
-        ? (formData.student_id ? [formData.student_id] : [])
-        : (selectedStudentIds.length > 0 ? selectedStudentIds : (formData.student_id ? [formData.student_id] : []));
+        ? formData.student_id
+          ? [formData.student_id]
+          : []
+        : selectedStudentIds.length > 0
+          ? selectedStudentIds
+          : formData.student_id
+            ? [formData.student_id]
+            : [];
 
       if (effectiveStudents.length === 0) {
         toast.warning('Thiếu thông tin', 'Vui lòng chọn ít nhất 1 học sinh phụ đạo');
@@ -594,7 +632,8 @@ export default function TimetableSlotModal({
           body: JSON.stringify({
             ...formData,
             class_id: slotMode === 'class' ? formData.class_id || null : null,
-            student_id: slotMode === 'tutoring' ? (formData.student_id || selectedStudentIds[0] || null) : null,
+            student_id:
+              slotMode === 'tutoring' ? formData.student_id || selectedStudentIds[0] || null : null,
             subject_id: formData.subject_id || null,
             teacher_id: formData.teacher_id || null,
             room: slotMode === 'tutoring' ? 'Linh hoạt' : formData.room || null,
@@ -676,10 +715,10 @@ export default function TimetableSlotModal({
             type="button"
             onClick={() => handleModeSwitch('class')}
             className={cn(
-              "flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2",
+              'flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2',
               slotMode === 'class'
-                ? "bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-sm scale-[1.01]"
-                : "text-stone-500 hover:text-stone-900 dark:hover:text-stone-200"
+                ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-sm scale-[1.01]'
+                : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
             )}
           >
             <Users className="w-4 h-4" /> Lớp Tập Trung
@@ -688,10 +727,10 @@ export default function TimetableSlotModal({
             type="button"
             onClick={() => handleModeSwitch('tutoring')}
             className={cn(
-              "flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2",
+              'flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2',
               slotMode === 'tutoring'
-                ? "bg-white dark:bg-stone-900 text-blue-600 dark:text-blue-400 shadow-sm scale-[1.01]"
-                : "text-stone-500 hover:text-stone-900 dark:hover:text-stone-200"
+                ? 'bg-white dark:bg-stone-900 text-blue-600 dark:text-blue-400 shadow-sm scale-[1.01]'
+                : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
             )}
           >
             <BookOpen className="w-4 h-4" /> Học Kèm (1-3 em)
@@ -756,7 +795,9 @@ export default function TimetableSlotModal({
                   }}
                   getOptionLabel={(s) => s.full_name}
                   getOptionValue={(s) => s.id}
-                  placeholder={editingSlot ? '-- Chọn học sinh --' : '-- Thêm học sinh vào ca kèm (1-3 em) --'}
+                  placeholder={
+                    editingSlot ? '-- Chọn học sinh --' : '-- Thêm học sinh vào ca kèm (1-3 em) --'
+                  }
                   searchPlaceholder="Tìm tên học sinh..."
                   disabled={loadingOptions}
                   icon={<User className="w-4 h-4" />}
@@ -797,10 +838,43 @@ export default function TimetableSlotModal({
                   Gia sư / Giáo viên *
                 </label>
                 <SearchableSelect
-                  options={tutors.length > 0 ? tutors : teachers}
+                  options={availableTutors}
                   value={formData.teacher_id}
-                  onChange={(val) => setFormData((prev) => ({ ...prev, teacher_id: val }))}
-                  getOptionLabel={(t) => t.full_name}
+                  onChange={(val) => {
+                    const selTutor = availableTutors.find((t) => t.id === val);
+                    let autoSubjectId = formData.subject_id;
+                    if (!autoSubjectId && selTutor) {
+                      if (selTutor.teaching_subjects && selTutor.teaching_subjects.length > 0) {
+                        const matchedSub = subjects.find((s) =>
+                          selTutor.teaching_subjects?.some(
+                            (ts) =>
+                              s.name.toLowerCase().includes(ts.toLowerCase()) ||
+                              ts.toLowerCase().includes(s.name.toLowerCase()) ||
+                              s.id === ts
+                          )
+                        );
+                        if (matchedSub) autoSubjectId = matchedSub.id;
+                      } else if (
+                        selTutor.teacher_subjects &&
+                        selTutor.teacher_subjects.length > 0
+                      ) {
+                        autoSubjectId = selTutor.teacher_subjects[0]?.subject_id || '';
+                      }
+                    }
+                    setFormData((prev) => ({
+                      ...prev,
+                      teacher_id: val,
+                      subject_id: autoSubjectId || prev.subject_id,
+                    }));
+                  }}
+                  getOptionLabel={(t) => {
+                    const roleLabel =
+                      t.role && t.role !== 'tutor'
+                        ? ` (${INSTRUCTOR_ROLE_LABELS[t.role] || t.role})`
+                        : '';
+                    const specLabel = t.specialization ? ` - ${t.specialization}` : '';
+                    return `${getDisplayName(t)}${roleLabel}${specLabel}`;
+                  }}
                   getOptionValue={(t) => t.id}
                   placeholder="-- Chọn gia sư --"
                   searchPlaceholder="Tìm tên gia sư..."
@@ -876,7 +950,10 @@ export default function TimetableSlotModal({
                   value={formData.teacher_id}
                   onChange={(val) => setFormData((prev) => ({ ...prev, teacher_id: val }))}
                   getOptionLabel={(t) => {
-                    const roleLabel = t.role && t.role !== 'teacher' ? ` (${INSTRUCTOR_ROLE_LABELS[t.role] || t.role})` : '';
+                    const roleLabel =
+                      t.role && t.role !== 'teacher'
+                        ? ` (${INSTRUCTOR_ROLE_LABELS[t.role] || t.role})`
+                        : '';
                     return `${getDisplayName(t)}${roleLabel}`;
                   }}
                   getOptionValue={(t) => t.id}
@@ -925,7 +1002,9 @@ export default function TimetableSlotModal({
               </label>
               <select
                 value={formData.day_of_week}
-                onChange={(e) => setFormData((prev) => ({ ...prev, day_of_week: parseInt(e.target.value) }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, day_of_week: parseInt(e.target.value) }))
+                }
                 className="w-full px-4 py-3 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500 transition-all shadow-sm cursor-pointer"
               >
                 {DAYS.map((day, i) => (
@@ -1004,7 +1083,9 @@ export default function TimetableSlotModal({
                     <input
                       type="time"
                       value={formData.start_time}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, start_time: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, start_time: e.target.value }))
+                      }
                       className="w-full px-4 py-2.5 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500"
                     />
                   </div>
@@ -1013,7 +1094,9 @@ export default function TimetableSlotModal({
                     <input
                       type="time"
                       value={formData.end_time}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, end_time: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, end_time: e.target.value }))
+                      }
                       className="w-full px-4 py-2.5 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500"
                     />
                   </div>
@@ -1035,20 +1118,36 @@ export default function TimetableSlotModal({
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { id: 'scheduled', label: '🟡 Đã xếp', color: 'border-amber-500/40 text-amber-600 bg-amber-500/10' },
-              { id: 'completed', label: '🟢 Hoàn thành', color: 'border-emerald-500/40 text-emerald-600 bg-emerald-500/10' },
-              { id: 'cancelled', label: '🔴 Hủy ca', color: 'border-rose-500/40 text-rose-600 bg-rose-500/10' },
-              { id: 'makeup', label: '🔵 Học bù', color: 'border-sky-500/40 text-sky-600 bg-sky-500/10' },
+              {
+                id: 'scheduled',
+                label: '🟡 Đã xếp',
+                color: 'border-amber-500/40 text-amber-600 bg-amber-500/10',
+              },
+              {
+                id: 'completed',
+                label: '🟢 Hoàn thành',
+                color: 'border-emerald-500/40 text-emerald-600 bg-emerald-500/10',
+              },
+              {
+                id: 'cancelled',
+                label: '🔴 Hủy ca',
+                color: 'border-rose-500/40 text-rose-600 bg-rose-500/10',
+              },
+              {
+                id: 'makeup',
+                label: '🔵 Học bù',
+                color: 'border-sky-500/40 text-sky-600 bg-sky-500/10',
+              },
             ].map((st) => (
               <button
                 key={st.id}
                 type="button"
                 onClick={() => setFormData((prev) => ({ ...prev, status: st.id as any }))}
                 className={cn(
-                  "py-2.5 px-3 rounded-2xl text-xs font-black border-2 transition-all text-center",
+                  'py-2.5 px-3 rounded-2xl text-xs font-black border-2 transition-all text-center',
                   formData.status === st.id
                     ? `${st.color} shadow-sm scale-[1.02]`
-                    : "border-stone-200/70 dark:border-white/5 text-stone-500 hover:border-stone-300"
+                    : 'border-stone-200/70 dark:border-white/5 text-stone-500 hover:border-stone-300'
                 )}
               >
                 {st.label}
@@ -1098,4 +1197,3 @@ export default function TimetableSlotModal({
     </Modal>
   );
 }
-
