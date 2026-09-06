@@ -118,7 +118,7 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({
           {/* Year Header */}
           <div className="flex items-center gap-3 sm:gap-4 px-1">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-200 dark:via-white/10 to-transparent" />
-            <div className="px-4 sm:px-6 py-1.5 sm:py-2 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] shadow-sm">
+            <div className="px-3.5 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-semibold border border-stone-200/60 dark:border-white/10 shadow-xs">
               {yearData.name}
             </div>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-200 dark:via-white/10 to-transparent" />
@@ -132,45 +132,47 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({
               return (
                 <div
                   key={subject.id}
-                  className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-white/10 p-4 shadow-sm space-y-3"
+                  className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-white/10 p-4 shadow-xs space-y-3"
                 >
-                  <div className="flex items-center justify-between gap-2 border-b border-stone-100 dark:border-white/5 pb-2.5">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 font-black text-xs flex items-center justify-center shrink-0">
+                  <div className="flex items-center justify-between gap-3 border-b border-stone-100 dark:border-white/5 pb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-sm flex items-center justify-center shrink-0">
                         {subject.name.charAt(0)}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-black text-stone-900 dark:text-white text-sm uppercase truncate">
+                        <div className="font-bold text-stone-900 dark:text-white text-sm sm:text-base truncate">
                           {subject.name}
                         </div>
-                        <div className="text-[10px] font-bold text-stone-400 font-mono">
-                          {subject.code || 'MON-HOC'}
+                        <div className="text-xs text-stone-500 dark:text-stone-400 font-mono">
+                          {subject.code || 'Môn học'}
                         </div>
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <div className="text-[9px] font-black uppercase text-stone-400">ĐTB Môn</div>
-                      <div className={cn('text-lg font-black font-mono', getScoreColor(avg))}>
+                    <div className="text-right shrink-0">
+                      <div className="text-xs font-medium text-stone-500 dark:text-stone-400">
+                        ĐTB môn
+                      </div>
+                      <div className={cn('text-lg font-bold font-mono', getScoreColor(avg))}>
                         {avg}
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                    <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200/40 dark:border-blue-800/30 rounded-xl">
-                      <div className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 mb-1">
+                  <div className="grid grid-cols-2 gap-2.5 text-center">
+                    <div className="p-2.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 rounded-xl">
+                      <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
                         Giữa kỳ (50%)
                       </div>
-                      <div className="text-base font-black text-blue-700 dark:text-blue-300 font-mono">
+                      <div className="text-base font-bold text-blue-800 dark:text-blue-200 font-mono">
                         {subject.midterm != null ? Number(subject.midterm).toFixed(1) : '-'}
                       </div>
                     </div>
-                    <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/40 dark:border-emerald-800/30 rounded-xl">
-                      <div className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 mb-1">
+                    <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl">
+                      <div className="text-xs font-medium text-emerald-700 dark:text-emerald-300 mb-1">
                         Cuối kỳ (50%)
                       </div>
-                      <div className="text-base font-black text-emerald-700 dark:text-emerald-300 font-mono">
+                      <div className="text-base font-bold text-emerald-800 dark:text-emerald-200 font-mono">
                         {subject.final != null ? Number(subject.final).toFixed(1) : '-'}
                       </div>
                     </div>
@@ -182,22 +184,22 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({
 
           {/* 2. DESKTOP ACADEMIC MATRIX TABLE */}
           <div className="hidden md:block">
-            <Card className="border border-stone-200/80 dark:border-white/10 shadow-sm bg-white dark:bg-stone-900 rounded-3xl overflow-hidden">
+            <Card className="border border-stone-200/80 dark:border-white/10 shadow-xs bg-white dark:bg-stone-900 rounded-2xl overflow-hidden">
               <CardBody className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[650px]">
                     <thead>
                       <tr className="bg-stone-50/90 dark:bg-stone-800/80 border-b border-stone-100 dark:border-white/5">
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-stone-400">
+                        <th className="px-5 py-3.5 text-xs font-semibold text-stone-600 dark:text-stone-300">
                           Môn học
                         </th>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 text-center bg-blue-500/5">
+                        <th className="px-5 py-3.5 text-xs font-semibold text-blue-700 dark:text-blue-300 text-center bg-blue-500/5">
                           Điểm Giữa kỳ (50%)
                         </th>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 text-center bg-emerald-500/5">
+                        <th className="px-5 py-3.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 text-center bg-emerald-500/5">
                           Điểm Cuối kỳ (50%)
                         </th>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-stone-400 text-right">
+                        <th className="px-5 py-3.5 text-xs font-semibold text-stone-600 dark:text-stone-300 text-right">
                           Điểm Tổng kết (TBM)
                         </th>
                       </tr>
@@ -211,35 +213,35 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({
                             key={subject.id}
                             className="group/row hover:bg-stone-50/70 dark:hover:bg-stone-800/50 transition-colors"
                           >
-                            <td className="px-6 py-4">
+                            <td className="px-5 py-3.5">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 font-black text-xs">
+                                <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 font-bold text-xs">
                                   {subject.name.charAt(0)}
                                 </div>
                                 <div>
-                                  <div className="text-xs font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                                  <div className="text-sm font-semibold text-stone-900 dark:text-white">
                                     {subject.name}
                                   </div>
-                                  <div className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mt-0.5">
+                                  <div className="text-xs text-stone-500 dark:text-stone-400 font-mono mt-0.5">
                                     {subject.code}
                                   </div>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-center bg-blue-500/5">
-                              <span className="text-base font-black text-blue-600 dark:text-blue-400 font-mono">
+                            <td className="px-5 py-3.5 text-center bg-blue-500/5">
+                              <span className="text-sm sm:text-base font-bold text-blue-700 dark:text-blue-300 font-mono">
                                 {subject.midterm != null ? Number(subject.midterm).toFixed(1) : '-'}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-center bg-emerald-500/5">
-                              <span className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                            <td className="px-5 py-3.5 text-center bg-emerald-500/5">
+                              <span className="text-sm sm:text-base font-bold text-emerald-700 dark:text-emerald-300 font-mono">
                                 {subject.final != null ? Number(subject.final).toFixed(1) : '-'}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-right">
+                            <td className="px-5 py-3.5 text-right">
                               <span
                                 className={cn(
-                                  'text-lg font-black tracking-tight font-mono',
+                                  'text-base sm:text-lg font-bold font-mono',
                                   getScoreColor(avg)
                                 )}
                               >

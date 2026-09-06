@@ -153,38 +153,38 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <div className="p-4 sm:p-8 space-y-8 bg-stone-50 dark:bg-stone-950 min-h-screen animate-in fade-in duration-700">
       {/* Header */}
-      <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl shadow-xl p-6 sm:p-8 border border-stone-200 dark:border-white/5 relative overflow-hidden">
+      <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl shadow-sm p-5 sm:p-6 border border-stone-200 dark:border-white/5 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full -mr-32 -mt-32" />
 
-        <div className="flex flex-col lg:flex-row items-start justify-between gap-6 relative z-10">
-          <div className="flex-1 space-y-4">
+        <div className="flex flex-col lg:flex-row items-start justify-between gap-5 relative z-10">
+          <div className="flex-1 space-y-3">
             <button
               onClick={() => router.back()}
-              className="group flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-white/5 rounded-xl text-stone-600 dark:text-stone-400 font-black uppercase tracking-widest text-[10px] hover:bg-amber-500 hover:text-white transition-all duration-300 cursor-pointer"
+              className="group flex items-center gap-2 px-3 py-1.5 bg-stone-100 dark:bg-white/5 rounded-xl text-stone-600 dark:text-stone-400 font-medium text-xs hover:bg-amber-500 hover:text-white transition-all duration-300 cursor-pointer"
             >
-              <Icons.Back className="w-3 h-3" />
-              Quay lại hồ sơ
+              <Icons.Back className="w-3.5 h-3.5" />
+              Quay lại danh mục
             </button>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <div className="w-1 h-5 bg-amber-500 rounded-full" />
-                <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-[0.2em]">
+                <div className="w-1 h-4 bg-amber-500 rounded-full" />
+                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
                   Hồ sơ học thuật
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-4xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-stone-900 dark:text-white">
                 Phiếu kết quả học tập
               </h1>
-              <div className="flex flex-wrap items-center gap-4 mt-4">
-                <p className="font-serif text-2xl font-black text-stone-800 dark:text-white uppercase">
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <p className="text-base sm:text-lg font-bold text-stone-800 dark:text-stone-100">
                   {student.full_name}
                 </p>
-                <div className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
-                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
-                    Mã HS
+                <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                    Mã HS:
                   </span>
-                  <span className="font-black text-emerald-600 tracking-tight">
+                  <span className="font-bold text-xs text-emerald-700 dark:text-emerald-300 font-mono">
                     {student.student_code}
                   </span>
                 </div>
@@ -192,15 +192,13 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full lg:w-auto">
-            <div className="p-4 bg-stone-50 dark:bg-white/5 rounded-2xl border border-stone-100 dark:border-white/5">
-              <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1">
-                Năm học
-              </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full lg:w-auto">
+            <div className="p-3.5 bg-stone-50 dark:bg-white/5 rounded-xl border border-stone-200/60 dark:border-white/5">
+              <p className="text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">Năm học</p>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="w-full bg-transparent font-black text-stone-900 dark:text-white uppercase tracking-tight focus:outline-none cursor-pointer"
+                className="w-full bg-transparent font-semibold text-stone-900 dark:text-white text-xs sm:text-sm focus:outline-none cursor-pointer"
               >
                 <option value="" className="text-stone-900">
                   -- Chọn năm học --
@@ -213,18 +211,16 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
               </select>
             </div>
 
-            <div className="p-4 bg-stone-50 dark:bg-white/5 rounded-2xl border border-stone-100 dark:border-white/5">
-              <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-1">
-                Học kỳ
-              </p>
+            <div className="p-3.5 bg-stone-50 dark:bg-white/5 rounded-xl border border-stone-200/60 dark:border-white/5">
+              <p className="text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">Học kỳ</p>
               <select
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value)}
-                className="w-full bg-transparent font-black text-stone-900 dark:text-white uppercase tracking-tight focus:outline-none cursor-pointer"
+                className="w-full bg-transparent font-semibold text-stone-900 dark:text-white text-xs sm:text-sm focus:outline-none cursor-pointer"
               >
                 {SEMESTERS.map((sem) => (
                   <option key={sem.value} value={sem.value} className="text-stone-900">
-                    {sem.label.toUpperCase()}
+                    {sem.label}
                   </option>
                 ))}
               </select>
@@ -235,112 +231,106 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
 
       {/* States */}
       {loading && (
-        <Card className="p-20 text-center animate-pulse border-none shadow-2xl bg-white dark:bg-stone-900">
-          <Icons.Refresh className="w-12 h-12 text-amber-500 mx-auto animate-spin mb-4" />
-          <p className="font-bold text-xs text-stone-500">
+        <Card className="p-12 sm:p-16 text-center animate-pulse border-none shadow-xs bg-white dark:bg-stone-900">
+          <Icons.Refresh className="w-10 h-10 text-amber-500 mx-auto animate-spin mb-3" />
+          <p className="font-semibold text-xs sm:text-sm text-stone-500">
             Đang khởi tạo dữ liệu kết quả học tập...
           </p>
         </Card>
       )}
 
       {error && !loading && (
-        <Card className="p-12 text-center border-rose-500/20 bg-rose-500/5">
-          <Icons.Error className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <p className="font-black text-stone-800 dark:text-white uppercase tracking-widest mb-2">
-            Lỗi hệ thống
-          </p>
-          <p className="text-rose-600 font-serif italic">{error}</p>
+        <Card className="p-8 sm:p-12 text-center border-rose-500/20 bg-rose-500/5">
+          <Icons.Error className="w-10 h-10 text-rose-500 mx-auto mb-3" />
+          <p className="font-bold text-stone-800 dark:text-white mb-1">Lỗi hệ thống</p>
+          <p className="text-rose-600 text-xs sm:text-sm">{error}</p>
         </Card>
       )}
 
       {/* Content */}
       {transcriptData && !loading && !error && (
-        <div className="space-y-8 animate-in slide-in-from-bottom duration-700">
+        <div className="space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            <Card className="p-6 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-xl border-none">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-2">
-                Điểm trung bình
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
+            <Card className="p-4 sm:p-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-xs border-none rounded-2xl">
+              <p className="text-xs font-medium opacity-90 mb-1">Điểm trung bình (GPA)</p>
+              <p className="text-2xl sm:text-3xl font-bold font-mono">
+                {transcriptData.gpa.toFixed(2)}
               </p>
-              <p className="text-4xl font-serif font-black">{transcriptData.gpa.toFixed(2)}</p>
             </Card>
-            <Card className="p-6 bg-emerald-500 shadow-xl border-none text-white">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-2">
-                Hạnh kiểm
-              </p>
-              <p className="text-3xl font-serif font-black uppercase">{transcriptData.conduct}</p>
+            <Card className="p-4 sm:p-5 bg-emerald-600 shadow-xs border-none text-white rounded-2xl">
+              <p className="text-xs font-medium opacity-90 mb-1">Hạnh kiểm</p>
+              <p className="text-2xl sm:text-3xl font-bold">{transcriptData.conduct}</p>
             </Card>
-            <Card className="p-6 bg-stone-900 shadow-xl border-none text-white">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-2">
-                Chuyên cần
-              </p>
-              <p className="text-3xl font-serif font-black">
+            <Card className="p-4 sm:p-5 bg-stone-900 shadow-xs border-none text-white rounded-2xl">
+              <p className="text-xs font-medium opacity-90 mb-1">Chuyên cần</p>
+              <p className="text-2xl sm:text-3xl font-bold font-mono">
                 {transcriptData.attendance_rate.toFixed(1)}%
               </p>
             </Card>
-            <Card className="p-6 bg-white dark:bg-stone-800 shadow-xl border-stone-100 dark:border-white/5">
-              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">
+            <Card className="p-4 sm:p-5 bg-white dark:bg-stone-800 shadow-xs border-stone-200/80 dark:border-white/5 rounded-2xl">
+              <p className="text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
                 Số môn học
               </p>
-              <p className="text-3xl font-serif font-black text-stone-900 dark:text-white">
+              <p className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white font-mono">
                 {transcriptData.subjects.length}
               </p>
             </Card>
           </div>
 
           {/* Subjects Grid */}
-          <Card className="p-0 overflow-hidden border border-stone-200 dark:border-white/5 shadow-2xl">
-            <div className="p-8 border-b border-stone-100 dark:border-white/5 flex items-center justify-between">
-              <h2 className="text-xl font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                Chi tiết kết quả
+          <Card className="p-0 overflow-hidden border border-stone-200/80 dark:border-white/5 shadow-xs rounded-2xl">
+            <div className="p-4 sm:p-5 border-b border-stone-100 dark:border-white/5 flex items-center justify-between">
+              <h2 className="text-sm sm:text-base font-bold text-stone-900 dark:text-white">
+                Chi tiết kết quả môn học
               </h2>
               <Badge
                 variant="default"
-                className="px-3 py-1 font-black text-[9px] uppercase tracking-widest opacity-50"
+                className="px-2.5 py-0.5 font-medium text-xs text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800"
               >
-                Dữ liệu phân tích
+                Học kỳ {selectedSemester}
               </Badge>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="bg-stone-50 dark:bg-stone-900/50">
-                  <tr className="uppercase tracking-[0.2em] text-[9px] font-black text-stone-400 border-b border-stone-100 dark:border-white/5">
-                    <th className="px-8 py-4">Môn học</th>
-                    <th className="px-6 py-4 text-center text-blue-600 dark:text-blue-400 bg-blue-500/5">
+                <thead className="bg-stone-50/90 dark:bg-stone-800/80 border-b border-stone-100 dark:border-white/5">
+                  <tr className="text-xs font-semibold text-stone-600 dark:text-stone-300">
+                    <th className="px-5 py-3.5">Môn học</th>
+                    <th className="px-5 py-3.5 text-center text-blue-700 dark:text-blue-300 bg-blue-500/5">
                       Giữa kỳ (50%)
                     </th>
-                    <th className="px-6 py-4 text-center text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
+                    <th className="px-5 py-3.5 text-center text-emerald-700 dark:text-emerald-300 bg-emerald-500/5">
                       Cuối kỳ (50%)
                     </th>
-                    <th className="px-8 py-4 text-right">Tổng kết (TBM)</th>
+                    <th className="px-5 py-3.5 text-right">Điểm Tổng kết (TBM)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 dark:divide-white/5">
                   {transcriptData.subjects.map((subject, index) => (
                     <tr
                       key={index}
-                      className="group hover:bg-stone-50 dark:hover:bg-amber-500/5 transition-all"
+                      className="group hover:bg-stone-50/70 dark:hover:bg-amber-500/5 transition-colors"
                     >
-                      <td className="px-8 py-5">
-                        <p className="font-serif font-black text-stone-800 dark:text-white uppercase tracking-tight">
+                      <td className="px-5 py-3.5">
+                        <p className="font-semibold text-sm sm:text-base text-stone-900 dark:text-white">
                           {subject.subject_name}
                         </p>
                       </td>
-                      <td className="px-6 py-5 text-center font-mono font-black text-blue-600 dark:text-blue-400 bg-blue-500/5 text-base">
+                      <td className="px-5 py-3.5 text-center font-mono font-bold text-blue-700 dark:text-blue-300 bg-blue-500/5 text-sm sm:text-base">
                         {subject.component_grades?.midterm != null
                           ? Number(subject.component_grades.midterm).toFixed(1)
                           : '-'}
                       </td>
-                      <td className="px-6 py-5 text-center font-mono font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 text-base">
+                      <td className="px-5 py-3.5 text-center font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/5 text-sm sm:text-base">
                         {subject.component_grades?.final != null
                           ? Number(subject.component_grades.final).toFixed(1)
                           : '-'}
                       </td>
-                      <td className="px-8 py-5 text-right">
-                        <Badge className="px-4 py-1.5 font-serif font-black text-lg bg-amber-500 hover:bg-amber-600 border-none font-mono">
+                      <td className="px-5 py-3.5 text-right">
+                        <span className="font-mono font-bold text-base sm:text-lg text-amber-700 dark:text-amber-400">
                           {subject.final_grade.toFixed(1)}
-                        </Badge>
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -350,16 +340,16 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
           </Card>
 
           {/* Action Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-8 bg-white dark:bg-stone-900 rounded-[2rem] shadow-xl border border-stone-200 dark:border-white/5 print:hidden">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600">
-                <Icons.Save className="w-6 h-6" />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6 bg-white dark:bg-stone-900 rounded-2xl shadow-xs border border-stone-200/80 dark:border-white/5 print:hidden">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-600 shrink-0">
+                <Icons.Save className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   Xuất dữ liệu & Tương tác
                 </p>
-                <p className="font-bold text-stone-900 dark:text-white uppercase">
+                <p className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white">
                   Bản sao kết quả & Báo cáo Zalo
                 </p>
               </div>

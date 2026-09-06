@@ -58,7 +58,7 @@ const navCards: NavCard[] = [
   {
     href: '/dashboard/grades/entry',
     title: 'Nhập điểm môn học',
-    description: 'Nhập điểm 15p, 1 tiết, giữa kỳ và cuối kỳ',
+    description: 'Nhập điểm giữa kỳ (50%) và cuối kỳ (50%)',
     icon: PencilSquareIcon,
     permission: 'grades.entry',
     color: 'amber',
