@@ -101,6 +101,9 @@ function AttendanceHistoryPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [activeDatePreset, setActiveDatePreset] = useState<'all' | 'today' | '7days' | 'month'>(
+    'all'
+  );
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -204,6 +207,30 @@ function AttendanceHistoryPageContent() {
     const rate = total > 0 ? Math.round((present / total) * 100) : 0;
     return { total, present, absent, late, excused, rate };
   }, [filteredRecords]);
+
+  // Quick Date Preset Filter Handlers
+  const handleDatePreset = (preset: 'all' | 'today' | '7days' | 'month') => {
+    setActiveDatePreset(preset);
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0] ?? '';
+
+    if (preset === 'all') {
+      setStartDate('');
+      setEndDate('');
+    } else if (preset === 'today') {
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (preset === '7days') {
+      const past7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      setStartDate(past7.toISOString().split('T')[0] ?? '');
+      setEndDate(todayStr);
+    } else if (preset === 'month') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      setStartDate(firstDay.toISOString().split('T')[0] ?? '');
+      setEndDate(todayStr);
+    }
+    setPage(1);
+  };
 
   // Export CSV with UTF-8 BOM for Excel compatibility
   const handleExportCSV = () => {
@@ -447,29 +474,30 @@ function AttendanceHistoryPageContent() {
           </div>
         </div>
 
-        {/* ── RESPONSIVE FILTERS PANEL ── */}
-        <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-3.5 sm:p-4 shadow-sm space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-            {/* Search Input (Active for all users to search student or class) */}
+        {/* ── 5-COLUMN BALANCED FILTERS PANEL WITH QUICK PRESETS ── */}
+        <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-4 sm:p-5 shadow-sm space-y-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {/* 1. Search Box */}
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                {t('common.search')}
+              <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 ml-0.5">
+                Tìm kiếm
               </label>
               <div className="relative">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                 <Input
                   type="text"
-                  placeholder="Tên học sinh, mã HS, lớp..."
+                  placeholder="Tên HS, mã HS, lớp..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-9 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-bold"
+                  className="pl-9 h-10 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-semibold placeholder:text-stone-400"
                 />
               </div>
             </div>
 
+            {/* 2. Class Selector */}
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                {t('attendance.mark.class')}
+              <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 ml-0.5">
+                Lớp học
               </label>
               <div className="relative">
                 <AcademicCapIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
@@ -479,9 +507,9 @@ function AttendanceHistoryPageContent() {
                     setSelectedClass(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-9 h-9 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-bold uppercase tracking-tight"
+                  className="pl-9 h-10 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-semibold tracking-tight"
                 >
-                  <option value="">{t('attendance.history.allClasses')}</option>
+                  <option value="">Tất cả lớp học</option>
                   {classes.map((cls) => (
                     <option key={cls.id} value={cls.id}>
                       {cls.name}
@@ -491,9 +519,10 @@ function AttendanceHistoryPageContent() {
               </div>
             </div>
 
+            {/* 3. Status Selector */}
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                {t('common.status')}
+              <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 ml-0.5">
+                Trạng thái
               </label>
               <Select
                 value={selectedStatus}
@@ -501,9 +530,9 @@ function AttendanceHistoryPageContent() {
                   setSelectedStatus(e.target.value);
                   setPage(1);
                 }}
-                className="h-9 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-bold uppercase tracking-tight"
+                className="h-10 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-semibold tracking-tight"
               >
-                <option value="">{t('attendance.history.allStatuses')}</option>
+                <option value="">Tất cả trạng thái</option>
                 <option value="present">Có mặt</option>
                 <option value="absent">Vắng mặt</option>
                 <option value="late">Đi muộn</option>
@@ -511,57 +540,121 @@ function AttendanceHistoryPageContent() {
               </Select>
             </div>
 
+            {/* 4. Start Date */}
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                Khoảng ngày
+              <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 ml-0.5 flex items-center gap-1">
+                <CalendarIcon className="w-3 h-3 text-stone-400" /> Từ ngày
               </label>
-              <div className="grid grid-cols-2 gap-1.5">
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setPage(1);
-                  }}
-                  className="h-9 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-[11px] font-bold"
-                  title="Từ ngày"
-                />
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    setPage(1);
-                  }}
-                  className="h-9 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-[11px] font-bold"
-                  title="Đến ngày"
-                />
-              </div>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setActiveDatePreset('all');
+                  setPage(1);
+                }}
+                className="h-10 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-semibold"
+              />
+            </div>
+
+            {/* 5. End Date */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 ml-0.5 flex items-center gap-1">
+                <CalendarIcon className="w-3 h-3 text-stone-400" /> Đến ngày
+              </label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setActiveDatePreset('all');
+                  setPage(1);
+                }}
+                className="h-10 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-semibold"
+              />
             </div>
           </div>
 
-          {hasActiveFilters && (
-            <div className="flex items-center justify-between pt-2 border-t border-stone-100 dark:border-white/5">
-              <span className="text-[11px] font-bold text-stone-400 dark:text-stone-500">
-                Tìm thấy {filteredRecords.length} kết quả
+          {/* Quick Date Presets & Filter Reset Footer */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-stone-100 dark:border-white/5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-400 mr-1">
+                Lọc nhanh:
               </span>
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedClass('');
-                  setSelectedStatus('');
-                  setStartDate('');
-                  setEndDate('');
-                  setSearchQuery('');
-                  setPage(1);
-                }}
-                className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 hover:text-rose-700 text-xs font-black uppercase tracking-wider px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
+                onClick={() => handleDatePreset('all')}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                  activeDatePreset === 'all' && !startDate && !endDate
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+                )}
               >
-                <XMarkIcon className="w-3.5 h-3.5" />
-                <span>Xóa bộ lọc</span>
+                Tất cả thời gian
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDatePreset('today')}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                  activeDatePreset === 'today'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+                )}
+              >
+                Hôm nay
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDatePreset('7days')}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                  activeDatePreset === '7days'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+                )}
+              >
+                7 ngày qua
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDatePreset('month')}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                  activeDatePreset === 'month'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+                )}
+              >
+                Tháng này
               </button>
             </div>
-          )}
+
+            {hasActiveFilters && (
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-bold text-stone-400 dark:text-stone-500">
+                  {filteredRecords.length} kết quả
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedClass('');
+                    setSelectedStatus('');
+                    setStartDate('');
+                    setEndDate('');
+                    setSearchQuery('');
+                    setActiveDatePreset('all');
+                    setPage(1);
+                  }}
+                  className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 hover:text-rose-700 text-xs font-black uppercase tracking-wider px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
+                >
+                  <XMarkIcon className="w-3.5 h-3.5" />
+                  <span>Xóa bộ lọc</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── RESULTS SECTION ── */}
