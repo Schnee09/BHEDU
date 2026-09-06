@@ -52,17 +52,26 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
       );
     }
 
-    // Flatten the response for frontend compatibility
+    // Flatten the response for frontend compatibility ensuring student UUID is preserved
     const students = (enrollments || [])
-      .map((e) => ({
-        id: e.student_id,
-        student_id: e.student_id,
-        enrollment_id: e.id,
-        enrollment_date: e.enrollment_date,
-        ...(e.profiles as any),
-        status: e.status || 'enrolled', // Ensure enrollment status wins
-      }))
-      .filter((s) => s.full_name); // Filter out any broken references
+      .map((e) => {
+        const profile = (e.profiles as any) || {};
+        const studentUuid = e.student_id || profile.id;
+        return {
+          id: studentUuid,
+          student_id: studentUuid,
+          user_id: studentUuid,
+          enrollment_id: e.id,
+          enrollment_date: e.enrollment_date,
+          status: e.status || 'enrolled',
+          full_name: profile.full_name,
+          email: profile.email,
+          student_code: profile.student_code,
+          grade_level: profile.grade_level,
+          cid: profile.student_id || null,
+        };
+      })
+      .filter((s) => s.full_name && s.id);
 
     return NextResponse.json({
       success: true,

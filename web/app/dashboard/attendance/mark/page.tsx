@@ -144,11 +144,12 @@ function AttendanceMarkingPageContent() {
       const attendanceRecords = attendanceRes.data || [];
 
       const mappedStudents: StudentAttendanceView[] = classStudents.map((s: any) => {
-        const record = attendanceRecords.find((r: any) => r.student_id === s.id);
+        const studentUUID = s.id || s.user_id || s.student_id;
+        const record = attendanceRecords.find((r: any) => r.student_id === studentUUID);
         return {
-          studentId: s.id,
+          studentId: studentUUID,
           studentName: s.full_name || s.name || 'Unknown',
-          studentCode: s.student_code || s.student_id || '',
+          studentCode: s.student_code || s.cid || '',
           email: s.email,
           status: record ? (record.status as AttendanceStatus) : 'unmarked',
           remarks: record?.notes || record?.remarks || '',
