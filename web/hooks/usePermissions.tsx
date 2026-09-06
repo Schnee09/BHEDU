@@ -187,14 +187,8 @@ export function usePermissions() {
     () => (profile ? isAtLeast(profile.role as UserRole, 'teacher') : false),
     [profile]
   );
-  const isStudent = useMemo(
-    () => (profile ? isAtLeast(profile.role as UserRole, 'student') : false),
-    [profile]
-  );
-  const isParent = useMemo(
-    () => (profile ? isAtLeast(profile.role as UserRole, 'parent') : false),
-    [profile]
-  );
+  const isStudent = useMemo(() => profile?.role === 'student', [profile]);
+  const isParent = useMemo(() => profile?.role === 'parent', [profile]);
 
   // Exact role checks (identity-based, not inherited)
   const isExactAdmin = useMemo(
