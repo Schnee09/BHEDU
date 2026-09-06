@@ -120,14 +120,11 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     fontSize: 9,
   },
-  col1: { width: '5%' },
-  col2: { width: '25%' },
-  col3: { width: '10%' },
-  col4: { width: '10%' },
-  col5: { width: '10%' },
-  col6: { width: '10%' },
-  col7: { width: '15%' },
-  col8: { width: '15%' },
+  col1: { width: '8%' },
+  col2: { width: '37%' },
+  col3: { width: '18%' },
+  col4: { width: '18%' },
+  col5: { width: '19%' },
   summaryBox: {
     marginTop: 15,
     padding: 10,
@@ -188,11 +185,11 @@ export interface SubjectGrade {
   final_grade: number;
   credits: number;
   component_grades?: {
-    oral?: number;
-    fifteen_min?: number;
-    one_period?: number;
-    midterm?: number;
-    final?: number;
+    midterm?: number | null;
+    final?: number | null;
+    oral?: number | null;
+    fifteen_min?: number | null;
+    one_period?: number | null;
   };
 }
 
@@ -278,12 +275,9 @@ export const HocBaDocument: React.FC<{ data: TranscriptData }> = ({ data }) => {
           <View style={styles.tableHeader}>
             <Text style={[styles.tableCell, styles.col1]}>STT</Text>
             <Text style={[styles.tableCellLeft, styles.col2]}>Môn học</Text>
-            <Text style={[styles.tableCell, styles.col3]}>Miệng</Text>
-            <Text style={[styles.tableCell, styles.col4]}>15 phút</Text>
-            <Text style={[styles.tableCell, styles.col5]}>1 tiết</Text>
-            <Text style={[styles.tableCell, styles.col6]}>Giữa kỳ</Text>
-            <Text style={[styles.tableCell, styles.col7]}>Cuối kỳ</Text>
-            <Text style={[styles.tableCell, styles.col8, { borderRightWidth: 0 }]}>TB môn</Text>
+            <Text style={[styles.tableCell, styles.col3]}>Giữa kỳ</Text>
+            <Text style={[styles.tableCell, styles.col4]}>Cuối kỳ</Text>
+            <Text style={[styles.tableCell, styles.col5, { borderRightWidth: 0 }]}>TB môn</Text>
           </View>
 
           {/* Table Rows */}
@@ -292,22 +286,17 @@ export const HocBaDocument: React.FC<{ data: TranscriptData }> = ({ data }) => {
               <Text style={[styles.tableCell, styles.col1]}>{index + 1}</Text>
               <Text style={[styles.tableCellLeft, styles.col2]}>{subject.subject_name}</Text>
               <Text style={[styles.tableCell, styles.col3]}>
-                {subject.component_grades?.oral?.toFixed(1) || '-'}
+                {subject.component_grades?.midterm != null
+                  ? Number(subject.component_grades.midterm).toFixed(1)
+                  : '-'}
               </Text>
               <Text style={[styles.tableCell, styles.col4]}>
-                {subject.component_grades?.fifteen_min?.toFixed(1) || '-'}
-              </Text>
-              <Text style={[styles.tableCell, styles.col5]}>
-                {subject.component_grades?.one_period?.toFixed(1) || '-'}
-              </Text>
-              <Text style={[styles.tableCell, styles.col6]}>
-                {subject.component_grades?.midterm?.toFixed(1) || '-'}
-              </Text>
-              <Text style={[styles.tableCell, styles.col7]}>
-                {subject.component_grades?.final?.toFixed(1) || '-'}
+                {subject.component_grades?.final != null
+                  ? Number(subject.component_grades.final).toFixed(1)
+                  : '-'}
               </Text>
               <Text
-                style={[styles.tableCell, styles.col8, { borderRightWidth: 0, fontWeight: 700 }]}
+                style={[styles.tableCell, styles.col5, { borderRightWidth: 0, fontWeight: 700 }]}
               >
                 {subject.final_grade.toFixed(1)}
               </Text>

@@ -307,12 +307,13 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
                 <thead className="bg-stone-50 dark:bg-stone-900/50">
                   <tr className="uppercase tracking-[0.2em] text-[9px] font-black text-stone-400 border-b border-stone-100 dark:border-white/5">
                     <th className="px-8 py-4">Môn học</th>
-                    <th className="px-4 py-4 text-center">Miệng</th>
-                    <th className="px-4 py-4 text-center">15 phút</th>
-                    <th className="px-4 py-4 text-center">1 tiết</th>
-                    <th className="px-4 py-4 text-center">Giữa kỳ</th>
-                    <th className="px-4 py-4 text-center">Cuối kỳ</th>
-                    <th className="px-8 py-4 text-right">Tổng kết</th>
+                    <th className="px-6 py-4 text-center text-blue-600 dark:text-blue-400 bg-blue-500/5">
+                      Giữa kỳ (50%)
+                    </th>
+                    <th className="px-6 py-4 text-center text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
+                      Cuối kỳ (50%)
+                    </th>
+                    <th className="px-8 py-4 text-right">Tổng kết (TBM)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 dark:divide-white/5">
@@ -326,23 +327,18 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
                           {subject.subject_name}
                         </p>
                       </td>
-                      <td className="px-4 py-5 text-center font-black text-stone-400 group-hover:text-stone-600 transition-colors">
-                        {subject.component_grades?.oral?.toFixed(1) || '-'}
+                      <td className="px-6 py-5 text-center font-mono font-black text-blue-600 dark:text-blue-400 bg-blue-500/5 text-base">
+                        {subject.component_grades?.midterm != null
+                          ? Number(subject.component_grades.midterm).toFixed(1)
+                          : '-'}
                       </td>
-                      <td className="px-4 py-5 text-center font-black text-stone-400 group-hover:text-stone-600 transition-colors">
-                        {subject.component_grades?.fifteen_min?.toFixed(1) || '-'}
-                      </td>
-                      <td className="px-4 py-5 text-center font-black text-stone-400 group-hover:text-stone-600 transition-colors">
-                        {subject.component_grades?.one_period?.toFixed(1) || '-'}
-                      </td>
-                      <td className="px-4 py-5 text-center font-black text-stone-400 group-hover:text-stone-600 transition-colors">
-                        {subject.component_grades?.midterm?.toFixed(1) || '-'}
-                      </td>
-                      <td className="px-4 py-5 text-center font-black text-stone-400 group-hover:text-stone-600 transition-colors">
-                        {subject.component_grades?.final?.toFixed(1) || '-'}
+                      <td className="px-6 py-5 text-center font-mono font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 text-base">
+                        {subject.component_grades?.final != null
+                          ? Number(subject.component_grades.final).toFixed(1)
+                          : '-'}
                       </td>
                       <td className="px-8 py-5 text-right">
-                        <Badge className="px-4 py-1.5 font-serif font-black text-lg bg-amber-500 hover:bg-amber-600 border-none">
+                        <Badge className="px-4 py-1.5 font-serif font-black text-lg bg-amber-500 hover:bg-amber-600 border-none font-mono">
                           {subject.final_grade.toFixed(1)}
                         </Badge>
                       </td>

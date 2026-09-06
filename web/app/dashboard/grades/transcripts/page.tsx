@@ -133,11 +133,14 @@ export default function TranscriptsPage() {
     );
   }
 
-  const currentStudentObj =
-    students.find((s) => s.id === selectedStudent) ||
-    (isStudent && profile
+  const currentStudentObj = selectedStudent
+    ? students.find((s) => s.id === selectedStudent) ||
+      (isStudent && profile
+        ? { full_name: profile.full_name, student_code: (profile as any).student_code || 'BH-ID' }
+        : null)
+    : isStudent && profile
       ? { full_name: profile.full_name, student_code: (profile as any).student_code || 'BH-ID' }
-      : null);
+      : null;
 
   return (
     <div className="min-h-screen bg-transparent py-4 sm:py-6 px-3 sm:px-6 lg:px-8 pb-28 md:pb-16 font-Be_Vietnam_Pro">
@@ -163,7 +166,7 @@ export default function TranscriptsPage() {
                     Phiếu kết quả học tập
                   </h1>
                   <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 line-clamp-2 sm:line-clamp-none">
-                    Hệ thống quản lý và tra cứu bảng điểm học tập tập trung
+                    Hệ thống quản lý và tra cứu bảng điểm học tập tập trung (GK 50% & CK 50%)
                   </p>
                 </div>
               </div>
@@ -184,43 +187,50 @@ export default function TranscriptsPage() {
             )}
           </div>
 
-          {/* KPI Summary Bar (Horizontal scroll with touch, clean spacing) */}
+          {/* KPI Summary Bar */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-2 border-t border-stone-100 dark:border-white/5 text-xs font-black no-scrollbar [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {currentStudentObj && (
-              <div className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                <span>
-                  Học sinh: <strong>{currentStudentObj.full_name}</strong>
-                </span>
+            {currentStudentObj ? (
+              <>
+                <div className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span>
+                    Học sinh: <strong>{currentStudentObj.full_name}</strong>
+                  </span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0 border border-stone-200/40 dark:border-white/5 whitespace-nowrap">
+                  <Users className="w-3.5 h-3.5 text-stone-500" />
+                  <span>
+                    Tổng bản ghi điểm:{' '}
+                    <strong className="font-mono text-stone-900 dark:text-white">
+                      {grades.length}
+                    </strong>
+                  </span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>
+                    Điểm TB (GPA):{' '}
+                    <strong className="font-mono text-emerald-800 dark:text-emerald-200">
+                      {averageScore > 0 ? averageScore.toFixed(2) : '-'}
+                    </strong>
+                  </span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                  <Award className="w-3.5 h-3.5 text-blue-600" />
+                  <span>
+                    Điểm cao nhất:{' '}
+                    <strong className="font-mono text-blue-800 dark:text-blue-200">
+                      {maxScore > 0 ? maxScore.toFixed(1) : '-'}
+                    </strong>
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 flex items-center gap-1.5 shrink-0">
+                <Users className="w-3.5 h-3.5" />
+                <span>Trạng thái: Vui lòng chọn lớp học và học sinh để xem kết quả</span>
               </div>
             )}
-            <div className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0 border border-stone-200/40 dark:border-white/5 whitespace-nowrap">
-              <Users className="w-3.5 h-3.5 text-stone-500" />
-              <span>
-                Tổng bản ghi điểm:{' '}
-                <strong className="font-mono text-stone-900 dark:text-white">
-                  {grades.length}
-                </strong>
-              </span>
-            </div>
-            <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-              <span>
-                Điểm TB:{' '}
-                <strong className="font-mono text-emerald-800 dark:text-emerald-200">
-                  {averageScore > 0 ? averageScore.toFixed(2) : '-'}
-                </strong>
-              </span>
-            </div>
-            <div className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-              <Award className="w-3.5 h-3.5 text-blue-600" />
-              <span>
-                Điểm cao nhất:{' '}
-                <strong className="font-mono text-blue-800 dark:text-blue-200">
-                  {maxScore > 0 ? maxScore.toFixed(1) : '-'}
-                </strong>
-              </span>
-            </div>
           </div>
         </div>
 
@@ -284,7 +294,7 @@ export default function TranscriptsPage() {
           <div className="flex items-center justify-between px-1">
             <h2 className="text-base font-black uppercase tracking-wider text-stone-800 dark:text-white flex items-center gap-2">
               <div className="w-1.5 h-4 bg-amber-500 rounded-full" />
-              Kết quả học tập chi tiết theo năm học & môn học
+              Kết quả học tập chi tiết (Giữa kỳ 50% & Cuối kỳ 50%)
             </h2>
             {loading && (
               <div className="flex items-center gap-1.5 text-xs text-stone-400 font-bold">
@@ -294,7 +304,31 @@ export default function TranscriptsPage() {
             )}
           </div>
 
-          <AcademicMatrix grades={grades} />
+          {!selectedStudent && !isStudent ? (
+            <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-dashed border-stone-200 dark:border-white/10 p-12 text-center space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+                <Users className="w-7 h-7" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-black uppercase text-stone-900 dark:text-white tracking-tight">
+                  Vui lòng chọn Lớp học và Học sinh
+                </h3>
+                <p className="text-xs text-stone-500 dark:text-stone-400 max-w-sm mx-auto">
+                  Chọn lớp học và học sinh ở bảng điều khiển phía trên để tra cứu bảng điểm và xuất
+                  phiếu kết quả học tập.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <AcademicMatrix
+              grades={grades}
+              emptyMessage={
+                isStudent
+                  ? 'Bạn chưa có bản ghi điểm nào trong hệ thống.'
+                  : 'Học sinh này chưa có bản ghi điểm nào.'
+              }
+            />
+          )}
         </div>
       </div>
     </div>

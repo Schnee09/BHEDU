@@ -23,55 +23,53 @@ export interface GradeEntry {
 interface AcademicMatrixProps {
   grades: any[];
   hideTitle?: boolean;
+  emptyMessage?: string;
 }
 
-function normalizeComponentType(
-  type?: string
-): 'oral' | 'fifteen_min' | 'one_period' | 'midterm' | 'final' {
-  if (!type) return 'fifteen_min';
+function normalizeComponentType(type?: string): 'midterm' | 'final' {
+  if (!type) return 'midterm';
   const t = type.toLowerCase().trim();
-  if (['oral', 'mieng', 'speaking'].includes(t)) return 'oral';
-  if (
-    [
-      'fifteen_min',
-      '15p',
-      '15min',
-      'quiz',
-      'regular',
-      'regular_1',
-      'regular_2',
-      'regular_3',
-      'homework',
-      'assignment',
-    ].includes(t)
-  )
-    return 'fifteen_min';
-  if (
-    ['one_period', '1tiet', '1period', '45min', 'period', 'test', 'project', 'unit_test'].includes(
-      t
-    )
-  )
-    return 'one_period';
-  if (['midterm', 'mid_term', 'giua_ky', 'giuaky', 'midterm_exam'].includes(t)) return 'midterm';
-  if (['final', 'final_exam', 'cuoi_ky', 'cuoiky', 'semester_final', 'exam'].includes(t))
+  if (['final', 'final_exam', 'cuoi_ky', 'cuoiky', 'semester_final', 'exam', 'end'].includes(t)) {
     return 'final';
-  return 'fifteen_min';
+  }
+  return 'midterm';
+}
+
+function calculateAverage(midterm?: number | null, final?: number | null): string {
+  if (midterm != null && final != null) {
+    return ((midterm + final) / 2).toFixed(1);
+  }
+  if (midterm != null) return midterm.toFixed(1);
+  if (final != null) return final.toFixed(1);
+  return '-';
+}
+
+function getScoreColor(scoreStr: string) {
+  const val = parseFloat(scoreStr);
+  if (isNaN(val)) return 'text-stone-400';
+  if (val >= 8.0) return 'text-emerald-600 dark:text-emerald-400';
+  if (val >= 6.5) return 'text-blue-600 dark:text-blue-400';
+  if (val >= 5.0) return 'text-amber-600 dark:text-amber-400';
+  return 'text-rose-600 dark:text-rose-400';
 }
 
 /**
- * Professional Academic Matrix (Học Bạ) component
- * Groups grades chronologically by Year -> Subject -> Components
+ * Professional Academic Matrix (Học Bạ) component - TTGD Bùi Hoàng
+ * Standardized exclusively on Giữa kỳ (GK 50%) and Cuối kỳ (CK 50%)
  */
-export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({ grades, hideTitle = false }) => {
+export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({
+  grades,
+  emptyMessage = 'Chưa có bản ghi điểm nào',
+}) => {
   // 1. Group by Academic Year
   const yearGroups = React.useMemo(() => {
     const groups: Record<string, { name: string; subjects: Record<string, any> }> = {};
 
     grades.forEach((g: any) => {
       const yearId = g.academic_year_id || g.academic_year?.id || 'unknown';
-      const yearName = g.academic_year?.name || 'Năm học khác';
+      const yearName = g.academic_year?.name || 'Năm học hiện tại';
       const subjectId = g.subject_id || g.subject?.id || 'unknown';
-      const subjectName = g.subject?.name || 'Môn học khác';
+      const subjectName = g.subject?.name || 'Môn học';
 
       if (!groups[yearId]) {
         groups[yearId] = { name: yearName, subjects: {} };
@@ -82,20 +80,19 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({ grades, hideTitl
           id: subjectId,
           name: subjectName,
           code: g.subject?.code || '',
-          components: {
-            oral: [] as number[],
-            fifteen_min: [] as number[],
-            one_period: [] as number[],
-            midterm: [] as number[],
-            final: [] as number[],
-          },
+          midterm: null as number | null,
+          final: null as number | null,
         };
       }
 
       const score = g.score ?? g.points_earned;
       if (typeof score === 'number') {
         const bucket = normalizeComponentType(g.component_type);
-        groups[yearId].subjects[subjectId].components[bucket].push(score);
+        if (bucket === 'midterm') {
+          groups[yearId].subjects[subjectId].midterm = score;
+        } else if (bucket === 'final') {
+          groups[yearId].subjects[subjectId].final = score;
+        }
       }
     });
 
@@ -103,74 +100,19 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({ grades, hideTitl
     return Object.entries(groups).sort((a, b) => b[1].name.localeCompare(a[1].name));
   }, [grades]);
 
-  const calculateAvg = (components: Record<string, number[]>) => {
-    let weightedSum = 0;
-    let totalWeight = 0;
-
-    const oral = components?.['oral'] ?? [];
-    const fifteen = components?.['fifteen_min'] ?? [];
-    const onePeriod = components?.['one_period'] ?? [];
-    const midterm = components?.['midterm'] ?? [];
-    const final = components?.['final'] ?? [];
-
-    // Regular assessments (oral + 15min): Weight 1 each
-    const regulars = [...oral, ...fifteen];
-    regulars.forEach((score) => {
-      weightedSum += score * 1;
-      totalWeight += 1;
-    });
-
-    // 1-period (one_period): Weight 2 each
-    onePeriod.forEach((score) => {
-      weightedSum += score * 2;
-      totalWeight += 2;
-    });
-
-    // Midterm: Weight 2
-    midterm.forEach((score) => {
-      weightedSum += score * 2;
-      totalWeight += 2;
-    });
-
-    // Final: Weight 3
-    final.forEach((score) => {
-      weightedSum += score * 3;
-      totalWeight += 3;
-    });
-
-    if (totalWeight > 0) {
-      return (weightedSum / totalWeight).toFixed(1);
-    }
-
-    // Simple fallback
-    const allScores = Object.values(components || {}).flat();
-    if (allScores.length === 0) return '-';
-    const sum = allScores.reduce((a, b) => a + b, 0);
-    return (sum / allScores.length).toFixed(1);
-  };
-
-  const getScoreColor = (score: string) => {
-    const val = parseFloat(score);
-    if (isNaN(val)) return 'text-stone-400';
-    if (val >= 8.0) return 'text-emerald-600 dark:text-emerald-400';
-    if (val >= 6.5) return 'text-blue-600 dark:text-blue-400';
-    if (val >= 5.0) return 'text-amber-600 dark:text-amber-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-
   if (yearGroups.length === 0) {
     return (
       <div className="py-16 sm:py-20 flex flex-col items-center justify-center text-stone-400 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-white/10 p-6">
         <Icons.Classes className="w-12 h-12 mb-3 opacity-20 text-stone-400" />
         <p className="font-bold uppercase tracking-wider text-xs max-w-xs text-center leading-relaxed">
-          Chưa có bản ghi điểm nào cho học sinh này
+          {emptyMessage}
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 sm:space-y-12">
+    <div className="space-y-6 sm:space-y-10">
       {yearGroups.map(([yearId, yearData]) => (
         <div key={yearId} className="space-y-4 sm:space-y-6">
           {/* Year Header */}
@@ -182,11 +124,10 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({ grades, hideTitl
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-200 dark:via-white/10 to-transparent" />
           </div>
 
-          {/* 1. MOBILE RESPONSIVE CARDS (Visible on mobile screens) */}
+          {/* 1. MOBILE RESPONSIVE CARDS */}
           <div className="block md:hidden space-y-3">
             {Object.values(yearData.subjects).map((subject: any) => {
-              const avg = calculateAvg(subject.components);
-              const regulars = subject.components.oral.concat(subject.components.fifteen_min);
+              const avg = calculateAverage(subject.midterm, subject.final);
 
               return (
                 <div
@@ -195,7 +136,7 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({ grades, hideTitl
                 >
                   <div className="flex items-center justify-between gap-2 border-b border-stone-100 dark:border-white/5 pb-2.5">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 font-black text-xs flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 font-black text-xs flex items-center justify-center shrink-0">
                         {subject.name.charAt(0)}
                       </div>
                       <div className="min-w-0">
@@ -210,47 +151,27 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({ grades, hideTitl
 
                     <div className="text-right">
                       <div className="text-[9px] font-black uppercase text-stone-400">ĐTB Môn</div>
-                      <div className={cn('text-lg font-black', getScoreColor(avg))}>{avg}</div>
+                      <div className={cn('text-lg font-black font-mono', getScoreColor(avg))}>
+                        {avg}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
-                    <div className="p-2 bg-stone-50 dark:bg-stone-800 rounded-xl">
-                      <div className="text-[9px] font-black uppercase text-stone-400 mb-1">
-                        TX (M/15&apos;)
-                      </div>
-                      <div className="font-bold text-stone-700 dark:text-stone-300">
-                        {regulars.length > 0 ? regulars.join(', ') : '-'}
-                      </div>
-                    </div>
-                    <div className="p-2 bg-stone-50 dark:bg-stone-800 rounded-xl">
-                      <div className="text-[9px] font-black uppercase text-stone-400 mb-1">
-                        1 Tiết
-                      </div>
-                      <div className="font-bold text-stone-700 dark:text-stone-300">
-                        {subject.components.one_period.length > 0
-                          ? subject.components.one_period.join(', ')
-                          : '-'}
-                      </div>
-                    </div>
-                    <div className="p-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200/40 dark:border-blue-800/30 rounded-xl">
+                  <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                    <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200/40 dark:border-blue-800/30 rounded-xl">
                       <div className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 mb-1">
-                        Giữa kỳ
+                        Giữa kỳ (50%)
                       </div>
-                      <div className="font-black text-blue-700 dark:text-blue-300">
-                        {subject.components.midterm.length > 0
-                          ? subject.components.midterm.join(', ')
-                          : '-'}
+                      <div className="text-base font-black text-blue-700 dark:text-blue-300 font-mono">
+                        {subject.midterm != null ? Number(subject.midterm).toFixed(1) : '-'}
                       </div>
                     </div>
-                    <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/40 dark:border-emerald-800/30 rounded-xl">
+                    <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/40 dark:border-emerald-800/30 rounded-xl">
                       <div className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 mb-1">
-                        Cuối kỳ
+                        Cuối kỳ (50%)
                       </div>
-                      <div className="font-black text-emerald-700 dark:text-emerald-300">
-                        {subject.components.final.length > 0
-                          ? subject.components.final.join(', ')
-                          : '-'}
+                      <div className="text-base font-black text-emerald-700 dark:text-emerald-300 font-mono">
+                        {subject.final != null ? Number(subject.final).toFixed(1) : '-'}
                       </div>
                     </div>
                   </div>
@@ -264,35 +185,26 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({ grades, hideTitl
             <Card className="border border-stone-200/80 dark:border-white/10 shadow-sm bg-white dark:bg-stone-900 rounded-3xl overflow-hidden">
               <CardBody className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[750px]">
+                  <table className="w-full text-left border-collapse min-w-[650px]">
                     <thead>
                       <tr className="bg-stone-50/90 dark:bg-stone-800/80 border-b border-stone-100 dark:border-white/5">
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-stone-400">
                           Môn học
                         </th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-wider text-stone-400 text-center">
-                          TX (Miệng / 15&apos;)
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 text-center bg-blue-500/5">
+                          Điểm Giữa kỳ (50%)
                         </th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-wider text-stone-400 text-center">
-                          Định kỳ (1 Tiết)
-                        </th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 text-center bg-blue-500/5">
-                          Giữa kỳ (x2)
-                        </th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 text-center bg-emerald-500/5">
-                          Cuối kỳ (x3)
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 text-center bg-emerald-500/5">
+                          Điểm Cuối kỳ (50%)
                         </th>
                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-stone-400 text-right">
-                          TBM
+                          Điểm Tổng kết (TBM)
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100 dark:divide-white/5">
                       {Object.values(yearData.subjects).map((subject: any) => {
-                        const avg = calculateAvg(subject.components);
-                        const regulars = subject.components.oral.concat(
-                          subject.components.fifteen_min
-                        );
+                        const avg = calculateAverage(subject.midterm, subject.final);
 
                         return (
                           <tr
@@ -301,7 +213,7 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({ grades, hideTitl
                           >
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 font-black text-xs">
+                                <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 font-black text-xs">
                                   {subject.name.charAt(0)}
                                 </div>
                                 <div>
@@ -314,79 +226,25 @@ export const AcademicMatrix: React.FC<AcademicMatrixProps> = ({ grades, hideTitl
                                 </div>
                               </div>
                             </td>
-                            <td className="px-4 py-4 text-center">
-                              <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                                {regulars.length > 0 ? (
-                                  regulars.map((score: any, i: number) => (
-                                    <span
-                                      key={i}
-                                      className="text-xs font-bold text-stone-700 dark:text-stone-300"
-                                    >
-                                      {score}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-stone-300 dark:text-stone-700">-</span>
-                                )}
-                              </div>
+                            <td className="px-6 py-4 text-center bg-blue-500/5">
+                              <span className="text-base font-black text-blue-600 dark:text-blue-400 font-mono">
+                                {subject.midterm != null ? Number(subject.midterm).toFixed(1) : '-'}
+                              </span>
                             </td>
-                            <td className="px-4 py-4 text-center">
-                              <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                                {subject.components.one_period.length > 0 ? (
-                                  subject.components.one_period.map((score: any, i: number) => (
-                                    <span
-                                      key={i}
-                                      className="text-xs font-bold text-stone-700 dark:text-stone-300"
-                                    >
-                                      {score}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-stone-300 dark:text-stone-700">-</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-center bg-blue-500/5">
-                              <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                                {subject.components.midterm.length > 0 ? (
-                                  subject.components.midterm.map((score: any, i: number) => (
-                                    <span
-                                      key={i}
-                                      className="text-sm font-black text-blue-600 dark:text-blue-400"
-                                    >
-                                      {score}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-stone-300 dark:text-stone-700">-</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-center bg-emerald-500/5">
-                              <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                                {subject.components.final.length > 0 ? (
-                                  subject.components.final.map((score: any, i: number) => (
-                                    <span
-                                      key={i}
-                                      className="text-sm font-black text-emerald-600 dark:text-emerald-400"
-                                    >
-                                      {score}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-stone-300 dark:text-stone-700">-</span>
-                                )}
-                              </div>
+                            <td className="px-6 py-4 text-center bg-emerald-500/5">
+                              <span className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                {subject.final != null ? Number(subject.final).toFixed(1) : '-'}
+                              </span>
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <div
+                              <span
                                 className={cn(
-                                  'text-base font-black tracking-tight font-mono',
+                                  'text-lg font-black tracking-tight font-mono',
                                   getScoreColor(avg)
                                 )}
                               >
                                 {avg}
-                              </div>
+                              </span>
                             </td>
                           </tr>
                         );
