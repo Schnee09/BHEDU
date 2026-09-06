@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import Badge from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useProfile } from '@/hooks/useProfile';
 import { cn } from '@/lib/utils';
 import {
   CalendarIcon,
@@ -30,6 +31,8 @@ import {
   TableCellsIcon,
   UserGroupIcon,
   ChartBarIcon,
+  EyeIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
@@ -41,14 +44,20 @@ interface AttendanceRecord {
   status: 'present' | 'absent' | 'late' | 'excused';
   notes?: string | null;
   remarks?: string | null;
+  created_at?: string;
   student?: {
-    full_name: string;
+    id?: string;
+    full_name?: string;
+    first_name?: string;
+    last_name?: string;
     student_id?: string;
     student_code?: string;
     email?: string;
+    student_profiles?: Array<{ student_code?: string }> | { student_code?: string };
   };
   class?: {
-    name: string;
+    id?: string;
+    name?: string;
   };
 }
 
@@ -75,11 +84,16 @@ function AttendanceHistoryPageContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const { isStudent, loading: permsLoading } = usePermissions();
+  const { profile } = useProfile();
+
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [viewMode, setViewMode] = useState<'auto' | 'table' | 'cards'>('auto');
+
+  // Selected Record for Detail Modal
+  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
 
   // Filters
   const [selectedClass, setSelectedClass] = useState('');
@@ -143,17 +157,42 @@ function AttendanceHistoryPageContent() {
     }
   }, [permsLoading, loadRecords]);
 
+  // Helper functions to reliably extract student name & code
+  const getStudentName = useCallback(
+    (record: AttendanceRecord) => {
+      if (record.student?.full_name?.trim()) return record.student.full_name.trim();
+      if (record.student?.first_name || record.student?.last_name) {
+        return `${record.student.last_name || ''} ${record.student.first_name || ''}`.trim();
+      }
+      if (isStudent && profile?.full_name) return profile.full_name;
+      return record.student?.email || 'Học sinh';
+    },
+    [isStudent, profile]
+  );
+
+  const getStudentCode = useCallback(
+    (record: AttendanceRecord) => {
+      if (record.student?.student_code) return record.student.student_code;
+      const sp = record.student?.student_profiles;
+      if (Array.isArray(sp) && sp[0]?.student_code) return sp[0].student_code;
+      if (sp && !Array.isArray(sp) && sp.student_code) return sp.student_code;
+      if (record.student?.student_id) return record.student.student_id;
+      if (isStudent && (profile as any)?.student_code) return (profile as any).student_code;
+      return 'BH-ID';
+    },
+    [isStudent, profile]
+  );
+
   const filteredRecords = useMemo(() => {
     if (!searchQuery.trim()) return records;
     const query = searchQuery.toLowerCase().trim();
-    return records.filter(
-      (record) =>
-        record.student?.full_name?.toLowerCase().includes(query) ||
-        record.student?.student_code?.toLowerCase().includes(query) ||
-        record.student?.student_id?.toLowerCase().includes(query) ||
-        record.class?.name?.toLowerCase().includes(query)
-    );
-  }, [records, searchQuery]);
+    return records.filter((record) => {
+      const name = getStudentName(record).toLowerCase();
+      const code = getStudentCode(record).toLowerCase();
+      const className = (record.class?.name || '').toLowerCase();
+      return name.includes(query) || code.includes(query) || className.includes(query);
+    });
+  }, [records, searchQuery, getStudentName, getStudentCode]);
 
   // Summary Metrics of current dataset
   const metrics = useMemo(() => {
@@ -184,8 +223,8 @@ function AttendanceHistoryPageContent() {
 
       const rows = filteredRecords.map((r) => {
         const dateFormatted = new Date(r.date).toLocaleDateString('vi-VN');
-        const studentName = r.student?.full_name || 'N/A';
-        const studentCode = r.student?.student_code || r.student?.student_id || 'BH-ID';
+        const studentName = getStudentName(r);
+        const studentCode = getStudentCode(r);
         const className = r.class?.name || 'N/A';
         const status = statusLabels[r.status] || r.status;
         const note = r.notes || r.remarks || '';
@@ -221,7 +260,7 @@ function AttendanceHistoryPageContent() {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: any; label: string; icon: any }> = {
       present: { variant: 'success', label: 'Có mặt', icon: CheckCircleIcon },
-      absent: { variant: 'danger', label: 'Vắng', icon: XCircleIcon },
+      absent: { variant: 'danger', label: 'Vắng mặt', icon: XCircleIcon },
       late: { variant: 'warning', label: 'Đi muộn', icon: ClockIcon },
       excused: { variant: 'info', label: 'Có phép', icon: ExclamationCircleIcon },
     };
@@ -231,7 +270,7 @@ function AttendanceHistoryPageContent() {
     return (
       <Badge
         variant={config.variant}
-        className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-xs inline-flex items-center gap-1.5"
+        className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-xs inline-flex items-center gap-1.5 whitespace-nowrap"
       >
         <Icon className="w-3.5 h-3.5" />
         <span>{config.label}</span>
@@ -334,18 +373,16 @@ function AttendanceHistoryPageContent() {
                 <span className="hidden sm:inline">Làm mới</span>
               </Button>
 
-              {!isStudent && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleExportCSV}
-                  disabled={exporting || filteredRecords.length === 0}
-                  className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-3 sm:px-4 text-xs font-black uppercase tracking-wider shadow-sm shadow-emerald-500/20 cursor-pointer"
-                >
-                  <ArrowDownTrayIcon className="w-3.5 h-3.5 mr-1.5" />
-                  <span>Xuất CSV</span>
-                </Button>
-              )}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleExportCSV}
+                disabled={exporting || filteredRecords.length === 0}
+                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-3 sm:px-4 text-xs font-black uppercase tracking-wider shadow-sm shadow-emerald-500/20 cursor-pointer"
+              >
+                <ArrowDownTrayIcon className="w-3.5 h-3.5 mr-1.5" />
+                <span>Xuất CSV</span>
+              </Button>
             </div>
           </div>
 
@@ -412,29 +449,23 @@ function AttendanceHistoryPageContent() {
 
         {/* ── RESPONSIVE FILTERS PANEL ── */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-3.5 sm:p-4 shadow-sm space-y-3">
-          <div
-            className={cn(
-              'grid gap-2.5 sm:gap-3',
-              isStudent ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
-            )}
-          >
-            {!isStudent && (
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                  {t('common.search')}
-                </label>
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-                  <Input
-                    type="text"
-                    placeholder="Tên học sinh, mã HS..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-bold"
-                  />
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            {/* Search Input (Active for all users to search student or class) */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                {t('common.search')}
+              </label>
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <Input
+                  type="text"
+                  placeholder="Tên học sinh, mã HS, lớp..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-bold"
+                />
               </div>
-            )}
+            </div>
 
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
@@ -577,12 +608,15 @@ function AttendanceHistoryPageContent() {
                   const isLate = record.status === 'late';
                   const noteText = record.notes || record.remarks;
                   const weekday = getWeekdayName(record.date);
+                  const studentName = getStudentName(record);
+                  const studentCode = getStudentCode(record);
 
                   return (
                     <div
                       key={record.id}
+                      onClick={() => setSelectedRecord(record)}
                       className={cn(
-                        'bg-white dark:bg-stone-900 p-3.5 rounded-2xl border shadow-xs transition-all space-y-2.5',
+                        'bg-white dark:bg-stone-900 p-4 rounded-2xl border shadow-xs transition-all space-y-3 cursor-pointer hover:shadow-md',
                         isPresent
                           ? 'border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/10'
                           : isAbsent
@@ -594,33 +628,23 @@ function AttendanceHistoryPageContent() {
                     >
                       {/* Top Header: Student Info + Status Badge */}
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          {!isStudent && (
-                            <div className="w-9 h-9 rounded-xl bg-stone-100 dark:bg-stone-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs shrink-0 uppercase">
-                              {record.student?.full_name?.substring(0, 2) || 'HS'}
-                            </div>
-                          )}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-black text-xs shrink-0 uppercase border border-emerald-300/30">
+                            {studentName.substring(0, 2)}
+                          </div>
                           <div className="min-w-0">
                             <div className="font-black text-stone-900 dark:text-white text-sm uppercase tracking-tight truncate">
-                              {isStudent ? (
-                                <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
-                                  <AcademicCapIcon className="w-4 h-4" />
-                                  Lớp {record.class?.name || '10A1'}
-                                </span>
-                              ) : (
-                                record.student?.full_name || 'Học sinh'
-                              )}
+                              {studentName}
                             </div>
-                            {!isStudent && (
-                              <div className="text-[10px] font-bold text-stone-400 font-mono flex items-center gap-1">
-                                <UserCircleIcon className="w-3 h-3" />
-                                <span>
-                                  {record.student?.student_code ||
-                                    record.student?.student_id ||
-                                    'BH-ID'}
-                                </span>
-                              </div>
-                            )}
+                            <div className="text-[10px] font-bold text-stone-400 font-mono flex items-center gap-1.5 mt-0.5">
+                              <span className="px-1.5 py-0.2 rounded bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400">
+                                {studentCode}
+                              </span>
+                              <span>•</span>
+                              <span className="text-emerald-600 dark:text-emerald-400 font-bold uppercase">
+                                {record.class?.name || '10A1'}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
@@ -629,31 +653,28 @@ function AttendanceHistoryPageContent() {
 
                       {/* Middle Row: Date & Class */}
                       <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-100 dark:border-white/5 text-xs">
-                        <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
-                          <CalendarIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                          <span className="font-bold">
+                        <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300 font-medium">
+                          <CalendarIcon className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span className="font-bold font-mono">
                             {new Date(record.date).toLocaleDateString('vi-VN', {
                               day: '2-digit',
                               month: '2-digit',
                               year: 'numeric',
                             })}
                           </span>
-                          <span className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-500 font-semibold text-[10px]">
+                          <span className="px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 font-bold text-[10px]">
                             {weekday}
                           </span>
                         </div>
-                        {!isStudent && (
-                          <div className="flex items-center gap-1 text-stone-600 dark:text-stone-300 truncate font-bold uppercase text-[11px]">
-                            <AcademicCapIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                            <span>{record.class?.name || 'Lớp học'}</span>
-                          </div>
-                        )}
+                        <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1">
+                          Chi tiết <EyeIcon className="w-3.5 h-3.5" />
+                        </span>
                       </div>
 
                       {/* Notes (if any) */}
                       {noteText && (
-                        <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800/80 border border-stone-100 dark:border-white/5 flex items-start gap-1.5 text-xs text-stone-600 dark:text-stone-300">
-                          <DocumentTextIcon className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                        <div className="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/80 border border-stone-100 dark:border-white/5 flex items-start gap-2 text-xs text-stone-600 dark:text-stone-300">
+                          <DocumentTextIcon className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                           <span className="italic">{noteText}</span>
                         </div>
                       )}
@@ -677,22 +698,23 @@ function AttendanceHistoryPageContent() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-stone-50/90 dark:bg-stone-800/80 border-b border-stone-100 dark:border-white/5">
-                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
+                        <th className="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
                           {t('attendance.history.table.time')}
                         </th>
-                        {!isStudent && (
-                          <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
-                            {t('attendance.history.table.student')}
-                          </th>
-                        )}
-                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
+                        <th className="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
+                          {t('attendance.history.table.student')}
+                        </th>
+                        <th className="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
                           {t('attendance.history.table.class')}
                         </th>
-                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400 text-center">
+                        <th className="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400 text-center">
                           {t('attendance.history.table.status')}
                         </th>
-                        <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
+                        <th className="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400">
                           {t('attendance.history.table.notes')}
+                        </th>
+                        <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-wider text-stone-400 text-center">
+                          Thao tác
                         </th>
                       </tr>
                     </thead>
@@ -700,13 +722,15 @@ function AttendanceHistoryPageContent() {
                       {filteredRecords.map((record) => {
                         const noteText = record.notes || record.remarks;
                         const weekday = getWeekdayName(record.date);
+                        const studentName = getStudentName(record);
+                        const studentCode = getStudentCode(record);
 
                         return (
                           <tr
                             key={record.id}
                             className="hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-colors group"
                           >
-                            <td className="px-6 py-4">
+                            <td className="px-5 py-4">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-black text-stone-900 dark:text-white uppercase font-mono">
                                   {new Date(record.date).toLocaleDateString('vi-VN', {
@@ -715,36 +739,31 @@ function AttendanceHistoryPageContent() {
                                     year: 'numeric',
                                   })}
                                 </span>
-                                <span className="px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-500 font-bold text-[10px] uppercase">
+                                <span className="px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 font-bold text-[10px] uppercase">
                                   {weekday}
                                 </span>
                               </div>
                             </td>
 
-                            {!isStudent && (
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-2.5">
-                                  <div className="w-8 h-8 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-xs uppercase shrink-0">
-                                    {record.student?.full_name?.substring(0, 2) || 'HS'}
+                            {/* ALWAYS DISPLAY STUDENT NAME & CODE */}
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-black text-xs uppercase shrink-0 border border-emerald-300/30">
+                                  {studentName.substring(0, 2)}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-xs font-black text-stone-900 dark:text-white uppercase tracking-tight truncate">
+                                    {studentName}
                                   </div>
-                                  <div className="min-w-0">
-                                    <div className="text-xs font-black text-stone-900 dark:text-white uppercase tracking-tight truncate">
-                                      {record.student?.full_name || 'Học sinh'}
-                                    </div>
-                                    <div className="text-[10px] font-mono text-stone-400 flex items-center gap-1">
-                                      <UserCircleIcon className="w-3 h-3" />
-                                      <span>
-                                        {record.student?.student_code ||
-                                          record.student?.student_id ||
-                                          'BH-ID'}
-                                      </span>
-                                    </div>
+                                  <div className="text-[10px] font-mono text-stone-400 flex items-center gap-1 mt-0.5">
+                                    <UserCircleIcon className="w-3 h-3" />
+                                    <span>{studentCode}</span>
                                   </div>
                                 </div>
-                              </td>
-                            )}
+                              </div>
+                            </td>
 
-                            <td className="px-6 py-4">
+                            <td className="px-5 py-4">
                               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-stone-100 dark:bg-stone-800/80 text-stone-800 dark:text-stone-200 border border-stone-200/50 dark:border-white/5">
                                 <AcademicCapIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 <span className="text-xs font-black uppercase">
@@ -753,11 +772,11 @@ function AttendanceHistoryPageContent() {
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 text-center">
+                            <td className="px-5 py-4 text-center">
                               {getStatusBadge(record.status)}
                             </td>
 
-                            <td className="px-6 py-4">
+                            <td className="px-5 py-4">
                               <div className="flex items-center gap-1.5">
                                 <DocumentTextIcon
                                   className={cn(
@@ -769,7 +788,7 @@ function AttendanceHistoryPageContent() {
                                 />
                                 <span
                                   className={cn(
-                                    'text-xs max-w-[240px] truncate',
+                                    'text-xs max-w-[220px] truncate',
                                     noteText
                                       ? 'text-stone-700 dark:text-stone-300'
                                       : 'text-stone-400 dark:text-stone-500 italic'
@@ -778,6 +797,17 @@ function AttendanceHistoryPageContent() {
                                   {noteText || 'Không có ghi chú'}
                                 </span>
                               </div>
+                            </td>
+
+                            <td className="px-4 py-4 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedRecord(record)}
+                                className="p-1.5 rounded-lg bg-stone-100 hover:bg-emerald-50 dark:bg-stone-800 dark:hover:bg-emerald-950/40 text-stone-600 hover:text-emerald-600 dark:text-stone-300 dark:hover:text-emerald-400 transition-all cursor-pointer shadow-xs"
+                                title="Xem chi tiết bản ghi điểm danh"
+                              >
+                                <EyeIcon className="w-4 h-4" />
+                              </button>
                             </td>
                           </tr>
                         );
@@ -828,6 +858,115 @@ function AttendanceHistoryPageContent() {
           )}
         </div>
       </div>
+
+      {/* ── DETAILED ATTENDANCE RECORD MODAL ── */}
+      {selectedRecord && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div
+            className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-scale-in relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
+
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-white/5 relative z-10">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                  <InformationCircleIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-stone-900 dark:text-white">
+                    Chi tiết điểm danh
+                  </h3>
+                  <p className="text-[11px] text-stone-400 font-medium">
+                    Thông tin phiên điểm danh của học sinh
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedRecord(null)}
+                className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-500 dark:text-stone-400 transition-all cursor-pointer"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Student Profile Card in Modal */}
+            <div className="p-4 bg-stone-50 dark:bg-stone-800/60 rounded-2xl border border-stone-200/60 dark:border-white/5 flex items-center justify-between gap-3 relative z-10">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-sm uppercase shadow-sm shrink-0">
+                  {getStudentName(selectedRecord).substring(0, 2)}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm sm:text-base font-black text-stone-900 dark:text-white uppercase tracking-tight truncate">
+                    {getStudentName(selectedRecord)}
+                  </div>
+                  <div className="text-xs font-mono text-stone-400 flex items-center gap-1.5 mt-0.5">
+                    <UserCircleIcon className="w-3.5 h-3.5 text-stone-400" />
+                    <span>Mã HS: {getStudentCode(selectedRecord)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="shrink-0">{getStatusBadge(selectedRecord.status)}</div>
+            </div>
+
+            {/* Attendance Details Grid */}
+            <div className="grid grid-cols-2 gap-3 relative z-10 text-xs">
+              <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-100 dark:border-white/5 space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-stone-400 flex items-center gap-1">
+                  <CalendarIcon className="w-3.5 h-3.5" /> Ngày điểm danh
+                </span>
+                <p className="font-bold text-stone-900 dark:text-white text-sm">
+                  {new Date(selectedRecord.date).toLocaleDateString('vi-VN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })}
+                </p>
+                <p className="text-[10px] text-stone-400 uppercase font-semibold">
+                  {getWeekdayName(selectedRecord.date)}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-100 dark:border-white/5 space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-stone-400 flex items-center gap-1">
+                  <AcademicCapIcon className="w-3.5 h-3.5" /> Lớp học
+                </span>
+                <p className="font-black text-emerald-600 dark:text-emerald-400 text-sm uppercase">
+                  {selectedRecord.class?.name || '10A1'}
+                </p>
+                <p className="text-[10px] text-stone-400 uppercase font-semibold">
+                  Trung tâm GD Bùi Hoàng
+                </p>
+              </div>
+            </div>
+
+            {/* Notes Section */}
+            <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-100 dark:border-white/5 space-y-1.5 relative z-10">
+              <span className="text-[10px] font-black uppercase tracking-wider text-stone-400 flex items-center gap-1">
+                <DocumentTextIcon className="w-3.5 h-3.5" /> Ghi chú từ giáo viên
+              </span>
+              <p className="text-xs text-stone-700 dark:text-stone-300 italic leading-relaxed">
+                {selectedRecord.notes ||
+                  selectedRecord.remarks ||
+                  'Không có ghi chú đặc biệt cho buổi học này.'}
+              </p>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex justify-end pt-2 relative z-10">
+              <Button
+                variant="secondary"
+                onClick={() => setSelectedRecord(null)}
+                className="rounded-xl px-5 h-9 font-bold uppercase text-xs cursor-pointer"
+              >
+                Đóng
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
