@@ -23,6 +23,7 @@ import {
   LazyHocBaDocument as HocBaDocument,
   type TranscriptData,
 } from '@/components/pdf/LazyPDF';
+import { toast } from 'react-hot-toast';
 
 interface AcademicYear {
   id: string;
@@ -389,7 +390,7 @@ Trung tâm xin gửi phiếu kết quả học tập kỳ ${semLabel} (${yearNam
 (Mọi thắc mắc xin vui lòng liên hệ Hotline trung tâm: 0899 060 686).`;
 
                   navigator.clipboard.writeText(textToCopy);
-                  alert('Đã sao chép mẫu tin nhắn Zalo gửi phụ huynh!');
+                  toast.success('Đã sao chép mẫu tin nhắn Zalo gửi phụ huynh!');
                 }}
                 className="px-5 py-2.5 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-500/30 rounded-xl font-bold uppercase tracking-wider text-xs hover:bg-amber-100 transition-all flex items-center gap-2 cursor-pointer"
               >

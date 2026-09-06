@@ -1,29 +1,34 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { apiFetch } from '@/lib/api/client';
 import { Card, CardBody } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProfile } from '@/hooks/useProfile';
 import {
   GraduationCap,
-  Search,
   TrendingUp,
   Award,
-  Star,
   Users,
   BookOpen,
   RefreshCw,
+  ArrowLeft,
+  FileText,
+  ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import { AcademicMatrix } from '@/components/Academic/AcademicMatrix';
 
 export default function TranscriptsPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { profile } = useProfile();
-  const { isAdmin, isStudent, isParent, loading: permsLoading } = usePermissions();
+  const { isStudent, loading: permsLoading } = usePermissions();
 
   // State
   const [classes, setClasses] = useState<any[]>([]);
@@ -87,7 +92,7 @@ export default function TranscriptsPage() {
     loadGrades();
   }, [selectedStudent]);
 
-  // Handle URL Parameters
+  // Handle URL Parameters & Student auto-select
   useEffect(() => {
     if (!permsLoading) {
       const qStudentId = searchParams.get('student_id');
@@ -95,7 +100,7 @@ export default function TranscriptsPage() {
       if (qClassId) setSelectedClass(qClassId);
       if (qStudentId) setSelectedStudent(qStudentId);
 
-      // Student/Parent Role Auto-selection
+      // Student Role Auto-selection
       if (isStudent && profile?.id) {
         setSelectedStudent(profile.id);
       }
@@ -120,110 +125,173 @@ export default function TranscriptsPage() {
     return Math.max(...scores, 0);
   }, [grades]);
 
-  if (permsLoading) return null;
+  if (permsLoading) {
+    return (
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-amber-500 border-t-transparent rounded-full shadow-lg" />
+      </div>
+    );
+  }
+
+  const currentStudentObj =
+    students.find((s) => s.id === selectedStudent) ||
+    (isStudent && profile
+      ? { full_name: profile.full_name, student_code: (profile as any).student_code || 'BH-ID' }
+      : null);
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 py-10 px-6 lg:px-12">
-      <div className="max-w-[1100px] mx-auto space-y-10 relative">
-        {/* Simplified Top Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-black text-stone-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
-              <GraduationCap className="w-8 h-8 text-amber-500" />
-              Phiếu kết quả học tập
-            </h1>
+    <div className="min-h-screen bg-transparent py-4 sm:py-6 px-3 sm:px-6 lg:px-8 pb-28 md:pb-16 font-Be_Vietnam_Pro">
+      <div className="max-w-[1400px] mx-auto space-y-4 sm:space-y-6 relative z-10">
+        {/* ── HEADER CARD ── */}
+        <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-4 sm:p-6 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+            <div className="flex items-start sm:items-center gap-3 min-w-0">
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/grades')}
+                className="p-2.5 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl text-stone-600 dark:text-stone-300 transition-all cursor-pointer shrink-0 mt-0.5 sm:mt-0"
+                title="Quay lại danh mục Điểm số"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div className="flex items-start sm:items-center gap-2.5 min-w-0">
+                <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-xl md:text-2xl font-black tracking-tight text-stone-900 dark:text-white uppercase leading-tight sm:leading-none break-words">
+                    Phiếu kết quả học tập
+                  </h1>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 line-clamp-2 sm:line-clamp-none">
+                    Hệ thống quản lý và tra cứu bảng điểm học tập tập trung
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions & Official PDF Link */}
             {selectedStudent && (
-              <div className="flex items-center gap-2 mt-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="text-sm font-black text-stone-600 dark:text-stone-300 uppercase tracking-tighter">
-                  {students.find((s) => s.id === selectedStudent)?.full_name ||
-                    profile?.full_name ||
-                    'Học sinh đang chọn'}
-                </p>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <Link
+                  href={`/dashboard/students/${selectedStudent}/transcript`}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm shadow-amber-500/20 transition-all cursor-pointer w-full sm:w-auto"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Xem học bạ & Xuất PDF</span>
+                  <ExternalLink className="w-3 h-3 opacity-70" />
+                </Link>
               </div>
             )}
-            <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] px-1 mt-1">
-              Hệ thống quản lý kết quả học tập tập trung
-            </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex -space-x-3 overflow-hidden">
-              {/* Quick stats badges */}
-              <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
-                <TrendingUp className="w-3 h-3" />
-                Điểm TB: {averageScore > 0 ? averageScore.toFixed(1) : '-'}
+          {/* KPI Summary Bar (Horizontal scroll with touch, clean spacing) */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-2 border-t border-stone-100 dark:border-white/5 text-xs font-black no-scrollbar [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {currentStudentObj && (
+              <div className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>
+                  Học sinh: <strong>{currentStudentObj.full_name}</strong>
+                </span>
               </div>
-              <div className="flex items-center gap-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-amber-500/20">
-                <Award className="w-3 h-3" />
-                Max: {maxScore > 0 ? maxScore.toFixed(1) : '-'}
-              </div>
+            )}
+            <div className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0 border border-stone-200/40 dark:border-white/5 whitespace-nowrap">
+              <Users className="w-3.5 h-3.5 text-stone-500" />
+              <span>
+                Tổng bản ghi điểm:{' '}
+                <strong className="font-mono text-stone-900 dark:text-white">
+                  {grades.length}
+                </strong>
+              </span>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+              <span>
+                Điểm TB:{' '}
+                <strong className="font-mono text-emerald-800 dark:text-emerald-200">
+                  {averageScore > 0 ? averageScore.toFixed(2) : '-'}
+                </strong>
+              </span>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+              <Award className="w-3.5 h-3.5 text-blue-600" />
+              <span>
+                Điểm cao nhất:{' '}
+                <strong className="font-mono text-blue-800 dark:text-blue-200">
+                  {maxScore > 0 ? maxScore.toFixed(1) : '-'}
+                </strong>
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Selection Interface - "Grades Entry" Style */}
-        <Card className="border-none shadow-ultra bg-white dark:bg-stone-900 rounded-[2.5rem] overflow-visible print:hidden">
-          <CardBody className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 px-1">
-                  1. Chọn lớp học
+        {/* ── SELECTION INTERFACE (FOR TEACHER / ADMIN) ── */}
+        {!isStudent && (
+          <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-4 sm:p-5 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Class Selector */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 ml-0.5 flex items-center gap-1">
+                  <BookOpen className="w-3.5 h-3.5" /> 1. Chọn lớp học
                 </label>
-                <div className="relative group">
-                  <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 group-focus-within:text-blue-500 transition-colors" />
-                  <Select
-                    value={selectedClass}
-                    onChange={(e) => {
-                      setSelectedClass(e.target.value);
-                      setSelectedStudent('');
-                      setGrades([]);
-                    }}
-                    className="pl-12 h-14 bg-stone-50 dark:bg-stone-800 border-none rounded-2xl focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-stone-700 dark:text-stone-200"
-                  >
-                    <option value="">Chọn lớp để xem danh sách...</option>
-                    {classes.map((cls) => (
-                      <option key={cls.id} value={cls.id}>
-                        {cls.name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
+                <Select
+                  value={selectedClass}
+                  onChange={(e: any) => {
+                    setSelectedClass(e.target.value);
+                    setSelectedStudent('');
+                    setGrades([]);
+                  }}
+                  className="h-11 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-bold uppercase tracking-tight"
+                >
+                  <option value="">-- Chọn lớp học để xem danh sách --</option>
+                  {classes.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </Select>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 px-1">
-                  2. Chọn học sinh
+              {/* Student Selector */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 ml-0.5 flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" /> 2. Chọn học sinh
                 </label>
-                <div className="relative group">
-                  <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 group-focus-within:text-emerald-500 transition-colors" />
-                  <Select
-                    value={selectedStudent}
-                    onChange={(e) => setSelectedStudent(e.target.value)}
-                    disabled={!selectedClass && !isStudent}
-                    className="pl-12 h-14 bg-stone-50 dark:bg-stone-800 border-none rounded-2xl focus:ring-4 focus:ring-emerald-500/10 transition-all font-bold text-stone-700 dark:text-stone-200 disabled:opacity-50"
-                  >
-                    <option value="">-- Chọn học sinh --</option>
-                    {students.map((student) => (
-                      <option key={student.id} value={student.id}>
-                        {student.full_name || student.name || student.student_code}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
+                <Select
+                  value={selectedStudent}
+                  onChange={(e: any) => setSelectedStudent(e.target.value)}
+                  disabled={!selectedClass}
+                  className="h-11 bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-xl text-xs font-bold uppercase tracking-tight disabled:opacity-50"
+                >
+                  <option value="">
+                    {!selectedClass
+                      ? '-- Vui lòng chọn lớp học trước --'
+                      : '-- Chọn học sinh trong lớp --'}
+                  </option>
+                  {students.map((student) => (
+                    <option key={student.id} value={student.id}>
+                      {student.full_name || student.name}{' '}
+                      {student.student_code ? `(${student.student_code})` : ''}
+                    </option>
+                  ))}
+                </Select>
               </div>
             </div>
-          </CardBody>
-        </Card>
+          </div>
+        )}
 
-        {/* Global Academic Matrix Section */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-lg font-black uppercase tracking-widest text-stone-800 dark:text-white flex items-center gap-3">
-              <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
-              Kết quả học tập chi tiết
+        {/* ── ACADEMIC MATRIX RESULTS SECTION ── */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-base font-black uppercase tracking-wider text-stone-800 dark:text-white flex items-center gap-2">
+              <div className="w-1.5 h-4 bg-amber-500 rounded-full" />
+              Kết quả học tập chi tiết theo năm học & môn học
             </h2>
-            {loading && <RefreshCw className="w-5 h-5 text-stone-300 animate-spin" />}
+            {loading && (
+              <div className="flex items-center gap-1.5 text-xs text-stone-400 font-bold">
+                <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
+                <span>Đang tải...</span>
+              </div>
+            )}
           </div>
 
           <AcademicMatrix grades={grades} />
