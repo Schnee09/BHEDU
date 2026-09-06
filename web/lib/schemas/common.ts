@@ -52,13 +52,15 @@ export function createSortSchema<T extends readonly [string, ...string[]]>(
 // COMMON FIELD SCHEMAS
 // ============================================
 
-/** UUID field */
-export const uuidSchema = z.string().uuid();
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** UUID field (PostgreSQL compliant: supports standard v1-v7 as well as seed/nil UUIDs) */
+export const uuidSchema = z.string().regex(UUID_REGEX, 'Invalid UUID');
 
 /** Optional UUID field */
 export const optionalUuidSchema = z
   .string()
-  .uuid()
+  .regex(UUID_REGEX, 'Invalid UUID')
   .or(z.literal(''))
   .optional()
   .nullable()
