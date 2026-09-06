@@ -330,24 +330,24 @@ function AttendanceHistoryPageContent() {
         {/* ── HEADER CARD ── */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-4 sm:p-5 shadow-sm space-y-3.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
               <button
                 type="button"
                 onClick={() => router.push('/dashboard/attendance')}
-                className="p-2.5 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl text-stone-600 dark:text-stone-300 transition-all cursor-pointer shrink-0"
+                className="p-2 sm:p-2.5 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 rounded-xl text-stone-600 dark:text-stone-300 transition-all cursor-pointer shrink-0 mt-0.5 sm:mt-0"
                 title={t('attendance.mark.backToDashboard')}
               >
                 <ArrowLeftIcon className="w-4 h-4" />
               </button>
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400 shrink-0">
-                  <ClockIcon className="w-5 h-5" />
+              <div className="flex items-start sm:items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5 sm:mt-0">
+                  <ClockIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <h1 className="text-lg sm:text-2xl font-black tracking-tight text-stone-900 dark:text-white uppercase leading-none truncate">
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-xl md:text-2xl font-black tracking-tight text-stone-900 dark:text-white uppercase leading-tight sm:leading-none break-words">
                     {isStudent ? t('attendance.history.title') : t('attendance.history.adminTitle')}
                   </h1>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 truncate max-w-md">
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 line-clamp-2 sm:line-clamp-none max-w-xl">
                     {isStudent
                       ? t('attendance.history.description')
                       : t('attendance.history.adminDescription')}
@@ -357,7 +357,7 @@ function AttendanceHistoryPageContent() {
             </div>
 
             {/* Quick Actions (Export + Refresh + View Toggle) */}
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-1 sm:pt-0">
               {/* View Mode Toggle */}
               <div className="hidden sm:inline-flex p-0.5 bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-200/60 dark:border-white/5">
                 <button
@@ -396,7 +396,9 @@ function AttendanceHistoryPageContent() {
                 className="rounded-xl border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 h-9 px-3 text-xs font-black uppercase tracking-wider cursor-pointer"
                 title="Tải lại dữ liệu"
               >
-                <ArrowPathIcon className={cn('w-3.5 h-3.5 mr-1', loading && 'animate-spin')} />
+                <ArrowPathIcon
+                  className={cn('w-3.5 h-3.5', loading && 'animate-spin', 'sm:mr-1')}
+                />
                 <span className="hidden sm:inline">Làm mới</span>
               </Button>
 
@@ -405,17 +407,17 @@ function AttendanceHistoryPageContent() {
                 size="sm"
                 onClick={handleExportCSV}
                 disabled={exporting || filteredRecords.length === 0}
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-3 sm:px-4 text-xs font-black uppercase tracking-wider shadow-sm shadow-emerald-500/20 cursor-pointer"
+                className="flex-1 sm:flex-initial justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-3 sm:px-4 text-xs font-black uppercase tracking-wider shadow-sm shadow-emerald-500/20 cursor-pointer"
               >
-                <ArrowDownTrayIcon className="w-3.5 h-3.5 mr-1.5" />
-                <span>Xuất CSV</span>
+                <ArrowDownTrayIcon className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                <span className="whitespace-nowrap">Xuất CSV</span>
               </Button>
             </div>
           </div>
 
-          {/* KPI Live Metric Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-2 border-t border-stone-100 dark:border-white/5 text-xs font-black">
-            <div className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0 border border-stone-200/40 dark:border-white/5">
+          {/* KPI Live Metric Bar (Touch scroll with hidden scrollbar) */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-2 border-t border-stone-100 dark:border-white/5 text-xs font-black no-scrollbar [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0 border border-stone-200/40 dark:border-white/5 whitespace-nowrap">
               <UserGroupIcon className="w-3.5 h-3.5 text-stone-500" />
               <span>
                 Tổng bản ghi:{' '}
@@ -424,7 +426,7 @@ function AttendanceHistoryPageContent() {
                 </strong>
               </span>
             </div>
-            <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5 shrink-0">
+            <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
               <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-600" />
               <span>
                 Có mặt:{' '}
@@ -433,7 +435,7 @@ function AttendanceHistoryPageContent() {
                 </strong>
               </span>
             </div>
-            <div className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40 flex items-center gap-1.5 shrink-0">
+            <div className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
               <XCircleIcon className="w-3.5 h-3.5 text-rose-600" />
               <span>
                 Vắng:{' '}
@@ -443,7 +445,7 @@ function AttendanceHistoryPageContent() {
               </span>
             </div>
             {metrics.late > 0 && (
-              <div className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 flex items-center gap-1.5 shrink-0">
+              <div className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                 <ClockIcon className="w-3.5 h-3.5 text-amber-600" />
                 <span>
                   Muộn:{' '}
@@ -454,7 +456,7 @@ function AttendanceHistoryPageContent() {
               </div>
             )}
             {metrics.excused > 0 && (
-              <div className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40 flex items-center gap-1.5 shrink-0">
+              <div className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                 <ExclamationCircleIcon className="w-3.5 h-3.5 text-blue-600" />
                 <span>
                   Có phép:{' '}
@@ -464,7 +466,7 @@ function AttendanceHistoryPageContent() {
                 </span>
               </div>
             )}
-            <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5 shrink-0 ml-auto">
+            <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5 shrink-0 ml-auto whitespace-nowrap">
               <ChartBarIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Tỷ lệ có mặt:</span>
               <strong className="text-emerald-700 dark:text-emerald-300 font-mono text-sm">

@@ -348,8 +348,8 @@ function AttendanceMarkingPageContent() {
 
           {/* Row 2: Live Summary Stats Pill Bar (Compact & Mobile-friendly) */}
           {summary && (
-            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 pt-1 border-t border-stone-100 dark:border-white/5 text-xs font-black">
-              <div className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 pt-1 border-t border-stone-100 dark:border-white/5 text-xs font-black no-scrollbar [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                 <UserGroupIcon className="w-3.5 h-3.5 text-stone-500" />
                 <span>
                   {t('attendance.mark.summary.total')}:{' '}
@@ -358,7 +358,7 @@ function AttendanceMarkingPageContent() {
                   </strong>
                 </span>
               </div>
-              <div className="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center gap-1.5 shrink-0">
+              <div className="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/30 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                 <CheckBadgeIcon className="w-3.5 h-3.5 text-emerald-600" />
                 <span>
                   {t('attendance.mark.summary.present')}:{' '}
@@ -367,7 +367,7 @@ function AttendanceMarkingPageContent() {
                   </strong>
                 </span>
               </div>
-              <div className="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/30 flex items-center gap-1.5 shrink-0">
+              <div className="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/30 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                 <XCircleIcon className="w-3.5 h-3.5 text-rose-600" />
                 <span>
                   {t('attendance.mark.summary.absent')}:{' '}
@@ -377,7 +377,7 @@ function AttendanceMarkingPageContent() {
                 </span>
               </div>
               {summary.unmarkedCount > 0 && (
-                <div className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/30 flex items-center gap-1.5 shrink-0">
+                <div className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/30 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                   <ExclamationCircleIcon className="w-3.5 h-3.5 text-amber-600" />
                   <span>
                     {t('attendance.mark.summary.unmarked')}:{' '}
@@ -387,7 +387,7 @@ function AttendanceMarkingPageContent() {
                   </span>
                 </div>
               )}
-              <div className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/30 flex items-center gap-1.5 shrink-0 ml-auto">
+              <div className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/30 flex items-center gap-1.5 shrink-0 ml-auto whitespace-nowrap">
                 <ChartBarIcon className="w-3.5 h-3.5 text-blue-600" />
                 <span>{summary.attendanceRate}%</span>
               </div>
