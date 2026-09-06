@@ -29,6 +29,7 @@ import {
   ChartBarIcon,
   ChatBubbleLeftRightIcon,
   DocumentDuplicateIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
@@ -291,7 +292,7 @@ function AttendanceMarkingPageContent() {
   });
 
   return (
-    <div className="min-h-screen bg-transparent py-3 sm:py-6 px-2.5 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-transparent py-3 sm:py-6 px-2.5 sm:px-6 lg:px-8 pb-32 md:pb-16">
       <div className="max-w-[1600px] mx-auto space-y-3 sm:space-y-4 relative z-10">
         {/* ── ULTRA-COMPACT UNIFIED HEADER ── */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-3 sm:p-5 shadow-sm space-y-3">
@@ -427,11 +428,9 @@ function AttendanceMarkingPageContent() {
                   value={studentSearch}
                   onChange={(e) => setStudentSearch(e.target.value)}
                   placeholder="Tìm học sinh..."
-                  className="w-full pl-7 pr-2.5 py-1 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-xl text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full pl-8 pr-2.5 py-1 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-xl text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                 />
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">
-                  🔍
-                </span>
+                <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
               </div>
 
               {hasUnsavedChanges && (

@@ -237,57 +237,57 @@ function AttendancePage() {
           </div>
 
           {/* History List */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between px-2">
-              <h2 className="text-xl font-black text-stone-900 tracking-tight flex items-center gap-2">
-                <ClockIcon className="w-6 h-6 text-emerald-500" />
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-base sm:text-lg font-black text-stone-900 dark:text-white tracking-tight flex items-center gap-2">
+                <ClockIcon className="w-5 h-5 text-emerald-500" />
                 {t('attendance.dashboard.history')}
               </h2>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
-                className="px-6 rounded-2xl border-stone-200 bg-white/50 backdrop-blur-sm font-bold uppercase tracking-widest text-[10px]"
+                className="px-4 rounded-xl border-stone-200 dark:border-white/10 bg-white/50 dark:bg-stone-800 font-bold uppercase tracking-wider text-xs"
               >
-                <FunnelIcon className="w-4 h-4 mr-2" />
+                <FunnelIcon className="w-3.5 h-3.5 mr-1.5" />
                 {t('attendance.dashboard.filter')}
               </Button>
             </div>
 
             {showFilters && (
-              <div className="glass-premium rounded-[32px] border border-white/20 p-8 shadow-xl animate-fade-in">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black uppercase tracking-widest text-stone-500 ml-1">
-                      {t('common.date')}
+              <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-4 sm:p-6 shadow-sm animate-fade-in">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                      Từ ngày
                     </label>
                     <Input
                       type="date"
                       value={filters.startDate}
-                      className="rounded-2xl border-stone-200 bg-white/50"
+                      className="rounded-xl border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-white text-xs h-9"
                       onChange={(e) =>
                         setFilters((prev) => ({ ...prev, startDate: e.target.value }))
                       }
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black uppercase tracking-widest text-stone-500 ml-1">
-                      {t('common.date')}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                      Đến ngày
                     </label>
                     <Input
                       type="date"
                       value={filters.endDate}
-                      className="rounded-2xl border-stone-200 bg-white/50"
+                      className="rounded-xl border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-white text-xs h-9"
                       onChange={(e) => setFilters((prev) => ({ ...prev, endDate: e.target.value }))}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black uppercase tracking-widest text-stone-500 ml-1">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
                       {t('common.status')}
                     </label>
                     <Select
                       value={filters.status}
-                      className="rounded-2xl border-stone-200 bg-white/50"
+                      className="rounded-xl border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-white text-xs h-9"
                       onChange={(e: any) =>
                         setFilters((prev) => ({ ...prev, status: e.target.value }))
                       }
@@ -302,24 +302,29 @@ function AttendancePage() {
             )}
 
             {loading ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-32 glass-premium rounded-[32px] animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-24 bg-stone-100 dark:bg-stone-800 rounded-2xl animate-pulse"
+                  />
                 ))}
               </div>
             ) : attendanceRecords.length === 0 ? (
-              <div className="glass-premium rounded-[40px] border-2 border-dashed border-stone-200 p-20 text-center">
+              <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border-2 border-dashed border-stone-200 dark:border-white/10 p-12 text-center">
                 <EmptyState
-                  icon={<CalendarDaysIcon className="w-16 h-16 text-stone-300 mx-auto mb-6" />}
+                  icon={
+                    <CalendarDaysIcon className="w-12 h-12 text-stone-300 dark:text-stone-600 mx-auto mb-4" />
+                  }
                   title={t('common.noData')}
                   description={t('attendance.history.noDataDesc')}
                 />
               </div>
             ) : (
-              <div className="glass-premium rounded-[32px] border border-white/20 shadow-xl overflow-hidden">
+              <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-sm overflow-hidden">
                 <ResponsiveTable
                   mobileView={
-                    <div className="space-y-4 p-4">
+                    <div className="space-y-2.5 p-3">
                       {attendanceRecords.map((record) => (
                         <MobileCard
                           key={record.id}
@@ -342,59 +347,59 @@ function AttendancePage() {
                             { label: t('students.class'), value: record.className },
                             { label: t('common.remarks'), value: record.remarks || '---' },
                           ]}
-                          className="rounded-2xl border-stone-100 shadow-sm"
+                          className="rounded-2xl border-stone-200/80 dark:border-white/10 shadow-xs"
                         />
                       ))}
                     </div>
                   }
                 >
                   <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full text-left">
                       <thead>
-                        <tr className="bg-stone-50/50">
-                          <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-stone-400">
+                        <tr className="bg-stone-50/90 dark:bg-stone-800/80 border-b border-stone-100 dark:border-white/5">
+                          <th className="px-5 py-3 text-left text-[10px] font-black uppercase tracking-wider text-stone-400">
                             {t('common.date')}
                           </th>
-                          <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-stone-400">
+                          <th className="px-5 py-3 text-left text-[10px] font-black uppercase tracking-wider text-stone-400">
                             {t('students.class')}
                           </th>
-                          <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-stone-400">
+                          <th className="px-5 py-3 text-left text-[10px] font-black uppercase tracking-wider text-stone-400">
                             {t('grades.subject')}
                           </th>
-                          <th className="px-8 py-5 text-center text-[10px] font-black uppercase tracking-widest text-stone-400">
+                          <th className="px-5 py-3 text-center text-[10px] font-black uppercase tracking-wider text-stone-400">
                             {t('common.status')}
                           </th>
-                          <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-stone-400">
+                          <th className="px-5 py-3 text-left text-[10px] font-black uppercase tracking-wider text-stone-400">
                             {t('common.remarks')}
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-stone-50">
+                      <tbody className="divide-y divide-stone-100 dark:divide-white/5">
                         {attendanceRecords.map((record) => (
                           <tr
                             key={record.id}
-                            className="hover:bg-emerald-50/30 transition-colors group"
+                            className="hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-colors group"
                           >
-                            <td className="px-8 py-6 text-sm font-bold text-stone-500">
+                            <td className="px-5 py-3.5 text-xs font-bold text-stone-600 dark:text-stone-300">
                               {record.date ? format(new Date(record.date), 'dd/MM/yyyy') : '---'}
                             </td>
-                            <td className="px-8 py-6 text-sm font-bold text-stone-900">
+                            <td className="px-5 py-3.5 text-xs font-bold text-stone-900 dark:text-white uppercase">
                               {record.className}
                             </td>
-                            <td className="px-8 py-6 text-sm font-bold text-stone-600">
+                            <td className="px-5 py-3.5 text-xs font-bold text-stone-600 dark:text-stone-300">
                               {record.subjectName || '-'}
                             </td>
-                            <td className="px-8 py-6 text-center">
+                            <td className="px-5 py-3.5 text-center">
                               <Badge
                                 variant={record.status === 'present' ? 'success' : 'danger'}
-                                className="rounded-full px-4 py-1 font-black uppercase tracking-widest text-[9px]"
+                                className="rounded-full px-3 py-0.5 font-black uppercase tracking-wider text-[9px]"
                               >
                                 {record.status === 'present'
                                   ? t('attendance.present')
                                   : t('attendance.absent')}
                               </Badge>
                             </td>
-                            <td className="px-8 py-6 text-sm text-stone-400 italic">
+                            <td className="px-5 py-3.5 text-xs text-stone-400 italic">
                               {record.remarks || '-'}
                             </td>
                           </tr>
@@ -437,38 +442,38 @@ function AttendancePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-10">
-      <div className="max-w-[1600px] mx-auto space-y-10 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 glass-premium p-6 md:p-10 rounded-[40px] border border-emerald-500/10 shadow-2xl relative overflow-hidden animate-fade-in">
+    <div className="min-h-screen bg-transparent py-4 sm:py-8 px-3 sm:px-6 lg:px-10 pb-28 md:pb-12">
+      <div className="max-w-[1600px] mx-auto space-y-6 sm:space-y-8 relative z-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 glass-premium p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-emerald-500/10 shadow-2xl relative overflow-hidden animate-fade-in">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="relative z-10">
-            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-stone-900 flex items-center gap-4">
-              <div className="p-3 bg-emerald-500/10 rounded-2xl">
-                <AcademicCapIcon className="w-8 h-8 text-emerald-600" />
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tighter text-stone-900 dark:text-white flex items-center gap-3 sm:gap-4">
+              <div className="p-2.5 sm:p-3 bg-emerald-500/10 rounded-2xl">
+                <AcademicCapIcon className="w-6 h-6 sm:w-8 h-8 text-emerald-600 dark:text-emerald-400" />
               </div>
               {t('attendance.dashboard.title')}
             </h1>
-            <p className="mt-4 text-sm font-medium text-stone-500 max-w-lg leading-relaxed">
+            <p className="mt-3 text-xs sm:text-sm font-medium text-stone-500 dark:text-stone-400 max-w-lg leading-relaxed">
               {t('attendance.dashboard.description')}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           {sections.map((section) => (
             <Link key={section.href} href={section.href} className="group">
-              <Card className="h-full glass-premium hover-up transition-all border border-white/20 shadow-xl rounded-[32px] overflow-hidden relative">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-stone-100 group-hover:bg-emerald-500 transition-colors" />
-                <CardBody className="flex flex-col items-center text-center p-10 relative">
+              <Card className="h-full glass-premium hover-up transition-all border border-stone-200/80 dark:border-white/10 shadow-xl rounded-2xl sm:rounded-3xl overflow-hidden relative">
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-stone-100 dark:bg-stone-800 group-hover:bg-emerald-500 transition-colors" />
+                <CardBody className="flex flex-col items-center text-center p-6 sm:p-8 relative">
                   <div
-                    className={`p-5 rounded-[24px] mb-6 transition-all group-hover:scale-110 border ${section.color}`}
+                    className={`p-4 sm:p-5 rounded-2xl mb-4 sm:mb-6 transition-all group-hover:scale-110 border ${section.color}`}
                   >
-                    <section.icon className="w-10 h-10" />
+                    <section.icon className="w-8 h-8 sm:w-10 sm:h-10" />
                   </div>
-                  <h3 className="text-xl font-black text-stone-900 mb-4 tracking-tight uppercase">
+                  <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white mb-2 tracking-tight uppercase">
                     {section.title}
                   </h3>
-                  <p className="text-stone-500 text-sm font-medium leading-relaxed">
+                  <p className="text-stone-500 dark:text-stone-400 text-xs sm:text-sm font-medium leading-relaxed">
                     {section.description}
                   </p>
                 </CardBody>
@@ -479,35 +484,36 @@ function AttendancePage() {
 
         {/* Teacher Recent Activity */}
         {(isTeacher || isStaff || isAdmin) && recentClasses.length > 0 && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-black text-stone-900 tracking-tight flex items-center gap-3 px-2">
-              <ClipboardDocumentCheckIcon className="w-6 h-6 text-emerald-500" />
+          <div className="space-y-4 sm:space-y-6">
+            <h2 className="text-base sm:text-lg font-black text-stone-900 dark:text-white tracking-tight flex items-center gap-2.5 px-1">
+              <ClipboardDocumentCheckIcon className="w-5 h-5 text-emerald-500" />
               {t('attendance.dashboard.myClasses')}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {recentClasses.map((cls) => (
                 <div
                   key={cls.id}
-                  className="glass-premium p-6 rounded-[28px] border border-white/20 shadow-lg flex items-center justify-between hover-up transition-all group"
+                  className="glass-premium p-4 sm:p-5 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-sm flex items-center justify-between hover-up transition-all group"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-stone-100 rounded-2xl flex items-center justify-center font-black text-stone-400 group-hover:bg-emerald-500 group-hover:text-white transition-all uppercase tracking-tighter">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 bg-stone-100 dark:bg-stone-800 rounded-xl flex items-center justify-center font-black text-stone-500 dark:text-stone-400 group-hover:bg-emerald-500 group-hover:text-white transition-all uppercase tracking-tight text-xs shrink-0">
                       {cls.name.substring(0, 2)}
                     </div>
-                    <div>
-                      <p className="font-black text-stone-900 tracking-tight uppercase text-sm">
+                    <div className="min-w-0">
+                      <p className="font-black text-stone-900 dark:text-white tracking-tight uppercase text-xs truncate">
                         {cls.name}
                       </p>
-                      <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest truncate">
                         {cls.subject_name || 'Instruction'}
                       </p>
                     </div>
                   </div>
                   <Link
                     href={`/dashboard/attendance/mark?classId=${cls.id}`}
-                    className="p-3 bg-stone-50 text-stone-400 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                    className="p-2.5 bg-stone-50 dark:bg-stone-800 text-stone-500 dark:text-stone-300 rounded-xl hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white transition-all shadow-xs shrink-0"
+                    title="Điểm danh lớp này"
                   >
-                    <PencilSquareIcon className="w-5 h-5" />
+                    <PencilSquareIcon className="w-4 h-4" />
                   </Link>
                 </div>
               ))}
