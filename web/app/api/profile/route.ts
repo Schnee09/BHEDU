@@ -167,6 +167,26 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Không tìm thấy hồ sơ' }, { status: 404 });
     }
 
+    // 5. Record activity in audit_logs
+    try {
+      const { error: logErr } = await serviceSupabase.from('audit_logs').insert({
+        user_id: updated.id,
+        user_email: user.email,
+        action: 'user.updated',
+        resource_type: 'profile',
+        resource_id: updated.id,
+        new_data: {
+          full_name: updated.full_name,
+          phone: updated.phone,
+          address: updated.address,
+          date_of_birth: updated.date_of_birth,
+          personal_email: updated.personal_email,
+        },
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record profile update audit log', { auditErr });
+    }
+
     return NextResponse.json({ profile: updated });
   } catch (err: any) {
     logger.error('Unexpected error in PATCH /api/profile:', err);

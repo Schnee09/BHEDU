@@ -21,7 +21,7 @@ const eventSchema = z.object({
 export const PUT = createApiHandler(
   {
     requireAuth: true,
-    allowedRoles: ['super_admin', 'admin'],
+    allowedRoles: ['super_admin', 'owner', 'admin', 'staff', 'teacher'],
     bodySchema: eventSchema,
   },
   async ({ body, params }) => {
@@ -44,10 +44,12 @@ export const PUT = createApiHandler(
   }
 );
 
+export const PATCH = PUT;
+
 export const DELETE = createApiHandler(
   {
     requireAuth: true,
-    allowedRoles: ['super_admin', 'admin'],
+    allowedRoles: ['super_admin', 'owner', 'admin', 'staff', 'teacher'],
   },
   async ({ params }) => {
     const { id } = params;

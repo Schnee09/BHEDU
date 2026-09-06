@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { createClientFromRequest } from '@/lib/supabase/server';
 import { teacherAuth } from '@/lib/auth/adminAuth';
 import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
+import { settingsService } from '@/lib/services/settingsService';
 
 // Vietnamese Academic Classification Function
 function getVietnameseClassification(
@@ -93,39 +94,55 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const { searchParams } = new URL(request.url);
+    const identifier = resolvedParams.id;
     const academicYearId = searchParams.get('academic_year_id');
-    const semester = searchParams.get('semester') || 'HK1';
+    const paramSemester = searchParams.get('semester');
 
-    // 1. Get student profile info
-    const { data: student, error: studentError } = await supabase
+    // 1. Get student profile info with flexible lookup
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      identifier
+    );
+
+    let studentQuery = supabase
       .from('profiles')
-      .select('id, full_name, student_id, student_code, date_of_birth, gender, grade_level, email')
-      .eq('id', resolvedParams.id)
-      .single();
+      .select(
+        'id, full_name, student_id, student_code, date_of_birth, gender, grade_level, email, role'
+      )
+      .eq('role', 'student');
+
+    if (isUUID) {
+      studentQuery = studentQuery.eq('id', identifier);
+    } else {
+      studentQuery = studentQuery.or(
+        `student_code.ilike.${identifier},student_id.ilike.${identifier},phone.eq.${identifier}`
+      );
+    }
+
+    const { data: student, error: studentError } = await studentQuery.maybeSingle();
 
     if (studentError || !student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    // 2. Get academic year info
+    const realStudentId = student.id;
+
+    // 2. Get active academic context
+    const { academicYear: currentAY, semester: activeSem } =
+      await settingsService.getAcademicContext();
+    const semester = paramSemester || activeSem.code || 'HK1';
+
     let academicYear: { id: string; name: string } | null = null;
     if (academicYearId) {
       const { data: yr } = await supabase
         .from('academic_years')
         .select('id, name')
         .eq('id', academicYearId)
-        .single();
+        .maybeSingle();
       academicYear = yr;
     }
 
     if (!academicYear) {
-      const { data: latestYr } = await supabase
-        .from('academic_years')
-        .select('id, name')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      academicYear = latestYr || { id: 'default', name: 'Năm học hiện tại' };
+      academicYear = { id: currentAY.id, name: currentAY.name };
     }
 
     // 3. Get student's class
@@ -143,8 +160,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         )
       `
       )
-      .eq('student_id', resolvedParams.id)
-      .eq('status', 'enrolled')
+      .eq('student_id', realStudentId)
+      .in('status', ['enrolled', 'active'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -166,7 +183,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         subject:subjects(id, name, code)
       `
       )
-      .eq('student_id', resolvedParams.id);
+      .eq('student_id', realStudentId);
 
     if (academicYearId && academicYearId !== 'all') {
       gradesQuery = gradesQuery.eq('academic_year_id', academicYearId);
@@ -183,10 +200,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     // 5. Get conduct grade
-    let conductQuery = supabase
-      .from('conduct_grades')
-      .select('*')
-      .eq('student_id', resolvedParams.id);
+    let conductQuery = supabase.from('conduct_grades').select('*').eq('student_id', realStudentId);
 
     if (academicYearId && academicYearId !== 'all') {
       conductQuery = conductQuery.eq('academic_year_id', academicYearId);
@@ -202,7 +216,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const { data: attendance } = await supabase
       .from('attendance')
       .select('id, status, date')
-      .eq('student_id', resolvedParams.id);
+      .eq('student_id', realStudentId);
 
     // 7. Process grades by subject and component type
     const subjectMap = new Map<string, any>();

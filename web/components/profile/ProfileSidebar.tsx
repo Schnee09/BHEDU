@@ -6,30 +6,39 @@ import { getRoleBadgeClass, getRoleLabel } from '@/lib/role-utils';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/useToast';
-import { Camera, Trash2, Lock, Building2, Calendar, Mail, Hash, Copy, Check, AlertCircle } from 'lucide-react';
+import {
+  Camera,
+  Trash2,
+  Building2,
+  Calendar,
+  Mail,
+  Hash,
+  Copy,
+  Check,
+  AlertCircle,
+} from 'lucide-react';
 
 interface ProfileSidebarProps {
   profile: any;
-  onPasswordChangeClick: () => void;
   refreshProfile: () => Promise<void>;
 }
 
 const ROLE_AVATAR_GRADIENT: Record<string, string> = {
   super_admin: 'from-slate-700 to-slate-900',
-  admin:       'from-violet-600 to-indigo-700',
-  teacher:     'from-blue-500 to-cyan-600',
-  student:     'from-emerald-500 to-teal-600',
-  parent:      'from-amber-500 to-orange-500',
-  tutor:       'from-rose-500 to-pink-600',
+  admin: 'from-violet-600 to-indigo-700',
+  teacher: 'from-blue-500 to-cyan-600',
+  student: 'from-emerald-500 to-teal-600',
+  parent: 'from-amber-500 to-orange-500',
+  tutor: 'from-rose-500 to-pink-600',
 };
 
 // Profile completeness: which fields count and their labels
 const COMPLETENESS_FIELDS = [
-  { key: 'full_name',       label: 'Họ và tên' },
-  { key: 'photo_url',      label: 'Ảnh đại diện' },
-  { key: 'phone',          label: 'Số điện thoại' },
-  { key: 'date_of_birth',  label: 'Ngày sinh' },
-  { key: 'address',        label: 'Địa chỉ' },
+  { key: 'full_name', label: 'Họ và tên' },
+  { key: 'photo_url', label: 'Ảnh đại diện' },
+  { key: 'phone', label: 'Số điện thoại' },
+  { key: 'date_of_birth', label: 'Ngày sinh' },
+  { key: 'address', label: 'Địa chỉ' },
   { key: 'personal_email', label: 'Email cá nhân' },
 ];
 
@@ -44,7 +53,7 @@ function useCopyField() {
   return { copied, copy };
 }
 
-export default function ProfileSidebar({ profile, onPasswordChangeClick, refreshProfile }: ProfileSidebarProps) {
+export default function ProfileSidebar({ profile, refreshProfile }: ProfileSidebarProps) {
   const toast = useToast();
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,7 +80,10 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
     mx.set((e.clientX - r.left) / r.width - 0.5);
     my.set((e.clientY - r.top) / r.height - 0.5);
   };
-  const handleMouseLeave = () => { mx.set(0); my.set(0); };
+  const handleMouseLeave = () => {
+    mx.set(0);
+    my.set(0);
+  };
 
   // Avatar upload via Server Endpoint with instant optimistic preview
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,7 +105,9 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
     setUploading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const headers: Record<string, string> = {};
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -129,7 +143,9 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
     setRemoving(true);
     setPreviewUrl(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const headers: Record<string, string> = {};
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -155,22 +171,31 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
   };
 
   // Completeness
-  const filledFields = COMPLETENESS_FIELDS.filter(f => {
+  const filledFields = COMPLETENESS_FIELDS.filter((f) => {
     const v = profile?.[f.key];
     return v && String(v).trim().length > 0;
   });
   const completeness = Math.round((filledFields.length / COMPLETENESS_FIELDS.length) * 100);
-  const missingFields = COMPLETENESS_FIELDS.filter(f => {
+  const missingFields = COMPLETENESS_FIELDS.filter((f) => {
     const v = profile?.[f.key];
     return !v || String(v).trim().length === 0;
   });
 
   const initials = profile?.full_name
-    ? profile.full_name.split(' ').map((n: string) => n[0]).slice(-2).join('').toUpperCase()
+    ? profile.full_name
+        .split(' ')
+        .map((n: string) => n[0])
+        .slice(-2)
+        .join('')
+        .toUpperCase()
     : '?';
   const avatarGradient = ROLE_AVATAR_GRADIENT[profile?.role] ?? 'from-stone-500 to-stone-700';
   const joinDate = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    ? new Date(profile.created_at).toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
     : null;
 
   // ── Role-aware identifier & unit ─────────────────────────────────
@@ -179,7 +204,8 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
     const teacherDept =
       profile?.teacher_profiles?.[0]?.department ||
       profile?.teacher_profiles?.department ||
-      profile?.department || null;
+      profile?.department ||
+      null;
 
     switch (role) {
       case 'student':
@@ -213,9 +239,13 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
         return {
           identifier: {
             label: 'Mã phụ huynh',
-            value: profile?.id?.slice(0, 8).toUpperCase() || null,
+            value:
+              profile?.parent_code ||
+              (profile?.phone ? `PH-${profile.phone.replace(/\D/g, '').slice(-4)}` : null),
             copyKey: 'parent_id',
-            copyValue: profile?.id || null,
+            copyValue:
+              profile?.parent_code ||
+              (profile?.phone ? `PH-${profile.phone.replace(/\D/g, '').slice(-4)}` : null),
           },
           unit: {
             label: 'Vai trò',
@@ -226,9 +256,9 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
         return {
           identifier: {
             label: 'Mã quản trị',
-            value: profile?.id?.slice(0, 8).toUpperCase() || null,
+            value: profile?.admin_code || null,
             copyKey: 'admin_id',
-            copyValue: profile?.id || null,
+            copyValue: profile?.admin_code || null,
           },
           unit: { label: 'Đơn vị', value: 'BH-EDU Việt Nam' },
         };
@@ -236,9 +266,9 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
         return {
           identifier: {
             label: 'Mã hệ thống',
-            value: profile?.id?.slice(0, 8).toUpperCase() || null,
+            value: profile?.admin_code || 'SUPER-ADMIN',
             copyKey: 'sysadmin_id',
-            copyValue: profile?.id || null,
+            copyValue: profile?.admin_code || 'SUPER-ADMIN',
           },
           unit: { label: 'Đơn vị', value: 'BH-EDU Việt Nam' },
         };
@@ -246,16 +276,22 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
         return {
           identifier: {
             label: 'Mã định danh',
-            value: profile?.id?.slice(0, 8).toUpperCase() || null,
+            value: profile?.student_code || profile?.teacher_code || null,
             copyKey: 'id',
-            copyValue: profile?.id || null,
+            copyValue: profile?.student_code || profile?.teacher_code || null,
           },
           unit: { label: 'Đơn vị', value: 'BH-EDU Việt Nam' },
         };
     }
   })();
 
-  const infoRows: { icon: any; label: string; value: string | null; copyKey?: string; copyValue?: string | null }[] = [
+  const infoRows: {
+    icon: any;
+    label: string;
+    value: string | null;
+    copyKey?: string;
+    copyValue?: string | null;
+  }[] = [
     {
       icon: Hash,
       label: roleRows.identifier.label,
@@ -287,13 +323,17 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
   ];
 
   const completenessColor =
-    completeness === 100 ? 'bg-emerald-500'
-    : completeness >= 60  ? 'bg-amber-400'
-    : 'bg-red-400';
+    completeness === 100 ? 'bg-emerald-500' : completeness >= 60 ? 'bg-amber-400' : 'bg-red-400';
 
   return (
-    <aside className="w-full lg:w-[270px] xl:w-[300px] flex-shrink-0 flex flex-col border-r border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 min-h-screen">
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+    <aside className="w-full lg:w-[270px] xl:w-[300px] flex-shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 lg:min-h-screen">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
 
       {/* ── Avatar ── */}
       <div className="flex flex-col items-center gap-4 px-7 pt-10 pb-7 border-b border-stone-200 dark:border-stone-800">
@@ -314,15 +354,24 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className={cn('w-full h-full bg-gradient-to-br flex items-center justify-center', avatarGradient)}>
-                <span className="text-2xl font-bold text-white tracking-tight select-none">{initials}</span>
+              <div
+                className={cn(
+                  'w-full h-full bg-gradient-to-br flex items-center justify-center',
+                  avatarGradient
+                )}
+              >
+                <span className="text-2xl font-bold text-white tracking-tight select-none">
+                  {initials}
+                </span>
               </div>
             )}
           </div>
           <div className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            {uploading
-              ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              : <Camera className="w-4 h-4 text-white" />}
+            {uploading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Camera className="w-4 h-4 text-white" />
+            )}
           </div>
         </motion.div>
 
@@ -330,10 +379,12 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
           <h2 className="text-[15px] font-bold text-stone-900 dark:text-stone-100 leading-tight tracking-tight">
             {profile?.full_name || 'Chưa đặt tên'}
           </h2>
-          <span className={cn(
-            'inline-flex items-center px-2.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-[0.1em]',
-            getRoleBadgeClass(profile?.role)
-          )}>
+          <span
+            className={cn(
+              'inline-flex items-center px-2.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-[0.1em]',
+              getRoleBadgeClass(profile?.role)
+            )}
+          >
             {getRoleLabel(profile?.role)}
           </span>
         </div>
@@ -368,10 +419,16 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
           <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
             Độ hoàn thiện hồ sơ
           </span>
-          <span className={cn(
-            'text-[10px] font-bold tabular-nums',
-            completeness === 100 ? 'text-emerald-500' : completeness >= 60 ? 'text-amber-500' : 'text-red-400'
-          )}>
+          <span
+            className={cn(
+              'text-[10px] font-bold tabular-nums',
+              completeness === 100
+                ? 'text-emerald-500'
+                : completeness >= 60
+                  ? 'text-amber-500'
+                  : 'text-red-400'
+            )}
+          >
             {completeness}%
           </span>
         </div>
@@ -393,7 +450,7 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
             <p className="text-[10px] text-stone-400 dark:text-stone-500 leading-snug">
               Còn thiếu:{' '}
               <span className="text-stone-600 dark:text-stone-400 font-medium">
-                {missingFields.map(f => f.label).join(', ')}
+                {missingFields.map((f) => f.label).join(', ')}
               </span>
             </p>
           </div>
@@ -414,7 +471,9 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
                   {row.value}
                 </p>
               ) : (
-                <p className="text-xs text-stone-300 dark:text-stone-600 italic">Chưa có thông tin</p>
+                <p className="text-xs text-stone-300 dark:text-stone-600 italic">
+                  Chưa có thông tin
+                </p>
               )}
             </div>
 
@@ -427,11 +486,21 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
               >
                 <AnimatePresence mode="wait" initial={false}>
                   {copied === row.copyKey ? (
-                    <motion.span key="check" initial={{ scale: 0.7 }} animate={{ scale: 1 }} exit={{ scale: 0.7 }}>
+                    <motion.span
+                      key="check"
+                      initial={{ scale: 0.7 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0.7 }}
+                    >
                       <Check className="w-3 h-3 text-emerald-500" />
                     </motion.span>
                   ) : (
-                    <motion.span key="copy" initial={{ scale: 0.7 }} animate={{ scale: 1 }} exit={{ scale: 0.7 }}>
+                    <motion.span
+                      key="copy"
+                      initial={{ scale: 0.7 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0.7 }}
+                    >
                       <Copy className="w-3 h-3 text-stone-400" />
                     </motion.span>
                   )}
@@ -440,17 +509,6 @@ export default function ProfileSidebar({ profile, onPasswordChangeClick, refresh
             )}
           </div>
         ))}
-      </div>
-
-      {/* ── Actions ── */}
-      <div className="px-6 py-5">
-        <button
-          onClick={onPasswordChangeClick}
-          className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-[11px] font-semibold text-stone-600 dark:text-stone-400 hover:border-stone-400 dark:hover:border-stone-500 hover:text-stone-800 dark:hover:text-stone-200 transition-all"
-        >
-          <Lock className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
-          Thay đổi mật khẩu
-        </button>
       </div>
     </aside>
   );

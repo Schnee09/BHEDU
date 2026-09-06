@@ -626,10 +626,6 @@ export default function AcademicYearsAndSemestersPage() {
                         </button>
                       )}
                     </div>
-
-                    <span className="text-[10px] font-mono text-stone-400 self-end sm:self-auto">
-                      ID: {year.id.slice(0, 8)}...
-                    </span>
                   </div>
                 </div>
               );

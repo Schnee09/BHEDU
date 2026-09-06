@@ -121,13 +121,13 @@ export default function MobileTimetableList({
   const currentDate = weekDates[currentDay] ?? new Date();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] md:hidden bg-transparent -mx-2.5 sm:-mx-6">
+    <div className="flex flex-col min-h-0 flex-1 md:hidden bg-transparent -mx-2.5 sm:-mx-6">
       {/* Day Selector - Premium Sticky */}
       <div className="sticky top-0 z-30 space-y-0.5">
         <div className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-xl border-b border-stone-200/50 dark:border-white/5 py-2.5">
           <div
             ref={scrollRef}
-            className="flex overflow-x-auto px-3 gap-2 no-scrollbar scroll-smooth"
+            className="flex overflow-x-auto px-3 gap-2 no-scrollbar scrollbar-none scroll-smooth"
           >
             {days.map((day, index) => {
               const date = weekDates[index];
@@ -157,11 +157,11 @@ export default function MobileTimetableList({
                   >
                     {day}
                   </span>
-                  <span className="text-lg font-black">{format(date, 'dd')}</span>
+                  <span className="text-lg font-black leading-none">{format(date, 'dd')}</span>
 
-                  {/* Active Indicator */}
+                  {/* Active Indicator Dot */}
                   {isSelected && (
-                    <div className="absolute -bottom-0.5 w-1.5 h-1.5 bg-stone-950 rounded-full" />
+                    <div className="w-1.5 h-1.5 bg-stone-950 rounded-full mt-1 shrink-0" />
                   )}
                 </button>
               );

@@ -38,10 +38,12 @@ export default function StudentGridView({
           <div
             key={student.id}
             className={cn(
-              'bg-white dark:bg-stone-900 rounded-2xl p-4 border transition-all duration-200 shadow-xs hover:shadow-md relative overflow-hidden flex flex-col justify-between group',
+              'rounded-2xl p-4 border transition-all duration-200 shadow-xs hover:shadow-md relative overflow-hidden flex flex-col justify-between group',
               isSelected
                 ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/10 dark:bg-amber-950/10'
-                : 'border-stone-200/80 dark:border-white/10 hover:border-amber-500/40'
+                : !isActive
+                  ? 'bg-stone-50/60 dark:bg-stone-900/40 border-stone-200/60 dark:border-white/5 opacity-80'
+                  : 'bg-white dark:bg-stone-900 border-stone-200/80 dark:border-white/10 hover:border-amber-500/40'
             )}
             style={{ animationDelay: `${index * 15}ms` }}
           >
@@ -57,7 +59,14 @@ export default function StudentGridView({
               {/* Card Header: Avatar + Name + Checkbox */}
               <div className="flex items-start justify-between gap-3 mb-3 pt-1">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 uppercase">
+                  <div
+                    className={cn(
+                      'w-10 h-10 rounded-xl text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 uppercase transition-all',
+                      !isActive
+                        ? 'bg-stone-300 dark:bg-stone-700 text-stone-500 dark:text-stone-400'
+                        : 'bg-gradient-to-tr from-amber-500 to-amber-600'
+                    )}
+                  >
                     {(
                       (student.full_name &&
                       student.full_name !== 'undefined undefined' &&
@@ -74,7 +83,12 @@ export default function StudentGridView({
                       onClick={() =>
                         onViewDetails ? onViewDetails(student) : onSelect(student.id)
                       }
-                      className="font-bold text-stone-900 dark:text-stone-100 text-sm hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer truncate"
+                      className={cn(
+                        'font-bold text-sm transition-colors cursor-pointer truncate',
+                        !isActive
+                          ? 'text-stone-400 dark:text-stone-500 line-through hover:text-stone-600 dark:hover:text-stone-300'
+                          : 'text-stone-900 dark:text-stone-100 hover:text-amber-600 dark:hover:text-amber-400'
+                      )}
                       title={student.full_name}
                     >
                       {student.full_name &&
@@ -87,7 +101,14 @@ export default function StudentGridView({
                     </h3>
                     <div className="flex items-center gap-1.5 mt-1">
                       {student.grade_level && (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40">
+                        <span
+                          className={cn(
+                            'px-2 py-0.5 rounded-md text-[10px] font-bold border',
+                            !isActive
+                              ? 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500 border-stone-200 dark:border-white/5'
+                              : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40'
+                          )}
+                        >
                           {student.grade_level}
                         </span>
                       )}
@@ -98,7 +119,7 @@ export default function StudentGridView({
                           'px-2 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer transition-all',
                           isActive
                             ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100'
-                            : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-white/10 hover:bg-stone-200'
+                            : 'bg-stone-200/70 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-300/80 dark:border-white/10 hover:bg-stone-200'
                         )}
                         title="Click đổi trạng thái"
                       >

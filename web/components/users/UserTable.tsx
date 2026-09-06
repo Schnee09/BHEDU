@@ -214,11 +214,7 @@ export function UserTable({
               users.map((user) => {
                 const isSelected = selectedIds.has(user.id);
                 const roleBadge = getRoleBadge(user.role);
-                const code =
-                  user.student_code ||
-                  user.student_id ||
-                  user.teacher_code ||
-                  user.id.slice(0, 8).toUpperCase();
+                const code = user.student_code || user.student_id || user.teacher_code || null;
 
                 const getUserUnit = (u: UserItem) => {
                   switch (u.role) {
@@ -325,22 +321,28 @@ export function UserTable({
 
                     {/* Code & Unit */}
                     <td className="py-3.5 px-4 min-w-[150px]">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-[11px] text-stone-800 dark:text-stone-200">
-                          {code}
+                      {code ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-bold text-[11px] text-stone-800 dark:text-stone-200">
+                            {code}
+                          </span>
+                          <button
+                            onClick={(e) => handleCopy(code, user.id, e)}
+                            title="Sao chép mã"
+                            className="p-1 rounded-md text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors"
+                          >
+                            {copiedId === user.id ? (
+                              <Check className="w-3 h-3 text-emerald-500" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-stone-400 dark:text-stone-500 italic">
+                          Chưa cấp mã
                         </span>
-                        <button
-                          onClick={(e) => handleCopy(code, user.id, e)}
-                          title="Sao chép mã"
-                          className="p-1 rounded-md text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors"
-                        >
-                          {copiedId === user.id ? (
-                            <Check className="w-3 h-3 text-emerald-500" />
-                          ) : (
-                            <Copy className="w-3 h-3" />
-                          )}
-                        </button>
-                      </div>
+                      )}
                       <p className="text-[10px] text-stone-400 dark:text-stone-500 truncate mt-0.5">
                         {unit}
                       </p>

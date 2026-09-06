@@ -125,6 +125,8 @@ export class StudentRepository
    * Find student by ID with enrollments
    */
   async findByIdWithEnrollments(id: string): Promise<StudentWithEnrollments | null> {
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
     // 1. Fetch student profile
     let studentQuery = this.supabase
       .from(this.tableName)
@@ -150,14 +152,34 @@ export class StudentRepository
         student_id
       `
       )
-      .eq('id', id)
       .eq('role', 'student');
+
+    if (isUUID) {
+      studentQuery = studentQuery.eq('id', id);
+    } else {
+      studentQuery = studentQuery.or(
+        `student_code.ilike.${id},student_id.ilike.${id},phone.eq.${id}`
+      );
+    }
 
     if (this.useSoftDelete && typeof (studentQuery as any).is === 'function') {
       studentQuery = (studentQuery as any).is('deleted_at', null);
     }
 
-    // 2. Fetch enrollments with class details (Parallel)
+    const [studentResult] = await Promise.all([
+      typeof (studentQuery as any).maybeSingle === 'function'
+        ? (studentQuery as any).maybeSingle()
+        : (studentQuery as any).single(),
+    ]);
+
+    if (studentResult.error || !studentResult.data) {
+      return null;
+    }
+
+    const rawStudent = studentResult.data as any;
+    const realId = rawStudent.id;
+
+    // 2. Fetch enrollments with class details
     let enrollmentsQuery = this.supabase
       .from('enrollments')
       .select(
@@ -173,25 +195,14 @@ export class StudentRepository
         )
       `
       )
-      .eq('student_id', id);
+      .eq('student_id', realId);
 
     if (this.useSoftDelete && typeof (enrollmentsQuery as any).is === 'function') {
       enrollmentsQuery = (enrollmentsQuery as any).is('deleted_at', null);
     }
 
-    const [studentResult, enrollmentsResult] = await Promise.all([
-      typeof (studentQuery as any).maybeSingle === 'function'
-        ? (studentQuery as any).maybeSingle()
-        : (studentQuery as any).single(),
-      enrollmentsQuery,
-    ]);
+    const enrollmentsResult = await enrollmentsQuery;
 
-    if (studentResult.error) {
-      if (studentResult.error.code === 'PGRST116' || !studentResult.data) return null;
-      throw new Error(`Failed to find student: ${studentResult.error.message}`);
-    }
-
-    const rawStudent = studentResult.data as any;
     let studentFullName = rawStudent.full_name;
     if (
       !studentFullName ||
@@ -210,7 +221,7 @@ export class StudentRepository
             : 'Học sinh';
     }
 
-    const student = {
+    const studentData = {
       ...rawStudent,
       full_name: studentFullName,
     } as Student;
@@ -221,7 +232,7 @@ export class StudentRepository
     }));
 
     return {
-      ...student,
+      ...studentData,
       enrollments,
     } as StudentWithEnrollments;
   }

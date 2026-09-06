@@ -6,6 +6,8 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { Icons } from '@/components/ui/Icons';
 import { Users, BookOpen, MapPin } from 'lucide-react';
 
+import { useProfile } from '@/hooks/useProfile';
+
 interface Student {
   id: string;
   full_name: string;
@@ -28,7 +30,10 @@ interface TimetableSlot {
 }
 
 export default function RecentTutoringStudentsWidget() {
-  const { data, loading } = useFetch<{ slots: TimetableSlot[] }>('/api/timetable/my');
+  const { profile } = useProfile();
+  const { data, loading } = useFetch<{ slots: TimetableSlot[] }>(
+    profile ? '/api/timetable/my' : null
+  );
 
   // Extract unique students and their associated tutoring subjects
   const studentsList = useMemo(() => {

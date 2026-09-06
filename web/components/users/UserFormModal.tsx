@@ -134,14 +134,14 @@ const ALL_ROLE_CARDS = [
   {
     value: 'tutor',
     label: 'Gia sư',
-    desc: 'Trợ giảng, dạy kèm 1-1 & nhóm bổ trợ',
-    icon: BookOpen,
-    badgeClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
+    desc: 'Gia sư dạy kèm 1-1 & nhóm học theo giờ',
+    icon: GraduationCap,
+    badgeClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20',
   },
   {
     value: 'teacher',
     label: 'Giáo viên',
-    desc: 'Giảng viên chuyên trách phụ trách lớp học',
+    desc: 'Giáo viên đứng lớp chính khóa tại trung tâm',
     icon: Award,
     badgeClass: 'bg-amber-600/10 text-amber-800 dark:text-amber-300 border-amber-600/20',
   },
@@ -1588,95 +1588,88 @@ export default function UserFormModal({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {formData.role === 'teacher' ? (
-                      <Select
-                        label="Hình thức hợp đồng"
-                        options={[
-                          { value: 'full_time', label: 'Toàn thời gian (Cơ hữu)' },
-                          { value: 'part_time', label: 'Bán thời gian (Thỉnh giảng)' },
-                        ]}
-                        value={formData.teacher_type}
-                        onChange={(e) => setFormData({ ...formData, teacher_type: e.target.value })}
-                      />
-                    ) : (
-                      <div className="flex flex-col justify-end">
-                        <label className="block text-xs font-bold text-stone-500 dark:text-stone-400 mb-1">
-                          Hình thức giảng dạy
-                        </label>
-                        <div className="px-4 py-2.5 bg-stone-100 dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-2xl text-xs font-bold text-stone-700 dark:text-stone-300 h-11 flex items-center">
-                          Gia sư & Trợ giảng kèm 1-1
-                        </div>
-                      </div>
-                    )}
-
                     <Input
-                      label="Chuyên môn / Học vị"
-                      placeholder="Học vị, bằng cấp hoặc chuyên môn..."
+                      label={
+                        formData.role === 'teacher'
+                          ? 'Chuyên môn / Khối lớp giảng dạy'
+                          : 'Trường ĐH / Chuyên ngành kèm'
+                      }
+                      placeholder={
+                        formData.role === 'teacher'
+                          ? 'VD: Luyện thi THPT QG, Khối 10-11-12...'
+                          : 'VD: ĐH Sư Phạm - Khoa Toán, Năm 3...'
+                      }
                       value={formData.specialization}
                       onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                       leftIcon={<BookOpen className="w-4 h-4 text-stone-400" />}
                     />
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
-                      label="Mức chi trả theo ca / buổi dạy"
+                      label={
+                        formData.role === 'teacher'
+                          ? 'Định mức thù lao ca dạy (VNĐ/ca)'
+                          : 'Định mức thù lao kèm (VNĐ/giờ)'
+                      }
                       type="number"
                       min={0}
-                      placeholder="VD: 150000 (VNĐ/buổi)..."
+                      placeholder={formData.role === 'teacher' ? 'VD: 300000...' : 'VD: 120000...'}
                       value={formData.hourly_rate || ''}
                       onChange={(e) =>
                         setFormData({ ...formData, hourly_rate: Number(e.target.value) })
                       }
                       leftIcon={<Coins className="w-4 h-4 text-stone-400" />}
-                      hint="Định mức chi trả áp dụng khi chấm công ca dạy"
+                      hint={
+                        formData.role === 'teacher'
+                          ? 'Mức thù lao chuẩn áp dụng trên mỗi ca dạy đứng lớp'
+                          : 'Mức thù lao tính theo giờ dạy kèm 1-1 hoặc nhóm'
+                      }
                     />
+                  </div>
 
-                    <div className="relative">
-                      <Input
-                        label={
-                          formData.role === 'tutor'
-                            ? 'Mã gia sư (UID định danh)'
-                            : 'Mã giảng viên (UID định danh)'
-                        }
-                        value={
-                          formData.teacher_code ||
-                          (user ? user.email?.split('@')[0]?.toUpperCase() : '')
-                        }
-                        onChange={(e) => {
-                          if (isEdit) return;
-                          setFormData({ ...formData, teacher_code: e.target.value.toUpperCase() });
+                  <div className="relative">
+                    <Input
+                      label={
+                        formData.role === 'tutor'
+                          ? 'Mã gia sư (UID định danh)'
+                          : 'Mã giáo viên (UID định danh)'
+                      }
+                      value={
+                        formData.teacher_code ||
+                        (user ? user.email?.split('@')[0]?.toUpperCase() : '')
+                      }
+                      onChange={(e) => {
+                        if (isEdit) return;
+                        setFormData({ ...formData, teacher_code: e.target.value.toUpperCase() });
+                      }}
+                      disabled={isEdit}
+                      placeholder={formData.role === 'tutor' ? 'GS2026...' : 'GV2026...'}
+                      leftIcon={
+                        isEdit ? (
+                          <Lock className="w-4 h-4 text-amber-500" />
+                        ) : (
+                          <Sparkle className="w-4 h-4 text-amber-500" />
+                        )
+                      }
+                      hint={
+                        isEdit
+                          ? 'Mã UID định danh cố định trong hệ thống, không thể thay đổi sau khi tạo.'
+                          : undefined
+                      }
+                    />
+                    {!isEdit && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = generateUID(formData.role);
+                          setFormData((prev) => ({ ...prev, teacher_code: code }));
                         }}
-                        disabled={isEdit}
-                        placeholder={formData.role === 'tutor' ? 'GS2026...' : 'GV2026...'}
-                        leftIcon={
-                          isEdit ? (
-                            <Lock className="w-4 h-4 text-amber-500" />
-                          ) : (
-                            <Sparkle className="w-4 h-4 text-amber-500" />
-                          )
-                        }
-                        hint={
-                          isEdit
-                            ? 'Mã UID định danh cố định trong hệ thống, không thể thay đổi sau khi tạo.'
-                            : undefined
-                        }
-                      />
-                      {!isEdit && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const code = generateUID(formData.role);
-                            setFormData((prev) => ({ ...prev, teacher_code: code }));
-                          }}
-                          className="absolute right-3 top-[34px] px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                          title="Tạo mã mới ngẫu nhiên"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Đổi mã
-                        </button>
-                      )}
-                    </div>
+                        className="absolute right-3 top-[34px] px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                        title="Tạo mã mới ngẫu nhiên"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Đổi mã
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

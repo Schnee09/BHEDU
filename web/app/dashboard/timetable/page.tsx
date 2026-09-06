@@ -23,7 +23,7 @@ export default function TimetablePage() {
   const isTeacherUser = state.role === 'teacher' || state.role === 'tutor';
 
   return (
-    <PageGuard permissions={['timetable.view']}>
+    <PageGuard permissions="classes.manage">
       <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/50 p-2.5 sm:p-5">
         <div className="max-w-[1680px] mx-auto space-y-3">
           {/* Unified Modern Timetable Board with Integrated Mobile-First Header */}

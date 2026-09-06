@@ -11,6 +11,7 @@ import AttendanceStatsWidget from '@/components/dashboard/widgets/AttendanceStat
 import GradeProgressWidget from '@/components/dashboard/widgets/GradeProgressWidget';
 import UpcomingDeadlinesWidget from '@/components/dashboard/widgets/UpcomingDeadlinesWidget';
 import AnnouncementsFeedWidget from '@/components/dashboard/widgets/AnnouncementsFeedWidget';
+import StudentRequestWidget from '@/components/dashboard/widgets/StudentRequestWidget';
 import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
 
 interface StudentStats {
@@ -156,8 +157,8 @@ export default function StudentDashboard() {
             {/* Attendance Circular progress */}
             <AttendanceStatsWidget />
 
-            {/* Upcoming Deadlines list */}
-            <UpcomingDeadlinesWidget />
+            {/* Student Request Widget */}
+            <StudentRequestWidget role="student" />
 
             {/* Announcements */}
             <AnnouncementsFeedWidget />

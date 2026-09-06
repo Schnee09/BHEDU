@@ -841,3 +841,17 @@ button,
     width: 100% !important;
   }
 }
+
+/* =============================================
+ * Utility Classes: Hide Scrollbar
+ * ============================================= */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}

@@ -18,29 +18,37 @@ const eventSchema = z.object({
   description: z.string().nullable().optional(),
 });
 
-export const GET = createGetHandler({ requireAuth: true }, async ({ request }) => {
+export const GET = createGetHandler({ requireAuth: false }, async ({ request }) => {
   const { searchParams } = new URL(request.url);
+  const isAllYear = searchParams.get('all') === 'true' || searchParams.get('scope') === 'year';
   const year = searchParams.get('year') || new Date().getFullYear().toString();
   const month = searchParams.get('month') || (new Date().getMonth() + 1).toString();
 
   const supabase = createServiceClient();
 
-  // Calculate date range for the month
-  const startDate = `${year}-${month.padStart(2, '0')}-01`;
-  const nextMonth = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
-  const nextYear = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
-  const endDate = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
-
-  const { data: events, error } = await supabase
+  let query = supabase
     .from('calendar_events')
     .select(
       'id, title, description, event_type, start_date, end_date, start_time, end_time, is_all_day, color'
     )
-    .gte('start_date', startDate)
-    .lt('start_date', endDate)
-    .order('start_date');
+    .order('start_date', { ascending: true });
 
-  if (error) throw error;
+  if (!isAllYear) {
+    // Calculate date range for the specified month
+    const startDate = `${year}-${month.padStart(2, '0')}-01`;
+    const nextMonth = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
+    const nextYear = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
+    const endDate = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
+
+    query = query.gte('start_date', startDate).lt('start_date', endDate);
+  }
+
+  const { data: events, error } = await query;
+
+  if (error) {
+    console.error('Error fetching calendar events:', error);
+    return apiSuccess({ events: [] });
+  }
 
   return apiSuccess({ events: events || [] });
 });
@@ -48,7 +56,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request }) =
 export const POST = createApiHandler(
   {
     requireAuth: true,
-    allowedRoles: ['super_admin', 'admin'],
+    allowedRoles: ['super_admin', 'owner', 'admin', 'staff', 'teacher'],
     bodySchema: eventSchema,
   },
   async ({ body, user }) => {

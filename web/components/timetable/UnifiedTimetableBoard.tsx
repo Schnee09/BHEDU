@@ -306,17 +306,6 @@ export default function UnifiedTimetableBoard({
     return counts;
   }, [filteredSlots]);
 
-  // Auto-focus the first active day in Room View if current day has no classes
-  useEffect(() => {
-    const currentCount = daySlotCounts[selectedDayForRoomView] ?? 0;
-    if (currentCount === 0) {
-      const firstActiveDay = daySlotCounts.findIndex((c) => c > 0);
-      if (firstActiveDay !== -1) {
-        setSelectedDayForRoomView(firstActiveDay);
-      }
-    }
-  }, [daySlotCounts, selectedDayForRoomView]);
-
   // Detect conflicts across filtered slots
   const conflictSlotIds = useMemo(() => {
     const conflicts = new Set<string>();
@@ -443,40 +432,54 @@ export default function UnifiedTimetableBoard({
       {/* ── ULTRA-COMPACT UNIFIED CONTROL HEADER ── */}
       <div className="bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 p-3 sm:p-4 shadow-sm space-y-2.5">
         {/* Row 1: Title & Main Quick Actions */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           {/* Left: Title + Role + Total slots */}
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="p-1.5 bg-amber-500/10 rounded-xl text-amber-500 shrink-0">
-              <CalendarIcon className="w-4 h-4" />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-amber-500/10 rounded-xl text-amber-500 shrink-0">
+                <CalendarIcon className="w-4 h-4" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-sm sm:text-base font-black tracking-tight text-stone-900 dark:text-white uppercase leading-none whitespace-nowrap">
+                  Thời Khóa Biểu
+                </h1>
+                {isAdmin ? (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase whitespace-nowrap hidden sm:inline-block">
+                    Quản trị
+                  </span>
+                ) : isTeacherUser ? (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase whitespace-nowrap hidden sm:inline-block">
+                    Giảng dạy
+                  </span>
+                ) : null}
+                {slots.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-black whitespace-nowrap">
+                    {slots.length} tiết
+                  </span>
+                )}
+                {isLoading && (
+                  <span className="text-[10px] font-black text-amber-500 animate-pulse uppercase ml-1 hidden sm:inline-block">
+                    ● Đang tải
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-              <h1 className="text-sm sm:text-base font-black tracking-tight text-stone-900 dark:text-white uppercase leading-none whitespace-nowrap">
-                Thời Khóa Biểu
-              </h1>
-              {isAdmin ? (
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase whitespace-nowrap hidden sm:inline-block">
-                  Quản trị
-                </span>
-              ) : isTeacherUser ? (
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase whitespace-nowrap hidden sm:inline-block">
-                  Giảng dạy
-                </span>
-              ) : null}
-              {slots.length > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-black whitespace-nowrap">
-                  {slots.length} tiết
-                </span>
-              )}
-              {isLoading && (
-                <span className="text-[10px] font-black text-amber-500 animate-pulse uppercase ml-1 hidden sm:inline-block">
-                  ● Đang tải
-                </span>
-              )}
-            </div>
+
+            {/* Mobile quick action: Xếp lịch on top right */}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => onCreateSlot(0, undefined, '')}
+                className="sm:hidden px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black shadow-sm flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Xếp lịch</span>
+              </button>
+            )}
           </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Right: Actions on Desktop & Filters */}
+          <div className="flex items-center justify-between sm:justify-end gap-1.5 shrink-0">
             {isTeacherUser && onAttendanceClick && (
               <button
                 type="button"
@@ -492,7 +495,7 @@ export default function UnifiedTimetableBoard({
               <button
                 type="button"
                 onClick={() => onCreateSlot(0, undefined, '')}
-                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black shadow-sm flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                className="hidden sm:flex px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black shadow-sm items-center gap-1 cursor-pointer whitespace-nowrap"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Xếp lịch</span>
@@ -618,7 +621,7 @@ export default function UnifiedTimetableBoard({
         </div>
 
         {/* Row 3: Swipeable Campus Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-1 no-scrollbar scrollbar-none">
           <button
             type="button"
             onClick={() => onSelectCampus('')}
@@ -709,20 +712,362 @@ export default function UnifiedTimetableBoard({
       </div>
 
       {/* ── MOBILE ADAPTIVE VIEW (< lg) ── */}
-      <div className="lg:hidden animate-fade-in">
-        <MobileTimetableList
-          slots={filteredSlots}
-          days={DAYS}
-          weekDates={weekDates}
-          currentDay={selectedDayForRoomView}
-          onDayChange={setSelectedDayForRoomView}
-          onEditSlot={onEditSlot}
-          onDeleteSlot={onDeleteSlot}
-          onCreateSlot={onCreateSlot}
-          viewMode="class"
-          sessions={effectiveSessions}
-          isLoading={isLoading}
-        />
+      <div className="lg:hidden animate-fade-in space-y-4">
+        {/* 1. Mobile View Mode: LƯỚI CA HỌC THEO NGÀY (Timeline Ca 1-6) */}
+        {viewMode === 'week' && (
+          <MobileTimetableList
+            slots={filteredSlots}
+            days={DAYS}
+            weekDates={weekDates}
+            currentDay={selectedDayForRoomView}
+            onDayChange={setSelectedDayForRoomView}
+            onEditSlot={onEditSlot}
+            onDeleteSlot={onDeleteSlot}
+            onCreateSlot={onCreateSlot}
+            viewMode="class"
+            sessions={effectiveSessions}
+            isLoading={isLoading}
+          />
+        )}
+
+        {/* 2. Mobile View Mode: THEO PHÒNG HỌC (Room Occupancy Cards) */}
+        {viewMode === 'room' && (
+          <div className="space-y-3">
+            {/* Day Selector Pill Tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar scrollbar-none">
+              {DAYS.map((dayName, dayIndex) => {
+                const date = weekDates[dayIndex];
+                const isSelected = selectedDayForRoomView === dayIndex;
+                const count = daySlotCounts[dayIndex] || 0;
+
+                return (
+                  <button
+                    key={dayIndex}
+                    type="button"
+                    onClick={() => setSelectedDayForRoomView(dayIndex)}
+                    className={`px-3 py-2 rounded-xl font-black text-xs transition-all flex flex-col items-center justify-center shrink-0 border cursor-pointer min-w-[58px] ${
+                      isSelected
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                        : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border-stone-200/80 dark:border-white/5'
+                    }`}
+                  >
+                    <span className="text-[10px] uppercase opacity-80">{dayName}</span>
+                    <span className="text-sm font-black">{date?.getDate()}</span>
+                    {count > 0 ? (
+                      <span
+                        className={`text-[8px] font-bold mt-0.5 px-1 rounded-full ${
+                          isSelected
+                            ? 'bg-white/20 text-white'
+                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                        }`}
+                      >
+                        {count} tiết
+                      </span>
+                    ) : (
+                      <span className="text-[8px] opacity-40 mt-0.5">(0)</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Room Cards List */}
+            <div className="space-y-3">
+              {effectiveCampusRooms.map((room) => {
+                const hasBranch = room.includes(' - ');
+                const parts = room.split(' - ');
+                const branchName = hasBranch ? parts[0] || '' : '';
+                const roomName = hasBranch ? parts[1] || room : room;
+
+                const targetBranch = hasBranch ? branchName.trim() : selectedCampus;
+                const targetRoomClean = hasBranch ? (parts[1] || room).trim() : room.trim();
+
+                // Find all slots in this room on the selected day
+                const roomSlots = filteredSlots
+                  .filter((s) => {
+                    if (s.day_of_week !== selectedDayForRoomView) return false;
+                    const slotRoom = (s.room || '').trim();
+                    if (!slotRoom) return false;
+
+                    const slotHasBranch = slotRoom.includes(' - ');
+                    const slotParts = slotRoom.split(' - ');
+                    const slotBranch = slotHasBranch ? (slotParts[0] || '').trim() : '';
+                    const slotRoomClean = slotHasBranch
+                      ? (slotParts[1] || slotRoom).trim()
+                      : slotRoom;
+
+                    if (targetBranch && slotBranch) {
+                      if (targetBranch.toLowerCase() !== slotBranch.toLowerCase()) return false;
+                    }
+
+                    return (
+                      slotRoomClean.toLowerCase() === targetRoomClean.toLowerCase() ||
+                      slotRoom.toLowerCase() === room.toLowerCase()
+                    );
+                  })
+                  .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+
+                return (
+                  <div
+                    key={room}
+                    className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-xs p-3.5 space-y-2.5"
+                  >
+                    {/* Room Card Header */}
+                    <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-white/5">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1.5 bg-blue-500/10 text-blue-600 rounded-lg text-xs font-black">
+                          🚪
+                        </span>
+                        <div>
+                          <h4 className="text-xs font-black text-stone-900 dark:text-white uppercase">
+                            Phòng {roomName}
+                          </h4>
+                          {branchName && (
+                            <span className="text-[10px] text-stone-400 font-medium">
+                              {branchName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                          roomSlots.length > 0
+                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                            : 'bg-stone-100 dark:bg-stone-800 text-stone-400'
+                        }`}
+                      >
+                        {roomSlots.length > 0 ? `${roomSlots.length} ca học` : 'Trống cả ngày'}
+                      </span>
+                    </div>
+
+                    {/* Room Slots List */}
+                    {roomSlots.length === 0 ? (
+                      canEdit ? (
+                        <button
+                          type="button"
+                          onClick={() => onCreateSlot(selectedDayForRoomView, undefined, room)}
+                          className="w-full py-3 rounded-xl border border-dashed border-stone-200 dark:border-white/10 hover:border-amber-400 hover:bg-amber-500/5 text-stone-400 hover:text-amber-600 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Chạm để xếp lịch phòng này</span>
+                        </button>
+                      ) : (
+                        <p className="text-[11px] text-stone-400 py-1 text-center italic">
+                          Không có ca học nào trong phòng này
+                        </p>
+                      )
+                    ) : (
+                      <div className="space-y-2">
+                        {roomSlots.map((slot) => {
+                          const style = getSubjectColor(slot.subject?.name || slot.subject?.code);
+                          const hasConflict = conflictSlotIds.has(slot.id);
+                          const liveStatus = getLiveSlotStatus(
+                            selectedDayForRoomView,
+                            slot.start_time,
+                            slot.end_time
+                          );
+
+                          return (
+                            <div
+                              key={slot.id}
+                              onClick={() => {
+                                if (onSelectSlotForAction) {
+                                  onSelectSlotForAction(slot);
+                                } else {
+                                  onEditSlot(slot);
+                                }
+                              }}
+                              className={`p-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs relative ${
+                                hasConflict
+                                  ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
+                                  : `${style.bg} ${style.border}`
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-1 mb-1">
+                                <span
+                                  className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded border ${style.badge}`}
+                                >
+                                  {slot.subject?.name || 'Môn học'}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  {liveStatus && (
+                                    <span
+                                      className={`px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase ${liveStatus.color}`}
+                                    >
+                                      {liveStatus.label}
+                                    </span>
+                                  )}
+                                  <span className="font-mono text-[10px] font-black text-stone-600 dark:text-stone-300 flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-stone-400" />
+                                    {slot.start_time?.substring(0, 5)} -{' '}
+                                    {slot.end_time?.substring(0, 5)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-xs font-black text-stone-900 dark:text-white uppercase">
+                                Lớp {slot.class?.name || 'Chưa gán'}
+                              </div>
+                              <div className="text-[10px] font-bold text-stone-600 dark:text-stone-300 flex items-center gap-1 mt-0.5">
+                                <Users className="w-3 h-3 text-stone-400 shrink-0" />
+                                <span>{getDisplayName(slot.teacher) || 'Chưa phân công GV'}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => onCreateSlot(selectedDayForRoomView, undefined, room)}
+                            className="w-full py-1.5 rounded-lg border border-dashed border-stone-200 dark:border-white/10 text-stone-400 hover:text-amber-600 hover:border-amber-400 text-[10px] font-bold transition-all flex items-center justify-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" /> Thêm ca vào phòng
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 3. Mobile View Mode: TOÀN BỘ DANH SÁCH CẢ TUẦN (Full 7-Day Agenda List) */}
+        {viewMode === 'agenda' && (
+          <div className="space-y-3">
+            {DAYS.map((dayName, dayIndex) => {
+              const date = weekDates[dayIndex];
+              const isToday = dayIndex === todayIndex;
+              const daySlots = filteredSlots
+                .filter((s) => s.day_of_week === dayIndex)
+                .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+
+              return (
+                <div
+                  key={dayIndex}
+                  className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-xs p-3.5 space-y-2.5"
+                >
+                  {/* Day Header */}
+                  <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-white/5">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-[11px] ${
+                          isToday
+                            ? 'bg-amber-500 text-white shadow-xs'
+                            : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300'
+                        }`}
+                      >
+                        {dayIndex === 6 ? 'CN' : `T${dayIndex + 2}`}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-black text-stone-900 dark:text-white uppercase">
+                            {dayName}
+                          </span>
+                          {isToday && (
+                            <span className="px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[8px] font-black uppercase">
+                              Hôm nay
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-stone-400">
+                          {date?.toLocaleDateString('vi-VN', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className="text-[10px] font-black text-stone-500 dark:text-stone-400 px-2 py-0.5 bg-stone-100 dark:bg-stone-800 rounded-lg">
+                      {daySlots.length} tiết
+                    </span>
+                  </div>
+
+                  {/* Day Slots */}
+                  {daySlots.length === 0 ? (
+                    <div className="py-2 text-center text-[11px] font-medium text-stone-400 italic">
+                      Không có tiết học nào trong ngày này.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {daySlots.map((slot) => {
+                        const style = getSubjectColor(slot.subject?.name || slot.subject?.code);
+                        const hasConflict = conflictSlotIds.has(slot.id);
+                        const liveStatus = getLiveSlotStatus(
+                          dayIndex,
+                          slot.start_time,
+                          slot.end_time
+                        );
+
+                        return (
+                          <div
+                            key={slot.id}
+                            onClick={() => {
+                              if (onSelectSlotForAction) {
+                                onSelectSlotForAction(slot);
+                              } else {
+                                onEditSlot(slot);
+                              }
+                            }}
+                            className={`p-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs relative ${
+                              hasConflict
+                                ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
+                                : `${style.bg} ${style.border}`
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <span
+                                className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded border ${style.badge}`}
+                              >
+                                {slot.subject?.name || 'Môn học'}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                {liveStatus && (
+                                  <span
+                                    className={`px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase ${liveStatus.color}`}
+                                  >
+                                    {liveStatus.label}
+                                  </span>
+                                )}
+                                <span className="font-mono text-[10px] font-black text-stone-600 dark:text-stone-300 flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-stone-400" />
+                                  {slot.start_time?.substring(0, 5)} -{' '}
+                                  {slot.end_time?.substring(0, 5)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="text-xs font-black text-stone-900 dark:text-white uppercase">
+                              Lớp {slot.class?.name || 'Chưa gán'}
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2 mt-1 text-[10px] font-bold text-stone-600 dark:text-stone-300">
+                              <div className="flex items-center gap-1 truncate">
+                                <Users className="w-3 h-3 text-stone-400 shrink-0" />
+                                <span className="truncate">
+                                  {getDisplayName(slot.teacher) || 'Chưa phân công GV'}
+                                </span>
+                              </div>
+                              {slot.room && (
+                                <span className="px-1.5 py-0.2 rounded bg-stone-200/80 dark:bg-white/10 text-stone-800 dark:text-stone-200 font-mono text-[9px] font-black shrink-0">
+                                  {slot.room}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── DESKTOP VIEWS (>= lg) ── */}

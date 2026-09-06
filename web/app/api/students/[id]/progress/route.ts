@@ -9,10 +9,13 @@
 import { NextResponse } from 'next/server';
 import { createClientFromRequest } from '@/lib/supabase/server';
 import { teacherAuth } from '@/lib/auth/adminAuth';
+import { settingsService } from '@/lib/services/settingsService';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
+    const identifier = resolvedParams.id;
+
     const authResult = await teacherAuth(request);
     if (!authResult.authorized) {
       return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
@@ -20,18 +23,33 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     const supabase = createClientFromRequest(request as any);
 
-    // 1. Get student basic info
-    const { data: student, error: studentError } = await supabase
+    // 1. Get student profile with flexible identifier lookup (UUID or student_code or student_id or phone)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      identifier
+    );
+
+    let studentQuery = supabase
       .from('profiles')
-      .select('id, full_name, student_id, student_code, grade_level')
-      .eq('id', resolvedParams.id)
-      .single();
+      .select('id, full_name, student_id, student_code, grade_level, role')
+      .eq('role', 'student');
+
+    if (isUUID) {
+      studentQuery = studentQuery.eq('id', identifier);
+    } else {
+      studentQuery = studentQuery.or(
+        `student_code.ilike.${identifier},student_id.ilike.${identifier},phone.eq.${identifier}`
+      );
+    }
+
+    const { data: student, error: studentError } = await studentQuery.maybeSingle();
 
     if (studentError || !student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    // 2. Parallelize data fetching
+    const realStudentId = student.id;
+
+    // 2. Parallelize data fetching using resolved realStudentId
     const [enrollmentsResponse, gradesResponse, attendanceResponse] = await Promise.all([
       supabase
         .from('enrollments')
@@ -39,14 +57,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           `
             class_id,
             enrollment_date,
+            status,
             classes:classes(
               id,
               name
             )
           `
         )
-        .eq('student_id', resolvedParams.id)
-        .eq('status', 'enrolled'),
+        .eq('student_id', realStudentId)
+        .in('status', ['enrolled', 'active']),
 
       supabase
         .from('grades')
@@ -64,18 +83,24 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             class:classes(id, name)
           `
         )
-        .eq('student_id', resolvedParams.id)
+        .eq('student_id', realStudentId)
         .order('created_at', { ascending: true }),
 
       supabase
         .from('attendance')
         .select('id, status, date, class_id')
-        .eq('student_id', resolvedParams.id),
+        .eq('student_id', realStudentId),
     ]);
 
-    const enrollments = enrollmentsResponse.data;
-    const grades = gradesResponse.data;
-    const attendance = attendanceResponse.data;
+    const enrollments = enrollmentsResponse.data || [];
+    const grades = gradesResponse.data || [];
+    const attendance = attendanceResponse.data || [];
+
+    // Load active academic context (Year & Semester)
+    const { academicYear: currentAY, semester: activeSem } =
+      await settingsService.getAcademicContext();
+    const activeYearName = currentAY.name || '2026-2027';
+    const activeSemName = activeSem.name || activeSem.code || 'HK1';
 
     // Process data by class / semester
     const classMap = new Map<string, any>();
@@ -83,16 +108,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     // Group grades by class / semester
     if (grades && grades.length > 0) {
       grades.forEach((grade: any) => {
-        const className =
-          grade.class?.name || (enrollments?.[0] as any)?.classes?.name || 'Lớp học';
+        const className = grade.class?.name || (enrollments[0] as any)?.classes?.name || 'Lớp học';
         const classId = grade.class_id || 'default';
-        const semester = grade.semester || 'HK1';
+        const semester = grade.semester || activeSemName;
         const key = `${classId}-${semester}`;
 
         if (!classMap.has(key)) {
           classMap.set(key, {
             semester,
-            academic_year: '2024-2025',
+            academic_year: activeYearName,
             class_name: className,
             subjects: new Map(),
             total_grades: [] as number[],
@@ -119,14 +143,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         }
 
         if (scoreVal != null) {
-          classData.subjects.get(subjectCode).grades.push(scoreVal);
-          classData.total_grades.push(scoreVal);
+          const numScore = Number(scoreVal);
+          if (!isNaN(numScore)) {
+            classData.subjects.get(subjectCode).grades.push(numScore);
+            classData.total_grades.push(numScore);
+          }
         }
       });
     }
 
     // Add attendance data
-    if (attendance) {
+    if (attendance && attendance.length > 0) {
       attendance.forEach((record: any) => {
         for (const data of classMap.values()) {
           data.attendance_records.push(record.status);
@@ -134,16 +161,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       });
     }
 
-    // If no grades yet, create an empty semester representation
+    // If no grades yet, create an empty semester representation using active context
     if (classMap.size === 0) {
-      const className = (enrollments?.[0] as any)?.classes?.name || 'Chưa xếp lớp';
-      classMap.set('default-HK1', {
-        semester: 'HK1',
-        academic_year: '2024-2025',
+      const className = (enrollments[0] as any)?.classes?.name || 'Chưa xếp lớp';
+      classMap.set(`default-${activeSemName}`, {
+        semester: activeSemName,
+        academic_year: activeYearName,
         class_name: className,
         subjects: new Map(),
         total_grades: [],
-        attendance_records: attendance ? attendance.map((a: any) => a.status) : [],
+        attendance_records: attendance.map((a: any) => a.status),
       });
     }
 
@@ -175,7 +202,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
                 data.total_grades.length) *
                 10
             ) / 10
-          : 0;
+          : null;
 
       const totalAttendance = data.attendance_records.length;
       const presentCount = data.attendance_records.filter(
@@ -185,11 +212,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 100;
 
       let conduct = 'Tốt';
-      if (attendanceRate < 80 || (gpa > 0 && gpa < 5)) {
+      if (attendanceRate < 80 || (gpa !== null && gpa < 5)) {
         conduct = 'Yếu';
-      } else if (attendanceRate < 90 || (gpa > 0 && gpa < 6.5)) {
+      } else if (attendanceRate < 90 || (gpa !== null && gpa < 6.5)) {
         conduct = 'Trung bình';
-      } else if (gpa >= 8 && attendanceRate >= 95) {
+      } else if (gpa !== null && gpa >= 8 && attendanceRate >= 95) {
         conduct = 'Xuất sắc';
       }
 
@@ -213,10 +240,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       data: {
         student_uu_id: student.id,
         student_name: student.full_name,
-        student_code: student.student_code || 'N/A',
-        student_id: student.student_id || 'N/A',
+        student_code: student.student_code || '—',
+        student_id: student.student_id || '—',
         class_name: currentClass?.name || 'Chưa có lớp',
-        grade_level: student.grade_level || 'N/A',
+        grade_level: student.grade_level || '—',
         semesters,
       },
     });

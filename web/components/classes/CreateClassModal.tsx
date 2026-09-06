@@ -1,21 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { apiFetch, createClass } from "@/lib/api/client";
-import { CENTER_ROOMS, STANDARD_SCHEDULES } from "@/lib/config/resources";
-import { Modal } from "@/components/ui";
-import { Icons } from "@/components/ui/Icons";
-import { useToast } from "@/hooks";
-import { getDisplayName } from "@/lib/utils/names";
-import {
-  X,
-  Save,
-  RefreshCw,
-  Calendar,
-  MapPin,
-  Clock,
-  Sparkles,
-} from "lucide-react";
+import { useState, useEffect } from 'react';
+import { apiFetch, createClass } from '@/lib/api/client';
+import { CENTER_ROOMS, STANDARD_SCHEDULES } from '@/lib/config/resources';
+import { Modal } from '@/components/ui';
+import { Icons } from '@/components/ui/Icons';
+import { useToast } from '@/hooks';
+import { getDisplayName } from '@/lib/utils/names';
+import { X, Save, RefreshCw, Calendar, MapPin, Clock, Sparkles } from 'lucide-react';
 
 interface Teacher {
   id: string;
@@ -52,26 +44,26 @@ interface CreateClassModalProps {
 }
 
 const EMPTY_FORM = {
-  name: "",
-  code: "",
-  description: "",
-  teacherId: "",
-  subjectId: "",
-  academicYearId: "",
-  room: "",
-  schedule: "",
+  name: '',
+  code: '',
+  description: '',
+  teacherId: '',
+  subjectId: '',
+  academicYearId: '',
+  room: '',
+  schedule: '',
   capacity: 40,
-  status: "active",
+  status: 'active',
 };
 
 const WEEK_DAYS = [
-  { day: 0, label: "Thứ 2" },
-  { day: 1, label: "Thứ 3" },
-  { day: 2, label: "Thứ 4" },
-  { day: 3, label: "Thứ 5" },
-  { day: 4, label: "Thứ 6" },
-  { day: 5, label: "Thứ 7" },
-  { day: 6, label: "Chủ Nhật" },
+  { day: 0, label: 'Thứ 2' },
+  { day: 1, label: 'Thứ 3' },
+  { day: 2, label: 'Thứ 4' },
+  { day: 3, label: 'Thứ 5' },
+  { day: 4, label: 'Thứ 6' },
+  { day: 5, label: 'Thứ 7' },
+  { day: 6, label: 'Chủ Nhật' },
 ];
 
 export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateClassModalProps) {
@@ -82,9 +74,9 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
   const [loadingData, setLoadingData] = useState(true);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [customRoom, setCustomRoom] = useState("");
+  const [customRoom, setCustomRoom] = useState('');
   const [useCustomRoom, setUseCustomRoom] = useState(false);
-  const [customSchedule, setCustomSchedule] = useState("");
+  const [customSchedule, setCustomSchedule] = useState('');
   const [useCustomSchedule, setUseCustomSchedule] = useState(false);
   const [dynamicRooms, setDynamicRooms] = useState<string[]>(CENTER_ROOMS);
   const [dynamicSchedules, setDynamicSchedules] = useState<string[]>(STANDARD_SCHEDULES);
@@ -95,9 +87,9 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
   useEffect(() => {
     if (!isOpen) return;
     setForm(EMPTY_FORM);
-    setCustomRoom("");
+    setCustomRoom('');
     setUseCustomRoom(false);
-    setCustomSchedule("");
+    setCustomSchedule('');
     setUseCustomSchedule(false);
     setSelectedDays([0, 2, 4]);
     setAutoSchedule(true);
@@ -106,16 +98,16 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
     async function fetchDropdownData() {
       try {
         const [teachersRes, subjectsRes, ayRes, roomsRes, schedulesRes] = await Promise.all([
-          apiFetch("/api/admin/users?role=instructors&limit=1000"),
-          apiFetch("/api/subjects"),
-          apiFetch("/api/academic-years"),
-          apiFetch("/api/settings?key=center_rooms"),
-          apiFetch("/api/settings?key=center_schedules"),
+          apiFetch('/api/teachers'),
+          apiFetch('/api/subjects'),
+          apiFetch('/api/academic-years'),
+          apiFetch('/api/settings?key=center_rooms'),
+          apiFetch('/api/settings?key=center_schedules'),
         ]);
 
         if (teachersRes.ok) {
           const json = await teachersRes.json();
-          setTeachers(json.data?.data || json.data || json.users || []);
+          setTeachers(json.data?.teachers || json.teachers || json.data?.data || []);
         }
         if (subjectsRes.ok) {
           const json = await subjectsRes.json();
@@ -134,7 +126,7 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
               const flatRooms: string[] = [];
               for (const [branch, rms] of Object.entries(rawRooms)) {
                 if (Array.isArray(rms)) {
-                  rms.forEach(r => {
+                  rms.forEach((r) => {
                     flatRooms.push(`${branch} - ${r}`);
                   });
                 }
@@ -153,7 +145,7 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
           }
         }
       } catch (err) {
-        console.error("[CreateClassModal] Failed to load dropdown data:", err);
+        console.error('[CreateClassModal] Failed to load dropdown data:', err);
       } finally {
         setLoadingData(false);
       }
@@ -164,7 +156,7 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
 
   const handleCreate = async () => {
     if (!form.name.trim()) {
-      toast.warning("Thiếu thông tin", "Vui lòng nhập tên lớp học");
+      toast.warning('Thiếu thông tin', 'Vui lòng nhập tên lớp học');
       return;
     }
     setCreating(true);
@@ -191,27 +183,27 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
 
       if (autoSchedule && resolvedSchedule && selectedDays.length > 0) {
         toast.success(
-          "Tạo lớp thành công",
+          'Tạo lớp thành công',
           `Đã tạo lớp ${form.name} và tự động xếp ${selectedDays.length} tiết học lên Thời Khóa Biểu!`
         );
       } else {
-        toast.success("Tạo thành công", "Lớp học đã được tạo thành công");
+        toast.success('Tạo thành công', 'Lớp học đã được tạo thành công');
       }
 
       onClose();
       onSuccess();
     } catch (err) {
-      toast.error("Lỗi", err instanceof Error ? err.message : "Tạo lớp học thất bại");
+      toast.error('Lỗi', err instanceof Error ? err.message : 'Tạo lớp học thất bại');
     } finally {
       setCreating(false);
     }
   };
 
   const inputClass =
-    "w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all";
+    'w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all';
   const selectClass =
-    "w-full pl-12 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none h-[48px]";
-  const labelClass = "block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1";
+    'w-full pl-12 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none h-[48px]';
+  const labelClass = 'block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="">
@@ -220,7 +212,9 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
         <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50 shrink-0">
           <div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Thêm lớp học mới</h3>
-            <p className="text-sm text-gray-500">Khởi tạo một lớp học mới và đồng bộ thời khóa biểu</p>
+            <p className="text-sm text-gray-500">
+              Khởi tạo một lớp học mới và đồng bộ thời khóa biểu
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -254,9 +248,7 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>
-                    Mã lớp học
-                  </label>
+                  <label className={labelClass}>Mã lớp học</label>
                   <input
                     type="text"
                     value={form.code}
@@ -300,7 +292,10 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
                       <option value="">-- Chọn giáo viên phụ trách --</option>
                       {teachers.map((t) => (
                         <option key={t.id} value={t.id}>
-                          {getDisplayName(t)} {t.role && t.role !== 'teacher' ? `(${INSTRUCTOR_ROLE_LABELS[t.role] || t.role})` : ''}
+                          {getDisplayName(t)}{' '}
+                          {t.role && t.role !== 'teacher'
+                            ? `(${INSTRUCTOR_ROLE_LABELS[t.role] || t.role})`
+                            : ''}
                         </option>
                       ))}
                     </select>
@@ -339,9 +334,9 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
                           value={form.room}
                           onChange={(e) => {
                             const val = e.target.value;
-                            if (val === "custom") {
+                            if (val === 'custom') {
                               setUseCustomRoom(true);
-                              setForm((p) => ({ ...p, room: "" }));
+                              setForm((p) => ({ ...p, room: '' }));
                             } else {
                               setForm((p) => ({ ...p, room: val }));
                             }
@@ -350,7 +345,9 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
                         >
                           <option value="">-- Chọn phòng học --</option>
                           {dynamicRooms.map((r) => (
-                            <option key={r} value={r}>Phòng {r}</option>
+                            <option key={r} value={r}>
+                              Phòng {r}
+                            </option>
                           ))}
                           <option value="custom">-- Phòng học khác (Tự nhập) --</option>
                         </select>
@@ -364,8 +361,8 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
                           type="button"
                           onClick={() => {
                             setUseCustomRoom(false);
-                            setCustomRoom("");
-                            setForm((p) => ({ ...p, room: "" }));
+                            setCustomRoom('');
+                            setForm((p) => ({ ...p, room: '' }));
                           }}
                           className="text-[10px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors"
                         >
@@ -400,9 +397,9 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
                             value={form.schedule}
                             onChange={(e) => {
                               const val = e.target.value;
-                              if (val === "custom") {
+                              if (val === 'custom') {
                                 setUseCustomSchedule(true);
-                                setForm((p) => ({ ...p, schedule: "" }));
+                                setForm((p) => ({ ...p, schedule: '' }));
                               } else {
                                 setForm((p) => ({ ...p, schedule: val }));
                               }
@@ -411,7 +408,9 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
                           >
                             <option value="">-- Chọn ca học --</option>
                             {dynamicSchedules.map((s) => (
-                              <option key={s} value={s}>{s}</option>
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
                             ))}
                             <option value="custom">-- Khung giờ khác (Tự nhập) --</option>
                           </select>
@@ -425,8 +424,8 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
                             type="button"
                             onClick={() => {
                               setUseCustomSchedule(false);
-                              setCustomSchedule("");
-                              setForm((p) => ({ ...p, schedule: "" }));
+                              setCustomSchedule('');
+                              setForm((p) => ({ ...p, schedule: '' }));
                             }}
                             className="text-[10px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors"
                           >
@@ -452,7 +451,9 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
                     <input
                       type="number"
                       value={form.capacity}
-                      onChange={(e) => setForm((p) => ({ ...p, capacity: parseInt(e.target.value) || 0 }))}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, capacity: parseInt(e.target.value) || 0 }))
+                      }
                       className={inputClass}
                       placeholder="VD: 40"
                       min={1}
@@ -467,7 +468,9 @@ export default function CreateClassModal({ isOpen, onClose, onSuccess }: CreateC
                       Ngày học trong tuần:
                     </label>
                     <span className="text-[11px] text-stone-400">
-                      {selectedDays.length === 0 ? "Chưa chọn ngày nào" : `Đã chọn ${selectedDays.length} ngày`}
+                      {selectedDays.length === 0
+                        ? 'Chưa chọn ngày nào'
+                        : `Đã chọn ${selectedDays.length} ngày`}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">

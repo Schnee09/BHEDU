@@ -32,7 +32,7 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
       .eq('parent_id', user.id)
       .eq('status', 'approved');
 
-    const linkedStudentIds = (links || []).map(l => l.student_id);
+    const linkedStudentIds = (links || []).map((l) => l.student_id);
 
     if (linkedStudentIds.length === 0) {
       return apiSuccess([]);
@@ -48,7 +48,7 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
       queryParams.student_id = linkedStudentIds as any; // Supabase filter handles array? No, eq doesn't.
       // Wait, let's fix the query builder below to handle this.
     }
-    
+
     // Set a flag for the query builder
     (queryParams as any)._linkedStudentIds = linkedStudentIds;
   }
@@ -64,7 +64,7 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     if (teacherClasses && teacherClasses.length > 0) {
       teacherClassIds = teacherClasses.map((c) => c.id);
     }
-    // Note: If teacher has no classes, teacherClassIds remains null. 
+    // Note: If teacher has no classes, teacherClassIds remains null.
     // They won't be scoped to any classes, but can still see specific students if permitted by RLS/Permissions.
   }
 
@@ -100,7 +100,25 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     if (Array.isArray(queryParams.student_id)) {
       query = query.in('student_id', queryParams.student_id);
     } else {
-      query = query.eq('student_id', queryParams.student_id);
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        queryParams.student_id
+      );
+      if (isUUID) {
+        query = query.eq('student_id', queryParams.student_id);
+      } else {
+        const { data: st } = await supabase
+          .from('profiles')
+          .select('id')
+          .or(
+            `student_code.ilike.${queryParams.student_id},student_id.ilike.${queryParams.student_id},phone.eq.${queryParams.student_id}`
+          )
+          .maybeSingle();
+        if (st) {
+          query = query.eq('student_id', st.id);
+        } else {
+          return apiSuccess([]);
+        }
+      }
     }
   }
 
@@ -134,8 +152,8 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
       validatedData = createGradeSchema.parse(data);
     }
   } catch (e: any) {
-    if (e.name === "ZodError" || e.message.includes("invalid")) {
-      logger.error("Grade validation failed", {
+    if (e.name === 'ZodError' || e.message.includes('invalid')) {
+      logger.error('Grade validation failed', {
         error: e.errors || e.message,
         body: JSON.stringify(data).slice(0, 500),
         hasGrades: !!data.grades,

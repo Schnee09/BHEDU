@@ -16,10 +16,14 @@ import {
   Check,
   Radio,
   ArrowUpRight,
+  AlertOctagon,
+  Bug,
+  ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiFetch } from '@/lib/api/client';
 import PageGuard from '@/components/PageGuard';
+import type { SystemIncident } from '@/lib/incidentLogger';
 
 interface HealthData {
   status: string;
@@ -62,19 +66,33 @@ function SystemHealthContent() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [testingEndpoint, setTestingEndpoint] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<Record<string, { ok: boolean; time: number; note: string }>>({});
+  const [testResults, setTestResults] = useState<
+    Record<string, { ok: boolean; time: number; note: string }>
+  >({});
+  const [incidents, setIncidents] = useState<SystemIncident[]>([]);
 
   const fetchHealth = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch('/api/health');
-      if (res.ok) {
-        const json = await res.json();
+      const [healthRes, incidentsRes] = await Promise.allSettled([
+        apiFetch('/api/health'),
+        apiFetch('/api/admin/incidents'),
+      ]);
+
+      if (healthRes.status === 'fulfilled' && healthRes.value.ok) {
+        const json = await healthRes.value.json();
         setData(json);
         setLastRefreshed(new Date());
-      } else {
-        setError('Dịch vụ giám sát trả về mã lỗi: ' + res.status);
+      } else if (healthRes.status === 'fulfilled') {
+        setError('Dịch vụ giám sát trả về mã lỗi: ' + healthRes.value.status);
+      }
+
+      if (incidentsRes.status === 'fulfilled' && incidentsRes.value.ok) {
+        const incidentsJson = await incidentsRes.value.json();
+        if (incidentsJson.success && Array.isArray(incidentsJson.data)) {
+          setIncidents(incidentsJson.data);
+        }
       }
     } catch (err: any) {
       setError(err?.message || 'Không thể kết nối đến API Health');
@@ -164,19 +182,30 @@ function SystemHealthContent() {
                     : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                 )}
               >
-                <span className={cn('w-2 h-2 rounded-full', isHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500')} />
+                <span
+                  className={cn(
+                    'w-2 h-2 rounded-full',
+                    isHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+                  )}
+                />
                 {isHealthy ? 'Hoạt động tốt' : 'Cần kiểm tra'}
               </span>
             </h1>
             <p className="text-xs text-stone-500 font-medium">
-              Theo dõi tình trạng thời gian thực của Cơ sở dữ liệu Supabase, Server Node.js và các dịch vụ nền tảng
+              Theo dõi tình trạng thời gian thực của Cơ sở dữ liệu Supabase, Server Node.js và các
+              dịch vụ nền tảng
             </p>
           </div>
 
           {/* Action & Auto Refresh Controls */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-sm text-xs font-bold">
-              <Radio className={cn('w-3.5 h-3.5', autoRefresh ? 'text-emerald-500 animate-pulse' : 'text-stone-400')} />
+              <Radio
+                className={cn(
+                  'w-3.5 h-3.5',
+                  autoRefresh ? 'text-emerald-500 animate-pulse' : 'text-stone-400'
+                )}
+              />
               <span className="text-stone-600 dark:text-stone-300">Tự động làm mới (20s):</span>
               <button
                 onClick={() => setAutoRefresh(!autoRefresh)}
@@ -232,8 +261,8 @@ function SystemHealthContent() {
                     dbLatency < 200
                       ? 'bg-emerald-500/10 text-emerald-500'
                       : dbLatency < 800
-                      ? 'bg-amber-500/10 text-amber-500'
-                      : 'bg-rose-500/10 text-rose-500'
+                        ? 'bg-amber-500/10 text-amber-500'
+                        : 'bg-rose-500/10 text-rose-500'
                   )}
                 >
                   {dbLatency < 200 ? 'Rất nhanh' : dbLatency < 800 ? 'Bình thường' : 'Chậm'}
@@ -285,7 +314,9 @@ function SystemHealthContent() {
               <h3 className="text-lg font-black text-stone-950 dark:text-white truncate">
                 {formatUptime(data?.system?.uptime)}
               </h3>
-              <p className="text-xs text-stone-400 mt-1">Node.js {data?.system?.nodeVersion || 'v20+'}</p>
+              <p className="text-xs text-stone-400 mt-1">
+                Node.js {data?.system?.nodeVersion || 'v20+'}
+              </p>
             </div>
           </div>
 
@@ -310,6 +341,78 @@ function SystemHealthContent() {
           </div>
         </div>
 
+        {/* Realtime Incident & Error Tracker */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-stone-100 dark:border-white/5">
+            <div>
+              <h3 className="text-lg font-black text-stone-950 dark:text-white flex items-center gap-2">
+                <AlertOctagon className="w-5 h-5 text-rose-500" />
+                Nhật ký Báo lỗi & Sự cố Thời gian thực (Incident Feed)
+              </h3>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Tự động thu thập các lỗi người dùng, gián đoạn mạng và ngoại lệ hệ thống
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-[11px] font-bold text-stone-600 dark:text-stone-300">
+                {incidents.length} sự cố ghi nhận
+              </span>
+            </div>
+          </div>
+
+          {incidents.length === 0 ? (
+            <div className="p-8 text-center rounded-2xl bg-emerald-500/5 border border-emerald-500/20 space-y-2">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+              <h4 className="font-bold text-sm text-emerald-800 dark:text-emerald-300">
+                Hệ thống đang hoạt động hoàn hảo
+              </h4>
+              <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                Không ghi nhận sự cố gián đoạn mạng hoặc lỗi ứng dụng nào gần đây.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+              {incidents.map((inc) => (
+                <div
+                  key={inc.id}
+                  className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                >
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-[11px] text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md">
+                        {inc.id}
+                      </span>
+                      <span className="font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wider text-[10px] bg-stone-200 dark:bg-stone-700 px-1.5 py-0.5 rounded">
+                        {inc.type}
+                      </span>
+                      <span className="text-[10px] text-stone-400">
+                        {new Date(inc.timestamp).toLocaleTimeString('vi-VN')}
+                      </span>
+                    </div>
+                    <p className="text-stone-700 dark:text-stone-300 font-medium truncate">
+                      {inc.message}
+                    </p>
+                    {inc.userEmail && (
+                      <p className="text-[10px] text-stone-400">
+                        Người dùng:{' '}
+                        <span className="font-semibold text-stone-600 dark:text-stone-300">
+                          {inc.userEmail}
+                        </span>{' '}
+                        ({inc.userRole || 'user'})
+                      </p>
+                    )}
+                  </div>
+
+                  <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-[10px] uppercase shrink-0 self-start sm:self-center">
+                    {inc.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Diagnostic Testing Suite */}
         <div className="p-8 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -329,10 +432,14 @@ function SystemHealthContent() {
             <div className="p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-white/5 flex flex-col justify-between gap-4">
               <div>
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-sm text-stone-900 dark:text-white">API Health Endpoint</h4>
+                  <h4 className="font-bold text-sm text-stone-900 dark:text-white">
+                    API Health Endpoint
+                  </h4>
                   <span className="text-[10px] font-mono text-stone-400">/api/health</span>
                 </div>
-                <p className="text-xs text-stone-500 mt-1">Kiểm tra đường truyền trực tiếp đến server Next.js.</p>
+                <p className="text-xs text-stone-500 mt-1">
+                  Kiểm tra đường truyền trực tiếp đến server Next.js.
+                </p>
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-stone-200/60 dark:border-white/5">
@@ -353,10 +460,14 @@ function SystemHealthContent() {
             <div className="p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-white/5 flex flex-col justify-between gap-4">
               <div>
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-sm text-stone-900 dark:text-white">Phân quyền RBAC</h4>
+                  <h4 className="font-bold text-sm text-stone-900 dark:text-white">
+                    Phân quyền RBAC
+                  </h4>
                   <span className="text-[10px] font-mono text-stone-400">/api/admin/roles</span>
                 </div>
-                <p className="text-xs text-stone-500 mt-1">Kiểm tra kết nối truy xuất ma trận quyền và vai trò.</p>
+                <p className="text-xs text-stone-500 mt-1">
+                  Kiểm tra kết nối truy xuất ma trận quyền và vai trò.
+                </p>
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-stone-200/60 dark:border-white/5">
@@ -377,10 +488,14 @@ function SystemHealthContent() {
             <div className="p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-white/5 flex flex-col justify-between gap-4">
               <div>
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-sm text-stone-900 dark:text-white">Học vụ & Năm học</h4>
+                  <h4 className="font-bold text-sm text-stone-900 dark:text-white">
+                    Học vụ & Năm học
+                  </h4>
                   <span className="text-[10px] font-mono text-stone-400">/api/academic-years</span>
                 </div>
-                <p className="text-xs text-stone-500 mt-1">Kiểm tra khả năng truy vấn cấu hình học vụ cốt lõi.</p>
+                <p className="text-xs text-stone-500 mt-1">
+                  Kiểm tra khả năng truy vấn cấu hình học vụ cốt lõi.
+                </p>
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-stone-200/60 dark:border-white/5">
@@ -404,25 +519,34 @@ function SystemHealthContent() {
           <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-4">
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-5 h-5 text-emerald-500" />
-              <h4 className="font-bold text-sm text-stone-900 dark:text-white">Bảo mật & Rate Limiting</h4>
+              <h4 className="font-bold text-sm text-stone-900 dark:text-white">
+                Bảo mật & Rate Limiting
+              </h4>
             </div>
             <p className="text-xs text-stone-500 leading-relaxed">
-              Hệ thống áp dụng cơ chế <strong>Token Bucket Rate Limit</strong> và mã hóa JWT phiên đăng nhập. 
-              Các thao tác nhạy cảm của Quản trị hệ thống đều được lưu vết đầy đủ trong Nhật ký kiểm toán (Audit Logs).
+              Hệ thống áp dụng cơ chế <strong>Token Bucket Rate Limit</strong> và mã hóa JWT phiên
+              đăng nhập. Các thao tác nhạy cảm của Quản trị hệ thống đều được lưu vết đầy đủ trong
+              Nhật ký kiểm toán (Audit Logs).
             </p>
           </div>
 
           <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-sm space-y-4">
             <div className="flex items-center gap-3">
               <HardDrive className="w-5 h-5 text-amber-500" />
-              <h4 className="font-bold text-sm text-stone-900 dark:text-white">Sao lưu & Dự phòng</h4>
+              <h4 className="font-bold text-sm text-stone-900 dark:text-white">
+                Sao lưu & Dự phòng
+              </h4>
             </div>
             <p className="text-xs text-stone-500 leading-relaxed">
-              Cơ sở dữ liệu Supabase được sao lưu liên tục (Point-in-Time Recovery). 
-              Bạn có thể tải về bản sao lưu JSON toàn diện bất kỳ lúc nào tại mục{' '}
-              <a href="/dashboard/admin/backup" className="text-amber-500 font-bold hover:underline">
+              Cơ sở dữ liệu Supabase được sao lưu liên tục (Point-in-Time Recovery). Bạn có thể tải
+              về bản sao lưu JSON toàn diện bất kỳ lúc nào tại mục{' '}
+              <a
+                href="/dashboard/admin/backup"
+                className="text-amber-500 font-bold hover:underline"
+              >
                 Sao lưu & Dữ liệu
-              </a>.
+              </a>
+              .
             </p>
           </div>
         </div>

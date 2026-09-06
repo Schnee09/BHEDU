@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/useToast';
@@ -39,6 +39,25 @@ const getFieldLabel = (key: string) => {
   return map[key] ?? 'thông tin';
 };
 
+const getActionMeta = (action: string) => {
+  const map: Record<string, { label: string; dot: string }> = {
+    'auth.login': { label: 'Đăng nhập hệ thống', dot: 'bg-sky-500 shadow-sky-500/50' },
+    'auth.logout': { label: 'Đăng xuất', dot: 'bg-stone-400' },
+    'user.password_reset': { label: 'Đổi mật khẩu', dot: 'bg-amber-500 shadow-amber-500/50' },
+    'user.updated': { label: 'Cập nhật hồ sơ', dot: 'bg-emerald-500 shadow-emerald-500/50' },
+    'attendance.marked': { label: 'Điểm danh ca học', dot: 'bg-emerald-500 shadow-emerald-500/50' },
+    'attendance.updated': { label: 'Chỉnh sửa điểm danh', dot: 'bg-amber-500 shadow-amber-500/50' },
+    'grade.created': { label: 'Nhập điểm số', dot: 'bg-emerald-500 shadow-emerald-500/50' },
+    'grade.updated': { label: 'Chỉnh sửa điểm', dot: 'bg-amber-500 shadow-amber-500/50' },
+    'payment.created': { label: 'Thanh toán học phí', dot: 'bg-green-500 shadow-green-500/50' },
+    'student.enrolled': { label: 'Ghi danh lớp học', dot: 'bg-indigo-500 shadow-indigo-500/50' },
+    'class.created': { label: 'Tạo lớp học mới', dot: 'bg-purple-500 shadow-purple-500/50' },
+    'assignment.created': { label: 'Tạo bài tập mới', dot: 'bg-blue-500 shadow-blue-500/50' },
+    'assignment.submitted': { label: 'Nộp bài tập', dot: 'bg-teal-500 shadow-teal-500/50' },
+  };
+  return map[action] || { label: action.replace(/[._]/g, ' '), dot: 'bg-amber-500' };
+};
+
 export default function ProfilePage() {
   const { profile: userProfile, loading: profileLoading, refreshProfile } = useProfile();
   const toast = useToast();
@@ -71,24 +90,32 @@ export default function ProfilePage() {
     }
   }, [userProfile, initialized]);
 
-  useEffect(() => {
-    if (!userProfile?.id) return;
-    const load = async () => {
-      setLogsLoading(true);
-      try {
-        const { data } = await supabase
-          .from('audit_logs')
-          .select('id, action, resource_type, created_at')
-          .eq('actor_id', userProfile.id)
-          .order('created_at', { ascending: false })
-          .limit(8);
-        if (data) setLogs(data);
-      } finally {
-        setLogsLoading(false);
+  const loadLogs = useCallback(async () => {
+    setLogsLoading(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
       }
-    };
-    load();
-  }, [userProfile?.id]);
+
+      const res = await fetch('/api/profile/activity', { headers });
+      if (res.ok) {
+        const json = await res.json();
+        setLogs(json.data || []);
+      }
+    } catch {
+      // non-critical
+    } finally {
+      setLogsLoading(false);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    loadLogs();
+  }, [loadLogs]);
 
   const handleSaveField = async (
     fieldKey: keyof typeof formData,
@@ -129,16 +156,8 @@ export default function ProfilePage() {
       }
       setFormData((prev) => ({ ...prev, [fieldKey]: newValue }));
       await refreshProfile();
+      await loadLogs();
       toast.success('Đã lưu', `Cập nhật thành công ${getFieldLabel(fieldKey)}.`);
-
-      // refresh logs
-      const { data: fresh } = await supabase
-        .from('audit_logs')
-        .select('id, action, resource_type, created_at')
-        .eq('actor_id', userProfile?.id)
-        .order('created_at', { ascending: false })
-        .limit(8);
-      if (fresh) setLogs(fresh);
 
       return true;
     } catch {
@@ -152,25 +171,21 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-stone-950">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-white dark:bg-stone-950 w-full max-w-full overflow-x-hidden">
       {/* ── Left Sidebar ── */}
-      <ProfileSidebar
-        profile={userProfile}
-        onPasswordChangeClick={() => setActiveTab('security')}
-        refreshProfile={refreshProfile}
-      />
+      <ProfileSidebar profile={userProfile} refreshProfile={refreshProfile} />
 
       {/* ── Right Content ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
         {/* Top bar */}
-        <header className="sticky top-0 z-10 bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 px-8 flex items-center gap-1">
+        <header className="sticky top-0 z-10 bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 px-4 sm:px-8 flex items-center gap-1 overflow-x-auto scrollbar-none w-full">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-4 text-xs font-semibold border-b-2 transition-all -mb-px ${
+                className={`flex items-center gap-2 px-3 sm:px-4 py-3.5 sm:py-4 text-xs font-semibold border-b-2 transition-all -mb-px shrink-0 cursor-pointer ${
                   active
                     ? 'border-stone-900 dark:border-stone-100 text-stone-900 dark:text-stone-100'
                     : 'border-transparent text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300'
@@ -184,9 +199,9 @@ export default function ProfilePage() {
         </header>
 
         {/* Main grid */}
-        <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-0">
+        <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-0 w-full max-w-full overflow-x-hidden">
           {/* Tab content */}
-          <main className="p-8 border-r border-stone-100 dark:border-stone-800">
+          <main className="p-4 sm:p-8 border-b xl:border-b-0 xl:border-r border-stone-100 dark:border-stone-800 w-full max-w-full min-w-0">
             <AnimatePresence mode="wait">
               {activeTab === 'profile' && (
                 <ProfileFormCard key="profile" formData={formData} onSaveField={handleSaveField} />
@@ -197,7 +212,7 @@ export default function ProfilePage() {
           </main>
 
           {/* Activity sidebar */}
-          <aside className="p-6 bg-stone-50 dark:bg-stone-950">
+          <aside className="p-4 sm:p-6 bg-stone-50 dark:bg-stone-950 w-full max-w-full min-w-0">
             <div className="flex items-center gap-2 mb-5">
               <Activity className="w-3.5 h-3.5 text-stone-400" />
               <h3 className="text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
@@ -214,32 +229,35 @@ export default function ProfilePage() {
               <div className="py-8 text-center">
                 <p className="text-xs text-stone-400 dark:text-stone-500">Chưa có hoạt động nào</p>
                 <p className="text-[10px] text-stone-300 dark:text-stone-600 mt-1">
-                  Các thao tác sẽ xuất hiện tại đây
+                  Các thao tác thay đổi dữ liệu sẽ xuất hiện tại đây
                 </p>
               </div>
             ) : (
               <div className="space-y-1">
-                {logs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex items-start gap-3 py-2.5 border-b border-stone-100 dark:border-stone-800/50 last:border-0"
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full bg-stone-300 dark:bg-stone-600 mt-1.5 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-stone-700 dark:text-stone-300 capitalize truncate">
-                        {log.action.replace(/_/g, ' ')}
-                      </p>
-                      <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono mt-0.5">
-                        {new Date(log.created_at).toLocaleString('vi-VN', {
-                          month: 'short',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
+                {logs.map((log) => {
+                  const meta = getActionMeta(log.action);
+                  return (
+                    <div
+                      key={log.id}
+                      className="flex items-start gap-3 py-2.5 border-b border-stone-100 dark:border-stone-800/50 last:border-0"
+                    >
+                      <div className={`w-2 h-2 rounded-full ${meta.dot} mt-1.5 flex-shrink-0`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-stone-700 dark:text-stone-300 capitalize truncate">
+                          {meta.label}
+                        </p>
+                        <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono mt-0.5">
+                          {new Date(log.created_at).toLocaleString('vi-VN', {
+                            month: 'short',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </aside>

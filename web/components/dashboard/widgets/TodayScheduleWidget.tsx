@@ -7,6 +7,8 @@ import { Icons } from '@/components/ui/Icons';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
+import { useProfile } from '@/hooks/useProfile';
+
 interface Subject {
   id: string;
   name: string;
@@ -47,11 +49,13 @@ const TodayScheduleWidget = memo(function TodayScheduleWidget({
   role,
   studentId,
 }: TodayScheduleWidgetProps) {
-  // Fetch slots from my timetable
+  const { profile } = useProfile();
+
+  // Fetch slots from my timetable only when profile is authenticated
   const { data, loading, error } = useFetch<{
     slots: TimetableSlot[];
     classes: any[];
-  }>('/api/timetable/my');
+  }>(profile ? '/api/timetable/my' : null);
 
   const jsDay = new Date().getDay();
   const dayIndex = jsDay === 0 ? 6 : jsDay - 1;

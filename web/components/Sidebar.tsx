@@ -71,11 +71,6 @@ const Sidebar = memo(function Sidebar({
           badgeCounts.pendingParentLinks
         ) {
           badge = String(badgeCounts.pendingParentLinks);
-        } else if (
-          (link.href === '/dashboard/classes' || link.href === '/dashboard/teacher/classes') &&
-          badgeCounts.classes
-        ) {
-          badge = String(badgeCounts.classes);
         }
         return { ...link, badge };
       }),
@@ -90,11 +85,6 @@ const Sidebar = memo(function Sidebar({
             badgeCounts.pendingParentLinks
           ) {
             badge = String(badgeCounts.pendingParentLinks);
-          } else if (
-            (link.href === '/dashboard/classes' || link.href === '/dashboard/teacher/classes') &&
-            badgeCounts.classes
-          ) {
-            badge = String(badgeCounts.classes);
           }
           return { ...link, badge };
         }),

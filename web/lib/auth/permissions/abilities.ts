@@ -73,14 +73,18 @@ export function defineAbilitiesFor(context: PermissionContext): AbilityRule[] {
       { action: 'manage', subject: 'Class' },
       { action: 'manage', subject: 'Subject' },
       { action: 'manage', subject: 'Enrollment' },
-      // Data access
-      { action: 'read', subject: 'Grade' },
-      { action: 'read', subject: 'Attendance' },
-      { action: 'read', subject: 'Audit' },
-      // System
-      { action: 'manage', subject: 'Setting' },
+      { action: 'manage', subject: 'TutoringSession' },
+      // Grades & Attendance
+      { action: 'manage', subject: 'Grade' },
+      { action: 'manage', subject: 'Attendance' },
+      // Finance
+      { action: 'manage', subject: 'Finance' },
+      { action: 'manage', subject: 'Invoice' },
+      { action: 'manage', subject: 'Payment' },
+      // System & Comms
       { action: 'manage', subject: 'Announcement' },
-      { action: 'export', subject: 'Report' }
+      { action: 'export', subject: 'Report' },
+      { action: 'read', subject: 'Audit' }
     );
   }
 

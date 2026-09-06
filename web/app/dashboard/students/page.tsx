@@ -206,7 +206,7 @@ function StudentsPage() {
       toast.error('Không thể tải danh sách học sinh', error);
       logger.error('Error loading students', new Error(error));
     }
-  }, [error, toast]);
+  }, [error]);
 
   // Bulk archive mutation (admin/staff only)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

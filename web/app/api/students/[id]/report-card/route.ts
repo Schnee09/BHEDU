@@ -10,37 +10,39 @@ import { createClientFromRequest } from '@/lib/supabase/server';
 import { teacherAuth } from '@/lib/auth/adminAuth';
 import { renderToBuffer } from '@react-pdf/renderer';
 import ReportCardPDF from '@/components/reports/ReportCardPDF';
+import { settingsService } from '@/lib/services/settingsService';
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
     const authResult = await teacherAuth(request);
     if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
     }
 
     const supabase = createClientFromRequest(request as any);
     const { searchParams } = new URL(request.url);
-    const academicYearId = searchParams.get('academic_year_id');
-    const semester = searchParams.get('semester') || 'HK1';
+    const identifier = resolvedParams.id;
+    let academicYearId = searchParams.get('academic_year_id');
+    const paramSemester = searchParams.get('semester');
 
-    if (!academicYearId) {
-      return NextResponse.json(
-        { error: 'Academic year ID is required' },
-        { status: 400 }
-      );
+    const { academicYear: currentAY, semester: activeSem } =
+      await settingsService.getAcademicContext();
+    const semester = paramSemester || activeSem.code || 'HK1';
+
+    if (!academicYearId || academicYearId === 'current') {
+      academicYearId = currentAY.id;
     }
 
-    // Get student basic info
-    const { data: student, error: studentError } = await supabase
+    // Get student basic info with flexible lookup
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      identifier
+    );
+
+    let studentQuery = supabase
       .from('profiles')
-      .select(`
+      .select(
+        `
         id,
         full_name,
         student_id,
@@ -48,37 +50,48 @@ export async function POST(
         date_of_birth,
         gender,
         grade_level,
-        email
-      `)
-      .eq('id', resolvedParams.id)
-      .eq('role', 'student')
-      .single();
+        email,
+        role
+      `
+      )
+      .eq('role', 'student');
 
-    if (studentError || !student) {
-      return NextResponse.json(
-        { error: 'Student not found' },
-        { status: 404 }
+    if (isUUID) {
+      studentQuery = studentQuery.eq('id', identifier);
+    } else {
+      studentQuery = studentQuery.or(
+        `student_code.ilike.${identifier},student_id.ilike.${identifier},phone.eq.${identifier}`
       );
     }
 
-    // Get academic year info
-    const { data: academicYear, error: yearError } = await supabase
-      .from('academic_years')
-      .select('*')
-      .eq('id', academicYearId)
-      .single();
+    const { data: student, error: studentError } = await studentQuery.maybeSingle();
 
-    if (yearError || !academicYear) {
-      return NextResponse.json(
-        { error: 'Academic year not found' },
-        { status: 404 }
-      );
+    if (studentError || !student) {
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    }
+
+    const realStudentId = student.id;
+
+    // Get academic year info
+    let academicYear: any = null;
+    if (academicYearId) {
+      const { data: yr } = await supabase
+        .from('academic_years')
+        .select('*')
+        .eq('id', academicYearId)
+        .maybeSingle();
+      academicYear = yr;
+    }
+
+    if (!academicYear) {
+      academicYear = currentAY;
     }
 
     // Get student's current class
     const { data: enrollment } = await supabase
       .from('enrollments')
-      .select(`
+      .select(
+        `
         class_id,
         classes:classes!inner(
           id,
@@ -87,19 +100,21 @@ export async function POST(
             full_name
           )
         )
-      `)
-      .eq('student_id', resolvedParams.id)
-      .eq('status', 'enrolled')
+      `
+      )
+      .eq('student_id', realStudentId)
+      .in('status', ['enrolled', 'active'])
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     const currentClass = enrollment ? (enrollment as any).classes : null;
 
     // Get all grades for the student in this academic year and semester
     const gradesQuery = supabase
       .from('grades')
-      .select(`
+      .select(
+        `
         id,
         points_earned,
         component_type,
@@ -117,8 +132,9 @@ export async function POST(
             code
           )
         )
-      `)
-      .eq('student_id', resolvedParams.id)
+      `
+      )
+      .eq('student_id', realStudentId)
       .eq('academic_year_id', academicYearId);
 
     // Add semester filter if not "CN" (whole year)
@@ -130,10 +146,7 @@ export async function POST(
 
     if (gradesError) {
       console.error('Error fetching grades:', gradesError);
-      return NextResponse.json(
-        { error: 'Failed to fetch grades' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to fetch grades' }, { status: 500 });
     }
 
     // Process grades by subject
@@ -232,15 +245,16 @@ export async function POST(
     });
 
     // Calculate GPA
-    const gpa = subjects.length > 0
-      ? subjects.reduce((sum, s) => sum + s.final_grade, 0) / subjects.length
-      : 0;
+    const gpa =
+      subjects.length > 0
+        ? subjects.reduce((sum, s) => sum + s.final_grade, 0) / subjects.length
+        : 0;
 
     // Get conduct grade
     const conductQuery = supabase
       .from('conduct_grades')
       .select('*')
-      .eq('student_id', resolvedParams.id)
+      .eq('student_id', realStudentId)
       .eq('academic_year_id', academicYearId);
 
     if (semester !== 'CN') {
@@ -274,7 +288,8 @@ export async function POST(
       gpa: Math.round(gpa * 100) / 100,
       conduct,
       academic_classification: classification,
-      teacher_comment: conductGrades && conductGrades.length > 0 ? conductGrades[0].teacher_comment : null,
+      teacher_comment:
+        conductGrades && conductGrades.length > 0 ? conductGrades[0].teacher_comment : null,
       homeroom_teacher: currentClass?.teacher?.full_name || null,
       principal_name: 'Hiệu trưởng',
       report_date: formatDate(new Date().toISOString()),
@@ -290,7 +305,6 @@ export async function POST(
         'Content-Disposition': `attachment; filename="report-card-${student.student_code || student.student_id}-${semester}.pdf"`,
       },
     });
-
   } catch (error: any) {
     console.error('Error generating report card PDF:', error);
     return NextResponse.json(
@@ -301,7 +315,10 @@ export async function POST(
 }
 
 // Helper functions
-function getVietnameseClassification(gpa: number, conduct: string): {
+function getVietnameseClassification(
+  gpa: number,
+  conduct: string
+): {
   classification: string;
   classification_vi: string;
   description: string;
@@ -310,31 +327,31 @@ function getVietnameseClassification(gpa: number, conduct: string): {
     return {
       classification: 'Excellent',
       classification_vi: 'Xuất sắc',
-      description: 'Outstanding academic performance with excellent conduct'
+      description: 'Outstanding academic performance with excellent conduct',
     };
   } else if (gpa >= 8.0 && conduct !== 'Yếu') {
     return {
       classification: 'Good',
       classification_vi: 'Giỏi',
-      description: 'Strong academic performance with good conduct'
+      description: 'Strong academic performance with good conduct',
     };
   } else if (gpa >= 6.5 && conduct !== 'Yếu') {
     return {
       classification: 'Fair',
       classification_vi: 'Khá',
-      description: 'Satisfactory academic performance'
+      description: 'Satisfactory academic performance',
     };
   } else if (gpa >= 5.0) {
     return {
       classification: 'Average',
       classification_vi: 'Trung bình',
-      description: 'Average academic performance, needs improvement'
+      description: 'Average academic performance, needs improvement',
     };
   } else {
     return {
       classification: 'Weak',
       classification_vi: 'Yếu',
-      description: 'Below average performance, significant improvement needed'
+      description: 'Below average performance, significant improvement needed',
     };
   }
 }

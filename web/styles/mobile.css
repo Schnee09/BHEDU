@@ -3,6 +3,20 @@
    Academic Responsive Design System - BH-EDU
    ============================================ */
 
+/* Global Mobile Viewport Bounds: Prevent Horizontal Overflow & Phantom Scrollbars */
+@media (max-width: 1024px) {
+    html, body {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        position: relative;
+    }
+
+    #__next, main, [data-nextjs-scroll-focus-boundary] {
+        max-width: 100vw !important;
+    }
+}
+
 /* Mobile Interaction Utilities */
 .press-effect {
     transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.18s ease;

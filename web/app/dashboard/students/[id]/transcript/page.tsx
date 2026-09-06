@@ -181,7 +181,7 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
                 </p>
                 <div className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
-                    CID
+                    Mã HS
                   </span>
                   <span className="font-black text-emerald-600 tracking-tight">
                     {student.student_code}

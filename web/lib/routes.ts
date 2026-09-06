@@ -61,6 +61,12 @@ export const routes = {
     detail: (id: string) => `/dashboard/users/${id}`,
   },
 
+  // Teacher management routes
+  teachers: {
+    list: () => '/dashboard/teachers',
+    detail: (id: string) => `/dashboard/teachers/${id}`,
+  },
+
   // Tutor management routes
   tutors: {
     list: () => '/dashboard/tutors',

@@ -1,11 +1,11 @@
 /**
  * useToast Hook - Toast notification management
- * 
+ *
  * Provides consistent toast/alert notifications across the app
  * Better than using window.alert()
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -30,16 +30,16 @@ interface UseToastResult {
 
 /**
  * Custom hook for toast notifications
- * 
+ *
  * @example
  * const toast = useToast();
- * 
+ *
  * // Show success toast
  * toast.success('User created', 'John Doe has been added to the system');
- * 
+ *
  * // Show error toast
  * toast.error('Failed to save', 'Please try again later');
- * 
+ *
  * // Custom toast
  * toast.showToast({
  *   type: 'warning',
@@ -73,31 +73,28 @@ export function useToast(): UseToastResult {
   }, []);
 
   // showToast now uses setToasts directly instead of calling removeToast
-  const showToast = useCallback(
-    (toast: Omit<Toast, 'id'>) => {
-      const id = `toast-${Date.now()}-${Math.random()}`;
-      const duration = toast.duration || 5000;
-      
-      const newToast: Toast = {
-        ...toast,
-        id,
-        duration,
-      };
+  const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
+    const id = `toast-${Date.now()}-${Math.random()}`;
+    const duration = toast.duration || 5000;
 
-      setToasts((prev) => [...prev, newToast]);
+    const newToast: Toast = {
+      ...toast,
+      id,
+      duration,
+    };
 
-      // Auto-remove after duration
-      if (duration > 0) {
-        const timeout = setTimeout(() => {
-          setToasts((prev) => prev.filter((t) => t.id !== id));
-          timeoutsRef.current.delete(id);
-        }, duration);
-        
-        timeoutsRef.current.set(id, timeout);
-      }
-    },
-    []
-  );
+    setToasts((prev) => [...prev, newToast]);
+
+    // Auto-remove after duration
+    if (duration > 0) {
+      const timeout = setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+        timeoutsRef.current.delete(id);
+      }, duration);
+
+      timeoutsRef.current.set(id, timeout);
+    }
+  }, []);
 
   const success = useCallback(
     (title: string, message?: string) => {
@@ -133,14 +130,17 @@ export function useToast(): UseToastResult {
     setToasts([]);
   }, []);
 
-  return {
-    toasts,
-    showToast,
-    success,
-    error,
-    warning,
-    info,
-    removeToast,
-    clearAll,
-  };
+  return useMemo(
+    () => ({
+      toasts,
+      showToast,
+      success,
+      error,
+      warning,
+      info,
+      removeToast,
+      clearAll,
+    }),
+    [toasts, showToast, success, error, warning, info, removeToast, clearAll]
+  );
 }

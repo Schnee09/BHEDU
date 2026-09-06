@@ -38,7 +38,13 @@ export default function RecentGradesWidget({
   title = 'Điểm số vừa nhập',
   showStudentColumn = true,
 }: RecentGradesWidgetProps) {
-  const { data: grades, loading } = useFetch<Grade[]>(dataUrl);
+  const { data: rawData, loading } = useFetch<{ data?: Grade[] } | Grade[]>(dataUrl);
+
+  const grades: Grade[] = Array.isArray(rawData)
+    ? rawData
+    : Array.isArray(rawData?.data)
+      ? rawData.data
+      : [];
 
   const getComponentTypeLabel = (type: string) => {
     const types: Record<string, string> = {

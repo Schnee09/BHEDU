@@ -16,7 +16,15 @@ interface Announcement {
 }
 
 export default function AnnouncementsFeedWidget() {
-  const { data: announcements, loading } = useFetch<Announcement[]>('/api/announcements?limit=5');
+  const { data: rawData, loading } = useFetch<{ data?: Announcement[] } | Announcement[]>(
+    '/api/announcements?limit=5'
+  );
+
+  const announcements: Announcement[] = Array.isArray(rawData)
+    ? rawData
+    : Array.isArray(rawData?.data)
+      ? rawData.data
+      : [];
 
   const getAnnouncementIcon = (type: string) => {
     switch (type) {

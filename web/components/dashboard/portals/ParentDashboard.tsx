@@ -11,6 +11,7 @@ import ChildAttendanceTodayWidget from '@/components/dashboard/widgets/ChildAtte
 import TodayScheduleWidget from '@/components/dashboard/widgets/TodayScheduleWidget';
 import RecentGradesWidget from '@/components/dashboard/widgets/RecentGradesWidget';
 import AnnouncementsFeedWidget from '@/components/dashboard/widgets/AnnouncementsFeedWidget';
+import StudentRequestWidget from '@/components/dashboard/widgets/StudentRequestWidget';
 import Link from 'next/link';
 import { UserPlus, Settings } from 'lucide-react';
 
@@ -238,6 +239,9 @@ export default function ParentDashboard() {
           <div className="xl:col-span-4 space-y-4 sm:space-y-6">
             {/* Daily Attendance Card */}
             {selectedChildId && <ChildAttendanceTodayWidget childId={selectedChildId} />}
+
+            {/* Parent Online Request Service */}
+            {selectedChildId && <StudentRequestWidget role="parent" studentId={selectedChildId} />}
 
             {/* School Announcements */}
             <AnnouncementsFeedWidget />

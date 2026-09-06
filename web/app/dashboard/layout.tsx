@@ -47,10 +47,10 @@ function DashboardContent({ children }: { children: ReactNode }) {
 
           <main
             id="main-content"
-            className="flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6 pb-20 lg:pb-6 pb-safe overscroll-y-contain"
+            className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-4 lg:p-6 pb-20 lg:pb-6 pb-safe overscroll-y-contain w-full max-w-full min-w-0"
             role="main"
           >
-            <div className="w-full mx-auto max-w-[1600px]">
+            <div className="w-full mx-auto max-w-[1600px] min-w-0 overflow-x-hidden">
               <ErrorBoundary
                 showDetails={process.env.NODE_ENV === 'development'}
                 pageName="page content"

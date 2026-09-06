@@ -129,24 +129,24 @@ export default function MobileBottomNav() {
           icon: GraduationCap,
           badge: badgeCounts.pendingParentLinks || 0,
         },
-        { name: 'Lịch học', href: '/dashboard/timetable', icon: CalendarCheck, badge: 0 },
+        { name: 'Lịch học', href: '/dashboard/calendar', icon: CalendarCheck, badge: 0 },
         { name: 'Điểm số', href: '/dashboard/grades', icon: ClipboardList, badge: 0 }
       );
     } else if (role === 'student') {
       items.push(
         { name: 'Điểm số', href: '/dashboard/grades', icon: GraduationCap, badge: 0 },
-        { name: 'Lịch học', href: '/dashboard/timetable', icon: CalendarCheck, badge: 0 },
+        { name: 'Lịch học', href: '/dashboard/my-schedule', icon: CalendarCheck, badge: 0 },
         { name: 'Lớp học', href: '/dashboard/classes', icon: BookOpen, badge: 0 }
       );
     } else if (role === 'teacher' || role === 'tutor') {
       items.push(
-        { name: 'Lịch dạy', href: '/dashboard/timetable', icon: CalendarCheck, badge: 0 },
+        { name: 'Lịch dạy', href: '/dashboard/my-schedule', icon: CalendarCheck, badge: 0 },
         { name: 'Điểm danh', href: '/dashboard/attendance', icon: CheckCircle2, badge: 0 },
         {
           name: 'Lớp học',
           href: '/dashboard/classes',
           icon: BookOpen,
-          badge: badgeCounts.classes || 0,
+          badge: 0,
         }
       );
     } else {
@@ -162,7 +162,7 @@ export default function MobileBottomNav() {
           name: 'Lớp học',
           href: '/dashboard/classes',
           icon: BookOpen,
-          badge: badgeCounts.classes || 0,
+          badge: 0,
         },
         { name: 'Điểm danh', href: '/dashboard/attendance', icon: CheckCircle2, badge: 0 }
       );

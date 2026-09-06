@@ -1,6 +1,6 @@
 /**
  * Next.js 16 Proxy — Authentication & Route Protection
- * Replaces the deprecated middleware.ts convention.
+ * Complies with Next.js 16 proxy convention (replacing deprecated middleware.ts).
  * Handles session refresh, role resolution, and fine-grained access control.
  */
 
@@ -12,34 +12,81 @@ import { hasPermission, UserRole, PermissionCode } from './lib/auth/core';
 // Map of route prefixes to required permission codes.
 // Sorted by specificity (longest prefix first) for correct precedence matching.
 const ROUTE_PERMISSIONS: { prefix: string; permission: PermissionCode }[] = [
-  { prefix: '/dashboard/admin/students/parent-links', permission: 'students.edit' },
+  // ── Admin Sub-routes ──
+  { prefix: '/dashboard/admin/students/parent-links', permission: 'parent_links.view' },
   { prefix: '/dashboard/admin/permissions', permission: 'permissions.manage' },
-  { prefix: '/dashboard/admin/announcements', permission: 'users.view' },
-  { prefix: '/dashboard/admin/semesters', permission: 'classes.view' },
-  { prefix: '/dashboard/admin/subjects', permission: 'classes.view' },
-  { prefix: '/dashboard/admin/enrollments', permission: 'students.edit' },
-  { prefix: '/dashboard/admin/invitations', permission: 'users.view' },
+  { prefix: '/dashboard/admin/announcements', permission: 'announcements.manage' },
+  { prefix: '/dashboard/admin/academic-years', permission: 'classes.manage' },
+  { prefix: '/dashboard/admin/grading-scales', permission: 'classes.manage' },
+  { prefix: '/dashboard/admin/semesters', permission: 'classes.manage' },
+  { prefix: '/dashboard/admin/subjects', permission: 'subjects.manage' },
+  { prefix: '/dashboard/admin/enrollments', permission: 'enrollments.manage' },
+  { prefix: '/dashboard/admin/invitations', permission: 'users.invite' },
+  { prefix: '/dashboard/admin/import', permission: 'users.bulk_import' },
+  { prefix: '/dashboard/admin/finance/tuition-matrix', permission: 'finance.manage' },
+  { prefix: '/dashboard/admin/finance', permission: 'finance.view' },
+  { prefix: '/dashboard/admin/audit', permission: 'system.audit' },
+  { prefix: '/dashboard/admin/backup', permission: 'system.settings' },
   { prefix: '/dashboard/admin/health', permission: 'system.settings' },
-  { prefix: '/dashboard/classes', permission: 'classes.view' },
-  { prefix: '/dashboard/students', permission: 'students.view' },
-  { prefix: '/dashboard/timetable', permission: 'timetable.view' },
-  { prefix: '/dashboard/parent/link-student', permission: 'parent.link_student' },
-  { prefix: '/dashboard/parent', permission: 'parent.view_students' },
-  { prefix: '/dashboard/attendance/mark', permission: 'attendance.mark' },
-  { prefix: '/dashboard/attendance/history', permission: 'attendance.view' },
-  { prefix: '/dashboard/attendance/reports', permission: 'attendance.reports' },
-  { prefix: '/dashboard/grades/entry', permission: 'grades.entry' },
-  { prefix: '/dashboard/grades/transcripts', permission: 'grades.view' },
-  { prefix: '/dashboard/grades/analytics', permission: 'grades.analytics' },
-  { prefix: '/dashboard/users', permission: 'users.view' },
-  { prefix: '/dashboard/tutors', permission: 'users.view' },
+  { prefix: '/dashboard/admin/data-dump', permission: 'system.settings' },
+  { prefix: '/dashboard/admin/diagnostic', permission: 'system.settings' },
+  { prefix: '/dashboard/admin/impersonate', permission: 'system.impersonate' },
+  { prefix: '/dashboard/admin', permission: 'users.view' },
+
+  // ── System & Audit ──
+  { prefix: '/dashboard/debug-all-apis', permission: 'system.audit' },
   { prefix: '/dashboard/settings', permission: 'system.settings' },
+  { prefix: '/dashboard/reports', permission: 'reports.view' },
+
+  // ── Master Timetable (Admin/Owner only) ──
+  { prefix: '/dashboard/timetable', permission: 'classes.manage' },
+
+  // ── Users, Teachers & Tutors Management ──
+  { prefix: '/dashboard/users', permission: 'users.view' },
+  { prefix: '/dashboard/teachers', permission: 'users.view' },
+  { prefix: '/dashboard/tutors', permission: 'users.view' },
+
+  // ── Teacher-specific portal routes ──
+  { prefix: '/dashboard/teacher/classes', permission: 'attendance.mark' },
+  { prefix: '/dashboard/teacher', permission: 'attendance.mark' },
+
+  // ── Tutor-specific routes ──
+  { prefix: '/dashboard/tutor/students', permission: 'tutoring.sessions.view' },
+  { prefix: '/dashboard/tutor', permission: 'tutoring.sessions.view' },
+  { prefix: '/dashboard/tutoring', permission: 'tutoring.sessions.view' },
+
+  // ── Student management ──
+  { prefix: '/dashboard/students/import', permission: 'students.import' },
+  { prefix: '/dashboard/students/bulk', permission: 'students.create' },
+  { prefix: '/dashboard/students', permission: 'students.view' },
+
+  // ── Classes ──
+  { prefix: '/dashboard/classes', permission: 'classes.view' },
+
+  // ── Attendance ──
+  { prefix: '/dashboard/attendance/mark', permission: 'attendance.mark' },
+  { prefix: '/dashboard/attendance/reports', permission: 'attendance.reports' },
+  { prefix: '/dashboard/attendance/history', permission: 'attendance.view' },
+  { prefix: '/dashboard/attendance', permission: 'attendance.view' },
+
+  // ── Grades ──
+  { prefix: '/dashboard/grades/entry', permission: 'grades.entry' },
+  { prefix: '/dashboard/grades/assignments', permission: 'grades.manage' },
+  { prefix: '/dashboard/grades/analytics', permission: 'grades.analytics' },
+  { prefix: '/dashboard/grades/transcripts', permission: 'grades.view' },
+  { prefix: '/dashboard/grades', permission: 'grades.view' },
+
+  // ── Parent ──
+  { prefix: '/dashboard/parent/link-student', permission: 'parent.link_student' },
+  { prefix: '/dashboard/parent/grades', permission: 'grades.view' },
+  { prefix: '/dashboard/parent/attendance', permission: 'attendance.view' },
+  { prefix: '/dashboard/parent', permission: 'parent.view_students' },
 ];
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Only protect dashboard routes; allow the unauthorized page to render freely.
+  // Only protect dashboard routes; allow public and unauthorized pages to render freely.
   if (!pathname.startsWith('/dashboard') || pathname === '/dashboard/unauthorized') {
     return NextResponse.next();
   }

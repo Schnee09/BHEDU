@@ -12,7 +12,13 @@ interface Grade {
 }
 
 export default function GradeProgressWidget() {
-  const { data: grades, loading } = useFetch<Grade[]>('/api/grades');
+  const { data: rawData, loading } = useFetch<{ data?: Grade[] } | Grade[]>('/api/grades');
+
+  const grades: Grade[] = Array.isArray(rawData)
+    ? rawData
+    : Array.isArray(rawData?.data)
+      ? rawData.data
+      : [];
 
   const chartData = useMemo(() => {
     if (!grades || grades.length === 0) return [];

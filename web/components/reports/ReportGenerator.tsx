@@ -162,7 +162,7 @@ export default function ReportGenerator() {
     try {
       // Fetch school settings
       let schoolName = 'TRUNG TÂM GIÁO DỤC BÙI HOÀNG';
-      let academicYear = '2024-2025';
+      let academicYear = '2026-2027';
 
       try {
         const settingsRes = await apiFetch('/api/settings?category=school');

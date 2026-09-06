@@ -113,7 +113,9 @@ export function UserDetailDrawer({
           // Fetch linked children
           const { data: children } = await supabase
             .from('student_parent_links')
-            .select('id, student_id, relationship_type, profiles!student_id(full_name, student_code, phone)')
+            .select(
+              'id, student_id, relationship_type, profiles!student_id(full_name, student_code, phone)'
+            )
             .eq('parent_id', user.id)
             .limit(5);
 
@@ -138,11 +140,7 @@ export function UserDetailDrawer({
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const code =
-    user.student_code ||
-    user.student_id ||
-    user.teacher_code ||
-    user.id.slice(0, 8).toUpperCase();
+  const code = user.student_code || user.student_id || user.teacher_code || null;
 
   const formattedCreated = new Date(user.created_at).toLocaleDateString('vi-VN', {
     day: '2-digit',
@@ -257,21 +255,27 @@ export function UserDetailDrawer({
                   <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
                     Mã định danh
                   </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono font-bold text-xs text-stone-900 dark:text-stone-100">
-                      {code}
+                  {code ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono font-bold text-xs text-stone-900 dark:text-stone-100">
+                        {code}
+                      </span>
+                      <button
+                        onClick={() => handleCopy(code, 'code')}
+                        className="p-1 rounded text-stone-400 hover:text-amber-500"
+                      >
+                        {copiedKey === 'code' ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-stone-400 dark:text-stone-500 italic">
+                      Chưa thiết lập
                     </span>
-                    <button
-                      onClick={() => handleCopy(code, 'code')}
-                      className="p-1 rounded text-stone-400 hover:text-amber-500"
-                    >
-                      {copiedKey === 'code' ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-500" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -302,9 +306,7 @@ export function UserDetailDrawer({
                   <span className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
                     <Mail className="w-3.5 h-3.5 text-amber-500" /> Email hệ thống
                   </span>
-                  <span className="font-bold text-stone-900 dark:text-stone-100">
-                    {user.email}
-                  </span>
+                  <span className="font-bold text-stone-900 dark:text-stone-100">{user.email}</span>
                 </div>
 
                 {user.personal_email && (
@@ -361,16 +363,17 @@ export function UserDetailDrawer({
                   </div>
                 )}
 
-                {(user.role === 'teacher' || user.role === 'tutor') && (user as any).specialization && (
-                  <div className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800">
-                    <span className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
-                      <Award className="w-3.5 h-3.5 text-amber-500" /> Chuyên môn / Học vị
-                    </span>
-                    <span className="font-bold text-stone-900 dark:text-stone-100">
-                      {(user as any).specialization}
-                    </span>
-                  </div>
-                )}
+                {(user.role === 'teacher' || user.role === 'tutor') &&
+                  (user as any).specialization && (
+                    <div className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800">
+                      <span className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
+                        <Award className="w-3.5 h-3.5 text-amber-500" /> Chuyên môn / Học vị
+                      </span>
+                      <span className="font-bold text-stone-900 dark:text-stone-100">
+                        {(user as any).specialization}
+                      </span>
+                    </div>
+                  )}
 
                 {(user.role === 'teacher' || user.role === 'tutor') && (user as any).hourly_rate ? (
                   <div className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800">
@@ -394,16 +397,17 @@ export function UserDetailDrawer({
                   </div>
                 )}
 
-                {(user.role === 'admin' || user.role === 'owner' || user.role === 'super_admin') && user.department && (
-                  <div className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800">
-                    <span className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
-                      <Building2 className="w-3.5 h-3.5 text-stone-500" /> Phòng ban phụ trách
-                    </span>
-                    <span className="font-bold text-stone-900 dark:text-stone-100">
-                      {user.department}
-                    </span>
-                  </div>
-                )}
+                {(user.role === 'admin' || user.role === 'owner' || user.role === 'super_admin') &&
+                  user.department && (
+                    <div className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800">
+                      <span className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
+                        <Building2 className="w-3.5 h-3.5 text-stone-500" /> Phòng ban phụ trách
+                      </span>
+                      <span className="font-bold text-stone-900 dark:text-stone-100">
+                        {user.department}
+                      </span>
+                    </div>
+                  )}
 
                 <div className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800">
                   <span className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
@@ -429,9 +433,7 @@ export function UserDetailDrawer({
                   <span className="font-bold text-amber-800 dark:text-amber-400 block mb-1">
                     Ghi chú quản trị:
                   </span>
-                  <p className="text-stone-700 dark:text-stone-300 leading-relaxed">
-                    {user.notes}
-                  </p>
+                  <p className="text-stone-700 dark:text-stone-300 leading-relaxed">{user.notes}</p>
                 </div>
               )}
             </div>
@@ -493,7 +495,8 @@ export function UserDetailDrawer({
                             {profile?.full_name || 'Thành viên'}
                           </p>
                           <p className="text-[10px] text-stone-400 mt-0.5">
-                            {link.relationship_type || 'Liên kết'} • {profile?.phone || profile?.email || ''}
+                            {link.relationship_type || 'Liên kết'} •{' '}
+                            {profile?.phone || profile?.email || ''}
                           </p>
                         </div>
                       </div>
@@ -522,9 +525,7 @@ export function UserDetailDrawer({
                       className="p-3 rounded-xl bg-stone-50 dark:bg-[#181612] border border-stone-200 dark:border-stone-800"
                     >
                       <div className="flex items-center justify-between font-bold">
-                        <span className="text-stone-900 dark:text-stone-100">
-                          {log.action}
-                        </span>
+                        <span className="text-stone-900 dark:text-stone-100">{log.action}</span>
                         <span className="text-[10px] text-stone-400">
                           {new Date(log.created_at).toLocaleTimeString('vi-VN', {
                             hour: '2-digit',

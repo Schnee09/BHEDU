@@ -120,7 +120,7 @@ export function useTimetableState() {
     try {
       const [classRes, teacherRes, tutorRes, resourceRes] = await Promise.all([
         apiFetch('/api/classes'),
-        apiFetch('/api/admin/users?role=instructors&limit=1000'),
+        apiFetch('/api/teachers'),
         apiFetch('/api/tutors?limit=1000'),
         apiFetch('/api/settings?category=resource'),
       ]);
@@ -131,7 +131,12 @@ export function useTimetableState() {
       const classList = classData.data?.data || classData.data || classData.classes;
       setClasses(Array.isArray(classList) ? classList : []);
 
-      const teacherList = teacherData.data?.data || teacherData.data || teacherData.users;
+      const teacherList =
+        teacherData.data?.teachers ||
+        teacherData.teachers ||
+        teacherData.data?.data ||
+        teacherData.data ||
+        teacherData.users;
       setTeachers(Array.isArray(teacherList) ? teacherList : []);
 
       const tutorList = tutorData.data || tutorData.tutors;
@@ -142,7 +147,10 @@ export function useTimetableState() {
         const settings = resourceJson.settings || {};
 
         // Real Branches
-        if (settings.center_branches?.value_json && Array.isArray(settings.center_branches.value_json)) {
+        if (
+          settings.center_branches?.value_json &&
+          Array.isArray(settings.center_branches.value_json)
+        ) {
           setBranches(settings.center_branches.value_json);
         }
 
@@ -165,7 +173,10 @@ export function useTimetableState() {
         }
 
         // Real Center Schedules / Shifts
-        if (settings.center_schedules?.value_json && Array.isArray(settings.center_schedules.value_json)) {
+        if (
+          settings.center_schedules?.value_json &&
+          Array.isArray(settings.center_schedules.value_json)
+        ) {
           setDynamicSchedules(settings.center_schedules.value_json);
         }
       }
@@ -179,11 +190,15 @@ export function useTimetableState() {
     setLoading(true);
     try {
       if (selectedClass) {
-        const res = await apiFetch(`/api/timetable?class_id=${selectedClass}&week_start_date=${currentWeekStart}`);
+        const res = await apiFetch(
+          `/api/timetable?class_id=${selectedClass}&week_start_date=${currentWeekStart}`
+        );
         const data = await res.json();
         setSlots(data.data?.slots || data.slots || []);
       } else {
-        const res = await apiFetch(`/api/timetable/all?week_start_date=${currentWeekStart}&t=${Date.now()}`);
+        const res = await apiFetch(
+          `/api/timetable/all?week_start_date=${currentWeekStart}&t=${Date.now()}`
+        );
         const data = await res.json();
         setSlots(data.data?.slots || data.slots || []);
       }
@@ -245,7 +260,13 @@ export function useTimetableState() {
     setSlots((prev) =>
       prev.map((s) =>
         s.id === slotId
-          ? { ...s, day_of_week: newDay, start_time: newStartTime, end_time: newEndTime, room: newRoom }
+          ? {
+              ...s,
+              day_of_week: newDay,
+              start_time: newStartTime,
+              end_time: newEndTime,
+              room: newRoom,
+            }
           : s
       )
     );
@@ -294,23 +315,27 @@ export function useTimetableState() {
     }
   };
 
-  const handleUpdateSlotStatus = async (slotId: string, newStatus: 'scheduled' | 'completed' | 'cancelled' | 'makeup') => {
+  const handleUpdateSlotStatus = async (
+    slotId: string,
+    newStatus: 'scheduled' | 'completed' | 'cancelled' | 'makeup'
+  ) => {
     // NOTE: DB table `timetable_slots` does NOT have a `status` column.
     // Status is tracked client-side only via the slot's weekly_note as a lightweight workaround.
     // We persist the status change by saving it into the weekly_notes system.
     const previousSlots = [...slots];
 
     // Optimistic UI
-    setSlots((prev) =>
-      prev.map((s) => (s.id === slotId ? { ...s, status: newStatus } : s))
-    );
+    setSlots((prev) => prev.map((s) => (s.id === slotId ? { ...s, status: newStatus } : s)));
 
     try {
       // Save status as a structured weekly note prefix
       const currentSlot = slots.find((s) => s.id === slotId);
       const existingNote = currentSlot?.weekly_note || currentSlot?.notes || '';
       // Strip any previous status prefix
-      const cleanNote = existingNote.replace(/^\[(?:scheduled|completed|cancelled|makeup)\]\s*/i, '');
+      const cleanNote = existingNote.replace(
+        /^\[(?:scheduled|completed|cancelled|makeup)\]\s*/i,
+        ''
+      );
       const noteWithStatus = `[${newStatus}] ${cleanNote}`.trim();
 
       if (currentWeekStart) {

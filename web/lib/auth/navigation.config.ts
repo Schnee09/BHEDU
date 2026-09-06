@@ -129,6 +129,7 @@ export const ALL_NAV_ITEMS: NavSection[] = [
       },
       { href: '/dashboard/my-schedule', label: 'Lịch của tôi', icon: Clock },
       { href: '/dashboard/calendar', label: 'Lịch học tập', icon: CalendarDays },
+      { href: '/dashboard/requests', label: 'Đơn từ trực tuyến', icon: FileText },
     ],
   },
   {
@@ -227,6 +228,12 @@ export const ALL_NAV_ITEMS: NavSection[] = [
         href: '/dashboard/users',
         label: 'Quản lý tài khoản',
         icon: Users,
+        permissions: ['users.view'],
+      },
+      {
+        href: '/dashboard/teachers',
+        label: 'Đội ngũ Giáo viên',
+        icon: Award,
         permissions: ['users.view'],
       },
       {
@@ -433,6 +440,12 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
           href: '/dashboard/users',
           label: 'Quản lý tài khoản',
           icon: Users,
+          permissions: ['users.view'],
+        },
+        {
+          href: '/dashboard/teachers',
+          label: 'Đội ngũ Giáo viên',
+          icon: Award,
           permissions: ['users.view'],
         },
         {
@@ -646,6 +659,12 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
           permissions: ['users.view'],
         },
         {
+          href: '/dashboard/teachers',
+          label: 'Đội ngũ Giáo viên',
+          icon: Award,
+          permissions: ['users.view'],
+        },
+        {
           href: '/dashboard/tutors',
           label: 'Đội ngũ Gia sư',
           icon: GraduationCap,
@@ -707,13 +726,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
       title: 'Lớp dạy',
       links: [
         { href: '/dashboard/teacher/classes', label: 'Lớp dạy của tôi', icon: BookOpen },
-        { href: '/dashboard/my-schedule', label: 'Lịch của tôi', icon: Clock },
-        {
-          href: '/dashboard/timetable',
-          label: 'Thời khóa biểu',
-          icon: Calendar,
-          permissions: ['timetable.view'],
-        },
+        { href: '/dashboard/my-schedule', label: 'Lịch dạy của tôi', icon: Clock },
       ],
     },
     {
@@ -781,13 +794,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
       title: 'Kèm học',
       links: [
         { href: '/dashboard/tutor/students', label: 'Học sinh kèm', icon: Users },
-        { href: '/dashboard/my-schedule', label: 'Lịch của tôi', icon: Clock },
-        {
-          href: '/dashboard/timetable',
-          label: 'Thời khóa biểu',
-          icon: Calendar,
-          permissions: ['timetable.view'],
-        },
+        { href: '/dashboard/my-schedule', label: 'Lịch dạy của tôi', icon: Clock },
       ],
     },
     {
@@ -864,13 +871,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
           icon: BookOpen,
           permissions: ['classes.view'],
         },
-        {
-          href: '/dashboard/timetable',
-          label: 'Thời khóa biểu',
-          icon: Clock,
-          permissions: ['timetable.view'],
-        },
-        { href: '/dashboard/my-schedule', label: 'Lịch của tôi', icon: Calendar },
+        { href: '/dashboard/my-schedule', label: 'Lịch học của tôi', icon: Clock },
         { href: '/dashboard/calendar', label: 'Lịch học tập', icon: CalendarDays },
       ],
     },
@@ -981,10 +982,14 @@ export const ROLE_SPECIFIC_LABELS: Partial<Record<UserRole, Record<string, strin
   },
   teacher: {
     '/dashboard/classes': 'Lớp của tôi',
-    '/dashboard/timetable': 'Thời khóa biểu',
+    '/dashboard/my-schedule': 'Lịch dạy của tôi',
+  },
+  tutor: {
+    '/dashboard/my-schedule': 'Lịch dạy của tôi',
   },
   student: {
     '/dashboard/classes': 'Lớp học',
+    '/dashboard/my-schedule': 'Lịch học của tôi',
     '/dashboard/grades/transcripts': 'Điểm của tôi',
     '/dashboard/attendance/history': 'Điểm danh của tôi',
   },

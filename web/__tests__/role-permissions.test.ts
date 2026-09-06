@@ -152,11 +152,18 @@ describe('Unified Permission Checks (hasPermission)', () => {
     expect(hasPermission('owner', 'system.settings')).toBe(false);
   });
 
-  it('admin should have user invite/soft-delete and finance permissions but not system settings or finance refund', () => {
+  it('admin should have full operational permissions including analytics, exports, and import', () => {
     expect(hasPermission('admin', 'users.invite')).toBe(true);
     expect(hasPermission('admin', 'users.delete.soft')).toBe(true);
+    expect(hasPermission('admin', 'students.import')).toBe(true);
+    expect(hasPermission('admin', 'grades.analytics')).toBe(true);
+    expect(hasPermission('admin', 'attendance.manage')).toBe(true);
     expect(hasPermission('admin', 'finance.view')).toBe(true);
     expect(hasPermission('admin', 'finance.refund')).toBe(true);
+    expect(hasPermission('admin', 'finance.export')).toBe(true);
+    expect(hasPermission('admin', 'reports.export')).toBe(true);
+    expect(hasPermission('admin', 'tutoring.sessions.view')).toBe(true);
+    expect(hasPermission('admin', 'tutoring.sessions.manage')).toBe(true);
     expect(hasPermission('admin', 'system.settings')).toBe(false);
   });
 

@@ -14,6 +14,14 @@ export const GET = createGetHandler({ allowedRoles: ['tutor'] }, async ({ user }
   const supabase = createServiceClient();
 
   try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const teacherId = profile?.id || user.id;
+
     const { data: slots, error } = await supabase
       .from('timetable_slots')
       .select(
@@ -24,9 +32,8 @@ export const GET = createGetHandler({ allowedRoles: ['tutor'] }, async ({ user }
         start_time,
         end_time,
         notes,
-        status,
         subject:subjects (id, name),
-        student:profiles!student_id (
+        student:profiles!timetable_slots_student_id_fkey (
           id,
           first_name,
           last_name,
@@ -37,7 +44,7 @@ export const GET = createGetHandler({ allowedRoles: ['tutor'] }, async ({ user }
         )
       `
       )
-      .eq('teacher_id', user.id)
+      .or(`teacher_id.eq.${teacherId},teacher_id.eq.${user.id}`)
       .is('deleted_at', null)
       .not('student_id', 'is', null);
 
