@@ -59,10 +59,14 @@ export default function TutoringDispatchBoard({
   const [subjects, setSubjects] = useState<SubjectOption[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
-  const [queueFilter, setQueueFilter] = useState<'all' | 'unscheduled' | 'scheduled' | 'makeup'>('all');
+  const [queueFilter, setQueueFilter] = useState<'all' | 'unscheduled' | 'scheduled' | 'makeup'>(
+    'all'
+  );
 
   // Session Filter for Matrix
-  const [sessionFilter, setSessionFilter] = useState<'all' | 'evening' | 'afternoon' | 'morning'>('all');
+  const [sessionFilter, setSessionFilter] = useState<'all' | 'evening' | 'afternoon' | 'morning'>(
+    'all'
+  );
 
   // Dragging state
   const [draggedStudent, setDraggedStudent] = useState<{ id: string; name: string } | null>(null);
@@ -101,17 +105,30 @@ export default function TutoringDispatchBoard({
       return ALL_SESSIONS.filter((s) => s.label.startsWith('S'));
     }
     if (sessionFilter === 'afternoon') {
-      return ALL_SESSIONS.filter((s) => s.label.startsWith('C') && !s.label.includes('3') && !s.label.includes('4') && !s.label.includes('5'));
+      return ALL_SESSIONS.filter(
+        (s) =>
+          s.label.startsWith('C') &&
+          !s.label.includes('3') &&
+          !s.label.includes('4') &&
+          !s.label.includes('5')
+      );
     }
     if (sessionFilter === 'evening') {
-      return ALL_SESSIONS.filter((s) => s.label.startsWith('Ca') || s.label.includes('C3') || s.label.includes('C4') || s.label.includes('C5'));
+      return ALL_SESSIONS.filter(
+        (s) =>
+          s.label.startsWith('Ca') ||
+          s.label.includes('C3') ||
+          s.label.includes('C4') ||
+          s.label.includes('C5')
+      );
     }
     return ALL_SESSIONS;
   }, [sessionFilter]);
 
   // Compute Tutoring Slot Counts per student
   const studentScheduleCounts = useMemo(() => {
-    const counts: Record<string, { count: number; slots: TimetableSlot[]; hasMakeup: boolean }> = {};
+    const counts: Record<string, { count: number; slots: TimetableSlot[]; hasMakeup: boolean }> =
+      {};
     students.forEach((st) => {
       counts[st.id] = { count: 0, slots: [], hasMakeup: false };
     });
@@ -197,7 +214,10 @@ export default function TutoringDispatchBoard({
     );
 
     if (conflictStudent) {
-      toast.warning('Trùng lịch học sinh', `Học sinh ${studentName} đã có lịch học vào khung giờ này!`);
+      toast.warning(
+        'Trùng lịch học sinh',
+        `Học sinh ${studentName} đã có lịch học vào khung giờ này!`
+      );
       return;
     }
 
@@ -212,26 +232,26 @@ export default function TutoringDispatchBoard({
   };
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-      {/* 📋 LEFT COLUMN: HÀNG ĐỢI HỌC SINH CẦN KÈM (Tutoring Student Pool) */}
-      <div className="xl:col-span-4 bg-white/90 dark:bg-stone-900/90 backdrop-blur-xl rounded-[32px] border border-stone-200/70 dark:border-white/5 shadow-xl p-5 space-y-4">
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+      {/* 📋 LEFT COLUMN: HÀNG ĐỢI HỌC SINH CẦN XẾP (Student Queue Sidebar) */}
+      <div className="xl:col-span-4 bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-xs p-4 sm:p-5 space-y-3.5">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 border-b border-stone-100 dark:border-white/5 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 font-black">
-              <Users className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 font-bold shrink-0">
+              <Users className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
-                Hàng Đợi Học Sinh
+              <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-stone-100">
+                Hàng đợi học sinh
               </h3>
-              <p className="text-[10px] font-bold text-stone-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 Kéo thẻ thả vào Gia sư để xếp lịch
               </p>
             </div>
           </div>
 
-          <span className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-[10px] font-black text-stone-600 dark:text-stone-300 border border-stone-200/50 dark:border-white/5">
+          <span className="px-2.5 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 text-xs font-semibold text-stone-600 dark:text-stone-300 border border-stone-200/50 dark:border-white/5">
             {filteredQueueStudents.length} em
           </span>
         </div>
@@ -244,18 +264,18 @@ export default function TutoringDispatchBoard({
             placeholder="Tìm tên học sinh..."
             value={studentSearch}
             onChange={(e) => setStudentSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 rounded-2xl bg-stone-100 dark:bg-stone-800/80 border border-stone-200/60 dark:border-white/5 text-xs font-bold text-stone-900 dark:text-stone-100 outline-none placeholder:text-stone-400 focus:ring-2 focus:ring-amber-500/20"
+            className="w-full h-9 pl-8 pr-3 rounded-xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200/80 dark:border-white/10 text-xs sm:text-sm font-medium text-stone-900 dark:text-stone-100 outline-none placeholder:text-stone-400 focus:ring-2 focus:ring-amber-500/20"
           />
         </div>
 
         {/* Filter Pills */}
-        <div className="flex bg-stone-100 dark:bg-stone-800 p-1 rounded-2xl gap-1 text-[10px] font-black">
+        <div className="flex bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl gap-1 text-xs font-semibold">
           <button
             onClick={() => setQueueFilter('all')}
             className={cn(
-              'flex-1 py-1.5 rounded-xl transition-all',
+              'flex-1 py-1 rounded-lg transition-all cursor-pointer',
               queueFilter === 'all'
-                ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-xs'
                 : 'text-stone-500 hover:text-stone-900'
             )}
           >
@@ -264,9 +284,9 @@ export default function TutoringDispatchBoard({
           <button
             onClick={() => setQueueFilter('unscheduled')}
             className={cn(
-              'flex-1 py-1.5 rounded-xl transition-all flex items-center justify-center gap-1',
+              'flex-1 py-1 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer',
               queueFilter === 'unscheduled'
-                ? 'bg-amber-500 text-white shadow-sm'
+                ? 'bg-amber-500 text-white shadow-xs'
                 : 'text-stone-500 hover:text-amber-600'
             )}
           >
@@ -275,9 +295,9 @@ export default function TutoringDispatchBoard({
           <button
             onClick={() => setQueueFilter('scheduled')}
             className={cn(
-              'flex-1 py-1.5 rounded-xl transition-all flex items-center justify-center gap-1',
+              'flex-1 py-1 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer',
               queueFilter === 'scheduled'
-                ? 'bg-emerald-500 text-white shadow-sm'
+                ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-stone-500 hover:text-emerald-600'
             )}
           >
@@ -286,9 +306,9 @@ export default function TutoringDispatchBoard({
           <button
             onClick={() => setQueueFilter('makeup')}
             className={cn(
-              'flex-1 py-1.5 rounded-xl transition-all flex items-center justify-center gap-1',
+              'flex-1 py-1 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer',
               queueFilter === 'makeup'
-                ? 'bg-sky-500 text-white shadow-sm'
+                ? 'bg-sky-600 text-white shadow-xs'
                 : 'text-stone-500 hover:text-sky-600'
             )}
           >
@@ -299,16 +319,20 @@ export default function TutoringDispatchBoard({
         {/* Student Cards List */}
         <div className="max-h-[calc(100vh-420px)] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
           {loadingStudents ? (
-            <div className="py-12 text-center text-xs font-bold text-stone-400 animate-pulse">
+            <div className="py-12 text-center text-xs font-medium text-stone-400 animate-pulse">
               Đang tải danh sách học sinh...
             </div>
           ) : filteredQueueStudents.length === 0 ? (
-            <div className="py-12 text-center text-xs font-bold text-stone-400">
+            <div className="py-12 text-center text-xs font-medium text-stone-400">
               Không tìm thấy học sinh phù hợp
             </div>
           ) : (
             filteredQueueStudents.map((student) => {
-              const info = studentScheduleCounts[student.id] || { count: 0, slots: [], hasMakeup: false };
+              const info = studentScheduleCounts[student.id] || {
+                count: 0,
+                slots: [],
+                hasMakeup: false,
+              };
               const count = info.count;
 
               return (
@@ -317,19 +341,19 @@ export default function TutoringDispatchBoard({
                   draggable={canEdit}
                   onDragStart={(e) => handleStudentDragStart(e, student)}
                   className={cn(
-                    'p-3 rounded-2xl border transition-all select-none cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md relative group',
+                    'p-2.5 rounded-xl border transition-all select-none cursor-grab active:cursor-grabbing shadow-xs hover:shadow-sm relative group',
                     count === 0
                       ? 'bg-white dark:bg-stone-800/80 border-stone-200/80 dark:border-white/5 hover:border-amber-500/40'
                       : info.hasMakeup
-                      ? 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-200/80 dark:border-sky-800/30'
-                      : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/30'
+                        ? 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-200/80 dark:border-sky-800/30'
+                        : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/30'
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 truncate">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <div
                         className={cn(
-                          'w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0',
+                          'w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0',
                           count === 0
                             ? 'bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300'
                             : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
@@ -337,19 +361,21 @@ export default function TutoringDispatchBoard({
                       >
                         {student.full_name?.charAt(0) || 'H'}
                       </div>
-                      <div className="truncate">
-                        <div className="font-black text-stone-900 dark:text-stone-100 text-xs truncate">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-stone-900 dark:text-stone-100 text-xs sm:text-sm truncate">
                           {student.full_name}
                         </div>
-                        <div className="text-[10px] text-stone-400 font-bold flex items-center gap-1.5 mt-0.5">
+                        <div className="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-1.5 mt-0.5">
                           {info.hasMakeup ? (
-                            <span className="text-sky-600 dark:text-sky-400 font-black">🔄 Cần học bù</span>
+                            <span className="text-sky-600 dark:text-sky-400 font-semibold">
+                              🔄 Cần học bù
+                            </span>
                           ) : count > 0 ? (
-                            <span className="text-emerald-600 dark:text-emerald-400 font-black">
-                              ✓ Đã có {count} ca tuần này
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                              ✓ {count} ca tuần này
                             </span>
                           ) : (
-                            <span className="text-amber-600 dark:text-amber-500 font-bold">
+                            <span className="text-amber-600 dark:text-amber-500 font-medium">
                               Chưa có ca nào
                             </span>
                           )}
@@ -366,7 +392,7 @@ export default function TutoringDispatchBoard({
                             room: 'Linh hoạt',
                           })
                         }
-                        className="px-2 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-600 dark:text-amber-400 text-[10px] font-black transition-all border border-amber-500/20 shrink-0"
+                        className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-500 hover:text-white text-amber-700 dark:text-amber-300 text-xs font-semibold transition-all border border-amber-200/60 dark:border-amber-800/40 shrink-0 cursor-pointer"
                         title="Xếp ca nhanh"
                       >
                         + Xếp ca
@@ -381,32 +407,32 @@ export default function TutoringDispatchBoard({
       </div>
 
       {/* 📅 RIGHT COLUMN: BÀN ĐIỀU PHỐI GIA SƯ (Tutor Dispatch Matrix) */}
-      <div className="xl:col-span-8 bg-white/90 dark:bg-stone-900/90 backdrop-blur-xl rounded-[32px] border border-stone-200/70 dark:border-white/5 shadow-xl p-5 space-y-4">
+      <div className="xl:col-span-8 bg-white dark:bg-stone-900 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-xs p-4 sm:p-5 space-y-3.5">
         {/* Header & Session Shift Selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-white/5 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-white/5 pb-3.5">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
               <GraduationCap className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
-                Lưới Điều Phối Gia Sư
+              <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-stone-100">
+                Lưới điều phối gia sư
               </h3>
-              <p className="text-[10px] font-bold text-stone-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 Thả học sinh vào ô Gia sư rảnh để tự động gán ca
               </p>
             </div>
           </div>
 
           {/* Session Shift Filter Pills */}
-          <div className="flex bg-stone-100 dark:bg-stone-800 p-1 rounded-2xl text-[10px] font-black gap-1 self-start sm:self-auto">
+          <div className="flex bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl text-xs font-semibold gap-1 self-start sm:self-auto overflow-x-auto">
             <button
               onClick={() => setSessionFilter('all')}
               className={cn(
-                'px-3 py-1.5 rounded-xl transition-all',
+                'px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap',
                 sessionFilter === 'all'
-                  ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-sm'
-                  : 'text-stone-500 hover:text-stone-900'
+                  ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
               )}
             >
               Tất cả ca
@@ -414,10 +440,10 @@ export default function TutoringDispatchBoard({
             <button
               onClick={() => setSessionFilter('evening')}
               className={cn(
-                'px-3 py-1.5 rounded-xl transition-all',
+                'px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap',
                 sessionFilter === 'evening'
-                  ? 'bg-amber-500 text-white shadow-sm'
-                  : 'text-stone-500 hover:text-amber-600'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-amber-600'
               )}
             >
               Ca Tối (17h-21h30)
@@ -425,10 +451,10 @@ export default function TutoringDispatchBoard({
             <button
               onClick={() => setSessionFilter('afternoon')}
               className={cn(
-                'px-3 py-1.5 rounded-xl transition-all',
+                'px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap',
                 sessionFilter === 'afternoon'
-                  ? 'bg-amber-500 text-white shadow-sm'
-                  : 'text-stone-500 hover:text-amber-600'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-amber-600'
               )}
             >
               Ca Chiều (14h-17h)
@@ -436,10 +462,10 @@ export default function TutoringDispatchBoard({
             <button
               onClick={() => setSessionFilter('morning')}
               className={cn(
-                'px-3 py-1.5 rounded-xl transition-all',
+                'px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap',
                 sessionFilter === 'morning'
-                  ? 'bg-amber-500 text-white shadow-sm'
-                  : 'text-stone-500 hover:text-amber-600'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-amber-600'
               )}
             >
               Ca Sáng (8h-11h)
@@ -453,18 +479,18 @@ export default function TutoringDispatchBoard({
             {/* Sticky Header */}
             <thead className="sticky top-0 z-30">
               <tr className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-md">
-                <th className="p-3.5 border-b border-r border-stone-200/70 dark:border-white/5 text-left text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest w-44 sticky left-0 z-40 bg-white/95 dark:bg-stone-900/95">
+                <th className="p-3 border-b border-r border-stone-200/70 dark:border-white/5 text-left text-xs font-semibold text-stone-600 dark:text-stone-300 w-44 sticky left-0 z-40 bg-white/95 dark:bg-stone-900/95">
                   Gia sư & Phụ trách
                 </th>
                 {DAYS.map((day, i) => (
                   <th
                     key={day}
-                    className="p-3 border-b border-r border-stone-200/70 dark:border-white/5 text-center min-w-[150px]"
+                    className="p-2.5 border-b border-r border-stone-200/70 dark:border-white/5 text-center min-w-[130px]"
                   >
-                    <div className="font-black text-stone-900 dark:text-stone-100 text-xs uppercase tracking-tight">
+                    <div className="font-semibold text-stone-900 dark:text-stone-100 text-xs sm:text-sm">
                       {day}
                     </div>
-                    <div className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
+                    <div className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-0.5">
                       {weekDates[i]?.toLocaleDateString('vi-VN', {
                         day: '2-digit',
                         month: '2-digit',
@@ -488,27 +514,27 @@ export default function TutoringDispatchBoard({
                 return (
                   <React.Fragment key={tutor.id}>
                     {/* Tutor Header Row */}
-                    <tr className="bg-stone-100/60 dark:bg-stone-800/40">
+                    <tr className="bg-stone-50 dark:bg-stone-800/60">
                       <td
                         colSpan={8}
-                        className="p-2.5 px-4 border-b border-stone-200/70 dark:border-white/5"
+                        className="p-2 px-4 border-b border-stone-200/70 dark:border-white/5"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center">
                               {tutor.full_name?.charAt(0) || 'G'}
                             </div>
-                            <span className="font-black text-xs text-stone-900 dark:text-stone-100">
+                            <span className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-stone-100">
                               {tutor.full_name}
                             </span>
                             {tutor.phone && (
-                              <span className="text-[10px] text-stone-400 font-bold">
+                              <span className="text-xs text-stone-500 font-mono">
                                 • {tutor.phone}
                               </span>
                             )}
                           </div>
 
-                          <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black border border-emerald-500/20">
+                          <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium border border-emerald-200/60 dark:border-emerald-800/40">
                             {tutoringCount} ca kèm tuần này
                           </span>
                         </div>
@@ -519,11 +545,11 @@ export default function TutoringDispatchBoard({
                     {activeSessions.map((session) => (
                       <tr key={`${tutor.id}-${session.id}`} className="group/row">
                         {/* Session Label Column */}
-                        <td className="p-2.5 border-b border-r border-stone-200/70 dark:border-white/5 sticky left-0 z-20 bg-white/95 dark:bg-stone-900/95 shadow-[2px_0_8px_rgba(0,0,0,0.02)]">
-                          <div className="font-black text-amber-600 dark:text-amber-400 text-xs">
+                        <td className="p-2 border-b border-r border-stone-200/70 dark:border-white/5 sticky left-0 z-20 bg-white/95 dark:bg-stone-900/95 shadow-[2px_0_8px_rgba(0,0,0,0.02)]">
+                          <div className="font-semibold text-amber-700 dark:text-amber-400 text-xs">
                             {session.label}
                           </div>
-                          <div className="text-[9px] text-stone-400 font-bold">
+                          <div className="text-xs text-stone-500 dark:text-stone-400 font-mono">
                             {session.time || `${session.start} - ${session.end}`}
                           </div>
                         </td>
@@ -558,8 +584,8 @@ export default function TutoringDispatchBoard({
                                 !isAvailable
                                   ? 'bg-stone-500/5 dark:bg-white/2 opacity-30'
                                   : regularClassSlot
-                                  ? 'bg-stone-100/70 dark:bg-stone-800/40'
-                                  : 'hover:bg-amber-500/[0.04]'
+                                    ? 'bg-stone-100/70 dark:bg-stone-800/40'
+                                    : 'hover:bg-amber-500/[0.04]'
                               )}
                             >
                               {!isAvailable ? (
@@ -615,10 +641,10 @@ export default function TutoringDispatchBoard({
                                           {tutoringSlot.status === 'completed'
                                             ? '🟢 Xong'
                                             : tutoringSlot.status === 'makeup'
-                                            ? '🔵 Bù'
-                                            : tutoringSlot.status === 'cancelled'
-                                            ? '🔴 Hủy'
-                                            : '🟡 Đã xếp'}
+                                              ? '🔵 Bù'
+                                              : tutoringSlot.status === 'cancelled'
+                                                ? '🔴 Hủy'
+                                                : '🟡 Đã xếp'}
                                         </span>
 
                                         {canEdit && (
@@ -637,23 +663,21 @@ export default function TutoringDispatchBoard({
                                     </div>
                                   );
                                 })()
+                              ) : /* Empty / Available for Dropping */
+                              canEdit ? (
+                                <div
+                                  onClick={() =>
+                                    onCreateSlot(dayIndex, session, 'Linh hoạt', {
+                                      teacher_id: tutor.id,
+                                      room: 'Linh hoạt',
+                                    })
+                                  }
+                                  className="h-full min-h-[50px] rounded-xl border-2 border-dashed border-stone-200/60 dark:border-white/5 hover:border-emerald-500/50 hover:bg-emerald-500/[0.05] cursor-pointer flex items-center justify-center transition-all group/cell"
+                                >
+                                  <Plus className="w-3.5 h-3.5 text-stone-300 dark:text-stone-600 group-hover/cell:text-emerald-500 group-hover/cell:scale-110 transition-all" />
+                                </div>
                               ) : (
-                                /* Empty / Available for Dropping */
-                                canEdit ? (
-                                  <div
-                                    onClick={() =>
-                                      onCreateSlot(dayIndex, session, 'Linh hoạt', {
-                                        teacher_id: tutor.id,
-                                        room: 'Linh hoạt',
-                                      })
-                                    }
-                                    className="h-full min-h-[50px] rounded-xl border-2 border-dashed border-stone-200/60 dark:border-white/5 hover:border-emerald-500/50 hover:bg-emerald-500/[0.05] cursor-pointer flex items-center justify-center transition-all group/cell"
-                                  >
-                                    <Plus className="w-3.5 h-3.5 text-stone-300 dark:text-stone-600 group-hover/cell:text-emerald-500 group-hover/cell:scale-110 transition-all" />
-                                  </div>
-                                ) : (
-                                  <div className="h-full rounded-xl border border-dashed border-stone-200/30 dark:border-white/5" />
-                                )
+                                <div className="h-full rounded-xl border border-dashed border-stone-200/30 dark:border-white/5" />
                               )}
                             </td>
                           );

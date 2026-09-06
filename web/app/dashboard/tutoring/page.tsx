@@ -93,48 +93,48 @@ export default function TutoringManagementPage() {
       <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/50 p-4 sm:p-8">
         <div className="max-w-[1600px] mx-auto space-y-6">
           {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-stone-800/90 p-6 sm:p-8 rounded-[32px] border border-stone-200/60 dark:border-white/5 shadow-md backdrop-blur-md">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-stone-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-xs">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500">
-                  <BookOpen className="w-6 h-6" />
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <div className="p-2 bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400 shrink-0">
+                  <BookOpen className="w-5 h-5" />
                 </div>
-                <Badge variant={isManager ? 'info' : 'success'}>
+                <Badge variant={isManager ? 'info' : 'success'} className="text-xs font-semibold">
                   {isManager ? 'Phân hệ Quản lý Học Kèm' : 'Lịch Dạy Kèm Gia Sư'}
                 </Badge>
                 {state.loading && (
-                  <div className="flex items-center gap-2 text-[10px] font-black text-blue-500 animate-pulse uppercase tracking-widest ml-2">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-blue-500 animate-pulse ml-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     Đang nạp ca học...
                   </div>
                 )}
               </div>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-stone-900 dark:text-white uppercase leading-none">
-                {isManager ? 'Quản Lý Đào Tạo Học Kèm' : 'Lịch Dạy Kèm Của Tôi'}
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-stone-900 dark:text-white leading-tight">
+                {isManager ? 'Quản lý đào tạo học kèm' : 'Lịch dạy kèm của tôi'}
               </h1>
-              <p className="text-sm font-medium text-stone-500 dark:text-stone-400 mt-2 italic">
+              <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1">
                 {isManager
                   ? 'Điều phối gia sư, học sinh phụ đạo & quản lý danh sách ca học kèm tập trung'
                   : `Danh sách các ca học kèm và học sinh phụ trách của gia sư ${state.profile?.full_name || ''}`}
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               <button
                 onClick={handleExportPayroll}
-                className="px-4 py-2.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-black text-xs transition-all border border-emerald-500/20 flex items-center gap-2"
+                className="px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-semibold text-xs sm:text-sm transition-all border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-2 cursor-pointer"
                 title={
                   isManager ? 'Xuất CSV Bảng chấm công Gia sư tuần này' : 'Xuất lịch dạy cá nhân'
                 }
               >
-                <Download className="w-4 h-4 text-emerald-500" />{' '}
-                {isManager ? 'Bảng Chấm Công Gia Sư' : 'Xuất Lịch Dạy Của Tôi'}
+                <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />{' '}
+                <span>{isManager ? 'Bảng chấm công Gia sư' : 'Xuất lịch dạy'}</span>
               </button>
               {isManager && (
                 <Button
                   variant="primary"
                   size="sm"
-                  className="rounded-2xl px-5 py-2.5 text-xs font-black"
+                  className="rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold cursor-pointer"
                   onClick={() => state.openCreateModal(0, undefined, 'Linh hoạt')}
                   leftIcon={<Plus className="w-4 h-4" />}
                 >
@@ -179,26 +179,26 @@ export default function TutoringManagementPage() {
           />
 
           {/* View Tab Selector: Role-aware */}
-          <div className="flex justify-between items-center bg-white dark:bg-stone-800 p-2 rounded-2xl border border-stone-200/60 dark:border-white/5 shadow-sm">
-            <div className="flex bg-stone-100 dark:bg-stone-900 p-1 rounded-xl gap-1">
+          <div className="flex justify-between items-center bg-white dark:bg-stone-900 p-1.5 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-xs">
+            <div className="flex bg-stone-100 dark:bg-stone-800 p-1 rounded-xl gap-1 overflow-x-auto w-full no-scrollbar">
               {isManager && (
                 <button
                   onClick={() => setTutoringViewTab('dispatch')}
-                  className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${
+                  className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
                     tutoringViewTab === 'dispatch'
-                      ? 'bg-white dark:bg-stone-800 text-amber-600 dark:text-amber-400 shadow-sm'
-                      : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100'
+                      ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-xs'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                   }`}
                 >
-                  <Sparkles className="w-4 h-4 text-amber-500" /> Bàn Điều Phối (Matchmaker)
+                  <Sparkles className="w-4 h-4 text-amber-500" /> Bàn điều phối (Matchmaker)
                 </button>
               )}
               <button
                 onClick={() => setTutoringViewTab('list')}
-                className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${
+                className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
                   tutoringViewTab === 'list'
-                    ? 'bg-white dark:bg-stone-800 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100'
+                    ? 'bg-white dark:bg-stone-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                 }`}
               >
                 <ListFilter className="w-4 h-4" />{' '}
@@ -206,10 +206,10 @@ export default function TutoringManagementPage() {
               </button>
               <button
                 onClick={() => setTutoringViewTab('teacher')}
-                className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${
+                className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
                   tutoringViewTab === 'teacher'
-                    ? 'bg-white dark:bg-stone-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                    : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100'
+                    ? 'bg-white dark:bg-stone-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                 }`}
               >
                 <GraduationCap className="w-4 h-4" />{' '}

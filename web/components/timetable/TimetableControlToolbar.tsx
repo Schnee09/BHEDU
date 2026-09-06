@@ -90,8 +90,14 @@ export default function TimetableControlToolbar({
     setCurrentWeek(new Date());
   };
 
-  const startDateStr = weekDates[0]?.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) || '';
-  const endDateStr = weekDates[6]?.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) || '';
+  const startDateStr =
+    weekDates[0]?.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) || '';
+  const endDateStr =
+    weekDates[6]?.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }) || '';
 
   return (
     <div className="space-y-3 mb-6">
@@ -149,20 +155,20 @@ export default function TimetableControlToolbar({
       )}
 
       {/* Tier 2: Compact Unified Control Bar */}
-      <div className="bg-white/90 dark:bg-stone-900/90 backdrop-blur-xl p-3.5 rounded-[28px] border border-stone-200/80 dark:border-white/10 shadow-md flex flex-col lg:flex-row justify-between items-center gap-3.5">
+      <div className="bg-white dark:bg-stone-900 p-3 sm:p-3.5 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-xs flex flex-col lg:flex-row justify-between items-center gap-3">
         {/* Left: Week Switcher & Jump to Today */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           {/* Week Nav Buttons */}
-          <div className="flex items-center bg-stone-100 dark:bg-stone-800 p-1 rounded-2xl border border-stone-200/60 dark:border-white/5">
+          <div className="flex items-center bg-stone-50 dark:bg-stone-800 p-0.5 rounded-xl border border-stone-200/60 dark:border-white/5">
             <button
               onClick={handlePrevWeek}
-              className="p-1.5 rounded-xl hover:bg-white dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-all"
+              className="p-1.5 rounded-lg hover:bg-stone-200/60 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-all cursor-pointer"
               title="Tuần trước"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            <div className="px-3 py-1 text-xs font-black text-stone-800 dark:text-stone-100 flex items-center gap-1.5 whitespace-nowrap">
+            <div className="px-2.5 py-1 text-xs sm:text-sm font-semibold text-stone-800 dark:text-stone-100 flex items-center gap-1.5 whitespace-nowrap">
               <Calendar className="w-3.5 h-3.5 text-amber-500" />
               <span>
                 {startDateStr} - {endDateStr}
@@ -171,7 +177,7 @@ export default function TimetableControlToolbar({
 
             <button
               onClick={handleNextWeek}
-              className="p-1.5 rounded-xl hover:bg-white dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-all"
+              className="p-1.5 rounded-lg hover:bg-stone-200/60 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-all cursor-pointer"
               title="Tuần kế tiếp"
             >
               <ChevronRight className="w-4 h-4" />
@@ -181,7 +187,7 @@ export default function TimetableControlToolbar({
           {/* Jump to Today Button */}
           <button
             onClick={handleJumpToToday}
-            className="px-3 py-2 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-black transition-all flex items-center gap-1.5 border border-amber-500/20"
+            className="h-9 px-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 border border-amber-200/60 dark:border-amber-800/40 cursor-pointer shrink-0"
             title="Quay lại tuần hiện tại"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Hôm nay
@@ -189,15 +195,15 @@ export default function TimetableControlToolbar({
 
           {/* Contextual Campus Selector (Room view) */}
           {activeTab === 'room' && mode !== 'tutoring' && (
-            <div className="flex bg-stone-100 dark:bg-stone-800 p-1 rounded-2xl border border-stone-200/50 dark:border-white/5">
+            <div className="flex bg-stone-50 dark:bg-stone-800 p-0.5 rounded-xl border border-stone-200/50 dark:border-white/5">
               {CAMPUSES.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCampus(c.id)}
                   className={cn(
-                    'px-3 py-1 rounded-xl text-xs font-black transition-all',
+                    'px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer',
                     selectedCampus === c.id
-                      ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-sm'
+                      ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-xs'
                       : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100'
                   )}
                 >
@@ -212,7 +218,7 @@ export default function TimetableControlToolbar({
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="px-3 py-2 bg-stone-100 dark:bg-stone-800 border border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-stone-100 outline-none cursor-pointer"
+              className="h-9 px-3 bg-stone-50 dark:bg-stone-800 border border-stone-200/80 dark:border-white/10 rounded-xl text-xs sm:text-sm font-medium text-stone-900 dark:text-stone-100 outline-none cursor-pointer"
             >
               <option value="">-- Chọn lớp học --</option>
               {classes.map((c) => (
@@ -228,7 +234,7 @@ export default function TimetableControlToolbar({
             <select
               value={selectedTeacher}
               onChange={(e) => setSelectedTeacher(e.target.value)}
-              className="px-3 py-2 bg-stone-100 dark:bg-stone-800 border border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-stone-100 outline-none cursor-pointer"
+              className="h-9 px-3 bg-stone-50 dark:bg-stone-800 border border-stone-200/80 dark:border-white/10 rounded-xl text-xs sm:text-sm font-medium text-stone-900 dark:text-stone-100 outline-none cursor-pointer"
             >
               <option value="">👨‍🏫 Chọn giáo viên --</option>
               {teachers.map((t) => (
@@ -244,7 +250,7 @@ export default function TimetableControlToolbar({
             <select
               value={statusFilter || ''}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-stone-100 dark:bg-stone-800 border border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-stone-100 outline-none cursor-pointer"
+              className="h-9 px-3 bg-stone-50 dark:bg-stone-800 border border-stone-200/80 dark:border-white/10 rounded-xl text-xs sm:text-sm font-medium text-stone-900 dark:text-stone-100 outline-none cursor-pointer"
             >
               <option value="">🎯 Tất cả trạng thái</option>
               <option value="scheduled">🟡 Đã xếp</option>
@@ -266,19 +272,19 @@ export default function TimetableControlToolbar({
                 placeholder="Tìm lớp, giáo viên, phòng..."
                 value={searchQuery || ''}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-2 bg-stone-100 dark:bg-stone-800 border border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-bold text-stone-900 dark:text-stone-100 outline-none w-full sm:w-48 focus:sm:w-60 focus:ring-2 focus:ring-amber-500/30 transition-all placeholder:text-stone-400"
+                className="h-9 pl-8 pr-3 bg-stone-50 dark:bg-stone-800 border border-stone-200/80 dark:border-white/10 rounded-xl text-xs sm:text-sm font-medium text-stone-900 dark:text-stone-100 outline-none w-full sm:w-48 focus:sm:w-60 focus:ring-2 focus:ring-amber-500/30 transition-all placeholder:text-stone-400"
               />
             </div>
           )}
 
           {/* Layout Display Mode Selector: Grid / Timeline / Agenda */}
-          <div className="flex bg-stone-100 dark:bg-stone-800 p-1 rounded-2xl border border-stone-200/60 dark:border-white/5">
+          <div className="flex bg-stone-50 dark:bg-stone-800 p-0.5 rounded-xl border border-stone-200/60 dark:border-white/5">
             <button
               onClick={() => onLayoutChange('grid')}
               className={cn(
-                'px-2.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5',
+                'px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer',
                 displayLayout === 'grid'
-                  ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-sm'
+                  ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-xs'
                   : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
               )}
               title="Chế độ Lưới tuần"
@@ -290,40 +296,41 @@ export default function TimetableControlToolbar({
             <button
               onClick={() => onLayoutChange('timeline')}
               className={cn(
-                'px-2.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5',
+                'px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer',
                 displayLayout === 'timeline'
-                  ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-sm'
+                  ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-xs'
                   : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
               )}
               title="Chế độ Dòng thời gian"
             >
               <Clock className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Timeline</span>
+              <span className="hidden md:inline">Dòng t.gian</span>
             </button>
 
             <button
               onClick={() => onLayoutChange('agenda')}
               className={cn(
-                'px-2.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5',
+                'px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer',
                 displayLayout === 'agenda'
-                  ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-sm'
+                  ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-xs'
                   : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
               )}
-              title="Chế độ Danh sách"
+              title="Chế độ Danh sách ca"
             >
               <ListFilter className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Danh sách</span>
             </button>
           </div>
 
-          {/* Print Button */}
+          {/* Quick Print Schedule Button */}
           {onPrint && (
             <button
               onClick={onPrint}
-              className="p-2 rounded-2xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:text-stone-900 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors border border-stone-200/60 dark:border-white/5 flex items-center gap-1.5 text-xs font-bold shrink-0"
-              title="In thời khóa biểu"
+              className="h-9 px-3 rounded-xl border border-stone-200/80 dark:border-white/10 bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-100 hover:text-amber-600 transition-all flex items-center gap-1.5 text-xs sm:text-sm font-semibold cursor-pointer"
+              title="In lịch tuần chuẩn A4"
             >
-              <Printer className="w-3.5 h-3.5 text-amber-500" />
+              <Printer className="w-4 h-4" />
+              <span className="hidden sm:inline">In lịch</span>
             </button>
           )}
         </div>
