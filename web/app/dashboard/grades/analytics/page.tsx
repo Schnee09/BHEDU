@@ -101,8 +101,10 @@ export default function GradeAnalyticsPage() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [grades, setGrades] = useState<StudentGrade[]>([]);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     loadClasses();
   }, []);
 
@@ -219,7 +221,11 @@ export default function GradeAnalyticsPage() {
 
     grades.forEach((student) => {
       student.category_grades.forEach((cat) => {
-        if (cat.percentage !== null && typeof cat.percentage === 'number' && !isNaN(cat.percentage)) {
+        if (
+          cat.percentage !== null &&
+          typeof cat.percentage === 'number' &&
+          !isNaN(cat.percentage)
+        ) {
           if (!categoryData[cat.category_name]) {
             categoryData[cat.category_name] = [];
           }
@@ -250,14 +256,26 @@ export default function GradeAnalyticsPage() {
   // Identify struggling students
   const getStrugglingStudents = () => {
     return grades
-      .filter((g) => g.overall_percentage !== null && typeof g.overall_percentage === 'number' && !isNaN(g.overall_percentage) && g.overall_percentage < 70)
+      .filter(
+        (g) =>
+          g.overall_percentage !== null &&
+          typeof g.overall_percentage === 'number' &&
+          !isNaN(g.overall_percentage) &&
+          g.overall_percentage < 70
+      )
       .sort((a, b) => a.overall_percentage - b.overall_percentage);
   };
 
   // Identify top performers
   const getTopPerformers = () => {
     return grades
-      .filter((g) => g.overall_percentage !== null && typeof g.overall_percentage === 'number' && !isNaN(g.overall_percentage) && g.overall_percentage >= 90)
+      .filter(
+        (g) =>
+          g.overall_percentage !== null &&
+          typeof g.overall_percentage === 'number' &&
+          !isNaN(g.overall_percentage) &&
+          g.overall_percentage >= 90
+      )
       .sort((a, b) => b.overall_percentage - a.overall_percentage);
   };
 
@@ -434,65 +452,73 @@ export default function GradeAnalyticsPage() {
                   </div>
 
                   <div className="h-80 w-full min-w-0">
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
-                      <AreaChart
-                        data={
-                          classStats
-                            ? [
-                                {
-                                  name: t('analytics.semesterOverview'),
-                                  average: classStats.average,
-                                  highest: classStats.highest,
-                                  lowest: classStats.lowest,
-                                },
-                              ]
-                            : []
-                        }
-                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    {mounted && (
+                      <ResponsiveContainer
+                        width="100%"
+                        height={320}
+                        minWidth={0}
+                        minHeight={320}
+                        initialDimension={{ width: 500, height: 320 }}
                       >
-                        <defs>
-                          <linearGradient id="colorAvg" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                        <XAxis
-                          dataKey="name"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
-                        />
-                        <YAxis
-                          domain={[0, 100]}
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#fff',
-                            borderRadius: '16px',
-                            border: 'none',
-                            boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
-                          }}
-                          itemStyle={{
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            textTransform: 'uppercase',
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="average"
-                          stroke="#10b981"
-                          strokeWidth={4}
-                          fillOpacity={1}
-                          fill="url(#colorAvg)"
-                          animationDuration={1500}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                        <AreaChart
+                          data={
+                            classStats
+                              ? [
+                                  {
+                                    name: t('analytics.semesterOverview'),
+                                    average: classStats.average,
+                                    highest: classStats.highest,
+                                    lowest: classStats.lowest,
+                                  },
+                                ]
+                              : []
+                          }
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        >
+                          <defs>
+                            <linearGradient id="colorAvg" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                          <XAxis
+                            dataKey="name"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
+                          />
+                          <YAxis
+                            domain={[0, 100]}
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              borderRadius: '16px',
+                              border: 'none',
+                              boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
+                            }}
+                            itemStyle={{
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              textTransform: 'uppercase',
+                            }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="average"
+                            stroke="#10b981"
+                            strokeWidth={4}
+                            fillOpacity={1}
+                            fill="url(#colorAvg)"
+                            animationDuration={1500}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
                   </div>
                 </div>
 
@@ -504,42 +530,50 @@ export default function GradeAnalyticsPage() {
                       {t('analytics.distributionPie')}
                     </h2>
                     <div className="h-72 w-full min-w-0">
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={288}>
-                        <PieChart>
-                          <Pie
-                            data={gradeDistribution.filter((d) => d.count > 0)}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
-                            paddingAngle={5}
-                            dataKey="count"
-                            nameKey="grade"
-                            animationDuration={1500}
-                          >
-                            {gradeDistribution
-                              .filter((d) => d.count > 0)
-                              .map((entry, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={
-                                    CHART_COLORS.bands[
-                                      entry.id as keyof typeof CHART_COLORS.bands
-                                    ] || CHART_COLORS.pieColors[index % 6]
-                                  }
-                                  stroke="transparent"
-                                />
-                              ))}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={{
-                              borderRadius: '16px',
-                              border: 'none',
-                              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      {mounted && (
+                        <ResponsiveContainer
+                          width="100%"
+                          height={288}
+                          minWidth={0}
+                          minHeight={288}
+                          initialDimension={{ width: 500, height: 288 }}
+                        >
+                          <PieChart>
+                            <Pie
+                              data={gradeDistribution.filter((d) => d.count > 0)}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={100}
+                              paddingAngle={5}
+                              dataKey="count"
+                              nameKey="grade"
+                              animationDuration={1500}
+                            >
+                              {gradeDistribution
+                                .filter((d) => d.count > 0)
+                                .map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={
+                                      CHART_COLORS.bands[
+                                        entry.id as keyof typeof CHART_COLORS.bands
+                                      ] || CHART_COLORS.pieColors[index % 6]
+                                    }
+                                    stroke="transparent"
+                                  />
+                                ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                borderRadius: '16px',
+                                border: 'none',
+                                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
                     </div>
                   </div>
 
@@ -549,40 +583,52 @@ export default function GradeAnalyticsPage() {
                       {t('analytics.distributionBar')}
                     </h2>
                     <div className="h-72 w-full min-w-0">
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={288}>
-                        <BarChart data={gradeDistribution.filter((d) => d.count > 0)}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                          <XAxis
-                            dataKey="grade"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
-                          />
-                          <YAxis
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
-                          />
-                          <Tooltip
-                            cursor={{ fill: 'transparent' }}
-                            contentStyle={{ borderRadius: '16px', border: 'none' }}
-                          />
-                          <Bar dataKey="count" radius={[12, 12, 0, 0]} animationDuration={1500}>
-                            {gradeDistribution
-                              .filter((d) => d.count > 0)
-                              .map((entry, index) => (
-                                <Cell
-                                  key={`bar-${index}`}
-                                  fill={
-                                    CHART_COLORS.bands[
-                                      entry.id as keyof typeof CHART_COLORS.bands
-                                    ] || '#10b981'
-                                  }
-                                />
-                              ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
+                      {mounted && (
+                        <ResponsiveContainer
+                          width="100%"
+                          height={288}
+                          minWidth={0}
+                          minHeight={288}
+                          initialDimension={{ width: 500, height: 288 }}
+                        >
+                          <BarChart data={gradeDistribution.filter((d) => d.count > 0)}>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              vertical={false}
+                              stroke="#e5e7eb"
+                            />
+                            <XAxis
+                              dataKey="grade"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
+                            />
+                            <YAxis
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 10, fontWeight: 700, fill: '#78716c' }}
+                            />
+                            <Tooltip
+                              cursor={{ fill: 'transparent' }}
+                              contentStyle={{ borderRadius: '16px', border: 'none' }}
+                            />
+                            <Bar dataKey="count" radius={[12, 12, 0, 0]} animationDuration={1500}>
+                              {gradeDistribution
+                                .filter((d) => d.count > 0)
+                                .map((entry, index) => (
+                                  <Cell
+                                    key={`bar-${index}`}
+                                    fill={
+                                      CHART_COLORS.bands[
+                                        entry.id as keyof typeof CHART_COLORS.bands
+                                      ] || '#10b981'
+                                    }
+                                  />
+                                ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
                     </div>
                   </div>
                 </div>

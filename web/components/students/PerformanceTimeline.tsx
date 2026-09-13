@@ -8,7 +8,7 @@
  * Uses lazy-loaded chart components for better performance.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
@@ -131,6 +131,12 @@ export default function PerformanceTimeline({
     );
   };
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <Card>
       <div className="p-6">
@@ -189,67 +195,80 @@ export default function PerformanceTimeline({
               Chưa có dữ liệu
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={height}>
-              <LazyAreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="gpaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
-                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
-                <YAxis
-                  domain={[0, 10]}
-                  stroke="var(--text-muted)"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip content={<CustomTooltip />} />
-
-                {/* Target GPA Reference Line */}
-                <ReferenceLine
-                  y={targetGPA}
-                  stroke="#10b981"
-                  strokeDasharray="5 5"
-                  label={{
-                    value: `Mục tiêu: ${targetGPA}`,
-                    position: 'right',
-                    fill: '#10b981',
-                    fontSize: 11,
-                  }}
-                />
-
-                {/* Pass threshold */}
-                <ReferenceLine y={5.0} stroke="#ef4444" strokeDasharray="5 5" strokeOpacity={0.5} />
-
-                {/* Class Average */}
-                {showClassAverage && (
-                  <Line
-                    type="monotone"
-                    dataKey="classAverage"
-                    stroke="#94a3b8"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    name="TB Lớp"
+            mounted && (
+              <ResponsiveContainer
+                width="100%"
+                height={height}
+                minWidth={0}
+                minHeight={height}
+                initialDimension={{ width: 500, height }}
+              >
+                <LazyAreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gpaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
+                  <YAxis
+                    domain={[0, 10]}
+                    stroke="var(--text-muted)"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
                   />
-                )}
+                  <Tooltip content={<CustomTooltip />} />
 
-                {/* Student GPA */}
-                <Area
-                  type="monotone"
-                  dataKey="gpa"
-                  stroke="#6366f1"
-                  strokeWidth={3}
-                  fill="url(#gpaGradient)"
-                  dot={{ fill: '#6366f1', strokeWidth: 2, r: 5 }}
-                  activeDot={{ r: 7, strokeWidth: 0 }}
-                  name="Điểm TB"
-                />
-              </LazyAreaChart>
-            </ResponsiveContainer>
+                  {/* Target GPA Reference Line */}
+                  <ReferenceLine
+                    y={targetGPA}
+                    stroke="#10b981"
+                    strokeDasharray="5 5"
+                    label={{
+                      value: `Mục tiêu: ${targetGPA}`,
+                      position: 'right',
+                      fill: '#10b981',
+                      fontSize: 11,
+                    }}
+                  />
+
+                  {/* Pass threshold */}
+                  <ReferenceLine
+                    y={5.0}
+                    stroke="#ef4444"
+                    strokeDasharray="5 5"
+                    strokeOpacity={0.5}
+                  />
+
+                  {/* Class Average */}
+                  {showClassAverage && (
+                    <Line
+                      type="monotone"
+                      dataKey="classAverage"
+                      stroke="#94a3b8"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={false}
+                      name="TB Lớp"
+                    />
+                  )}
+
+                  {/* Student GPA */}
+                  <Area
+                    type="monotone"
+                    dataKey="gpa"
+                    stroke="#6366f1"
+                    strokeWidth={3}
+                    fill="url(#gpaGradient)"
+                    dot={{ fill: '#6366f1', strokeWidth: 2, r: 5 }}
+                    activeDot={{ r: 7, strokeWidth: 0 }}
+                    name="Điểm TB"
+                  />
+                </LazyAreaChart>
+              </ResponsiveContainer>
+            )
           )}
         </div>
 

@@ -7,7 +7,18 @@ import { Button } from '@/components/ui';
 import Badge from '@/components/ui/badge';
 import PageGuard from '@/components/PageGuard';
 import { useFetch } from '@/hooks/useFetch';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 
 interface AcademicYear {
   id: string;
@@ -56,9 +67,14 @@ export default function FinanceDashboardPage() {
 }
 
 function FinanceDashboardContent() {
+  const [mounted, setMounted] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'invoices'>('overview');
-  
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Invoice filters
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
@@ -84,9 +100,15 @@ function FinanceDashboardContent() {
   const [isSubmittingPay, setIsSubmittingPay] = useState(false);
 
   // Fetch lookups
-  const { data: yearsRes } = useFetch<{ success: boolean; data: AcademicYear[] }>('/api/admin/academic-years');
-  const { data: classesRes } = useFetch<{ success: boolean; data: ClassOption[] }>('/api/admin/classes?limit=100');
-  const { data: paymentMethods } = useFetch<Array<{ id: string; name: string }>>('/api/admin/finance/invoices'); // Placeholder lookup or direct
+  const { data: yearsRes } = useFetch<{ success: boolean; data: AcademicYear[] }>(
+    '/api/admin/academic-years'
+  );
+  const { data: classesRes } = useFetch<{ success: boolean; data: ClassOption[] }>(
+    '/api/admin/classes?limit=100'
+  );
+  const { data: paymentMethods } = useFetch<Array<{ id: string; name: string }>>(
+    '/api/admin/finance/invoices'
+  ); // Placeholder lookup or direct
 
   const years = yearsRes?.data || [];
   const classes = classesRes?.data || [];
@@ -94,8 +116,8 @@ function FinanceDashboardContent() {
   // Set current year default
   useEffect(() => {
     if (years.length > 0 && !selectedYear) {
-      const current = years.find(y => y.is_current);
-      setSelectedYear(current ? current.id : (years[0]?.id || ''));
+      const current = years.find((y) => y.is_current);
+      setSelectedYear(current ? current.id : years[0]?.id || '');
     }
   }, [years, selectedYear]);
 
@@ -143,7 +165,7 @@ function FinanceDashboardContent() {
   // Chart data mapping
   const chartData = [
     { name: 'Đã đóng', value: stats.totalPaid },
-    { name: 'Nợ đọng', value: stats.totalDebt }
+    { name: 'Nợ đọng', value: stats.totalDebt },
   ];
 
   const colors = ['#10b981', '#ef4444'];
@@ -244,7 +266,7 @@ function FinanceDashboardContent() {
         const response = await fetch('/api/admin/finance/tuition-matrix'); // Or some fallback
       } catch (e) {}
     };
-    
+
     // We can query custom supabase config for payment methods or query directly in supabase:
     // For cash method, let's fetch it via SQL or API or fallback to cash types in Supabase.
     // We'll call the custom DB select to grab active payment methods in useEffect.
@@ -253,16 +275,16 @@ function FinanceDashboardContent() {
       // Let's populate default payment methods for safety
       setMethods([
         { id: 'cash-id', name: 'Tiền mặt' },
-        { id: 'bank-transfer-id', name: 'Chuyển khoản ngân hàng' }
+        { id: 'bank-transfer-id', name: 'Chuyển khoản ngân hàng' },
       ]);
-      
+
       // Real fetch
       try {
         // Let's check invoices GET endpoint or fetch custom list
         const resMethods = await fetch('/api/admin/finance/invoices');
         // Let's get actual database payment methods
         const resObj = await fetch('/api/admin/classes?limit=1'); // Just warm up connection
-      } catch(e) {}
+      } catch (e) {}
     };
     queryMethods();
   }, [selectedYear]);
@@ -309,7 +331,8 @@ Trung tâm xin gửi thông báo học phí:
             </h1>
           </div>
           <p className="text-sm text-stone-500 max-w-2xl">
-            Trung tâm BHEDU: Quản lý học phí học sinh, tự động phát hành hóa đơn hàng tháng và quản lý dòng tiền.
+            Trung tâm BHEDU: Quản lý học phí học sinh, tự động phát hành hóa đơn hàng tháng và quản
+            lý dòng tiền.
           </p>
         </div>
 
@@ -429,19 +452,32 @@ Trung tâm xin gửi thông báo học phí:
             <Card className="glass-crystal rounded-3xl p-6 lg:col-span-2 space-y-6">
               <h3 className="text-lg font-bold tracking-tight">Doanh thu vs Công nợ</h3>
               <div className="h-64 w-full min-w-0">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={256}>
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                    <XAxis dataKey="name" stroke="#888888" />
-                    <YAxis stroke="#888888" tickFormatter={(v) => `₫${(v/1000000).toFixed(1)}M`} />
-                    <Tooltip formatter={(v: any) => [`₫${v.toLocaleString('vi-VN')}`, 'Số tiền']} />
-                    <Bar dataKey="value" radius={[10, 10, 0, 0]}>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {mounted && (
+                  <ResponsiveContainer
+                    width="100%"
+                    height={256}
+                    minWidth={0}
+                    minHeight={256}
+                    initialDimension={{ width: 500, height: 256 }}
+                  >
+                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                      <XAxis dataKey="name" stroke="#888888" />
+                      <YAxis
+                        stroke="#888888"
+                        tickFormatter={(v) => `₫${(v / 1000000).toFixed(1)}M`}
+                      />
+                      <Tooltip
+                        formatter={(v: any) => [`₫${v.toLocaleString('vi-VN')}`, 'Số tiền']}
+                      />
+                      <Bar dataKey="value" radius={[10, 10, 0, 0]}>
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </Card>
 
@@ -474,7 +510,9 @@ Trung tâm xin gửi thông báo học phí:
               </div>
               <div className="pt-6 border-t border-stone-100 dark:border-white/5 flex items-center justify-between text-xs text-stone-500">
                 <span>Tổng số hóa đơn:</span>
-                <span className="font-bold text-stone-800 dark:text-white">{stats.totalInvoicesCount}</span>
+                <span className="font-bold text-stone-800 dark:text-white">
+                  {stats.totalInvoicesCount}
+                </span>
               </div>
             </Card>
           </div>
@@ -492,15 +530,17 @@ Trung tâm xin gửi thông báo học phí:
                 className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
               />
             </div>
-            
+
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
               className="px-4 py-2.5 bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-white/10 rounded-xl text-sm font-semibold focus:outline-none"
             >
               <option value="">Tất cả Lớp học</option>
-              {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
 
@@ -563,10 +603,17 @@ Trung tâm xin gửi thông báo học phí:
                     </tr>
                   ) : (
                     invoices.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-stone-50/50 dark:hover:bg-white/5 transition-colors">
+                      <tr
+                        key={inv.id}
+                        className="hover:bg-stone-50/50 dark:hover:bg-white/5 transition-colors"
+                      >
                         <td className="px-6 py-4 font-bold text-sm">{inv.invoice_number}</td>
-                        <td className="px-6 py-4 text-sm font-semibold">{inv.student?.full_name}</td>
-                        <td className="px-6 py-4 text-sm font-mono text-stone-500">{inv.student?.student_code || '—'}</td>
+                        <td className="px-6 py-4 text-sm font-semibold">
+                          {inv.student?.full_name}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-mono text-stone-500">
+                          {inv.student?.student_code || '—'}
+                        </td>
                         <td className="px-6 py-4 text-sm text-stone-500">
                           {new Date(inv.issue_date).toLocaleDateString('vi-VN')}
                         </td>
@@ -590,7 +637,11 @@ Trung tâm xin gửi thông báo học phí:
                             }
                             className="rounded-full uppercase text-[9px] font-black px-2.5 py-1"
                           >
-                            {inv.status === 'paid' ? 'Đã đóng' : inv.status === 'pending' ? 'Chờ thu' : 'Quá hạn'}
+                            {inv.status === 'paid'
+                              ? 'Đã đóng'
+                              : inv.status === 'pending'
+                                ? 'Chờ thu'
+                                : 'Quá hạn'}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -628,14 +679,14 @@ Trung tâm xin gửi thông báo học phí:
                 </span>
                 <div className="flex items-center gap-2">
                   <Button
-                    onClick={() => setInvoicePage(p => Math.max(1, p - 1))}
+                    onClick={() => setInvoicePage((p) => Math.max(1, p - 1))}
                     disabled={invoicePage === 1}
                     className="px-3 py-1.5 text-xs bg-stone-100 dark:bg-stone-900 border rounded-lg"
                   >
                     Trước
                   </Button>
                   <Button
-                    onClick={() => setInvoicePage(p => Math.min(pagination.totalPages, p + 1))}
+                    onClick={() => setInvoicePage((p) => Math.min(pagination.totalPages, p + 1))}
                     disabled={invoicePage === pagination.totalPages}
                     className="px-3 py-1.5 text-xs bg-stone-100 dark:bg-stone-900 border rounded-lg"
                   >
@@ -658,7 +709,7 @@ Trung tâm xin gửi thông báo học phí:
             >
               <Icons.Close className="w-5 h-5" />
             </button>
-            
+
             <h2 className="text-xl font-bold tracking-tight uppercase text-emerald-600">
               Tạo Hóa Đơn Hàng Loạt Theo Lớp
             </h2>
@@ -673,15 +724,19 @@ Trung tâm xin gửi thông báo học phí:
                   className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-white/10 rounded-xl text-sm focus:outline-none"
                 >
                   <option value="">Chọn lớp học...</option>
-                  {classes.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-500 uppercase">Tháng xuất hóa đơn</label>
+                  <label className="text-xs font-bold text-stone-500 uppercase">
+                    Tháng xuất hóa đơn
+                  </label>
                   <input
                     type="month"
                     required
@@ -691,7 +746,9 @@ Trung tâm xin gửi thông báo học phí:
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-500 uppercase">Hạn đóng học phí</label>
+                  <label className="text-xs font-bold text-stone-500 uppercase">
+                    Hạn đóng học phí
+                  </label>
                   <input
                     type="date"
                     required
@@ -703,7 +760,9 @@ Trung tâm xin gửi thông báo học phí:
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-500 uppercase">Số tiền đóng tháng (VND - Tùy chọn)</label>
+                <label className="text-xs font-bold text-stone-500 uppercase">
+                  Số tiền đóng tháng (VND - Tùy chọn)
+                </label>
                 <input
                   type="number"
                   placeholder="Để trống để lấy học phí mặc định của lớp"
@@ -714,7 +773,9 @@ Trung tâm xin gửi thông báo học phí:
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-500 uppercase">Nội dung / Mô tả hóa đơn (Tùy chọn)</label>
+                <label className="text-xs font-bold text-stone-500 uppercase">
+                  Nội dung / Mô tả hóa đơn (Tùy chọn)
+                </label>
                 <input
                   type="text"
                   placeholder="Ví dụ: Học phí Lớp 9T2 - Tháng 9"
@@ -758,22 +819,31 @@ Trung tâm xin gửi thông báo học phí:
             >
               <Icons.Close className="w-5 h-5" />
             </button>
-            
+
             <h2 className="text-xl font-bold tracking-tight uppercase text-emerald-600">
               Ghi Nhận Thanh Toán Học Phí
             </h2>
 
             <div className="p-4 bg-stone-50 dark:bg-stone-900/40 rounded-2xl space-y-2">
-              <p className="text-sm">Học sinh: <span className="font-bold">{selectedInvoice.student?.full_name}</span></p>
-              <p className="text-sm">Hóa đơn: <span className="font-mono">{selectedInvoice.invoice_number}</span></p>
+              <p className="text-sm">
+                Học sinh: <span className="font-bold">{selectedInvoice.student?.full_name}</span>
+              </p>
+              <p className="text-sm">
+                Hóa đơn: <span className="font-mono">{selectedInvoice.invoice_number}</span>
+              </p>
               <p className="text-sm text-red-500 font-semibold">
-                Còn nợ: ₫{(selectedInvoice.total_amount - selectedInvoice.paid_amount).toLocaleString('vi-VN')}
+                Còn nợ: ₫
+                {(selectedInvoice.total_amount - selectedInvoice.paid_amount).toLocaleString(
+                  'vi-VN'
+                )}
               </p>
             </div>
 
             <form onSubmit={handleRecordPayment} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-500 uppercase">Số tiền đóng thực tế (VND)</label>
+                <label className="text-xs font-bold text-stone-500 uppercase">
+                  Số tiền đóng thực tế (VND)
+                </label>
                 <input
                   type="number"
                   required
@@ -784,7 +854,9 @@ Trung tâm xin gửi thông báo học phí:
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-500 uppercase">Phương thức đóng</label>
+                <label className="text-xs font-bold text-stone-500 uppercase">
+                  Phương thức đóng
+                </label>
                 <select
                   required
                   value={payMethod}
@@ -798,7 +870,9 @@ Trung tâm xin gửi thông báo học phí:
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-stone-500 uppercase">Mã tham chiếu giao dịch (Tùy chọn)</label>
+                <label className="text-xs font-bold text-stone-500 uppercase">
+                  Mã tham chiếu giao dịch (Tùy chọn)
+                </label>
                 <input
                   type="text"
                   placeholder="Ví dụ: Mã GD ngân hàng"

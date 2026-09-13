@@ -78,6 +78,11 @@ function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
   const [progress, setProgress] = useState<StudentProgress | null>(null);
   const [grades, setGrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     fetchProgress();
@@ -392,58 +397,66 @@ function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
 
           {progress.semesters.some((s) => s.gpa !== null && s.gpa !== undefined) ? (
             <div className="h-[280px] w-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
-                <AreaChart
-                  data={progress.semesters
-                    .filter((s) => s.gpa !== null && s.gpa !== undefined)
-                    .map((s) => ({
-                      name: s.semester,
-                      gpa: parseFloat((s.gpa as number).toFixed(2)),
-                    }))}
+              {mounted && (
+                <ResponsiveContainer
+                  width="100%"
+                  height={280}
+                  minWidth={0}
+                  minHeight={280}
+                  initialDimension={{ width: 500, height: 280 }}
                 >
-                  <defs>
-                    <linearGradient id="gpaGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#d97706" stopOpacity={0.7} />
-                      <stop offset="95%" stopColor="#d97706" stopOpacity={0.05} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#78716c', fontSize: 11, fontWeight: 700 }}
-                  />
-                  <YAxis
-                    domain={[0, 10]}
-                    ticks={[0, 2.5, 5, 7.5, 10]}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#78716c', fontSize: 11, fontWeight: 700 }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1c1917',
-                      borderRadius: '0.75rem',
-                      border: 'none',
-                      padding: '0.5rem 0.75rem',
-                    }}
-                    itemStyle={{
-                      color: '#f59e0b',
-                      fontWeight: 800,
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="gpa"
-                    stroke="#d97706"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#gpaGradient)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+                  <AreaChart
+                    data={progress.semesters
+                      .filter((s) => s.gpa !== null && s.gpa !== undefined)
+                      .map((s) => ({
+                        name: s.semester,
+                        gpa: parseFloat((s.gpa as number).toFixed(2)),
+                      }))}
+                  >
+                    <defs>
+                      <linearGradient id="gpaGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#d97706" stopOpacity={0.7} />
+                        <stop offset="95%" stopColor="#d97706" stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#78716c', fontSize: 11, fontWeight: 700 }}
+                    />
+                    <YAxis
+                      domain={[0, 10]}
+                      ticks={[0, 2.5, 5, 7.5, 10]}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#78716c', fontSize: 11, fontWeight: 700 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1c1917',
+                        borderRadius: '0.75rem',
+                        border: 'none',
+                        padding: '0.5rem 0.75rem',
+                      }}
+                      itemStyle={{
+                        color: '#f59e0b',
+                        fontWeight: 800,
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="gpa"
+                      stroke="#d97706"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#gpaGradient)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           ) : (
             <div className="h-[240px] flex flex-col items-center justify-center text-center p-6 space-y-2">
@@ -473,23 +486,31 @@ function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
 
           <div className="h-[280px] w-full min-w-0">
             {radarData.length >= 3 ? (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="#e7e5e4" />
-                  <PolarAngleAxis
-                    dataKey="subject"
-                    tick={{ fill: '#78716c', fontSize: 10, fontWeight: 700 }}
-                  />
-                  <PolarRadiusAxis domain={[0, 10]} tick={false} />
-                  <Radar
-                    name="Điểm môn"
-                    dataKey="grade"
-                    stroke="#d97706"
-                    fill="#d97706"
-                    fillOpacity={0.5}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
+              mounted && (
+                <ResponsiveContainer
+                  width="100%"
+                  height={280}
+                  minWidth={0}
+                  minHeight={280}
+                  initialDimension={{ width: 500, height: 280 }}
+                >
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="#e7e5e4" />
+                    <PolarAngleAxis
+                      dataKey="subject"
+                      tick={{ fill: '#78716c', fontSize: 10, fontWeight: 700 }}
+                    />
+                    <PolarRadiusAxis domain={[0, 10]} tick={false} />
+                    <Radar
+                      name="Điểm môn"
+                      dataKey="grade"
+                      stroke="#d97706"
+                      fill="#d97706"
+                      fillOpacity={0.5}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              )
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-2">
                 <div className="p-3 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-400">
@@ -519,44 +540,52 @@ function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
             </div>
 
             <div className="h-[240px] w-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={240}>
-                <PieChart>
-                  <Pie
-                    data={pieChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={6}
-                    dataKey="value"
-                  >
-                    {pieChartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={
-                          entry.name.includes('Giỏi')
-                            ? '#10b981'
-                            : entry.name.includes('Khá')
-                              ? '#d97706'
-                              : entry.name.includes('TB')
-                                ? '#64748b'
-                                : '#ef4444'
-                        }
-                        stroke="none"
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1c1917',
-                      borderRadius: '0.75rem',
-                      border: 'none',
-                    }}
-                    itemStyle={{ fontWeight: 800, fontSize: '12px' }}
-                  />
-                  <Legend iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
+              {mounted && (
+                <ResponsiveContainer
+                  width="100%"
+                  height={240}
+                  minWidth={0}
+                  minHeight={240}
+                  initialDimension={{ width: 500, height: 240 }}
+                >
+                  <PieChart>
+                    <Pie
+                      data={pieChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={6}
+                      dataKey="value"
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            entry.name.includes('Giỏi')
+                              ? '#10b981'
+                              : entry.name.includes('Khá')
+                                ? '#d97706'
+                                : entry.name.includes('TB')
+                                  ? '#64748b'
+                                  : '#ef4444'
+                          }
+                          stroke="none"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1c1917',
+                        borderRadius: '0.75rem',
+                        border: 'none',
+                      }}
+                      itemStyle={{ fontWeight: 800, fontSize: '12px' }}
+                    />
+                    <Legend iconType="circle" />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         )}
