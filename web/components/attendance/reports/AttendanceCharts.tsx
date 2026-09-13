@@ -34,8 +34,8 @@ export function AttendanceCharts({
           <div className="w-2 h-2 bg-emerald-500 rounded-full" />
           {t('attendance.report.statusChart')}
         </h2>
-        <div className="h-64" style={{ minHeight: '300px' }}>
-          <ResponsiveContainer width="100%" height={300}>
+        <div className="h-64 w-full min-w-0" style={{ minHeight: '300px' }}>
+          <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={300}>
             <PieChart>
               <Pie
                 data={[
@@ -84,8 +84,8 @@ export function AttendanceCharts({
           <div className="w-2 h-2 bg-amber-500 rounded-full" />
           {t('attendance.report.rateByClass')}
         </h2>
-        <div className="h-64" style={{ minHeight: '300px' }}>
-          <ResponsiveContainer width="100%" height={300}>
+        <div className="h-64 w-full min-w-0" style={{ minHeight: '300px' }}>
+          <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={300}>
             <BarChart
               data={Object.values(byClass)
                 .slice(0, 6)

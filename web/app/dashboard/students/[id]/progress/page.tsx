@@ -391,8 +391,8 @@ function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
           </div>
 
           {progress.semesters.some((s) => s.gpa !== null && s.gpa !== undefined) ? (
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[280px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
                 <AreaChart
                   data={progress.semesters
                     .filter((s) => s.gpa !== null && s.gpa !== undefined)
@@ -471,9 +471,9 @@ function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
             </p>
           </div>
 
-          <div className="h-[280px]">
+          <div className="h-[280px] w-full min-w-0">
             {radarData.length >= 3 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="#e7e5e4" />
                   <PolarAngleAxis
@@ -518,8 +518,8 @@ function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
               </p>
             </div>
 
-            <div className="h-[240px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[240px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={240}>
                 <PieChart>
                   <Pie
                     data={pieChartData}

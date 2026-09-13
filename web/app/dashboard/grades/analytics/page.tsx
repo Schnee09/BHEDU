@@ -433,8 +433,8 @@ export default function GradeAnalyticsPage() {
                     </p>
                   </div>
 
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="h-80 w-full min-w-0">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
                       <AreaChart
                         data={
                           classStats
@@ -503,8 +503,8 @@ export default function GradeAnalyticsPage() {
                     <h2 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight mb-8">
                       {t('analytics.distributionPie')}
                     </h2>
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div className="h-72 w-full min-w-0">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={288}>
                         <PieChart>
                           <Pie
                             data={gradeDistribution.filter((d) => d.count > 0)}
@@ -548,8 +548,8 @@ export default function GradeAnalyticsPage() {
                     <h2 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight mb-8">
                       {t('analytics.distributionBar')}
                     </h2>
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div className="h-72 w-full min-w-0">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={288}>
                         <BarChart data={gradeDistribution.filter((d) => d.count > 0)}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                           <XAxis

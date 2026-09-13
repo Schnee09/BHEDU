@@ -428,8 +428,8 @@ Trung tâm xin gửi thông báo học phí:
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <Card className="glass-crystal rounded-3xl p-6 lg:col-span-2 space-y-6">
               <h3 className="text-lg font-bold tracking-tight">Doanh thu vs Công nợ</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="h-64 w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={256}>
                   <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                     <XAxis dataKey="name" stroke="#888888" />

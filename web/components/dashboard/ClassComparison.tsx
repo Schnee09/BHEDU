@@ -195,8 +195,8 @@ export default function ClassComparison({ classes, loading = false }: ClassCompa
                         </table>
                     </div>
                 ) : (
-                    <div className="p-8">
-                        <ResponsiveContainer width="100%" height={380}>
+                    <div className="p-8 w-full min-w-0">
+                        <ResponsiveContainer width="100%" height={380} minWidth={0} minHeight={380}>
                             <BarChart
                                 data={sortedClasses.slice(0, 10)}
                                 layout="vertical"

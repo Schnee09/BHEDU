@@ -172,7 +172,7 @@ const AnalyticsWidgetComponent = memo(function AnalyticsWidget({
         switch (chartType) {
             case 'line':
                 return (
-                    <ResponsiveContainer width="100%" height={height}>
+                    <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={height}>
                         <LazyLineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />}
                             <XAxis
@@ -216,7 +216,7 @@ const AnalyticsWidgetComponent = memo(function AnalyticsWidget({
 
             case 'bar':
                 return (
-                    <ResponsiveContainer width="100%" height={height}>
+                    <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={height}>
                         <LazyBarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />}
                             <XAxis
@@ -267,7 +267,7 @@ const AnalyticsWidgetComponent = memo(function AnalyticsWidget({
                 const finalPieData = activePieData.length > 0 ? activePieData : pieDataWithColors;
 
                 return (
-                    <ResponsiveContainer width="100%" height={height}>
+                    <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={height}>
                         <LazyPieChart>
                             <Pie
                                 data={finalPieData}
@@ -308,7 +308,7 @@ const AnalyticsWidgetComponent = memo(function AnalyticsWidget({
 
             case 'area':
                 return (
-                    <ResponsiveContainer width="100%" height={height}>
+                    <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={height}>
                         <LazyAreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />}
                             <XAxis
@@ -347,7 +347,7 @@ const AnalyticsWidgetComponent = memo(function AnalyticsWidget({
 
             case 'radar':
                 return (
-                    <ResponsiveContainer width="100%" height={height}>
+                    <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={height}>
                         <LazyRadarChart data={data} cx="50%" cy="50%" outerRadius="80%">
                             <PolarGrid stroke="var(--border-light)" />
                             <PolarAngleAxis
