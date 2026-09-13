@@ -531,7 +531,7 @@ export const Modal: React.FC<ModalProps> = ({
           {/* Header */}
           <div
             className="
-            flex items-center justify-between px-8 py-5
+            flex items-center justify-between px-5 sm:px-8 py-4 sm:py-5
             border-b border-stone-100 dark:border-stone-800
             bg-stone-50/80 dark:bg-stone-900/50
             rounded-t-3xl print:hidden
@@ -539,7 +539,7 @@ export const Modal: React.FC<ModalProps> = ({
           >
             <h3
               id="modal-title"
-              className="text-xl font-serif font-bold text-stone-900 dark:text-white italic"
+              className="text-lg sm:text-xl font-serif font-bold text-stone-900 dark:text-white italic"
             >
               {title}
             </h3>
@@ -566,13 +566,15 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
 
           {/* Body */}
-          <div className="px-6 py-5 max-h-[65vh] overflow-y-auto print:max-h-none print:overflow-visible print:p-0">{children}</div>
+          <div className="px-4 sm:px-6 py-4 sm:py-5 max-h-[75vh] sm:max-h-[65vh] overflow-y-auto print:max-h-none print:overflow-visible print:p-0">
+            {children}
+          </div>
 
           {/* Footer */}
           {footer && (
             <div
               className="
-              px-8 py-5 
+              px-5 sm:px-8 py-4 sm:py-5 
               border-t border-stone-200/50 dark:border-white/5
               bg-white/30 dark:bg-black/10
               rounded-b-3xl 

@@ -67,6 +67,7 @@ interface SearchableSelectProps<T> {
   searchPlaceholder?: string;
   disabled?: boolean;
   icon?: React.ReactNode;
+  align?: 'left' | 'right';
 }
 
 const SearchableSelect = memo(function SearchableSelect<T>({
@@ -79,6 +80,7 @@ const SearchableSelect = memo(function SearchableSelect<T>({
   searchPlaceholder = 'Tìm kiếm...',
   disabled = false,
   icon,
+  align = 'left',
 }: SearchableSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -120,12 +122,12 @@ const SearchableSelect = memo(function SearchableSelect<T>({
   }, []);
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div className="relative w-full min-w-0" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={cn(
-          'w-full px-4 py-3 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black flex items-center justify-between outline-none transition-all shadow-sm text-left',
+          'w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black flex items-center justify-between outline-none transition-all shadow-sm text-left min-w-0',
           isOpen
             ? 'border-amber-500 ring-4 ring-amber-500/10'
             : 'hover:border-stone-300 dark:hover:border-white/20',
@@ -133,22 +135,29 @@ const SearchableSelect = memo(function SearchableSelect<T>({
         )}
         disabled={disabled}
       >
-        <div className="flex items-center gap-2.5 truncate">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 overflow-hidden">
           {icon && <span className="text-stone-400 shrink-0">{icon}</span>}
-          <span className={cn('truncate', !selectedOption && 'text-stone-400 font-medium')}>
+          <span
+            className={cn('truncate block flex-1', !selectedOption && 'text-stone-400 font-medium')}
+          >
             {selectedOption ? getOptionLabel(selectedOption) : placeholder}
           </span>
         </div>
         <ChevronDown
           className={cn(
-            'w-4 h-4 text-stone-400 transition-transform duration-200 shrink-0 ml-2',
+            'w-4 h-4 text-stone-400 transition-transform duration-200 shrink-0 ml-1.5 sm:ml-2',
             isOpen && 'rotate-180'
           )}
         />
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+        <div
+          className={cn(
+            'absolute z-50 w-full min-w-full sm:min-w-[280px] max-w-[calc(100vw-2.5rem)] mt-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150',
+            align === 'right' ? 'right-0 sm:right-0 left-auto' : 'left-0'
+          )}
+        >
           <div className="p-2.5 border-b border-stone-100 dark:border-white/5 flex items-center gap-2 bg-stone-50/50 dark:bg-stone-900/50">
             <Search className="w-4 h-4 text-stone-400 shrink-0 ml-1" />
             <input
@@ -189,13 +198,13 @@ const SearchableSelect = memo(function SearchableSelect<T>({
                       setSearch('');
                     }}
                     className={cn(
-                      'w-full px-4 py-2.5 text-left text-xs font-black flex items-center justify-between transition-colors',
+                      'w-full px-4 py-2.5 text-left text-xs font-black flex items-center justify-between transition-colors gap-2',
                       isSelected
                         ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                         : 'hover:bg-stone-100 dark:hover:bg-white/5 text-stone-700 dark:text-stone-200'
                     )}
                   >
-                    <span className="truncate">{optLabel}</span>
+                    <span className="truncate flex-1">{optLabel}</span>
                     {isSelected && <Check className="w-4 h-4 text-amber-500 shrink-0 ml-2" />}
                   </button>
                 );
@@ -683,7 +692,7 @@ export default function TimetableSlotModal({
       isOpen={isOpen}
       onClose={onClose}
       title={editingSlot ? 'Chỉnh Sửa Tiết Học' : 'Thêm Tiết Học Mới'}
-      size="md"
+      size="lg"
       footer={
         <div className="flex items-center justify-end gap-3 w-full">
           <Button variant="ghost" onClick={onClose} className="rounded-2xl font-bold">
@@ -763,7 +772,7 @@ export default function TimetableSlotModal({
           {slotMode === 'tutoring' ? (
             /* Tutoring Inputs */
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-1.5">
+              <div className="col-span-1 sm:col-span-2 space-y-1.5 min-w-0">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                     Học sinh phụ đạo * {!editingSlot && '(Kèm 1-on-1 hoặc Nhóm 2-3 em)'}
@@ -833,13 +842,14 @@ export default function TimetableSlotModal({
                 )}
               </div>
 
-              <div className="space-y-1.5">
+              <div className="col-span-1 space-y-1.5 min-w-0">
                 <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                   Gia sư / Giáo viên *
                 </label>
                 <SearchableSelect
                   options={availableTutors}
                   value={formData.teacher_id}
+                  align="left"
                   onChange={(val) => {
                     const selTutor = availableTutors.find((t) => t.id === val);
                     let autoSubjectId = formData.subject_id;
@@ -883,13 +893,14 @@ export default function TimetableSlotModal({
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="col-span-1 space-y-1.5 min-w-0">
                 <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                   Môn học *
                 </label>
                 <SearchableSelect
                   options={subjects}
                   value={formData.subject_id}
+                  align="right"
                   onChange={(val) => setFormData((prev) => ({ ...prev, subject_id: val }))}
                   getOptionLabel={(s) => s.name}
                   getOptionValue={(s) => s.id}
@@ -903,7 +914,7 @@ export default function TimetableSlotModal({
           ) : (
             /* Regular Class Inputs */
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-1.5">
+              <div className="col-span-1 sm:col-span-2 space-y-1.5 min-w-0">
                 <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                   Lớp học *
                 </label>
@@ -941,13 +952,14 @@ export default function TimetableSlotModal({
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="col-span-1 space-y-1.5 min-w-0">
                 <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                   Giáo viên phụ trách *
                 </label>
                 <SearchableSelect
                   options={teachers}
                   value={formData.teacher_id}
+                  align="left"
                   onChange={(val) => setFormData((prev) => ({ ...prev, teacher_id: val }))}
                   getOptionLabel={(t) => {
                     const roleLabel =
@@ -964,13 +976,14 @@ export default function TimetableSlotModal({
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="col-span-1 space-y-1.5 min-w-0">
                 <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                   Môn học *
                 </label>
                 <SearchableSelect
                   options={subjects}
                   value={formData.subject_id}
+                  align="right"
                   onChange={(val) => setFormData((prev) => ({ ...prev, subject_id: val }))}
                   getOptionLabel={(s) => s.name}
                   getOptionValue={(s) => s.id}
@@ -996,7 +1009,7 @@ export default function TimetableSlotModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Day of Week */}
-            <div className="space-y-1.5">
+            <div className="col-span-1 space-y-1.5 min-w-0">
               <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                 Thứ trong tuần *
               </label>
@@ -1016,7 +1029,7 @@ export default function TimetableSlotModal({
             </div>
 
             {/* Room / Location */}
-            <div className="space-y-1.5">
+            <div className="col-span-1 space-y-1.5 min-w-0">
               <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                 Phòng / Vị trí *
               </label>
@@ -1042,7 +1055,7 @@ export default function TimetableSlotModal({
             </div>
 
             {/* Session Preset vs Custom Time Switcher */}
-            <div className="col-span-2 space-y-2">
+            <div className="col-span-1 sm:col-span-2 space-y-2 min-w-0">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                   Khung giờ học *
