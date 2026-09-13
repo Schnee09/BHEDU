@@ -12,7 +12,10 @@ interface TutoringListViewProps {
   onEditSlot: (slot: TimetableSlot) => void;
   onDeleteSlot: (slotId: string) => void;
   onCreateSlot: (dayIndex: number, session: any, room: string) => void;
-  onUpdateStatus?: (slotId: string, newStatus: 'scheduled' | 'completed' | 'cancelled' | 'makeup') => void;
+  onUpdateStatus?: (
+    slotId: string,
+    newStatus: 'scheduled' | 'completed' | 'cancelled' | 'makeup'
+  ) => void;
 }
 
 export default function TutoringListView({
@@ -26,24 +29,24 @@ export default function TutoringListView({
   const tutoringSlots = slots.filter((s) => !s.room || s.room === 'Linh hoạt');
 
   return (
-    <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-[32px] overflow-hidden shadow-2xl border border-stone-200/50 dark:border-white/5">
-      <div className="p-8 border-b border-stone-200/50 dark:border-white/5 bg-white/60 dark:bg-stone-900/60 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-blue-500/10 rounded-2xl">
-            <ClipboardList className="w-6 h-6 text-blue-500" />
+    <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-2xl sm:rounded-[32px] overflow-hidden shadow-2xl border border-stone-200/50 dark:border-white/5">
+      <div className="p-4 sm:p-6 md:p-8 border-b border-stone-200/50 dark:border-white/5 bg-white/60 dark:bg-stone-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <div className="p-2.5 sm:p-3 bg-blue-500/10 rounded-xl sm:rounded-2xl shrink-0">
+            <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
           </div>
-          <div>
-            <h3 className="font-black text-stone-900 dark:text-stone-100 text-xl tracking-tight">
+          <div className="min-w-0">
+            <h3 className="font-black text-stone-900 dark:text-stone-100 text-base sm:text-lg md:text-xl tracking-tight leading-snug">
               Lịch học kèm tuần này
             </h3>
-            <p className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-1">
+            <p className="text-[10px] sm:text-xs text-stone-400 font-bold uppercase tracking-widest mt-0.5 sm:mt-1">
               Danh sách quản lý tập trung
             </p>
           </div>
         </div>
         <button
           onClick={() => onCreateSlot(0, ALL_SESSIONS[4], 'Linh hoạt')}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-[20px] text-sm font-black transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95"
+          className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl sm:rounded-[20px] text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95 shrink-0"
         >
           <Plus className="w-4 h-4" /> Thêm lịch học kèm
         </button>
@@ -78,14 +81,14 @@ export default function TutoringListView({
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {tutoringSlots.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-32 text-center">
-                  <div className="bg-stone-500/5 dark:bg-white/5 w-24 h-24 rounded-[32px] flex items-center justify-center mx-auto mb-6 border border-stone-200/50 dark:border-white/5">
-                    <Search className="w-10 h-10 text-stone-300 dark:text-stone-700" />
+                <td colSpan={7} className="py-16 sm:py-24 md:py-32 px-4 text-center">
+                  <div className="bg-stone-500/5 dark:bg-white/5 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-[32px] flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-stone-200/50 dark:border-white/5">
+                    <Search className="w-8 h-8 sm:w-10 sm:h-10 text-stone-300 dark:text-stone-700" />
                   </div>
-                  <p className="text-stone-900 dark:text-stone-100 font-black text-xl tracking-tight">
+                  <p className="text-stone-900 dark:text-stone-100 font-black text-lg sm:text-xl tracking-tight">
                     Trống lịch học kèm
                   </p>
-                  <p className="text-stone-400 font-bold uppercase tracking-widest text-xs mt-2">
+                  <p className="text-stone-400 font-bold uppercase tracking-widest text-[10px] sm:text-xs mt-1.5 sm:mt-2">
                     Chưa có lịch nào được tạo trong tuần này
                   </p>
                 </td>
@@ -106,9 +109,8 @@ export default function TutoringListView({
                   </td>
                   <td className="p-5">
                     <div className="inline-flex px-3 py-1 bg-blue-500/10 rounded-xl text-[10px] font-black text-blue-600 dark:text-blue-500 uppercase tracking-widest border border-blue-500/20">
-                      {ALL_SESSIONS.find(
-                        (s) => s.start === slot.start_time?.substring(0, 5)
-                      )?.label || slot.start_time}
+                      {ALL_SESSIONS.find((s) => s.start === slot.start_time?.substring(0, 5))
+                        ?.label || slot.start_time}
                     </div>
                   </td>
                   <td className="p-5">
@@ -122,10 +124,7 @@ export default function TutoringListView({
                     </div>
                   </td>
                   <td className="p-5 font-black text-stone-900 dark:text-stone-100 text-sm tracking-tight">
-                    {slot.student?.full_name ||
-                      slot.class?.name ||
-                      slot.subject?.name ||
-                      'N/A'}
+                    {slot.student?.full_name || slot.class?.name || slot.subject?.name || 'N/A'}
                   </td>
                   <td className="p-5 text-emerald-600 dark:text-emerald-500 text-[11px] font-black uppercase tracking-widest">
                     {slot.subject?.name}
@@ -134,18 +133,16 @@ export default function TutoringListView({
                     {onUpdateStatus ? (
                       <select
                         value={slot.status || 'scheduled'}
-                        onChange={(e) =>
-                          onUpdateStatus(slot.id, e.target.value as any)
-                        }
+                        onChange={(e) => onUpdateStatus(slot.id, e.target.value as any)}
                         className={cn(
                           'px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider outline-none border transition-all cursor-pointer',
                           slot.status === 'completed'
                             ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30 dark:text-emerald-400'
                             : slot.status === 'cancelled'
-                            ? 'bg-red-500/10 text-red-600 border-red-500/30 dark:text-red-400'
-                            : slot.status === 'makeup'
-                            ? 'bg-sky-500/10 text-sky-600 border-sky-500/30 dark:text-sky-400'
-                            : 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400'
+                              ? 'bg-red-500/10 text-red-600 border-red-500/30 dark:text-red-400'
+                              : slot.status === 'makeup'
+                                ? 'bg-sky-500/10 text-sky-600 border-sky-500/30 dark:text-sky-400'
+                                : 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400'
                         )}
                       >
                         <option value="scheduled">🟡 Đã xếp</option>
@@ -158,24 +155,24 @@ export default function TutoringListView({
                         {slot.status === 'completed'
                           ? 'Hoàn thành'
                           : slot.status === 'cancelled'
-                          ? 'Hủy ca'
-                          : slot.status === 'makeup'
-                          ? 'Học bù'
-                          : 'Đã xếp'}
+                            ? 'Hủy ca'
+                            : slot.status === 'makeup'
+                              ? 'Học bù'
+                              : 'Đã xếp'}
                       </span>
                     )}
                   </td>
                   <td className="p-5">
-                    <div className="flex gap-2 justify-center opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
+                    <div className="flex gap-2 justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all sm:scale-95 sm:group-hover:scale-100">
                       <button
                         onClick={() => onEditSlot(slot)}
-                        className="w-10 h-10 bg-white dark:bg-white/5 text-stone-400 hover:text-blue-500 rounded-2xl shadow-sm border border-stone-200/50 dark:border-white/5 flex items-center justify-center transition-all"
+                        className="w-9 h-9 sm:w-10 sm:h-10 bg-white dark:bg-white/5 text-stone-400 hover:text-blue-500 rounded-xl sm:rounded-2xl shadow-sm border border-stone-200/50 dark:border-white/5 flex items-center justify-center transition-all"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => onDeleteSlot(slot.id)}
-                        className="w-10 h-10 bg-white dark:bg-white/5 text-stone-400 hover:text-red-500 rounded-2xl shadow-sm border border-stone-200/50 dark:border-white/5 flex items-center justify-center transition-all"
+                        className="w-9 h-9 sm:w-10 sm:h-10 bg-white dark:bg-white/5 text-stone-400 hover:text-red-500 rounded-xl sm:rounded-2xl shadow-sm border border-stone-200/50 dark:border-white/5 flex items-center justify-center transition-all"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -187,15 +184,13 @@ export default function TutoringListView({
           </tbody>
         </table>
       </div>
-      <div className="p-6 border-t border-stone-200/50 dark:border-white/5 bg-stone-500/5 dark:bg-white/2 flex justify-between items-center">
+      <div className="p-4 sm:p-6 border-t border-stone-200/50 dark:border-white/5 bg-stone-500/5 dark:bg-white/2 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
           <span className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em]">
             Tổng cộng:{' '}
-            <span className="text-stone-900 dark:text-stone-100">
-              {tutoringSlots.length}
-            </span>{' '}
-            buổi học kèm
+            <span className="text-stone-900 dark:text-stone-100">{tutoringSlots.length}</span> buổi
+            học kèm
           </span>
         </div>
       </div>

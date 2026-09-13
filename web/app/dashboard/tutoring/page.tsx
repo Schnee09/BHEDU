@@ -90,7 +90,7 @@ export default function TutoringManagementPage() {
 
   return (
     <PageGuard permissions={['timetable.view']}>
-      <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/50 p-4 sm:p-8">
+      <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/50 p-4 sm:p-8 pb-28 sm:pb-8">
         <div className="max-w-[1600px] mx-auto space-y-6">
           {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-stone-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-200/80 dark:border-white/10 shadow-xs">

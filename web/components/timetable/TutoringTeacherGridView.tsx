@@ -23,13 +23,13 @@ export default function TutoringTeacherGridView({
   onCreateSlot,
 }: TutoringTeacherGridViewProps) {
   return (
-    <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-[32px] overflow-hidden shadow-2xl border border-stone-200/50 dark:border-white/5">
-      <div className="p-6 border-b border-stone-200/50 dark:border-white/5 bg-white/60 dark:bg-stone-900/60 flex items-center gap-4">
-        <div className="p-2.5 bg-emerald-500/10 rounded-2xl">
+    <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-2xl sm:rounded-[32px] overflow-hidden shadow-2xl border border-stone-200/50 dark:border-white/5">
+      <div className="p-4 sm:p-6 border-b border-stone-200/50 dark:border-white/5 bg-white/60 dark:bg-stone-900/60 flex items-center gap-3 sm:gap-4">
+        <div className="p-2 sm:p-2.5 bg-emerald-500/10 rounded-xl sm:rounded-2xl shrink-0">
           <GraduationCap className="w-5 h-5 text-emerald-500" />
         </div>
         <div>
-          <h3 className="font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
+          <h3 className="font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight text-sm sm:text-base">
             Lịch học kèm theo gia sư
           </h3>
           <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mt-0.5">
@@ -136,12 +136,16 @@ export default function TutoringTeacherGridView({
                                       </span>
                                     </div>
                                     <div className="text-[10px] font-black text-stone-800 dark:text-stone-200 line-clamp-1">
-                                      {cellSlots.map((s) => s.student?.full_name || 'HS').join(', ')}
+                                      {cellSlots
+                                        .map((s) => s.student?.full_name || 'HS')
+                                        .join(', ')}
                                     </div>
                                   </div>
                                 ) : (
                                   <div className="font-black text-stone-900 dark:text-stone-100 text-[11px] line-clamp-2 leading-tight mb-1">
-                                    {primarySlot?.student?.full_name || primarySlot?.class?.name || primarySlot?.subject?.name}
+                                    {primarySlot?.student?.full_name ||
+                                      primarySlot?.class?.name ||
+                                      primarySlot?.subject?.name}
                                   </div>
                                 )}
                               </div>
@@ -150,7 +154,9 @@ export default function TutoringTeacherGridView({
                                   <ClipboardList className="w-2.5 h-2.5 text-stone-400 flex-shrink-0" />
                                 )}
                                 <span className="text-[9px] text-stone-400 font-bold truncate">
-                                  {primarySlot?.weekly_note ?? primarySlot?.notes ?? primarySlot?.subject?.name}
+                                  {primarySlot?.weekly_note ??
+                                    primarySlot?.notes ??
+                                    primarySlot?.subject?.name}
                                 </span>
                               </div>
                             </div>
