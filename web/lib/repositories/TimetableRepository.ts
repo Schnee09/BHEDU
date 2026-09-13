@@ -219,7 +219,7 @@ export class TimetableRepository extends BaseRepository<
       }
     }
 
-    // Student Conflict (Prevent student double-booking)
+    // Student Conflict (Prevent student double-booking across both Tutoring AND Regular Classes)
     if (data.student_id) {
       const { data: activeSemester } = await this.supabase
         .from('semesters')
@@ -227,26 +227,113 @@ export class TimetableRepository extends BaseRepository<
         .eq('is_active', true)
         .maybeSingle();
 
+      // 1. Fetch any regular classes the student is currently enrolled in
+      const { data: enrollments } = await this.supabase
+        .from('enrollments')
+        .select('class_id, class:classes(name)')
+        .eq('student_id', data.student_id)
+        .in('status', ['enrolled', 'active']);
+
+      const classIds = enrollments?.map((e: any) => e.class_id).filter(Boolean) || [];
+
+      // 2. Query all active slots at this day & overlapping time window
       let studentQuery = this.supabase
         .from('timetable_slots')
-        .select('id, start_time, end_time, teacher:profiles!timetable_slots_teacher_id_fkey(full_name)')
-        .eq('student_id', data.student_id)
+        .select(
+          `
+          id, 
+          class_id,
+          student_id,
+          room,
+          start_time, 
+          end_time, 
+          teacher:profiles!timetable_slots_teacher_id_fkey(full_name),
+          class:classes(name)
+        `
+        )
         .eq('day_of_week', day_of_week)
         .gt('end_time', start_time)
-        .lt('start_time', end_time);
+        .lt('start_time', end_time)
+        .is('deleted_at', null);
 
       if (activeSemester?.id) {
         studentQuery = studentQuery.or(`semester_id.eq.${activeSemester.id},semester_id.is.null`);
       }
       if (excludeSlotId) studentQuery = studentQuery.neq('id', excludeSlotId);
 
-      const { data: studentConflicts } = await studentQuery;
-      if (studentConflicts && studentConflicts.length > 0) {
-        const first = studentConflicts[0] as any;
-        const teacherName = first.teacher?.full_name || 'Gia sư / Giáo viên khác';
-        return `Học sinh này đã có lịch học kèm với "${teacherName}" vào khung giờ này (Tiết: ${
-          first?.start_time?.substring(0, 5) ?? ''
-        }-${first?.end_time?.substring(0, 5) ?? ''}).`;
+      const { data: slotsInWindow } = await studentQuery;
+      if (slotsInWindow && slotsInWindow.length > 0) {
+        // Filter slots that belong either directly to this student (tutoring) or to a class they are enrolled in
+        const conflictSlot = slotsInWindow.find((s: any) => {
+          if (s.student_id === data.student_id) return true;
+          if (s.class_id && classIds.includes(s.class_id)) return true;
+          return false;
+        }) as any;
+
+        if (conflictSlot) {
+          const className = Array.isArray(conflictSlot.class)
+            ? conflictSlot.class[0]?.name
+            : conflictSlot.class?.name;
+          const teacherObj = Array.isArray(conflictSlot.teacher)
+            ? conflictSlot.teacher[0]
+            : conflictSlot.teacher;
+
+          if (conflictSlot.class_id && className) {
+            return `Học sinh này đã có lịch học lớp tập trung "${className}" vào khung giờ này (tại "${
+              conflictSlot.room || 'Chưa xếp phòng'
+            }" - Tiết: ${conflictSlot.start_time?.substring(0, 5) ?? ''}-${
+              conflictSlot.end_time?.substring(0, 5) ?? ''
+            }).`;
+          } else {
+            const teacherName = teacherObj?.full_name || 'Gia sư / Giáo viên khác';
+            return `Học sinh này đã có lịch học kèm với "${teacherName}" vào khung giờ này (Tiết: ${
+              conflictSlot.start_time?.substring(0, 5) ?? ''
+            }-${conflictSlot.end_time?.substring(0, 5) ?? ''}).`;
+          }
+        }
+      }
+    }
+
+    // Class Conflict -> Check if any enrolled student has a tutoring slot conflict
+    if (data.class_id && !data.student_id) {
+      const { data: enrolledStudents } = await this.supabase
+        .from('enrollments')
+        .select('student_id, student:profiles!enrollments_student_id_fkey(full_name)')
+        .eq('class_id', data.class_id)
+        .in('status', ['enrolled', 'active']);
+
+      if (enrolledStudents && enrolledStudents.length > 0) {
+        const studentIds = enrolledStudents.map((e: any) => e.student_id).filter(Boolean);
+        if (studentIds.length > 0) {
+          const { data: studentTutoringSlots } = await this.supabase
+            .from('timetable_slots')
+            .select(
+              `
+              id, 
+              student_id, 
+              start_time, 
+              end_time, 
+              teacher:profiles!timetable_slots_teacher_id_fkey(full_name),
+              student:profiles!timetable_slots_student_id_fkey(full_name)
+            `
+            )
+            .eq('day_of_week', day_of_week)
+            .gt('end_time', start_time)
+            .lt('start_time', end_time)
+            .is('deleted_at', null)
+            .in('student_id', studentIds);
+
+          if (studentTutoringSlots && studentTutoringSlots.length > 0) {
+            const first = studentTutoringSlots[0] as any;
+            const studentObj = Array.isArray(first.student) ? first.student[0] : first.student;
+            const teacherObj = Array.isArray(first.teacher) ? first.teacher[0] : first.teacher;
+            const stName = studentObj?.full_name || 'Một học sinh trong lớp';
+            const tName = teacherObj?.full_name || 'Gia sư';
+            return `Học sinh "${stName}" trong lớp đã có lịch học kèm với "${tName}" vào khung giờ này (Tiết: ${
+              first.start_time?.substring(0, 5) ?? ''
+            }-${first.end_time?.substring(0, 5) ?? ''}).`;
+          }
+        }
       }
     }
 
@@ -613,29 +700,37 @@ export class TimetableRepository extends BaseRepository<
             .maybeSingle();
 
           let roomsObj: Record<string, string[]> = {};
-          if (roomSetting && roomSetting.value_json && typeof roomSetting.value_json === 'object' && !Array.isArray(roomSetting.value_json)) {
+          if (
+            roomSetting &&
+            roomSetting.value_json &&
+            typeof roomSetting.value_json === 'object' &&
+            !Array.isArray(roomSetting.value_json)
+          ) {
             roomsObj = roomSetting.value_json as Record<string, string[]>;
           } else if (roomSetting && Array.isArray(roomSetting.value_json)) {
-            roomsObj = { "Cơ sở khác": roomSetting.value_json as string[] };
+            roomsObj = { 'Cơ sở khác': roomSetting.value_json as string[] };
           }
 
-          const targetBranch = branchName || "Cơ sở khác";
+          const targetBranch = branchName || 'Cơ sở khác';
           if (!roomsObj[targetBranch]) {
             roomsObj[targetBranch] = [];
           }
 
-          const roomExists = roomsObj[targetBranch].some(r => r.toLowerCase() === roomName.toLowerCase());
+          const roomExists = roomsObj[targetBranch].some(
+            (r) => r.toLowerCase() === roomName.toLowerCase()
+          );
           if (!roomExists) {
             roomsObj[targetBranch].push(roomName);
-            await this.supabase
-              .from('settings')
-              .upsert({
+            await this.supabase.from('settings').upsert(
+              {
                 key: 'center_rooms',
                 value_json: roomsObj,
                 category: 'resource',
                 is_public: true,
-                updated_at: new Date().toISOString()
-              }, { onConflict: 'key' });
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'key' }
+            );
           }
         }
 
@@ -652,24 +747,32 @@ export class TimetableRepository extends BaseRepository<
             branchesList = branchSetting.value_json as string[];
           }
 
-          const branchExists = branchesList.some(b => b.toLowerCase() === branchName.toLowerCase());
+          const branchExists = branchesList.some(
+            (b) => b.toLowerCase() === branchName.toLowerCase()
+          );
           if (!branchExists) {
             branchesList.push(branchName);
-            await this.supabase
-              .from('settings')
-              .upsert({
+            await this.supabase.from('settings').upsert(
+              {
                 key: 'center_branches',
                 value_json: branchesList,
                 category: 'resource',
                 is_public: true,
-                updated_at: new Date().toISOString()
-              }, { onConflict: 'key' });
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'key' }
+            );
           }
         }
       }
 
       // 2. Sync Schedule / Shift (strictly as time range, e.g. "08:00 - 09:30")
-      if (start_time && end_time && typeof start_time === 'string' && typeof end_time === 'string') {
+      if (
+        start_time &&
+        end_time &&
+        typeof start_time === 'string' &&
+        typeof end_time === 'string'
+      ) {
         const start = start_time.substring(0, 5);
         const end = end_time.substring(0, 5);
         const timeStr = `${start} - ${end}`;
@@ -685,18 +788,19 @@ export class TimetableRepository extends BaseRepository<
           schedulesList = scheduleSetting.value_json as string[];
         }
 
-        const scheduleExists = schedulesList.some(s => s.includes(timeStr));
+        const scheduleExists = schedulesList.some((s) => s.includes(timeStr));
         if (!scheduleExists) {
           schedulesList.push(timeStr);
-          await this.supabase
-            .from('settings')
-            .upsert({
+          await this.supabase.from('settings').upsert(
+            {
               key: 'center_schedules',
               value_json: schedulesList,
               category: 'resource',
               is_public: true,
-              updated_at: new Date().toISOString()
-            }, { onConflict: 'key' });
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          );
         }
       }
     } catch (err) {

@@ -14,6 +14,7 @@ import {
   Check,
   X,
   Clock,
+  Calendar,
   BookOpen,
   Users,
   User,
@@ -217,6 +218,14 @@ const SearchableSelect = memo(function SearchableSelect<T>({
   );
 }) as <T>(props: SearchableSelectProps<T>) => React.ReactElement | null;
 
+export interface TutoringSessionSchedule {
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  use_custom_time?: boolean;
+}
+
 interface TimetableSlotModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -224,6 +233,7 @@ interface TimetableSlotModalProps {
   editingSlot: TimetableSlot | null;
   initialData?: Partial<TimetableSlot>;
   currentWeekStart: string;
+  mode?: 'tutoring' | 'class' | 'all';
 }
 
 export default function TimetableSlotModal({
@@ -233,6 +243,7 @@ export default function TimetableSlotModal({
   editingSlot,
   initialData,
   currentWeekStart,
+  mode = 'tutoring',
 }: TimetableSlotModalProps) {
   const { can } = usePermissions();
   const toast = useToast();
@@ -242,10 +253,17 @@ export default function TimetableSlotModal({
   const [loadingOptions, setLoadingOptions] = useState(false);
 
   // Slot mode: 'class' (Lớp tập trung) vs 'tutoring' (Học kèm 1-on-1 hoặc nhóm 2-3 em)
-  const [slotMode, setSlotMode] = useState<'class' | 'tutoring'>('class');
+  const [slotMode, setSlotMode] = useState<'class' | 'tutoring'>(
+    mode === 'class' ? 'class' : 'tutoring'
+  );
 
-  // Custom Time Toggle
+  // Custom Time Toggle (for class mode / single slot edit)
   const [useCustomTime, setUseCustomTime] = useState(false);
+
+  // Multi-session state for tutoring creation (Buổi 1, Buổi 2...)
+  const [tutoringSessions, setTutoringSessions] = useState<TutoringSessionSchedule[]>([
+    { id: 'session-1', day_of_week: 0, start_time: '17:00', end_time: '18:30' },
+  ]);
 
   // Multi-student selection for micro-group tutoring (kèm nhóm 2-3 em)
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
@@ -285,7 +303,10 @@ export default function TimetableSlotModal({
     if (isOpen) {
       if (editingSlot) {
         const isTutoring =
-          !editingSlot.room || editingSlot.room === 'Linh hoạt' || !!editingSlot.student_id;
+          mode === 'tutoring' ||
+          !editingSlot.room ||
+          editingSlot.room === 'Linh hoạt' ||
+          !!editingSlot.student_id;
         setSlotMode(isTutoring ? 'tutoring' : 'class');
         setSelectedStudentIds(editingSlot.student_id ? [editingSlot.student_id] : []);
 
@@ -306,19 +327,21 @@ export default function TimetableSlotModal({
           status: editingSlot.status || 'scheduled',
         });
       } else if (initialData) {
-        const isTutoring = initialData.room === 'Linh hoạt' || !!initialData.student_id;
+        const isTutoring =
+          mode === 'tutoring' || initialData.room === 'Linh hoạt' || !!initialData.student_id;
         setSlotMode(isTutoring ? 'tutoring' : 'class');
         setSelectedStudentIds(initialData.student_id ? [initialData.student_id] : []);
 
         const startTime = initialData.start_time?.substring(0, 5) || '17:00';
         const endTime = initialData.end_time?.substring(0, 5) || '18:30';
+        const dayOfWeek = initialData.day_of_week ?? 0;
 
         setFormData({
           class_id: initialData.class_id || '',
           student_id: initialData.student_id || '',
           subject_id: '',
           teacher_id: '',
-          day_of_week: initialData.day_of_week ?? 0,
+          day_of_week: dayOfWeek,
           start_time: startTime,
           end_time: endTime,
           room: initialData.room || (isTutoring ? 'Linh hoạt' : ''),
@@ -326,16 +349,24 @@ export default function TimetableSlotModal({
           weekly_note: '',
           status: 'scheduled',
         });
+
+        setTutoringSessions([
+          { id: 'session-1', day_of_week: dayOfWeek, start_time: startTime, end_time: endTime },
+        ]);
       } else {
+        setSlotMode(mode === 'class' ? 'class' : 'tutoring');
         setSelectedStudentIds([]);
+        setTutoringSessions([
+          { id: 'session-1', day_of_week: 0, start_time: '17:00', end_time: '18:30' },
+        ]);
       }
     }
-  }, [isOpen, editingSlot, initialData]);
+  }, [isOpen, editingSlot, initialData, mode]);
 
   // Handle Mode Switch (Class vs Tutoring)
-  const handleModeSwitch = (mode: 'class' | 'tutoring') => {
-    setSlotMode(mode);
-    if (mode === 'tutoring') {
+  const handleModeSwitch = (newMode: 'class' | 'tutoring') => {
+    setSlotMode(newMode);
+    if (newMode === 'tutoring') {
       setFormData((prev) => ({
         ...prev,
         room: 'Linh hoạt',
@@ -351,56 +382,196 @@ export default function TimetableSlotModal({
     }
   };
 
-  // Conflict Checking Effect with debounce and pre-check validation
+  // Helper functions for Tutoring Sessions (Multi-slot creation)
+  const handleAddSession = () => {
+    if (tutoringSessions.length >= 7) {
+      toast.warning('Giới hạn', 'Tối đa 7 buổi học kèm trong tuần');
+      return;
+    }
+    const lastSession = tutoringSessions[tutoringSessions.length - 1];
+    const nextDay = lastSession ? (lastSession.day_of_week + 2) % 7 : 0;
+    const newSession: TutoringSessionSchedule = {
+      id: `session-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+      day_of_week: nextDay,
+      start_time: lastSession?.start_time || '17:00',
+      end_time: lastSession?.end_time || '18:30',
+      use_custom_time: lastSession?.use_custom_time || false,
+    };
+    setTutoringSessions((prev) => [...prev, newSession]);
+  };
+
+  const handleRemoveSession = (id: string) => {
+    if (tutoringSessions.length <= 1) return;
+    setTutoringSessions((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const handleUpdateSession = (id: string, updates: Partial<TutoringSessionSchedule>) => {
+    setTutoringSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+  };
+
+  // Conflict Checking Effect with 2-way student conflict checking
   useEffect(() => {
     if (!isOpen || !canEdit) return;
 
-    // Skip conflict check if neither teacher nor physical room is set
-    if (
-      (!formData.teacher_id && (!formData.room || formData.room === 'Linh hoạt')) ||
-      !formData.start_time ||
-      !formData.end_time ||
-      formData.day_of_week === undefined
-    ) {
-      setConflictMessage(null);
-      return;
-    }
+    const studentIds =
+      selectedStudentIds.length > 0
+        ? selectedStudentIds
+        : formData.student_id
+          ? [formData.student_id]
+          : [];
 
-    const checkConflict = async () => {
-      setCheckingConflict(true);
-      try {
-        const res = await apiFetch('/api/timetable/check-conflict', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            teacher_id: formData.teacher_id || null,
-            student_id:
-              slotMode === 'tutoring' ? formData.student_id || selectedStudentIds[0] || null : null,
-            room: formData.room || null,
-            day_of_week: formData.day_of_week,
-            start_time: formData.start_time,
-            end_time: formData.end_time,
-            exclude_slot_id: editingSlot?.id || null,
-          }),
-        });
+    // Multi-session conflict checking for tutoring mode
+    if (slotMode === 'tutoring' && !editingSlot) {
+      if (studentIds.length === 0 && !formData.teacher_id) {
+        setConflictMessage(null);
+        return;
+      }
 
-        if (res.ok) {
-          const json = await res.json();
-          if (json.has_conflict) {
-            setConflictMessage(json.conflict_reason);
+      const checkMultiConflict = async () => {
+        setCheckingConflict(true);
+        const conflictList: string[] = [];
+
+        try {
+          // Check intra-session overlaps within tutoringSessions itself
+          for (let i = 0; i < tutoringSessions.length; i++) {
+            const s1 = tutoringSessions[i];
+            if (!s1) continue;
+            for (let j = i + 1; j < tutoringSessions.length; j++) {
+              const s2 = tutoringSessions[j];
+              if (!s2) continue;
+              if (s1.day_of_week === s2.day_of_week) {
+                if (s1.start_time < s2.end_time && s1.end_time > s2.start_time) {
+                  const dayName = DAYS[s1.day_of_week] || `Thứ ${s1.day_of_week}`;
+                  conflictList.push(
+                    `Buổi ${i + 1} và Buổi ${j + 1} bị trùng giờ vào ${dayName} (${s1.start_time}-${s1.end_time} & ${s2.start_time}-${s2.end_time})`
+                  );
+                }
+              }
+            }
+          }
+
+          for (const [idx, session] of tutoringSessions.entries()) {
+            if (!session) continue;
+            // Check for each student
+            for (const stId of studentIds) {
+              const res = await apiFetch('/api/timetable/check-conflict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  teacher_id: formData.teacher_id || null,
+                  student_id: stId,
+                  room: 'Linh hoạt',
+                  day_of_week: session.day_of_week,
+                  start_time: session.start_time,
+                  end_time: session.end_time,
+                  exclude_slot_id: null,
+                }),
+              });
+              if (res.ok) {
+                const json = await res.json();
+                if (json.has_conflict && json.conflict_reason) {
+                  const dayLabel = DAYS[session.day_of_week] || `Thứ ${session.day_of_week}`;
+                  const stName = students.find((s) => s.id === stId)?.full_name;
+                  const prefix = studentIds.length > 1 && stName ? `[${stName}] ` : '';
+                  conflictList.push(
+                    `${prefix}[Buổi ${idx + 1} - ${dayLabel} ${session.start_time}-${session.end_time}]: ${json.conflict_reason}`
+                  );
+                }
+              }
+            }
+
+            // If no student selected yet, but teacher is selected, check teacher conflict for that session
+            if (studentIds.length === 0 && formData.teacher_id) {
+              const res = await apiFetch('/api/timetable/check-conflict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  teacher_id: formData.teacher_id,
+                  student_id: null,
+                  room: 'Linh hoạt',
+                  day_of_week: session.day_of_week,
+                  start_time: session.start_time,
+                  end_time: session.end_time,
+                  exclude_slot_id: null,
+                }),
+              });
+              if (res.ok) {
+                const json = await res.json();
+                if (json.has_conflict && json.conflict_reason) {
+                  const dayLabel = DAYS[session.day_of_week] || `Thứ ${session.day_of_week}`;
+                  conflictList.push(
+                    `[Buổi ${idx + 1} - ${dayLabel} ${session.start_time}-${session.end_time}]: ${json.conflict_reason}`
+                  );
+                }
+              }
+            }
+          }
+
+          if (conflictList.length > 0) {
+            const unique = Array.from(new Set(conflictList));
+            setConflictMessage(unique.join(' | '));
           } else {
             setConflictMessage(null);
           }
+        } catch (err) {
+          console.error('Failed to check multi-slot conflicts:', err);
+        } finally {
+          setCheckingConflict(false);
         }
-      } catch (err) {
-        console.error('Failed to check timetable conflict:', err);
-      } finally {
-        setCheckingConflict(false);
-      }
-    };
+      };
 
-    const timer = setTimeout(checkConflict, 600);
-    return () => clearTimeout(timer);
+      const timer = setTimeout(checkMultiConflict, 600);
+      return () => clearTimeout(timer);
+    } else {
+      // Single slot check for edit mode or regular class mode
+      if (
+        (!formData.teacher_id && (!formData.room || formData.room === 'Linh hoạt')) ||
+        !formData.start_time ||
+        !formData.end_time ||
+        formData.day_of_week === undefined
+      ) {
+        setConflictMessage(null);
+        return;
+      }
+
+      const checkSingleConflict = async () => {
+        setCheckingConflict(true);
+        try {
+          const res = await apiFetch('/api/timetable/check-conflict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              teacher_id: formData.teacher_id || null,
+              student_id:
+                slotMode === 'tutoring'
+                  ? formData.student_id || selectedStudentIds[0] || null
+                  : null,
+              room: formData.room || null,
+              day_of_week: formData.day_of_week,
+              start_time: formData.start_time,
+              end_time: formData.end_time,
+              exclude_slot_id: editingSlot?.id || null,
+            }),
+          });
+
+          if (res.ok) {
+            const json = await res.json();
+            if (json.has_conflict) {
+              setConflictMessage(json.conflict_reason);
+            } else {
+              setConflictMessage(null);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to check timetable conflict:', err);
+        } finally {
+          setCheckingConflict(false);
+        }
+      };
+
+      const timer = setTimeout(checkSingleConflict, 600);
+      return () => clearTimeout(timer);
+    }
   }, [
     formData.teacher_id,
     formData.student_id,
@@ -410,6 +581,7 @@ export default function TimetableSlotModal({
     formData.day_of_week,
     formData.start_time,
     formData.end_time,
+    tutoringSessions,
     isOpen,
     editingSlot?.id,
   ]);
@@ -608,30 +780,61 @@ export default function TimetableSlotModal({
     try {
       const isEditing = !!editingSlot;
 
-      if (slotMode === 'tutoring' && !isEditing && selectedStudentIds.length > 1) {
-        // Create multiple slots for micro-group (2-3 students) in the same session
-        const createPromises = selectedStudentIds.map((stId) =>
-          apiFetch('/api/timetable', {
-            method: 'POST',
-            body: JSON.stringify({
-              ...formData,
-              class_id: null,
-              student_id: stId,
-              subject_id: formData.subject_id || null,
-              teacher_id: formData.teacher_id || null,
-              room: 'Linh hoạt',
-            }),
-            headers: { 'Content-Type': 'application/json' },
-          })
-        );
+      if (slotMode === 'tutoring' && !isEditing) {
+        const effectiveStudents =
+          selectedStudentIds.length > 0
+            ? selectedStudentIds
+            : formData.student_id
+              ? [formData.student_id]
+              : [];
+
+        // Create multiple slots for every student and every session in tutoringSessions
+        const createPromises: Promise<any>[] = [];
+
+        for (const stId of effectiveStudents) {
+          for (const session of tutoringSessions) {
+            createPromises.push(
+              apiFetch('/api/timetable', {
+                method: 'POST',
+                body: JSON.stringify({
+                  class_id: null,
+                  student_id: stId,
+                  subject_id: formData.subject_id || null,
+                  teacher_id: formData.teacher_id || null,
+                  room: 'Linh hoạt',
+                  day_of_week: session.day_of_week,
+                  start_time: session.start_time,
+                  end_time: session.end_time,
+                  notes: formData.notes || null,
+                  status: formData.status || 'scheduled',
+                }),
+                headers: { 'Content-Type': 'application/json' },
+              })
+            );
+          }
+        }
 
         const responses = await Promise.all(createPromises);
+        let errorCount = 0;
+        let lastErrorMsg = '';
+
         for (const res of responses) {
           const json = await res.json();
           if (!json.success) {
-            throw new Error(json.error || 'Lỗi khi lưu tiết học kèm nhóm');
+            errorCount++;
+            lastErrorMsg = json.error || 'Lỗi khi lưu ca học kèm';
           }
         }
+
+        if (errorCount > 0) {
+          throw new Error(lastErrorMsg);
+        }
+
+        const totalCreated = effectiveStudents.length * tutoringSessions.length;
+        toast.success(
+          'Tạo lịch thành công',
+          `Đã tạo thành công ${totalCreated} ca học kèm (${tutoringSessions.length} buổi/tuần) cho học sinh!`
+        );
       } else {
         const url = isEditing ? `/api/timetable/${editingSlot.id}` : '/api/timetable';
         const method = isEditing ? 'PUT' : 'POST';
@@ -673,13 +876,18 @@ export default function TimetableSlotModal({
             { method: 'DELETE' }
           );
         }
+
+        toast.success(
+          'Lưu thành công',
+          slotMode === 'tutoring' ? 'Đã cập nhật ca học kèm' : 'Đã lưu tiết học thành công'
+        );
       }
 
       onSuccess();
       onClose();
     } catch (error: any) {
       console.error('Failed to save slot:', error);
-      toast.error('Lỗi khi lưu tiết học', error.message || 'Lỗi không xác định');
+      toast.error('Lỗi khi lưu', error.message || 'Lỗi không xác định');
     } finally {
       setSaving(false);
     }
@@ -691,7 +899,15 @@ export default function TimetableSlotModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={editingSlot ? 'Chỉnh Sửa Tiết Học' : 'Thêm Tiết Học Mới'}
+      title={
+        editingSlot
+          ? slotMode === 'tutoring'
+            ? 'Chỉnh Sửa Ca Học Kèm'
+            : 'Chỉnh Sửa Tiết Học'
+          : slotMode === 'tutoring'
+            ? 'Thêm Lịch Học Kèm Mới'
+            : 'Thêm Tiết Học Mới'
+      }
       size="lg"
       footer={
         <div className="flex items-center justify-end gap-3 w-full">
@@ -712,39 +928,47 @@ export default function TimetableSlotModal({
             leftIcon={editingSlot ? <Edit3 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             className="rounded-2xl px-6 font-black bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-md shadow-amber-500/20"
           >
-            {editingSlot ? 'Cập Nhật' : 'Tạo Tiết Học'}
+            {editingSlot
+              ? slotMode === 'tutoring'
+                ? 'Cập Nhật Ca Học'
+                : 'Cập Nhật'
+              : slotMode === 'tutoring'
+                ? 'Tạo Lịch Học Kèm'
+                : 'Tạo Tiết Học'}
           </Button>
         </div>
       }
     >
       <div className="space-y-6">
-        {/* Segmented Mode Selector: Regular Class vs Tutoring */}
-        <div className="p-1.5 bg-stone-100 dark:bg-stone-800 rounded-2xl flex gap-1 border border-stone-200/60 dark:border-white/5">
-          <button
-            type="button"
-            onClick={() => handleModeSwitch('class')}
-            className={cn(
-              'flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2',
-              slotMode === 'class'
-                ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-sm scale-[1.01]'
-                : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
-            )}
-          >
-            <Users className="w-4 h-4" /> Lớp Tập Trung
-          </button>
-          <button
-            type="button"
-            onClick={() => handleModeSwitch('tutoring')}
-            className={cn(
-              'flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2',
-              slotMode === 'tutoring'
-                ? 'bg-white dark:bg-stone-900 text-blue-600 dark:text-blue-400 shadow-sm scale-[1.01]'
-                : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
-            )}
-          >
-            <BookOpen className="w-4 h-4" /> Học Kèm (1-3 em)
-          </button>
-        </div>
+        {/* Segmented Mode Selector: Regular Class vs Tutoring - Only visible if mode is 'all' */}
+        {mode === 'all' && (
+          <div className="p-1.5 bg-stone-100 dark:bg-stone-800 rounded-2xl flex gap-1 border border-stone-200/60 dark:border-white/5">
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('class')}
+              className={cn(
+                'flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2',
+                slotMode === 'class'
+                  ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-sm scale-[1.01]'
+                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
+              )}
+            >
+              <Users className="w-4 h-4" /> Lớp Tập Trung
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('tutoring')}
+              className={cn(
+                'flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2',
+                slotMode === 'tutoring'
+                  ? 'bg-white dark:bg-stone-900 text-blue-600 dark:text-blue-400 shadow-sm scale-[1.01]'
+                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
+              )}
+            >
+              <BookOpen className="w-4 h-4" /> Học Kèm (1-3 em)
+            </button>
+          </div>
+        )}
 
         {/* Real-time Conflict Alert Banner */}
         {conflictMessage && (
@@ -998,126 +1222,269 @@ export default function TimetableSlotModal({
         </div>
 
         {/* Time, Day & Location Section */}
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-amber-500" />
-            <span className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">
-              Lịch Học & Phòng Xếp
-            </span>
-            <div className="h-[1px] flex-1 bg-stone-200/60 dark:bg-white/5" />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Day of Week */}
-            <div className="col-span-1 space-y-1.5 min-w-0">
-              <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
-                Thứ trong tuần *
-              </label>
-              <select
-                value={formData.day_of_week}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, day_of_week: parseInt(e.target.value) }))
-                }
-                className="w-full px-4 py-3 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500 transition-all shadow-sm cursor-pointer"
-              >
-                {DAYS.map((day, i) => (
-                  <option key={i} value={i}>
-                    🗓️ {day}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Room / Location */}
-            <div className="col-span-1 space-y-1.5 min-w-0">
-              <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
-                Phòng / Vị trí *
-              </label>
-              <select
-                value={formData.room}
-                onChange={(e) => setFormData((prev) => ({ ...prev, room: e.target.value }))}
-                className="w-full px-4 py-3 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500 transition-all shadow-sm cursor-pointer"
-                disabled={slotMode === 'tutoring'}
-              >
-                <option value="">-- Chọn phòng --</option>
-                <option value="Linh hoạt">🎓 Học kèm (Linh hoạt)</option>
-                {(dynamicRooms.length > 0
-                  ? dynamicRooms
-                  : CAMPUSES.filter((c) => c.id !== 'HK').flatMap((c) =>
-                      c.rooms.map((room) => `${c.name} - ${room}`)
-                    )
-                ).map((room) => (
-                  <option key={room} value={room}>
-                    🏢 {room}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Session Preset vs Custom Time Switcher */}
-            <div className="col-span-1 sm:col-span-2 space-y-2 min-w-0">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
-                  Khung giờ học *
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setUseCustomTime(!useCustomTime)}
-                  className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
-                >
-                  <Clock className="w-3 h-3" />
-                  {useCustomTime ? 'Dùng ca mẫu cố định' : 'Tùy chỉnh giờ bắt đầu/kết thúc'}
-                </button>
+        {slotMode === 'tutoring' && !editingSlot ? (
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-blue-500" />
+                <span className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+                  Lịch Các Buổi Học Kèm Trong Tuần
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  {tutoringSessions.length} buổi / tuần
+                </span>
               </div>
+              <button
+                type="button"
+                onClick={handleAddSession}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all shadow-sm cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" /> Thêm buổi học
+              </button>
+            </div>
 
-              {!useCustomTime ? (
+            <div className="space-y-3">
+              {tutoringSessions.map((session, idx) => (
+                <div
+                  key={session.id || idx}
+                  className="p-3.5 bg-stone-50/80 dark:bg-stone-800/40 rounded-2xl border border-stone-200/80 dark:border-white/10 space-y-3 relative group transition-all"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+                        Buổi {idx + 1}
+                      </span>
+                      <span className="text-[11px] text-stone-500 font-medium">
+                        Phòng: Học kèm (Linh hoạt)
+                      </span>
+                    </div>
+                    {tutoringSessions.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSession(session.id)}
+                        className="p-1 text-stone-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer"
+                        title="Xóa buổi này"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Day of Week */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-stone-600 dark:text-stone-300">
+                        Thứ trong tuần *
+                      </label>
+                      <select
+                        value={session.day_of_week}
+                        onChange={(e) =>
+                          handleUpdateSession(session.id, {
+                            day_of_week: parseInt(e.target.value),
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-xl text-xs font-bold text-stone-900 dark:text-white outline-none focus:border-blue-500 transition-all cursor-pointer shadow-sm"
+                      >
+                        {DAYS.map((day, i) => (
+                          <option key={i} value={i}>
+                            🗓️ {day}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Time Slot */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-stone-600 dark:text-stone-300">
+                          Khung giờ học *
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleUpdateSession(session.id, {
+                              use_custom_time: !session.use_custom_time,
+                            })
+                          }
+                          className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Clock className="w-2.5 h-2.5" />
+                          {session.use_custom_time ? 'Dùng ca mẫu' : 'Tùy chỉnh giờ'}
+                        </button>
+                      </div>
+
+                      {!session.use_custom_time ? (
+                        <select
+                          value={session.start_time}
+                          onChange={(e) => {
+                            const matched = sessionsFromSchedules.find(
+                              (s) => s.start === e.target.value
+                            );
+                            handleUpdateSession(session.id, {
+                              start_time: e.target.value,
+                              end_time: matched?.end || session.end_time,
+                            });
+                          }}
+                          className="w-full px-3 py-2 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-xl text-xs font-bold text-stone-900 dark:text-white outline-none focus:border-blue-500 transition-all cursor-pointer shadow-sm"
+                        >
+                          {sessionsFromSchedules.map((p) => (
+                            <option key={p.id} value={p.start}>
+                              ⏰ {p.label} ({p.time})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="time"
+                            value={session.start_time}
+                            onChange={(e) =>
+                              handleUpdateSession(session.id, {
+                                start_time: e.target.value,
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-xl text-xs font-bold text-stone-900 dark:text-white outline-none focus:border-blue-500"
+                          />
+                          <input
+                            type="time"
+                            value={session.end_time}
+                            onChange={(e) =>
+                              handleUpdateSession(session.id, {
+                                end_time: e.target.value,
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-xl text-xs font-bold text-stone-900 dark:text-white outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-500" />
+              <span className="text-[11px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+                Lịch Học & Phòng Xếp
+              </span>
+              <div className="h-[1px] flex-1 bg-stone-200/60 dark:bg-white/5" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Day of Week */}
+              <div className="col-span-1 space-y-1.5 min-w-0">
+                <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
+                  Thứ trong tuần *
+                </label>
                 <select
-                  value={formData.start_time}
-                  onChange={(e) => {
-                    const session = sessionsFromSchedules.find((s) => s.start === e.target.value);
-                    setFormData((prev) => ({
-                      ...prev,
-                      start_time: e.target.value,
-                      end_time: session?.end || prev.end_time,
-                    }));
-                  }}
+                  value={formData.day_of_week}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, day_of_week: parseInt(e.target.value) }))
+                  }
                   className="w-full px-4 py-3 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500 transition-all shadow-sm cursor-pointer"
                 >
-                  {sessionsFromSchedules.map((p) => (
-                    <option key={p.id} value={p.start}>
-                      ⏰ {p.label} ({p.time})
+                  {DAYS.map((day, i) => (
+                    <option key={i} value={i}>
+                      🗓️ {day}
                     </option>
                   ))}
                 </select>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-stone-400">Giờ bắt đầu:</span>
-                    <input
-                      type="time"
-                      value={formData.start_time}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, start_time: e.target.value }))
-                      }
-                      className="w-full px-4 py-2.5 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-stone-400">Giờ kết thúc:</span>
-                    <input
-                      type="time"
-                      value={formData.end_time}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, end_time: e.target.value }))
-                      }
-                      className="w-full px-4 py-2.5 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500"
-                    />
-                  </div>
+              </div>
+
+              {/* Room / Location */}
+              <div className="col-span-1 space-y-1.5 min-w-0">
+                <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
+                  Phòng / Vị trí *
+                </label>
+                <select
+                  value={formData.room}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, room: e.target.value }))}
+                  className="w-full px-4 py-3 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500 transition-all shadow-sm cursor-pointer"
+                  disabled={slotMode === 'tutoring'}
+                >
+                  <option value="">-- Chọn phòng --</option>
+                  <option value="Linh hoạt">🎓 Học kèm (Linh hoạt)</option>
+                  {(dynamicRooms.length > 0
+                    ? dynamicRooms
+                    : CAMPUSES.filter((c) => c.id !== 'HK').flatMap((c) =>
+                        c.rooms.map((room) => `${c.name} - ${room}`)
+                      )
+                  ).map((room) => (
+                    <option key={room} value={room}>
+                      🏢 {room}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Session Preset vs Custom Time Switcher */}
+              <div className="col-span-1 sm:col-span-2 space-y-2 min-w-0">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
+                    Khung giờ học *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setUseCustomTime(!useCustomTime)}
+                    className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+                  >
+                    <Clock className="w-3 h-3" />
+                    {useCustomTime ? 'Dùng ca mẫu cố định' : 'Tùy chỉnh giờ bắt đầu/kết thúc'}
+                  </button>
                 </div>
-              )}
+
+                {!useCustomTime ? (
+                  <select
+                    value={formData.start_time}
+                    onChange={(e) => {
+                      const session = sessionsFromSchedules.find((s) => s.start === e.target.value);
+                      setFormData((prev) => ({
+                        ...prev,
+                        start_time: e.target.value,
+                        end_time: session?.end || prev.end_time,
+                      }));
+                    }}
+                    className="w-full px-4 py-3 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500 transition-all shadow-sm cursor-pointer"
+                  >
+                    {sessionsFromSchedules.map((p) => (
+                      <option key={p.id} value={p.start}>
+                        ⏰ {p.label} ({p.time})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-stone-400">Giờ bắt đầu:</span>
+                      <input
+                        type="time"
+                        value={formData.start_time}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, start_time: e.target.value }))
+                        }
+                        className="w-full px-4 py-2.5 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-stone-400">Giờ kết thúc:</span>
+                      <input
+                        type="time"
+                        value={formData.end_time}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, end_time: e.target.value }))
+                        }
+                        className="w-full px-4 py-2.5 bg-white dark:bg-stone-800 border-2 border-stone-200/80 dark:border-white/10 rounded-2xl text-xs font-black text-stone-900 dark:text-white outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Slot Status Selection Section */}
         <div className="space-y-3 pt-2">
