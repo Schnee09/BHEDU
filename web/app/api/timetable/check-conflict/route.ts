@@ -12,6 +12,7 @@ import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
 import { z } from 'zod';
 
 const checkConflictSchema = z.object({
+  class_id: z.string().uuid().optional().nullable(),
   teacher_id: z.string().uuid().optional().nullable(),
   student_id: z.string().uuid().optional().nullable(),
   room: z.string().optional().nullable(),
@@ -33,6 +34,7 @@ export const POST = createApiHandler(
     // Call checkConflicts in Repository
     const conflict = await repository.checkConflicts(
       {
+        class_id: body.class_id,
         day_of_week: body.day_of_week,
         start_time: body.start_time,
         end_time: body.end_time,

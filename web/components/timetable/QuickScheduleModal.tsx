@@ -109,6 +109,66 @@ export default function QuickScheduleModal({
     }
   }, [isOpen, initialData, dynamicRooms]);
 
+  const [checkingConflict, setCheckingConflict] = useState(false);
+
+  // Real-time conflict checking across all selected days
+  useEffect(() => {
+    if (!isOpen || !classId || selectedDays.length === 0 || !startTime || !endTime) {
+      setConflictWarning(null);
+      return;
+    }
+
+    if (startTime >= endTime) {
+      return;
+    }
+
+    const checkConflicts = async () => {
+      setCheckingConflict(true);
+      const conflicts: string[] = [];
+
+      try {
+        const formattedStart = startTime.length === 5 ? `${startTime}:00` : startTime;
+        const formattedEnd = endTime.length === 5 ? `${endTime}:00` : endTime;
+
+        for (const day of selectedDays) {
+          const res = await apiFetch('/api/timetable/check-conflict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              class_id: classId,
+              teacher_id: teacherId || null,
+              room: room || null,
+              day_of_week: day,
+              start_time: formattedStart,
+              end_time: formattedEnd,
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.has_conflict && data.conflict_reason) {
+              const dayLabel = DAY_NAMES[day] || `Thứ ${day + 2}`;
+              conflicts.push(`[${dayLabel}]: ${data.conflict_reason}`);
+            }
+          }
+        }
+
+        if (conflicts.length > 0) {
+          setConflictWarning(conflicts.join(' | '));
+        } else {
+          setConflictWarning(null);
+        }
+      } catch (err) {
+        console.warn('Failed to check timetable conflicts in real-time:', err);
+      } finally {
+        setCheckingConflict(false);
+      }
+    };
+
+    const timer = setTimeout(checkConflicts, 500);
+    return () => clearTimeout(timer);
+  }, [isOpen, classId, teacherId, room, selectedDays, startTime, endTime]);
+
   // When class is selected, auto-fill teacher and subject from class metadata
   const handleClassChange = (selectedClassId: string) => {
     setClassId(selectedClassId);

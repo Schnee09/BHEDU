@@ -39,6 +39,8 @@ export const PUT = createApiHandler(
   }
 );
 
+export const PATCH = PUT;
+
 export const DELETE = createApiHandler(
   {
     permission: 'classes.manage',
