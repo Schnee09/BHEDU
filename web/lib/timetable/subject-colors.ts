@@ -1,7 +1,7 @@
 /**
  * Subject Color Palette & Styling Utility
  * Maps subject names/codes to harmonious, distinctive color tokens.
- * Complies 100% with the Purple Ban (no violet/purple tokens).
+ * Complies 100% with design guidelines (no banned tokens).
  */
 
 export interface SubjectColorStyle {
@@ -131,7 +131,10 @@ const SUBJECT_STYLES = {
 /**
  * Get color style for a subject by name or code
  */
-export function getSubjectColor(subjectNameOrCode?: string | null, isTutoring?: boolean): SubjectColorStyle {
+export function getSubjectColor(
+  subjectNameOrCode?: string | null,
+  isTutoring?: boolean
+): SubjectColorStyle {
   if (isTutoring) {
     return SUBJECT_STYLES.tutoring;
   }
@@ -163,7 +166,12 @@ export function getSubjectColor(subjectNameOrCode?: string | null, isTutoring?: 
   if (normalized.includes('van') || normalized.includes('lit')) {
     return SUBJECT_STYLES.literature;
   }
-  if (normalized.includes('su') || normalized.includes('dia') || normalized.includes('hist') || normalized.includes('geo')) {
+  if (
+    normalized.includes('su') ||
+    normalized.includes('dia') ||
+    normalized.includes('hist') ||
+    normalized.includes('geo')
+  ) {
     return SUBJECT_STYLES.history_geo;
   }
   if (normalized.includes('tin') || normalized.includes('info') || normalized.includes('code')) {

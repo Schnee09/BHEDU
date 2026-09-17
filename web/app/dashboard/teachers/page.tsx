@@ -267,7 +267,7 @@ function TeachersContent() {
             <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
               Tổng ca dạy / tuần
             </span>
-            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <Clock className="w-4 h-4" />
             </div>
           </div>
@@ -422,7 +422,7 @@ function TeachersContent() {
                       </div>
                       <div className="text-left">
                         <span className="text-[10px] font-semibold text-stone-400 block flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-purple-500" /> Ca dạy / tuần:
+                          <Clock className="w-3 h-3 text-amber-500" /> Ca dạy / tuần:
                         </span>
                         <span className="text-xs font-bold text-stone-900 dark:text-stone-100 font-mono">
                           {t.weekly_sessions} ca/tuần
@@ -560,7 +560,7 @@ function TeachersContent() {
                     <td className="px-4 py-3.5 font-bold font-mono text-blue-600 dark:text-blue-400">
                       {t.total_students} HS
                     </td>
-                    <td className="px-4 py-3.5 font-bold font-mono text-purple-600 dark:text-purple-400">
+                    <td className="px-4 py-3.5 font-bold font-mono text-amber-600 dark:text-amber-400">
                       {t.weekly_sessions} ca
                     </td>
                     <td className="px-4 py-3.5">

@@ -29,9 +29,9 @@ export function RequestTypeBadge({ type, size = 'md' }: RequestTypeBadgeProps) {
     },
     class_transfer: {
       label: 'Chuyển lớp',
-      bg: 'bg-indigo-500/10 dark:bg-indigo-500/20',
-      text: 'text-indigo-700 dark:text-indigo-300',
-      border: 'border-indigo-500/20',
+      bg: 'bg-sky-500/10 dark:bg-sky-500/20',
+      text: 'text-sky-700 dark:text-sky-300',
+      border: 'border-sky-500/20',
       icon: '🔀',
     },
     deferral: {

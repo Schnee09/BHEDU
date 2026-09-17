@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useFetch } from '@/hooks/useFetch';
-import { Card, CardHeader, CardBody } from '@/components/ui/Card';
+import { Card, CardHeader } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 
 interface StudentRanking {
@@ -128,7 +128,7 @@ export default function RankingWidget({
             ))
           ) : topStudents.length === 0 ? (
             <div className="px-4 py-8 text-center text-stone-500 dark:text-stone-400 text-xs font-medium">
-              Chưa có dữ liệu xếp hạng
+              {error ? 'Không thể tải dữ liệu xếp hạng' : 'Chưa có dữ liệu xếp hạng'}
             </div>
           ) : (
             topStudents.map((student) => (

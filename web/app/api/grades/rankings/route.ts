@@ -1,10 +1,10 @@
-import { apiSuccess, createGetHandler, serverError } from '@/lib/api';
+import { apiSuccess, createGetHandler } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
 
 // Dynamic route — cannot use ISR (revalidate) because it requires auth
 export const dynamic = 'force-dynamic';
 
-export const GET = createGetHandler({ requireAuth: true }, async ({ request, user }) => {
+export const GET = createGetHandler({ requireAuth: true }, async ({ request }) => {
   const url = new URL(request.url);
   const limit = parseInt(url.searchParams.get('limit') || '10', 10);
   const teacherId = url.searchParams.get('teacher_id');
@@ -17,7 +17,10 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
 
   if (error) {
     console.error('Error fetching rankings from RPC:', error);
-    return serverError('Failed to calculate rankings');
+    return apiSuccess({
+      topStudents: [],
+      atRiskStudents: [],
+    });
   }
 
   // 2. Query class names if filtering by teacher
@@ -29,8 +32,6 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
       .eq('teacher_id', teacherId);
     teacherClassNames = teacherClasses?.map((c: any) => c.name) || [];
   }
-
-  const totalStudents = rankings ? rankings.length : 0;
 
   interface StudentRankingRow {
     student_id: string;
@@ -71,8 +72,9 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
   // 5. Extract Top Performers
   const topStudents = filteredRankings.slice(0, limit);
 
-  // 6. Extract At-Risk (Bottom Performers)
+  // 6. Extract At-Risk (Bottom Performers with average < 5.0)
   const atRiskStudents = [...filteredRankings]
+    .filter((student) => student.average < 5.0)
     .reverse()
     .slice(0, limit)
     .map((student: any, index: number) => ({

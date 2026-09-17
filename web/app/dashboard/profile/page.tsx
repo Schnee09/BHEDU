@@ -50,8 +50,8 @@ const getActionMeta = (action: string) => {
     'grade.created': { label: 'Nhập điểm số', dot: 'bg-emerald-500 shadow-emerald-500/50' },
     'grade.updated': { label: 'Chỉnh sửa điểm', dot: 'bg-amber-500 shadow-amber-500/50' },
     'payment.created': { label: 'Thanh toán học phí', dot: 'bg-green-500 shadow-green-500/50' },
-    'student.enrolled': { label: 'Ghi danh lớp học', dot: 'bg-indigo-500 shadow-indigo-500/50' },
-    'class.created': { label: 'Tạo lớp học mới', dot: 'bg-purple-500 shadow-purple-500/50' },
+    'student.enrolled': { label: 'Ghi danh lớp học', dot: 'bg-sky-500 shadow-sky-500/50' },
+    'class.created': { label: 'Tạo lớp học mới', dot: 'bg-amber-600 shadow-amber-600/50' },
     'assignment.created': { label: 'Tạo bài tập mới', dot: 'bg-blue-500 shadow-blue-500/50' },
     'assignment.submitted': { label: 'Nộp bài tập', dot: 'bg-teal-500 shadow-teal-500/50' },
   };

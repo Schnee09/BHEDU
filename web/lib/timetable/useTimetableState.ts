@@ -223,7 +223,12 @@ export function useTimetableState() {
   }, [fetchSlots]);
 
   // Actions
-  const openCreateModal = (dayIndex?: number, period?: any, room?: string) => {
+  const openCreateModal = (
+    dayIndex?: number,
+    period?: any,
+    room?: string,
+    initialData?: Partial<TimetableSlot>
+  ) => {
     if (!canEdit) return;
     setEditingSlot(null);
     setInitialModalData({
@@ -232,6 +237,7 @@ export function useTimetableState() {
       end_time: period?.end ?? '18:30',
       room: room || '',
       class_id: room !== 'Linh hoạt' ? selectedClass : '',
+      ...(initialData || {}),
     });
     setShowEditModal(true);
   };
@@ -254,11 +260,17 @@ export function useTimetableState() {
     newDay: number,
     newStartTime: string,
     newEndTime: string,
-    newRoom: string
+    newRoom: string,
+    newTeacherId?: string
   ) => {
     if (!canEdit) return;
     const currentSlot = slots.find((s) => s.id === slotId);
     if (!currentSlot) return;
+
+    const targetTeacherId = newTeacherId || currentSlot.teacher?.id || currentSlot.teacher_id;
+    const targetTeacher = targetTeacherId
+      ? teachers.find((t) => t.id === targetTeacherId)
+      : currentSlot.teacher;
 
     // Optimistic UI Update
     setSlots((prev) =>
@@ -270,6 +282,14 @@ export function useTimetableState() {
               start_time: newStartTime,
               end_time: newEndTime,
               room: newRoom,
+              teacher_id: targetTeacherId,
+              teacher: targetTeacher
+                ? {
+                    id: targetTeacher.id,
+                    full_name: targetTeacher.full_name,
+                    phone: targetTeacher.phone,
+                  }
+                : s.teacher,
             }
           : s
       )
@@ -283,7 +303,7 @@ export function useTimetableState() {
           class_id: currentSlot.class_id || null,
           student_id: currentSlot.student_id || null,
           subject_id: currentSlot.subject?.id || null,
-          teacher_id: currentSlot.teacher?.id || null,
+          teacher_id: targetTeacherId || null,
           day_of_week: newDay,
           start_time: newStartTime,
           end_time: newEndTime,

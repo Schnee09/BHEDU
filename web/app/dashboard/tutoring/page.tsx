@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import PageGuard from '@/components/PageGuard';
 import { Badge, LoadingState, Button } from '@/components/ui';
-import { BookOpen, Plus, GraduationCap, ListFilter, Download, Sparkles } from 'lucide-react';
-import { useTimetableState } from '@/lib/timetable/useTimetableState';
+import { BookOpen, Plus, Download } from 'lucide-react';
+import { useTimetableState, DisplayLayout } from '@/lib/timetable/useTimetableState';
 import { DAYS } from '@/lib/timetable/constants';
 import { getDisplayName } from '@/lib/utils/names';
 
@@ -14,22 +13,29 @@ import TutoringStatsWidget from '@/components/tutoring/TutoringStatsWidget';
 import TutoringListView from '@/components/timetable/TutoringListView';
 import TutoringTeacherGridView from '@/components/timetable/TutoringTeacherGridView';
 import TutoringDispatchBoard from '@/components/tutoring/TutoringDispatchBoard';
+import ContinuousTimelineView from '@/components/timetable/ContinuousTimelineView';
 import TimetableQuickActionModal from '@/components/timetable/TimetableQuickActionModal';
 import TimetableSlotModal from '@/components/timetable/TimetableSlotModal';
 import TimetableControlToolbar from '@/components/timetable/TimetableControlToolbar';
 
+export type TutoringViewMode = 'dispatch' | 'grid' | 'timeline' | 'agenda';
+
 export default function TutoringManagementPage() {
   const state = useTimetableState();
-  const router = useRouter();
   const isManager = state.isAdmin || state.canEdit;
 
-  const [tutoringViewTab, setTutoringViewTab] = useState<'dispatch' | 'list' | 'teacher'>(
-    isManager ? 'dispatch' : 'list'
-  );
+  const [viewMode, setViewMode] = useState<TutoringViewMode>(isManager ? 'dispatch' : 'grid');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
+  const handleLayoutChange = (layout: DisplayLayout | 'dispatch') => {
+    setViewMode(layout as TutoringViewMode);
+    if (layout !== 'dispatch') {
+      state.handleLayoutChange(layout);
+    }
+  };
+
   // Role-aware tutoring slots: Managers see all; Tutors see only their own
-  const tutoringSlots = React.useMemo(() => {
+  const filteredTutoringSlots = React.useMemo(() => {
     let slots = state.slots.filter((s) => !s.room || s.room === 'Linh hoạt' || !!s.student_id);
 
     if (!isManager && state.profile?.id) {
@@ -41,8 +47,21 @@ export default function TutoringManagementPage() {
     if (statusFilter) {
       slots = slots.filter((s) => (s.status || 'scheduled') === statusFilter);
     }
+
+    if (state.searchQuery) {
+      const q = state.searchQuery.toLowerCase();
+      slots = slots.filter(
+        (s) =>
+          s.teacher?.full_name?.toLowerCase().includes(q) ||
+          s.student?.full_name?.toLowerCase().includes(q) ||
+          s.subject?.name?.toLowerCase().includes(q) ||
+          s.class?.name?.toLowerCase().includes(q) ||
+          s.room?.toLowerCase().includes(q)
+      );
+    }
+
     return slots;
-  }, [state.slots, statusFilter, isManager, state.profile?.id]);
+  }, [state.slots, statusFilter, state.searchQuery, isManager, state.profile?.id]);
 
   const handleExportPayroll = () => {
     const headers = [
@@ -54,7 +73,7 @@ export default function TutoringManagementPage() {
       'Trạng thái',
       'Ghi chú',
     ];
-    const rows = tutoringSlots.map((s) => [
+    const rows = filteredTutoringSlots.map((s) => [
       `${DAYS[s.day_of_week]} (${state.weekDates[s.day_of_week]?.toLocaleDateString('vi-VN') || ''})`,
       `${s.start_time?.substring(0, 5)} - ${s.end_time?.substring(0, 5)}`,
       getDisplayName(s.teacher) || 'Chưa phân công',
@@ -146,18 +165,18 @@ export default function TutoringManagementPage() {
 
           {/* Tutoring Overview Analytics Stats Widget */}
           <TutoringStatsWidget
-            slots={isManager ? state.slots : tutoringSlots}
+            slots={filteredTutoringSlots}
             tutors={
               isManager ? state.tutors : state.tutors.filter((t) => t.id === state.profile?.id)
             }
           />
 
-          {/* Control Toolbar */}
+          {/* Control Toolbar with Integrated View Switcher */}
           <TimetableControlToolbar
             activeTab="personal"
             setActiveTab={() => {}}
-            displayLayout={state.displayLayout}
-            onLayoutChange={state.handleLayoutChange}
+            displayLayout={viewMode}
+            onLayoutChange={handleLayoutChange}
             currentWeek={state.currentWeek}
             setCurrentWeek={state.setCurrentWeek}
             weekDates={state.weekDates}
@@ -176,54 +195,15 @@ export default function TutoringManagementPage() {
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
             mode="tutoring"
+            showDispatchOption={isManager}
           />
-
-          {/* View Tab Selector: Role-aware */}
-          <div className="flex justify-between items-center bg-white dark:bg-stone-900 p-1.5 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-xs">
-            <div className="flex bg-stone-100 dark:bg-stone-800 p-1 rounded-xl gap-1 overflow-x-auto w-full no-scrollbar">
-              {isManager && (
-                <button
-                  onClick={() => setTutoringViewTab('dispatch')}
-                  className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
-                    tutoringViewTab === 'dispatch'
-                      ? 'bg-white dark:bg-stone-900 text-amber-600 dark:text-amber-400 shadow-xs'
-                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4 text-amber-500" /> Bàn điều phối (Matchmaker)
-                </button>
-              )}
-              <button
-                onClick={() => setTutoringViewTab('list')}
-                className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
-                  tutoringViewTab === 'list'
-                    ? 'bg-white dark:bg-stone-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
-                }`}
-              >
-                <ListFilter className="w-4 h-4" />{' '}
-                {isManager ? 'Danh sách ca học kèm' : 'Danh sách ca dạy của tôi'}
-              </button>
-              <button
-                onClick={() => setTutoringViewTab('teacher')}
-                className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
-                  tutoringViewTab === 'teacher'
-                    ? 'bg-white dark:bg-stone-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
-                }`}
-              >
-                <GraduationCap className="w-4 h-4" />{' '}
-                {isManager ? 'Lưới ma trận Gia sư' : 'Lịch tuần của tôi'}
-              </button>
-            </div>
-          </div>
 
           {/* Main Tutoring Content */}
           {state.loading ? (
             <LoadingState message="Đang tải danh sách ca học kèm..." />
-          ) : tutoringViewTab === 'dispatch' && isManager ? (
+          ) : viewMode === 'dispatch' && isManager ? (
             <TutoringDispatchBoard
-              slots={state.slots}
+              slots={filteredTutoringSlots}
               tutors={state.tutors}
               weekDates={state.weekDates}
               onEditSlot={state.openEditModal}
@@ -231,20 +211,39 @@ export default function TutoringManagementPage() {
               onCreateSlot={state.openCreateModal}
               onUpdateStatus={state.handleUpdateSlotStatus}
               onRefresh={state.refetchSlots}
+              onMoveSlot={state.handleMoveSlot}
               canEdit={state.canEdit}
             />
-          ) : tutoringViewTab === 'list' ? (
-            <TutoringListView
-              slots={tutoringSlots}
+          ) : viewMode === 'timeline' ? (
+            <ContinuousTimelineView
+              slots={filteredTutoringSlots}
               weekDates={state.weekDates}
               onEditSlot={state.openEditModal}
               onDeleteSlot={state.handleDeleteSlot}
-              onCreateSlot={state.openCreateModal}
+              onCreateSlot={(dayIndex, period, room) =>
+                state.openCreateModal(dayIndex, period, room || 'Linh hoạt')
+              }
+              onMoveSlot={state.handleMoveSlot}
+              viewMode="tutoring"
+              isLoading={state.loading}
+              searchQuery={state.searchQuery}
+              selectedTeacher={state.selectedTeacher}
+              selectedClass={state.selectedClass}
+            />
+          ) : viewMode === 'agenda' ? (
+            <TutoringListView
+              slots={filteredTutoringSlots}
+              weekDates={state.weekDates}
+              onEditSlot={state.openEditModal}
+              onDeleteSlot={state.handleDeleteSlot}
+              onCreateSlot={(dayIndex, session, room) =>
+                state.openCreateModal(dayIndex, session, room || 'Linh hoạt')
+              }
               onUpdateStatus={state.handleUpdateSlotStatus}
             />
           ) : (
             <TutoringTeacherGridView
-              slots={isManager ? state.slots : tutoringSlots}
+              slots={filteredTutoringSlots}
               tutors={
                 isManager
                   ? state.tutors
@@ -259,7 +258,7 @@ export default function TutoringManagementPage() {
               }
               weekDates={state.weekDates}
               onEditSlot={state.openEditModal}
-              onCreateSlot={(d, s, tId) => state.openCreateModal(d, s, 'Linh hoạt')}
+              onCreateSlot={(d, s) => state.openCreateModal(d, s, 'Linh hoạt')}
             />
           )}
 

@@ -26,7 +26,7 @@ export default function TutoringListView({
   onCreateSlot,
   onUpdateStatus,
 }: TutoringListViewProps) {
-  const tutoringSlots = slots.filter((s) => !s.room || s.room === 'Linh hoạt');
+  const tutoringSlots = slots.filter((s) => !s.room || s.room === 'Linh hoạt' || !!s.student_id);
 
   return (
     <div className="bg-white/40 dark:bg-stone-900/40 backdrop-blur-xl rounded-2xl sm:rounded-[32px] overflow-hidden shadow-2xl border border-stone-200/50 dark:border-white/5">

@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { Shield, Sparkles, Check, CheckSquare, Square, Palette, Layers, Info } from 'lucide-react';
@@ -41,13 +36,41 @@ interface CreateRoleModalProps {
 }
 
 const COLOR_PRESETS = [
-  { label: 'Vàng Cam', value: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800' },
-  { label: 'Hồng Đào', value: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border-rose-200 dark:border-rose-800' },
-  { label: 'Xanh Lam', value: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
-  { label: 'Xanh Ngọc', value: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200 dark:border-teal-800' },
-  { label: 'Hổ Phách', value: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800' },
-  { label: 'Lục Bảo', value: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
-  { label: 'Xám Đá', value: 'bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border-stone-300 dark:border-stone-700' },
+  {
+    label: 'Vàng Cam',
+    value:
+      'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+  },
+  {
+    label: 'Hồng Đào',
+    value:
+      'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border-rose-200 dark:border-rose-800',
+  },
+  {
+    label: 'Xanh Lam',
+    value:
+      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+  },
+  {
+    label: 'Xanh Ngọc',
+    value:
+      'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200 dark:border-teal-800',
+  },
+  {
+    label: 'Hổ Phách',
+    value:
+      'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+  },
+  {
+    label: 'Lục Bảo',
+    value:
+      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+  },
+  {
+    label: 'Xám Đá',
+    value:
+      'bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border-stone-300 dark:border-stone-700',
+  },
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -78,7 +101,9 @@ export function CreateRoleModal({
   const [submitting, setSubmitting] = useState(false);
   const [loadingPerms, setLoadingPerms] = useState(false);
 
-  const defaultColor = COLOR_PRESETS[0]?.value || 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+  const defaultColor =
+    COLOR_PRESETS[0]?.value ||
+    'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800';
 
   const [formData, setFormData] = useState({
     code: '',
@@ -90,12 +115,15 @@ export function CreateRoleModal({
   const [selectedPerms, setSelectedPerms] = useState<Set<string>>(new Set());
 
   // Group permissions by category
-  const groupedPerms = allPermissions.reduce((acc, perm) => {
-    const cat = perm.category || 'other';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat]!.push(perm);
-    return acc;
-  }, {} as Record<string, Permission[]>);
+  const groupedPerms = allPermissions.reduce(
+    (acc, perm) => {
+      const cat = perm.category || 'other';
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat]!.push(perm);
+      return acc;
+    },
+    {} as Record<string, Permission[]>
+  );
 
   useEffect(() => {
     if (editingRole) {
@@ -200,9 +228,7 @@ export function CreateRoleModal({
         permissions: Array.from(selectedPerms),
       };
 
-      const url = editingRole
-        ? `/api/admin/roles/${editingRole.code}`
-        : '/api/admin/roles';
+      const url = editingRole ? `/api/admin/roles/${editingRole.code}` : '/api/admin/roles';
       const method = editingRole ? 'PUT' : 'POST';
 
       const res = await apiFetch(url, {
@@ -214,10 +240,7 @@ export function CreateRoleModal({
       const data = await res.json();
 
       if (res.ok && (data.success || !data.error)) {
-        toast.success(
-          'Thành công',
-          editingRole ? 'Đã cập nhật vai trò' : 'Đã tạo vai trò mới'
-        );
+        toast.success('Thành công', editingRole ? 'Đã cập nhật vai trò' : 'Đã tạo vai trò mới');
         onSuccess();
         onClose();
       } else {
@@ -298,9 +321,7 @@ export function CreateRoleModal({
               </label>
               <Input
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, description: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder="Ví dụ: Quản lý các khoản thu chi, báo cáo tài chính và hoàn phí..."
                 className="h-11 rounded-2xl bg-stone-50 dark:bg-white/5 border-stone-200 dark:border-white/10 text-xs"
               />
@@ -349,9 +370,7 @@ export function CreateRoleModal({
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      setSelectedPerms(new Set(allPermissions.map((p) => p.code)))
-                    }
+                    onClick={() => setSelectedPerms(new Set(allPermissions.map((p) => p.code)))}
                     className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline"
                   >
                     Chọn tất cả
@@ -370,9 +389,7 @@ export function CreateRoleModal({
               {/* Permission Groups */}
               <div className="space-y-4">
                 {Object.entries(groupedPerms).map(([category, perms]) => {
-                  const catSelectedCount = perms.filter((p) =>
-                    selectedPerms.has(p.code)
-                  ).length;
+                  const catSelectedCount = perms.filter((p) => selectedPerms.has(p.code)).length;
                   const isAllCatSelected = catSelectedCount === perms.length;
 
                   return (
@@ -392,7 +409,8 @@ export function CreateRoleModal({
                             <Square className="w-4 h-4 text-stone-400" />
                           )}
                           <span>
-                            {CATEGORY_LABELS[category] || category} ({catSelectedCount}/{perms.length})
+                            {CATEGORY_LABELS[category] || category} ({catSelectedCount}/
+                            {perms.length})
                           </span>
                         </button>
                       </div>
@@ -438,9 +456,7 @@ export function CreateRoleModal({
           <div className="p-6 border-t border-stone-100 dark:border-white/5 bg-stone-50/60 dark:bg-white/[0.02] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
               <Info className="w-4 h-4 text-amber-500" />
-              <span>
-                {selectedPerms.size} quyền sẽ được cấp cho vai trò này.
-              </span>
+              <span>{selectedPerms.size} quyền sẽ được cấp cho vai trò này.</span>
             </div>
 
             <div className="flex gap-3">

@@ -101,7 +101,7 @@ const COLOR_PRESETS = [
   '#3b82f6', // Blue
   '#ef4444', // Red
   '#f59e0b', // Amber
-  '#8b5cf6', // Purple
+  '#0d9488', // Teal
   '#ec4899', // Pink
   '#06b6d4', // Cyan
   '#64748b', // Slate

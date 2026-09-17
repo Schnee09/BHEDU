@@ -239,7 +239,7 @@ function TutorsContent() {
             <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
               Môn dạy kèm
             </span>
-            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <BookOpen className="w-4 h-4" />
             </div>
           </div>

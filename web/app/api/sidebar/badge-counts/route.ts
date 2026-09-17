@@ -7,6 +7,9 @@ import { createClientFromRequest, createServiceClient } from '@/lib/supabase/ser
  * Consolidated endpoint that returns all sidebar badge counts in a single
  * request. Replaces 3 separate API calls the Sidebar was making.
  */
+// Force dynamic evaluation to prevent static optimization / 404 in Next.js
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClientFromRequest(request);

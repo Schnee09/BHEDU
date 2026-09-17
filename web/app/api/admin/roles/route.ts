@@ -113,9 +113,7 @@ export async function GET(request: NextRequest) {
     const serviceClient = createServiceClient();
 
     // 1. Fetch user counts grouped by role
-    const { data: profiles } = await serviceClient
-      .from('profiles')
-      .select('role');
+    const { data: profiles } = await serviceClient.from('profiles').select('role');
 
     const countsByRole: Record<string, number> = {};
     (profiles || []).forEach((p) => {
@@ -137,7 +135,7 @@ export async function GET(request: NextRequest) {
         code: r.code,
         name: r.name,
         description: r.description || '',
-        color: r.color || 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+        color: r.color || 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
         is_system: false,
         user_count: countsByRole[r.code] || 0,
         permission_count: r.permission_count || 0,
@@ -160,7 +158,7 @@ export async function GET(request: NextRequest) {
           code: r.code,
           name: r.name,
           description: r.description || '',
-          color: r.color || 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+          color: r.color || 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
           is_system: false,
           user_count: countsByRole[r.code] || 0,
           permission_count: r.permissions?.length || 0,
@@ -225,7 +223,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const normalizedCode = code.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '_');
+    const normalizedCode = code
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9_-]/g, '_');
 
     // Prevent overwriting system roles
     const reservedCodes = SYSTEM_ROLES.map((r) => r.code);
@@ -242,16 +243,14 @@ export async function POST(request: NextRequest) {
       code: normalizedCode,
       name: name.trim(),
       description: description?.trim() || '',
-      color: color || 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+      color: color || 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
       created_by: admin.id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
     // 1. Try inserting into custom_roles table
-    const { error: insertError } = await serviceClient
-      .from('custom_roles')
-      .insert(newRoleData);
+    const { error: insertError } = await serviceClient.from('custom_roles').insert(newRoleData);
 
     if (insertError) {
       // Fallback: save to app_settings

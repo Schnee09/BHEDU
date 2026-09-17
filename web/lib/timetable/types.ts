@@ -71,4 +71,6 @@ export interface TeacherOption {
 export interface StudentOption {
   id: string;
   full_name: string;
+  email?: string;
+  phone?: string;
 }

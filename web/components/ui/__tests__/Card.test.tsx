@@ -17,37 +17,29 @@ describe('Card Components', () => {
     });
 
     it('applies custom className', () => {
-      const { container } = render(
-        <Card className="custom-class">Content</Card>
-      );
+      const { container } = render(<Card className="custom-class">Content</Card>);
 
       const card = container.firstChild;
       expect(card).toHaveClass('custom-class');
     });
 
     it('has default styling classes', () => {
-      const { container } = render(
-        <Card>Content</Card>
-      );
+      const { container } = render(<Card>Content</Card>);
 
       const card = container.firstChild;
-      expect(card).toHaveClass('rounded-3xl', 'glass-premium', 'text-foreground');
+      expect(card).toHaveClass('glass-premium', 'text-foreground');
     });
 
     it('applies hover class when hover is true', () => {
-      const { container } = render(
-        <Card hover={true}>Content</Card>
-      );
+      const { container } = render(<Card hover={true}>Content</Card>);
 
       const card = container.firstChild;
-      expect(card).toHaveClass('hover:shadow-ultra', 'hover:-translate-y-1');
+      expect(card).toHaveClass('hover:shadow-md', 'hover:-translate-y-0.5');
     });
 
     it('handles click events', () => {
       const onClick = jest.fn();
-      const { container } = render(
-        <Card onClick={onClick}>Clickable</Card>
-      );
+      const { container } = render(<Card onClick={onClick}>Clickable</Card>);
 
       const card = container.firstChild as HTMLElement;
       card.click();
@@ -56,23 +48,17 @@ describe('Card Components', () => {
     });
 
     it('applies cursor-pointer when clickable', () => {
-      const { container } = render(
-        <Card onClick={() => { }}>Clickable</Card>
-      );
+      const { container } = render(<Card onClick={() => {}}>Clickable</Card>);
 
       const card = container.firstChild;
       expect(card).toHaveClass('cursor-pointer');
     });
 
     it('renders as different element types', () => {
-      const { container: divContainer } = render(
-        <Card as="div">Div card</Card>
-      );
+      const { container: divContainer } = render(<Card as="div">Div card</Card>);
       expect(divContainer.firstChild?.nodeName).toBe('DIV');
 
-      const { container: articleContainer } = render(
-        <Card as="article">Article card</Card>
-      );
+      const { container: articleContainer } = render(<Card as="article">Article card</Card>);
       expect(articleContainer.firstChild?.nodeName).toBe('ARTICLE');
     });
 
@@ -122,7 +108,7 @@ describe('Card Components', () => {
       );
 
       const header = container.firstChild;
-      expect(header).toHaveClass('border-b', 'border-gray-100/10');
+      expect(header).toHaveClass('border-b', 'border-stone-100');
     });
 
     it('renders multiple children', () => {
@@ -138,9 +124,7 @@ describe('Card Components', () => {
     });
 
     it('rounds top corners', () => {
-      const { container } = render(
-        <CardHeader>Header</CardHeader>
-      );
+      const { container } = render(<CardHeader>Header</CardHeader>);
 
       const header = container.firstChild;
       expect(header).toHaveClass('border-b');
@@ -175,21 +159,17 @@ describe('Card Components', () => {
     });
 
     it('applies custom className', () => {
-      const { container } = render(
-        <CardBody className="custom-body">Content</CardBody>
-      );
+      const { container } = render(<CardBody className="custom-body">Content</CardBody>);
 
       const body = container.querySelector('.custom-body');
       expect(body).toBeInTheDocument();
     });
 
     it('has proper padding', () => {
-      const { container } = render(
-        <CardBody>Body</CardBody>
-      );
+      const { container } = render(<CardBody>Body</CardBody>);
 
       const body = container.firstChild;
-      expect(body).toHaveClass('px-4', 'sm:px-6');
+      expect(body).toHaveClass('px-3.5', 'sm:px-5');
     });
 
     it('memoizes to prevent unnecessary re-renders', () => {
@@ -221,27 +201,21 @@ describe('Card Components', () => {
     });
 
     it('applies custom className', () => {
-      const { container } = render(
-        <CardFooter className="custom-footer">Footer</CardFooter>
-      );
+      const { container } = render(<CardFooter className="custom-footer">Footer</CardFooter>);
 
       const footer = container.querySelector('.custom-footer');
       expect(footer).toBeInTheDocument();
     });
 
     it('has border-top styling', () => {
-      const { container } = render(
-        <CardFooter>Footer</CardFooter>
-      );
+      const { container } = render(<CardFooter>Footer</CardFooter>);
 
       const footer = container.firstChild;
       expect(footer).toHaveClass('border-t', 'border-gray-100/10');
     });
 
     it('rounds bottom corners', () => {
-      const { container } = render(
-        <CardFooter>Footer</CardFooter>
-      );
+      const { container } = render(<CardFooter>Footer</CardFooter>);
 
       const footer = container.firstChild;
       expect(footer).toHaveClass('border-t');
@@ -266,43 +240,27 @@ describe('Card Components', () => {
 
   describe('StatCard Component', () => {
     it('renders label and value', () => {
-      render(
-        <StatCard label="Users" value="1,234" />
-      );
+      render(<StatCard label="Users" value="1,234" />);
 
       expect(screen.getByText('Users')).toBeInTheDocument();
       expect(screen.getByText('1,234')).toBeInTheDocument();
     });
 
     it('renders with optional subtitle', () => {
-      render(
-        <StatCard label="Users" value="1,234" subtitle="Active users" />
-      );
+      render(<StatCard label="Users" value="1,234" subtitle="Active users" />);
 
       expect(screen.getByText('Active users')).toBeInTheDocument();
     });
 
     it('renders with positive trend', () => {
-      render(
-        <StatCard
-          label="Revenue"
-          value="$5,000"
-          trend={{ value: 15, isPositive: true }}
-        />
-      );
+      render(<StatCard label="Revenue" value="$5,000" trend={{ value: 15, isPositive: true }} />);
 
       expect(screen.getByText('Revenue')).toBeInTheDocument();
       expect(screen.getByText('$5,000')).toBeInTheDocument();
     });
 
     it('renders with negative trend', () => {
-      render(
-        <StatCard
-          label="Errors"
-          value="42"
-          trend={{ value: 5, isPositive: false }}
-        />
-      );
+      render(<StatCard label="Errors" value="42" trend={{ value: 5, isPositive: false }} />);
 
       expect(screen.getByText('Errors')).toBeInTheDocument();
       expect(screen.getByText('42')).toBeInTheDocument();
@@ -310,17 +268,13 @@ describe('Card Components', () => {
 
     it('renders with icon', () => {
       const TestIcon = () => <span data-testid="icon">📊</span>;
-      render(
-        <StatCard label="Stats" value="100" icon={<TestIcon />} />
-      );
+      render(<StatCard label="Stats" value="100" icon={<TestIcon />} />);
 
       expect(screen.getByTestId('icon')).toBeInTheDocument();
     });
 
     it('supports different color variants', () => {
-      const { rerender } = render(
-        <StatCard label="Blue" value="100" color="blue" />
-      );
+      const { rerender } = render(<StatCard label="Blue" value="100" color="blue" />);
       expect(screen.getByText('Blue')).toBeInTheDocument();
 
       rerender(<StatCard label="Green" value="100" color="green" />);
@@ -335,9 +289,7 @@ describe('Card Components', () => {
 
     it('handles click events', () => {
       const onClick = jest.fn();
-      const { container } = render(
-        <StatCard label="Clickable" value="100" onClick={onClick} />
-      );
+      const { container } = render(<StatCard label="Clickable" value="100" onClick={onClick} />);
 
       const statCard = container.firstChild as HTMLElement;
       statCard.click();
@@ -346,17 +298,13 @@ describe('Card Components', () => {
     });
 
     it('renders number values', () => {
-      render(
-        <StatCard label="Count" value={500} />
-      );
+      render(<StatCard label="Count" value={500} />);
 
       expect(screen.getByText('500')).toBeInTheDocument();
     });
 
     it('renders string values', () => {
-      render(
-        <StatCard label="Status" value="Active" />
-      );
+      render(<StatCard label="Status" value="Active" />);
 
       expect(screen.getByText('Active')).toBeInTheDocument();
     });
@@ -418,12 +366,10 @@ describe('Card Components', () => {
     });
 
     it('applies transition classes for smooth interactions', () => {
-      const { container } = render(
-        <Card hover={true}>Interactive</Card>
-      );
+      const { container } = render(<Card hover={true}>Interactive</Card>);
 
       const card = container.firstChild;
-      expect(card).toHaveClass('transition-all', 'duration-500');
+      expect(card).toHaveClass('transition-all', 'duration-300');
     });
 
     it('maintains consistent spacing', () => {
@@ -437,8 +383,8 @@ describe('Card Components', () => {
       const header = screen.getByText('Header').closest('div');
       const body = screen.getByText('Body').closest('div');
 
-      expect(header).toHaveClass('px-4', 'sm:px-6');
-      expect(body).toHaveClass('px-4', 'sm:px-6');
+      expect(header).toHaveClass('px-3.5', 'sm:px-5');
+      expect(body).toHaveClass('px-3.5', 'sm:px-5');
     });
   });
 
@@ -456,9 +402,7 @@ describe('Card Components', () => {
 
     it('supports keyboard interaction for clickable cards', () => {
       const onClick = jest.fn();
-      const { container } = render(
-        <Card onClick={onClick}>Clickable</Card>
-      );
+      const { container } = render(<Card onClick={onClick}>Clickable</Card>);
 
       const card = container.firstChild as HTMLElement;
       card.click();

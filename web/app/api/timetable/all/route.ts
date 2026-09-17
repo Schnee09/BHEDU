@@ -2,6 +2,8 @@ import { apiSuccess, createGetHandler } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = createGetHandler(
   {
     requireAuth: true,

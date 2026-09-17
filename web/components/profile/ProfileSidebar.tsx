@@ -25,7 +25,7 @@ interface ProfileSidebarProps {
 
 const ROLE_AVATAR_GRADIENT: Record<string, string> = {
   super_admin: 'from-slate-700 to-slate-900',
-  admin: 'from-violet-600 to-indigo-700',
+  admin: 'from-amber-600 to-stone-800',
   teacher: 'from-blue-500 to-cyan-600',
   student: 'from-emerald-500 to-teal-600',
   parent: 'from-amber-500 to-orange-500',

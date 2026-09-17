@@ -336,11 +336,14 @@ export default function TimetableSlotModal({
         const endTime = initialData.end_time?.substring(0, 5) || '18:30';
         const dayOfWeek = initialData.day_of_week ?? 0;
 
+        const teacherId = (initialData as any).teacher_id || initialData.teacher?.id || '';
+        const subjectId = (initialData as any).subject_id || initialData.subject?.id || '';
+
         setFormData({
           class_id: initialData.class_id || '',
           student_id: initialData.student_id || '',
-          subject_id: '',
-          teacher_id: '',
+          subject_id: subjectId,
+          teacher_id: teacherId,
           day_of_week: dayOfWeek,
           start_time: startTime,
           end_time: endTime,
