@@ -265,7 +265,10 @@ export default function ContinuousTimelineView({
                           onClick={() => onEditSlot(slot)}
                           className={cn(
                             'absolute rounded-2xl border backdrop-blur-md transition-all duration-200 cursor-pointer overflow-hidden group shadow-xs hover:shadow-md hover:z-20',
-                            isNarrowSlot ? 'p-2 sm:p-2.5' : 'p-2.5 sm:p-3',
+                            'flex flex-col justify-between',
+                            isNarrowSlot
+                              ? 'p-2 pb-2.5 sm:p-2.5 sm:pb-3'
+                              : 'p-2.5 pb-3 sm:p-3 sm:pb-3.5',
                             getSlotColorClasses(slot),
                             query &&
                               isMatch &&
@@ -280,88 +283,86 @@ export default function ContinuousTimelineView({
                           }}
                           title={`${titleName} | ${slot.start_time?.substring(0, 5)} - ${slot.end_time?.substring(0, 5)} | ${slot.subject?.name || ''} | ${slot.room || ''} | ${teacherName || ''}`}
                         >
-                          <div className="flex flex-col h-full justify-between gap-1 min-w-0 pb-1">
-                            {/* Top: Time & Edit Controls */}
-                            <div className="min-w-0">
-                              <div className="flex items-center justify-between gap-1 min-w-0 mb-0.5">
-                                <div className="inline-flex items-center gap-1 text-[10px] font-bold text-stone-600 dark:text-stone-300 opacity-90 leading-none whitespace-nowrap">
-                                  <Clock className="w-2.5 h-2.5 shrink-0 text-amber-500/80" />
-                                  <span>
-                                    {slot.start_time?.substring(0, 5)} -{' '}
-                                    {slot.end_time?.substring(0, 5)}
-                                  </span>
-                                </div>
+                          {/* Top: Time & Edit Controls */}
+                          <div className="min-w-0">
+                            <div className="flex items-center justify-between gap-1 min-w-0 mb-0.5">
+                              <div className="inline-flex items-center gap-1 text-[10px] font-bold text-stone-600 dark:text-stone-300 opacity-90 leading-none whitespace-nowrap">
+                                <Clock className="w-2.5 h-2.5 shrink-0 text-amber-500/80" />
+                                <span>
+                                  {slot.start_time?.substring(0, 5)} -{' '}
+                                  {slot.end_time?.substring(0, 5)}
+                                </span>
+                              </div>
 
-                                {/* Actions on Desktop Hover */}
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0">
+                              {/* Actions on Desktop Hover */}
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditSlot(slot);
+                                  }}
+                                  className="p-1 rounded-md bg-white/90 dark:bg-stone-800/90 text-stone-600 hover:text-amber-600 shadow-xs cursor-pointer"
+                                  title="Chỉnh sửa ca học"
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                </button>
+                                {onDeleteSlot && (
                                   <button
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      onEditSlot(slot);
+                                      onDeleteSlot(slot.id);
                                     }}
-                                    className="p-1 rounded-md bg-white/90 dark:bg-stone-800/90 text-stone-600 hover:text-amber-600 shadow-xs cursor-pointer"
-                                    title="Chỉnh sửa ca học"
+                                    className="p-1 rounded-md bg-white/90 dark:bg-stone-800/90 text-stone-600 hover:text-red-600 shadow-xs cursor-pointer"
+                                    title="Xóa ca học"
                                   >
-                                    <Edit3 className="w-3 h-3" />
+                                    <Trash2 className="w-3 h-3" />
                                   </button>
-                                  {onDeleteSlot && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        onDeleteSlot(slot.id);
-                                      }}
-                                      className="p-1 rounded-md bg-white/90 dark:bg-stone-800/90 text-stone-600 hover:text-red-600 shadow-xs cursor-pointer"
-                                      title="Xóa ca học"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Primary Title (Student or Class Name) with multi-line clamping */}
-                              <h4
-                                className={cn(
-                                  'font-bold text-stone-900 dark:text-white leading-snug min-w-0 break-words',
-                                  isNarrowSlot ? 'text-xs' : 'text-xs sm:text-sm',
-                                  heightPx > 65 ? 'line-clamp-2' : 'truncate'
                                 )}
-                              >
-                                {titleName}
-                              </h4>
-
-                              {/* Subject Badge (if available and slot is tall enough) */}
-                              {slot.subject?.name && heightPx > 75 && (
-                                <div className="mt-1 flex items-center gap-1">
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-white/80 dark:bg-stone-800/80 text-stone-700 dark:text-stone-300 border border-stone-200/60 dark:border-white/10 truncate max-w-full">
-                                    {slot.subject.name}
-                                  </span>
-                                </div>
-                              )}
+                              </div>
                             </div>
 
-                            {/* Bottom: Location & Teacher */}
-                            {!isShortSlot && (
-                              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-stone-600 dark:text-stone-400 pt-1 border-t border-black/5 dark:border-white/5 min-w-0">
-                                {slot.room && (
-                                  <span className="inline-flex items-center gap-1 font-semibold shrink-0">
-                                    <MapPin className="w-2.5 h-2.5 text-amber-500 shrink-0" />
-                                    <span className="truncate max-w-[100px]">{slot.room}</span>
-                                  </span>
-                                )}
-                                {teacherName && (
-                                  <span className="inline-flex items-center gap-1 font-medium min-w-0 max-w-full">
-                                    <Users className="w-2.5 h-2.5 text-stone-400 shrink-0" />
-                                    <span className="truncate max-w-[120px] sm:max-w-[180px]">
-                                      {teacherName}
-                                    </span>
-                                  </span>
-                                )}
+                            {/* Primary Title (Student or Class Name) with multi-line clamping */}
+                            <h4
+                              className={cn(
+                                'font-bold text-stone-900 dark:text-white leading-snug min-w-0 break-words',
+                                isNarrowSlot ? 'text-xs' : 'text-xs sm:text-sm',
+                                heightPx > 65 ? 'line-clamp-2' : 'truncate'
+                              )}
+                            >
+                              {titleName}
+                            </h4>
+
+                            {/* Subject Badge (if available and slot is tall enough) */}
+                            {slot.subject?.name && heightPx > 75 && (
+                              <div className="mt-1 flex items-center gap-1">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-white/80 dark:bg-stone-800/80 text-stone-700 dark:text-stone-300 border border-stone-200/60 dark:border-white/10 truncate max-w-full">
+                                  {slot.subject.name}
+                                </span>
                               </div>
                             )}
                           </div>
+
+                          {/* Bottom: Location & Teacher */}
+                          {!isShortSlot && (
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-stone-600 dark:text-stone-400 pt-1 border-t border-black/5 dark:border-white/5 min-w-0">
+                              {slot.room && (
+                                <span className="inline-flex items-center gap-1 font-semibold shrink-0">
+                                  <MapPin className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                                  <span className="truncate max-w-[100px]">{slot.room}</span>
+                                </span>
+                              )}
+                              {teacherName && (
+                                <span className="inline-flex items-center gap-1 font-medium min-w-0 max-w-full">
+                                  <Users className="w-2.5 h-2.5 text-stone-400 shrink-0" />
+                                  <span className="truncate max-w-[120px] sm:max-w-[180px]">
+                                    {teacherName}
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     }
