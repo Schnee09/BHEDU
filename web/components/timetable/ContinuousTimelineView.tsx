@@ -368,12 +368,30 @@ export default function ContinuousTimelineView({
                     }
                   )}
 
-                  {/* Empty State Overlay if no slots in range */}
+                  {/* Empty State Overlay if no slots in range (strictly bounded to grid area) */}
                   {positionedSlots.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
-                      <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">
-                        Chưa có tiết học trong khung giờ này
-                      </span>
+                    <div className="absolute inset-y-0 left-16 right-0 flex flex-col items-center justify-center p-4 text-center select-none z-10">
+                      <div className="flex flex-col items-center gap-2 max-w-[220px] sm:max-w-none">
+                        <div className="w-9 h-9 rounded-full bg-stone-100 dark:bg-stone-800/80 flex items-center justify-center text-stone-400 dark:text-stone-500 shadow-2xs">
+                          <Calendar className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-semibold text-stone-400 dark:text-stone-500 leading-snug">
+                          Chưa có tiết học trong khung giờ này
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onCreateSlot(selectedDay, {
+                              start: `${Math.floor(range.startHour)}:00`,
+                              end: `${Math.floor(range.startHour + 1)}:30`,
+                            })
+                          }
+                          className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold transition-all cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Thêm ngay</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
