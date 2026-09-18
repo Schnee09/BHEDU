@@ -144,6 +144,9 @@ export default function ContinuousTimelineView({
           const endMin = range.endHour * 60;
           const totalDurationMin = endMin - startMin;
           const totalHeightPx = totalDurationMin * PX_PER_MINUTE;
+          const TIMELINE_TOP_PADDING = 16;
+          const TIMELINE_BOTTOM_PADDING = 32;
+          const totalBoxHeightPx = totalHeightPx + TIMELINE_TOP_PADDING + TIMELINE_BOTTOM_PADDING;
           const timeTicks = generateTimeTicks(range.startHour, range.endHour, 15);
 
           // Get slots that fall inside this time range
@@ -189,7 +192,7 @@ export default function ContinuousTimelineView({
                 <div
                   className="relative border border-stone-200/80 dark:border-white/10 rounded-2xl bg-stone-50/50 dark:bg-stone-950/30 overflow-hidden transition-all"
                   style={{
-                    height: `${totalHeightPx}px`,
+                    height: `${totalBoxHeightPx}px`,
                     minWidth:
                       maxRangeCols >= 2 ? `${Math.max(460, 72 + maxRangeCols * 180)}px` : '100%',
                   }}
@@ -197,7 +200,7 @@ export default function ContinuousTimelineView({
                   {/* 15-Minute Grid Lines & Ticks */}
                   {timeTicks.map((tickStr) => {
                     const tickMin = timeToMinutes(tickStr);
-                    const topPx = (tickMin - startMin) * PX_PER_MINUTE;
+                    const topPx = TIMELINE_TOP_PADDING + (tickMin - startMin) * PX_PER_MINUTE;
                     const isHourTick = tickStr.endsWith(':00');
                     const isHalfHourTick = tickStr.endsWith(':30');
 
@@ -270,14 +273,14 @@ export default function ContinuousTimelineView({
                             query && !isMatch && 'opacity-30 grayscale-[50%]'
                           )}
                           style={{
-                            top: `${topPx + 2}px`,
+                            top: `${TIMELINE_TOP_PADDING + topPx + 2}px`,
                             height: `${heightPx - 4}px`,
                             left: `calc(4.2rem + (100% - 4.5rem) * ${leftPercent / 100})`,
                             width: `calc((100% - 4.5rem) * ${widthPercent / 100} - 4px)`,
                           }}
                           title={`${titleName} | ${slot.start_time?.substring(0, 5)} - ${slot.end_time?.substring(0, 5)} | ${slot.subject?.name || ''} | ${slot.room || ''} | ${teacherName || ''}`}
                         >
-                          <div className="flex flex-col h-full justify-between gap-1 min-w-0">
+                          <div className="flex flex-col h-full justify-between gap-1 min-w-0 pb-1">
                             {/* Top: Time & Edit Controls */}
                             <div className="min-w-0">
                               <div className="flex items-center justify-between gap-1 min-w-0 mb-0.5">
@@ -351,7 +354,9 @@ export default function ContinuousTimelineView({
                                 {teacherName && (
                                   <span className="inline-flex items-center gap-1 font-medium min-w-0 max-w-full">
                                     <Users className="w-2.5 h-2.5 text-stone-400 shrink-0" />
-                                    <span className="truncate">{teacherName}</span>
+                                    <span className="truncate max-w-[120px] sm:max-w-[180px]">
+                                      {teacherName}
+                                    </span>
                                   </span>
                                 )}
                               </div>
