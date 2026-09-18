@@ -1,6 +1,4 @@
 import { createServiceClient } from '@/lib/supabase/server';
-import { NotFoundError, ValidationError } from '@/lib/api/errors';
-import type { CreateUserInput, UpdateUserInput } from '@/lib/schemas';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TeacherRepository } from '../repositories/TeacherRepository';
 

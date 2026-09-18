@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 
 interface SwipeInput {
   onSwipedLeft?: () => void;

@@ -4,10 +4,10 @@
  * MIGRATED TO INSTANCE-BASED (Phase 2)
  */
 
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { NotFoundError, ValidationError } from "@/lib/api/errors";
-import type { CreateCourseInput, UpdateCourseInput } from "@/lib/schemas";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createServiceClient } from '@/lib/supabase/server';
+import { NotFoundError, ValidationError } from '@/lib/api/errors';
+import type { CreateCourseInput, UpdateCourseInput } from '@/lib/schemas';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface Course {
   id: string;
@@ -18,7 +18,7 @@ export interface Course {
   credits: number | null;
   created_at: string;
   updated_at: string;
-  status: "active" | "inactive" | "archived";
+  status: 'active' | 'inactive' | 'archived';
 }
 
 export class CourseService {
@@ -45,27 +45,25 @@ export class CourseService {
     const pageSize = filters?.pageSize || 20;
     const offset = (page - 1) * pageSize;
 
-    let query = this.supabase
-      .from("courses")
-      .select("*, subjects(id, name)", { count: "exact" });
+    let query = this.supabase.from('courses').select('*, subjects(id, name)', { count: 'exact' });
 
     if (filters?.subjectId) {
-      query = query.eq("subject_id", filters.subjectId);
+      query = query.eq('subject_id', filters.subjectId);
     }
 
     if (filters?.search) {
       query = query.or(
-        `name.ilike.%${filters.search}%,code.ilike.%${filters.search}%,description.ilike.%${filters.search}%`,
+        `name.ilike.%${filters.search}%,code.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
       );
     }
 
-    query = query.range(offset, offset + pageSize - 1).order("name");
+    query = query.range(offset, offset + pageSize - 1).order('name');
 
     const { data, error, count } = await query;
 
     if (error) {
-      console.error("Failed to fetch courses:", error);
-      throw new Error("Failed to fetch courses");
+      console.error('Failed to fetch courses:', error);
+      throw new Error('Failed to fetch courses');
     }
 
     return {
@@ -78,13 +76,13 @@ export class CourseService {
 
   async getCourseById(id: string): Promise<Course> {
     const { data, error } = await this.supabase
-      .from("courses")
-      .select("*, subjects(id, name)")
-      .eq("id", id)
+      .from('courses')
+      .select('*, subjects(id, name)')
+      .eq('id', id)
       .single();
 
     if (error || !data) {
-      throw new NotFoundError("Course not found");
+      throw new NotFoundError('Course not found');
     }
 
     return data;
@@ -92,27 +90,27 @@ export class CourseService {
 
   async createCourse(input: CreateCourseInput) {
     const { data: existing } = await this.supabase
-      .from("courses")
-      .select("id")
-      .eq("code", input.code)
+      .from('courses')
+      .select('id')
+      .eq('code', input.code)
       .single();
 
     if (existing) {
-      throw new ValidationError("Course code already exists");
+      throw new ValidationError('Course code already exists');
     }
 
     const { data: subject } = await this.supabase
-      .from("subjects")
-      .select("id")
-      .eq("id", input.subject_id)
+      .from('subjects')
+      .select('id')
+      .eq('id', input.subject_id)
       .single();
 
     if (!subject) {
-      throw new ValidationError("Subject not found");
+      throw new ValidationError('Subject not found');
     }
 
     const { data, error } = await this.supabase
-      .from("courses")
+      .from('courses')
       .insert({
         name: input.name,
         description: input.description || null,
@@ -125,8 +123,8 @@ export class CourseService {
       .single();
 
     if (error) {
-      console.error("Failed to create course:", error);
-      throw new Error("Failed to create course");
+      console.error('Failed to create course:', error);
+      throw new Error('Failed to create course');
     }
 
     return data;
@@ -137,39 +135,39 @@ export class CourseService {
 
     if (input.code) {
       const { data: existing } = await this.supabase
-        .from("courses")
-        .select("id")
-        .eq("code", input.code)
-        .neq("id", id)
+        .from('courses')
+        .select('id')
+        .eq('code', input.code)
+        .neq('id', id)
         .single();
 
       if (existing) {
-        throw new ValidationError("Course code already exists");
+        throw new ValidationError('Course code already exists');
       }
     }
 
     if (input.subject_id) {
       const { data: subject } = await this.supabase
-        .from("subjects")
-        .select("id")
-        .eq("id", input.subject_id)
+        .from('subjects')
+        .select('id')
+        .eq('id', input.subject_id)
         .single();
 
       if (!subject) {
-        throw new ValidationError("Subject not found");
+        throw new ValidationError('Subject not found');
       }
     }
 
     const { data, error } = await this.supabase
-      .from("courses")
+      .from('courses')
       .update(input)
-      .eq("id", id)
+      .eq('id', id)
       .select()
       .single();
 
     if (error) {
-      console.error("Failed to update course:", error);
-      throw new Error("Failed to update course");
+      console.error('Failed to update course:', error);
+      throw new Error('Failed to update course');
     }
 
     return data;
@@ -179,23 +177,20 @@ export class CourseService {
     await this.getCourseById(id);
 
     const { data: classes } = await this.supabase
-      .from("classes")
-      .select("id")
-      .eq("course_id", id)
+      .from('classes')
+      .select('id')
+      .eq('course_id', id)
       .limit(1);
 
     if (classes && classes.length > 0) {
-      throw new ValidationError("Cannot delete course with existing classes");
+      throw new ValidationError('Cannot delete course with existing classes');
     }
 
-    const { error } = await this.supabase
-      .from("courses")
-      .delete()
-      .eq("id", id);
+    const { error } = await this.supabase.from('courses').delete().eq('id', id);
 
     if (error) {
-      console.error("Failed to delete course:", error);
-      throw new Error("Failed to delete course");
+      console.error('Failed to delete course:', error);
+      throw new Error('Failed to delete course');
     }
   }
 
@@ -207,9 +202,7 @@ export class CourseService {
   // STATIC METHODS FOR BACKWARD COMPATIBILITY
   // ============================================================
 
-  static async getCourses(
-    filters?: Parameters<CourseService["getCourses"]>[0],
-  ) {
+  static async getCourses(filters?: Parameters<CourseService['getCourses']>[0]) {
     return courseService.getCourses(filters);
   }
 

@@ -6,9 +6,10 @@
  */
 
 import { createServiceClient } from '@/lib/supabase/server';
-import { ConflictError, NotFoundError, ValidationError } from '@/lib/api/errors';
+import { NotFoundError } from '@/lib/api/errors';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { calculateAverageGrade, EvaluationType, type Semester } from '@/lib/grades/types';
+import { invalidateCache, invalidateCacheByTag } from '@/lib/cache/cache';
 
 export interface GradeEntry {
   student_id: string;
@@ -156,6 +157,10 @@ export class GradeService {
     });
 
     if (error) throw error;
+
+    // Invalidate distributed cache for rankings and grades
+    await invalidateCache('rankings:');
+    await invalidateCacheByTag('grades');
 
     return { success: true, count: recordsToInsert.length };
   }

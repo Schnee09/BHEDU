@@ -1,6 +1,6 @@
 /**
  * Student Analytics Service
- * 
+ *
  * Provides comprehensive student performance analytics:
  * - Individual performance metrics
  * - Comparison with class/school averages
@@ -9,20 +9,8 @@
  * - Strength and weakness analysis
  */
 
-import { createClient } from '@/lib/supabase/client';
-import { 
-  SemesterGPA, 
-  calculateCumulativeGPA, 
-  getAcademicStanding,
-  ACADEMIC_STANDINGS,
-  getProgressToNextStanding,
-} from '@/lib/grades/gpaCalculator';
-import { 
-  RiskAssessment, 
-  GradeTrend,
-  calculateGradeTrend,
-  assessRisk,
-} from '@/lib/grades/gradePredictor';
+import type { SemesterGPA } from '@/lib/grades/gpaCalculator';
+import type { RiskAssessment, GradeTrend } from '@/lib/grades/gradePredictor';
 
 export interface SubjectPerformance {
   subjectId: string;
@@ -136,22 +124,23 @@ export interface SchoolAnalytics {
 /**
  * Calculate student's strengths and weaknesses
  */
-export function analyzeStrengthsWeaknesses(
-  subjectPerformances: SubjectPerformance[]
-): { strengths: string[]; weaknesses: string[] } {
+export function analyzeStrengthsWeaknesses(subjectPerformances: SubjectPerformance[]): {
+  strengths: string[];
+  weaknesses: string[];
+} {
   const sorted = [...subjectPerformances].sort(
-    (a, b) => (b.currentScore - b.classAverage) - (a.currentScore - a.classAverage)
+    (a, b) => b.currentScore - b.classAverage - (a.currentScore - a.classAverage)
   );
 
   const strengths = sorted
-    .filter(s => s.currentScore > s.classAverage + 0.5)
+    .filter((s) => s.currentScore > s.classAverage + 0.5)
     .slice(0, 3)
-    .map(s => s.subjectName);
+    .map((s) => s.subjectName);
 
   const weaknesses = sorted
-    .filter(s => s.currentScore < s.classAverage - 0.5)
+    .filter((s) => s.currentScore < s.classAverage - 0.5)
     .slice(-3)
-    .map(s => s.subjectName);
+    .map((s) => s.subjectName);
 
   return { strengths, weaknesses };
 }
@@ -159,15 +148,13 @@ export function analyzeStrengthsWeaknesses(
 /**
  * Generate personalized recommendations
  */
-export function generateRecommendations(
-  analytics: {
-    gpa: number;
-    trend: GradeTrend;
-    attendance: AttendanceSummary;
-    weaknesses: string[];
-    risk: RiskAssessment;
-  }
-): string[] {
+export function generateRecommendations(analytics: {
+  gpa: number;
+  trend: GradeTrend;
+  attendance: AttendanceSummary;
+  weaknesses: string[];
+  risk: RiskAssessment;
+}): string[] {
   const recommendations: string[] = [];
 
   // GPA-based recommendations
@@ -177,7 +164,9 @@ export function generateRecommendations(
   } else if (analytics.gpa < 6.5) {
     recommendations.push('Cần nỗ lực thêm để nâng cao học lực từ Trung bình lên Khá');
   } else if (analytics.gpa >= 8.0) {
-    recommendations.push('Tiếp tục phát huy, có thể thử thách bản thân với các cuộc thi học sinh giỏi');
+    recommendations.push(
+      'Tiếp tục phát huy, có thể thử thách bản thân với các cuộc thi học sinh giỏi'
+    );
   }
 
   // Trend-based recommendations
@@ -219,9 +208,7 @@ export function calculateImprovementMetrics(
   message: string;
 } {
   const improvement = currentGPA - previousGPA;
-  const improvementPercent = previousGPA > 0 
-    ? Math.round((improvement / previousGPA) * 100) 
-    : 0;
+  const improvementPercent = previousGPA > 0 ? Math.round((improvement / previousGPA) * 100) : 0;
 
   const gap = targetGPA - currentGPA;
   const onTrack = improvement >= 0 && (currentGPA >= targetGPA || improvement >= 0.2);
@@ -324,17 +311,17 @@ export function formatForCharts(
   radarChart: Array<{ subject: string; score: number; fullMark: number }>;
 } {
   return {
-    gpaChart: semesterGPAs.map(s => ({
+    gpaChart: semesterGPAs.map((s) => ({
       semester: s.semesterName,
       gpa: s.gpa,
       standing: s.standing.labelVi,
     })),
-    subjectChart: subjectPerformances.map(s => ({
+    subjectChart: subjectPerformances.map((s) => ({
       subject: s.subjectName,
       student: s.currentScore,
       classAverage: s.classAverage,
     })),
-    radarChart: subjectPerformances.map(s => ({
+    radarChart: subjectPerformances.map((s) => ({
       subject: s.subjectName,
       score: s.currentScore,
       fullMark: 10,

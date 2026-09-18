@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import { useFetch } from '@/hooks/useFetch';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
-import { Icons } from '@/components/ui/Icons';
 import { Users, BookOpen, MapPin } from 'lucide-react';
 
 import { useProfile } from '@/hooks/useProfile';

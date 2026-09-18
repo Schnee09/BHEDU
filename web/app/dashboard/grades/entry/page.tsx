@@ -927,6 +927,10 @@ const GradeInput = React.memo(function GradeInput({
     }
   };
 
+  const num = Number(localValue);
+  const isInlineError = localValue !== '' && !isNaN(num) && (num < 0 || num > 10);
+  const displayError = error || (isInlineError ? 'Điểm phải từ 0 đến 10' : undefined);
+
   return (
     <div className={cn('flex flex-col items-center gap-0.5 group', isMobile && 'w-full')}>
       <Input
@@ -946,11 +950,13 @@ const GradeInput = React.memo(function GradeInput({
           isMobile ? 'w-full h-9 text-sm' : 'w-24 h-9 text-xs sm:text-sm',
           'bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-white/10',
           'focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500',
-          error ? 'border-rose-500 ring-rose-500/10' : ''
+          displayError ? 'border-rose-500 ring-rose-500/10 text-rose-600 dark:text-rose-400' : ''
         )}
       />
-      {error && (
-        <span className="text-[9px] text-rose-600 font-bold uppercase tracking-tight">{error}</span>
+      {displayError && (
+        <span className="text-[9px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-tight">
+          {displayError}
+        </span>
       )}
     </div>
   );

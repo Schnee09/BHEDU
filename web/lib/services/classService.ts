@@ -7,11 +7,11 @@
  * - Default singleton exported for backward compatibility
  */
 
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { NotFoundError, ValidationError } from "@/lib/api/errors";
-import type { CreateClassInput, UpdateClassInput } from "@/lib/schemas";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { hasPermission, UserRole } from "@/lib/auth/core";
+import { createServiceClient } from '@/lib/supabase/server';
+import { NotFoundError, ValidationError } from '@/lib/api/errors';
+import type { CreateClassInput, UpdateClassInput } from '@/lib/schemas';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { hasPermission, UserRole } from '@/lib/auth/core';
 
 export interface Class {
   id: string;
@@ -23,7 +23,7 @@ export interface Class {
   capacity: number | null;
   created_at: string;
   updated_at: string;
-  status: "active" | "inactive" | "completed";
+  status: 'active' | 'inactive' | 'completed';
 }
 
 export interface ClassWithDetails extends Class {
@@ -88,38 +88,36 @@ export class ClassService {
     const offset = (page - 1) * pageSize;
     const { role, profileId } = filters?.context || {};
 
-    let query = this.supabase
-      .from("classes")
-      .select(
-        `
+    let query = this.supabase.from('classes').select(
+      `
         *,
         teacher:profiles!teacher_id (id, first_name, last_name, email, subject_id, subjects (id, name, code)),
         academic_years (id, name, start_date, end_date)
       `,
-        { count: "exact" },
-      );
+      { count: 'exact' }
+    );
 
     // --- Role-based Visibility Logic (Centralized) ---
     if (role && profileId) {
-      if (hasPermission(role, "classes.manage")) {
+      if (hasPermission(role, 'classes.manage')) {
         // Staff/Admin - No additional filtering (sees all)
-      } else if (role === "teacher") {
+      } else if (role === 'teacher') {
         // Teachers - See their assigned classes
-        query = query.eq("teacher_id", profileId);
-      } else if (role === "student") {
+        query = query.eq('teacher_id', profileId);
+      } else if (role === 'student') {
         // Students - See classes they are enrolled in
         // We use a subquery/join approach for efficiency
         const { data: enrollmentData } = await this.supabase
-          .from("enrollments")
-          .select("class_id")
-          .eq("student_id", profileId)
-          .eq("status", "enrolled");
+          .from('enrollments')
+          .select('class_id')
+          .eq('student_id', profileId)
+          .eq('status', 'enrolled');
 
         const classIds = (enrollmentData || []).map((e) => e.class_id);
         if (classIds.length === 0) {
           return { classes: [], total: 0, page, pageSize };
         }
-        query = query.in("id", classIds);
+        query = query.in('id', classIds);
       } else {
         // Other roles - return empty potentially or handle based on rules
         return { classes: [], total: 0, page, pageSize };
@@ -127,22 +125,22 @@ export class ClassService {
     }
 
     if (filters?.teacherId) {
-      query = query.eq("teacher_id", filters.teacherId);
+      query = query.eq('teacher_id', filters.teacherId);
     }
     if (filters?.academicYearId) {
-      query = query.eq("academic_year_id", filters.academicYearId);
+      query = query.eq('academic_year_id', filters.academicYearId);
     }
     if (filters?.search) {
-      query = query.ilike("name", `%${filters.search}%`);
+      query = query.ilike('name', `%${filters.search}%`);
     }
 
-    query = query.range(offset, offset + pageSize - 1).order("name");
+    query = query.range(offset, offset + pageSize - 1).order('name');
 
     const { data, error, count } = await query;
 
     if (error) {
-      console.error("Failed to fetch classes:", error);
-      throw new Error("Failed to fetch classes");
+      console.error('Failed to fetch classes:', error);
+      throw new Error('Failed to fetch classes');
     }
 
     return {
@@ -158,24 +156,26 @@ export class ClassService {
    */
   async getClassById(id: string): Promise<ClassWithDetails> {
     const { data, error } = await this.supabase
-      .from("classes")
-      .select(`
+      .from('classes')
+      .select(
+        `
         *,
         teacher:profiles!teacher_id (id, first_name, last_name, email, subject_id, subjects (id, name, code)),
         academic_years (id, name, start_date, end_date)
-      `)
-      .eq("id", id)
+      `
+      )
+      .eq('id', id)
       .single();
 
     if (error || !data) {
-      throw new NotFoundError("Class not found");
+      throw new NotFoundError('Class not found');
     }
 
     const { count } = await this.supabase
-      .from("enrollments")
-      .select("*", { count: "exact", head: true })
-      .eq("class_id", id)
-      .eq("status", "enrolled");
+      .from('enrollments')
+      .select('*', { count: 'exact', head: true })
+      .eq('class_id', id)
+      .eq('status', 'enrolled');
 
     return {
       ...data,
@@ -189,32 +189,32 @@ export class ClassService {
   async createClass(input: CreateClassInput) {
     // Verify teacher exists and has teacher role
     const { data: teacher } = await this.supabase
-      .from("profiles")
-      .select("id, role")
-      .eq("id", input.teacher_id)
+      .from('profiles')
+      .select('id, role')
+      .eq('id', input.teacher_id)
       .single();
 
     if (!teacher) {
-      throw new ValidationError("Teacher not found");
+      throw new ValidationError('Teacher not found');
     }
 
-    if (teacher.role !== "teacher" && teacher.role !== "admin") {
-      throw new ValidationError("User must have teacher or admin role");
+    if (teacher.role !== 'teacher' && teacher.role !== 'admin') {
+      throw new ValidationError('User must have teacher or admin role');
     }
 
     // Verify academic year exists
     const { data: academicYear } = await this.supabase
-      .from("academic_years")
-      .select("id")
-      .eq("id", input.academic_year_id)
+      .from('academic_years')
+      .select('id')
+      .eq('id', input.academic_year_id)
       .single();
 
     if (!academicYear) {
-      throw new ValidationError("Academic year not found");
+      throw new ValidationError('Academic year not found');
     }
 
     const { data, error } = await this.supabase
-      .from("classes")
+      .from('classes')
       .insert({
         name: input.name,
         teacher_id: input.teacher_id,
@@ -229,8 +229,8 @@ export class ClassService {
       .single();
 
     if (error) {
-      console.error("Failed to create class:", error);
-      throw new Error("Failed to create class");
+      console.error('Failed to create class:', error);
+      throw new Error('Failed to create class');
     }
 
     return data;
@@ -246,43 +246,43 @@ export class ClassService {
     // Validate teacher if provided
     if (input.teacher_id) {
       const { data: teacher } = await this.supabase
-        .from("profiles")
-        .select("id, role")
-        .eq("id", input.teacher_id)
+        .from('profiles')
+        .select('id, role')
+        .eq('id', input.teacher_id)
         .single();
 
       if (!teacher) {
-        throw new ValidationError("Teacher not found");
+        throw new ValidationError('Teacher not found');
       }
 
-      if (teacher.role !== "teacher" && teacher.role !== "admin") {
-        throw new ValidationError("User must have teacher or admin role");
+      if (teacher.role !== 'teacher' && teacher.role !== 'admin') {
+        throw new ValidationError('User must have teacher or admin role');
       }
     }
 
     // Validate academic year if provided
     if (input.academic_year_id) {
       const { data: academicYear } = await this.supabase
-        .from("academic_years")
-        .select("id")
-        .eq("id", input.academic_year_id)
+        .from('academic_years')
+        .select('id')
+        .eq('id', input.academic_year_id)
         .single();
 
       if (!academicYear) {
-        throw new ValidationError("Academic year not found");
+        throw new ValidationError('Academic year not found');
       }
     }
 
     const { data, error } = await this.supabase
-      .from("classes")
+      .from('classes')
       .update(input)
-      .eq("id", id)
+      .eq('id', id)
       .select()
       .single();
 
     if (error) {
-      console.error("Failed to update class:", error);
-      throw new Error("Failed to update class");
+      console.error('Failed to update class:', error);
+      throw new Error('Failed to update class');
     }
 
     return data;
@@ -297,25 +297,22 @@ export class ClassService {
 
     // Check if class has enrollments
     const { data: enrollments } = await this.supabase
-      .from("enrollments")
-      .select("id")
-      .eq("class_id", id)
+      .from('enrollments')
+      .select('id')
+      .eq('class_id', id)
       .limit(1);
 
     if (enrollments && enrollments.length > 0) {
       throw new ValidationError(
-        "Cannot delete class with existing enrollments. Remove enrollments first."
+        'Cannot delete class with existing enrollments. Remove enrollments first.'
       );
     }
 
-    const { error } = await this.supabase
-      .from("classes")
-      .delete()
-      .eq("id", id);
+    const { error } = await this.supabase.from('classes').delete().eq('id', id);
 
     if (error) {
-      console.error("Failed to delete class:", error);
-      throw new Error("Failed to delete class");
+      console.error('Failed to delete class:', error);
+      throw new Error('Failed to delete class');
     }
   }
 
@@ -324,8 +321,9 @@ export class ClassService {
    */
   async getClassStudents(classId: string) {
     const { data, error } = await this.supabase
-      .from("enrollments")
-      .select(`
+      .from('enrollments')
+      .select(
+        `
         id,
         enrollment_date,
         status,
@@ -339,14 +337,15 @@ export class ClassService {
             student_code
           )
         )
-      `)
-      .eq("class_id", classId)
-      .eq("status", "enrolled")
-      .order("student(last_name)"); // Note: Specific join ordering syntax might vary
+      `
+      )
+      .eq('class_id', classId)
+      .eq('status', 'enrolled')
+      .order('student(last_name)'); // Note: Specific join ordering syntax might vary
 
     if (error) {
-      console.error("Failed to fetch class students:", error);
-      throw new Error("Failed to fetch class students");
+      console.error('Failed to fetch class students:', error);
+      throw new Error('Failed to fetch class students');
     }
 
     return data;
@@ -356,7 +355,7 @@ export class ClassService {
    * Get assignments for a class
    * @deprecated Legacy functionality
    */
-  async getClassAssignments(classId: string) {
+  async getClassAssignments(_classId: string) {
     return [];
   }
 
@@ -365,8 +364,9 @@ export class ClassService {
    */
   async getClassAttendance(classId: string, date?: string) {
     let query = this.supabase
-      .from("attendance")
-      .select(`
+      .from('attendance')
+      .select(
+        `
         *,
         student:profiles!student_id (
           id,
@@ -374,19 +374,20 @@ export class ClassService {
           last_name,
           full_name
         )
-      `)
-      .eq("class_id", classId)
-      .order("date", { ascending: false });
+      `
+      )
+      .eq('class_id', classId)
+      .order('date', { ascending: false });
 
     if (date) {
-      query = query.eq("date", date);
+      query = query.eq('date', date);
     }
 
     const { data, error } = await query;
 
     if (error) {
-      console.error("Failed to fetch attendance:", error);
-      throw new Error("Failed to fetch attendance");
+      console.error('Failed to fetch attendance:', error);
+      throw new Error('Failed to fetch attendance');
     }
 
     return data;
@@ -397,9 +398,9 @@ export class ClassService {
    */
   async getClassGradeStats(classId: string) {
     const { data: grades } = await this.supabase
-      .from("grades")
-      .select("score")
-      .eq("class_id", classId);
+      .from('grades')
+      .select('score')
+      .eq('class_id', classId);
 
     if (!grades || grades.length === 0) {
       return {
@@ -410,9 +411,7 @@ export class ClassService {
       };
     }
 
-    const scores = grades.map((g) => g.score).filter((s) =>
-      s != null && !isNaN(s)
-    );
+    const scores = grades.map((g) => g.score).filter((s) => s != null && !isNaN(s));
 
     if (scores.length === 0) {
       return {
@@ -447,7 +446,7 @@ export class ClassService {
   // These delegate to the default singleton instance
   // ============================================================
 
-  static async getClasses(filters?: Parameters<ClassService["getClasses"]>[0]) {
+  static async getClasses(filters?: Parameters<ClassService['getClasses']>[0]) {
     return classService.getClasses(filters);
   }
 

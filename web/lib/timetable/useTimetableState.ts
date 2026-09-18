@@ -4,7 +4,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { apiFetch } from '@/lib/api/client';
 import { useToast } from '@/hooks/useToast';
 import { getWeekDates } from './utils';
-import { CAMPUSES, ALL_SESSIONS } from './constants';
 import { TimetableSlot, ClassOption, TeacherOption } from './types';
 
 export type PrimaryTab = 'personal' | 'room' | 'class' | 'teacher';
@@ -12,7 +11,7 @@ export type DisplayLayout = 'timeline' | 'agenda' | 'grid';
 
 export function useTimetableState() {
   const { profile, loading: profileLoading } = useProfile();
-  const { can, role, isAdmin, isTeacher, isStudent } = usePermissions();
+  const { can, role, isAdmin } = usePermissions();
   const toast = useToast();
 
   const canEdit = can('timetable.edit') || role === 'super_admin' || role === 'owner';
@@ -34,7 +33,7 @@ export function useTimetableState() {
   // Data States
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState<TimetableSlot[]>([]);
-  const [personalSlots, setPersonalSlots] = useState<TimetableSlot[]>([]);
+  const [personalSlots] = useState<TimetableSlot[]>([]);
   const [branches, setBranches] = useState<string[]>([]);
   const [branchRooms, setBranchRooms] = useState<Record<string, string[]>>({});
   const [dynamicRooms, setDynamicRooms] = useState<string[]>([]);

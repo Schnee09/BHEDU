@@ -2,18 +2,25 @@
 // Browser-side Supabase client using @supabase/ssr
 // Use this in client components and browser code
 
-import { createBrowserClient } from '@supabase/ssr'
+import { createBrowserClient } from '@supabase/ssr';
 
-let client: ReturnType<typeof createBrowserClient> | null = null
+declare global {
+  var __supabaseBrowserClient: ReturnType<typeof createBrowserClient> | undefined;
+}
+
+let client: ReturnType<typeof createBrowserClient> | null = null;
 
 export function createClient() {
-  if (client) return client
+  if (typeof window !== 'undefined' && globalThis.__supabaseBrowserClient) {
+    return globalThis.__supabaseBrowserClient;
+  }
+  if (client) return client;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anonKey) {
-    console.warn('Missing Supabase env vars, returning stub client')
+    console.warn('Missing Supabase env vars, returning stub client');
     // Return a minimal stub to avoid crashes in development
     return {
       from: () => ({
@@ -26,12 +33,19 @@ export function createClient() {
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
       },
-    } as any
+    } as any;
   }
 
-  client = createBrowserClient(url, anonKey)
-  return client
+  client = createBrowserClient(url, anonKey, {
+    isSingleton: true,
+  });
+
+  if (typeof window !== 'undefined') {
+    globalThis.__supabaseBrowserClient = client;
+  }
+
+  return client;
 }
 
 // Singleton export for convenience
-export const supabase = createClient()
+export const supabase = createClient();

@@ -1,5 +1,6 @@
 import { apiSuccess, createGetHandler } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
+import { cached, CACHE_TTL } from '@/lib/cache/cache';
 
 // Dynamic route — cannot use ISR (revalidate) because it requires auth
 export const dynamic = 'force-dynamic';
@@ -9,81 +10,91 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request }) =
   const limit = parseInt(url.searchParams.get('limit') || '10', 10);
   const teacherId = url.searchParams.get('teacher_id');
 
-  // Use service client to calculate global rankings, bypassing RLS
-  const supabase = createServiceClient();
+  const cacheKey = `rankings:${teacherId || 'global'}:${limit}`;
 
-  // 1. Fetch rankings from Database RPC
-  const { data: rankings, error } = await supabase.rpc('get_student_rankings');
+  const result = await cached(
+    cacheKey,
+    async () => {
+      // Use service client to calculate global rankings, bypassing RLS
+      const supabase = createServiceClient();
 
-  if (error) {
-    console.error('Error fetching rankings from RPC:', error);
-    return apiSuccess({
-      topStudents: [],
-      atRiskStudents: [],
-    });
-  }
+      // 1. Fetch rankings from Database RPC (SQL optimized fallback defense)
+      const { data: rankings, error } = await supabase.rpc('get_student_rankings');
 
-  // 2. Query class names if filtering by teacher
-  let teacherClassNames: string[] = [];
-  if (teacherId) {
-    const { data: teacherClasses } = await supabase
-      .from('classes')
-      .select('name')
-      .eq('teacher_id', teacherId);
-    teacherClassNames = teacherClasses?.map((c: any) => c.name) || [];
-  }
+      if (error) {
+        console.error('Error fetching rankings from RPC:', error);
+        return {
+          topStudents: [],
+          atRiskStudents: [],
+        };
+      }
 
-  interface StudentRankingRow {
-    student_id: string;
-    student_name: string;
-    class_name: string;
-    average: string | number;
-    rank: string | number;
-    percentile: string | number;
-  }
+      // 2. Query class names if filtering by teacher
+      let teacherClassNames: string[] = [];
+      if (teacherId) {
+        const { data: teacherClasses } = await supabase
+          .from('classes')
+          .select('name')
+          .eq('teacher_id', teacherId);
+        teacherClassNames = teacherClasses?.map((c: any) => c.name) || [];
+      }
 
-  // 3. Map database columns
-  const formattedRankings = (rankings || []).map((student: StudentRankingRow) => ({
-    studentId: student.student_id,
-    studentName: student.student_name,
-    className: student.class_name,
-    average: Number(student.average),
-    rank: Number(student.rank),
-    percentile: Number(student.percentile),
-    change: 0,
-  }));
+      interface StudentRankingRow {
+        student_id: string;
+        student_name: string;
+        class_name: string;
+        average: string | number;
+        rank: string | number;
+        percentile: string | number;
+      }
 
-  // 4. Filter by teacher's classes if requested
-  let filteredRankings = formattedRankings;
-  if (teacherId) {
-    if (teacherClassNames.length === 0) {
-      return apiSuccess({
-        topStudents: [],
-        atRiskStudents: [],
-      });
-    }
-    filteredRankings = formattedRankings.filter((student: any) =>
-      teacherClassNames.includes(student.className)
-    );
-  }
+      // 3. Map database columns
+      const formattedRankings = (rankings || []).map((student: StudentRankingRow) => ({
+        studentId: student.student_id,
+        studentName: student.student_name,
+        className: student.class_name,
+        average: Number(student.average),
+        rank: Number(student.rank),
+        percentile: Number(student.percentile),
+        change: 0,
+      }));
 
-  const filteredTotal = filteredRankings.length;
+      // 4. Filter by teacher's classes if requested
+      let filteredRankings = formattedRankings;
+      if (teacherId) {
+        if (teacherClassNames.length === 0) {
+          return apiSuccess({
+            topStudents: [],
+            atRiskStudents: [],
+          });
+        }
+        filteredRankings = formattedRankings.filter((student: any) =>
+          teacherClassNames.includes(student.className)
+        );
+      }
 
-  // 5. Extract Top Performers
-  const topStudents = filteredRankings.slice(0, limit);
+      const filteredTotal = filteredRankings.length;
 
-  // 6. Extract At-Risk (Bottom Performers with average < 5.0)
-  const atRiskStudents = [...filteredRankings]
-    .filter((student) => student.average < 5.0)
-    .reverse()
-    .slice(0, limit)
-    .map((student: any, index: number) => ({
-      ...student,
-      rank: filteredTotal - index,
-    }));
+      // 5. Extract Top Performers
+      const topStudents = filteredRankings.slice(0, limit);
 
-  return apiSuccess({
-    topStudents,
-    atRiskStudents,
-  });
+      // 6. Extract At-Risk (Bottom Performers with average < 5.0)
+      const atRiskStudents = [...filteredRankings]
+        .filter((student) => student.average < 5.0)
+        .reverse()
+        .slice(0, limit)
+        .map((student: any, index: number) => ({
+          ...student,
+          rank: filteredTotal - index,
+        }));
+
+      return {
+        topStudents,
+        atRiskStudents,
+      };
+    },
+    { ttl: CACHE_TTL.SHORT, tags: ['grades', 'rankings'] }
+  );
+
+  return apiSuccess(result);
 });

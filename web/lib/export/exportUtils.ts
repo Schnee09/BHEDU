@@ -44,7 +44,7 @@ export function exportToCSV(data: Record<string, unknown>[], filename: string): 
 export function exportToExcel(
   data: Record<string, unknown>[],
   filename: string,
-  sheetName?: string
+  _sheetName?: string
 ): void {
   // For basic Excel export, we use CSV format
   // For more complex Excel features, consider using xlsx library
@@ -92,7 +92,7 @@ export function exportToPDF(
           h1 {
             text-align: center;
             color: #1f2937;
-            border-bottom: 2px solid #6366f1;
+            border-bottom: 2px solid #d97706;
             padding-bottom: 10px;
           }
           table {

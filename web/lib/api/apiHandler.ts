@@ -25,7 +25,7 @@ import { getAuthContext } from '@/lib/auth/guard';
 import { UserRole, isAtLeast } from '@/lib/auth/core';
 import { AuthenticationError, AuthorizationError, handleApiError, ValidationError } from './errors';
 import { API_VERSION, withVersionHeaders } from './apiVersion';
-import { logger, logRequest, logResponse } from '@/lib/logger';
+import { logRequest, logResponse } from '@/lib/logger';
 
 // Types
 export interface ApiUser {
@@ -101,7 +101,7 @@ function inferPermissionFromPath(method: string, urlStr: string): string | undef
       if (m === 'PATCH' || m === 'PUT') return 'students.edit';
       if (m === 'DELETE') return 'students.delete';
     }
-  } catch (e) {
+  } catch {
     // Ignore URL parsing errors
   }
   return undefined;
@@ -179,7 +179,9 @@ export function createApiHandler<TBody = unknown>(
                 throw new ValidationError('Dữ liệu gửi lên không hợp lệ');
               }
               const fieldName = firstError.path.join('.');
-              const message = fieldName ? `${fieldName}: ${firstError.message}` : firstError.message;
+              const message = fieldName
+                ? `${fieldName}: ${firstError.message}`
+                : firstError.message;
               throw new ValidationError(message);
             }
 

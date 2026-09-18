@@ -6,10 +6,15 @@
  * Aligned with BH-EDU v5.0 Architecture and SOLID principles.
  */
 
-import { SupabaseClient } from "@supabase/supabase-js";
-import { createServiceClient } from "@/lib/supabase/server";
-import { FinanceRepository, Invoice, Payment, StudentAccount, FinanceOverview, InvoiceFilters } from "@/lib/repositories/FinanceRepository";
-import { ValidationError, NotFoundError } from "@/lib/api/errors";
+import { SupabaseClient } from '@supabase/supabase-js';
+import { createServiceClient } from '@/lib/supabase/server';
+import {
+  FinanceRepository,
+  Payment,
+  FinanceOverview,
+  InvoiceFilters,
+} from '@/lib/repositories/FinanceRepository';
+import { ValidationError, NotFoundError } from '@/lib/api/errors';
 
 export class FinanceService {
   private supabase: SupabaseClient;
@@ -33,7 +38,7 @@ export class FinanceService {
    */
   async getOverview(academicYearId: string): Promise<FinanceOverview> {
     if (!academicYearId) {
-      throw new ValidationError("Academic Year ID is required");
+      throw new ValidationError('Academic Year ID is required');
     }
     return this.financeRepository.getOverviewStats(academicYearId);
   }
@@ -60,13 +65,13 @@ export class FinanceService {
     }
   ): Promise<Payment> {
     const { data: invoice, error } = await this.supabase
-      .from("invoices")
-      .select("student_id")
-      .eq("id", invoiceId)
+      .from('invoices')
+      .select('student_id')
+      .eq('id', invoiceId)
       .single();
 
     if (error || !invoice) {
-      throw new NotFoundError("Hóa đơn không tồn tại");
+      throw new NotFoundError('Hóa đơn không tồn tại');
     }
 
     return this.financeRepository.recordInvoicePayment({
@@ -87,34 +92,38 @@ export class FinanceService {
   async getTuitionMatrix(classId: string, academicYearId: string, months: string[]) {
     // 1. Fetch class details
     const { data: classObj } = await this.supabase
-      .from("classes")
-      .select("name")
-      .eq("id", classId)
+      .from('classes')
+      .select('name')
+      .eq('id', classId)
       .single();
 
     if (!classObj) {
-      throw new NotFoundError("Lớp học không tồn tại");
+      throw new NotFoundError('Lớp học không tồn tại');
     }
 
     // 2. Fetch all active student enrollments
     const { data: enrollments, error: enrollError } = await this.supabase
-      .from("enrollments")
-      .select(`
+      .from('enrollments')
+      .select(
+        `
         student_id,
         student:profiles!student_id(id, full_name, student_code)
-      `)
-      .eq("class_id", classId)
-      .eq("status", "enrolled");
+      `
+      )
+      .eq('class_id', classId)
+      .eq('status', 'enrolled');
 
     if (enrollError) {
       throw new Error(`Failed to fetch enrollments: ${enrollError.message}`);
     }
 
-    const students = (enrollments || []).map((e: any) => ({
-      id: e.student.id,
-      full_name: e.student.full_name,
-      student_code: e.student.student_code,
-    })).sort((a, b) => a.full_name.localeCompare(b.full_name, "vi"));
+    const students = (enrollments || [])
+      .map((e: any) => ({
+        id: e.student.id,
+        full_name: e.student.full_name,
+        student_code: e.student.student_code,
+      }))
+      .sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
 
     if (students.length === 0) {
       return { students: [], matrix: {} };
@@ -124,11 +133,11 @@ export class FinanceService {
 
     // 3. Fetch all invoices for these students matching issue_date (months)
     const { data: invoices, error: invoiceError } = await this.supabase
-      .from("invoices")
-      .select("id, student_id, issue_date, due_date, total_amount, paid_amount, status")
-      .in("student_id", studentIds)
-      .eq("academic_year_id", academicYearId)
-      .in("issue_date", months);
+      .from('invoices')
+      .select('id, student_id, issue_date, due_date, total_amount, paid_amount, status')
+      .in('student_id', studentIds)
+      .eq('academic_year_id', academicYearId)
+      .in('issue_date', months);
 
     if (invoiceError) {
       throw new Error(`Failed to fetch invoices: ${invoiceError.message}`);
@@ -137,12 +146,12 @@ export class FinanceService {
     // 4. Map invoices into matrix dictionary
     // Structure: { [studentId]: { [month]: { invoiceId, status, total, paid } } }
     const matrix: Record<string, Record<string, any>> = {};
-    
+
     // Initialize student rows
     students.forEach((s) => {
       const studentMap: Record<string, any> = {};
       months.forEach((m) => {
-        studentMap[m] = { status: "not_created" };
+        studentMap[m] = { status: 'not_created' };
       });
       matrix[s.id] = studentMap;
     });
@@ -169,11 +178,11 @@ export class FinanceService {
   private async determineMonthlyFee(classId: string, academicYearId: string): Promise<number> {
     // 1. Check fee_assignments
     const { data: assignment } = await this.supabase
-      .from("fee_assignments")
-      .select("amount")
-      .eq("class_id", classId)
-      .eq("academic_year_id", academicYearId)
-      .eq("is_active", true)
+      .from('fee_assignments')
+      .select('amount')
+      .eq('class_id', classId)
+      .eq('academic_year_id', academicYearId)
+      .eq('is_active', true)
       .maybeSingle();
 
     if (assignment) {
@@ -182,9 +191,9 @@ export class FinanceService {
 
     // 2. Parse class name (e.g. "9T2 (1200k)", "Lớp 6T1 (800K)")
     const { data: classObj } = await this.supabase
-      .from("classes")
-      .select("name")
-      .eq("id", classId)
+      .from('classes')
+      .select('name')
+      .eq('id', classId)
       .single();
 
     if (classObj?.name) {
@@ -208,19 +217,19 @@ export class FinanceService {
   ): Promise<{ success: boolean; updatedCount: number }> {
     // 1. Get default invoice details
     const monthlyFee = await this.determineMonthlyFee(classId, academicYearId);
-    
+
     // Get cash payment method id
     const { data: paymentMethods } = await this.supabase
-      .from("payment_methods")
-      .select("id")
-      .eq("type", "cash")
-      .eq("is_active", true)
+      .from('payment_methods')
+      .select('id')
+      .eq('type', 'cash')
+      .eq('is_active', true)
       .limit(1);
-    
+
     const paymentMethodId = paymentMethods?.[0]?.id;
 
     if (!paymentMethodId) {
-      throw new Error("Cash payment method is not configured in payment_methods table");
+      throw new Error('Cash payment method is not configured in payment_methods table');
     }
 
     let updatedCount = 0;
@@ -230,77 +239,79 @@ export class FinanceService {
 
       // Check if invoice already exists for this student and month
       const { data: existingInvoice } = await this.supabase
-        .from("invoices")
-        .select("id, total_amount, paid_amount, status")
-        .eq("student_id", studentId)
-        .eq("academic_year_id", academicYearId)
-        .eq("issue_date", month)
+        .from('invoices')
+        .select('id, total_amount, paid_amount, status')
+        .eq('student_id', studentId)
+        .eq('academic_year_id', academicYearId)
+        .eq('issue_date', month)
         .maybeSingle();
 
       if (existingInvoice) {
-        if (paid && existingInvoice.status !== "paid") {
+        if (paid && existingInvoice.status !== 'paid') {
           // Record payment for remaining balance
-          const balance = Number(existingInvoice.total_amount) - Number(existingInvoice.paid_amount);
+          const balance =
+            Number(existingInvoice.total_amount) - Number(existingInvoice.paid_amount);
           if (balance > 0) {
             await this.financeRepository.recordInvoicePayment({
               student_id: studentId,
               invoice_id: existingInvoice.id,
               amount: balance,
               payment_method_id: paymentMethodId,
-              notes: "Thanh toán học phí qua Portal (Bảng điều khiển)",
+              notes: 'Thanh toán học phí qua Portal (Bảng điều khiển)',
             });
             updatedCount++;
           }
-        } else if (!paid && existingInvoice.status === "paid") {
+        } else if (!paid && existingInvoice.status === 'paid') {
           // Revert payment: Set paid_amount to 0, status to pending, and delete payment allocations/records
           // 1. Delete allocations
           await this.supabase
-            .from("payment_allocations")
+            .from('payment_allocations')
             .delete()
-            .eq("invoice_id", existingInvoice.id);
+            .eq('invoice_id', existingInvoice.id);
 
           // 2. Delete payment records for this invoice
-          await this.supabase
-            .from("payments")
-            .delete()
-            .eq("invoice_id", existingInvoice.id);
+          await this.supabase.from('payments').delete().eq('invoice_id', existingInvoice.id);
 
           // 3. Update invoice status
           await this.supabase
-            .from("invoices")
+            .from('invoices')
             .update({
               paid_amount: 0,
-              status: "pending",
+              status: 'pending',
             })
-            .eq("id", existingInvoice.id);
+            .eq('id', existingInvoice.id);
 
           // 4. Update student account balance
           const { data: account } = await this.supabase
-            .from("student_accounts")
-            .select("*")
-            .eq("student_id", studentId)
-            .eq("academic_year_id", academicYearId)
+            .from('student_accounts')
+            .select('*')
+            .eq('student_id', studentId)
+            .eq('academic_year_id', academicYearId)
             .maybeSingle();
 
           if (account) {
-            const newTotalPaid = Math.max(0, Number(account.total_paid) - Number(existingInvoice.total_amount));
+            const newTotalPaid = Math.max(
+              0,
+              Number(account.total_paid) - Number(existingInvoice.total_amount)
+            );
             const newBalance = Number(account.balance) + Number(existingInvoice.total_amount);
 
             await this.supabase
-              .from("student_accounts")
+              .from('student_accounts')
               .update({
                 total_paid: newTotalPaid,
                 balance: newBalance,
               })
-              .eq("id", account.id);
+              .eq('id', account.id);
           }
           updatedCount++;
         }
       } else {
         // If invoice doesn't exist and we want to set it to paid/unpaid
-        const dueDate = new Date(new Date(month).getTime() + 15 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0] || ""; // Due 15 days later
+        const dueDate =
+          new Date(new Date(month).getTime() + 15 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0] || ''; // Due 15 days later
 
         // Create invoice
         const invoice = await this.financeRepository.createInvoiceWithItems(
@@ -310,7 +321,7 @@ export class FinanceService {
             issue_date: month,
             due_date: dueDate,
             total_amount: monthlyFee,
-            notes: "Hóa đơn học phí tự động sinh từ Portal",
+            notes: 'Hóa đơn học phí tự động sinh từ Portal',
           },
           [
             {
@@ -328,7 +339,7 @@ export class FinanceService {
             invoice_id: invoice.id,
             amount: monthlyFee,
             payment_method_id: paymentMethodId,
-            notes: "Thanh toán học phí qua Portal",
+            notes: 'Thanh toán học phí qua Portal',
           });
         }
         updatedCount++;
@@ -351,24 +362,25 @@ export class FinanceService {
   ): Promise<{ success: boolean; generatedCount: number }> {
     // 1. Fetch class details
     const { data: classObj } = await this.supabase
-      .from("classes")
-      .select("name")
-      .eq("id", classId)
+      .from('classes')
+      .select('name')
+      .eq('id', classId)
       .single();
 
     if (!classObj) {
-      throw new NotFoundError("Lớp học không tồn tại");
+      throw new NotFoundError('Lớp học không tồn tại');
     }
 
     // 2. Determine monthly fee if not overridden
-    const monthlyFee = amount !== undefined ? amount : await this.determineMonthlyFee(classId, academicYearId);
+    const monthlyFee =
+      amount !== undefined ? amount : await this.determineMonthlyFee(classId, academicYearId);
 
     // 3. Fetch active student enrollments
     const { data: enrollments } = await this.supabase
-      .from("enrollments")
-      .select("student_id")
-      .eq("class_id", classId)
-      .eq("status", "enrolled");
+      .from('enrollments')
+      .select('student_id')
+      .eq('class_id', classId)
+      .eq('status', 'enrolled');
 
     if (!enrollments || enrollments.length === 0) {
       return { success: true, generatedCount: 0 };
@@ -381,17 +393,18 @@ export class FinanceService {
 
       // Check if invoice already exists for this student and month
       const { data: existingInvoice } = await this.supabase
-        .from("invoices")
-        .select("id")
-        .eq("student_id", studentId)
-        .eq("academic_year_id", academicYearId)
-        .eq("issue_date", month)
+        .from('invoices')
+        .select('id')
+        .eq('student_id', studentId)
+        .eq('academic_year_id', academicYearId)
+        .eq('issue_date', month)
         .maybeSingle();
 
       if (!existingInvoice) {
         const descMonth = new Date(month).getMonth() + 1;
         const descYear = new Date(month).getFullYear();
-        const finalDesc = description || `Học phí Lớp ${classObj.name} - Tháng ${descMonth}/${descYear}`;
+        const finalDesc =
+          description || `Học phí Lớp ${classObj.name} - Tháng ${descMonth}/${descYear}`;
 
         await this.financeRepository.createInvoiceWithItems(
           {
