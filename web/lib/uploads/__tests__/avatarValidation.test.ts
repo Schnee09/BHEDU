@@ -34,7 +34,7 @@ describe('avatar validation', () => {
   });
 
   it('rejects a spoofed MIME type', () => {
-    const html = new TextEncoder().encode('<script>alert(1)</script>');
+    const html = new Uint8Array([0x3c, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x3e]);
     expect(hasValidImageSignature(html, 'image/png')).toBe(false);
   });
 });
