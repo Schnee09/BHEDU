@@ -4,6 +4,7 @@
  */
 
 import { createServiceClient } from '@/lib/supabase/server';
+import { createLazyService } from '@/lib/utils/lazyService';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type RequestType = 'leave_absence' | 'makeup_class' | 'class_transfer' | 'deferral';
@@ -260,4 +261,4 @@ export class StudentRequestRepository {
   }
 }
 
-export const studentRequestRepository = new StudentRequestRepository();
+export const studentRequestRepository = createLazyService(() => new StudentRequestRepository());
