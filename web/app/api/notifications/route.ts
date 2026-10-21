@@ -35,8 +35,12 @@ export async function GET(request: NextRequest) {
     const profileId = profile?.id || user.id;
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const page = parseInt(searchParams.get('page') || '1');
+    const parsedLimit = Number(searchParams.get('limit') || '20');
+    const parsedPage = Number(searchParams.get('page') || '1');
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.min(100, Math.max(1, Math.floor(parsedLimit)))
+      : 20;
+    const page = Number.isFinite(parsedPage) ? Math.max(1, Math.floor(parsedPage)) : 1;
     const isRead = searchParams.get('is_read');
     const offset = (page - 1) * limit;
 

@@ -2,6 +2,36 @@ import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { createClientFromRequest } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { z } from 'zod';
+
+const optionalNullableText = (max: number) =>
+  z.union([z.string().trim().max(max), z.null()]).optional();
+
+const profileUpdateSchema = z
+  .object({
+    full_name: z.string().trim().min(1, 'Họ và tên không được để trống').max(200),
+    first_name: optionalNullableText(100),
+    last_name: optionalNullableText(100),
+    phone: z
+      .union([
+        z
+          .string()
+          .trim()
+          .regex(/^\+?[0-9]{8,15}$/, 'Số điện thoại không hợp lệ'),
+        z.literal(''),
+        z.null(),
+      ])
+      .optional(),
+    address: optionalNullableText(500),
+    date_of_birth: z
+      .union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.literal(''), z.null()])
+      .optional(),
+    personal_email: z
+      .union([z.string().trim().email().max(254), z.literal(''), z.null()])
+      .optional(),
+    photo_url: z.union([z.string().url().max(2048), z.literal(''), z.null()]).optional(),
+  })
+  .strict();
 
 export async function GET(request: Request) {
   try {
@@ -102,7 +132,15 @@ export async function PATCH(request: Request) {
     }
 
     // 2. Parse body
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    const parsed = profileUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Dữ liệu hồ sơ không hợp lệ', details: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
     const {
       full_name,
       first_name,
@@ -112,21 +150,17 @@ export async function PATCH(request: Request) {
       date_of_birth,
       personal_email,
       photo_url,
-    } = body;
-
-    if (!full_name || typeof full_name !== 'string' || full_name.trim().length === 0) {
-      return NextResponse.json({ error: 'Họ và tên không được để trống' }, { status: 400 });
-    }
+    } = parsed.data;
 
     // 3. Build safe payload — never touch id, role, email, user_id directly
     const updatePayload: Record<string, unknown> = {
-      full_name: full_name.trim(),
-      first_name: first_name?.trim() || null,
-      last_name: last_name?.trim() || null,
-      phone: phone?.trim() || null,
-      address: address?.trim() || null,
+      full_name,
+      first_name: first_name || null,
+      last_name: last_name || null,
+      phone: phone || null,
+      address: address || null,
       date_of_birth: date_of_birth || null,
-      personal_email: personal_email?.trim() || null,
+      personal_email: personal_email || null,
       photo_url: photo_url || null,
       updated_at: new Date().toISOString(),
     };

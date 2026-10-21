@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { getAvatarExtension, hasValidImageSignature } from '@/lib/uploads/avatarValidation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,12 +27,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Không tìm thấy file tải lên' }, { status: 400 });
     }
 
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Vui lòng chọn định dạng file ảnh hợp lệ' }, { status: 400 });
+    const extension = getAvatarExtension(file.type);
+    if (!extension) {
+      return NextResponse.json({ error: 'Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP' }, { status: 400 });
     }
 
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ error: 'Dung lượng ảnh tối đa là 5MB' }, { status: 400 });
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBytes = new Uint8Array(arrayBuffer);
+    if (!hasValidImageSignature(fileBytes, file.type)) {
+      return NextResponse.json({ error: 'Nội dung file ảnh không hợp lệ' }, { status: 400 });
     }
 
     const serviceSupabase = createServiceClient();
@@ -47,7 +55,9 @@ export async function POST(request: NextRequest) {
         });
       }
     } catch (bucketErr: any) {
-      logger.warn('Bucket verification warning:', { error: bucketErr?.message || String(bucketErr) });
+      logger.warn('Bucket verification warning:', {
+        error: bucketErr?.message || String(bucketErr),
+      });
     }
 
     // 4. Fetch current profile to get old photo for cleanup
@@ -67,11 +77,9 @@ export async function POST(request: NextRequest) {
     }
 
     const profileId = profile?.id || user.id;
-    const ext = file.name.split('.').pop() || 'png';
-    const filePath = `profiles/profile-${profileId}-${Date.now()}.${ext}`;
+    const filePath = `profiles/profile-${profileId}-${Date.now()}.${extension}`;
 
     // 5. Convert file to buffer and upload via admin service client
-    const arrayBuffer = await file.arrayBuffer();
     const fileBuffer = Buffer.from(arrayBuffer);
 
     const { error: uploadError } = await serviceSupabase.storage
@@ -90,9 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. Get public URL
-    const { data: urlData } = serviceSupabase.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
+    const { data: urlData } = serviceSupabase.storage.from('avatars').getPublicUrl(filePath);
 
     const publicUrl = urlData.publicUrl;
 
@@ -142,7 +148,9 @@ export async function POST(request: NextRequest) {
           await serviceSupabase.storage.from('avatars').remove([oldRelPath]);
         }
       } catch (cleanErr: any) {
-        logger.warn('Failed to cleanup old avatar file:', { error: cleanErr?.message || String(cleanErr) });
+        logger.warn('Failed to cleanup old avatar file:', {
+          error: cleanErr?.message || String(cleanErr),
+        });
       }
     }
 
@@ -151,7 +159,9 @@ export async function POST(request: NextRequest) {
       photo_url: publicUrl,
     });
   } catch (error: any) {
-    logger.error('Unexpected error in POST /api/profile/avatar:', { error: error?.message || String(error) });
+    logger.error('Unexpected error in POST /api/profile/avatar:', {
+      error: error?.message || String(error),
+    });
     return NextResponse.json(
       { error: error.message || 'Lỗi xử lý tải ảnh đại diện' },
       { status: 500 }
@@ -200,7 +210,9 @@ export async function DELETE(request: NextRequest) {
           await serviceSupabase.storage.from('avatars').remove([oldRelPath]);
         }
       } catch (cleanErr: any) {
-        logger.warn('Failed to delete avatar from storage:', { error: cleanErr?.message || String(cleanErr) });
+        logger.warn('Failed to delete avatar from storage:', {
+          error: cleanErr?.message || String(cleanErr),
+        });
       }
     }
 
@@ -247,7 +259,9 @@ export async function DELETE(request: NextRequest) {
       photo_url: null,
     });
   } catch (error: any) {
-    logger.error('Unexpected error in DELETE /api/profile/avatar:', { error: error?.message || String(error) });
+    logger.error('Unexpected error in DELETE /api/profile/avatar:', {
+      error: error?.message || String(error),
+    });
     return NextResponse.json(
       { error: error.message || 'Lỗi khi gỡ ảnh đại diện' },
       { status: 500 }
