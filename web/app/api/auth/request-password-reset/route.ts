@@ -3,21 +3,38 @@ import { apiSuccess, createApiHandler } from '@/lib/api/apiHandler';
 import { createServiceClient } from '@/lib/supabase/server';
 import { sendEmail } from '@/lib/email/emailService';
 import { z } from 'zod';
+import { checkRateLimit, getRateLimitIdentifier } from '@/lib/auth/rateLimit';
 
 const resetRequestSchema = z.object({
-  identifier: z.string().min(1, 'Vui lòng nhập Email, Mã định danh (UID) hoặc Số điện thoại'),
+  identifier: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập Email, Mã định danh (UID) hoặc Số điện thoại')
+    .max(200)
+    .regex(/^[A-Za-z0-9@._+\-]+$/, 'Thông tin tài khoản chứa ký tự không hợp lệ'),
 });
 
-function maskEmail(email: string): string {
-  const parts = email.split('@');
-  if (parts.length !== 2) return email;
-  const name = parts[0] || '';
-  const domain = parts[1] || '';
-  if (!name || !domain) return email;
-  if (name.length <= 2) {
-    return `${name.charAt(0)}***@${domain}`;
-  }
-  return `${name.charAt(0)}***${name.charAt(name.length - 1)}@${domain}`;
+const GENERIC_RESET_MESSAGE =
+  'Nếu thông tin khớp với một tài khoản hợp lệ, hướng dẫn khôi phục mật khẩu sẽ được gửi tới email đã đăng ký.';
+const PASSWORD_RESET_RATE_LIMIT = {
+  maxAttempts: 5,
+  windowMs: 15 * 60 * 1000,
+  blockDurationMs: 30 * 60 * 1000,
+};
+
+function genericResetResponse() {
+  return apiSuccess({ requiresAdminContact: false, message: GENERIC_RESET_MESSAGE });
+}
+
+function escapeHtml(value: string): string {
+  const replacements: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;',
+  };
+  return value.replace(/[&<>'"]/g, (char) => replacements[char] || char);
 }
 
 export const POST = createApiHandler(
@@ -26,9 +43,17 @@ export const POST = createApiHandler(
     bodySchema: resetRequestSchema,
   },
   async ({ body, request }) => {
+    const rateCheck = checkRateLimit(
+      `password-reset:${getRateLimitIdentifier(request)}`,
+      PASSWORD_RESET_RATE_LIMIT
+    );
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
+    }
+
     const raw = body.identifier.trim();
     const supabase = createServiceClient();
-    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://bhedu.vn';
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://bhedu.vn').replace(/\/$/, '');
 
     // 1. Find profile by identifier (email, personal_email, student_code, teacher_code, student_id, phone)
     let profile: any = null;
@@ -53,23 +78,11 @@ export const POST = createApiHandler(
     }
 
     if (!profile || !profile.email) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Không tìm thấy tài khoản phù hợp với thông tin đã nhập.',
-        },
-        { status: 404 }
-      );
+      return genericResetResponse();
     }
 
     if (!profile.is_active) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Tài khoản này đang trong trạng thái tạm khóa. Vui lòng liên hệ trung tâm để được hỗ trợ.',
-        },
-        { status: 403 }
-      );
+      return genericResetResponse();
     }
 
     // 2. Check destination email (priority: personal_email if email is virtual/managed)
@@ -83,12 +96,7 @@ export const POST = createApiHandler(
       : profile.personal_email || profile.email;
 
     if (!targetRecipientEmail) {
-      return apiSuccess({
-        requiresAdminContact: true,
-        message:
-          'Tài khoản của bạn chưa đăng ký Email cá nhân nhận tin. Vui lòng liên hệ Văn phòng Trung tâm để được cấp lại mật khẩu.',
-        hotline: '0899 060 686',
-      });
+      return genericResetResponse();
     }
 
     // 3. Generate Supabase Password Recovery Link
@@ -97,24 +105,21 @@ export const POST = createApiHandler(
         type: 'recovery',
         email: profile.email,
         options: {
-          redirectTo: `${origin}/reset-password`,
+          redirectTo: `${appUrl}/reset-password`,
         },
       });
 
       if (linkError || !linkData?.properties?.action_link) {
         console.error('Failed to generate recovery link:', linkError);
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Không thể tạo liên kết khôi phục mật khẩu. Vui lòng thử lại sau hoặc liên hệ trung tâm.',
-          },
-          { status: 500 }
-        );
+        return genericResetResponse();
       }
 
       const recoveryUrl = linkData.properties.action_link;
+      const safeRecoveryUrl = escapeHtml(recoveryUrl);
 
       // 4. Send email to recipient
+      const safeName = escapeHtml(profile.full_name || 'Quý học sinh / Phụ huynh');
+      const safeAccountEmail = escapeHtml(profile.email);
       const emailHtml = `
 <!DOCTYPE html>
 <html>
@@ -135,11 +140,11 @@ export const POST = createApiHandler(
       <p style="margin: 6px 0 0 0; color: #D6D3D1; font-size: 13px;">Yêu cầu đặt lại mật khẩu tài khoản học vụ</p>
     </div>
     <div class="content">
-      <p>Kính gửi <strong>${profile.full_name || 'Quý học sinh / Phụ huynh'}</strong>,</p>
-      <p>Hệ thống BH-EDU vừa nhận được yêu cầu đặt lại mật khẩu cho tài khoản: <strong>${profile.email}</strong>.</p>
+      <p>Kính gửi <strong>${safeName}</strong>,</p>
+      <p>Hệ thống BH-EDU vừa nhận được yêu cầu đặt lại mật khẩu cho tài khoản: <strong>${safeAccountEmail}</strong>.</p>
       <p>Vui lòng bấm vào nút bên dưới để tiến hành tạo mật khẩu mới:</p>
       <div style="text-align: center;">
-        <a href="${recoveryUrl}" class="button">Đặt Lại Mật Khẩu Ngay</a>
+        <a href="${safeRecoveryUrl}" class="button">Đặt Lại Mật Khẩu Ngay</a>
       </div>
       <p style="font-size: 12px; color: #78716C;">* Liên kết có hiệu lực trong vòng 24 giờ. Nếu bạn không yêu cầu hành động này, vui lòng bỏ qua email.</p>
       <p>Hotline hỗ trợ kỹ thuật học vụ: <strong>0899 060 686</strong></p>
@@ -160,20 +165,10 @@ export const POST = createApiHandler(
         text: `Kính gửi ${profile.full_name}, vui lòng truy cập liên kết sau để đặt lại mật khẩu: ${recoveryUrl}`,
       });
 
-      return apiSuccess({
-        requiresAdminContact: false,
-        maskedEmail: maskEmail(targetRecipientEmail),
-        message: `Đã gửi hướng dẫn khôi phục mật khẩu tới email "${maskEmail(targetRecipientEmail)}". Vui lòng kiểm tra hộp thư.`,
-      });
+      return genericResetResponse();
     } catch (err: any) {
       console.error('Password reset process error:', err);
-      return NextResponse.json(
-        {
-          success: false,
-          error: err.message || 'Đã xảy ra lỗi trong quá trình xử lý yêu cầu.',
-        },
-        { status: 500 }
-      );
+      return genericResetResponse();
     }
   }
 );

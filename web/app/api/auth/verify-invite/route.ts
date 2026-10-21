@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
 
 export async function GET(request: NextRequest) {
   try {
+    const rateCheck = checkRateLimit(
+      `verify-invite:${getRateLimitIdentifier(request)}`,
+      rateLimitConfigs.authStrict
+    );
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 
-    if (!token) {
+    if (!token || token.length > 512) {
       return NextResponse.json(
         { error: 'Token is required' },
         {
