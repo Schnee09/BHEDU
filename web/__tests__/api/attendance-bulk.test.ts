@@ -7,6 +7,12 @@ import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 // Mock dependencies
 jest.mock('@/lib/repositories/AttendanceRepository');
 
+// The route intentionally uses the service-role client after authorization.
+// Keep this unit test isolated from deployment secrets and Supabase itself.
+jest.mock('@/lib/supabase/server', () => ({
+  createServiceClient: jest.fn(() => ({})),
+}));
+
 // Mock auth guard to bypass 401
 jest.mock('@/lib/auth/guard', () => ({
   getAuthContext: jest.fn().mockResolvedValue({
