@@ -6,13 +6,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { teacherAuth } from '@/lib/auth/adminAuth';
+import { adminAuth, teacherAuth } from '@/lib/auth/adminAuth';
 import { logger } from '@/lib/logger';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 // Enroll students in a class
 export async function POST(req: NextRequest, { params }: { params: Promise<{ classId: string }> }) {
   try {
-    const authResult = await teacherAuth(req);
+    const authResult = await adminAuth(req);
     if (!authResult.authorized) {
       return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
     }
@@ -99,7 +100,7 @@ export async function DELETE(
   { params }: { params: Promise<{ classId: string }> }
 ) {
   try {
-    const authResult = await teacherAuth(req);
+    const authResult = await adminAuth(req);
     if (!authResult.authorized) {
       return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
     }
@@ -152,6 +153,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
 
     const supabase = createServiceClient();
     const { classId } = await params;
+
+    const canViewClass = await canAccessClass(
+      supabase,
+      { id: authResult.userId, role: authResult.userRole },
+      classId
+    );
+    if (!canViewClass) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const { data: enrollments, error } = await supabase
       .from('enrollments')

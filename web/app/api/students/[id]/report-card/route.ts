@@ -6,8 +6,9 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClientFromRequest } from '@/lib/supabase/server';
-import { teacherAuth } from '@/lib/auth/adminAuth';
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/guard';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 import { renderToBuffer } from '@react-pdf/renderer';
 import ReportCardPDF from '@/components/reports/ReportCardPDF';
 import { settingsService } from '@/lib/services/settingsService';
@@ -15,9 +16,9 @@ import { settingsService } from '@/lib/services/settingsService';
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
-    const authResult = await teacherAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(request);
+    if (!auth.authorized || !auth.profile || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
     }
 
     const supabase = createClientFromRequest(request as any);
@@ -71,6 +72,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const realStudentId = student.id;
+
+    const allowed = await canAccessStudent(
+      createServiceClient(),
+      { id: auth.profile.id, role: auth.role },
+      realStudentId
+    );
+    if (!allowed) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Get academic year info
     let academicYear: any = null;

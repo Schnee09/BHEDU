@@ -9,6 +9,7 @@ import { adminAuth, teacherAuth } from '@/lib/auth/adminAuth';
 import { GradeRepository } from '@/lib/repositories/GradeRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,8 +62,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
-    // Role-based access logic
-    if (auth.userRole === 'student' && auth.userId !== grade.student_id) {
+    const canViewGrade = await canAccessClass(
+      supabase,
+      { id: auth.userId, role: auth.userRole },
+      grade.class_id
+    );
+    if (!canViewGrade) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -126,6 +131,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const supabase = createServiceClient();
     const repository = new GradeRepository(supabase);
+
+    const existing = await repository.findById(id);
+    if (!existing) {
+      return NextResponse.json({ error: 'Grade not found' }, { status: 404 });
+    }
+
+    const canEditGrade = await canAccessClass(
+      supabase,
+      { id: auth.userId, role: auth.userRole },
+      existing.class_id
+    );
+    if (!canEditGrade) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const updated = await repository.update(id, parsed.data);
     return NextResponse.json({ success: true, grade: updated });

@@ -7,7 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { teacherAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 import { logger } from '@/lib/logger';
 
 interface RouteParams {
@@ -16,9 +17,9 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await teacherAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(request);
+    if (!auth.authorized || !auth.profile || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
     }
 
     const { id: studentId } = await params;
@@ -26,6 +27,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const period = searchParams.get('period') || 'all'; // semester, year, all
 
     const supabase = createServiceClient();
+
+    const allowed = await canAccessStudent(
+      supabase,
+      { id: auth.profile.id, role: auth.role },
+      studentId
+    );
+    if (!allowed) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Get student info
     const { data: student, error: studentError } = await supabase

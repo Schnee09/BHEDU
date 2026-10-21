@@ -9,6 +9,7 @@ import { adminAuth, teacherAuth } from '@/lib/auth/adminAuth';
 import { ClassRepository } from '@/lib/repositories/ClassRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,15 @@ export async function GET(
     const supabase = createServiceClient();
     const repository = new ClassRepository(supabase);
 
+    const canViewClass = await canAccessClass(
+      supabase,
+      { id: auth.userId, role: auth.userRole },
+      classId
+    );
+    if (!canViewClass) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Parallel fetch class details, students, and timetable slots
     const promises: Promise<any>[] = [repository.findByIdWithDetails(classId)];
 
@@ -68,9 +78,11 @@ export async function GET(
       promises.push(
         supabase
           .from('enrollments')
-          .select('id, student_id, status, enrollment_date, student:profiles!enrollments_student_id_fkey(id, email, full_name, student_code, grade_level)')
+          .select(
+            'id, student_id, status, enrollment_date, student:profiles!enrollments_student_id_fkey(id, email, full_name, student_code, grade_level)'
+          )
           .eq('class_id', classId)
-          .then(res => res) as Promise<any>
+          .then((res) => res) as Promise<any>
       );
     } else {
       promises.push(Promise.resolve(null));
@@ -80,9 +92,11 @@ export async function GET(
       promises.push(
         supabase
           .from('timetable_slots')
-          .select('id, day_of_week, start_time, end_time, room, notes, subject:subjects(id, name, code), teacher:profiles!timetable_slots_teacher_id_fkey(id, full_name)')
+          .select(
+            'id, day_of_week, start_time, end_time, room, notes, subject:subjects(id, name, code), teacher:profiles!timetable_slots_teacher_id_fkey(id, full_name)'
+          )
           .eq('class_id', classId)
-          .then(res => res) as Promise<any>
+          .then((res) => res) as Promise<any>
       );
     } else {
       promises.push(Promise.resolve(null));

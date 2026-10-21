@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { teacherAuth } from '@/lib/auth/adminAuth';
 import { logger } from '@/lib/logger';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ classId: string }> }) {
   try {
@@ -20,6 +21,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
 
     const supabase = createServiceClient();
     const { classId } = await params;
+
+    const canViewClass = await canAccessClass(
+      supabase,
+      { id: authResult.userId, role: authResult.userRole },
+      classId
+    );
+    if (!canViewClass) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Get enrolled students from enrollments table (primary and only source)
     const { data: enrollments, error: enrollError } = await supabase

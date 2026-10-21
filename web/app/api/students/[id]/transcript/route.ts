@@ -6,8 +6,9 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClientFromRequest } from '@/lib/supabase/server';
-import { teacherAuth } from '@/lib/auth/adminAuth';
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/guard';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
 import { settingsService } from '@/lib/services/settingsService';
 
@@ -56,42 +57,13 @@ function getVietnameseClassification(
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
-    const studentIdRequesting = resolvedParams.id;
 
-    // Flexible auth: allow students (self), parents (linked), and teachers/admins
-    const authResult = await teacherAuth(request);
-
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(request);
+    if (!auth.authorized || !auth.profile || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId, userRole } = authResult;
     const supabase = createClientFromRequest(request as any);
-
-    // Role scoping
-    let hasAccess = false;
-    if (['super_admin', 'owner', 'admin', 'staff', 'teacher'].includes(userRole || '')) {
-      hasAccess = true;
-    } else if (userRole === 'student') {
-      hasAccess = userId === studentIdRequesting;
-    } else if (userRole === 'parent') {
-      const { data: link } = await supabase
-        .from('parent_student_links')
-        .select('id')
-        .eq('parent_id', userId)
-        .eq('student_id', studentIdRequesting)
-        .eq('status', 'approved')
-        .single();
-
-      hasAccess = !!link;
-    }
-
-    if (!hasAccess) {
-      return NextResponse.json(
-        { error: 'Forbidden: You do not have permission to view this transcript' },
-        { status: 403 }
-      );
-    }
 
     const { searchParams } = new URL(request.url);
     const identifier = resolvedParams.id;
@@ -125,6 +97,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const realStudentId = student.id;
+
+    const allowed = await canAccessStudent(
+      createServiceClient(),
+      { id: auth.profile.id, role: auth.role },
+      realStudentId
+    );
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Forbidden: You do not have permission to view this transcript' },
+        { status: 403 }
+      );
+    }
 
     // 2. Get active academic context
     const { academicYear: currentAY, semester: activeSem } =

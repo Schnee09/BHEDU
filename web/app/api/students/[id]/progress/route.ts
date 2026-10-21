@@ -7,8 +7,9 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClientFromRequest } from '@/lib/supabase/server';
-import { teacherAuth } from '@/lib/auth/adminAuth';
+import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/guard';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 import { settingsService } from '@/lib/services/settingsService';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -16,9 +17,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const resolvedParams = await params;
     const identifier = resolvedParams.id;
 
-    const authResult = await teacherAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(request);
+    if (!auth.authorized || !auth.profile || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
     }
 
     const supabase = createClientFromRequest(request as any);
@@ -48,6 +49,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const realStudentId = student.id;
+
+    const allowed = await canAccessStudent(
+      createServiceClient(),
+      { id: auth.profile.id, role: auth.role },
+      realStudentId
+    );
+    if (!allowed) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // 2. Parallelize data fetching using resolved realStudentId
     const [enrollmentsResponse, gradesResponse, attendanceResponse] = await Promise.all([
