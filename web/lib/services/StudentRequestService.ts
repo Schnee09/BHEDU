@@ -1,3 +1,5 @@
+import { createLazyService } from './lazyService';
+
 /**
  * Student Request Service - Business logic & automated workflows for student requests
  * Connects requests with notification dispatch and attendance automation
@@ -161,4 +163,4 @@ export class StudentRequestService {
   }
 }
 
-export const studentRequestService = new StudentRequestService();
+export const studentRequestService = createLazyService(() => new StudentRequestService());

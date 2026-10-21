@@ -1,3 +1,5 @@
+import { createLazyService } from './lazyService';
+
 /**
  * Course Service - Business logic for course management
  *
@@ -228,4 +230,4 @@ export class CourseService {
 }
 
 // Default singleton instance
-export const courseService = new CourseService();
+export const courseService = createLazyService(() => new CourseService());

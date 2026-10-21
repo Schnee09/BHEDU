@@ -1,3 +1,5 @@
+import { createLazyService } from './lazyService';
+
 import { createServiceClient } from '@/lib/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TeacherRepository } from '../repositories/TeacherRepository';
@@ -486,4 +488,4 @@ export class TeacherService {
 }
 
 // Default singleton instance
-export const teacherService = new TeacherService();
+export const teacherService = createLazyService(() => new TeacherService());

@@ -1,3 +1,5 @@
+import { createLazyService } from './lazyService';
+
 /**
  * Finance Service
  *
@@ -431,4 +433,4 @@ export class FinanceService {
   }
 }
 
-export const financeService = new FinanceService();
+export const financeService = createLazyService(() => new FinanceService());

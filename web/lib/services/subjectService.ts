@@ -1,6 +1,8 @@
-import { createServiceClient } from "@/lib/supabase/server";
-import { ConflictError, ValidationError } from "@/lib/api/errors";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createLazyService } from './lazyService';
+
+import { createServiceClient } from '@/lib/supabase/server';
+import { ConflictError, ValidationError } from '@/lib/api/errors';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface Subject {
   id: string;
@@ -50,26 +52,25 @@ export class SubjectService {
    * Get all subjects with optional filters
    */
   async getSubjects(
-    options: SubjectListOptions = {},
+    options: SubjectListOptions = {}
   ): Promise<{ subjects: Subject[]; total: number }> {
     const { search, is_active, page = 1, limit = 100 } = options;
 
     let query = this.supabase
-      .from("subjects")
-      .select(
-        "id, name, code, description, credits, is_active, created_at, updated_at",
-        { count: "exact" },
-      );
+      .from('subjects')
+      .select('id, name, code, description, credits, is_active, created_at, updated_at', {
+        count: 'exact',
+      });
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%`);
     }
     if (is_active !== undefined) {
-      query = query.eq("is_active", is_active);
+      query = query.eq('is_active', is_active);
     }
 
     const offset = (page - 1) * limit;
-    query = query.range(offset, offset + limit - 1).order("name");
+    query = query.range(offset, offset + limit - 1).order('name');
 
     const { data, count, error } = await query;
 
@@ -95,14 +96,10 @@ export class SubjectService {
    * Get a single subject by ID
    */
   async getSubjectById(id: string): Promise<Subject | null> {
-    const { data, error } = await this.supabase
-      .from("subjects")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const { data, error } = await this.supabase.from('subjects').select('*').eq('id', id).single();
 
     if (error) {
-      if (error.code === "PGRST116") return null;
+      if (error.code === 'PGRST116') return null;
       throw error;
     }
 
@@ -124,9 +121,9 @@ export class SubjectService {
   async createSubject(input: CreateSubjectInput): Promise<Subject> {
     // Check for duplicate code
     const { data: existing } = await this.supabase
-      .from("subjects")
-      .select("id")
-      .eq("code", input.code.toUpperCase())
+      .from('subjects')
+      .select('id')
+      .eq('code', input.code.toUpperCase())
       .maybeSingle();
 
     if (existing) {
@@ -134,7 +131,7 @@ export class SubjectService {
     }
 
     const { data, error } = await this.supabase
-      .from("subjects")
+      .from('subjects')
       .insert({
         name: input.name,
         code: input.code.toUpperCase(),
@@ -142,7 +139,7 @@ export class SubjectService {
         credits: input.credits,
         is_active: input.is_active !== undefined ? input.is_active : true,
       })
-      .select("*")
+      .select('*')
       .single();
 
     if (error) {
@@ -175,10 +172,10 @@ export class SubjectService {
     if (input.is_active !== undefined) updateData.is_active = input.is_active;
 
     const { data, error } = await this.supabase
-      .from("subjects")
+      .from('subjects')
       .update(updateData)
-      .eq("id", id)
-      .select("*")
+      .eq('id', id)
+      .select('*')
       .single();
 
     if (error) {
@@ -202,30 +199,25 @@ export class SubjectService {
   async deleteSubject(id: string, hardDelete = false): Promise<void> {
     // Check for grades using this subject
     const { count: gradeCount } = await this.supabase
-      .from("grades")
-      .select("*", { count: "exact", head: true })
-      .eq("subject_id", id);
+      .from('grades')
+      .select('*', { count: 'exact', head: true })
+      .eq('subject_id', id);
 
     if (gradeCount && gradeCount > 0 && !hardDelete) {
-      throw new ValidationError(
-        `Không thể xóa môn học có ${gradeCount} bản ghi điểm`,
-      );
+      throw new ValidationError(`Không thể xóa môn học có ${gradeCount} bản ghi điểm`);
     }
 
     if (hardDelete) {
       // 1. Delete related grades
       if (gradeCount && gradeCount > 0) {
-        await this.supabase.from("grades").delete().eq("subject_id", id);
+        await this.supabase.from('grades').delete().eq('subject_id', id);
       }
 
       // 2. Delete related timetable slots
-      await this.supabase.from("timetable_slots").delete().eq("subject_id", id);
+      await this.supabase.from('timetable_slots').delete().eq('subject_id', id);
 
       // 3. Delete the subject
-      const { error } = await this.supabase
-        .from("subjects")
-        .delete()
-        .eq("id", id);
+      const { error } = await this.supabase.from('subjects').delete().eq('id', id);
 
       if (error) {
         throw error;
@@ -262,4 +254,4 @@ export class SubjectService {
 }
 
 // Default singleton instance
-export const subjectService = new SubjectService();
+export const subjectService = createLazyService(() => new SubjectService());

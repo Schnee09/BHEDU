@@ -1,8 +1,10 @@
-import { createServiceClient } from "@/lib/supabase/server";
-import { NotFoundError, ValidationError } from "@/lib/api/errors";
-import type { CreateStudentInput, UpdateStudentInput } from "@/lib/schemas";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { StudentRepository } from "../repositories/StudentRepository";
+import { createLazyService } from './lazyService';
+
+import { createServiceClient } from '@/lib/supabase/server';
+import { NotFoundError, ValidationError } from '@/lib/api/errors';
+import type { CreateStudentInput, UpdateStudentInput } from '@/lib/schemas';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { StudentRepository } from '../repositories/StudentRepository';
 
 export interface Student {
   id: string;
@@ -48,11 +50,7 @@ export class StudentService {
     this.repository = new StudentRepository(this.supabase);
   }
 
-  async getStudents(filters?: {
-    search?: string;
-    page?: number;
-    pageSize?: number;
-  }) {
+  async getStudents(filters?: { search?: string; page?: number; pageSize?: number }) {
     const result = await this.repository.findAll(filters);
     return {
       students: result.data,
@@ -65,7 +63,7 @@ export class StudentService {
   async getStudentById(id: string): Promise<StudentWithEnrollments> {
     const student = await this.repository.findByIdWithEnrollments(id);
     if (!student) {
-      throw new NotFoundError("Student not found");
+      throw new NotFoundError('Student not found');
     }
     return student as unknown as StudentWithEnrollments;
   }
@@ -73,63 +71,62 @@ export class StudentService {
   async getStudentByCode(code: string): Promise<Student> {
     // Repository doesn't have findByCode yet, but let's add it or keep it here if specific
     const { data, error } = await this.supabase
-      .from("profiles")
-      .select(`
+      .from('profiles')
+      .select(
+        `
         *,
         student_profiles!inner (
           student_code,
           grade_level
         )
-      `)
-      .eq("student_profiles.student_code", code.toUpperCase())
-      .eq("role", "student")
+      `
+      )
+      .eq('student_profiles.student_code', code.toUpperCase())
+      .eq('role', 'student')
       .single();
 
     if (error || !data) {
-      throw new NotFoundError("Không tìm thấy học sinh với mã này");
+      throw new NotFoundError('Không tìm thấy học sinh với mã này');
     }
 
     // Flatten
     const { student_profiles, ...rest } = data as any;
     return {
       ...rest,
-      student_code: student_profiles?.[0]?.student_code ||
-        (data as any).student_code,
-      grade_level: student_profiles?.[0]?.grade_level ||
-        (data as any).grade_level,
+      student_code: student_profiles?.[0]?.student_code || (data as any).student_code,
+      grade_level: student_profiles?.[0]?.grade_level || (data as any).grade_level,
     } as Student;
   }
 
   async createStudent(input: CreateStudentInput) {
     const { data: existing } = await this.supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", input.email)
+      .from('profiles')
+      .select('id')
+      .eq('email', input.email)
       .single();
 
     if (existing) {
-      throw new ValidationError("Email already exists");
+      throw new ValidationError('Email already exists');
     }
 
-    const { data: authData, error: authError } = await this.supabase.auth.admin
-      .createUser({
-        email: input.email || undefined,
-        email_confirm: true,
-        user_metadata: {
-          first_name: input.first_name,
-          last_name: input.last_name,
-          full_name: `${input.last_name} ${input.first_name}`.trim(),
-          role: "student",
-        },
-      });
+    const { data: authData, error: authError } = await this.supabase.auth.admin.createUser({
+      email: input.email || undefined,
+      email_confirm: true,
+      user_metadata: {
+        first_name: input.first_name,
+        last_name: input.last_name,
+        full_name: `${input.last_name} ${input.first_name}`.trim(),
+        role: 'student',
+      },
+    });
 
     if (authError || !authData.user) {
-      console.error("Failed to create auth user:", authError);
-      throw new Error("Failed to create student account");
+      console.error('Failed to create auth user:', authError);
+      throw new Error('Failed to create student account');
     }
 
     const { data: profile, error: profileError } = await this.supabase
-      .from("profiles")
+      .from('profiles')
       .update({
         first_name: input.first_name,
         last_name: input.last_name,
@@ -138,26 +135,29 @@ export class StudentService {
         phone: input.phone || null,
         address: input.address || null,
         emergency_contact: input.emergency_contact || null,
-        role: "student",
+        role: 'student',
         student_code: input.student_code || null,
         grade_level: input.grade_level || null,
       })
-      .eq("user_id", authData.user.id)
+      .eq('user_id', authData.user.id)
       .select()
       .single();
 
     if (profileError) {
-      console.error("Failed to update profile:", profileError);
+      console.error('Failed to update profile:', profileError);
       await this.supabase.auth.admin.deleteUser(authData.user.id);
-      throw new Error("Failed to create student profile");
+      throw new Error('Failed to create student profile');
     }
 
     // Synchronize to student_profiles
-    await this.supabase.from("student_profiles").upsert({
-      profile_id: profile.id,
-      student_code: profile.student_code || input.student_code,
-      grade_level: profile.grade_level || input.grade_level,
-    }, { onConflict: "profile_id" });
+    await this.supabase.from('student_profiles').upsert(
+      {
+        profile_id: profile.id,
+        student_code: profile.student_code || input.student_code,
+        grade_level: profile.grade_level || input.grade_level,
+      },
+      { onConflict: 'profile_id' }
+    );
 
     return profile;
   }
@@ -174,8 +174,9 @@ export class StudentService {
 
   async getStudentGrades(studentId: string, classId?: string) {
     let query = this.supabase
-      .from("grades")
-      .select(`
+      .from('grades')
+      .select(
+        `
         *,
         assignments (
           id,
@@ -187,19 +188,20 @@ export class StudentService {
             name
           )
         )
-      `)
-      .eq("student_id", studentId)
-      .order("created_at", { ascending: false });
+      `
+      )
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: false });
 
     if (classId) {
-      query = query.eq("assignments.class_id", classId);
+      query = query.eq('assignments.class_id', classId);
     }
 
     const { data, error } = await query;
 
     if (error) {
-      console.error("Failed to fetch student grades:", error);
-      throw new Error("Failed to fetch student grades");
+      console.error('Failed to fetch student grades:', error);
+      throw new Error('Failed to fetch student grades');
     }
 
     return data;
@@ -207,26 +209,28 @@ export class StudentService {
 
   async getStudentAttendance(studentId: string, classId?: string) {
     let query = this.supabase
-      .from("attendance")
-      .select(`
+      .from('attendance')
+      .select(
+        `
         *,
         classes (
           id,
           name
         )
-      `)
-      .eq("student_id", studentId)
-      .order("date", { ascending: false });
+      `
+      )
+      .eq('student_id', studentId)
+      .order('date', { ascending: false });
 
     if (classId) {
-      query = query.eq("class_id", classId);
+      query = query.eq('class_id', classId);
     }
 
     const { data, error } = await query;
 
     if (error) {
-      console.error("Failed to fetch attendance:", error);
-      throw new Error("Failed to fetch attendance");
+      console.error('Failed to fetch attendance:', error);
+      throw new Error('Failed to fetch attendance');
     }
 
     return data;
@@ -234,30 +238,30 @@ export class StudentService {
 
   async enrollStudent(studentId: string, classId: string) {
     const { data: existing } = await this.supabase
-      .from("enrollments")
-      .select("id")
-      .eq("student_id", studentId)
-      .eq("class_id", classId)
+      .from('enrollments')
+      .select('id')
+      .eq('student_id', studentId)
+      .eq('class_id', classId)
       .single();
 
     if (existing) {
-      throw new ValidationError("Student already enrolled in this class");
+      throw new ValidationError('Student already enrolled in this class');
     }
 
     const { data, error } = await this.supabase
-      .from("enrollments")
+      .from('enrollments')
       .insert({
         student_id: studentId,
         class_id: classId,
-        enrollment_date: new Date().toISOString().split("T")[0],
-        status: "active",
+        enrollment_date: new Date().toISOString().split('T')[0],
+        status: 'active',
       })
       .select()
       .single();
 
     if (error) {
-      console.error("Failed to enroll student:", error);
-      throw new Error("Failed to enroll student");
+      console.error('Failed to enroll student:', error);
+      throw new Error('Failed to enroll student');
     }
 
     return data;
@@ -265,29 +269,23 @@ export class StudentService {
 
   async unenrollStudent(studentId: string, classId: string) {
     const { data, error } = await this.supabase
-      .from("enrollments")
-      .update({ status: "withdrawn" })
-      .eq("student_id", studentId)
-      .eq("class_id", classId)
+      .from('enrollments')
+      .update({ status: 'withdrawn' })
+      .eq('student_id', studentId)
+      .eq('class_id', classId)
       .select()
       .single();
 
     if (error) {
-      console.error("Failed to unenroll student:", error);
-      throw new Error("Failed to unenroll student");
+      console.error('Failed to unenroll student:', error);
+      throw new Error('Failed to unenroll student');
     }
 
     return data;
   }
 
-  async getStudentsForTeacher(
-    teacherProfileId: string,
-    filters: any = {},
-  ) {
-    const result = await this.repository.findByTeacher(
-      teacherProfileId,
-      filters,
-    );
+  async getStudentsForTeacher(teacherProfileId: string, filters: any = {}) {
+    const result = await this.repository.findByTeacher(teacherProfileId, filters);
     return {
       students: result.data,
       total: result.total,
@@ -298,9 +296,7 @@ export class StudentService {
   // STATIC METHODS FOR BACKWARD COMPATIBILITY
   // ============================================================
 
-  static async getStudents(
-    filters?: Parameters<StudentService["getStudents"]>[0],
-  ) {
+  static async getStudents(filters?: Parameters<StudentService['getStudents']>[0]) {
     return studentService.getStudents(filters);
   }
 
@@ -342,4 +338,4 @@ export class StudentService {
 }
 
 // Default singleton instance
-export const studentService = new StudentService();
+export const studentService = createLazyService(() => new StudentService());

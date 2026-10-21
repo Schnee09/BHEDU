@@ -1,3 +1,5 @@
+import { createLazyService } from './lazyService';
+
 /**
  * User Service - Core logic for user and profile management
  *
@@ -463,4 +465,4 @@ export class UserService {
 }
 
 // Default singleton instance
-export const userService = new UserService();
+export const userService = createLazyService(() => new UserService());

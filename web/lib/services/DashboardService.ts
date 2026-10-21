@@ -1,3 +1,5 @@
+import { createLazyService } from './lazyService';
+
 import { createServiceClient } from '@/lib/supabase/server';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { UserRole } from '@/lib/auth/core';
@@ -156,4 +158,4 @@ export class DashboardService {
   }
 }
 
-export const dashboardService = new DashboardService();
+export const dashboardService = createLazyService(() => new DashboardService());

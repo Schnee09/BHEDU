@@ -1,3 +1,5 @@
+import { createLazyService } from './lazyService';
+
 /**
  * Grade Service - Student academic performance management
  *
@@ -200,7 +202,7 @@ export class GradeService {
   // Static methods removed in favor of singleton instance usage.
 }
 
-export const gradeService = new GradeService();
+export const gradeService = createLazyService(() => new GradeService());
 
 // Legacy type exports for backward compatibility with assignment management system
 // These reference the old assignment/category tables that may still exist

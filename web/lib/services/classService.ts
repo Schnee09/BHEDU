@@ -1,3 +1,5 @@
+import { createLazyService } from './lazyService';
+
 /**
  * Class Service - Business logic for class management
  *
@@ -488,4 +490,4 @@ export class ClassService {
 }
 
 // Default singleton instance for backward compatibility
-export const classService = new ClassService();
+export const classService = createLazyService(() => new ClassService());

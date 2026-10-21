@@ -1,3 +1,5 @@
+import { createLazyService } from './lazyService';
+
 /**
  * Settings Service - Business logic for system settings and global academic context
  *
@@ -180,4 +182,4 @@ export class SettingsService {
   }
 }
 
-export const settingsService = new SettingsService();
+export const settingsService = createLazyService(() => new SettingsService());
