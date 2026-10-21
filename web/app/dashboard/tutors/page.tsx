@@ -321,17 +321,22 @@ function TutorsContent() {
                       {initials}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <h3 className="font-bold text-stone-900 dark:text-white text-sm truncate">
-                          {tutor.full_name}
-                        </h3>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h3
+                            className="font-bold text-stone-900 dark:text-white text-base leading-snug break-words"
+                            title={tutor.full_name}
+                          >
+                            {tutor.full_name}
+                          </h3>
+                          <p className="font-mono text-[11px] text-stone-400 dark:text-stone-500 mt-0.5">
+                            {tutor.teacher_code || 'GS---'}
+                          </p>
+                        </div>
+                        <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50">
                           Gia sư
                         </span>
                       </div>
-                      <p className="font-mono text-[10px] text-stone-400 dark:text-stone-500 mt-0.5">
-                        {tutor.teacher_code || 'GS---'}
-                      </p>
                     </div>
                   </div>
 
@@ -385,9 +390,9 @@ function TutorsContent() {
                     {/* Contact */}
                     <div className="pt-2 space-y-1 text-[11px] text-stone-500 dark:text-stone-400">
                       {tutor.email && (
-                        <div className="flex items-center gap-1.5 truncate">
+                        <div className="flex items-center gap-1.5 min-w-0" title={tutor.email}>
                           <Mail className="w-3 h-3 shrink-0 text-stone-400" />
-                          <span className="truncate">{tutor.email}</span>
+                          <span className="truncate font-mono text-[10.5px]">{tutor.email}</span>
                         </div>
                       )}
                       {tutor.phone && (

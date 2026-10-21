@@ -59,7 +59,8 @@ export default function ClassGridView({
           Chưa chọn lớp học
         </h3>
         <p className="text-stone-500 dark:text-stone-400 max-w-xs mx-auto text-xs font-bold">
-          Vui lòng chọn một lớp học từ danh sách phía trên để xem và quản lý thời khóa biểu chi tiết.
+          Vui lòng chọn một lớp học từ danh sách phía trên để xem và quản lý thời khóa biểu chi
+          tiết.
         </p>
       </div>
     );
@@ -136,7 +137,10 @@ export default function ClassGridView({
                     ? getSlotForClassCell(slots, dayIndex, session.start)
                     : null;
 
-                  const colors = getSubjectColor(slot?.subject?.name, !slot?.room || slot?.room === 'Linh hoạt');
+                  const colors = getSubjectColor(
+                    slot?.subject?.name,
+                    !slot?.room || slot?.room === 'Linh hoạt'
+                  );
 
                   return (
                     <td
@@ -181,19 +185,29 @@ export default function ClassGridView({
                               {slot.subject?.name || 'Môn học'}
                             </div>
                             <div className="flex items-center gap-1.5 text-[10px] font-bold text-stone-600 dark:text-stone-300">
-                              <Users className="w-3 h-3 text-amber-500" />
-                              <span className="truncate">{slot.teacher?.full_name || 'Chưa phân công'}</span>
+                              <Users className="w-3 h-3 text-amber-500 shrink-0" />
+                              <span
+                                className="truncate"
+                                title={slot.teacher?.full_name || 'Chưa phân công giáo viên'}
+                              >
+                                {slot.teacher?.full_name || 'Chưa phân công'}
+                              </span>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between text-[9px] text-stone-500 dark:text-stone-400 pt-1 border-t border-stone-200/40 dark:border-white/5 mt-1.5">
                             {slot.room ? (
-                              <span className="font-bold flex items-center gap-1 truncate">
-                                <MapPin className="w-2.5 h-2.5 text-amber-500" />
-                                {slot.room.replace(/^.*? - /, '')}
+                              <span
+                                className="font-bold flex items-center gap-1 truncate"
+                                title={`Phòng: ${slot.room}`}
+                              >
+                                <MapPin className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                                <span className="truncate">{slot.room.replace(/^.*? - /, '')}</span>
                               </span>
                             ) : (
-                              <span className="font-bold text-sky-600 dark:text-sky-400">Linh hoạt</span>
+                              <span className="font-bold text-sky-600 dark:text-sky-400">
+                                Linh hoạt
+                              </span>
                             )}
                           </div>
 

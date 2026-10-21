@@ -5,9 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { getDisplayName } from '@/lib/utils/names';
+import { getDisplayName, getUserInitials, getUserAvatarSrc } from '@/lib/utils/names';
 import { Profile } from '@/contexts/ProfileContext';
 import type { UserRole } from '@/lib/auth/core';
+import { getRoleAvatarGradient } from '@/lib/role-utils';
 import { ChevronLeft } from 'lucide-react';
 
 interface SidebarHeaderProps {
@@ -25,7 +26,8 @@ export const SidebarHeader = memo(function SidebarHeader({
   const [imgError, setImgError] = useState(false);
   const role = (profile.role ?? 'student') as UserRole;
 
-  const avatarSrc = profile?.photo_url || profile?.avatar_url;
+  const avatarSrc = getUserAvatarSrc(profile);
+  const avatarGradient = getRoleAvatarGradient(profile?.role);
 
   useEffect(() => {
     setImgError(false);
@@ -38,23 +40,7 @@ export const SidebarHeader = memo(function SidebarHeader({
     else setGreeting('Chào buổi tối');
   }, []);
 
-  const initials = useMemo(() => {
-    if (profile?.last_name && profile?.first_name) {
-      return `${profile.last_name[0] || ''}${profile.first_name[0] || ''}`.toUpperCase();
-    }
-    if (profile?.full_name) {
-      const parts = profile.full_name.trim().split(/\s+/).filter(Boolean);
-      if (parts.length >= 2) {
-        const first = parts[0] || '';
-        const last = parts[parts.length - 1] || '';
-        return `${first[0] || ''}${last[0] || ''}`.toUpperCase();
-      }
-      if (parts.length === 1 && parts[0]) {
-        return parts[0].substring(0, 2).toUpperCase();
-      }
-    }
-    return 'U';
-  }, [profile]);
+  const initials = useMemo(() => getUserInitials(profile), [profile]);
 
   return (
     <div className="flex flex-col border-b border-stone-100 dark:border-white/5 pb-3.5 relative overflow-hidden shrink-0">
@@ -130,7 +116,8 @@ export const SidebarHeader = memo(function SidebarHeader({
           href="/dashboard/profile"
           title="Hồ sơ cá nhân"
           className={cn(
-            'relative shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 border border-amber-400/40 shadow-2xs flex items-center justify-center text-white font-bold text-xs hover:rotate-3 transition-all duration-300 group cursor-pointer overflow-hidden',
+            'relative shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br border border-white/20 shadow-2xs flex items-center justify-center text-white font-bold text-xs hover:rotate-3 transition-all duration-300 group cursor-pointer overflow-hidden',
+            avatarGradient,
             isCollapsed && 'w-9 h-9'
           )}
         >
@@ -150,7 +137,10 @@ export const SidebarHeader = memo(function SidebarHeader({
         {!isCollapsed && (
           <div className="flex flex-col min-w-0 flex-1 justify-center">
             <Link href="/dashboard/profile" className="group/profile block w-full min-w-0">
-              <span className="block text-xs font-black uppercase leading-tight tracking-wide text-stone-900 dark:text-stone-100 group-hover/profile:text-amber-600 transition-colors truncate">
+              <span
+                className="block text-xs font-black uppercase leading-snug tracking-wide text-stone-900 dark:text-stone-100 group-hover/profile:text-amber-600 transition-colors line-clamp-2 break-words"
+                title={profile.full_name || 'NGƯỜI DÙNG'}
+              >
                 {profile.full_name || 'NGƯỜI DÙNG'}
               </span>
             </Link>

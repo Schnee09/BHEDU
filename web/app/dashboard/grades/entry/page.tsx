@@ -607,11 +607,11 @@ function GradeEntryPageContent() {
                     )}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className="w-6 h-6 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center text-[11px] font-black shrink-0">
                           {idx + 1}
                         </span>
-                        <span className="font-bold text-sm text-stone-900 dark:text-white truncate">
+                        <span className="font-bold text-sm text-stone-900 dark:text-white leading-snug break-words">
                           {student.full_name || student.name || '—'}
                         </span>
                       </div>

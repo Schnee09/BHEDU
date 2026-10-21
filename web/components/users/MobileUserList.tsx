@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { getRoleLabel } from '@/lib/role-utils';
+import { getRoleLabel, getRoleAvatarGradient } from '@/lib/role-utils';
+import { getUserInitials } from '@/lib/utils/names';
 
 // Mimic User interface or import if possible. Since it's not exported in page.tsx, we redefine compatible one.
 interface User {
@@ -121,32 +122,41 @@ export default function MobileUserList({
             key={user.id}
             className={cn(
               'bg-white dark:bg-[#14120E] rounded-3xl p-6 shadow-md border transition-all',
-              !user.is_active ? 'opacity-70 grayscale-[0.3] border-stone-200 dark:border-stone-800' : 'border-stone-200/80 dark:border-stone-800'
+              !user.is_active
+                ? 'opacity-70 grayscale-[0.3] border-stone-200 dark:border-stone-800'
+                : 'border-stone-200/80 dark:border-stone-800'
             )}
           >
-
             <div className="flex justify-between items-start gap-3 mb-4 relative z-10">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-bold text-stone-900 dark:text-stone-100 truncate text-lg tracking-tight">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div
+                  className={cn(
+                    'w-11 h-11 rounded-2xl text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-sm overflow-hidden bg-gradient-to-br',
+                    getRoleAvatarGradient(user.role)
+                  )}
+                >
+                  <span>{getUserInitials(user)}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-stone-900 dark:text-stone-100 text-base tracking-tight mb-1 leading-snug break-words">
                     {user.full_name}
                   </h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <span
-                    className={cn(
-                      'px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5 shadow-sm',
-                      getRoleColor(user.role)
-                    )}
-                  >
-                    {getRoleIcon(user.role)}
-                    {getRoleLabel(user.role)}
-                  </span>
-                  {!user.is_active && (
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-500 dark:bg-white/10 dark:text-stone-400 border border-stone-200 dark:border-white/5">
-                      Vô hiệu hóa
+                  <div className="flex flex-wrap gap-2">
+                    <span
+                      className={cn(
+                        'px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 shadow-2xs',
+                        getRoleColor(user.role)
+                      )}
+                    >
+                      {getRoleIcon(user.role)}
+                      {getRoleLabel(user.role)}
                     </span>
-                  )}
+                    {!user.is_active && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-stone-500 dark:bg-white/10 dark:text-stone-400 border border-stone-200 dark:border-white/5">
+                        Vô hiệu hóa
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -156,7 +166,7 @@ export default function MobileUserList({
                 <div className="p-1.5 bg-white dark:bg-stone-800 rounded-lg shadow-sm">
                   <Mail className="w-3.5 h-3.5 text-stone-400" />
                 </div>
-                <span className="text-xs font-medium text-stone-600 dark:text-stone-400 truncate">
+                <span className="text-xs font-medium text-stone-600 dark:text-stone-400 break-all font-mono">
                   {user.email}
                 </span>
               </div>
@@ -245,26 +255,28 @@ export default function MobileUserList({
                   </div>
                 </div>
               )}
-              {(user.role === 'admin' || user.role === 'owner' || user.role === 'super_admin') && user.department && (
-                <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-white dark:bg-stone-800 rounded-lg shadow-sm">
-                    <Building className="w-3.5 h-3.5 text-stone-400" />
+              {(user.role === 'admin' || user.role === 'owner' || user.role === 'super_admin') &&
+                user.department && (
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-white dark:bg-stone-800 rounded-lg shadow-sm">
+                      <Building className="w-3.5 h-3.5 text-stone-400" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-bold text-stone-400 tracking-wider leading-none mb-1 uppercase">
+                        Phòng ban phụ trách
+                      </span>
+                      <span className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                        {user.department}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-bold text-stone-400 tracking-wider leading-none mb-1 uppercase">
-                      Phòng ban phụ trách
-                    </span>
-                    <span className="text-xs font-bold text-stone-800 dark:text-stone-200">
-                      {user.department}
-                    </span>
-                  </div>
-                </div>
-              )}
+                )}
             </div>
 
             <div className="grid grid-cols-4 gap-3 pt-4 border-t border-stone-100 dark:border-white/5 relative z-10">
               <button
                 onClick={() => onEdit(user)}
+                aria-label={`Chỉnh sửa thông tin ${user.full_name}`}
                 className="h-12 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center hover:bg-blue-500/20 transition-all press-effect shadow-sm"
                 title="Chỉnh sửa"
               >
@@ -272,6 +284,7 @@ export default function MobileUserList({
               </button>
               <button
                 onClick={() => onResetPassword(user)}
+                aria-label={`Đặt lại mật khẩu cho ${user.full_name}`}
                 className="h-12 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center hover:bg-amber-500/20 transition-all press-effect shadow-sm"
                 title="Đặt lại mật khẩu"
               >
@@ -279,6 +292,11 @@ export default function MobileUserList({
               </button>
               <button
                 onClick={() => onToggleActive(user)}
+                aria-label={
+                  user.is_active
+                    ? `Vô hiệu hóa tài khoản ${user.full_name}`
+                    : `Kích hoạt tài khoản ${user.full_name}`
+                }
                 className={cn(
                   'h-12 rounded-2xl flex items-center justify-center transition-all press-effect shadow-sm',
                   user.is_active
@@ -291,6 +309,7 @@ export default function MobileUserList({
               </button>
               <button
                 onClick={() => onDelete(user)}
+                aria-label={`Xóa tài khoản ${user.full_name}`}
                 className="h-12 bg-red-500/10 text-red-600 dark:text-red-400 rounded-2xl flex items-center justify-center hover:bg-red-500/20 transition-all press-effect shadow-sm"
                 title="Xóa vĩnh viễn"
               >

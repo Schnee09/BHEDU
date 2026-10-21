@@ -444,11 +444,14 @@ export default function SubjectManagementPage() {
                       </div>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-gray-900 dark:text-white truncate">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h3
+                          className="font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug break-words"
+                          title={subject.name}
+                        >
                           {subject.name}
                         </h3>
-                        <code className="text-[10px] px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md font-bold uppercase tracking-wider">
+                        <code className="text-[10px] px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md font-bold uppercase tracking-wider shrink-0 mt-0.5">
                           {subject.code}
                         </code>
                       </div>

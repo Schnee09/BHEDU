@@ -84,7 +84,7 @@ export default function StudentGridView({
                         onViewDetails ? onViewDetails(student) : onSelect(student.id)
                       }
                       className={cn(
-                        'font-bold text-sm transition-colors cursor-pointer truncate',
+                        'font-bold text-sm transition-colors cursor-pointer line-clamp-2 leading-snug break-words',
                         !isActive
                           ? 'text-stone-400 dark:text-stone-500 line-through hover:text-stone-600 dark:hover:text-stone-300'
                           : 'text-stone-900 dark:text-stone-100 hover:text-amber-600 dark:hover:text-amber-400'
@@ -145,7 +145,10 @@ export default function StudentGridView({
                   <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">
                     Mã UID
                   </span>
-                  <span className="font-mono font-semibold text-blue-600 dark:text-blue-400 truncate block text-[11px]">
+                  <span
+                    className="font-mono font-semibold text-blue-600 dark:text-blue-400 truncate block text-[11px]"
+                    title={`UID: ${student.student_code || 'Chưa có'}`}
+                  >
                     {student.student_code || '—'}
                   </span>
                 </div>
@@ -153,7 +156,10 @@ export default function StudentGridView({
                   <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">
                     Mã CID
                   </span>
-                  <span className="font-mono font-semibold text-amber-700 dark:text-amber-300 truncate block text-[11px]">
+                  <span
+                    className="font-mono font-semibold text-amber-700 dark:text-amber-300 truncate block text-[11px]"
+                    title={`CID: ${student.student_id || 'Chưa có'}`}
+                  >
                     {student.student_id || '—'}
                   </span>
                 </div>
@@ -174,9 +180,9 @@ export default function StudentGridView({
                 ) : null}
 
                 {student.email ? (
-                  <div className="flex items-center gap-2 truncate">
+                  <div className="flex items-center gap-2 min-w-0" title={student.email}>
                     <Mail className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="truncate text-stone-600 dark:text-stone-300">
+                    <span className="truncate font-mono text-[11px] text-stone-600 dark:text-stone-300">
                       {student.email}
                     </span>
                   </div>

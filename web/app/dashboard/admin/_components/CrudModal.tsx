@@ -36,13 +36,17 @@ export function CrudModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className={`bg-white dark:bg-[#1A1410] rounded-xl shadow-xl ${sizeClasses[size]} w-full mx-4 max-h-[95dvh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95`}>
+      <div
+        className={`bg-white dark:bg-[#1A1410] rounded-xl shadow-xl ${sizeClasses[size]} w-full mx-4 max-h-[95dvh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-stone-800">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100">{title}</h2>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            aria-label="Đóng"
+            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-stone-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
             disabled={loading}
           >
             <XMarkIcon className="w-5 h-5" />
@@ -54,7 +58,7 @@ export function CrudModal({
           {children}
 
           {/* Footer */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-stone-800 mt-auto">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-stone-800 mt-auto">
             <button
               type="button"
               onClick={onClose}
@@ -72,7 +76,7 @@ export function CrudModal({
                   : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
-              {loading ? 'Saving...' : submitLabel}
+              {loading ? 'Saving…' : submitLabel}
             </button>
           </div>
         </form>

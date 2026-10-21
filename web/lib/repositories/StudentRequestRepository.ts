@@ -80,7 +80,9 @@ export class StudentRequestRepository {
    */
   async findRequests(filters: {
     student_id?: string;
+    student_ids?: string[];
     class_id?: string;
+    class_ids?: string[];
     status?: string;
     request_type?: string;
     limit?: number;
@@ -104,9 +106,15 @@ export class StudentRequestRepository {
 
       if (filters.student_id) {
         query = query.eq('student_id', filters.student_id);
+      } else if (filters.student_ids) {
+        if (filters.student_ids.length === 0) return { data: [], total: 0 };
+        query = query.in('student_id', filters.student_ids);
       }
       if (filters.class_id) {
         query = query.eq('class_id', filters.class_id);
+      } else if (filters.class_ids) {
+        if (filters.class_ids.length === 0) return { data: [], total: 0 };
+        query = query.in('class_id', filters.class_ids);
       }
       if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status);

@@ -690,7 +690,10 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
             {/* Student Identity */}
             <div className="space-y-1 flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <h1 className="text-base sm:text-lg font-black text-stone-900 dark:text-white uppercase tracking-tight truncate">
+                <h1
+                  className="text-base sm:text-lg font-black text-stone-900 dark:text-white uppercase tracking-tight leading-snug break-words"
+                  title={profile.full_name}
+                >
                   {profile.full_name}
                 </h1>
                 {profile.grade_level && (

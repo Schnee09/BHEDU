@@ -1,4 +1,9 @@
-import { createClient, createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
+import {
+  createClient,
+  createClientFromRequest,
+  createClientFromToken,
+  createServiceClient,
+} from '@/lib/supabase/server';
 
 /**
  * Returns a Supabase client suitable for the current request/viewer.
@@ -13,55 +18,35 @@ import { createClient, createClientFromRequest, createServiceClient } from '@/li
  */
 export async function getDataClient(request?: Request) {
   try {
-    // 1. Try to get role and ID from headers (passed by proxy for speed)
-    const headerRole = request?.headers.get('x-user-role');
-    const headerUserId = request?.headers.get('x-user-id');
+    // Authentication must be derived from a verified Supabase session/token.
+    // Never trust identity or role headers supplied by the caller: API routes do
+    // not pass through the dashboard proxy, so those headers are forgeable.
+    const bearerToken = request?.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
+    const authClient = bearerToken
+      ? createClientFromToken(bearerToken)
+      : request
+        ? createClientFromRequest(request)
+        : await createClient();
 
-    const authClient = request ? createClientFromRequest(request) : await createClient();
+    const { data: auth, error: authError } = await authClient.auth.getUser();
+    const user = authError ? null : (auth?.user ?? null);
+    let viewerRole: string | null = null;
 
-    let viewerRole: string | null = headerRole ?? null;
-    let user: any = headerUserId ? { id: headerUserId } : null;
-    let fastPath = false;
+    if (user) {
+      const { data: viewer, error: profileError } = await authClient
+        .from('profiles')
+        .select('role')
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .maybeSingle();
 
-    // If we have headers, we can potentially skip two DB calls
-    if (headerRole && headerUserId) {
-      console.log(
-        `[getDataClient] Fast path: using headers (Role: ${headerRole}, ID: ${headerUserId})`
-      );
-      fastPath = true;
-    } else {
-      // Slow path: Need to fetch from Supabase
-      const { data: auth, error: authError } = await authClient.auth.getUser();
-      if (authError) {
-        console.warn('[getDataClient] auth.getUser() error:', authError);
-      }
-      user = auth?.user ?? null;
-
-      if (user) {
-        try {
-          const { data: viewer } = await authClient
-            .from('profiles')
-            .select('role')
-            .or(`id.eq.${user.id},user_id.eq.${user.id}`)
-            .maybeSingle();
-          viewerRole = (viewer as { role?: string } | null)?.role ?? null;
-          console.log(`[getDataClient] Slow path: fetched role: ${viewerRole}`);
-        } catch (profileCatchError) {
-          console.warn('[getDataClient] profile query caught error:', profileCatchError);
-          viewerRole = null;
-        }
+      if (!profileError) {
+        viewerRole = (viewer as { role?: string } | null)?.role ?? null;
       }
     }
 
     const usingServiceClient =
       viewerRole === 'admin' || viewerRole === 'super_admin' || viewerRole === 'owner';
     const supabase = usingServiceClient ? createServiceClient() : authClient;
-
-    if (!fastPath) {
-      console.log(
-        `[getDataClient] Using Service Client: ${usingServiceClient} for role: ${viewerRole}`
-      );
-    }
 
     return { supabase, viewerRole, user, usingServiceClient } as const;
   } catch (outerError) {

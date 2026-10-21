@@ -92,7 +92,10 @@ function ClassCard({ cls }: { cls: ClassItem }) {
               {cls.academic_years?.name ?? 'Năm học'}
             </span>
           </div>
-          <h3 className="text-xl font-black text-stone-900 dark:text-stone-50 truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors duration-300">
+          <h3
+            className="text-xl font-black text-stone-900 dark:text-stone-50 line-clamp-2 leading-snug break-words group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors duration-300"
+            title={cls.name}
+          >
             {cls.name}
           </h3>
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">{subject}</p>

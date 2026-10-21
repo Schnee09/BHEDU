@@ -84,3 +84,56 @@ export function getDisplayName(
 
   return formatted || 'Chưa có';
 }
+
+/**
+ * Resolves consistent avatar initials for a user:
+ * Rule: First letter of Surname (Họ) + First letter of Given Name (Tên).
+ * Example: "Trương Ngọc Anh Thư" -> "TT"
+ * Example: "Nguyễn Văn Nam" -> "NN"
+ * Example: "Thư" -> "TH"
+ */
+export function getUserInitials(
+  profile?: {
+    full_name?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+  } | null
+): string {
+  if (!profile) return 'U';
+
+  const firstName = (profile.first_name || '').trim();
+  const lastName = (profile.last_name || '').trim();
+
+  if (lastName && firstName) {
+    const firstChar = lastName[0] || '';
+    const lastChar = firstName[0] || '';
+    return `${firstChar}${lastChar}`.toUpperCase();
+  }
+
+  const fullName = (profile.full_name || '').trim();
+  if (fullName) {
+    const parts = fullName.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      const first = parts[0] || '';
+      const last = parts[parts.length - 1] || '';
+      return `${first[0] || ''}${last[0] || ''}`.toUpperCase();
+    }
+    if (parts.length === 1 && parts[0]) {
+      return parts[0].substring(0, 2).toUpperCase();
+    }
+  }
+
+  return 'U';
+}
+
+/**
+ * Gets standard avatar image source, checking photo_url then avatar_url
+ */
+export function getUserAvatarSrc(
+  profile?: {
+    photo_url?: string | null;
+    avatar_url?: string | null;
+  } | null
+): string | null {
+  return profile?.photo_url || profile?.avatar_url || null;
+}

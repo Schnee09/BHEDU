@@ -27,6 +27,8 @@ import {
 import { cn } from '@/lib/utils';
 import type { UserItem } from './UserTable';
 import { createClient } from '@/lib/supabase/client';
+import { getUserInitials } from '@/lib/utils/names';
+import { getRoleAvatarGradient } from '@/lib/role-utils';
 
 interface UserDetailDrawerProps {
   isOpen: boolean;
@@ -172,7 +174,12 @@ export function UserDetailDrawer({
         <div className="p-6 border-b border-stone-200 dark:border-stone-800 bg-stone-50/80 dark:bg-[#181612] shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white font-black text-xl flex items-center justify-center shadow-md overflow-hidden shrink-0">
+              <div
+                className={cn(
+                  'w-14 h-14 rounded-2xl text-white font-black text-xl flex items-center justify-center shadow-md overflow-hidden shrink-0 bg-gradient-to-br',
+                  getRoleAvatarGradient(user.role)
+                )}
+              >
                 {user.photo_url ? (
                   <img
                     src={user.photo_url}
@@ -180,14 +187,14 @@ export function UserDetailDrawer({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span>{user.full_name?.charAt(0) || 'U'}</span>
+                  <span>{getUserInitials(user)}</span>
                 )}
               </div>
-              <div className="min-w-0">
-                <h3 className="text-base font-black text-stone-900 dark:text-white truncate">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-black text-stone-900 dark:text-white leading-snug break-words">
                   {user.full_name || 'Chưa đặt tên'}
                 </h3>
-                <p className="text-xs text-stone-500 dark:text-stone-400 truncate mt-0.5">
+                <p className="text-xs text-stone-500 dark:text-stone-400 break-all font-mono mt-0.5">
                   {user.email}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
@@ -211,6 +218,7 @@ export function UserDetailDrawer({
 
             <button
               onClick={onClose}
+              aria-label="Đóng bảng chi tiết người dùng"
               className="p-2 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors"
             >
               <X className="w-5 h-5" />

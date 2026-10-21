@@ -139,7 +139,10 @@ export default function RankingWidget({
               >
                 {getRankIcon(student.rank)}
                 <div className="flex-1 min-w-0">
-                  <p className="font-black text-stone-900 dark:text-white truncate group-hover:text-amber-600 transition-colors uppercase text-xs sm:text-sm tracking-tight">
+                  <p
+                    className="font-black text-stone-900 dark:text-white line-clamp-1 sm:line-clamp-2 leading-tight break-words group-hover:text-amber-600 transition-colors uppercase text-xs sm:text-sm tracking-tight"
+                    title={student.studentName}
+                  >
                     {student.studentName}
                   </p>
                   <p className="text-[9.5px] sm:text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5 truncate">
@@ -194,7 +197,10 @@ export default function RankingWidget({
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-black text-stone-900 dark:text-white truncate uppercase text-sm tracking-tight group-hover:text-red-600 transition-colors">
+                    <p
+                      className="font-black text-stone-900 dark:text-white line-clamp-1 sm:line-clamp-2 leading-tight break-words uppercase text-sm tracking-tight group-hover:text-red-600 transition-colors"
+                      title={student.studentName}
+                    >
                       {student.studentName}
                     </p>
                     <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">

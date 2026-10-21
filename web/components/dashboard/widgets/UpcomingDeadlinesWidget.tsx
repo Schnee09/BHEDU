@@ -81,7 +81,10 @@ export default function UpcomingDeadlinesWidget() {
                   className="flex items-center justify-between p-4 bg-white/45 dark:bg-stone-900/40 border border-stone-200/60 dark:border-white/5 rounded-2xl hover:border-amber-500/30 transition-all duration-300 gap-4"
                 >
                   <div className="space-y-1 min-w-0">
-                    <h4 className="font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight text-sm sm:text-base truncate">
+                    <h4
+                      className="font-serif font-black text-stone-900 dark:text-white uppercase tracking-tight text-sm sm:text-base line-clamp-2 leading-snug"
+                      title={deadline.title}
+                    >
                       {deadline.title}
                     </h4>
                     <div className="flex items-center gap-2 flex-wrap">

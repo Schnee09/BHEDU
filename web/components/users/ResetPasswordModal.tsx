@@ -132,11 +132,13 @@ export default function ResetPasswordModal({ isOpen, onClose, user }: ResetPassw
             <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center flex-shrink-0">
               <Icons.Lock className="w-6 h-6 text-emerald-600" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-black text-stone-400 uppercase tracking-widest">
                 Đang đặt lại mật khẩu cho
               </p>
-              <p className="font-bold text-stone-900 dark:text-white truncate">{user?.full_name}</p>
+              <p className="font-bold text-stone-900 dark:text-white leading-snug break-words">
+                {user?.full_name}
+              </p>
             </div>
           </div>
 
@@ -150,7 +152,7 @@ export default function ResetPasswordModal({ isOpen, onClose, user }: ResetPassw
               type="password"
               autoComplete="new-password"
               name="bhedu_reset_new_password"
-              placeholder="Nhập mật khẩu mới..."
+              placeholder="Nhập mật khẩu mới…"
               value={passwordData.new_password}
               onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
               required

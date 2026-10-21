@@ -126,7 +126,11 @@ interface PendingRolePermAction {
 // ──────────────────────────────────────────────
 
 const DEFAULT_ROLE_OPTIONS = [
-  { value: 'super_admin', label: 'Quản trị Hệ thống', color: 'bg-black text-white dark:bg-white/10' },
+  {
+    value: 'super_admin',
+    label: 'Quản trị Hệ thống',
+    color: 'bg-black text-white dark:bg-white/10',
+  },
   {
     value: 'owner',
     label: 'Chủ trung tâm',
@@ -589,7 +593,8 @@ function RolePermissionsTab() {
         <div className="p-3.5 bg-amber-50/80 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-900/40">
           <p className="text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2 leading-relaxed">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
-            Thay đổi quyền hạn vai trò sẽ tự động cập nhật ngay lập tức cho toàn bộ tài khoản thuộc vai trò đó.
+            Thay đổi quyền hạn vai trò sẽ tự động cập nhật ngay lập tức cho toàn bộ tài khoản thuộc
+            vai trò đó.
           </p>
         </div>
       </div>
@@ -659,8 +664,8 @@ function RolePermissionsTab() {
           <div className="p-4 rounded-2xl bg-stone-900 dark:bg-stone-950 border border-stone-800 text-stone-200 flex items-center gap-3">
             <Shield className="w-5 h-5 text-amber-400 shrink-0" />
             <div className="text-xs">
-              <span className="font-bold text-white">Toàn quyền Hệ thống (God Mode):</span>{' '}
-              Quản trị Hệ thống sở hữu tất cả các quyền hạn và không thể bị từ chối quyền.
+              <span className="font-bold text-white">Toàn quyền Hệ thống (God Mode):</span> Quản trị
+              Hệ thống sở hữu tất cả các quyền hạn và không thể bị từ chối quyền.
             </div>
           </div>
         )}
@@ -802,7 +807,9 @@ function RolePermCategory({
           {CATEGORY_LABELS[category] || category}
         </span>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-muted-foreground">{permissions.length} quyền</span>
+          <span className="text-xs font-mono text-muted-foreground">
+            {permissions.length} quyền
+          </span>
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
@@ -817,7 +824,8 @@ function RolePermCategory({
             );
             const isGrantedExtra = override && !override.is_denied;
             const isDenied = !isSuperAdminRole && override && override.is_denied;
-            const isEffectivelyGranted = isSuperAdminRole || (isBase && !isDenied) || isGrantedExtra;
+            const isEffectivelyGranted =
+              isSuperAdminRole || (isBase && !isDenied) || isGrantedExtra;
 
             return (
               <div
@@ -1090,7 +1098,10 @@ function UserPermissionsTab() {
         if (selectedUser?.id === pendingRoleChange.userId) {
           setSelectedUser((prev) => (prev ? { ...prev, role: pendingRoleChange.newRole } : null));
         }
-        toast.success('Thành công', `Đã đổi vai trò sang ${pendingRoleChange.newRole.toUpperCase()}`);
+        toast.success(
+          'Thành công',
+          `Đã đổi vai trò sang ${pendingRoleChange.newRole.toUpperCase()}`
+        );
       } else {
         const d = await res.json();
         toast.error('Lỗi', d.error || 'Không thể đổi vai trò');
@@ -1148,11 +1159,16 @@ function UserPermissionsTab() {
                     selectedUser?.id === user.id ? 'bg-primary text-white' : 'hover:bg-muted'
                   )}
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold truncate">{user.full_name || 'Chưa đặt tên'}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p
+                      className="font-bold line-clamp-2 leading-snug break-words"
+                      title={user.full_name || 'Chưa đặt tên'}
+                    >
+                      {user.full_name || 'Chưa đặt tên'}
+                    </p>
                     <span
                       className={cn(
-                        'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase',
+                        'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0',
                         selectedUser?.id === user.id
                           ? 'bg-white/20 text-white'
                           : roleOpt?.color || 'bg-gray-100 text-gray-700'
@@ -1192,7 +1208,9 @@ function UserPermissionsTab() {
           <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
               <div>
-                <h2 className="text-xl font-bold">{selectedUser.full_name || selectedUser.email}</h2>
+                <h2 className="text-xl font-bold">
+                  {selectedUser.full_name || selectedUser.email}
+                </h2>
                 <p className="text-xs text-muted-foreground">{selectedUser.email}</p>
               </div>
 
@@ -1310,7 +1328,9 @@ function UserPermCategory({
           {CATEGORY_LABELS[category] || category}
         </span>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-muted-foreground">{permissions.length} quyền</span>
+          <span className="text-xs font-mono text-muted-foreground">
+            {permissions.length} quyền
+          </span>
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
@@ -1447,7 +1467,10 @@ function AuditLogTab() {
           <h2 className="text-lg font-bold text-foreground">Nhật ký thay đổi quyền</h2>
           <p className="text-xs text-muted-foreground">{total} bản ghi được lưu vết</p>
         </div>
-        <button onClick={loadLogs} className="p-2 rounded-xl hover:bg-muted transition-colors border border-border">
+        <button
+          onClick={loadLogs}
+          className="p-2 rounded-xl hover:bg-muted transition-colors border border-border"
+        >
           <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
         </button>
       </div>
@@ -1524,7 +1547,9 @@ function AuditLogTab() {
                     {log.user?.full_name || 'N/A'} • Bởi: {log.performer?.full_name || 'N/A'}
                   </p>
                   {log.reason && (
-                    <p className="text-[11px] text-muted-foreground italic mt-0.5">"{log.reason}"</p>
+                    <p className="text-[11px] text-muted-foreground italic mt-0.5">
+                      "{log.reason}"
+                    </p>
                   )}
                 </div>
                 <p className="text-[11px] text-muted-foreground shrink-0 font-mono">

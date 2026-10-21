@@ -33,6 +33,7 @@ interface PerformanceMetrics {
 }
 
 const isDev = process.env.NODE_ENV === 'development';
+const isTest = process.env.NODE_ENV === 'test';
 const isBrowser = typeof window !== 'undefined';
 
 // ANSI color codes for terminal output
@@ -59,8 +60,49 @@ const browserColors = {
   audit: 'color: #8B5CF6; font-weight: bold',
 };
 
-// Global context that persists across logs
-let globalContext: LogContext = {};
+const SENSITIVE_KEY_PATTERN =
+  /password|passcode|token|authorization|cookie|secret|api[-_]?key|anon[-_]?key|service[-_]?role/i;
+const EMAIL_KEY_PATTERN = /email$/i;
+
+function redactEmail(value: string): string {
+  const [localPart, domain] = value.split('@');
+  if (!localPart || !domain) return '[REDACTED_EMAIL]';
+  return `${localPart.slice(0, 1)}***@${domain}`;
+}
+
+function sanitizeValue(value: unknown, key = '', seen = new WeakSet<object>()): unknown {
+  if (SENSITIVE_KEY_PATTERN.test(key)) return '[REDACTED]';
+  if (EMAIL_KEY_PATTERN.test(key) && typeof value === 'string') return redactEmail(value);
+
+  if (typeof value === 'string') {
+    return value.replace(/Bearer\s+[A-Za-z0-9._~+\/-]+=*/gi, 'Bearer [REDACTED]');
+  }
+  if (value === null || typeof value !== 'object') return value;
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: value.message,
+      ...(isDev && value.stack ? { stack: value.stack } : {}),
+    };
+  }
+  if (seen.has(value)) return '[Circular]';
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeValue(item, key, seen));
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([childKey, childValue]) => [
+      childKey,
+      sanitizeValue(childValue, childKey, seen),
+    ])
+  );
+}
+
+export function sanitizeLogMetadata(meta: Record<string, unknown>): Record<string, unknown> {
+  return sanitizeValue(meta) as Record<string, unknown>;
+}
 
 /**
  * Generate a unique correlation ID
@@ -72,7 +114,8 @@ function generateCorrelationId(): string {
 /**
  * Safely serialize values for logging
  */
-function safeStringify(value: unknown): string {
+function safeStringify(value: unknown, key = ''): string {
+  value = sanitizeValue(value, key);
   if (value === null || value === undefined) {
     return String(value);
   }
@@ -115,11 +158,11 @@ function safeStringify(value: unknown): string {
  */
 function formatLog(level: LogLevel, msg: string, meta?: Record<string, unknown>): any[] {
   const timestamp = new Date().toISOString();
-  const correlationId = globalContext.correlationId || generateCorrelationId();
+  const correlationId =
+    String(meta?.correlationId || meta?.requestId || '') || generateCorrelationId();
 
   // Merge metadata with global context
   const combinedContext = {
-    ...globalContext,
     correlationId,
     ...meta,
   };
@@ -129,7 +172,7 @@ function formatLog(level: LogLevel, msg: string, meta?: Record<string, unknown>)
   if (combinedContext && Object.keys(combinedContext).length > 0) {
     for (const [key, value] of Object.entries(combinedContext)) {
       if (value !== undefined) {
-        safeMeta[key] = safeStringify(value);
+        safeMeta[key] = safeStringify(value, key);
       }
     }
   }
@@ -188,24 +231,10 @@ function formatLog(level: LogLevel, msg: string, meta?: Record<string, unknown>)
  */
 export const logger = {
   /**
-   * Set global log context
-   */
-  setContext: (context: LogContext) => {
-    globalContext = { ...globalContext, ...context };
-  },
-
-  /**
-   * Clear global log context
-   */
-  clearContext: () => {
-    globalContext = {};
-  },
-
-  /**
    * DEBUG level - Development only
    */
   debug: (msg: string, meta?: Record<string, unknown>) => {
-    if (!isDev) return;
+    if (!isDev || isTest) return;
     const args = formatLog('debug', msg, meta);
     console.debug(...args);
   },
@@ -214,6 +243,7 @@ export const logger = {
    * INFO level - General information
    */
   info: (msg: string, meta?: Record<string, unknown>) => {
+    if (isTest) return;
     const args = formatLog('info', msg, meta);
     console.log(...args);
   },
@@ -222,6 +252,7 @@ export const logger = {
    * WARN level - Warnings
    */
   warn: (msg: string, meta?: Record<string, unknown>) => {
+    if (isTest) return;
     const args = formatLog('warn', msg, meta);
     console.warn(...args);
   },
@@ -230,13 +261,14 @@ export const logger = {
    * ERROR level - Errors with stack traces
    */
   error: (msg: string, error?: Error | unknown, meta?: Record<string, unknown>) => {
+    if (isTest) return;
     let errorData: Record<string, unknown> = {};
 
     if (error instanceof Error) {
       errorData = {
         errorName: error.name,
         errorMessage: error.message,
-        stack: error.stack,
+        ...(isDev && error.stack ? { stack: error.stack } : {}),
       };
     } else if (error !== null && error !== undefined) {
       errorData = { error: safeStringify(error) };
@@ -251,10 +283,10 @@ export const logger = {
     // Report to Sentry
     import('@sentry/nextjs').then((Sentry) => {
       Sentry.captureException(error || new Error(msg), {
-        extra: meta,
+        extra: meta ? sanitizeLogMetadata(meta) : undefined,
         tags: {
-          correlationId: globalContext.correlationId,
-          requestId: (meta?.requestId as string) || (globalContext.requestId as string),
+          correlationId: meta?.correlationId as string | undefined,
+          requestId: meta?.requestId as string | undefined,
         },
       });
     });
@@ -264,6 +296,7 @@ export const logger = {
    * AUDIT level - Security and compliance audit trail
    */
   audit: (action: string, context: LogContext, details?: Record<string, unknown>) => {
+    if (isTest) return;
     const args = formatLog('audit', `AUDIT: ${action}`, {
       ...context,
       ...details,

@@ -404,3 +404,20 @@
 .dark .particles-bg::before {
     background-image: radial-gradient(circle, rgba(99, 102, 241, 0.3) 1px, transparent 1px);
 }
+
+/* ============================================
+   ACCESSIBILITY: PREFERS REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .animated-gradient {
+        animation: none !important;
+    }
+}

@@ -978,15 +978,19 @@ function StudentsPage() {
                                 <div className="min-w-0">
                                   <p
                                     className={cn(
-                                      'font-bold tracking-tight text-xs transition-colors hover:text-amber-500 truncate',
+                                      'font-bold tracking-tight text-xs transition-colors hover:text-amber-500 line-clamp-2 leading-snug break-words',
                                       student.status !== 'active'
                                         ? 'text-stone-400 dark:text-stone-500 line-through'
                                         : 'text-stone-900 dark:text-white'
                                     )}
+                                    title={displayName}
                                   >
                                     {displayName}
                                   </p>
-                                  <p className="text-[11px] text-stone-400 font-normal truncate">
+                                  <p
+                                    className="text-[11px] text-stone-400 font-normal truncate"
+                                    title={student.email || 'Chưa có email'}
+                                  >
                                     {student.email || 'Chưa có email'}
                                   </p>
                                 </div>
@@ -1385,11 +1389,17 @@ function StudentDrawer({
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold text-lg shadow-xs shrink-0 uppercase">
               {(getStudentDisplayName(activeStudent).charAt(0) || 'H').toUpperCase()}
             </div>
-            <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-tight truncate">
+            <div className="min-w-0 flex-1">
+              <h2
+                className="text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-snug break-words line-clamp-2"
+                title={getStudentDisplayName(activeStudent)}
+              >
                 {getStudentDisplayName(activeStudent)}
               </h2>
-              <p className="text-xs text-stone-400 font-normal truncate mt-0.5">
+              <p
+                className="text-xs text-stone-400 font-normal truncate mt-0.5"
+                title={activeStudent.email || 'Chưa cập nhật email'}
+              >
                 {activeStudent.email || 'Chưa cập nhật email'}
               </p>
             </div>

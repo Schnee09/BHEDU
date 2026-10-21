@@ -114,7 +114,10 @@ function StudentCard({ s, index }: { s: TutoringStudent; index: number }) {
           {initials}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-black text-stone-900 dark:text-stone-50 truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors duration-300">
+          <p
+            className="font-black text-stone-900 dark:text-stone-50 line-clamp-2 leading-snug break-words group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors duration-300"
+            title={s.full_name}
+          >
             {s.full_name}
           </p>
           {s.student_code && (

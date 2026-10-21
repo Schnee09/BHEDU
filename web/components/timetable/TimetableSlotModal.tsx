@@ -205,7 +205,9 @@ const SearchableSelect = memo(function SearchableSelect<T>({
                         : 'hover:bg-stone-100 dark:hover:bg-white/5 text-stone-700 dark:text-stone-200'
                     )}
                   >
-                    <span className="truncate flex-1">{optLabel}</span>
+                    <span className="flex-1 line-clamp-2 break-words leading-snug" title={optLabel}>
+                      {optLabel}
+                    </span>
                     {isSelected && <Check className="w-4 h-4 text-amber-500 shrink-0 ml-2" />}
                   </button>
                 );

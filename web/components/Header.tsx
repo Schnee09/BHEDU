@@ -29,6 +29,7 @@ import { SearchModal } from './header/SearchModal';
 import { NotificationsPanel } from './header/NotificationsPanel';
 import { QuickActions } from './header/QuickActions';
 import { UserMenu } from './header/UserMenu';
+import { getUserInitials } from '@/lib/utils/names';
 
 interface HeaderProps {
   profile: {
@@ -91,24 +92,7 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
     router.push('/login');
   };
 
-  const initials = useMemo(() => {
-    if (profile?.last_name && profile?.first_name) {
-      // Vietnamese initials: Surname[0] + GivenName[0]
-      return `${profile.last_name[0]}${profile.first_name[0]}`.toUpperCase();
-    }
-
-    if (profile?.full_name) {
-      const parts = profile.full_name.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        // Fallback for full_name: First word[0] + Last word[0]
-        const first = parts[0]?.[0] ?? '';
-        const last = parts[parts.length - 1]?.[0] ?? '';
-        return `${first}${last}`.toUpperCase();
-      }
-      return profile.full_name.substring(0, 2).toUpperCase();
-    }
-    return 'U';
-  }, [profile]);
+  const initials = useMemo(() => getUserInitials(profile), [profile]);
 
   const quickActions = useMemo(
     () =>

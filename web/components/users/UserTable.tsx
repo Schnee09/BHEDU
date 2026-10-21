@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '@/lib/auth/core';
+import { getUserInitials } from '@/lib/utils/names';
+import { getRoleAvatarGradient } from '@/lib/role-utils';
 
 export interface UserItem {
   id: string;
@@ -145,6 +147,7 @@ export function UserTable({
               <th className="py-3 px-4 w-12 text-center">
                 <input
                   type="checkbox"
+                  aria-label="Chọn tất cả người dùng"
                   checked={isAllSelected}
                   ref={(el) => {
                     if (el) el.indeterminate = isSomeSelected;
@@ -266,6 +269,7 @@ export function UserTable({
                     >
                       <input
                         type="checkbox"
+                        aria-label={`Chọn người dùng ${user.full_name || user.email}`}
                         checked={isSelected}
                         onChange={() => onToggleSelect(user.id)}
                         className="w-4 h-4 rounded border-stone-300 dark:border-stone-700 text-amber-500 focus:ring-amber-400 cursor-pointer"
@@ -273,9 +277,14 @@ export function UserTable({
                     </td>
 
                     {/* User info */}
-                    <td className="py-3.5 px-4 min-w-[200px]">
+                    <td className="py-3.5 px-4 min-w-[240px]">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                        <div
+                          className={cn(
+                            'w-9 h-9 rounded-xl text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm overflow-hidden bg-gradient-to-br',
+                            getRoleAvatarGradient(user.role)
+                          )}
+                        >
                           {user.photo_url ? (
                             <img
                               src={user.photo_url}
@@ -283,12 +292,15 @@ export function UserTable({
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span>{user.full_name?.charAt(0) || 'U'}</span>
+                            <span>{getUserInitials(user)}</span>
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-stone-900 dark:text-stone-100 truncate group-hover:text-amber-600 transition-colors">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className="font-bold text-stone-900 dark:text-stone-100 line-clamp-2 break-words leading-snug group-hover:text-amber-600 transition-colors"
+                              title={user.full_name}
+                            >
                               {user.full_name || 'Chưa đặt tên'}
                             </span>
                             {user.is_managed && (
@@ -300,7 +312,10 @@ export function UserTable({
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-stone-400 dark:text-stone-500 truncate mt-0.5">
+                          <p
+                            className="text-[11px] text-stone-400 dark:text-stone-500 truncate mt-0.5 font-mono"
+                            title={`${user.email || ''}${user.phone ? ` • ${user.phone}` : ''}`}
+                          >
                             {user.email} {user.phone ? `• ${user.phone}` : ''}
                           </p>
                         </div>
@@ -327,8 +342,10 @@ export function UserTable({
                             {code}
                           </span>
                           <button
+                            type="button"
                             onClick={(e) => handleCopy(code, user.id, e)}
                             title="Sao chép mã"
+                            aria-label="Sao chép mã"
                             className="p-1 rounded-md text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors"
                           >
                             {copiedId === user.id ? (
@@ -343,7 +360,10 @@ export function UserTable({
                           Chưa cấp mã
                         </span>
                       )}
-                      <p className="text-[10px] text-stone-400 dark:text-stone-500 truncate mt-0.5">
+                      <p
+                        className="text-[10px] text-stone-400 dark:text-stone-500 line-clamp-2 leading-tight mt-0.5"
+                        title={unit}
+                      >
                         {unit}
                       </p>
                     </td>
@@ -392,6 +412,7 @@ export function UserTable({
                           onClick={() =>
                             setOpenDropdownId(openDropdownId === user.id ? null : user.id)
                           }
+                          aria-label={`Tùy chọn thao tác cho ${user.full_name || 'người dùng'}`}
                           className="p-1.5 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-500 transition-colors"
                         >
                           <MoreVertical className="w-4 h-4" />

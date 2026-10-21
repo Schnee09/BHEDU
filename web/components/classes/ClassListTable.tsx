@@ -66,14 +66,18 @@ export default function ClassListTable({ classes, searchQuery }: ClassListTableP
                     {cls.code || cls.course?.code || 'LỚP HỌC'}
                   </span>
                   {cls.course && (
-                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider truncate">
+                    <span
+                      className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider line-clamp-1 break-words"
+                      title={cls.course.name}
+                    >
                       • {cls.course.name}
                     </span>
                   )}
                 </div>
                 <Link
                   href={routes.classes.detail(cls.id)}
-                  className="text-base font-black text-stone-900 dark:text-white hover:text-amber-500 transition-colors leading-tight line-clamp-1 block"
+                  className="text-base font-black text-stone-900 dark:text-white hover:text-amber-500 transition-colors leading-snug line-clamp-2 block break-words"
+                  title={cls.name}
                 >
                   {cls.name}
                 </Link>

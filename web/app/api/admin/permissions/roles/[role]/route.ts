@@ -8,8 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { UserRole, BASE_ROLE_PERMISSIONS, SYSTEM_PERMISSION_DEFINITIONS } from '@/lib/auth/core';
+import { getAuthContext } from '@/lib/auth/guard';
+import { canManageRolePermissions, isValidPermissionCode } from '@/lib/auth/permissionManagement';
 
 interface RouteContext {
   params: Promise<{ role: string }>;
@@ -17,45 +19,17 @@ interface RouteContext {
 
 const VALID_ROLES: UserRole[] = ['owner', 'admin', 'teacher', 'tutor', 'parent', 'student'];
 
-async function getSuperAdminProfile(request: NextRequest) {
-  const supabase = createClientFromRequest(request);
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, role')
-    .or(`id.eq.${user.id},user_id.eq.${user.id}`)
-    .maybeSingle();
-
-  if (profile?.role !== 'super_admin' && profile?.role !== 'owner') return null;
-  return profile;
-}
-
 // GET — Get current overrides for a role
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { role } = await context.params;
 
-    const supabase = createClientFromRequest(request);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, role')
-      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
-      .maybeSingle();
-
-    if (!['super_admin', 'owner', 'admin'].includes(profile?.role || '')) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    const auth = await getAuthContext(request, 'permissions.manage');
+    if (!auth.authorized || !auth.profile) {
+      return NextResponse.json(
+        { error: auth.reason || 'Forbidden' },
+        { status: auth.user ? 403 : 401 }
+      );
     }
 
     const serviceClient = createServiceClient();
@@ -108,16 +82,25 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Invalid role code format' }, { status: 400 });
     }
 
-    const adminProfile = await getSuperAdminProfile(request);
-    if (!adminProfile) {
-      return NextResponse.json({ error: 'Super Admin access required' }, { status: 403 });
+    const auth = await getAuthContext(request, 'permissions.manage');
+    if (!auth.authorized || !auth.profile || !auth.role) {
+      return NextResponse.json(
+        { error: auth.reason || 'Forbidden' },
+        { status: auth.user ? 403 : 401 }
+      );
+    }
+    if (!canManageRolePermissions(auth.role, role as UserRole)) {
+      return NextResponse.json(
+        { error: 'Cannot manage permissions for this role' },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
     const { permission_code, is_denied = false, notes } = body;
 
-    if (!permission_code) {
-      return NextResponse.json({ error: 'permission_code is required' }, { status: 400 });
+    if (typeof permission_code !== 'string' || !isValidPermissionCode(permission_code)) {
+      return NextResponse.json({ error: 'Invalid permission_code' }, { status: 400 });
     }
 
     const serviceClient = createServiceClient();
@@ -138,7 +121,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
           role,
           permission_code,
           is_denied,
-          granted_by: adminProfile.id,
+          granted_by: auth.profile.id,
           notes: notes || null,
           updated_at: new Date().toISOString(),
         },
@@ -158,9 +141,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Audit log
     await serviceClient.from('permission_audit_logs').insert({
       action: is_denied ? 'deny' : 'grant',
-      user_id: adminProfile.id, // role change: user_id = performer for role-level entries
+      user_id: auth.profile.id, // role change: user_id = performer for role-level entries
       permission_code,
-      performed_by: adminProfile.id,
+      performed_by: auth.profile.id,
       old_value: oldOverride || null,
       new_value: { role, is_denied, notes },
       reason: notes || null,
@@ -181,13 +164,22 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { searchParams } = new URL(request.url);
     const permission_code = searchParams.get('permission_code');
 
-    if (!permission_code) {
-      return NextResponse.json({ error: 'permission_code is required' }, { status: 400 });
+    if (!permission_code || !isValidPermissionCode(permission_code)) {
+      return NextResponse.json({ error: 'Invalid permission_code' }, { status: 400 });
     }
 
-    const adminProfile = await getSuperAdminProfile(request);
-    if (!adminProfile) {
-      return NextResponse.json({ error: 'Super Admin access required' }, { status: 403 });
+    const auth = await getAuthContext(request, 'permissions.manage');
+    if (!auth.authorized || !auth.profile || !auth.role) {
+      return NextResponse.json(
+        { error: auth.reason || 'Forbidden' },
+        { status: auth.user ? 403 : 401 }
+      );
+    }
+    if (!canManageRolePermissions(auth.role, role as UserRole)) {
+      return NextResponse.json(
+        { error: 'Cannot manage permissions for this role' },
+        { status: 403 }
+      );
     }
 
     const serviceClient = createServiceClient();
@@ -214,9 +206,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     // Audit log
     await serviceClient.from('permission_audit_logs').insert({
       action: 'revoke',
-      user_id: adminProfile.id,
+      user_id: auth.profile.id,
       permission_code,
-      performed_by: adminProfile.id,
+      performed_by: auth.profile.id,
       old_value: oldOverride || null,
       new_value: null,
       reason: 'Override removed — reverted to code default',

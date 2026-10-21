@@ -31,6 +31,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { PermissionCode } from '@/lib/auth/core';
 import { createClient } from '@/lib/supabase/client';
 import { apiFetch } from '@/lib/api/client';
+import { getUserInitials, getUserAvatarSrc } from '@/lib/utils/names';
+import { getRoleAvatarGradient } from '@/lib/role-utils';
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
@@ -43,10 +45,18 @@ export default function MobileBottomNav() {
     pendingParentLinks?: number;
     classes?: number;
   }>({});
+  const [imgError, setImgError] = useState(false);
   const { theme, setTheme } = useCustomization();
   const { can, isAdmin, isOwner } = usePermissions();
 
   const role = profile?.role as string;
+  const avatarSrc = getUserAvatarSrc(profile);
+  const initials = getUserInitials(profile);
+  const avatarGradient = getRoleAvatarGradient(profile?.role);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarSrc]);
 
   // Auto-hide bottom nav when user is typing in form inputs or focused on input fields
   useEffect(() => {
@@ -273,8 +283,22 @@ export default function MobileBottomNav() {
 
           {/* User Brief Card */}
           <div className="px-5 pt-2 pb-4 flex items-center gap-3 border-b border-stone-100 dark:border-stone-800">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white font-bold text-base shadow-sm shrink-0">
-              {profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+            <div
+              className={cn(
+                'w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0 overflow-hidden bg-gradient-to-br',
+                avatarGradient
+              )}
+            >
+              {avatarSrc && !imgError ? (
+                <img
+                  src={avatarSrc}
+                  alt={profile?.full_name || 'Ảnh đại diện'}
+                  onError={() => setImgError(true)}
+                  className="w-full h-full object-cover rounded-2xl"
+                />
+              ) : (
+                <span>{initials}</span>
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="font-bold text-stone-900 dark:text-stone-100 text-sm truncate">

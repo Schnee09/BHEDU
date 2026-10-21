@@ -308,11 +308,12 @@ export default function NotificationsPage() {
                   <div className="flex items-center justify-between gap-4">
                     <h3
                       className={cn(
-                        'font-black uppercase tracking-tight truncate transition-colors',
+                        'font-black uppercase tracking-tight line-clamp-2 leading-snug break-words transition-colors',
                         notification.is_read
                           ? 'text-stone-500 dark:text-stone-400 text-sm'
                           : 'text-stone-900 dark:text-white text-base group-hover:text-amber-600'
                       )}
+                      title={notification.title}
                     >
                       {notification.title}
                     </h3>

@@ -347,3 +347,25 @@ export type AccountStatus = 'pending' | 'active' | 'suspended' | 'deactivated' |
 export function requiresApprovalAfterSignup(role: string): boolean {
   return role === 'parent'; // Parents need approval to link with students
 }
+
+/**
+ * Centralized role avatar gradients when user does not have an uploaded photo
+ * Admin: Red / deep amber, Teacher: Blue, Tutor: Teal/emerald, Student: Emerald, Parent: Orange, Super Admin: Slate/stone
+ */
+export const ROLE_AVATAR_GRADIENT: Record<string, string> = {
+  super_admin: 'from-slate-800 to-stone-950',
+  owner: 'from-amber-500 to-amber-700',
+  admin: 'from-red-600 to-amber-600',
+  teacher: 'from-blue-600 to-cyan-600',
+  tutor: 'from-teal-600 to-emerald-600',
+  parent: 'from-amber-500 to-orange-500',
+  student: 'from-emerald-500 to-teal-600',
+};
+
+/**
+ * Get avatar gradient for a given role
+ */
+export function getRoleAvatarGradient(role?: string | null): string {
+  if (!role) return 'from-amber-500 to-amber-600';
+  return ROLE_AVATAR_GRADIENT[role] || 'from-amber-500 to-amber-600';
+}

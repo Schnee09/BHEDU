@@ -282,23 +282,31 @@ export function CreateRoleModal({
             {/* Basic Info Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                <label
+                  htmlFor="role-name-input"
+                  className="text-[11px] font-black text-stone-500 dark:text-stone-400 uppercase tracking-wider cursor-pointer"
+                >
                   Tên hiển thị vai trò *
                 </label>
                 <Input
+                  id="role-name-input"
                   value={formData.name}
                   onChange={(e) => handleAutoSlug(e.target.value)}
-                  placeholder="Ví dụ: Kế toán viên, Giáo vụ..."
+                  placeholder="Ví dụ: Kế toán viên, Giáo vụ…"
                   required
                   className="h-11 rounded-2xl font-bold bg-stone-50 dark:bg-white/5 border-stone-200 dark:border-white/10"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                <label
+                  htmlFor="role-code-input"
+                  className="text-[11px] font-black text-stone-500 dark:text-stone-400 uppercase tracking-wider cursor-pointer"
+                >
                   Mã định danh (Code) *
                 </label>
                 <Input
+                  id="role-code-input"
                   value={formData.code}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -316,13 +324,17 @@ export function CreateRoleModal({
 
             {/* Description */}
             <div className="space-y-2">
-              <label className="text-[11px] font-black text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+              <label
+                htmlFor="role-desc-input"
+                className="text-[11px] font-black text-stone-500 dark:text-stone-400 uppercase tracking-wider cursor-pointer"
+              >
                 Mô tả nhiệm vụ & phạm vi
               </label>
               <Input
+                id="role-desc-input"
                 value={formData.description}
                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                placeholder="Ví dụ: Quản lý các khoản thu chi, báo cáo tài chính và hoàn phí..."
+                placeholder="Ví dụ: Quản lý các khoản thu chi, báo cáo tài chính và hoàn phí…"
                 className="h-11 rounded-2xl bg-stone-50 dark:bg-white/5 border-stone-200 dark:border-white/10 text-xs"
               />
             </div>

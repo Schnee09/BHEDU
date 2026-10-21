@@ -394,17 +394,22 @@ function TeachersContent() {
                       {initials}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <h3 className="font-bold text-stone-900 dark:text-white text-sm truncate">
-                          {t.full_name}
-                        </h3>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h3
+                            className="font-bold text-stone-900 dark:text-white text-base leading-snug break-words"
+                            title={t.full_name}
+                          >
+                            {t.full_name}
+                          </h3>
+                          <p className="font-mono text-[11px] text-stone-400 dark:text-stone-500 mt-0.5">
+                            {t.teacher_code || 'GV---'}
+                          </p>
+                        </div>
+                        <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50">
                           {t.department || 'Giáo viên'}
                         </span>
                       </div>
-                      <p className="font-mono text-[10px] text-stone-400 dark:text-stone-500 mt-0.5">
-                        {t.teacher_code || 'GV---'}
-                      </p>
                     </div>
                   </div>
 
@@ -431,11 +436,14 @@ function TeachersContent() {
                     </div>
 
                     {t.specialization && (
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-stone-400 flex items-center gap-1">
-                          <Award className="w-3.5 h-3.5" /> Chuyên môn:
+                      <div className="flex items-center justify-between text-xs gap-2">
+                        <span className="text-stone-400 flex items-center gap-1 shrink-0">
+                          <Award className="w-3.5 h-3.5 text-amber-500" /> Chuyên môn:
                         </span>
-                        <span className="font-medium text-stone-600 dark:text-stone-400 truncate max-w-[160px]">
+                        <span
+                          className="font-medium text-stone-600 dark:text-stone-400 line-clamp-1 break-words text-right"
+                          title={t.specialization}
+                        >
                           {t.specialization}
                         </span>
                       </div>
@@ -473,9 +481,9 @@ function TeachersContent() {
                     {/* Contact Info */}
                     <div className="pt-1 space-y-1 text-[11px] text-stone-500 dark:text-stone-400">
                       {t.email && (
-                        <div className="flex items-center gap-1.5 truncate">
+                        <div className="flex items-center gap-1.5 min-w-0" title={t.email}>
                           <Mail className="w-3 h-3 shrink-0 text-stone-400" />
-                          <span className="truncate">{t.email}</span>
+                          <span className="truncate font-mono text-[10.5px]">{t.email}</span>
                         </div>
                       )}
                       {t.phone && (

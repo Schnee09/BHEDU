@@ -59,7 +59,8 @@ export default function TeacherGridView({
           Chưa chọn giáo viên
         </h3>
         <p className="text-stone-500 dark:text-stone-400 max-w-xs mx-auto text-xs font-bold">
-          Vui lòng chọn một giáo viên từ danh sách phía trên để xem và điều phối lịch giảng dạy chi tiết.
+          Vui lòng chọn một giáo viên từ danh sách phía trên để xem và điều phối lịch giảng dạy chi
+          tiết.
         </p>
       </div>
     );
@@ -88,7 +89,9 @@ export default function TeacherGridView({
               Lịch Dạy: {currentTeacher?.full_name || 'Giáo viên'}
             </h3>
             <p className="text-[11px] text-stone-500 dark:text-stone-400 font-bold mt-0.5">
-              {currentTeacher?.phone ? `SĐT: ${currentTeacher.phone}` : 'Theo dõi & xếp lịch theo khung ca'}
+              {currentTeacher?.phone
+                ? `SĐT: ${currentTeacher.phone}`
+                : 'Theo dõi & xếp lịch theo khung ca'}
             </p>
           </div>
         </div>
@@ -136,7 +139,10 @@ export default function TeacherGridView({
                     ? getSlotForTeacherCell(slots, selectedTeacher, dayIndex, session.start)
                     : null;
 
-                  const colors = getSubjectColor(slot?.subject?.name, !slot?.room || slot?.room === 'Linh hoạt');
+                  const colors = getSubjectColor(
+                    slot?.subject?.name,
+                    !slot?.room || slot?.room === 'Linh hoạt'
+                  );
 
                   return (
                     <td
@@ -177,7 +183,10 @@ export default function TeacherGridView({
                           }}
                         >
                           <div>
-                            <div className="font-black text-stone-900 dark:text-stone-100 text-xs line-clamp-1 leading-tight mb-1">
+                            <div
+                              className="font-black text-stone-900 dark:text-stone-100 text-xs line-clamp-1 leading-tight mb-1"
+                              title={slot.class?.name || slot.student?.full_name || 'Tiết dạy'}
+                            >
                               {slot.class?.name || slot.student?.full_name || 'Tiết dạy'}
                             </div>
                             <span
@@ -185,6 +194,7 @@ export default function TeacherGridView({
                                 'text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border inline-block',
                                 colors.badge
                               )}
+                              title={slot.subject?.name || 'Môn học'}
                             >
                               {slot.subject?.name || 'Môn học'}
                             </span>
@@ -192,12 +202,17 @@ export default function TeacherGridView({
 
                           <div className="flex items-center justify-between text-[9px] text-stone-500 dark:text-stone-400 pt-1 border-t border-stone-200/40 dark:border-white/5 mt-1.5">
                             {slot.room ? (
-                              <span className="font-bold flex items-center gap-1 truncate">
-                                <MapPin className="w-2.5 h-2.5 text-amber-500" />
-                                {slot.room.replace(/^.*? - /, '')}
+                              <span
+                                className="font-bold flex items-center gap-1 truncate"
+                                title={`Phòng: ${slot.room}`}
+                              >
+                                <MapPin className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                                <span className="truncate">{slot.room.replace(/^.*? - /, '')}</span>
                               </span>
                             ) : (
-                              <span className="font-bold text-sky-600 dark:text-sky-400">Học kèm</span>
+                              <span className="font-bold text-sky-600 dark:text-sky-400">
+                                Học kèm
+                              </span>
                             )}
                           </div>
 
@@ -214,7 +229,9 @@ export default function TeacherGridView({
                         </div>
                       ) : (
                         <div
-                          onClick={() => onCreateSlot && onCreateSlot(dayIndex, session, selectedTeacher)}
+                          onClick={() =>
+                            onCreateSlot && onCreateSlot(dayIndex, session, selectedTeacher)
+                          }
                           className="h-full min-h-[70px] rounded-2xl border-2 border-dashed border-stone-200/70 dark:border-white/5 hover:border-amber-500/50 hover:bg-amber-500/[0.06] cursor-pointer flex flex-col items-center justify-center gap-1 transition-all group/empty"
                         >
                           <Plus className="w-3.5 h-3.5 text-stone-300 dark:text-stone-600 group-hover/empty:text-amber-500 transition-colors" />

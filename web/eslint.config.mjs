@@ -1,17 +1,9 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTypeScript from "eslint-config-next/typescript";
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals"),
-  ...compat.extends("next/typescript"),
+  ...nextVitals,
+  ...nextTypeScript,
   {
     ignores: [
       "**/node_modules/**",
@@ -37,6 +29,22 @@ const eslintConfig = [
       // React hooks - enable warnings
       "react-hooks/exhaustive-deps": "warn",
       "react-hooks/rules-of-hooks": "error",
+      // React 19 compiler diagnostics are newly enabled by eslint-config-next 16.
+      // Keep them visible without turning this dependency upgrade into a
+      // repository-wide blocking migration.
+      "react-hooks/static-components": "warn",
+      "react-hooks/use-memo": "warn",
+      "react-hooks/void-use-memo": "warn",
+      "react-hooks/preserve-manual-memoization": "warn",
+      "react-hooks/immutability": "warn",
+      "react-hooks/globals": "warn",
+      "react-hooks/refs": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/error-boundaries": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/set-state-in-render": "warn",
+      "react-hooks/config": "warn",
+      "react-hooks/gating": "warn",
 
       // React - turn off
       "react/no-unescaped-entities": "off",

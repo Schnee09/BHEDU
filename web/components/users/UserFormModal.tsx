@@ -915,6 +915,7 @@ export default function UserFormModal({
                 <button
                   type="button"
                   onClick={() => copyToClipboard(loginId, 'UID')}
+                  aria-label="Sao chép tên đăng nhập UID"
                   className="text-stone-400 hover:text-amber-400 transition-colors p-1 cursor-pointer print:hidden"
                 >
                   {copiedField === 'UID' ? (
@@ -937,6 +938,7 @@ export default function UserFormModal({
                 <button
                   type="button"
                   onClick={() => copyToClipboard(createdUserInfo?.password || '', 'Mật khẩu')}
+                  aria-label="Sao chép mật khẩu"
                   className="text-stone-400 hover:text-amber-400 transition-colors p-1 cursor-pointer print:hidden"
                 >
                   {copiedField === 'Mật khẩu' ? (
@@ -955,7 +957,7 @@ export default function UserFormModal({
               <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 print:text-stone-600 block">
                 Email hệ thống
               </span>
-              <p className="text-xs font-mono text-stone-300 print:text-black truncate">
+              <p className="text-xs font-mono text-stone-300 print:text-black break-all">
                 {createdUserInfo?.email}
               </p>
             </div>
@@ -1314,6 +1316,8 @@ export default function UserFormModal({
                           key={rc.value}
                           type="button"
                           onClick={() => handleRoleSelect(rc.value)}
+                          aria-pressed={isSelected}
+                          aria-label={`Chọn vai trò ${rc.label}`}
                           className={cn(
                             'p-4 rounded-2xl border text-left transition-all relative flex flex-col justify-between gap-3 group cursor-pointer',
                             isSelected
@@ -1361,7 +1365,7 @@ export default function UserFormModal({
                     <Input
                       label="Họ và tên đầy đủ"
                       required
-                      placeholder="Nhập họ và tên học sinh / nhân sự..."
+                      placeholder="Nhập họ và tên học sinh / nhân sự…"
                       value={formData.full_name}
                       onChange={(e) => handleNameChange(e.target.value)}
                       onBlur={handleNameBlur}
@@ -1397,7 +1401,7 @@ export default function UserFormModal({
                   />
                   <Input
                     label="Địa chỉ thường trú"
-                    placeholder="Số nhà, tên đường, khu vực..."
+                    placeholder="Số nhà, tên đường, khu vực…"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     leftIcon={<MapPin className="w-4 h-4 text-stone-400" />}
@@ -1433,7 +1437,7 @@ export default function UserFormModal({
                     />
                     <Input
                       label="Trường học phổ thông đang theo học"
-                      placeholder="Nhập tên trường học..."
+                      placeholder="Nhập tên trường học…"
                       value={formData.school_name}
                       onChange={(e) => setFormData({ ...formData, school_name: e.target.value })}
                       leftIcon={<Building2 className="w-4 h-4 text-stone-400" />}
@@ -1455,7 +1459,7 @@ export default function UserFormModal({
                           }));
                         }}
                         disabled={isEdit}
-                        placeholder="HS2026..."
+                        placeholder="HS2026…"
                         leftIcon={
                           isEdit ? (
                             <Lock className="w-4 h-4 text-stone-400" />
@@ -1480,6 +1484,7 @@ export default function UserFormModal({
                               email: `${code.toLowerCase()}@student.bhedu.vn`,
                             }));
                           }}
+                          aria-label="Tạo mã học sinh mới ngẫu nhiên"
                           className="absolute right-3 top-[34px] px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
                           title="Tạo mã mới ngẫu nhiên"
                         >
@@ -1491,7 +1496,7 @@ export default function UserFormModal({
 
                     <Input
                       label="Mã định danh cá nhân / CCCD (Tùy chọn)"
-                      placeholder="Số CCCD hoặc mã thẻ học sinh..."
+                      placeholder="Số CCCD hoặc mã thẻ học sinh…"
                       value={formData.student_id}
                       onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
                     />
@@ -1499,7 +1504,7 @@ export default function UserFormModal({
 
                   <Textarea
                     label="Ghi chú học vụ / Mục tiêu đào tạo"
-                    placeholder="Ghi chú về học lực, nhu cầu bồi dưỡng hoặc mục tiêu thi cử..."
+                    placeholder="Ghi chú về học lực, nhu cầu bồi dưỡng hoặc mục tiêu thi cử…"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={2}
@@ -1529,7 +1534,7 @@ export default function UserFormModal({
                     {loadingSubjects && subjects.length === 0 ? (
                       <div className="p-4 rounded-2xl bg-stone-50 dark:bg-white/[0.02] border border-stone-200/80 dark:border-white/5 flex items-center justify-center gap-2 text-xs text-stone-400">
                         <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
-                        Đang tải danh mục môn học từ cơ sở dữ liệu...
+                        Đang tải danh mục môn học từ cơ sở dữ liệu…
                       </div>
                     ) : dbSubjects.length === 0 ? (
                       <div className="p-4 rounded-2xl bg-stone-50 dark:bg-white/[0.02] border border-dashed border-stone-200 dark:border-white/10 text-center text-xs text-stone-500">
@@ -1596,8 +1601,8 @@ export default function UserFormModal({
                       }
                       placeholder={
                         formData.role === 'teacher'
-                          ? 'VD: Luyện thi THPT QG, Khối 10-11-12...'
-                          : 'VD: ĐH Sư Phạm - Khoa Toán, Năm 3...'
+                          ? 'VD: Luyện thi THPT QG, Khối 10-11-12…'
+                          : 'VD: ĐH Sư Phạm - Khoa Toán, Năm 3…'
                       }
                       value={formData.specialization}
                       onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
@@ -1612,7 +1617,7 @@ export default function UserFormModal({
                       }
                       type="number"
                       min={0}
-                      placeholder={formData.role === 'teacher' ? 'VD: 300000...' : 'VD: 120000...'}
+                      placeholder={formData.role === 'teacher' ? 'VD: 300000' : 'VD: 120000'}
                       value={formData.hourly_rate || ''}
                       onChange={(e) =>
                         setFormData({ ...formData, hourly_rate: Number(e.target.value) })
@@ -1642,7 +1647,7 @@ export default function UserFormModal({
                         setFormData({ ...formData, teacher_code: e.target.value.toUpperCase() });
                       }}
                       disabled={isEdit}
-                      placeholder={formData.role === 'tutor' ? 'GS2026...' : 'GV2026...'}
+                      placeholder={formData.role === 'tutor' ? 'GS2026…' : 'GV2026…'}
                       leftIcon={
                         isEdit ? (
                           <Lock className="w-4 h-4 text-amber-500" />
@@ -1663,6 +1668,7 @@ export default function UserFormModal({
                           const code = generateUID(formData.role);
                           setFormData((prev) => ({ ...prev, teacher_code: code }));
                         }}
+                        aria-label="Tạo mã chuyên môn mới ngẫu nhiên"
                         className="absolute right-3 top-[34px] px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
                         title="Tạo mã mới ngẫu nhiên"
                       >
@@ -1679,14 +1685,14 @@ export default function UserFormModal({
                 <div className="space-y-4">
                   <Input
                     label="Nghề nghiệp / Cơ quan công tác (Tùy chọn)"
-                    placeholder="Nghề nghiệp hoặc nơi công tác..."
+                    placeholder="Nghề nghiệp hoặc nơi công tác…"
                     value={formData.occupation}
                     onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
                     leftIcon={<Briefcase className="w-4 h-4 text-stone-400" />}
                   />
                   <Textarea
                     label="Ghi chú về con em / học sinh cần liên kết"
-                    placeholder="Thông tin học sinh liên kết hoặc yêu cầu theo dõi..."
+                    placeholder="Thông tin học sinh liên kết hoặc yêu cầu theo dõi…"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={2}
@@ -1701,14 +1707,14 @@ export default function UserFormModal({
                 <div className="space-y-4">
                   <Input
                     label="Phòng ban / Bộ phận công tác"
-                    placeholder="Bộ phận chuyên môn hoặc phòng ban..."
+                    placeholder="Bộ phận chuyên môn hoặc phòng ban…"
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                     leftIcon={<Building2 className="w-4 h-4 text-stone-400" />}
                   />
                   <Textarea
                     label="Ghi chú trách nhiệm & phạm vi phụ trách"
-                    placeholder="Ghi chú trách nhiệm phân công nội bộ..."
+                    placeholder="Ghi chú trách nhiệm phân công nội bộ…"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={2}
@@ -1756,7 +1762,7 @@ export default function UserFormModal({
 
                   <Input
                     label="Email cá nhân (Nhận thông báo)"
-                    placeholder="email.canhan@gmail.com..."
+                    placeholder="email.canhan@gmail.com"
                     value={formData.personal_email}
                     onChange={(e) => setFormData({ ...formData, personal_email: e.target.value })}
                     leftIcon={<Inbox className="w-4 h-4 text-stone-400" />}
@@ -1782,6 +1788,7 @@ export default function UserFormModal({
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
+                          aria-label={showPassword ? 'Ẩn mật khẩu' : 'Xem mật khẩu'}
                           className="text-stone-400 hover:text-amber-500 p-1 cursor-pointer"
                           title={showPassword ? 'Ẩn mật khẩu' : 'Xem mật khẩu'}
                         >
@@ -1811,6 +1818,7 @@ export default function UserFormModal({
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? 'Ẩn mật khẩu' : 'Xem mật khẩu'}
                             className="text-stone-400 hover:text-amber-500 p-1 cursor-pointer"
                             title={showPassword ? 'Ẩn mật khẩu' : 'Xem mật khẩu'}
                           >
@@ -1825,6 +1833,7 @@ export default function UserFormModal({
                             onClick={() =>
                               setFormData({ ...formData, password: generateStrongPassword(10) })
                             }
+                            aria-label="Tạo mật khẩu ngẫu nhiên"
                             className="text-stone-400 hover:text-amber-500 p-1 cursor-pointer"
                             title="Tạo mật khẩu mạnh ngẫu nhiên"
                           >

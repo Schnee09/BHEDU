@@ -19,8 +19,8 @@ import {
   SlidersHorizontal,
   ClipboardCheck,
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui';
+import { downloadExcelWorkbook } from '@/lib/export/excelWorkbook';
 import { TimetableSlot, ClassOption, TeacherOption } from '@/lib/timetable/types';
 import { DAYS } from '@/lib/timetable/constants';
 import { getSubjectColor } from '@/lib/timetable/subject-colors';
@@ -388,7 +388,7 @@ export default function UnifiedTimetableBoard({
     return null;
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!filteredSlots || filteredSlots.length === 0) {
       alert('Không có dữ liệu tiết học để xuất file');
       return;
@@ -408,12 +408,19 @@ export default function UnifiedTimetableBoard({
       };
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'ThoiKhoaBieu');
-
     const dateStr = weekDates[0]?.toISOString().split('T')[0] || 'TKB';
-    XLSX.writeFile(workbook, `TKB_BHEDU_${dateStr}.xlsx`);
+    const firstRow = rows[0];
+    if (!firstRow) return;
+    const headers = Object.keys(firstRow);
+    await downloadExcelWorkbook({
+      rows: [
+        headers,
+        ...rows.map((row) => headers.map((header) => row[header as keyof typeof row])),
+      ],
+      sheetName: 'ThoiKhoaBieu',
+      filename: `TKB_BHEDU_${dateStr}.xlsx`,
+      columnWidths: [12, 18, 24, 24, 28, 18, 32],
+    });
   };
 
   const hasActiveFilters = Boolean(

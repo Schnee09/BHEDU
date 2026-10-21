@@ -144,11 +144,11 @@ const TodayScheduleWidget = memo(function TodayScheduleWidget({
                   <div className="flex items-start gap-3">
                     {/* Time block */}
                     <div className="flex flex-col items-center justify-center bg-stone-100 dark:bg-white/5 rounded-xl px-2.5 py-1.5 min-w-[58px]">
-                      <span className="text-xs font-black text-stone-800 dark:text-stone-200 tracking-tighter">
+                      <span className="text-xs font-black font-mono tabular-nums text-stone-800 dark:text-stone-200 tracking-tighter">
                         {formatTime(slot.start_time)}
                       </span>
                       <div className="w-4 h-[1px] bg-stone-300 dark:bg-stone-700 my-1" />
-                      <span className="text-[10px] font-bold text-stone-400">
+                      <span className="text-[10px] font-bold font-mono tabular-nums text-stone-400">
                         {formatTime(slot.end_time)}
                       </span>
                     </div>

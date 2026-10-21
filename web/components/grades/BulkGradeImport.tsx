@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api/client';
-import * as XLSX from 'xlsx';
+import { downloadExcelWorkbook, readFirstWorksheet } from '@/lib/export/excelWorkbook';
 import {
   Upload,
   FileSpreadsheet,
@@ -30,6 +30,8 @@ interface BulkGradeImportProps {
   onClose?: () => void;
 }
 
+const MAX_EXCEL_FILE_SIZE = 5 * 1024 * 1024;
+
 export default function BulkGradeImport({
   classId,
   assignmentId,
@@ -49,31 +51,29 @@ export default function BulkGradeImport({
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      if (!selectedFile.name.toLowerCase().endsWith('.xlsx')) {
+        alert('Chỉ hỗ trợ file Excel định dạng .xlsx');
+        e.target.value = '';
+        return;
+      }
+      if (selectedFile.size > MAX_EXCEL_FILE_SIZE) {
+        alert('File Excel không được vượt quá 5 MB');
+        e.target.value = '';
+        return;
+      }
       setFile(selectedFile);
-      parseExcelFile(selectedFile);
+      void parseExcelFile(selectedFile);
     }
   }, []);
 
   const parseExcelFile = async (file: File) => {
     try {
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      if (!sheetName) {
-        alert('File Excel không có sheet nào');
-        return;
-      }
-      const worksheet = workbook.Sheets[sheetName];
-      if (!worksheet) {
-        alert('Không thấy sheet dữ liệu');
-        return;
-      }
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      const rows = await readFirstWorksheet(file);
 
       // Skip header row, parse data
       const grades: ParsedGrade[] = [];
-      for (let i = 1; i < jsonData.length; i++) {
-        const row = jsonData[i];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
         if (!row || row.length === 0) continue;
 
         const studentId = String(row[0] || '').trim();
@@ -91,7 +91,7 @@ export default function BulkGradeImport({
           error = 'Thiếu mã học sinh';
         }
 
-        const score = parseFloat(scoreRaw);
+        const score = parseFloat(String(scoreRaw ?? ''));
         if (isNaN(score)) {
           isValid = false;
           error = 'Điểm không hợp lệ';
@@ -115,7 +115,8 @@ export default function BulkGradeImport({
       setStep('preview');
     } catch (error) {
       console.error('Error parsing Excel:', error);
-      alert('Không thể đọc file Excel. Vui lòng kiểm tra định dạng file.');
+      setFile(null);
+      alert(error instanceof Error ? error.message : 'Không thể đọc file Excel.');
     }
   };
 
@@ -163,7 +164,7 @@ export default function BulkGradeImport({
     }
   };
 
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
     const templateData = [
       ['Mã học sinh', 'Tên học sinh', 'Điểm', 'Loại điểm', 'Ghi chú'],
       ['HS001', 'Nguyễn Văn A', 8.5, 'Miệng', ''],
@@ -171,10 +172,12 @@ export default function BulkGradeImport({
       ['HS003', 'Lê Văn C', 9.0, '1 tiết', 'Xuất sắc'],
     ];
 
-    const ws = XLSX.utils.aoa_to_sheet(templateData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Template');
-    XLSX.writeFile(wb, 'mau_nhap_diem.xlsx');
+    await downloadExcelWorkbook({
+      rows: templateData,
+      sheetName: 'Template',
+      filename: 'mau_nhap_diem.xlsx',
+      columnWidths: [16, 28, 10, 16, 28],
+    });
   };
 
   const validCount = parsedData.filter((g) => g.isValid).length;
@@ -233,12 +236,12 @@ export default function BulkGradeImport({
                 <p className="mb-2 text-lg font-semibold text-gray-700 dark:text-gray-300">
                   Kéo thả file hoặc click để chọn
                 </p>
-                <p className="text-sm text-gray-500">Chỉ hỗ trợ file .xlsx, .xls</p>
+                <p className="text-sm text-gray-500">Chỉ hỗ trợ file .xlsx, tối đa 5 MB</p>
               </div>
               <input
                 type="file"
                 className="hidden"
-                accept=".xlsx,.xls"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 onChange={handleFileChange}
               />
             </label>

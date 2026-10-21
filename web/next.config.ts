@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
-import { withSentryConfig } from '@sentry/nextjs';
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const withAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -21,11 +23,6 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Provide safe defaults for public envs to avoid build-time crashes when unset in CI
-  env: {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.com',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'public-anon-key',
-  },
   outputFileTracingRoot: __dirname,
 
   // Silence workspace root warning from multiple lockfiles in monorepo
@@ -71,7 +68,9 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
+              `script-src 'self' 'unsafe-inline'${
+                process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''
+              } https://va.vercel-scripts.com`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https:",
               "font-src 'self' data: https://fonts.gstatic.com",
@@ -89,9 +88,23 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(withAnalyzer(nextConfig), {
-  // Sentry Webpack Plugin options
-  silent: true,
-  org: 'bh-edu',
-  project: 'bh-edu-web',
-});
+const analyzedConfig = withAnalyzer(nextConfig);
+
+// The Sentry build plugin is expensive to load on slow Windows filesystems and
+// is only needed for production instrumentation/source-map uploads.
+const finalConfig =
+  process.env.NODE_ENV === 'development'
+    ? analyzedConfig
+    : withSentryConfigForProduction(analyzedConfig);
+
+function withSentryConfigForProduction(config: NextConfig): NextConfig {
+  const { withSentryConfig } =
+    require('@sentry/nextjs/config') as typeof import('@sentry/nextjs/config');
+  return withSentryConfig(config, {
+    silent: true,
+    org: 'bh-edu',
+    project: 'bh-edu-web',
+  });
+}
+
+export default finalConfig;

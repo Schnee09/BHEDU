@@ -93,7 +93,10 @@ export function MobileCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex-1 min-w-0">
-          <div className="font-extrabold text-stone-900 dark:text-stone-100 text-lg leading-tight truncate">
+          <div
+            className="font-extrabold text-stone-900 dark:text-stone-100 text-lg leading-snug break-words line-clamp-2"
+            title={typeof title === 'string' ? title : undefined}
+          >
             {title}
           </div>
           {subtitle && (

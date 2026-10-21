@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { useFetch } from '@/hooks/useFetch';
 import { Plus, Clock, Check, X, FileText, RefreshCw } from 'lucide-react';
@@ -8,10 +8,19 @@ import { StatCard } from '@/components/ui/Card';
 import { StudentRequest } from '@/lib/repositories/StudentRequestRepository';
 import { RequestListTable } from '@/components/requests/RequestListTable';
 import { CreateRequestModal } from '@/components/requests/CreateRequestModal';
+import ChildSwitcher from '@/components/dashboard/widgets/ChildSwitcher';
+
+interface ParentLink {
+  id: string;
+  student_id: string;
+  status: string;
+  student?: { full_name: string; student_code: string };
+}
 
 export default function RequestsPage() {
   const { profile } = useProfile();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedChildId, setSelectedChildId] = useState('');
 
   const { data, loading, refetch } = useFetch<{
     data: StudentRequest[];
@@ -19,11 +28,38 @@ export default function RequestsPage() {
   }>('/api/requests?limit=100');
 
   const requests = data?.data || [];
+  const { data: linksData, loading: linksLoading } = useFetch<{ data: ParentLink[] }>(
+    profile?.role === 'parent' ? '/api/parent/links' : null
+  );
+  const approvedLinks = (linksData?.data || []).filter((link) => link.status === 'approved');
+  const childrenList = approvedLinks.map((link) => ({
+    id: link.student_id,
+    full_name: link.student?.full_name || 'Học sinh',
+    student_code: link.student?.student_code || 'N/A',
+  }));
+
+  useEffect(() => {
+    if (profile?.role === 'parent' && childrenList.length > 0 && !selectedChildId) {
+      setSelectedChildId(childrenList[0]?.id || '');
+    }
+  }, [childrenList, profile?.role, selectedChildId]);
+
   const isStaff =
     profile?.role === 'admin' ||
     profile?.role === 'teacher' ||
     profile?.role === 'staff' ||
     profile?.role === 'super_admin';
+  const canCreateRequest = profile?.role === 'student' || profile?.role === 'parent';
+  const requestStudent =
+    profile?.role === 'parent'
+      ? childrenList.find((child) => child.id === selectedChildId)
+      : profile?.id
+        ? {
+            id: profile.id,
+            full_name: profile.full_name || 'Học sinh',
+            student_code: '',
+          }
+        : null;
 
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
   const approvedCount = requests.filter((r) => r.status === 'approved').length;
@@ -47,7 +83,7 @@ export default function RequestsPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {!isStaff && profile?.id && (
+            {canCreateRequest && requestStudent && (
               <button
                 onClick={() => setIsCreateOpen(true)}
                 className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center gap-2"
@@ -66,6 +102,23 @@ export default function RequestsPage() {
             </button>
           </div>
         </div>
+
+        {profile?.role === 'parent' && !linksLoading && childrenList.length > 1 && (
+          <ChildSwitcher
+            childrenList={childrenList}
+            selectedChildId={selectedChildId}
+            onSelectChild={setSelectedChildId}
+          />
+        )}
+
+        {profile?.role === 'parent' && !linksLoading && childrenList.length === 0 && (
+          <div
+            role="status"
+            className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200"
+          >
+            Bạn cần có ít nhất một liên kết học sinh đã được duyệt trước khi gửi đơn.
+          </div>
+        )}
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -108,13 +161,13 @@ export default function RequestsPage() {
         />
 
         {/* Create Modal */}
-        {profile?.id && (
+        {requestStudent && (
           <CreateRequestModal
             isOpen={isCreateOpen}
             onClose={() => setIsCreateOpen(false)}
             onSuccess={() => refetch()}
-            studentId={profile.id}
-            studentName={profile.full_name || undefined}
+            studentId={requestStudent.id}
+            studentName={requestStudent.full_name}
           />
         )}
       </div>

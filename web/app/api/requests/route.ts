@@ -8,6 +8,8 @@ import { NextResponse } from 'next/server';
 import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
 import { studentRequestRepository } from '@/lib/repositories/StudentRequestRepository';
 import { studentRequestService } from '@/lib/services/StudentRequestService';
+import { canSubmitStudentRequest } from '@/lib/auth/studentRequestAccess';
+import type { UserRole } from '@/lib/auth/core';
 import { z } from 'zod';
 
 const createRequestSchema = z.object({
@@ -60,8 +62,10 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') || undefined;
     const request_type = searchParams.get('request_type') || undefined;
     const class_id = searchParams.get('class_id') || undefined;
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
-    const offset = parseInt(searchParams.get('offset') || '0', 10);
+    const parsedLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const parsedOffset = parseInt(searchParams.get('offset') || '0', 10);
+    const limit = Number.isFinite(parsedLimit) ? Math.min(100, Math.max(1, parsedLimit)) : 50;
+    const offset = Number.isFinite(parsedOffset) ? Math.max(0, parsedOffset) : 0;
 
     const filters: any = {
       status,
@@ -86,23 +90,25 @@ export async function GET(request: Request) {
 
       if (requestedStudent && studentIds.includes(requestedStudent)) {
         filters.student_id = requestedStudent;
-      } else if (studentIds.length > 0) {
-        filters.student_id = studentIds[0];
       } else {
-        return NextResponse.json({ success: true, data: [], total: 0 });
+        filters.student_ids = studentIds;
       }
     } else if (profile.role === 'teacher') {
-      // Teachers can view all requests or filter by their classes
-      if (!filters.class_id) {
-        const { data: teacherClasses } = await serviceSupabase
-          .from('classes')
-          .select('id')
-          .eq('teacher_id', profile.id);
+      const { data: teacherClasses } = await serviceSupabase
+        .from('classes')
+        .select('id')
+        .eq('teacher_id', profile.id);
+      const classIds = teacherClasses?.map((item: { id: string }) => item.id) || [];
 
-        if (teacherClasses && teacherClasses.length > 0) {
-          // If viewing general list, can show their class requests
+      if (filters.class_id) {
+        if (!classIds.includes(filters.class_id)) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
+      } else {
+        filters.class_ids = classIds;
       }
+    } else if (!['admin', 'owner', 'super_admin', 'staff'].includes(profile.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const result = await studentRequestRepository.findRequests(filters);
@@ -160,15 +166,54 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Determine parent_id if submitted by parent
-    let parent_id = parsed.data.parent_id;
+    const studentId = parsed.data.student_id;
+    let parentId: string | null = null;
+    let hasApprovedParentLink = false;
+
     if (profile.role === 'parent') {
-      parent_id = profile.id;
+      const { data: link } = await serviceSupabase
+        .from('parent_student_links')
+        .select('student_id')
+        .eq('parent_id', profile.id)
+        .eq('student_id', studentId)
+        .eq('status', 'approved')
+        .maybeSingle();
+
+      hasApprovedParentLink = !!link;
+      if (hasApprovedParentLink) parentId = profile.id;
+    }
+
+    if (
+      !canSubmitStudentRequest(
+        profile.role as UserRole,
+        profile.id,
+        studentId,
+        hasApprovedParentLink
+      )
+    ) {
+      return NextResponse.json(
+        { error: 'Bạn không thể gửi đơn cho học sinh này' },
+        { status: 403 }
+      );
+    }
+
+    if (parsed.data.class_id && ['student', 'parent'].includes(profile.role)) {
+      const { data: enrollment } = await serviceSupabase
+        .from('enrollments')
+        .select('id')
+        .eq('student_id', studentId)
+        .eq('class_id', parsed.data.class_id)
+        .maybeSingle();
+
+      if (!enrollment) {
+        return NextResponse.json({ error: 'Học sinh không thuộc lớp đã chọn' }, { status: 403 });
+      }
     }
 
     const created = await studentRequestService.submitRequest({
       ...parsed.data,
-      parent_id,
+      student_id: studentId,
+      parent_id: parentId,
     });
 
     return NextResponse.json({

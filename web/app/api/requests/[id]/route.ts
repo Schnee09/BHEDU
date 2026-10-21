@@ -8,6 +8,8 @@ import { NextResponse } from 'next/server';
 import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
 import { studentRequestRepository } from '@/lib/repositories/StudentRequestRepository';
 import { studentRequestService } from '@/lib/services/StudentRequestService';
+import { canChangeStudentRequestStatus } from '@/lib/auth/studentRequestAccess';
+import type { UserRole } from '@/lib/auth/core';
 import { z } from 'zod';
 
 const reviewRequestSchema = z.object({
@@ -66,15 +68,32 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: 'Không tìm thấy đơn' }, { status: 404 });
     }
 
-    // If user is student/parent, they can only cancel their own pending request
-    if (profile.role === 'student' || profile.role === 'parent') {
-      const isOwner = existing.student_id === profile.id || existing.parent_id === profile.id;
-      if (!isOwner || parsed.data.status !== 'cancelled') {
-        return NextResponse.json(
-          { error: 'Bạn chỉ có thể hủy đơn đang chờ duyệt của mình' },
-          { status: 403 }
-        );
-      }
+    let isAssignedTeacher = false;
+    if (profile.role === 'teacher' && existing.class_id) {
+      const { data: assignedClass } = await serviceSupabase
+        .from('classes')
+        .select('id')
+        .eq('id', existing.class_id)
+        .eq('teacher_id', profile.id)
+        .maybeSingle();
+
+      isAssignedTeacher = !!assignedClass;
+    }
+
+    const isOwner = existing.student_id === profile.id || existing.parent_id === profile.id;
+    if (
+      !canChangeStudentRequestStatus({
+        role: profile.role as UserRole,
+        currentStatus: existing.status,
+        nextStatus: parsed.data.status,
+        isOwner,
+        isAssignedTeacher,
+      })
+    ) {
+      return NextResponse.json(
+        { error: 'Bạn không có quyền cập nhật trạng thái đơn này' },
+        { status: existing.status === 'pending' ? 403 : 409 }
+      );
     }
 
     const updated = await studentRequestService.reviewRequest(requestId, {

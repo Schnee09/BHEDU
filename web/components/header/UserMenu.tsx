@@ -18,6 +18,8 @@ import {
 import { usePermissions } from '@/hooks/usePermissions';
 import { useCustomization } from '@/contexts/CustomizationContext';
 import { cn } from '@/lib/utils';
+import { getRoleAvatarGradient } from '@/lib/role-utils';
+import { getUserAvatarSrc } from '@/lib/utils/names';
 
 interface UserProfile {
   id?: string;
@@ -51,7 +53,8 @@ export function UserMenu({
   const { theme, setTheme } = useCustomization();
   const [imgError, setImgError] = useState(false);
 
-  const avatarSrc = profile?.photo_url || profile?.avatar_url || null;
+  const avatarSrc = getUserAvatarSrc(profile);
+  const avatarGradient = getRoleAvatarGradient(profile?.role);
 
   // Reset img error if avatarSrc changes
   useEffect(() => {
@@ -118,7 +121,12 @@ export function UserMenu({
               </linearGradient>
             </defs>
           </svg>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-xs md:text-sm relative z-10 shadow-xs overflow-hidden bg-gradient-to-br from-amber-500 to-amber-600">
+          <div
+            className={cn(
+              'w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-xs md:text-sm relative z-10 shadow-xs overflow-hidden bg-gradient-to-br',
+              avatarGradient
+            )}
+          >
             {avatarSrc && !imgError ? (
               <img
                 src={avatarSrc}
@@ -175,7 +183,12 @@ export function UserMenu({
               </button>
 
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold text-sm shadow-xs overflow-hidden bg-gradient-to-br from-amber-500 to-amber-600 shrink-0">
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold text-sm shadow-xs overflow-hidden bg-gradient-to-br shrink-0',
+                    avatarGradient
+                  )}
+                >
                   {avatarSrc && !imgError ? (
                     <img
                       src={avatarSrc}
@@ -189,10 +202,10 @@ export function UserMenu({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-black text-sm text-stone-950 dark:text-white tracking-tight truncate">
+                  <p className="font-black text-sm text-stone-950 dark:text-white tracking-tight leading-snug break-words">
                     {profile?.full_name || 'Người dùng BH-EDU'}
                   </p>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate mt-0.5">
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400 break-all font-mono mt-0.5">
                     {profile?.email}
                   </p>
                   <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-black uppercase">

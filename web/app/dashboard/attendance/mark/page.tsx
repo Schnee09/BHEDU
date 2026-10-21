@@ -515,8 +515,8 @@ function AttendanceMarkingPageContent() {
                         <div className="w-8 h-8 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 flex items-center justify-center font-black text-xs shrink-0">
                           {idx + 1}
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-black text-stone-900 dark:text-white text-sm uppercase tracking-tight truncate">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-black text-stone-900 dark:text-white text-sm uppercase tracking-tight leading-snug break-words">
                             {student.studentName}
                           </div>
                           <div className="text-[10px] font-bold text-stone-400 font-mono">

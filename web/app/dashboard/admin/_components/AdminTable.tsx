@@ -48,7 +48,7 @@ export function AdminTable<T extends { id: string }>({
 
   const toggleSelectAll = (checked: boolean) => {
     if (!checked || !onSelect) return;
-    data.forEach(item => onSelect(item));
+    data.forEach((item) => onSelect(item));
   };
 
   return (
@@ -66,58 +66,70 @@ export function AdminTable<T extends { id: string }>({
               <th className="px-6 py-3 text-left">
                 <input
                   type="checkbox"
+                  aria-label="Chọn tất cả bản ghi"
                   onChange={(e) => toggleSelectAll(e.target.checked)}
-                  className="rounded border-gray-300"
+                  className="rounded border-gray-300 dark:border-stone-700 text-amber-500 focus:ring-amber-400"
                 />
               </th>
             )}
             {columns.map((column) => (
               <th
                 key={String(column.key)}
-                className="px-6 py-3 text-left text-sm font-semibold text-gray-900"
+                className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-stone-100"
                 style={{ width: column.width }}
               >
                 <button
+                  type="button"
                   onClick={() => handleSort(column)}
                   className={`flex items-center gap-2 ${
-                    column.sortable ? 'cursor-pointer hover:text-gray-600' : ''
+                    column.sortable
+                      ? 'cursor-pointer hover:text-gray-600 dark:hover:text-stone-300'
+                      : ''
                   }`}
                 >
                   {column.label}
-                  {column.sortable && sortBy === column.key && (
-                    sortOrder === 'asc' ? (
+                  {column.sortable &&
+                    sortBy === column.key &&
+                    (sortOrder === 'asc' ? (
                       <ChevronUpIcon className="w-4 h-4" />
                     ) : (
                       <ChevronDownIcon className="w-4 h-4" />
-                    )
-                  )}
+                    ))}
                 </button>
               </th>
             ))}
-            {(onEdit || onDelete) && <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Actions</th>}
+            {(onEdit || onDelete) && (
+              <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-stone-100">
+                Actions
+              </th>
+            )}
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-200 dark:divide-stone-800">
           {data.length === 0 ? (
             <tr>
               <td
                 colSpan={(selectable ? 1 : 0) + columns.length + (onEdit || onDelete ? 1 : 0)}
-                className="px-6 py-8 text-center text-gray-500"
+                className="px-6 py-8 text-center text-gray-500 dark:text-stone-400"
               >
                 {emptyMessage}
               </td>
             </tr>
           ) : (
             data.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50">
+              <tr
+                key={item.id}
+                className="hover:bg-gray-50 dark:hover:bg-stone-800/40 transition-colors"
+              >
                 {selectable && (
                   <td className="px-6 py-3">
                     <input
                       type="checkbox"
+                      aria-label={`Chọn bản ghi ${item.id}`}
                       checked={selectedIds.includes(item.id)}
                       onChange={() => onSelect?.(item)}
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-300 dark:border-stone-700 text-amber-500 focus:ring-amber-400"
                     />
                   </td>
                 )}

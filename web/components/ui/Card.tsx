@@ -234,7 +234,10 @@ export const StatCard = memo(function StatCard({
 
       <div className="p-3 sm:p-4 md:p-5 flex items-start justify-between gap-2 relative z-10">
         <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1 font-sans">
-          <p className="text-[10px] sm:text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider truncate">
+          <p
+            className="text-[10px] sm:text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider line-clamp-2 leading-tight break-words"
+            title={label}
+          >
             {label}
           </p>
           <div className="flex items-baseline gap-1">
@@ -243,7 +246,10 @@ export const StatCard = memo(function StatCard({
             </p>
           </div>
           {subtitle && (
-            <p className="text-[9.5px] sm:text-[11px] font-medium text-stone-400 dark:text-stone-500 tracking-tight truncate">
+            <p
+              className="text-[9.5px] sm:text-[11px] font-medium text-stone-400 dark:text-stone-500 tracking-tight line-clamp-2 leading-tight break-words mt-0.5"
+              title={subtitle}
+            >
               {subtitle}
             </p>
           )}

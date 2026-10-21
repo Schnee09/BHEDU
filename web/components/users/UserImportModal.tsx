@@ -42,7 +42,9 @@ export function UserImportModal({ isOpen, onClose, onSuccess }: UserImportModalP
   const [parsedRows, setParsedRows] = useState<ParsedUserRow[]>([]);
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [importResults, setImportResults] = useState<{ success: number; failed: number } | null>(null);
+  const [importResults, setImportResults] = useState<{ success: number; failed: number } | null>(
+    null
+  );
 
   if (!isOpen) return null;
 
@@ -125,7 +127,10 @@ export function UserImportModal({ isOpen, onClose, onSuccess }: UserImportModalP
   const handleImport = async () => {
     const validRows = parsedRows.filter((r) => r.isValid);
     if (validRows.length === 0) {
-      toast.error('Không có dữ liệu hợp lệ', 'Vui lòng kiểm tra lại các dòng bị lỗi trước khi nhập.');
+      toast.error(
+        'Không có dữ liệu hợp lệ',
+        'Vui lòng kiểm tra lại các dòng bị lỗi trước khi nhập.'
+      );
       return;
     }
 
@@ -205,6 +210,7 @@ export function UserImportModal({ isOpen, onClose, onSuccess }: UserImportModalP
 
           <button
             onClick={onClose}
+            aria-label="Đóng cửa sổ tải lên"
             className="p-2 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -242,13 +248,23 @@ export function UserImportModal({ isOpen, onClose, onSuccess }: UserImportModalP
             type="file"
             accept=".csv,text/csv,text/plain"
             onChange={handleFileChange}
+            aria-label="Tải lên tệp CSV"
             className="hidden"
           />
 
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            aria-label="Chọn hoặc kéo thả file CSV"
             className={cn(
-              'border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2',
+              'border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500',
               file
                 ? 'border-emerald-500/50 bg-emerald-50/30 dark:bg-emerald-950/10'
                 : 'border-stone-300 dark:border-stone-700 hover:border-amber-500 hover:bg-stone-50 dark:hover:bg-[#181612]'
@@ -309,7 +325,9 @@ export function UserImportModal({ isOpen, onClose, onSuccess }: UserImportModalP
                         <td className="p-2 font-bold text-stone-900 dark:text-stone-100">
                           {row.full_name || '—'}
                         </td>
-                        <td className="p-2 text-stone-500 dark:text-stone-400">{row.email || '—'}</td>
+                        <td className="p-2 text-stone-500 dark:text-stone-400">
+                          {row.email || '—'}
+                        </td>
                         <td className="p-2">
                           <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
                             {row.role}
@@ -319,9 +337,7 @@ export function UserImportModal({ isOpen, onClose, onSuccess }: UserImportModalP
                           {row.isValid ? (
                             <span className="text-emerald-600 text-[10px] font-bold">Hợp lệ</span>
                           ) : (
-                            <span className="text-rose-600 text-[10px] font-bold">
-                              {row.error}
-                            </span>
+                            <span className="text-rose-600 text-[10px] font-bold">{row.error}</span>
                           )}
                         </td>
                       </tr>

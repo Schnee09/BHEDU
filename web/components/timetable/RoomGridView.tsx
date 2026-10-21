@@ -211,8 +211,8 @@ export default function RoomGridView({
                           !isAvailable
                             ? 'bg-stone-500/5 dark:bg-white/2 opacity-30'
                             : isBusy
-                            ? 'bg-red-500/5 dark:bg-red-950/20'
-                            : 'group-hover:bg-stone-500/2 dark:group-hover:bg-white/2'
+                              ? 'bg-red-500/5 dark:bg-red-950/20'
+                              : 'group-hover:bg-stone-500/2 dark:group-hover:bg-white/2'
                         )}
                         onDragOver={(e) => {
                           if (isAvailable && !isBusy) e.preventDefault();
@@ -255,7 +255,8 @@ export default function RoomGridView({
                             'border-blue-500',
                             'border-red-500'
                           );
-                          if (isAvailable && !isBusy) handleDrop(e, selectedDayIndex, session, room);
+                          if (isAvailable && !isBusy)
+                            handleDrop(e, selectedDayIndex, session, room);
                         }}
                       >
                         {!isAvailable ? (
@@ -266,7 +267,10 @@ export default function RoomGridView({
                           </div>
                         ) : slot ? (
                           (() => {
-                            const colors = getSubjectColor(slot.subject?.name, !slot.room || slot.room === 'Linh hoạt');
+                            const colors = getSubjectColor(
+                              slot.subject?.name,
+                              !slot.room || slot.room === 'Linh hoạt'
+                            );
                             return (
                               <div
                                 className={cn(
@@ -283,7 +287,8 @@ export default function RoomGridView({
                                   e.dataTransfer.effectAllowed = 'move';
                                   e.currentTarget.style.opacity = '0.5';
                                   if (setDraggingSlotId) setDraggingSlotId(slot.id);
-                                  if (setDraggingTeacherId) setDraggingTeacherId(slot.teacher?.id || null);
+                                  if (setDraggingTeacherId)
+                                    setDraggingTeacherId(slot.teacher?.id || null);
                                   if (setDraggingClassId) setDraggingClassId(slot.class_id || null);
                                 }}
                                 onDragEnd={(e) => {
@@ -326,7 +331,7 @@ export default function RoomGridView({
                                         {slot.teacher.full_name?.charAt(0) || 'G'}
                                       </div>
                                       <span
-                                        className="truncate max-w-[100px]"
+                                        className="truncate max-w-[140px]"
                                         title={getDisplayName(slot.teacher)}
                                       >
                                         {getDisplayName(slot.teacher)}
@@ -356,7 +361,11 @@ export default function RoomGridView({
                           <div
                             className="h-full rounded-2xl border-2 border-dashed border-stone-200 dark:border-white/5 hover:border-amber-500/50 hover:bg-amber-500/5 cursor-pointer flex items-center justify-center transition-all group/empty"
                             onClick={() =>
-                              onCreateSlot(selectedDayIndex, session, `${currentCampus.name} - ${room}`)
+                              onCreateSlot(
+                                selectedDayIndex,
+                                session,
+                                `${currentCampus.name} - ${room}`
+                              )
                             }
                           >
                             <div className="p-2.5 rounded-2xl bg-stone-500/5 dark:bg-white/5 group-hover/empty:scale-110 group-hover/empty:bg-amber-500 group-hover/empty:text-white transition-all text-stone-300 dark:text-stone-700">

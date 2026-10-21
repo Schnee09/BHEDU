@@ -2,8 +2,9 @@
 
 import React, { useRef, useState, useCallback } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
-import { getRoleBadgeClass, getRoleLabel } from '@/lib/role-utils';
+import { getRoleBadgeClass, getRoleLabel, getRoleAvatarGradient } from '@/lib/role-utils';
 import { cn } from '@/lib/utils';
+import { getUserInitials, getUserAvatarSrc } from '@/lib/utils/names';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/useToast';
 import {
@@ -22,15 +23,6 @@ interface ProfileSidebarProps {
   profile: any;
   refreshProfile: () => Promise<void>;
 }
-
-const ROLE_AVATAR_GRADIENT: Record<string, string> = {
-  super_admin: 'from-slate-700 to-slate-900',
-  admin: 'from-amber-600 to-stone-800',
-  teacher: 'from-blue-500 to-cyan-600',
-  student: 'from-emerald-500 to-teal-600',
-  parent: 'from-amber-500 to-orange-500',
-  tutor: 'from-rose-500 to-pink-600',
-};
 
 // Profile completeness: which fields count and their labels
 const COMPLETENESS_FIELDS = [
@@ -66,7 +58,7 @@ export default function ProfileSidebar({ profile, refreshProfile }: ProfileSideb
   React.useEffect(() => {
     setImgError(false);
     setPreviewUrl(null);
-  }, [profile?.photo_url]);
+  }, [profile?.photo_url, profile?.avatar_url]);
 
   // 3-D tilt
   const mx = useMotionValue(0);
@@ -181,15 +173,9 @@ export default function ProfileSidebar({ profile, refreshProfile }: ProfileSideb
     return !v || String(v).trim().length === 0;
   });
 
-  const initials = profile?.full_name
-    ? profile.full_name
-        .split(' ')
-        .map((n: string) => n[0])
-        .slice(-2)
-        .join('')
-        .toUpperCase()
-    : '?';
-  const avatarGradient = ROLE_AVATAR_GRADIENT[profile?.role] ?? 'from-stone-500 to-stone-700';
+  const initials = getUserInitials(profile);
+  const avatarGradient = getRoleAvatarGradient(profile?.role);
+  const avatarSrc = getUserAvatarSrc(profile);
   const joinDate = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString('vi-VN', {
         day: '2-digit',
@@ -345,9 +331,9 @@ export default function ProfileSidebar({ profile, refreshProfile }: ProfileSideb
           className="relative cursor-pointer group"
         >
           <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md ring-2 ring-white dark:ring-stone-800 ring-offset-1 ring-offset-stone-50 dark:ring-offset-stone-950">
-            {(previewUrl || profile?.photo_url) && !imgError ? (
+            {(previewUrl || avatarSrc) && !imgError ? (
               <img
-                src={previewUrl || profile?.photo_url}
+                src={previewUrl || avatarSrc || undefined}
                 alt={profile?.full_name || 'Ảnh đại diện'}
                 onError={() => setImgError(true)}
                 referrerPolicy="no-referrer"
@@ -400,7 +386,7 @@ export default function ProfileSidebar({ profile, refreshProfile }: ProfileSideb
             {uploading ? 'Đang tải...' : 'Đổi ảnh'}
           </button>
 
-          {(profile?.photo_url || previewUrl) && (
+          {(avatarSrc || previewUrl) && (
             <button
               onClick={handleRemovePhoto}
               disabled={removing || uploading}

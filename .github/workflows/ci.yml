@@ -6,8 +6,16 @@ on:
   pull_request:
     branches: ["main", "master"]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  web:
+    name: Web checks
     runs-on: ubuntu-latest
     
     defaults:
@@ -27,11 +35,54 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Security audit
+        # Runtime dependencies block CI. Dev-tool advisories are tracked
+        # separately because npm currently proposes breaking downgrades for them.
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Lint
         run: npm run lint
 
       - name: Test
-        run: npx jest --passWithNoTests
+        run: npx jest --runInBand --passWithNoTests
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: ./web/.next/cache
+          key: ${{ runner.os }}-next-${{ hashFiles('web/package-lock.json') }}-${{ hashFiles('web/**/*.ts', 'web/**/*.tsx', 'web/**/*.js', 'web/**/*.jsx') }}
+          restore-keys: |
+            ${{ runner.os }}-next-${{ hashFiles('web/package-lock.json') }}-
 
       - name: Build
         run: npm run build
+
+  flutter:
+    name: Flutter checks
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./flutter_app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test

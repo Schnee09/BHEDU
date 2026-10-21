@@ -1,8 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/guard';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const start = Date.now();
+  const auth = await getAuthContext(request, 'system.settings');
+  const canViewDetails = auth.authorized && !!auth.profile;
   const checks: Record<string, any> = {
     timestamp: new Date().toISOString(),
   };
@@ -55,16 +58,18 @@ export async function GET() {
 
     const overallStatus = checks.database.status === 'healthy' ? 'ok' : 'degraded';
 
-    return NextResponse.json({
+    const publicHealth = {
       status: overallStatus,
       duration_total_ms: Date.now() - start,
-      ...checks,
-    });
+      timestamp: checks.timestamp,
+    };
+
+    return NextResponse.json(canViewDetails ? { ...publicHealth, ...checks } : publicHealth);
   } catch (err: any) {
     return NextResponse.json(
       {
         status: 'error',
-        message: err.message,
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Health check failed',
         timestamp: checks.timestamp,
       },
       { status: 500 }

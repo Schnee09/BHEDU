@@ -204,7 +204,7 @@ export default function ClassDetailPage() {
 
               <div className="space-y-1.5 min-w-0 flex-1">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight truncate">
+                  <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight leading-snug break-words">
                     {classData.name}
                   </h1>
                   {classData.code && (
@@ -305,7 +305,10 @@ export default function ClassDetailPage() {
               <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 block mb-1">
                 Phòng học
               </span>
-              <p className="text-base sm:text-lg font-black text-stone-900 dark:text-white truncate">
+              <p
+                className="text-base sm:text-lg font-black text-stone-900 dark:text-white line-clamp-2 leading-snug break-words"
+                title={classData.room || 'Chưa xếp phòng'}
+              >
                 {classData.room || 'Chưa xếp'}
               </p>
             </div>
@@ -536,7 +539,10 @@ export default function ClassDetailPage() {
                           {getDisplayName(student).charAt(0)}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-xs text-stone-900 dark:text-white truncate">
+                          <p
+                            className="font-bold text-xs text-stone-900 dark:text-white line-clamp-2 leading-snug break-words"
+                            title={getDisplayName(student)}
+                          >
                             {getDisplayName(student)}
                           </p>
                           <div className="flex items-center gap-2 text-[10px] text-stone-400 mt-0.5">
@@ -587,7 +593,10 @@ export default function ClassDetailPage() {
                                 {getDisplayName(student).charAt(0)}
                               </div>
                               <div>
-                                <p className="font-bold text-stone-900 dark:text-white">
+                                <p
+                                  className="font-bold text-stone-900 dark:text-white line-clamp-2 leading-snug break-words"
+                                  title={getDisplayName(student)}
+                                >
                                   {getDisplayName(student)}
                                 </p>
                                 <span className="text-[9px] text-stone-400">
@@ -599,7 +608,10 @@ export default function ClassDetailPage() {
                           <td className="px-4 py-3 font-mono font-bold text-stone-600 dark:text-stone-400">
                             {student.student_code || '—'}
                           </td>
-                          <td className="px-4 py-3 text-stone-500 truncate max-w-[200px]">
+                          <td
+                            className="px-4 py-3 text-stone-500 truncate max-w-[200px]"
+                            title={student.email || '—'}
+                          >
                             {student.email || '—'}
                           </td>
                           <td className="px-4 py-3 text-right">

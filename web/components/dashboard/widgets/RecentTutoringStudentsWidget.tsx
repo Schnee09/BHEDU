@@ -6,6 +6,8 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { Users, BookOpen, MapPin } from 'lucide-react';
 
 import { useProfile } from '@/hooks/useProfile';
+import { getUserInitials } from '@/lib/utils/names';
+import { getRoleAvatarGradient } from '@/lib/role-utils';
 
 interface Student {
   id: string;
@@ -121,11 +123,21 @@ export default function RecentTutoringStudentsWidget() {
                       className="hover:bg-stone-500/5 dark:hover:bg-white/5 transition-colors"
                     >
                       <td className="p-4 pl-6">
-                        <div className="font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                          {student.full_name}
-                        </div>
-                        <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-0.5">
-                          Mã HS: {student.student_code}
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-xl bg-gradient-to-br ${getRoleAvatarGradient('student')} flex items-center justify-center text-white text-xs font-black shrink-0 shadow-sm`}
+                            aria-hidden="true"
+                          >
+                            {getUserInitials({ full_name: student.full_name })}
+                          </div>
+                          <div>
+                            <div className="font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                              {student.full_name}
+                            </div>
+                            <div className="text-[10px] font-black text-stone-400 font-mono tabular-nums uppercase tracking-widest mt-0.5">
+                              Mã HS: {student.student_code}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="p-4">
@@ -157,13 +169,21 @@ export default function RecentTutoringStudentsWidget() {
               {studentsList.map((student) => (
                 <div key={student.id} className="p-4 space-y-2">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-black text-stone-900 dark:text-white uppercase tracking-tight text-sm">
-                        {student.full_name}
-                      </h4>
-                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
-                        Mã: {student.student_code}
-                      </span>
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className={`w-8 h-8 rounded-xl bg-gradient-to-br ${getRoleAvatarGradient('student')} flex items-center justify-center text-white text-xs font-black shrink-0 shadow-sm`}
+                        aria-hidden="true"
+                      >
+                        {getUserInitials({ full_name: student.full_name })}
+                      </div>
+                      <div>
+                        <h4 className="font-black text-stone-900 dark:text-white uppercase tracking-tight text-sm">
+                          {student.full_name}
+                        </h4>
+                        <span className="text-[10px] font-black text-stone-400 font-mono tabular-nums uppercase tracking-widest">
+                          Mã: {student.student_code}
+                        </span>
+                      </div>
                     </div>
                     {student.rooms && (
                       <span className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold">

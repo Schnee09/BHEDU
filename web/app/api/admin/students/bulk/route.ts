@@ -6,18 +6,20 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getDataClient } from '@/lib/auth/dataClient';
+import { getAuthContext } from '@/lib/auth/guard';
 import { createServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { UserService } from '@/lib/services/userService';
 
 export async function POST(request: NextRequest) {
   try {
-    const { user } = await getDataClient(request);
+    const auth = await getAuthContext(request, 'students.create');
 
-    // Basic auth check
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!auth.authorized || !auth.profile || !auth.role) {
+      return NextResponse.json(
+        { error: auth.reason || 'Unauthorized' },
+        { status: auth.user ? 403 : 401 }
+      );
     }
 
     const body = await request.json();
@@ -53,8 +55,8 @@ export async function POST(request: NextRequest) {
             grade_level: student.grade_level || undefined,
             is_active: true,
           } as any,
-          user.role,
-          user.id
+          auth.role,
+          auth.profile.id
         );
 
         results.push({

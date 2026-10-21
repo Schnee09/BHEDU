@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Send, Loader2 } from 'lucide-react';
+import { X, Send, Loader2, GraduationCap } from 'lucide-react';
 import { RequestType } from '@/lib/repositories/StudentRequestRepository';
 import { apiFetch } from '@/lib/api/client';
 
@@ -136,6 +136,9 @@ export function CreateRequestModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-request-title"
         className="w-full max-w-lg bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
@@ -146,7 +149,10 @@ export function CreateRequestModal({
               📝
             </span>
             <div>
-              <h2 className="text-base font-black text-stone-900 dark:text-white uppercase tracking-tight">
+              <h2
+                id="create-request-title"
+                className="text-base font-black text-stone-900 dark:text-white uppercase tracking-tight"
+              >
                 Gửi đơn trực tuyến
               </h2>
               <p className="text-xs text-stone-400">
@@ -164,6 +170,19 @@ export function CreateRequestModal({
 
         {/* Form Content */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1">
+          {studentName && (
+            <div className="flex items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3 dark:border-white/10 dark:bg-stone-800/50">
+              <GraduationCap className="h-5 w-5 shrink-0 text-amber-500" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                  Học sinh gửi đơn
+                </p>
+                <p className="truncate text-sm font-bold text-stone-900 dark:text-white">
+                  {studentName}
+                </p>
+              </div>
+            </div>
+          )}
           {errorMsg && (
             <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-xs font-bold text-rose-600 dark:text-rose-400">
               {errorMsg}

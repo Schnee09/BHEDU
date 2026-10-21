@@ -50,35 +50,168 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const appFeatures: SearchItem[] = useMemo(
     () => [
       // Học vụ & Đào tạo
-      { type: 'feature', category: 'Học vụ & Đào tạo', name: 'Lớp học', sub: 'Quản lý danh sách lớp, phòng học & môn', href: routes.classes.list(), icon: AcademicCapIcon },
-      { type: 'feature', category: 'Học vụ & Đào tạo', name: 'Hồ sơ Học sinh', sub: 'Danh sách học sinh & mã định danh', href: routes.students.list(), icon: UserGroupIcon },
-      { type: 'feature', category: 'Học vụ & Đào tạo', name: 'Thời khóa biểu', sub: 'Lịch học theo tuần và phòng học', href: routes.timetable.manage(), icon: ClockIcon },
-      { type: 'feature', category: 'Học vụ & Đào tạo', name: 'Lịch dạy Gia sư', sub: 'Quản lý buổi kèm 1-1 và gia sư', href: '/dashboard/tutoring/schedule', icon: BookOpenIcon },
-      { type: 'feature', category: 'Học vụ & Đào tạo', name: 'Nhập học sinh từ Excel', sub: 'Tải lên danh sách học sinh hàng loạt', href: routes.students.import(), icon: UserGroupIcon },
-      
+      {
+        type: 'feature',
+        category: 'Học vụ & Đào tạo',
+        name: 'Lớp học',
+        sub: 'Quản lý danh sách lớp, phòng học & môn',
+        href: routes.classes.list(),
+        icon: AcademicCapIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Học vụ & Đào tạo',
+        name: 'Hồ sơ Học sinh',
+        sub: 'Danh sách học sinh & mã định danh',
+        href: routes.students.list(),
+        icon: UserGroupIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Học vụ & Đào tạo',
+        name: 'Thời khóa biểu',
+        sub: 'Lịch học theo tuần và phòng học',
+        href: routes.timetable.manage(),
+        icon: ClockIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Học vụ & Đào tạo',
+        name: 'Lịch dạy Gia sư',
+        sub: 'Quản lý buổi kèm 1-1 và gia sư',
+        href: '/dashboard/tutoring/schedule',
+        icon: BookOpenIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Học vụ & Đào tạo',
+        name: 'Nhập học sinh từ Excel',
+        sub: 'Tải lên danh sách học sinh hàng loạt',
+        href: routes.students.import(),
+        icon: UserGroupIcon,
+      },
+
       // Điểm danh & Điểm số
-      { type: 'feature', category: 'Điểm danh & Điểm số', name: 'Điểm danh lớp học', sub: 'Nhật ký chuyên cần hàng ngày', href: routes.attendance.list(), icon: ClipboardDocumentCheckIcon },
-      { type: 'feature', category: 'Điểm danh & Điểm số', name: 'Nhập điểm học tập', sub: 'Sổ điểm, điểm thi và kiểm tra', href: routes.grades.entry(), icon: AcademicCapIcon },
-      { type: 'feature', category: 'Điểm danh & Điểm số', name: 'Báo cáo & Phân tích', sub: 'Thống kê kết quả và học lực', href: routes.grades.analytics(), icon: SparklesIcon },
+      {
+        type: 'feature',
+        category: 'Điểm danh & Điểm số',
+        name: 'Điểm danh lớp học',
+        sub: 'Nhật ký chuyên cần hàng ngày',
+        href: routes.attendance.list(),
+        icon: ClipboardDocumentCheckIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Điểm danh & Điểm số',
+        name: 'Nhập điểm học tập',
+        sub: 'Sổ điểm, điểm thi và kiểm tra',
+        href: routes.grades.entry(),
+        icon: AcademicCapIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Điểm danh & Điểm số',
+        name: 'Báo cáo & Phân tích',
+        sub: 'Thống kê kết quả và học lực',
+        href: routes.grades.analytics(),
+        icon: SparklesIcon,
+      },
 
       // Tài chính
-      { type: 'feature', category: 'Tài chính', name: 'Tài chính & Học phí', sub: 'Hóa đơn, khoản thu & thanh toán', href: '/dashboard/finance', icon: BanknotesIcon },
+      {
+        type: 'feature',
+        category: 'Tài chính',
+        name: 'Tài chính & Học phí',
+        sub: 'Hóa đơn, khoản thu & thanh toán',
+        href: '/dashboard/finance',
+        icon: BanknotesIcon,
+      },
 
       // Nhân sự & Người dùng
-      { type: 'feature', category: 'Nhân sự', name: 'Quản lý Giáo viên & Gia sư', sub: 'Danh sách đội ngũ nhân sự', href: '/dashboard/admin/teachers', icon: UserGroupIcon },
-      { type: 'feature', category: 'Nhân sự', name: 'Lời mời tham gia', sub: 'Tạo mã mời phụ huynh và giáo viên', href: '/dashboard/admin/invitations', icon: UserGroupIcon },
+      {
+        type: 'feature',
+        category: 'Nhân sự',
+        name: 'Quản lý Giáo viên & Gia sư',
+        sub: 'Danh sách đội ngũ nhân sự',
+        href: '/dashboard/admin/teachers',
+        icon: UserGroupIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Nhân sự',
+        name: 'Lời mời tham gia',
+        sub: 'Tạo mã mời phụ huynh và giáo viên',
+        href: '/dashboard/admin/invitations',
+        icon: UserGroupIcon,
+      },
 
       // Cấu hình Học vụ
-      { type: 'feature', category: 'Cấu hình Học vụ', name: 'Năm học & Học kỳ', sub: 'Thiết lập niên khóa và giai đoạn', href: '/dashboard/admin/academic-years', icon: AcademicCapIcon },
-      { type: 'feature', category: 'Cấu hình Học vụ', name: 'Thang điểm & Xếp loại', sub: 'Quy chuẩn tính GPA và xếp loại', href: '/dashboard/admin/grading-scales', icon: SparklesIcon },
-      { type: 'feature', category: 'Cấu hình Học vụ', name: 'Thông báo trung tâm', sub: 'Đăng tin tức và thông báo', href: '/dashboard/admin/announcements', icon: SparklesIcon },
+      {
+        type: 'feature',
+        category: 'Cấu hình Học vụ',
+        name: 'Năm học & Học kỳ',
+        sub: 'Thiết lập niên khóa và giai đoạn',
+        href: '/dashboard/admin/academic-years',
+        icon: AcademicCapIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Cấu hình Học vụ',
+        name: 'Thang điểm & Xếp loại',
+        sub: 'Quy chuẩn tính GPA và xếp loại',
+        href: '/dashboard/admin/grading-scales',
+        icon: SparklesIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Cấu hình Học vụ',
+        name: 'Thông báo trung tâm',
+        sub: 'Đăng tin tức và thông báo',
+        href: '/dashboard/admin/announcements',
+        icon: SparklesIcon,
+      },
 
       // Quản trị Hệ thống
-      { type: 'feature', category: 'Quản trị Hệ thống', name: 'Cài đặt Trung tâm', sub: 'Thông tin trung tâm, logo, quy định', href: '/dashboard/settings', icon: Cog6ToothIcon },
-      { type: 'feature', category: 'Quản trị Hệ thống', name: 'Phân quyền & Vai trò', sub: 'Ma trận quyền và Custom Roles', href: '/dashboard/admin/permissions', icon: ShieldCheckIcon },
-      { type: 'feature', category: 'Quản trị Hệ thống', name: 'Giám sát Hệ thống', sub: 'Tình trạng kết nối DB và RAM', href: '/dashboard/admin/health', icon: SparklesIcon },
-      { type: 'feature', category: 'Quản trị Hệ thống', name: 'Sao lưu & Dữ liệu', sub: 'Tải bản backup và xuất phân hệ', href: '/dashboard/admin/backup', icon: ShieldCheckIcon },
-      { type: 'feature', category: 'Cá nhân', name: 'Hồ sơ của tôi', sub: 'Thông tin tài khoản và đổi mật khẩu', href: routes.profile(), icon: UserGroupIcon },
+      {
+        type: 'feature',
+        category: 'Quản trị Hệ thống',
+        name: 'Cài đặt Trung tâm',
+        sub: 'Thông tin trung tâm, logo, quy định',
+        href: '/dashboard/settings',
+        icon: Cog6ToothIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Quản trị Hệ thống',
+        name: 'Phân quyền & Vai trò',
+        sub: 'Ma trận quyền và Custom Roles',
+        href: '/dashboard/admin/permissions',
+        icon: ShieldCheckIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Quản trị Hệ thống',
+        name: 'Giám sát Hệ thống',
+        sub: 'Tình trạng kết nối DB và RAM',
+        href: '/dashboard/admin/health',
+        icon: SparklesIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Quản trị Hệ thống',
+        name: 'Sao lưu & Dữ liệu',
+        sub: 'Tải bản backup và xuất phân hệ',
+        href: '/dashboard/admin/backup',
+        icon: ShieldCheckIcon,
+      },
+      {
+        type: 'feature',
+        category: 'Cá nhân',
+        name: 'Hồ sơ của tôi',
+        sub: 'Thông tin tài khoản và đổi mật khẩu',
+        href: routes.profile(),
+        icon: UserGroupIcon,
+      },
     ],
     []
   );
@@ -133,23 +266,23 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             p.role === 'super_admin'
               ? 'Quản trị Hệ thống'
               : p.role === 'owner'
-              ? 'Chủ trung tâm'
-              : p.role === 'admin'
-              ? 'Quản trị viên'
-              : p.role === 'teacher'
-              ? 'Giáo viên'
-              : p.role === 'tutor'
-              ? 'Gia sư'
-              : p.role === 'parent'
-              ? 'Phụ huynh'
-              : 'Học sinh';
+                ? 'Chủ trung tâm'
+                : p.role === 'admin'
+                  ? 'Quản trị viên'
+                  : p.role === 'teacher'
+                    ? 'Giáo viên'
+                    : p.role === 'tutor'
+                      ? 'Gia sư'
+                      : p.role === 'parent'
+                        ? 'Phụ huynh'
+                        : 'Học sinh';
 
           const href =
             p.role === 'student'
               ? `/dashboard/students/${p.id}`
               : p.role === 'teacher' || p.role === 'tutor'
-              ? `/dashboard/admin/teachers`
-              : `/dashboard/admin/users`;
+                ? `/dashboard/admin/teachers`
+                : `/dashboard/admin/users`;
 
           dbResults.push({
             type: p.role === 'student' ? 'student' : 'teacher',
@@ -187,12 +320,14 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           const combined = [...localMatches, ...dbResults];
           // Deduplicate by href + name
           const seen = new Set<string>();
-          return combined.filter((item) => {
-            const key = item.href + item.name;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          }).slice(0, 10);
+          return combined
+            .filter((item) => {
+              const key = item.href + item.name;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            })
+            .slice(0, 10);
         });
       } catch (e) {
         console.error('Search preview error:', e);
@@ -237,10 +372,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   return (
     <>
       {/* Solid Dim Backdrop */}
-      <div
-        className="fixed inset-0 z-[200] bg-black/60 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-[200] bg-black/60 transition-opacity" onClick={onClose} />
 
       {/* Solid Opaque Dialog Box */}
       <div className="fixed inset-x-4 top-16 md:inset-auto md:top-20 md:left-1/2 md:-translate-x-1/2 md:w-[720px] max-h-[85vh] bg-white dark:bg-[#14120E] rounded-3xl z-[210] flex flex-col overflow-hidden shadow-2xl border-2 border-stone-200 dark:border-stone-800 font-['Be_Vietnam_Pro'] animate-scale-in">
@@ -250,7 +382,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <input
             type="text"
             autoFocus
-            placeholder="Tìm tính năng, học sinh, lớp học, giáo viên (ví dụ: Điểm danh, Lớp 10A)..."
+            aria-label="Tìm kiếm toàn hệ thống"
+            placeholder="Tìm tính năng, học sinh, lớp học, giáo viên (ví dụ: Điểm danh, Lớp 10A)…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -259,6 +392,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
+              aria-label="Xóa nội dung tìm kiếm"
               className="p-1.5 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-400 text-xs"
             >
               <XMarkIcon className="w-4 h-4" />
@@ -266,6 +400,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           )}
           <button
             onClick={onClose}
+            aria-label="Đóng tìm kiếm (ESC)"
             className="px-2.5 py-1 rounded-xl bg-stone-200 dark:bg-stone-800 text-[10px] font-mono font-bold text-stone-600 dark:text-stone-300 uppercase tracking-widest hover:bg-stone-300 dark:hover:bg-stone-700 transition-colors"
           >
             ESC
@@ -284,8 +419,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             </div>
           ) : searchResults.length === 0 ? (
             <div className="py-12 text-center space-y-2">
-              <p className="text-sm font-bold text-stone-700 dark:text-stone-300">Không tìm thấy kết quả phù hợp</p>
-              <p className="text-xs text-stone-400">Thử tìm kiếm với từ khóa khác như tên học sinh, tên lớp hoặc tên trang.</p>
+              <p className="text-sm font-bold text-stone-700 dark:text-stone-300">
+                Không tìm thấy kết quả phù hợp
+              </p>
+              <p className="text-xs text-stone-400">
+                Thử tìm kiếm với từ khóa khác như tên học sinh, tên lớp hoặc tên trang.
+              </p>
             </div>
           ) : (
             <>
@@ -326,15 +465,17 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       >
                         <IconComponent className="w-4 h-4" />
                       </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs md:text-sm font-black truncate">{item.name}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-xs md:text-sm font-black line-clamp-2 leading-snug break-words">
+                            {item.name}
+                          </p>
                           <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-300 uppercase tracking-wider shrink-0">
                             {item.category}
                           </span>
                         </div>
                         {item.sub && (
-                          <p className="text-[11px] text-stone-400 dark:text-stone-400 truncate mt-0.5">
+                          <p className="text-[11px] text-stone-400 dark:text-stone-400 line-clamp-2 leading-tight break-words mt-0.5">
                             {item.sub}
                           </p>
                         )}
@@ -344,7 +485,9 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     <ArrowRightIcon
                       className={cn(
                         'w-4 h-4 shrink-0 transition-transform',
-                        isSelected ? 'text-amber-500 translate-x-0.5' : 'text-stone-300 dark:text-stone-700 opacity-0 group-hover:opacity-100'
+                        isSelected
+                          ? 'text-amber-500 translate-x-0.5'
+                          : 'text-stone-300 dark:text-stone-700 opacity-0 group-hover:opacity-100'
                       )}
                     />
                   </button>
@@ -358,12 +501,18 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         <div className="px-6 py-3 border-t border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-[#1A1814] flex items-center justify-between text-[11px] text-stone-500 dark:text-stone-400 font-bold">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-[9px] text-stone-700 dark:text-stone-300">↑</kbd>
-              <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-[9px] text-stone-700 dark:text-stone-300">↓</kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-[9px] text-stone-700 dark:text-stone-300">
+                ↑
+              </kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-[9px] text-stone-700 dark:text-stone-300">
+                ↓
+              </kbd>
               <span>Điều hướng</span>
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-[9px] text-stone-700 dark:text-stone-300">ENTER</kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-[9px] text-stone-700 dark:text-stone-300">
+                ENTER
+              </kbd>
               <span>Truy cập</span>
             </span>
           </div>

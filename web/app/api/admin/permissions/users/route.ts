@@ -4,38 +4,28 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/guard';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClientFromRequest(request);
     const { searchParams } = new URL(request.url);
 
-    // 1. Check admin / owner / super_admin authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { data: currentProfile } = await supabase
-      .from('profiles')
-      .select('id, role')
-      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
-      .maybeSingle();
-
-    if (!['super_admin', 'admin', 'owner'].includes(currentProfile?.role || '')) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    const auth = await getAuthContext(request, 'permissions.manage');
+    if (!auth.authorized || !auth.profile) {
+      return NextResponse.json(
+        { error: auth.reason || 'Forbidden' },
+        { status: auth.user ? 403 : 401 }
+      );
     }
 
     // 2. Parse pagination & search params
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')));
-    const search = searchParams.get('search')?.trim();
-    const role = searchParams.get('role')?.trim();
+    const parsedPage = parseInt(searchParams.get('page') || '1', 10);
+    const parsedLimit = parseInt(searchParams.get('limit') || '20', 10);
+    const page = Number.isFinite(parsedPage) ? Math.max(1, parsedPage) : 1;
+    const limit = Number.isFinite(parsedLimit) ? Math.min(100, Math.max(1, parsedLimit)) : 20;
+    const search = searchParams.get('search')?.trim().slice(0, 200);
+    const role = searchParams.get('role')?.trim().slice(0, 50);
 
     const serviceClient = createServiceClient();
     let query = serviceClient

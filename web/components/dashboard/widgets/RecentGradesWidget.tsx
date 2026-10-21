@@ -5,6 +5,8 @@ import { useFetch } from '@/hooks/useFetch';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { Icons } from '@/components/ui/Icons';
 import { cn } from '@/lib/utils';
+import { getUserInitials } from '@/lib/utils/names';
+import { getRoleAvatarGradient } from '@/lib/role-utils';
 
 interface Grade {
   id: string;
@@ -113,8 +115,18 @@ export default function RecentGradesWidget({
                     className="hover:bg-stone-500/2 dark:hover:bg-white/1 transition-colors"
                   >
                     {showStudentColumn && (
-                      <td className="p-4 pl-6 font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                        {grade.student?.full_name || 'N/A'}
+                      <td className="p-4 pl-6">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={`w-7 h-7 rounded-lg bg-gradient-to-br ${getRoleAvatarGradient('student')} flex items-center justify-center text-white text-[11px] font-black shrink-0 shadow-sm`}
+                            aria-hidden="true"
+                          >
+                            {getUserInitials({ full_name: grade.student?.full_name || '' })}
+                          </div>
+                          <span className="font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                            {grade.student?.full_name || 'N/A'}
+                          </span>
+                        </div>
                       </td>
                     )}
                     <td className="p-4">

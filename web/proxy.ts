@@ -142,57 +142,27 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // 3. Resolve role — check cookie cache first to avoid an extra DB round-trip
-  const cachedRoleCookie = request.cookies.get('user-role')?.value;
-  let role: UserRole | null = null;
+  // 3. Resolve role from the database on every protected navigation.
+  // Never trust a client-supplied role cookie for an authorization decision.
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('user_id', user.id)
+    .maybeSingle();
 
-  if (cachedRoleCookie) {
-    const [cookieUserId, cookieRole] = cachedRoleCookie.split(':');
-    if (cookieUserId === user.id) {
-      role = cookieRole as UserRole;
-    }
+  if (error || !profile) {
+    console.warn(`[Proxy] Profile fetch failed for user ${user.id}:`, error);
+    return NextResponse.redirect(new URL('/dashboard/unauthorized', request.url));
   }
 
-  // Cache miss: fetch role from the profiles table
-  if (!role) {
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (error || !profile) {
-      console.warn(`[Proxy] Profile fetch failed for user ${user.id}:`, error);
-      return NextResponse.redirect(new URL('/dashboard/unauthorized', request.url));
-    }
-
-    role = profile.role as UserRole;
-
-    // Persist role in a short-lived cookie to avoid repeat DB queries
-    response.cookies.set('user-role', `${user.id}:${role}`, {
-      maxAge: 60 * 60 * 24, // 1 day
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-    });
-  }
+  const role = profile.role as UserRole;
 
   // 4. Permission check
   if (!hasPermission(role, requiredPermission)) {
     console.warn(
       `[Proxy] Access denied — user ${user.id} (role: ${role}) → ${pathname}. Required: ${requiredPermission}`
     );
-    const unauthorizedResponse = NextResponse.redirect(
-      new URL('/dashboard/unauthorized', request.url)
-    );
-    // Propagate role cache to the redirect response
-    unauthorizedResponse.cookies.set('user-role', `${user.id}:${role}`, {
-      maxAge: 60 * 60 * 24,
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-    });
-    return unauthorizedResponse;
+    return NextResponse.redirect(new URL('/dashboard/unauthorized', request.url));
   }
 
   return response;

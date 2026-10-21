@@ -129,18 +129,24 @@ export default function EnrollmentModal({
               <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                 <GraduationCap className="w-5 h-5" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <h4 className="font-black text-sm text-stone-900 dark:text-white truncate">
+                  <h4
+                    className="font-black text-sm text-stone-900 dark:text-white line-clamp-2 leading-snug break-words"
+                    title={classData.name}
+                  >
                     {classData.name}
                   </h4>
                   {classData.code && (
-                    <span className="px-1.5 py-0.5 rounded bg-amber-200/60 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-mono font-bold text-[9px] uppercase">
+                    <span className="px-1.5 py-0.5 rounded bg-amber-200/60 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-mono font-bold text-[9px] uppercase shrink-0">
                       {classData.code}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate mt-0.5">
+                <p
+                  className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-1 leading-tight break-words mt-0.5"
+                  title={classData.teacher ? getDisplayName(classData.teacher) : undefined}
+                >
                   GV: {classData.teacher ? getDisplayName(classData.teacher) : 'Chưa chỉ định'}
                 </p>
               </div>

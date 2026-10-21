@@ -5,8 +5,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { BASE_ROLE_PERMISSIONS, UserRole, PermissionCode } from '@/lib/auth/core';
+import { getAuthContext } from '@/lib/auth/guard';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
+import { isValidPermissionCode } from '@/lib/auth/permissionManagement';
 
 export interface RoleInfo {
   code: string;
@@ -86,21 +89,9 @@ const SYSTEM_ROLES: RoleInfo[] = [
 ];
 
 async function getSuperAdminProfile(request: NextRequest) {
-  const supabase = createClientFromRequest(request);
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, role')
-    .or(`id.eq.${user.id},user_id.eq.${user.id}`)
-    .maybeSingle();
-
-  if (!['super_admin', 'owner', 'admin'].includes(profile?.role || '')) return null;
-  return profile;
+  const auth = await getAuthContext(request, 'permissions.manage');
+  if (!auth.authorized || !auth.profile || !auth.role) return null;
+  return { id: auth.profile.id as string, role: auth.role };
 }
 
 export async function GET(request: NextRequest) {
@@ -221,6 +212,30 @@ export async function POST(request: NextRequest) {
         { error: 'Mã vai trò (code) và Tên hiển thị (name) là bắt buộc' },
         { status: 400 }
       );
+    }
+
+    if (
+      !Array.isArray(permissions) ||
+      permissions.length > 100 ||
+      permissions.some(
+        (permission) => typeof permission !== 'string' || !isValidPermissionCode(permission)
+      )
+    ) {
+      return NextResponse.json({ error: 'Danh sách quyền không hợp lệ' }, { status: 400 });
+    }
+
+    if (admin.role !== 'super_admin') {
+      const delegationChecks = await Promise.all(
+        permissions.map((permission: string) =>
+          resolveServerPermission(admin.id, admin.role, permission as PermissionCode)
+        )
+      );
+      if (delegationChecks.some((allowed) => !allowed)) {
+        return NextResponse.json(
+          { error: 'Không thể cấp quyền cao hơn quyền của tài khoản hiện tại' },
+          { status: 403 }
+        );
+      }
     }
 
     const normalizedCode = code
