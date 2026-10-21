@@ -5,13 +5,13 @@ const GLOBAL_CLASS_ROLES = new Set(['admin', 'owner', 'super_admin']);
 export async function canAccessClass(
   supabase: SupabaseClient,
   user: { id?: string; role?: string },
-  classId: string
+  classId: string | null | undefined
 ): Promise<boolean> {
   if (user.role && GLOBAL_CLASS_ROLES.has(user.role)) {
     return true;
   }
 
-  if (user.role !== 'teacher' || !user.id) {
+  if (user.role !== 'teacher' || !user.id || !classId) {
     return false;
   }
 

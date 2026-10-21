@@ -42,6 +42,15 @@ describe('canAccessClass', () => {
     ).resolves.toBe(false);
   });
 
+  it('rejects a teacher when a legacy record has no class', async () => {
+    const { client } = createSupabaseResult({ id: 'class-1' });
+
+    await expect(canAccessClass(client, { id: 'teacher-1', role: 'teacher' }, null)).resolves.toBe(
+      false
+    );
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
   it.each(['student', 'parent', 'tutor', undefined])(
     'rejects non-teacher role %s without a query',
     async (role) => {
