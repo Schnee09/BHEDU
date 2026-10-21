@@ -25,6 +25,7 @@ import {
   rateLimitConfigs,
 } from '@/lib/auth/rateLimit';
 import { adminAuth, teacherAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
 import { logAuditEvent } from '@/lib/auth/auditLog';
 
 // ============================================
@@ -119,15 +120,14 @@ export function withRateLimit(config: RateLimitConfig = rateLimitConfigs.api): M
  */
 export function withAuth(roles?: Role[]): Middleware {
   return (handler: Handler) => async (request: NextRequest, context: MiddlewareContext) => {
-    // Try most permissive auth first
-    const auth = await teacherAuth(request);
+    const auth = await getAuthContext(request);
 
     if (!auth.authorized) {
       return errorResponses.unauthorized();
     }
 
-    context.userId = auth.userId!;
-    context.userRole = auth.userRole as Role;
+    context.userId = auth.profile!.id;
+    context.userRole = auth.role as Role;
 
     // Check role restriction if specified
     if (roles && roles.length > 0 && !roles.includes(context.userRole)) {

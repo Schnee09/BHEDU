@@ -1,6 +1,8 @@
 import { apiSuccess, createGetHandler } from '@/lib/api/apiHandler';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 import { createServiceClient } from '@/lib/supabase/server';
+import { canAccessClass } from '@/lib/auth/classAccess';
+import { AuthorizationError, ValidationError } from '@/lib/api/errors';
 
 /**
  * Attendance Reports API
@@ -23,6 +25,21 @@ export const GET = createGetHandler(
     // Force personal scoping for students
     if (user.role === 'student') {
       filters.student_id = user.id;
+    }
+
+    if (user.role === 'teacher') {
+      if (!filters.class_id) {
+        throw new ValidationError('classId is required for teacher reports');
+      }
+
+      const allowed = await canAccessClass(
+        supabase,
+        { id: user.id, role: user.role },
+        filters.class_id
+      );
+      if (!allowed) {
+        throw new AuthorizationError('You are not assigned to this class');
+      }
     }
 
     const report = await repository.findAll(filters);

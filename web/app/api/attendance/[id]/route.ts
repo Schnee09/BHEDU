@@ -9,6 +9,7 @@ import { adminAuth, teacherAuth } from '@/lib/auth/adminAuth';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,8 +61,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
-    // Role-based access logic
-    if (auth.userRole === 'student' && auth.userId !== record.student_id) {
+    const canViewRecord = await canAccessClass(
+      supabase,
+      { id: auth.userId, role: auth.userRole },
+      record.class_id
+    );
+    if (!canViewRecord) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -125,6 +130,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const supabase = createServiceClient();
     const repository = new AttendanceRepository(supabase);
+
+    const existing = await repository.findById(id);
+    if (!existing) {
+      return NextResponse.json({ error: 'Attendance record not found' }, { status: 404 });
+    }
+
+    const canEditRecord = await canAccessClass(
+      supabase,
+      { id: auth.userId, role: auth.userRole },
+      existing.class_id
+    );
+    if (!canEditRecord) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const updated = await repository.update(id, parsed.data);
     return NextResponse.json({ success: true, record: updated });

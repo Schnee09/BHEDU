@@ -26,6 +26,12 @@ export interface AuthResult {
   supabase?: any; // The authorized Supabase client (service role if admin)
 }
 
+const TEACHER_AUTH_ROLES = new Set<UserRole>(['teacher', 'admin', 'owner', 'super_admin']);
+
+export function canUseTeacherRoutes(role: string): role is UserRole {
+  return TEACHER_AUTH_ROLES.has(role as UserRole);
+}
+
 /**
  * Check if the current user is authenticated and has admin role
  * @param request - Optional NextRequest for API routes
@@ -306,20 +312,16 @@ export async function teacherAuth(
       setCached(cacheKey, profile, 'auth', cacheConfigs.profile);
     }
 
-    if (
-      !isAtLeast(profile.role as UserRole, 'student') &&
-      profile.role !== 'owner' &&
-      profile.role !== 'super_admin'
-    ) {
+    if (!canUseTeacherRoutes(profile.role)) {
       console.warn(
-        `[teacherAuth] Authorization failed for user ${profile.id}. Role: ${profile.role}. Reason: Role not in hierarchy or below student level.`
+        `[teacherAuth] Authorization failed for user ${profile.id}. Role: ${profile.role}. Reason: Teacher role required.`
       );
       logAuthAttempt({
         success: false,
         userId: profile.id,
         userEmail: user.email,
         userRole: profile.role,
-        reason: 'Insufficient permissions (valid role required)',
+        reason: 'Insufficient permissions (teacher role required)',
         request,
       });
 
@@ -328,7 +330,7 @@ export async function teacherAuth(
         userId: profile.id,
         userEmail: user.email,
         userRole: profile.role,
-        reason: 'Insufficient permissions (valid role required)',
+        reason: 'Insufficient permissions (teacher role required)',
       };
     }
 
