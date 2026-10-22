@@ -234,19 +234,35 @@ export class FinanceService {
       throw new Error('Cash payment method is not configured in payment_methods table');
     }
 
+    const studentIds = [...new Set(updates.map((update) => update.studentId))];
+    const months = [...new Set(updates.map((update) => update.month))];
+    const existingInvoices = new Map<
+      string,
+      { id: string; total_amount: number; paid_amount: number; status: string }
+    >();
+
+    if (studentIds.length > 0 && months.length > 0) {
+      const { data: invoices, error: invoicesError } = await this.supabase
+        .from('invoices')
+        .select('id, student_id, issue_date, total_amount, paid_amount, status')
+        .eq('academic_year_id', academicYearId)
+        .in('student_id', studentIds)
+        .in('issue_date', months);
+
+      if (invoicesError) {
+        throw new Error(`Failed to fetch existing invoices: ${invoicesError.message}`);
+      }
+
+      for (const invoice of invoices || []) {
+        existingInvoices.set(`${invoice.student_id}:${invoice.issue_date}`, invoice);
+      }
+    }
+
     let updatedCount = 0;
 
     for (const update of updates) {
       const { studentId, month, paid } = update;
-
-      // Check if invoice already exists for this student and month
-      const { data: existingInvoice } = await this.supabase
-        .from('invoices')
-        .select('id, total_amount, paid_amount, status')
-        .eq('student_id', studentId)
-        .eq('academic_year_id', academicYearId)
-        .eq('issue_date', month)
-        .maybeSingle();
+      const existingInvoice = existingInvoices.get(`${studentId}:${month}`);
 
       if (existingInvoice) {
         if (paid && existingInvoice.status !== 'paid') {
@@ -260,6 +276,11 @@ export class FinanceService {
               amount: balance,
               payment_method_id: paymentMethodId,
               notes: 'Thanh toán học phí qua Portal (Bảng điều khiển)',
+            });
+            existingInvoices.set(`${studentId}:${month}`, {
+              ...existingInvoice,
+              paid_amount: Number(existingInvoice.total_amount),
+              status: 'paid',
             });
             updatedCount++;
           }
@@ -306,6 +327,11 @@ export class FinanceService {
               })
               .eq('id', account.id);
           }
+          existingInvoices.set(`${studentId}:${month}`, {
+            ...existingInvoice,
+            paid_amount: 0,
+            status: 'pending',
+          });
           updatedCount++;
         }
       } else {
@@ -344,6 +370,12 @@ export class FinanceService {
             notes: 'Thanh toán học phí qua Portal',
           });
         }
+        existingInvoices.set(`${studentId}:${month}`, {
+          id: invoice.id,
+          total_amount: monthlyFee,
+          paid_amount: paid ? monthlyFee : 0,
+          status: paid ? 'paid' : 'pending',
+        });
         updatedCount++;
       }
     }
@@ -388,21 +420,27 @@ export class FinanceService {
       return { success: true, generatedCount: 0 };
     }
 
+    const studentIds = enrollments.map((enrollment) => enrollment.student_id);
+    const { data: existingInvoices, error: invoicesError } = await this.supabase
+      .from('invoices')
+      .select('student_id')
+      .eq('academic_year_id', academicYearId)
+      .eq('issue_date', month)
+      .in('student_id', studentIds);
+
+    if (invoicesError) {
+      throw new Error(`Failed to fetch existing invoices: ${invoicesError.message}`);
+    }
+
+    const invoicedStudentIds = new Set(
+      (existingInvoices || []).map((invoice) => invoice.student_id)
+    );
     let generatedCount = 0;
 
     for (const enrollment of enrollments) {
       const studentId = enrollment.student_id;
 
-      // Check if invoice already exists for this student and month
-      const { data: existingInvoice } = await this.supabase
-        .from('invoices')
-        .select('id')
-        .eq('student_id', studentId)
-        .eq('academic_year_id', academicYearId)
-        .eq('issue_date', month)
-        .maybeSingle();
-
-      if (!existingInvoice) {
+      if (!invoicedStudentIds.has(studentId)) {
         const descMonth = new Date(month).getMonth() + 1;
         const descYear = new Date(month).getFullYear();
         const finalDesc =
