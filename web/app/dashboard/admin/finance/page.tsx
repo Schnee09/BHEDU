@@ -58,6 +58,20 @@ interface OverviewStats {
   overdueInvoicesCount: number;
 }
 
+interface PaymentRecord {
+  id: string;
+  receipt_number: string | null;
+  amount: number;
+  refunded_amount: number;
+  payment_date: string;
+  status: string;
+  reference_number: string | null;
+  student: { id: string; full_name: string; student_code: string | null };
+  payment_method: { id: string; name: string; type: string } | null;
+  invoice: { id: string; invoice_number: string; total_amount: number };
+  refunds: Array<{ id: string; refund_number: string; amount: number; reason: string }>;
+}
+
 export default function FinanceDashboardPage() {
   return (
     <PageGuard permissions="finance.view">
@@ -69,7 +83,7 @@ export default function FinanceDashboardPage() {
 function FinanceDashboardContent() {
   const [mounted, setMounted] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'invoices'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'payments'>('overview');
 
   useEffect(() => {
     setMounted(true);
@@ -98,6 +112,11 @@ function FinanceDashboardContent() {
   const [payRef, setPayRef] = useState('');
   const [payNotes, setPayNotes] = useState('');
   const [isSubmittingPay, setIsSubmittingPay] = useState(false);
+  const [paymentPage, setPaymentPage] = useState(1);
+  const [refundPayment, setRefundPayment] = useState<PaymentRecord | null>(null);
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
 
   // Fetch lookups
   const { data: yearsRes } = useFetch<{ success: boolean; data: AcademicYear[] }>(
@@ -106,9 +125,11 @@ function FinanceDashboardContent() {
   const { data: classesRes } = useFetch<{ success: boolean; data: ClassOption[] }>(
     '/api/admin/classes?limit=100'
   );
-  const { data: paymentMethods } = useFetch<Array<{ id: string; name: string }>>(
-    '/api/admin/finance/invoices'
-  ); // Placeholder lookup or direct
+  const { data: paymentMethodsRes } = useFetch<{
+    success: boolean;
+    data: Array<{ id: string; name: string; type: string }>;
+  }>('/api/admin/finance/payment-methods');
+  const paymentMethods = paymentMethodsRes?.data || [];
 
   const years = yearsRes?.data || [];
   const classes = classesRes?.data || [];
@@ -156,10 +177,28 @@ function FinanceDashboardContent() {
   const invoices = invoicesRes?.data || [];
   const pagination = invoicesRes?.pagination || { total: 0, page: 1, pageSize: 15, totalPages: 1 };
 
+  const { data: paymentsRes, refetch: refetchPayments } = useFetch<{
+    success: boolean;
+    data: PaymentRecord[];
+    pagination: { total: number; page: number; pageSize: number; totalPages: number };
+  }>(
+    selectedYear
+      ? `/api/admin/finance/payments?academic_year_id=${selectedYear}&page=${paymentPage}&limit=20`
+      : ''
+  );
+  const payments = paymentsRes?.data || [];
+  const paymentPagination = paymentsRes?.pagination || {
+    total: 0,
+    page: 1,
+    pageSize: 20,
+    totalPages: 1,
+  };
+
   // Sync / Refetch helper
   const refreshAll = () => {
     refetchOverview();
     refetchInvoices();
+    refetchPayments();
   };
 
   // Chart data mapping
@@ -253,50 +292,48 @@ function FinanceDashboardContent() {
     }
   };
 
-  // Static list of payment methods since we know we seeded "cash"
-  // In a real app we might fetch it, but here cash is dffdb33d-... or similar.
-  // We can query the first payment method found from the database in a flexible way inside API or UI.
-  // To keep it simple, we load cash/bank transfer options.
-  const [methods, setMethods] = useState<Array<{ id: string; name: string }>>([]);
-  useEffect(() => {
-    const fetchMethods = async () => {
-      try {
-        const res = await fetch('/api/admin/finance/invoices');
-        // Retrieve lookup method internally or from database queries
-        const response = await fetch('/api/admin/finance/tuition-matrix'); // Or some fallback
-      } catch (e) {}
-    };
+  const handleOpenRefund = (payment: PaymentRecord) => {
+    setRefundPayment(payment);
+    setRefundAmount(String(Number(payment.amount) - Number(payment.refunded_amount || 0)));
+    setRefundReason('');
+  };
 
-    // We can query custom supabase config for payment methods or query directly in supabase:
-    // For cash method, let's fetch it via SQL or API or fallback to cash types in Supabase.
-    // We'll call the custom DB select to grab active payment methods in useEffect.
-    const queryMethods = async () => {
-      const res = await fetch('/api/admin/finance/overview?academic_year_id=' + selectedYear);
-      // Let's populate default payment methods for safety
-      setMethods([
-        { id: 'cash-id', name: 'Tiền mặt' },
-        { id: 'bank-transfer-id', name: 'Chuyển khoản ngân hàng' },
-      ]);
+  const handleRefund = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!refundPayment) return;
+    setIsSubmittingRefund(true);
+    try {
+      const response = await fetch(`/api/admin/finance/payments/${refundPayment.id}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Number(refundAmount), reason: refundReason }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || 'Không thể hoàn tiền');
+      setRefundPayment(null);
+      refreshAll();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Không thể hoàn tiền');
+    } finally {
+      setIsSubmittingRefund(false);
+    }
+  };
 
-      // Real fetch
-      try {
-        // Let's check invoices GET endpoint or fetch custom list
-        const resMethods = await fetch('/api/admin/finance/invoices');
-        // Let's get actual database payment methods
-        const resObj = await fetch('/api/admin/classes?limit=1'); // Just warm up connection
-      } catch (e) {}
-    };
-    queryMethods();
-  }, [selectedYear]);
-
-  // Let's load the actual payment methods from Supabase!
-  useEffect(() => {
-    const loadRealMethods = async () => {
-      const response = await fetch('/api/admin/finance/invoices'); // In API layer, we added getPaymentMethods
-      // We can create a quick custom endpoint or grab from supabase client.
-      // Let's check what methods are in DB by querying.
-    };
-  }, []);
+  const handleCancelInvoice = async (invoice: Invoice) => {
+    const reason = window.prompt('Nhập lý do hủy hóa đơn (ít nhất 3 ký tự):');
+    if (!reason) return;
+    const response = await fetch(`/api/admin/finance/invoices/${invoice.id}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      alert(result.error || 'Không thể hủy hóa đơn');
+      return;
+    }
+    refreshAll();
+  };
 
   const handleCopyZaloTuition = (inv: Invoice) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://bhedu.vn';
@@ -388,6 +425,16 @@ Trung tâm xin gửi thông báo học phí:
           }`}
         >
           Danh sách hóa đơn
+        </button>
+        <button
+          onClick={() => setActiveTab('payments')}
+          className={`pb-4 px-2 font-bold text-sm uppercase tracking-wider border-b-2 transition-all ${
+            activeTab === 'payments'
+              ? 'border-emerald-600 text-emerald-600'
+              : 'border-transparent text-stone-500 hover:text-stone-700'
+          }`}
+        >
+          Phiếu thu & hoàn tiền
         </button>
       </div>
 
@@ -517,7 +564,7 @@ Trung tâm xin gửi thông báo học phí:
             </Card>
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'invoices' ? (
         <div className="space-y-6 animate-fadeIn">
           {/* Filters Bar */}
           <Card className="glass-crystal rounded-3xl p-6 flex flex-wrap items-center gap-4">
@@ -631,17 +678,23 @@ Trung tâm xin gửi thông báo học phí:
                             color={
                               inv.status === 'paid'
                                 ? 'green'
-                                : inv.status === 'overdue'
-                                  ? 'red'
-                                  : 'yellow'
+                                : inv.status === 'cancelled'
+                                  ? 'gray'
+                                  : inv.status === 'overdue'
+                                    ? 'red'
+                                    : 'yellow'
                             }
                             className="rounded-full uppercase text-[9px] font-black px-2.5 py-1"
                           >
                             {inv.status === 'paid'
                               ? 'Đã đóng'
-                              : inv.status === 'pending'
-                                ? 'Chờ thu'
-                                : 'Quá hạn'}
+                              : inv.status === 'partial'
+                                ? 'Đã đóng một phần'
+                                : inv.status === 'cancelled'
+                                  ? 'Đã hủy'
+                                  : inv.status === 'pending'
+                                    ? 'Chờ thu'
+                                    : 'Quá hạn'}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -654,13 +707,22 @@ Trung tâm xin gửi thông báo học phí:
                             >
                               Sao chép Zalo
                             </button>
-                            {inv.status !== 'paid' && (
+                            {!['paid', 'cancelled'].includes(inv.status) && (
                               <Button
                                 onClick={() => handleOpenPayModal(inv)}
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs py-1.5 px-3 font-semibold"
                               >
                                 Ghi nhận đóng
                               </Button>
+                            )}
+                            {Number(inv.paid_amount) === 0 && inv.status !== 'cancelled' && (
+                              <button
+                                type="button"
+                                onClick={() => handleCancelInvoice(inv)}
+                                className="rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-900 dark:hover:bg-rose-950/30"
+                              >
+                                Hủy hóa đơn
+                              </button>
                             )}
                           </div>
                         </td>
@@ -693,6 +755,116 @@ Trung tâm xin gửi thông báo học phí:
                     Sau
                   </Button>
                 </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      ) : (
+        <div className="space-y-6 animate-fadeIn">
+          <Card className="glass-crystal overflow-hidden rounded-3xl p-6">
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-stone-900 dark:text-white">
+                  Lịch sử phiếu thu
+                </h2>
+                <p className="text-xs text-stone-500">
+                  Phiếu đã hoàn vẫn được giữ lại để đối soát và kiểm tra lịch sử.
+                </p>
+              </div>
+              <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+                {paymentPagination.total} phiếu
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-stone-150 dark:divide-white/5">
+                <thead>
+                  <tr className="text-left text-xs font-bold uppercase tracking-wider text-stone-500">
+                    <th className="px-4 py-3">Số phiếu</th>
+                    <th className="px-4 py-3">Học viên</th>
+                    <th className="px-4 py-3">Hóa đơn</th>
+                    <th className="px-4 py-3">Ngày thu</th>
+                    <th className="px-4 py-3">Phương thức</th>
+                    <th className="px-4 py-3 text-right">Đã thu</th>
+                    <th className="px-4 py-3 text-right">Đã hoàn</th>
+                    <th className="px-4 py-3 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100 dark:divide-white/5">
+                  {payments.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-12 text-center text-sm text-stone-500">
+                        Chưa có phiếu thu trong năm học này.
+                      </td>
+                    </tr>
+                  ) : (
+                    payments.map((payment) => {
+                      const refundable =
+                        Number(payment.amount) - Number(payment.refunded_amount || 0);
+                      return (
+                        <tr key={payment.id} className="hover:bg-stone-50/60 dark:hover:bg-white/5">
+                          <td className="px-4 py-3 text-sm font-bold">
+                            {payment.receipt_number || 'Phiếu cũ'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-sm font-semibold">{payment.student?.full_name}</p>
+                            <p className="text-[11px] text-stone-500">
+                              {payment.student?.student_code || '—'}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3 text-xs font-mono text-stone-600 dark:text-stone-300">
+                            {payment.invoice?.invoice_number}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-stone-500">
+                            {new Date(payment.payment_date).toLocaleDateString('vi-VN')}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {payment.payment_method?.name || '—'}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm font-bold text-emerald-600">
+                            ₫{Number(payment.amount).toLocaleString('vi-VN')}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm font-bold text-rose-600">
+                            {Number(payment.refunded_amount || 0) > 0
+                              ? `₫${Number(payment.refunded_amount).toLocaleString('vi-VN')}`
+                              : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              disabled={refundable <= 0}
+                              onClick={() => handleOpenRefund(payment)}
+                              className="cursor-pointer rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-rose-900 dark:hover:bg-rose-950/30"
+                            >
+                              {refundable > 0 ? 'Hoàn tiền' : 'Đã hoàn hết'}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {paymentPagination.totalPages > 1 && (
+              <div className="mt-5 flex items-center justify-end gap-2 border-t border-stone-100 pt-5 dark:border-white/5">
+                <Button
+                  disabled={paymentPage === 1}
+                  onClick={() => setPaymentPage((page) => Math.max(1, page - 1))}
+                  className="px-3 py-1.5 text-xs"
+                >
+                  Trước
+                </Button>
+                <span className="text-xs text-stone-500">
+                  {paymentPage}/{paymentPagination.totalPages}
+                </span>
+                <Button
+                  disabled={paymentPage === paymentPagination.totalPages}
+                  onClick={() =>
+                    setPaymentPage((page) => Math.min(paymentPagination.totalPages, page + 1))
+                  }
+                  className="px-3 py-1.5 text-xs"
+                >
+                  Sau
+                </Button>
               </div>
             )}
           </Card>
@@ -864,8 +1036,11 @@ Trung tâm xin gửi thông báo học phí:
                   className="w-full px-4 py-2.5 bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-white/10 rounded-xl text-sm focus:outline-none"
                 >
                   <option value="">Chọn phương thức...</option>
-                  <option value="cash-id">Tiền mặt (Cash)</option>
-                  <option value="bank-transfer-id">Chuyển khoản (Bank Transfer)</option>
+                  {paymentMethods.map((method) => (
+                    <option key={method.id} value={method.id}>
+                      {method.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -919,6 +1094,69 @@ Trung tâm xin gửi thông báo học phí:
                     {isSubmittingPay ? 'Đang ghi nhận...' : 'Xác nhận đóng học phí'}
                   </Button>
                 </div>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {refundPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <Card className="relative w-full max-w-md space-y-5 rounded-3xl bg-white p-7 shadow-2xl dark:bg-stone-950">
+            <button
+              onClick={() => setRefundPayment(null)}
+              className="absolute right-4 top-4 cursor-pointer text-stone-500 hover:text-stone-800"
+              aria-label="Đóng"
+            >
+              <Icons.Close className="h-5 w-5" />
+            </button>
+            <div>
+              <h2 className="text-xl font-black text-rose-600">Hoàn tiền phiếu thu</h2>
+              <p className="mt-1 text-sm text-stone-500">
+                {refundPayment.receipt_number || refundPayment.id} ·{' '}
+                {refundPayment.student?.full_name}
+              </p>
+            </div>
+            <form onSubmit={handleRefund} className="space-y-4">
+              <label className="block text-xs font-bold uppercase text-stone-500">
+                Số tiền hoàn (VND)
+                <input
+                  required
+                  min="1"
+                  max={Number(refundPayment.amount) - Number(refundPayment.refunded_amount || 0)}
+                  type="number"
+                  value={refundAmount}
+                  onChange={(event) => setRefundAmount(event.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm dark:border-white/10 dark:bg-stone-900/50"
+                />
+              </label>
+              <label className="block text-xs font-bold uppercase text-stone-500">
+                Lý do hoàn tiền
+                <textarea
+                  required
+                  minLength={3}
+                  maxLength={500}
+                  value={refundReason}
+                  onChange={(event) => setRefundReason(event.target.value)}
+                  className="mt-1.5 h-24 w-full resize-none rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm dark:border-white/10 dark:bg-stone-900/50"
+                  placeholder="Nhập lý do để lưu lịch sử đối soát"
+                />
+              </label>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setRefundPayment(null)}
+                  className="rounded-xl bg-stone-100 text-stone-700"
+                >
+                  Đóng
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmittingRefund}
+                  className="rounded-xl bg-rose-600 font-bold text-white hover:bg-rose-700"
+                >
+                  {isSubmittingRefund ? 'Đang hoàn...' : 'Xác nhận hoàn tiền'}
+                </Button>
               </div>
             </form>
           </Card>

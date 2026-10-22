@@ -27,6 +27,16 @@ export class FinanceService {
     this.financeRepository = new FinanceRepository(this.supabase);
   }
 
+  private isMissingFinanceFoundation(error: { code?: string; message?: string } | null): boolean {
+    return Boolean(
+      error &&
+      (error.code === '42703' ||
+        error.code === 'PGRST204' ||
+        error.message?.includes('billing_period') ||
+        error.message?.includes('class_id'))
+    );
+  }
+
   /**
    * Set the Supabase client (primarily for testing)
    */
@@ -50,6 +60,10 @@ export class FinanceService {
    */
   async getInvoices(filters: InvoiceFilters) {
     return this.financeRepository.findInvoices(filters);
+  }
+
+  async getPaymentMethods() {
+    return this.financeRepository.getPaymentMethods();
   }
 
   /**
@@ -133,13 +147,26 @@ export class FinanceService {
 
     const studentIds = students.map((s) => s.id);
 
-    // 3. Fetch all invoices for these students matching issue_date (months)
-    const { data: invoices, error: invoiceError } = await this.supabase
+    // 3. Prefer the class-scoped billing period introduced by the finance
+    // foundation. Keep a temporary legacy read fallback during rollout.
+    let { data: invoices, error: invoiceError } = await this.supabase
       .from('invoices')
-      .select('id, student_id, issue_date, due_date, total_amount, paid_amount, status')
+      .select('id, student_id, billing_period, due_date, total_amount, paid_amount, status')
       .in('student_id', studentIds)
       .eq('academic_year_id', academicYearId)
-      .in('issue_date', months);
+      .eq('class_id', classId)
+      .in('billing_period', months);
+
+    if (invoiceError && this.isMissingFinanceFoundation(invoiceError)) {
+      const legacyResult = await this.supabase
+        .from('invoices')
+        .select('id, student_id, issue_date, due_date, total_amount, paid_amount, status')
+        .in('student_id', studentIds)
+        .eq('academic_year_id', academicYearId)
+        .in('issue_date', months);
+      invoices = legacyResult.data as any;
+      invoiceError = legacyResult.error;
+    }
 
     if (invoiceError) {
       throw new Error(`Failed to fetch invoices: ${invoiceError.message}`);
@@ -158,8 +185,8 @@ export class FinanceService {
       matrix[s.id] = studentMap;
     });
 
-    invoices?.forEach((inv) => {
-      const month = inv.issue_date; // YYYY-MM-DD
+    ((invoices || []) as any[]).forEach((inv) => {
+      const month = inv.billing_period || inv.issue_date; // YYYY-MM-DD
       const studentRow = matrix[inv.student_id];
       if (studentRow && studentRow[month] !== undefined) {
         studentRow[month] = {
@@ -242,19 +269,34 @@ export class FinanceService {
     >();
 
     if (studentIds.length > 0 && months.length > 0) {
-      const { data: invoices, error: invoicesError } = await this.supabase
+      let { data: invoices, error: invoicesError } = await this.supabase
         .from('invoices')
-        .select('id, student_id, issue_date, total_amount, paid_amount, status')
+        .select('id, student_id, billing_period, total_amount, paid_amount, status')
         .eq('academic_year_id', academicYearId)
+        .eq('class_id', classId)
         .in('student_id', studentIds)
-        .in('issue_date', months);
+        .in('billing_period', months);
+
+      if (invoicesError && this.isMissingFinanceFoundation(invoicesError)) {
+        const legacyResult = await this.supabase
+          .from('invoices')
+          .select('id, student_id, issue_date, total_amount, paid_amount, status')
+          .eq('academic_year_id', academicYearId)
+          .in('student_id', studentIds)
+          .in('issue_date', months);
+        invoices = legacyResult.data as any;
+        invoicesError = legacyResult.error;
+      }
 
       if (invoicesError) {
         throw new Error(`Failed to fetch existing invoices: ${invoicesError.message}`);
       }
 
-      for (const invoice of invoices || []) {
-        existingInvoices.set(`${invoice.student_id}:${invoice.issue_date}`, invoice);
+      for (const invoice of (invoices || []) as any[]) {
+        existingInvoices.set(
+          `${invoice.student_id}:${invoice.billing_period || invoice.issue_date}`,
+          invoice
+        );
       }
     }
 
@@ -342,23 +384,16 @@ export class FinanceService {
             .split('T')[0] || ''; // Due 15 days later
 
         // Create invoice
-        const invoice = await this.financeRepository.createInvoiceWithItems(
-          {
-            student_id: studentId,
-            academic_year_id: academicYearId,
-            issue_date: month,
-            due_date: dueDate,
-            total_amount: monthlyFee,
-            notes: 'Hóa đơn học phí tự động sinh từ Portal',
-          },
-          [
-            {
-              description: `Học phí tháng ${new Date(month).getMonth() + 1}/${new Date(month).getFullYear()}`,
-              quantity: 1,
-              unit_price: monthlyFee,
-            },
-          ]
-        );
+        const invoice = await this.financeRepository.createMonthlyTuitionInvoice({
+          student_id: studentId,
+          class_id: classId,
+          academic_year_id: academicYearId,
+          billing_period: month,
+          due_date: dueDate,
+          gross_amount: monthlyFee,
+          description: `Học phí tháng ${new Date(month).getMonth() + 1}/${new Date(month).getFullYear()}`,
+          notes: 'Hóa đơn học phí tự động sinh từ Portal',
+        });
 
         // Record payment if paid is true
         if (paid) {
@@ -421,12 +456,24 @@ export class FinanceService {
     }
 
     const studentIds = enrollments.map((enrollment) => enrollment.student_id);
-    const { data: existingInvoices, error: invoicesError } = await this.supabase
+    let { data: existingInvoices, error: invoicesError } = await this.supabase
       .from('invoices')
       .select('student_id')
       .eq('academic_year_id', academicYearId)
-      .eq('issue_date', month)
+      .eq('class_id', classId)
+      .eq('billing_period', month)
       .in('student_id', studentIds);
+
+    if (invoicesError && this.isMissingFinanceFoundation(invoicesError)) {
+      const legacyResult = await this.supabase
+        .from('invoices')
+        .select('student_id')
+        .eq('academic_year_id', academicYearId)
+        .eq('issue_date', month)
+        .in('student_id', studentIds);
+      existingInvoices = legacyResult.data;
+      invoicesError = legacyResult.error;
+    }
 
     if (invoicesError) {
       throw new Error(`Failed to fetch existing invoices: ${invoicesError.message}`);
@@ -446,23 +493,16 @@ export class FinanceService {
         const finalDesc =
           description || `Học phí Lớp ${classObj.name} - Tháng ${descMonth}/${descYear}`;
 
-        await this.financeRepository.createInvoiceWithItems(
-          {
-            student_id: studentId,
-            academic_year_id: academicYearId,
-            issue_date: month,
-            due_date: dueDate,
-            total_amount: monthlyFee,
-            notes: `Hóa đơn hàng loạt tạo cho lớp ${classObj.name}`,
-          },
-          [
-            {
-              description: finalDesc,
-              quantity: 1,
-              unit_price: monthlyFee,
-            },
-          ]
-        );
+        await this.financeRepository.createMonthlyTuitionInvoice({
+          student_id: studentId,
+          class_id: classId,
+          academic_year_id: academicYearId,
+          billing_period: month,
+          due_date: dueDate,
+          gross_amount: monthlyFee,
+          description: finalDesc,
+          notes: `Hóa đơn hàng loạt tạo cho lớp ${classObj.name}`,
+        });
         generatedCount++;
       }
     }

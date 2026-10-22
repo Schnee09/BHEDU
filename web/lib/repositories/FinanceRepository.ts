@@ -5,8 +5,8 @@
  * Aligned with BH-EDU v5.0 Architecture and SOLID principles.
  */
 
-import { SupabaseClient } from "@supabase/supabase-js";
-import { BaseRepository, PaginatedResult } from "./base";
+import { SupabaseClient } from '@supabase/supabase-js';
+import { BaseRepository, PaginatedResult } from './base';
 
 export interface Invoice {
   id: string;
@@ -14,11 +14,16 @@ export interface Invoice {
   student_id: string;
   student_account_id: string;
   academic_year_id: string;
+  class_id?: string | null;
+  billing_period?: string | null;
   issue_date: string;
   due_date: string;
+  gross_amount?: number | null;
+  discount_amount?: number;
+  tuition_discount_id?: string | null;
   total_amount: number;
   paid_amount: number;
-  status: "draft" | "pending" | "partial" | "paid" | "overdue" | "cancelled" | "sent" | "refunded";
+  status: 'draft' | 'pending' | 'partial' | 'paid' | 'overdue' | 'cancelled' | 'sent' | 'refunded';
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -33,13 +38,14 @@ export interface Payment {
   id: string;
   student_id: string;
   invoice_id: string | null;
+  receipt_number?: string | null;
   payment_method_id: string;
   amount: number;
   reference_number: string | null;
   payment_date: string;
   received_by: string | null;
   notes: string | null;
-  status: "pending" | "received" | "verified" | "cancelled" | "completed" | "failed" | "refunded";
+  status: 'pending' | 'received' | 'verified' | 'cancelled' | 'completed' | 'failed' | 'refunded';
   created_at: string;
   updated_at: string;
   payment_method?: {
@@ -54,7 +60,7 @@ export interface StudentAccount {
   balance: number;
   total_fees: number;
   total_paid: number;
-  status: "active" | "inactive" | "graduated";
+  status: 'active' | 'inactive' | 'graduated';
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -82,11 +88,83 @@ export interface InvoiceFilters {
 }
 
 export class FinanceRepository extends BaseRepository<Invoice, any, any> {
-  protected readonly tableName = "invoices";
-  protected readonly primaryKey = "id";
+  protected readonly tableName = 'invoices';
+  protected readonly primaryKey = 'id';
 
   constructor(supabase: SupabaseClient) {
     super(supabase);
+  }
+
+  private isMissingRpc(error: { code?: string; message?: string } | null): boolean {
+    return Boolean(
+      error &&
+      (error.code === 'PGRST202' ||
+        error.code === '42883' ||
+        error.message?.includes('schema cache') ||
+        error.message?.includes('does not exist'))
+    );
+  }
+
+  /**
+   * Issue one class-scoped monthly tuition invoice atomically.
+   * Falls back during the migration rollout window only.
+   */
+  async createMonthlyTuitionInvoice(input: {
+    student_id: string;
+    class_id: string;
+    academic_year_id: string;
+    billing_period: string;
+    due_date: string;
+    gross_amount?: number;
+    discount_amount?: number;
+    description?: string;
+    notes?: string | null;
+  }): Promise<Invoice> {
+    if (typeof (this.supabase as any).rpc === 'function') {
+      const { data, error } = await this.supabase.rpc('create_monthly_tuition_invoice', {
+        p_student_id: input.student_id,
+        p_class_id: input.class_id,
+        p_academic_year_id: input.academic_year_id,
+        p_billing_period: input.billing_period,
+        p_due_date: input.due_date,
+        p_gross_amount: input.gross_amount ?? null,
+        p_discount_amount: input.discount_amount ?? null,
+        p_description: input.description ?? null,
+        p_notes: input.notes ?? null,
+      });
+
+      const invoice = Array.isArray(data) ? data[0] : data;
+      if (!error && invoice) {
+        return invoice as Invoice;
+      }
+      if (!this.isMissingRpc(error)) {
+        throw new Error(`Failed to create monthly tuition invoice: ${error?.message}`);
+      }
+    }
+
+    if (input.gross_amount === undefined) {
+      throw new Error('Monthly tuition rate is required until the finance migration is applied');
+    }
+
+    const discount = Math.max(0, input.discount_amount || 0);
+    const total = Math.max(0, input.gross_amount - discount);
+    return this.createInvoiceWithItems(
+      {
+        student_id: input.student_id,
+        academic_year_id: input.academic_year_id,
+        issue_date: input.billing_period,
+        due_date: input.due_date,
+        total_amount: total,
+        notes: input.notes,
+      },
+      [
+        {
+          description: input.description || `Học phí tháng ${input.billing_period.slice(0, 7)}`,
+          quantity: 1,
+          unit_price: total,
+        },
+      ]
+    );
   }
 
   /**
@@ -97,10 +175,10 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     academicYearId: string
   ): Promise<StudentAccount> {
     const { data: existing, error: fetchError } = await this.supabase
-      .from("student_accounts")
-      .select("*")
-      .eq("student_id", studentId)
-      .eq("academic_year_id", academicYearId)
+      .from('student_accounts')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('academic_year_id', academicYearId)
       .maybeSingle();
 
     if (fetchError) {
@@ -112,14 +190,14 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     }
 
     const { data: created, error: insertError } = await this.supabase
-      .from("student_accounts")
+      .from('student_accounts')
       .insert({
         student_id: studentId,
         academic_year_id: academicYearId,
         balance: 0,
         total_fees: 0,
         total_paid: 0,
-        status: "active",
+        status: 'active',
       })
       .select()
       .single();
@@ -158,22 +236,24 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
 
     // 2. Generate invoice number
     const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, '0');
     const invoiceNumber = `INV-${timestamp}-${random}`;
 
     // 3. Create invoice
     const { data: invoice, error: invoiceError } = await this.supabase
-      .from("invoices")
+      .from('invoices')
       .insert({
         invoice_number: invoiceNumber,
         student_id: invoiceInput.student_id,
         student_account_id: account.id,
         academic_year_id: invoiceInput.academic_year_id,
-        issue_date: invoiceInput.issue_date || new Date().toISOString().split("T")[0],
+        issue_date: invoiceInput.issue_date || new Date().toISOString().split('T')[0],
         due_date: invoiceInput.due_date,
         total_amount: invoiceInput.total_amount,
         paid_amount: 0,
-        status: "pending",
+        status: 'pending',
         notes: invoiceInput.notes || null,
       })
       .select()
@@ -193,13 +273,11 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
       total_price: item.quantity * item.unit_price,
     }));
 
-    const { error: itemsError } = await this.supabase
-      .from("invoice_items")
-      .insert(invoiceItems);
+    const { error: itemsError } = await this.supabase.from('invoice_items').insert(invoiceItems);
 
     if (itemsError) {
       // Clean up invoice if items fail
-      await this.supabase.from("invoices").delete().eq("id", invoice.id);
+      await this.supabase.from('invoices').delete().eq('id', invoice.id);
       throw new Error(`Failed to create invoice items: ${itemsError.message}`);
     }
 
@@ -208,15 +286,15 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     const newBalance = Number(account.balance) + invoiceInput.total_amount;
 
     const { error: accountError } = await this.supabase
-      .from("student_accounts")
+      .from('student_accounts')
       .update({
         total_fees: newTotalFees,
         balance: newBalance,
       })
-      .eq("id", account.id);
+      .eq('id', account.id);
 
     if (accountError) {
-      console.error("Warning: Failed to update student account totals:", accountError.message);
+      console.error('Warning: Failed to update student account totals:', accountError.message);
     }
 
     return invoice as Invoice;
@@ -235,30 +313,50 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     notes?: string | null;
     received_by?: string | null;
   }): Promise<Payment> {
+    if (typeof (this.supabase as any).rpc === 'function') {
+      const { data, error } = await this.supabase.rpc('record_invoice_payment_atomic', {
+        p_invoice_id: paymentInput.invoice_id,
+        p_amount: paymentInput.amount,
+        p_payment_method_id: paymentInput.payment_method_id,
+        p_reference_number: paymentInput.reference_number || null,
+        p_payment_date: paymentInput.payment_date || null,
+        p_received_by: paymentInput.received_by || null,
+        p_notes: paymentInput.notes || null,
+      });
+
+      const payment = Array.isArray(data) ? data[0] : data;
+      if (!error && payment) {
+        return payment as Payment;
+      }
+      if (!this.isMissingRpc(error)) {
+        throw new Error(`Failed to record invoice payment: ${error?.message}`);
+      }
+    }
+
     // 1. Verify invoice exists
     const { data: invoice, error: invoiceFetchError } = await this.supabase
-      .from("invoices")
-      .select("*")
-      .eq("id", paymentInput.invoice_id)
+      .from('invoices')
+      .select('*')
+      .eq('id', paymentInput.invoice_id)
       .single();
 
     if (invoiceFetchError || !invoice) {
-      throw new Error(`Invoice not found: ${invoiceFetchError?.message || "Invalid ID"}`);
+      throw new Error(`Invoice not found: ${invoiceFetchError?.message || 'Invalid ID'}`);
     }
 
     // 2. Record payment
     const { data: payment, error: paymentError } = await this.supabase
-      .from("payments")
+      .from('payments')
       .insert({
         student_id: paymentInput.student_id,
         invoice_id: paymentInput.invoice_id,
         payment_method_id: paymentInput.payment_method_id,
         amount: paymentInput.amount,
         reference_number: paymentInput.reference_number || null,
-        payment_date: paymentInput.payment_date || new Date().toISOString().split("T")[0],
+        payment_date: paymentInput.payment_date || new Date().toISOString().split('T')[0],
         received_by: paymentInput.received_by || null,
         notes: paymentInput.notes || null,
-        status: "completed",
+        status: 'completed',
       })
       .select()
       .single();
@@ -268,7 +366,7 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     }
 
     // 3. Record allocation
-    await this.supabase.from("payment_allocations").insert({
+    await this.supabase.from('payment_allocations').insert({
       payment_id: payment.id,
       invoice_id: paymentInput.invoice_id,
       amount: paymentInput.amount,
@@ -277,22 +375,22 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     // 4. Update invoice status & paid amount
     const newPaidAmount = Number(invoice.paid_amount) + paymentInput.amount;
     const isPaid = newPaidAmount >= Number(invoice.total_amount);
-    const invoiceStatus = isPaid ? "paid" : "partial";
+    const invoiceStatus = isPaid ? 'paid' : 'partial';
 
     await this.supabase
-      .from("invoices")
+      .from('invoices')
       .update({
         paid_amount: newPaidAmount,
         status: invoiceStatus,
       })
-      .eq("id", invoice.id);
+      .eq('id', invoice.id);
 
     // 5. Update student account
     const { data: account } = await this.supabase
-      .from("student_accounts")
-      .select("*")
-      .eq("student_id", paymentInput.student_id)
-      .eq("academic_year_id", invoice.academic_year_id)
+      .from('student_accounts')
+      .select('*')
+      .eq('student_id', paymentInput.student_id)
+      .eq('academic_year_id', invoice.academic_year_id)
       .maybeSingle();
 
     if (account) {
@@ -300,12 +398,12 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
       const newBalance = Math.max(0, Number(account.balance) - paymentInput.amount);
 
       await this.supabase
-        .from("student_accounts")
+        .from('student_accounts')
         .update({
           total_paid: newTotalPaid,
           balance: newBalance,
         })
-        .eq("id", account.id);
+        .eq('id', account.id);
     }
 
     return payment as Payment;
@@ -320,25 +418,23 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     const start = (page - 1) * pageSize;
     const end = start + pageSize - 1;
 
-    let query = this.supabase
-      .from("invoices")
-      .select(
-        `
+    let query = this.supabase.from('invoices').select(
+      `
         *,
         student:profiles!student_id(id, full_name, student_code)
       `,
-        { count: "exact" }
-      );
+      { count: 'exact' }
+    );
 
     if (filters.academicYearId) {
-      query = query.eq("academic_year_id", filters.academicYearId);
+      query = query.eq('academic_year_id', filters.academicYearId);
     }
     if (filters.status) {
-      query = query.eq("status", filters.status);
+      query = query.eq('status', filters.status);
     }
     if (filters.month) {
       // Match issue_date starting with YYYY-MM
-      query = query.like("issue_date", `${filters.month}%`);
+      query = query.like('issue_date', `${filters.month}%`);
     }
 
     // Filter by student search (full_name or student_code)
@@ -352,15 +448,15 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     if (filters.classId) {
       // Get student_ids enrolled in this class
       const { data: enrollments } = await this.supabase
-        .from("enrollments")
-        .select("student_id")
-        .eq("class_id", filters.classId)
-        .eq("status", "enrolled");
+        .from('enrollments')
+        .select('student_id')
+        .eq('class_id', filters.classId)
+        .eq('status', 'enrolled');
 
       const studentIds = (enrollments || []).map((e) => e.student_id);
-      
+
       if (studentIds.length > 0) {
-        query = query.in("student_id", studentIds);
+        query = query.in('student_id', studentIds);
       } else {
         // Return empty result if class has no students
         return {
@@ -374,7 +470,7 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     }
 
     const { data, error, count } = await query
-      .order("created_at", { ascending: false })
+      .order('created_at', { ascending: false })
       .range(start, end);
 
     if (error) {
@@ -396,9 +492,9 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
   async getOverviewStats(academicYearId: string): Promise<FinanceOverview> {
     // 1. Aggregate invoice statistics
     const { data: invoices, error: invoiceError } = await this.supabase
-      .from("invoices")
-      .select("total_amount, paid_amount, status")
-      .eq("academic_year_id", academicYearId);
+      .from('invoices')
+      .select('total_amount, paid_amount, status')
+      .eq('academic_year_id', academicYearId);
 
     if (invoiceError) {
       throw new Error(`Failed to calculate overview: ${invoiceError.message}`);
@@ -413,16 +509,16 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     const totalInvoicesCount = invoices?.length || 0;
 
     invoices?.forEach((inv) => {
-      if (inv.status !== "cancelled") {
+      if (inv.status !== 'cancelled') {
         totalInvoiced += Number(inv.total_amount);
         totalPaid += Number(inv.paid_amount);
         totalDebt += Number(inv.total_amount) - Number(inv.paid_amount);
 
-        if (inv.status === "paid") {
+        if (inv.status === 'paid') {
           paidInvoicesCount++;
-        } else if (inv.status === "pending" || inv.status === "partial") {
+        } else if (inv.status === 'pending' || inv.status === 'partial') {
           pendingInvoicesCount++;
-        } else if (inv.status === "overdue") {
+        } else if (inv.status === 'overdue') {
           overdueInvoicesCount++;
         }
       }
@@ -447,9 +543,9 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
    */
   async getPaymentMethods(): Promise<Array<{ id: string; name: string; type: string }>> {
     const { data, error } = await this.supabase
-      .from("payment_methods")
-      .select("id, name, type")
-      .eq("is_active", true);
+      .from('payment_methods')
+      .select('id, name, type')
+      .eq('is_active', true);
 
     if (error) {
       throw new Error(`Failed to fetch payment methods: ${error.message}`);

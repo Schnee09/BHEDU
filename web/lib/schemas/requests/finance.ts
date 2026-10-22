@@ -76,3 +76,52 @@ export const tuitionMatrixUpdateSchema = z.object({
       });
     }),
 });
+
+export const tuitionRateSchema = z
+  .object({
+    class_id: uuidSchema,
+    academic_year_id: uuidSchema,
+    monthly_amount: z.number().nonnegative('Monthly amount must be non-negative'),
+    effective_from: dateStringSchema,
+    effective_to: dateStringSchema.optional().nullable(),
+    notes: z.string().max(500).optional().nullable(),
+    is_active: z.boolean().optional().default(true),
+  })
+  .refine((value) => !value.effective_to || value.effective_to >= value.effective_from, {
+    message: 'Effective end date must not be before start date',
+    path: ['effective_to'],
+  });
+
+export const studentTuitionDiscountSchema = z
+  .object({
+    student_id: uuidSchema,
+    class_id: uuidSchema,
+    academic_year_id: uuidSchema,
+    discount_type: z.enum(['percentage', 'fixed']),
+    discount_value: z.number().nonnegative('Discount value must be non-negative'),
+    effective_from: dateStringSchema,
+    effective_to: dateStringSchema.optional().nullable(),
+    reason: z.string().max(500).optional().nullable(),
+    is_active: z.boolean().optional().default(true),
+  })
+  .refine((value) => value.discount_type !== 'percentage' || value.discount_value <= 100, {
+    message: 'Percentage discount cannot exceed 100',
+    path: ['discount_value'],
+  })
+  .refine((value) => !value.effective_to || value.effective_to >= value.effective_from, {
+    message: 'Effective end date must not be before start date',
+    path: ['effective_to'],
+  });
+
+export const refundPaymentSchema = z.object({
+  amount: z.number().positive('Refund amount must be positive'),
+  reason: z.string().trim().min(3, 'Refund reason must contain at least 3 characters').max(500),
+});
+
+export const cancelInvoiceSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(3, 'Cancellation reason must contain at least 3 characters')
+    .max(500),
+});

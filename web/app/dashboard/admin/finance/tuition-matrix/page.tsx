@@ -14,16 +14,20 @@ import {
   AlertCircle,
   Clock,
   SlidersHorizontal,
+  Settings2,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import PageGuard from '@/components/PageGuard';
 import { useFetch } from '@/hooks/useFetch';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
+import TuitionConfigurationPanel from '@/components/finance/TuitionConfigurationPanel';
 
 interface AcademicYear {
   id: string;
   name: string;
+  start_date: string;
+  end_date: string;
   is_current: boolean;
 }
 
@@ -64,9 +68,7 @@ function TuitionMatrixContent() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [mobileView, setMobileView] = useState<'grid' | 'cards'>('grid');
-
-  // Grid months to display
-  const months = ['2026-06-01', '2026-07-01', '2026-08-01'];
+  const [showConfiguration, setShowConfiguration] = useState(false);
 
   // Track pending grid changes: { [studentId_month]: paid_boolean }
   const [pendingUpdates, setPendingUpdates] = useState<Record<string, boolean>>({});
@@ -82,6 +84,25 @@ function TuitionMatrixContent() {
 
   const years = yearsRes?.data || [];
   const classes = classesRes?.data || [];
+  const selectedAcademicYear = years.find((year) => year.id === selectedYear);
+  const selectedClassOption = classes.find((item) => item.id === selectedClass);
+
+  const months = useMemo(() => {
+    const academicYear = years.find((year) => year.id === selectedYear);
+    if (!academicYear?.start_date || !academicYear?.end_date) return [];
+
+    const start = new Date(`${academicYear.start_date.slice(0, 7)}-01T00:00:00Z`);
+    const end = new Date(`${academicYear.end_date.slice(0, 7)}-01T00:00:00Z`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return [];
+
+    const result: string[] = [];
+    const cursor = new Date(start);
+    while (cursor <= end && result.length < 24) {
+      result.push(cursor.toISOString().slice(0, 10));
+      cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+    }
+    return result;
+  }, [years, selectedYear]);
 
   // Default year selection
   useEffect(() => {
@@ -111,7 +132,9 @@ function TuitionMatrixContent() {
     error,
     refetch,
   } = useFetch<MatrixResponse>(
-    selectedClass && selectedYear ? `/api/admin/finance/tuition-matrix?${matrixQuery}` : ''
+    selectedClass && selectedYear && months.length > 0
+      ? `/api/admin/finance/tuition-matrix?${matrixQuery}`
+      : ''
   );
 
   const rawStudents = matrixData?.students || [];
@@ -228,6 +251,14 @@ function TuitionMatrixContent() {
         {/* Desktop Save Action */}
         <div className="hidden md:flex items-center gap-3">
           <button
+            onClick={() => setShowConfiguration(true)}
+            disabled={!selectedClass || !selectedYear}
+            className="flex cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
+          >
+            <Settings2 className="h-4 w-4" />
+            Cấu hình mức phí
+          </button>
+          <button
             onClick={handleSaveChanges}
             disabled={!hasChanges || isSaving}
             className={cn(
@@ -335,6 +366,14 @@ function TuitionMatrixContent() {
             </div>
           </div>
         </div>
+        <button
+          onClick={() => setShowConfiguration(true)}
+          disabled={!selectedClass || !selectedYear}
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-xs font-bold text-stone-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 md:hidden"
+        >
+          <Settings2 className="h-4 w-4" />
+          Cấu hình mức phí và ưu đãi
+        </button>
       </div>
 
       {/* ── Main Content Container ── */}
@@ -627,6 +666,17 @@ function TuitionMatrixContent() {
             </div>
           )}
         </>
+      )}
+
+      {showConfiguration && selectedClassOption && selectedAcademicYear && (
+        <TuitionConfigurationPanel
+          academicYearId={selectedYear}
+          academicYearStart={selectedAcademicYear.start_date}
+          classId={selectedClass}
+          className={selectedClassOption.name}
+          students={rawStudents}
+          onClose={() => setShowConfiguration(false)}
+        />
       )}
 
       {/* ── FLOATING MOBILE ACTION BAR (WHEN CHANGES EXIST) ── */}
