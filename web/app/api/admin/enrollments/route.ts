@@ -48,7 +48,7 @@ export const POST = createApiHandler(
     const { data, error } = await supabase.rpc('enroll_student_atomic', {
       p_student_id: body.student_id,
       p_class_id: body.class_id,
-      p_enrollment_date: body.enrollment_date,
+      p_enrollment_date: body.enrollment_date || new Date().toISOString().slice(0, 10),
       p_notes: body.notes || null,
       p_source_system: null,
       p_source_key: null,

@@ -413,10 +413,20 @@ export async function bulkArchiveStudents(studentIds: string[]): Promise<void> {
 /**
  * Enroll student in a class
  */
-export async function enrollStudent(studentId: string, classId: string): Promise<any> {
+export async function enrollStudent(
+  studentId: string,
+  classId: string,
+  enrollmentDate?: string,
+  notes?: string
+): Promise<any> {
   const response = await apiFetch('/api/enrollments', {
     method: 'POST',
-    body: JSON.stringify({ student_id: studentId, class_id: classId }),
+    body: JSON.stringify({
+      student_id: studentId,
+      class_id: classId,
+      enrollment_date: enrollmentDate,
+      notes,
+    }),
   });
   const result = await safeParseJson(response);
 
@@ -424,6 +434,32 @@ export async function enrollStudent(studentId: string, classId: string): Promise
     throw new Error(result.error || 'Failed to enroll student');
   }
 
+  return result.data;
+}
+
+export async function endEnrollment(
+  enrollmentId: string,
+  input: { end_date: string; status: 'completed' | 'dropped' | 'withdrawn'; reason: string }
+): Promise<any> {
+  const response = await apiFetch(`/api/enrollments/${enrollmentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'end', ...input }),
+  });
+  const result = await safeParseJson(response);
+  if (!response.ok) throw new Error(result.error || 'Failed to end enrollment');
+  return result.data;
+}
+
+export async function transferEnrollment(
+  enrollmentId: string,
+  input: { to_class_id: string; effective_date: string; reason: string }
+): Promise<any> {
+  const response = await apiFetch(`/api/enrollments/${enrollmentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'transfer', ...input }),
+  });
+  const result = await safeParseJson(response);
+  if (!response.ok) throw new Error(result.error || 'Failed to transfer enrollment');
   return result.data;
 }
 

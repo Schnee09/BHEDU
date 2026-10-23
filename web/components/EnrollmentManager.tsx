@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiFetch, enrollStudent, deleteEnrollment } from '@/lib/api/client';
+import { apiFetch, enrollStudent, endEnrollment, transferEnrollment } from '@/lib/api/client';
 import { showToast } from '@/components/ToastProvider';
 import { Icons } from '@/components/ui/Icons';
 import {
@@ -28,6 +28,7 @@ import {
   TrashIcon,
   ClockIcon,
   AcademicCapIcon,
+  ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 
@@ -52,7 +53,10 @@ interface Enrollment {
   schedule?: string;
   teacher_name?: string;
   enrollment_date: string;
+  end_date?: string | null;
   status: string;
+  status_reason?: string | null;
+  previous_enrollment_id?: string | null;
 }
 
 interface EnrollmentManagerProps {
@@ -69,6 +73,7 @@ export default function EnrollmentManager({
   const [loading, setLoading] = useState(true);
   const [showAddDropdown, setShowAddDropdown] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState('');
+  const [enrollmentDate, setEnrollmentDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [scheduleConflicts, setScheduleConflicts] = useState<string[]>([]);
   const [processingEnrollment, setProcessingEnrollment] = useState<string | null>(null);
 
@@ -78,14 +83,15 @@ export default function EnrollmentManager({
   const [enrollmentToRemove, setEnrollmentToRemove] = useState<{ id: string; name: string } | null>(
     null
   );
+  const [lifecycleAction, setLifecycleAction] = useState<'end' | 'transfer'>('end');
+  const [lifecycleDate, setLifecycleDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [lifecycleReason, setLifecycleReason] = useState('');
+  const [transferClassId, setTransferClassId] = useState('');
   const [capacityWarning, setCapacityWarning] = useState<{ enrolled: number; max: number } | null>(
     null
   );
-
-  useEffect(() => {
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studentId]);
+  const activeEnrollments = enrollments.filter((enrollment) => enrollment.status === 'enrolled');
+  const enrollmentHistory = enrollments.filter((enrollment) => enrollment.status !== 'enrolled');
 
   const fetchData = async () => {
     try {
@@ -101,12 +107,11 @@ export default function EnrollmentManager({
 
         const enrs = enrollmentsData.enrollments || [];
         setEnrollments(enrs);
-        if (onEnrollmentCountChange) {
-          onEnrollmentCountChange(enrs.length);
-        }
+        const activeEnrollments = enrs.filter((e: Enrollment) => e.status === 'enrolled');
+        onEnrollmentCountChange?.(activeEnrollments.length);
 
         // Filter out classes the student is already enrolled in
-        const enrolledClassIds = new Set(enrs.map((e: Enrollment) => e.class_id));
+        const enrolledClassIds = new Set(activeEnrollments.map((e: Enrollment) => e.class_id));
         const available =
           classesData.classes?.filter((c: Class) => !enrolledClassIds.has(c.id)) || [];
         setAvailableClasses(available);
@@ -118,6 +123,13 @@ export default function EnrollmentManager({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Initial synchronization with the server when the selected student changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId]);
 
   const checkScheduleConflict = (newSchedule?: string) => {
     if (!newSchedule) return [];
@@ -215,7 +227,7 @@ export default function EnrollmentManager({
     setShowWarningDialog(false);
 
     try {
-      await enrollStudent(studentId, selectedClassId);
+      await enrollStudent(studentId, selectedClassId, enrollmentDate);
 
       showToast.dismiss(toastId);
       showToast.success('Ghi danh học sinh vào lớp thành công!');
@@ -236,21 +248,55 @@ export default function EnrollmentManager({
 
   const handleRemoveClick = (enrollmentId: string, className: string) => {
     setEnrollmentToRemove({ id: enrollmentId, name: className });
+    setLifecycleAction('end');
+    setLifecycleDate(new Date().toISOString().slice(0, 10));
+    setLifecycleReason('');
+    setTransferClassId('');
     setShowRemoveDialog(true);
+  };
+
+  const handleTransferClick = (enrollmentId: string, className: string) => {
+    handleRemoveClick(enrollmentId, className);
+    setLifecycleAction('transfer');
   };
 
   const performRemoval = async () => {
     if (!enrollmentToRemove) return;
 
-    const toastId = showToast.loading('Đang hủy ghi danh...');
+    if (!lifecycleReason.trim()) {
+      showToast.error('Vui lòng nhập lý do');
+      return;
+    }
+    if (lifecycleAction === 'transfer' && !transferClassId) {
+      showToast.error('Vui lòng chọn lớp chuyển đến');
+      return;
+    }
+
+    const toastId = showToast.loading(
+      lifecycleAction === 'transfer' ? 'Đang chuyển lớp...' : 'Đang kết thúc ghi danh...'
+    );
     setProcessingEnrollment(enrollmentToRemove.id);
     setShowRemoveDialog(false);
 
     try {
-      await deleteEnrollment(enrollmentToRemove.id);
+      if (lifecycleAction === 'transfer') {
+        await transferEnrollment(enrollmentToRemove.id, {
+          to_class_id: transferClassId,
+          effective_date: lifecycleDate,
+          reason: lifecycleReason.trim(),
+        });
+      } else {
+        await endEnrollment(enrollmentToRemove.id, {
+          end_date: lifecycleDate,
+          status: 'withdrawn',
+          reason: lifecycleReason.trim(),
+        });
+      }
 
       showToast.dismiss(toastId);
-      showToast.success('Đã hủy ghi danh lớp học');
+      showToast.success(
+        lifecycleAction === 'transfer' ? 'Chuyển lớp thành công' : 'Đã kết thúc ghi danh'
+      );
       await fetchData();
     } catch (error) {
       const errMessage = error instanceof Error ? error.message : 'Không thể hủy ghi danh';
@@ -281,7 +327,7 @@ export default function EnrollmentManager({
             <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
               <Icons.Classes className="w-4 h-4" />
             </span>
-            Lớp học đang tham gia ({enrollments.length})
+            Lớp học đang tham gia ({activeEnrollments.length})
           </h2>
           <p className="text-[11px] text-stone-500 mt-0.5">
             Quản lý các lớp học chính khóa, ca dạy và giáo viên phụ trách
@@ -312,6 +358,21 @@ export default function EnrollmentManager({
           </div>
 
           <div className="max-w-xl space-y-3">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="enrollment-date"
+                className="block text-[11px] font-bold text-stone-600 dark:text-stone-300"
+              >
+                Ngày bắt đầu
+              </label>
+              <input
+                id="enrollment-date"
+                type="date"
+                value={enrollmentDate}
+                onChange={(event) => setEnrollmentDate(event.target.value)}
+                className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-900 outline-none transition-colors focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-stone-800 dark:bg-stone-900 dark:text-white"
+              />
+            </div>
             <select
               value={selectedClassId}
               onChange={(e) => handleClassSelect(e.target.value)}
@@ -394,7 +455,7 @@ export default function EnrollmentManager({
       )}
 
       {/* Enrolled Classes List */}
-      {enrollments.length === 0 ? (
+      {activeEnrollments.length === 0 ? (
         <div className="p-8 sm:p-12 bg-white dark:bg-stone-900 rounded-2xl border border-dashed border-stone-200 dark:border-white/10 text-center space-y-2">
           <div className="w-12 h-12 rounded-2xl bg-stone-100 dark:bg-white/5 text-stone-400 flex items-center justify-center mx-auto mb-2">
             <AcademicCapIcon className="w-6 h-6" />
@@ -409,7 +470,7 @@ export default function EnrollmentManager({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {enrollments.map((enrollment) => (
+          {activeEnrollments.map((enrollment) => (
             <div
               key={enrollment.id}
               className="p-4 bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-white/10 rounded-2xl shadow-xs hover:border-amber-500/30 transition-all flex flex-col justify-between gap-3"
@@ -467,8 +528,18 @@ export default function EnrollmentManager({
                 </div>
               </div>
 
-              {(enrollment.status === 'enrolled' || enrollment.status === 'active') && (
-                <div className="pt-2 border-t border-stone-100 dark:border-white/5 flex justify-end">
+              {enrollment.status === 'enrolled' && (
+                <div className="pt-2 border-t border-stone-100 dark:border-white/5 flex flex-wrap justify-end gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleTransferClick(enrollment.id, enrollment.class_name)}
+                    disabled={processingEnrollment === enrollment.id}
+                    className="h-8 px-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl font-bold text-[11px] gap-1 cursor-pointer"
+                  >
+                    <ArrowRightIcon className="w-3.5 h-3.5" />
+                    <span>Chuyển lớp</span>
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -477,13 +548,55 @@ export default function EnrollmentManager({
                     className="h-8 px-2.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl font-bold text-[11px] gap-1 cursor-pointer"
                   >
                     <TrashIcon className="w-3.5 h-3.5" />
-                    <span>Hủy ghi danh</span>
+                    <span>Nghỉ lớp</span>
                   </Button>
                 </div>
               )}
             </div>
           ))}
         </div>
+      )}
+
+      {enrollmentHistory.length > 0 && (
+        <section className="space-y-2 pt-2" aria-labelledby="enrollment-history-title">
+          <h3
+            id="enrollment-history-title"
+            className="text-xs font-black uppercase tracking-wider text-stone-500 dark:text-stone-400"
+          >
+            Lịch sử ghi danh ({enrollmentHistory.length})
+          </h3>
+          <div className="divide-y divide-stone-100 overflow-hidden rounded-2xl border border-stone-200 bg-white dark:divide-white/5 dark:border-white/10 dark:bg-stone-900">
+            {enrollmentHistory.map((enrollment) => (
+              <div
+                key={enrollment.id}
+                className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-stone-800 dark:text-stone-100">
+                    {enrollment.class_name}
+                  </p>
+                  <p className="text-[11px] text-stone-500">
+                    {new Date(enrollment.enrollment_date).toLocaleDateString('vi-VN')}
+                    {' → '}
+                    {enrollment.end_date
+                      ? new Date(enrollment.end_date).toLocaleDateString('vi-VN')
+                      : '—'}
+                    {enrollment.status_reason ? ` · ${enrollment.status_reason}` : ''}
+                  </p>
+                </div>
+                <Badge variant="default" className="w-fit text-[9px] font-black uppercase">
+                  {enrollment.status === 'transferred'
+                    ? 'Đã chuyển lớp'
+                    : enrollment.status === 'withdrawn'
+                      ? 'Đã nghỉ'
+                      : enrollment.status === 'completed'
+                        ? 'Hoàn thành'
+                        : 'Dừng học'}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Warning Dialog */}
@@ -530,22 +643,88 @@ export default function EnrollmentManager({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Remove Confirmation Dialog */}
+      {/* Enrollment lifecycle dialog */}
       <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
-        <AlertDialogContent className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-6 max-w-sm">
+        <AlertDialogContent className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-6 max-w-md">
           <AlertDialogHeader>
-            <div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center mb-3">
-              <TrashIcon className="w-5 h-5 text-rose-500" />
+            <div
+              className={cn(
+                'w-10 h-10 rounded-xl flex items-center justify-center mb-3',
+                lifecycleAction === 'transfer' ? 'bg-blue-500/10' : 'bg-rose-500/10'
+              )}
+            >
+              {lifecycleAction === 'transfer' ? (
+                <ArrowRightIcon className="w-5 h-5 text-blue-600" />
+              ) : (
+                <TrashIcon className="w-5 h-5 text-rose-500" />
+              )}
             </div>
-            <AlertDialogTitle className="text-lg font-black text-stone-900 dark:text-white uppercase tracking-tight text-rose-600">
-              Hủy ghi danh lớp học?
+            <AlertDialogTitle className="text-lg font-black text-stone-900 dark:text-white uppercase tracking-tight">
+              {lifecycleAction === 'transfer' ? 'Chuyển lớp học' : 'Xác nhận nghỉ lớp'}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-stone-500 leading-relaxed">
-              Bạn có chắc chắn muốn hủy ghi danh học sinh khỏi lớp{' '}
+              Thao tác với lớp{' '}
               <strong className="text-stone-900 dark:text-white">{enrollmentToRemove?.name}</strong>
-              ?
+              . Lịch sử cũ sẽ được giữ lại để đối chiếu điểm danh và học phí.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-3 py-2">
+            {lifecycleAction === 'transfer' && (
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="transfer-class"
+                  className="block text-xs font-bold text-stone-700 dark:text-stone-200"
+                >
+                  Lớp chuyển đến
+                </label>
+                <select
+                  id="transfer-class"
+                  value={transferClassId}
+                  onChange={(event) => setTransferClassId(event.target.value)}
+                  className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-stone-700 dark:bg-stone-950"
+                >
+                  <option value="">Chọn lớp chuyển đến…</option>
+                  {availableClasses.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name} {cls.schedule ? `· ${cls.schedule}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="lifecycle-date"
+                className="block text-xs font-bold text-stone-700 dark:text-stone-200"
+              >
+                {lifecycleAction === 'transfer' ? 'Ngày chuyển lớp' : 'Ngày kết thúc'}
+              </label>
+              <input
+                id="lifecycle-date"
+                type="date"
+                value={lifecycleDate}
+                onChange={(event) => setLifecycleDate(event.target.value)}
+                className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-stone-700 dark:bg-stone-950"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="lifecycle-reason"
+                className="block text-xs font-bold text-stone-700 dark:text-stone-200"
+              >
+                Lý do
+              </label>
+              <textarea
+                id="lifecycle-reason"
+                value={lifecycleReason}
+                onChange={(event) => setLifecycleReason(event.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder="Nhập lý do để các bộ phận cùng đối chiếu…"
+                className="w-full resize-none rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-medium outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-stone-700 dark:bg-stone-950"
+              />
+            </div>
+          </div>
           <AlertDialogFooter className="flex gap-2 pt-2">
             <AlertDialogCancel
               disabled={processingEnrollment !== null}
@@ -555,9 +734,19 @@ export default function EnrollmentManager({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={performRemoval}
-              className="flex-1 font-bold text-xs h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
+              disabled={
+                !lifecycleDate ||
+                lifecycleReason.trim().length < 3 ||
+                (lifecycleAction === 'transfer' && !transferClassId)
+              }
+              className={cn(
+                'flex-1 font-bold text-xs h-10 rounded-xl text-white',
+                lifecycleAction === 'transfer'
+                  ? 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-rose-600 hover:bg-rose-700'
+              )}
             >
-              Xác nhận hủy
+              {lifecycleAction === 'transfer' ? 'Xác nhận chuyển' : 'Xác nhận nghỉ'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
