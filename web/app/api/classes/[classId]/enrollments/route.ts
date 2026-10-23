@@ -94,7 +94,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cla
   }
 }
 
-// Remove student enrollment
+// End a student enrollment without deleting its history.
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ classId: string }> }
@@ -114,23 +114,45 @@ export async function DELETE(
       return NextResponse.json({ error: 'studentId query parameter is required' }, { status: 400 });
     }
 
-    const { error } = await supabase
+    const { data: enrollment, error: findError } = await supabase
       .from('enrollments')
-      .delete()
+      .select('id')
       .eq('class_id', classId)
-      .eq('student_id', studentId);
+      .eq('student_id', studentId)
+      .eq('status', 'enrolled')
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (findError) {
+      logger.error('Failed to find enrollment', new Error(findError.message));
+      return NextResponse.json(
+        { error: 'Failed to find enrollment', details: findError.message },
+        { status: 500 }
+      );
+    }
+    if (!enrollment) {
+      return NextResponse.json({ error: 'Active enrollment not found' }, { status: 404 });
+    }
+
+    const { error } = await supabase.rpc('end_enrollment_atomic', {
+      p_enrollment_id: enrollment.id,
+      p_end_date: new Date().toISOString().split('T')[0],
+      p_status: 'withdrawn',
+      p_reason: 'Ended from class enrollment management',
+      p_actor_id: null,
+    });
 
     if (error) {
-      logger.error('Failed to remove enrollment', new Error(error.message));
+      logger.error('Failed to end enrollment', new Error(error.message));
       return NextResponse.json(
-        { error: 'Failed to remove enrollment', details: error.message },
+        { error: 'Failed to end enrollment', details: error.message },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Student removed from class',
+      message: 'Student enrollment ended',
     });
   } catch (error) {
     logger.error('Remove enrollment error', error);

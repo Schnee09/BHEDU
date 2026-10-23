@@ -19,7 +19,9 @@ export const enrollmentQuerySchema = z.object({
   ...createSortSchema(['enrolled_at', 'created_at'], 'enrolled_at').shape,
   class_id: uuidSchema.optional(),
   student_id: uuidSchema.optional(),
-  status: z.enum(['enrolled', 'withdrawn', 'dropped', 'completed', 'all']).optional(),
+  status: z
+    .enum(['enrolled', 'withdrawn', 'dropped', 'completed', 'transferred', 'all'])
+    .optional(),
   academic_year_id: uuidSchema.optional(),
   from_date: dateStringSchema.optional(),
   to_date: dateStringSchema.optional(),

@@ -6,7 +6,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BaseRepository, type PaginatedResult, type PaginationParams } from './base';
+import { BaseRepository, type PaginatedResult } from './base';
 
 // ============================================
 // Types
@@ -254,7 +254,8 @@ export class EnrollmentRepository
       .from(this.tableName)
       .select('*')
       .eq('student_id', studentId)
-      .eq('class_id', classId);
+      .eq('class_id', classId)
+      .eq('status', 'enrolled');
 
     if (this.useSoftDelete && typeof (query as any).is === 'function') {
       query = query.is('deleted_at', null);
@@ -365,23 +366,33 @@ export class EnrollmentRepository
   async transferStudent(
     studentId: string,
     fromClassId: string,
-    toClassId: string
+    toClassId: string,
+    effectiveDate = new Date().toISOString().split('T')[0],
+    reason = 'Class transfer',
+    actorId?: string
   ): Promise<Enrollment> {
-    // 1. Find the existing enrollment ID
     const enrollment = await this.findByStudentAndClass(studentId, fromClassId);
-    if (!enrollment) {
+    if (!enrollment || enrollment.status !== 'enrolled') {
       throw new Error('Student is not enrolled in the source class');
     }
 
-    // 2. Perform the transfer (delete existing and create new)
-    // Note: We don't have atomic transactions in Supabase client easily,
-    // so we'll do them sequentially.
-    await this.delete(enrollment.id);
-
-    return await this.create({
-      student_id: studentId,
-      class_id: toClassId,
-      status: 'enrolled',
+    const { data, error } = await this.supabase.rpc('transfer_student_atomic', {
+      p_enrollment_id: enrollment.id,
+      p_to_class_id: toClassId,
+      p_effective_date: effectiveDate,
+      p_reason: reason,
+      p_actor_id: actorId || null,
     });
+
+    if (error) {
+      throw new Error(`Failed to transfer enrollment: ${error.message}`);
+    }
+
+    const transferred = Array.isArray(data) ? data[0] : data;
+    if (!transferred) {
+      throw new Error('Failed to transfer enrollment: RPC returned no enrollment');
+    }
+
+    return transferred as Enrollment;
   }
 }

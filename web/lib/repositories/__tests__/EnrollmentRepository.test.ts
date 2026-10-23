@@ -86,11 +86,16 @@ describe('EnrollmentRepository', () => {
   });
 
   describe('transferStudent', () => {
-    it('should delete existing enrollment and create new one', async () => {
+    it('should transfer an active enrollment atomically', async () => {
       const studentId = 'student-1';
       const fromClassId = 'class-old';
       const toClassId = 'class-new';
-      const existingEnrollment = { id: 'enr-old', student_id: studentId, class_id: fromClassId };
+      const existingEnrollment = {
+        id: 'enr-old',
+        student_id: studentId,
+        class_id: fromClassId,
+        status: 'enrolled',
+      };
       const newEnrollment = {
         id: 'enr-new',
         student_id: studentId,
@@ -103,44 +108,23 @@ describe('EnrollmentRepository', () => {
         data: existingEnrollment,
         error: null,
       });
-      const eq2Mock = jest.fn().mockReturnValue({
+      const eq3Mock = jest.fn().mockReturnValue({
         maybeSingle: maybeSingleMock,
       });
+      const eq2Mock = jest.fn().mockReturnValue({ eq: eq3Mock });
       const eq1Mock = jest.fn().mockReturnValue({
         eq: eq2Mock,
       });
 
-      // Mock delete
-      const deleteEqMock = jest.fn().mockResolvedValue({ error: null });
-      const deleteMock = jest.fn().mockReturnValue({
-        eq: deleteEqMock,
-      });
-
-      // Mock create
-      const singleMock = jest.fn().mockResolvedValue({
-        data: newEnrollment,
-        error: null,
-      });
-      const selectMock = jest.fn().mockReturnValue({
-        single: singleMock,
-      });
-      const insertMock = jest.fn().mockReturnValue({
-        select: selectMock,
-      });
-      const upsertMock = jest.fn().mockReturnValue({
-        select: selectMock,
-      });
+      mockSupabase.rpc = jest.fn().mockResolvedValue({ data: newEnrollment, error: null });
 
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'enrollments') {
           return {
             select: jest.fn().mockImplementation((query: string) => {
               if (query === '*') return { eq: eq1Mock };
-              return { single: singleMock };
+              return {};
             }),
-            delete: deleteMock,
-            insert: insertMock,
-            upsert: upsertMock,
           };
         }
         return {};
@@ -149,14 +133,11 @@ describe('EnrollmentRepository', () => {
       const result = await repository.transferStudent(studentId, fromClassId, toClassId);
 
       expect(result).toEqual(newEnrollment);
-      expect(deleteMock).toHaveBeenCalled();
-      expect(upsertMock).toHaveBeenCalledWith(
+      expect(mockSupabase.rpc).toHaveBeenCalledWith(
+        'transfer_student_atomic',
         expect.objectContaining({
-          student_id: studentId,
-          class_id: toClassId,
-        }),
-        expect.objectContaining({
-          onConflict: 'student_id,class_id',
+          p_enrollment_id: existingEnrollment.id,
+          p_to_class_id: toClassId,
         })
       );
     });
@@ -166,7 +147,9 @@ describe('EnrollmentRepository', () => {
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
-              maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+              eq: jest.fn().mockReturnValue({
+                maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+              }),
             }),
           }),
         }),

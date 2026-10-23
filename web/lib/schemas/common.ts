@@ -149,7 +149,13 @@ export const gradeComponentSchema = z.enum([
 export const attendanceStatusSchema = z.enum(['present', 'absent', 'late', 'excused', 'half_day']);
 
 /** Enrollment status (matches database enum) */
-export const enrollmentStatusSchema = z.enum(['enrolled', 'completed', 'dropped', 'withdrawn']);
+export const enrollmentStatusSchema = z.enum([
+  'enrolled',
+  'completed',
+  'dropped',
+  'withdrawn',
+  'transferred',
+]);
 
 /** Invoice status (matches database enum) */
 export const invoiceStatusSchema = z.enum([
