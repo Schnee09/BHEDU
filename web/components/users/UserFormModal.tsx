@@ -34,6 +34,8 @@ import {
   Inbox,
   Sparkle,
   Loader2,
+  SearchCheck,
+  TriangleAlert,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api/client';
 import { logger } from '@/lib/logger';
@@ -186,6 +188,26 @@ interface UserFormModalProps {
   initialRole?: string;
 }
 
+type DuplicateCandidate = {
+  id: string;
+  full_name: string | null;
+  student_code: string | null;
+  phone: string | null;
+  grade_level: string | null;
+  status: string | null;
+  severity: 'high' | 'medium' | 'low';
+  reasons: string[];
+};
+
+const DUPLICATE_REASON_LABELS: Record<string, string> = {
+  student_code: 'trùng mã học sinh',
+  student_id: 'trùng mã định danh/CCCD',
+  phone: 'trùng số điện thoại',
+  personal_email: 'trùng email cá nhân',
+  email: 'trùng tài khoản đăng nhập',
+  full_name: 'trùng họ tên',
+};
+
 export default function UserFormModal({
   isOpen,
   onClose,
@@ -236,6 +258,34 @@ export default function UserFormModal({
   const [createdUserInfo, setCreatedUserInfo] = useState<any>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<any[]>([]);
+  const [duplicateReview, setDuplicateReview] = useState<{
+    matches: DuplicateCandidate[];
+    signature: string;
+  } | null>(null);
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
+  const currentDuplicateSignature = useMemo(() => {
+    const studentEmail =
+      formData.email.trim() ||
+      (formData.student_code
+        ? `${formData.student_code.toLowerCase()}@student.bhedu.vn`
+        : undefined);
+    return JSON.stringify({
+      full_name: formData.full_name,
+      student_code: formData.student_code || undefined,
+      student_id: formData.student_id || undefined,
+      phone: formData.phone ? formData.phone.replace(/\s/g, '') : undefined,
+      personal_email: formData.personal_email || undefined,
+      email: studentEmail,
+    });
+  }, [
+    formData.email,
+    formData.full_name,
+    formData.personal_email,
+    formData.phone,
+    formData.student_code,
+    formData.student_id,
+  ]);
+  const hasValidDuplicateReview = duplicateReview?.signature === currentDuplicateSignature;
 
   // Role Metadata Definitions for Visual Cards
   const roleCards = useMemo(() => {
@@ -318,6 +368,7 @@ export default function UserFormModal({
       setCurrentStep(1);
       setFormError(null);
       setCreatedUserInfo(null);
+      setDuplicateReview(null);
 
       if (user) {
         const resolvedRole = user.role || initialRole || 'student';
@@ -603,7 +654,7 @@ export default function UserFormModal({
   };
 
   // Submit Handler
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent, confirmDuplicate = false) => {
     if (e) e.preventDefault();
     setLoading(true);
     setFormError(null);
@@ -706,6 +757,37 @@ export default function UserFormModal({
         }
       });
 
+      if (!isEdit && formData.role === 'student' && !confirmDuplicate) {
+        const duplicatePayload = {
+          full_name: payload.full_name,
+          student_code: payload.student_code,
+          student_id: payload.student_id,
+          phone: payload.phone,
+          personal_email: payload.personal_email,
+          email: payload.email,
+        };
+        const signature = JSON.stringify(duplicatePayload);
+        setCheckingDuplicates(true);
+        const duplicateResponse = await apiFetch('/api/admin/students/duplicate-check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: signature,
+        });
+        const duplicateData = await duplicateResponse.json();
+        setCheckingDuplicates(false);
+
+        if (!duplicateResponse.ok || !duplicateData.success) {
+          throw new Error(duplicateData.error || 'Không thể kiểm tra hồ sơ trùng');
+        }
+
+        if (duplicateData.requires_confirmation) {
+          setDuplicateReview({ matches: duplicateData.matches || [], signature });
+          setFormError(null);
+          return;
+        }
+        setDuplicateReview(null);
+      }
+
       const response = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -761,6 +843,7 @@ export default function UserFormModal({
       logger.error('User form error', err);
       toast.error('Lỗi', errorMsg);
     } finally {
+      setCheckingDuplicates(false);
       setLoading(false);
     }
   };
@@ -1120,12 +1203,16 @@ export default function UserFormModal({
                 <Button
                   type="button"
                   variant="gold"
-                  onClick={() => handleSubmit()}
-                  isLoading={loading}
+                  onClick={() => handleSubmit(undefined, hasValidDuplicateReview)}
+                  isLoading={loading || checkingDuplicates}
                   className="rounded-2xl font-black uppercase tracking-wider text-xs gap-1.5 h-11 px-8 shadow-lg shadow-amber-500/20"
                 >
-                  <Check className="w-4 h-4" />
-                  Tạo người dùng
+                  {hasValidDuplicateReview ? (
+                    <TriangleAlert className="w-4 h-4" />
+                  ) : (
+                    <SearchCheck className="w-4 h-4" />
+                  )}
+                  {hasValidDuplicateReview ? 'Vẫn tạo hồ sơ' : 'Kiểm tra & tạo'}
                 </Button>
               )}
             </div>
@@ -1727,6 +1814,57 @@ export default function UserFormModal({
           {/* STEP 3: Tài khoản, Mật khẩu & Liên hệ */}
           {(currentStep === 3 || isEdit) && (
             <div className="space-y-6 animate-fade-in">
+              {!isEdit &&
+                formData.role === 'student' &&
+                hasValidDuplicateReview &&
+                duplicateReview && (
+                  <div
+                    role="alert"
+                    className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100"
+                  >
+                    <div className="flex items-start gap-3">
+                      <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <div className="min-w-0 flex-1 space-y-3">
+                        <div>
+                          <p className="text-sm font-black">Có hồ sơ tương tự cần kiểm tra</p>
+                          <p className="mt-1 text-xs leading-relaxed text-amber-800 dark:text-amber-200">
+                            Hãy mở hồ sơ hiện có trước khi tạo mới để tránh tách lịch sử học và học
+                            phí của cùng một học sinh.
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          {duplicateReview.matches.map((match) => (
+                            <div
+                              key={match.id}
+                              className="rounded-xl border border-amber-200 bg-white/80 p-3 dark:border-amber-800/60 dark:bg-stone-950/40"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="text-xs font-bold">
+                                  {match.full_name || 'Chưa có họ tên'}
+                                </span>
+                                <span className="font-mono text-[11px] text-amber-700 dark:text-amber-300">
+                                  {match.student_code || 'Chưa có mã'}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-[11px] text-stone-600 dark:text-stone-300">
+                                {[match.grade_level, match.phone].filter(Boolean).join(' · ') ||
+                                  'Chưa có thông tin bổ sung'}
+                              </p>
+                              <p className="mt-1 text-[11px] font-semibold text-amber-800 dark:text-amber-200">
+                                {match.reasons
+                                  .map((reason) => DUPLICATE_REASON_LABELS[reason] || reason)
+                                  .join(', ')}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[11px] font-semibold">
+                          Nếu đây chắc chắn là học sinh khác, bạn vẫn có thể tiếp tục tạo hồ sơ.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               <div className="p-6 rounded-[28px] bg-stone-50 dark:bg-white/[0.02] border border-stone-200/80 dark:border-white/5 space-y-4">
                 <div className="flex justify-between items-center border-b border-stone-200/60 dark:border-white/5 pb-3">
                   <div className="flex items-center gap-2">
