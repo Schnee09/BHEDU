@@ -165,7 +165,7 @@ const DEFAULT_ROLE_OPTIONS = [
 
 const CATEGORY_LABELS: Record<string, string> = {
   system: 'Hệ Thống',
-  users: 'Người Dùng',
+  users: 'Người dùng',
   students: 'Học Sinh',
   classes: 'Lớp Học',
   grades: 'Điểm Số',

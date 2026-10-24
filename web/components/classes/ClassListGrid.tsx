@@ -214,7 +214,7 @@ export default function ClassListGrid({
                   onEnrollClick(cls);
                 }}
                 className="flex-1 py-1.5 px-3 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-xl transition-all border border-blue-100/50 dark:border-blue-500/20 flex items-center justify-center gap-1.5"
-                title="Ghi danh học sinh vào lớp"
+                title="Ghi danh vào lớp"
               >
                 <Users className="w-3.5 h-3.5" />
                 <span>Ghi danh</span>

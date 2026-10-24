@@ -398,7 +398,7 @@ Trung tâm xin gửi thông báo học phí:
           <a href="/dashboard/admin/finance/tuition-matrix">
             <Button className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:opacity-90 rounded-xl text-sm font-bold flex items-center gap-2">
               <Icons.Layout className="w-4 h-4" />
-              Lưới học phí
+              Học phí theo lớp
             </Button>
           </a>
         </div>

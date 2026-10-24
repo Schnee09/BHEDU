@@ -317,7 +317,7 @@ export class FinanceService {
               invoice_id: existingInvoice.id,
               amount: balance,
               payment_method_id: paymentMethodId,
-              notes: 'Thanh toán học phí qua Portal (Bảng điều khiển)',
+              notes: 'Thanh toán học phí qua cổng học viên',
             });
             existingInvoices.set(`${studentId}:${month}`, {
               ...existingInvoice,

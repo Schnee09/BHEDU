@@ -1149,7 +1149,7 @@ export default function UserFormModal({
           ? 'Phiếu Bàn Giao Tài Khoản'
           : isEdit
             ? `Chỉnh sửa ${ROLE_VIETNAMESE_NAMES[formData.role] || 'người dùng'}: ${formData.full_name || 'Hồ sơ'}`
-            : 'Thêm Người Dùng Mới'
+            : 'Thêm người dùng mới'
       }
       size="lg"
       footer={

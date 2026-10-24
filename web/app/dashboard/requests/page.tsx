@@ -74,11 +74,11 @@ export default function RequestsPage() {
             <div className="flex items-center gap-2.5">
               <div className="w-1.5 h-6 bg-amber-500 rounded-full shadow-accent-glow" />
               <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
-                Dịch vụ <span className="text-amber-500">Đơn từ trực tuyến</span>
+                <span className="text-amber-500">Yêu cầu học tập</span>
               </h1>
             </div>
             <p className="text-xs font-bold text-stone-500 dark:text-stone-400 pl-4">
-              Tiếp nhận và xét duyệt đơn xin nghỉ phép, học bù, đổi ca theo chuẩn đào tạo
+              Gửi và theo dõi yêu cầu nghỉ học, học bù hoặc đổi ca
             </p>
           </div>
 

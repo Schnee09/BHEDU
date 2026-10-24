@@ -115,7 +115,7 @@ export default function LinkStudentPage() {
           onClick={() => router.push('/dashboard/parent')}
           className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-500/25 active:scale-95 uppercase tracking-widest text-xs"
         >
-          Quay lại Bảng điều khiển
+          Quay lại trang tổng quan
         </button>
       </div>
     );

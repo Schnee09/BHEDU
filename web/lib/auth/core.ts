@@ -291,7 +291,7 @@ export const SYSTEM_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
   {
     id: 'classes.manage',
     code: 'classes.manage',
-    name: 'Quản trị lớp học toàn diện',
+    name: 'Quản lý lớp học',
     description: 'Toàn quyền điều hành học vụ lớp học',
     category: 'classes',
   },

@@ -766,7 +766,7 @@ export default function TimetableSlotModal({
             : [];
 
       if (effectiveStudents.length === 0) {
-        toast.warning('Thiếu thông tin', 'Vui lòng chọn ít nhất 1 học sinh phụ đạo');
+        toast.warning('Thiếu thông tin', 'Vui lòng chọn ít nhất 1 học sinh học kèm');
         return;
       }
     } else {
@@ -1004,7 +1004,7 @@ export default function TimetableSlotModal({
               <div className="col-span-1 sm:col-span-2 space-y-1.5 min-w-0">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
-                    Học sinh phụ đạo * {!editingSlot && '(Kèm 1-on-1 hoặc Nhóm 2-3 em)'}
+                    Học sinh học kèm * {!editingSlot && '(Kèm 1-1 hoặc nhóm 2-3 em)'}
                   </label>
                   {!editingSlot && selectedStudentIds.length > 0 && (
                     <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">

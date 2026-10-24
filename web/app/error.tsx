@@ -110,7 +110,7 @@ export default function GlobalError({
             className="h-12 px-6 rounded-2xl bg-stone-100 dark:bg-[#1C1A16] hover:bg-stone-200 dark:hover:bg-[#25221D] text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-800 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-xs"
           >
             <Home className="w-4 h-4" />
-            <span>Về Bảng điều khiển</span>
+            <span>Về trang tổng quan</span>
           </Link>
         </div>
       </div>

@@ -133,7 +133,7 @@ export default function TutoringManagementPage() {
               </h1>
               <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1">
                 {isManager
-                  ? 'Điều phối gia sư, học sinh phụ đạo & quản lý danh sách ca học kèm tập trung'
+                  ? 'Điều phối gia sư, học sinh và các ca học kèm tại một nơi'
                   : `Danh sách các ca học kèm và học sinh phụ trách của gia sư ${state.profile?.full_name || ''}`}
               </p>
             </div>

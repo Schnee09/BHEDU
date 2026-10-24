@@ -217,7 +217,7 @@ function generateRecommendations(factors: RiskFactor[], currentGPA: number): str
   for (const factor of factors) {
     switch (factor.type) {
       case 'low_performance':
-        recommendations.push('Tham gia lớp phụ đạo hoặc học thêm');
+        recommendations.push('Đăng ký thêm buổi học kèm');
         recommendations.push('Gặp giáo viên để được hỗ trợ');
         break;
       case 'grade_decline':

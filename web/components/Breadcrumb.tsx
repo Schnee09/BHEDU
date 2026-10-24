@@ -12,7 +12,7 @@ interface BreadcrumbItem {
 
 // Map routes to friendly names
 const routeLabels: Record<string, string> = {
-  dashboard: 'Bảng điều khiển',
+  dashboard: 'Tổng quan',
   students: 'Học sinh',
   teachers: 'Giáo viên',
   classes: 'Lớp học',

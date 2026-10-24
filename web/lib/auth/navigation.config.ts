@@ -13,10 +13,10 @@ import {
   BarChart2,
   Bell,
   BookOpen,
-  Building,
   Calendar,
   CalendarDays,
   CheckCircle,
+  ContactRound,
   Clock,
   CreditCard,
   Database,
@@ -72,13 +72,20 @@ export const ALL_NAV_ITEMS: NavSection[] = [
   {
     title: 'Tổng quan',
     links: [
-      { href: '/dashboard', label: 'Bảng điều khiển', icon: Home },
+      { href: '/dashboard', label: 'Tổng quan', icon: Home },
       { href: '/dashboard/notifications', label: 'Thông báo', icon: Bell },
     ],
   },
   {
     title: 'Học vụ & Đào tạo',
     links: [
+      {
+        href: routes.admin.reception(),
+        label: 'Tiếp nhận học sinh',
+        icon: ContactRound,
+        permissions: ['students.view', 'finance.view'],
+        allowedRoles: ['staff', 'admin', 'owner', 'super_admin'],
+      },
       {
         href: '/dashboard/classes',
         label: 'Lớp học',
@@ -87,13 +94,13 @@ export const ALL_NAV_ITEMS: NavSection[] = [
       },
       {
         href: '/dashboard/students',
-        label: 'Học sinh',
+        label: 'Hồ sơ học sinh',
         icon: Users,
         permissions: ['students.view'],
       },
       {
         href: '/dashboard/admin/enrollments',
-        label: 'Ghi danh học sinh',
+        label: 'Đăng ký lớp',
         icon: UserCheck,
         permissions: ['enrollments.view'],
       },
@@ -105,7 +112,7 @@ export const ALL_NAV_ITEMS: NavSection[] = [
       },
       {
         href: '/dashboard/tutoring',
-        label: 'Quản lý Học kèm',
+        label: 'Học kèm',
         icon: GraduationCap,
         permissions: ['timetable.view'],
       },
@@ -129,7 +136,7 @@ export const ALL_NAV_ITEMS: NavSection[] = [
       },
       { href: '/dashboard/my-schedule', label: 'Lịch của tôi', icon: Clock },
       { href: '/dashboard/calendar', label: 'Lịch học tập', icon: CalendarDays },
-      { href: '/dashboard/requests', label: 'Đơn từ trực tuyến', icon: FileText },
+      { href: '/dashboard/requests', label: 'Yêu cầu học tập', icon: FileText },
     ],
   },
   {
@@ -209,13 +216,13 @@ export const ALL_NAV_ITEMS: NavSection[] = [
     links: [
       {
         href: '/dashboard/admin/finance',
-        label: 'Học phí & Hóa đơn',
+        label: 'Thu học phí',
         icon: Receipt,
         permissions: ['finance.view'],
       },
       {
         href: '/dashboard/admin/finance/tuition-matrix',
-        label: 'Lưới học phí',
+        label: 'Học phí theo lớp',
         icon: CreditCard,
         permissions: ['finance.manage'],
       },
@@ -328,13 +335,19 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
     {
       title: 'Tổng quan',
       links: [
-        { href: '/dashboard', label: 'Bảng điều khiển', icon: Home },
+        { href: '/dashboard', label: 'Tổng quan', icon: Home },
         { href: '/dashboard/notifications', label: 'Thông báo', icon: Bell },
       ],
     },
     {
       title: 'Học vụ & Đào tạo',
       links: [
+        {
+          href: routes.admin.reception(),
+          label: 'Tiếp nhận học sinh',
+          icon: ContactRound,
+          permissions: ['students.view', 'finance.view'],
+        },
         {
           href: '/dashboard/classes',
           label: 'Lớp học',
@@ -343,13 +356,13 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
         },
         {
           href: '/dashboard/students',
-          label: 'Học sinh',
+          label: 'Hồ sơ học sinh',
           icon: Users,
           permissions: ['students.view'],
         },
         {
           href: '/dashboard/admin/enrollments',
-          label: 'Ghi danh học sinh',
+          label: 'Đăng ký lớp',
           icon: UserCheck,
           permissions: ['enrollments.view'],
         },
@@ -361,7 +374,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
         },
         {
           href: '/dashboard/tutoring',
-          label: 'Quản lý Học kèm',
+          label: 'Học kèm',
           icon: GraduationCap,
           permissions: ['timetable.view'],
         },
@@ -421,13 +434,13 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
       links: [
         {
           href: '/dashboard/admin/finance',
-          label: 'Học phí & Hóa đơn',
+          label: 'Thu học phí',
           icon: Receipt,
           permissions: ['finance.view'],
         },
         {
           href: '/dashboard/admin/finance/tuition-matrix',
-          label: 'Lưới học phí',
+          label: 'Học phí theo lớp',
           icon: CreditCard,
           permissions: ['finance.manage'],
         },
@@ -531,7 +544,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
     {
       title: 'Trang chủ',
       links: [
-        { href: '/dashboard', label: 'Bảng điều khiển', icon: Home },
+        { href: '/dashboard', label: 'Tổng quan', icon: Home },
         { href: '/dashboard/notifications', label: 'Thông báo', icon: Bell },
       ],
     },
@@ -539,20 +552,26 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
       title: 'Học vụ & Đào tạo',
       links: [
         {
+          href: routes.admin.reception(),
+          label: 'Tiếp nhận học sinh',
+          icon: ContactRound,
+          permissions: ['students.view', 'finance.view'],
+        },
+        {
           href: '/dashboard/classes',
-          label: 'Quản trị lớp học',
+          label: 'Lớp học',
           icon: BookOpen,
           permissions: ['classes.view'],
         },
         {
           href: '/dashboard/students',
-          label: 'Quản trị học sinh',
+          label: 'Hồ sơ học sinh',
           icon: Users,
           permissions: ['students.view'],
         },
         {
           href: '/dashboard/admin/enrollments',
-          label: 'Ghi danh học sinh',
+          label: 'Đăng ký lớp',
           icon: UserCheck,
           permissions: ['enrollments.view'],
         },
@@ -564,7 +583,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
         },
         {
           href: '/dashboard/tutoring',
-          label: 'Quản lý Học kèm',
+          label: 'Học kèm',
           icon: GraduationCap,
           permissions: ['timetable.view'],
         },
@@ -637,13 +656,13 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
       links: [
         {
           href: '/dashboard/admin/finance',
-          label: 'Học phí & Hóa đơn',
+          label: 'Thu học phí',
           icon: Receipt,
           permissions: ['finance.view'],
         },
         {
           href: '/dashboard/admin/finance/tuition-matrix',
-          label: 'Lưới học phí',
+          label: 'Học phí theo lớp',
           icon: CreditCard,
           permissions: ['finance.manage'],
         },
@@ -718,7 +737,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
     {
       title: 'Trang chủ',
       links: [
-        { href: '/dashboard', label: 'Bảng điều khiển', icon: Home },
+        { href: '/dashboard', label: 'Tổng quan', icon: Home },
         { href: '/dashboard/notifications', label: 'Thông báo', icon: Bell },
       ],
     },
@@ -786,7 +805,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
     {
       title: 'Trang chủ',
       links: [
-        { href: '/dashboard', label: 'Bảng điều khiển', icon: Home },
+        { href: '/dashboard', label: 'Tổng quan', icon: Home },
         { href: '/dashboard/notifications', label: 'Thông báo', icon: Bell },
       ],
     },
@@ -808,7 +827,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
     {
       title: 'Trang chủ',
       links: [
-        { href: '/dashboard', label: 'Bảng điều khiển', icon: Home },
+        { href: '/dashboard', label: 'Tổng quan', icon: Home },
         { href: '/dashboard/notifications', label: 'Thông báo', icon: Bell },
       ],
     },
@@ -858,7 +877,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
     {
       title: 'Trang chủ',
       links: [
-        { href: '/dashboard', label: 'Bảng điều khiển', icon: Home },
+        { href: '/dashboard', label: 'Tổng quan', icon: Home },
         { href: '/dashboard/notifications', label: 'Thông báo', icon: Bell },
       ],
     },
@@ -976,8 +995,8 @@ export function isLinkVisible(link: NavLink, userPermissions: Set<PermissionCode
 
 export const ROLE_SPECIFIC_LABELS: Partial<Record<UserRole, Record<string, string>>> = {
   admin: {
-    '/dashboard/classes': 'Quản trị lớp học',
-    '/dashboard/students': 'Quản trị học sinh',
+    '/dashboard/classes': 'Lớp học',
+    '/dashboard/students': 'Hồ sơ học sinh',
     '/dashboard/timetable': 'Quản lý lịch học tập',
   },
   teacher: {

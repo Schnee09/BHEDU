@@ -230,7 +230,7 @@ export default function EnrollmentManager({
       await enrollStudent(studentId, selectedClassId, enrollmentDate);
 
       showToast.dismiss(toastId);
-      showToast.success('Ghi danh học sinh vào lớp thành công!');
+      showToast.success('Ghi danh vào lớp thành công.');
       setSelectedClassId('');
       setScheduleConflicts([]);
       setCapacityWarning(null);

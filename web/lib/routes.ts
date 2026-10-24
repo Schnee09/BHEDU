@@ -43,6 +43,7 @@ export const routes = {
 
   admin: {
     root: () => '/dashboard/admin',
+    reception: () => '/dashboard/admin/reception',
 
     students: {
       list: () => '/dashboard/admin/students',

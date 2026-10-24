@@ -541,7 +541,7 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
               <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <BanknotesIcon className="w-4 h-4" />
               </span>
-              Học phí & Hóa đơn đóng tiền
+              Học phí & thanh toán
             </h3>
           </div>
 

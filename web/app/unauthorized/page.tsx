@@ -60,7 +60,7 @@ export default function UnauthorizedPage() {
             className="h-12 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer"
           >
             <Home className="w-4 h-4" />
-            <span>Về Bảng điều khiển</span>
+            <span>Về trang tổng quan</span>
           </Link>
         </div>
 

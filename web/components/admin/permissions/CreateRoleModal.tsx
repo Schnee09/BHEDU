@@ -75,7 +75,7 @@ const COLOR_PRESETS = [
 
 const CATEGORY_LABELS: Record<string, string> = {
   system: 'Hệ Thống',
-  users: 'Người Dùng',
+  users: 'Người dùng',
   students: 'Học Sinh',
   classes: 'Lớp Học',
   timetable: 'Thời Khóa Biểu',

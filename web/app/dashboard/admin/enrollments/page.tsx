@@ -243,7 +243,9 @@ export default function EnrollmentsPage() {
       const text = e.target?.result as string;
       if (!text) return;
 
-      const rows = text.split('\n').map((line) => line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, '')));
+      const rows = text
+        .split('\n')
+        .map((line) => line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, '')));
       if (rows.length < 2) {
         toast.warning('File rỗng', 'Không có dữ liệu trong file CSV.');
         return;
@@ -255,16 +257,19 @@ export default function EnrollmentsPage() {
         return;
       }
 
-      const headers = firstRow.map(h => h.toLowerCase().trim());
+      const headers = firstRow.map((h) => h.toLowerCase().trim());
       const emailIdx = headers.indexOf('email');
-      const codeIdx = headers.indexOf('student_code') !== -1 ? headers.indexOf('student_code') : headers.indexOf('ma_hs');
+      const codeIdx =
+        headers.indexOf('student_code') !== -1
+          ? headers.indexOf('student_code')
+          : headers.indexOf('ma_hs');
 
       const lookups = new Set<string>();
-      
+
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         if (!row || row.length === 0 || !row[0]) continue;
-        
+
         const emailVal = emailIdx !== -1 && row[emailIdx] ? row[emailIdx] : undefined;
         const codeVal = codeIdx !== -1 && row[codeIdx] ? row[codeIdx] : undefined;
 
@@ -293,9 +298,12 @@ export default function EnrollmentsPage() {
         toast.error('Lỗi', 'Không tìm thấy học sinh nào khớp mã số hoặc email trong file CSV.');
       } else {
         const newSelection = new Set(selectedToEnroll);
-        matchedIds.forEach(id => newSelection.add(id));
+        matchedIds.forEach((id) => newSelection.add(id));
         setSelectedToEnroll(newSelection);
-        toast.success('Nhập file thành công', `Đã khớp thành công ${matchedIds.length} học sinh từ file CSV.`);
+        toast.success(
+          'Nhập file thành công',
+          `Đã khớp thành công ${matchedIds.length} học sinh từ file CSV.`
+        );
       }
     };
     reader.readAsText(file);
@@ -338,9 +346,11 @@ export default function EnrollmentsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <AcademicCapIcon className="w-8 h-8 text-primary" />
-            Quản lý ghi danh
+            Đăng ký lớp
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Ghi danh học sinh vào các lớp học</p>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Đăng ký lớp, nghỉ lớp và chuyển lớp cho học sinh
+          </p>
         </div>
 
         {/* Class Selector */}

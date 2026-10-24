@@ -99,8 +99,8 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
       [
         // Học vụ & Đào tạo
         {
-          label: 'Thêm học sinh mới',
-          sub: 'Tạo hồ sơ và mã học sinh',
+          label: 'Tạo hồ sơ học sinh',
+          sub: 'Thêm thông tin và cấp mã học sinh',
           category: 'Học vụ & Đào tạo',
           icon: UserPlusIcon,
           href: `${routes.students.list()}?action=add`,
@@ -131,8 +131,8 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
           show: can('grades.entry'),
         },
         {
-          label: 'Nhập học sinh từ Excel',
-          sub: 'Tải danh sách hàng loạt',
+          label: 'Nhập danh sách học sinh',
+          sub: 'Tải dữ liệu từ tệp Excel',
           category: 'Học vụ & Đào tạo',
           icon: ArrowDownTrayIcon,
           href: routes.students.import(),
@@ -141,8 +141,8 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
 
         // Tài chính & Học phí
         {
-          label: 'Lập hóa đơn học phí',
-          sub: 'Tạo phiếu thu học phí mới',
+          label: 'Lập khoản thu học phí',
+          sub: 'Tạo hóa đơn học phí mới',
           category: 'Tài chính & Học phí',
           icon: BanknotesIcon,
           href: '/dashboard/finance',
@@ -152,7 +152,7 @@ export default memo(function Header({ profile, onMenuToggle, isMenuOpen }: Heade
         // Dạy kèm & Tương tác
         {
           label: 'Đăng thông báo trung tâm',
-          sub: 'Gửi tin tức đến toàn trường',
+          sub: 'Gửi thông tin đến toàn trung tâm',
           category: 'Tương tác & Lịch dạy',
           icon: MegaphoneIcon,
           href: '/dashboard/admin/announcements',

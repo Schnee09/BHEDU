@@ -32,7 +32,7 @@ const quickActions: SearchResult[] = [
   {
     id: 'dashboard',
     type: 'page',
-    title: 'Bảng điều khiển',
+    title: 'Tổng quan',
     href: '/dashboard',
     icon: <LayoutDashboard className="w-4 h-4" />,
   },
@@ -242,7 +242,7 @@ export default function CommandPalette() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Tìm kiếm học sinh, lớp học, trang..."
+            placeholder="Tìm học sinh, lớp học hoặc chức năng…"
             className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none"
           />
           {loading && (
