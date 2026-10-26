@@ -8,13 +8,17 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { createGetHandler, AppError, apiSuccess } from '@/lib/api';
+import { getCurrentDateOnly, isValidDateOnly } from '@/lib/enrollments/effectiveDates';
 
 export const GET = createGetHandler({ requireAuth: true }, async ({ request, user, params }) => {
   try {
     const supabase = createServiceClient();
     const { classId } = (await params) as { classId: string };
     const url = new URL(request.url);
-    const date = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
+    const date = url.searchParams.get('date') || getCurrentDateOnly();
+    if (!isValidDateOnly(date)) {
+      throw new AppError('Date must use a valid YYYY-MM-DD format', 400, 'VALIDATION_ERROR');
+    }
 
     // Verify teacher has access to this class
     // Admins, Staff and higher see everything
@@ -54,6 +58,8 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
       .select(
         `
           student_id,
+          enrollment_date,
+          end_date,
           profiles!student_id (
             id,
             full_name,
@@ -62,7 +68,10 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
           )
         `
       )
-      .eq('class_id', classId);
+      .eq('class_id', classId)
+      .lte('enrollment_date', date)
+      .or(`end_date.is.null,end_date.gte.${date}`)
+      .is('deleted_at', null);
 
     if (enrollError) {
       logger.error('Failed to fetch enrollments', new Error(enrollError.message));

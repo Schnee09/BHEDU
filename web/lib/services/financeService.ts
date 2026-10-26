@@ -17,6 +17,10 @@ import {
   InvoiceFilters,
 } from '@/lib/repositories/FinanceRepository';
 import { ValidationError, NotFoundError } from '@/lib/api/errors';
+import {
+  doesEnrollmentOverlapPeriod,
+  getCalendarMonthPeriod,
+} from '@/lib/enrollments/effectiveDates';
 
 export class FinanceService {
   private supabase: SupabaseClient;
@@ -117,29 +121,58 @@ export class FinanceService {
       throw new NotFoundError('Lớp học không tồn tại');
     }
 
-    // 2. Fetch all active student enrollments
+    const billingPeriods = months.map(getCalendarMonthPeriod);
+    if (billingPeriods.length === 0) {
+      return { students: [], matrix: {} };
+    }
+    const firstBillingPeriod = billingPeriods[0]!;
+
+    const firstPeriodStart = billingPeriods.reduce(
+      (earliest, period) => (period.start < earliest ? period.start : earliest),
+      firstBillingPeriod.start
+    );
+    const lastPeriodEnd = billingPeriods.reduce(
+      (latest, period) => (period.end > latest ? period.end : latest),
+      firstBillingPeriod.end
+    );
+
+    // 2. Fetch enrollments overlapping the requested billing periods. Status alone
+    // cannot represent historical membership after a student leaves or transfers.
     const { data: enrollments, error: enrollError } = await this.supabase
       .from('enrollments')
       .select(
         `
         student_id,
+        enrollment_date,
+        end_date,
         student:profiles!student_id(id, full_name, student_code)
       `
       )
       .eq('class_id', classId)
-      .eq('status', 'enrolled');
+      .lte('enrollment_date', lastPeriodEnd)
+      .or(`end_date.is.null,end_date.gte.${firstPeriodStart}`)
+      .is('deleted_at', null);
 
     if (enrollError) {
       throw new Error(`Failed to fetch enrollments: ${enrollError.message}`);
     }
 
-    const students = (enrollments || [])
-      .map((e: any) => ({
-        id: e.student.id,
-        full_name: e.student.full_name,
-        student_code: e.student.student_code,
-      }))
-      .sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
+    const students = Array.from(
+      new Map(
+        (enrollments || [])
+          .filter((e: any) =>
+            billingPeriods.some((period) => doesEnrollmentOverlapPeriod(e, period))
+          )
+          .map((e: any) => [
+            e.student.id,
+            {
+              id: e.student.id,
+              full_name: e.student.full_name,
+              student_code: e.student.student_code,
+            },
+          ])
+      ).values()
+    ).sort((a, b) => a.full_name.localeCompare(b.full_name, 'vi'));
 
     if (students.length === 0) {
       return { students: [], matrix: {} };
@@ -175,12 +208,22 @@ export class FinanceService {
     // 4. Map invoices into matrix dictionary
     // Structure: { [studentId]: { [month]: { invoiceId, status, total, paid } } }
     const matrix: Record<string, Record<string, any>> = {};
+    const enrollmentPeriodsByStudent = new Map<string, any[]>();
+    (enrollments || []).forEach((enrollment: any) => {
+      const periods = enrollmentPeriodsByStudent.get(enrollment.student_id) || [];
+      periods.push(enrollment);
+      enrollmentPeriodsByStudent.set(enrollment.student_id, periods);
+    });
 
     // Initialize student rows
     students.forEach((s) => {
       const studentMap: Record<string, any> = {};
       months.forEach((m) => {
-        studentMap[m] = { status: 'not_created' };
+        const billingPeriod = getCalendarMonthPeriod(m);
+        const isApplicable = (enrollmentPeriodsByStudent.get(s.id) || []).some((enrollment) =>
+          doesEnrollmentOverlapPeriod(enrollment, billingPeriod)
+        );
+        studentMap[m] = { status: isApplicable ? 'not_created' : 'not_applicable' };
       });
       matrix[s.id] = studentMap;
     });
@@ -244,6 +287,63 @@ export class FinanceService {
     academicYearId: string,
     updates: Array<{ studentId: string; month: string; paid: boolean }>
   ): Promise<{ success: boolean; updatedCount: number }> {
+    const studentIds = [...new Set(updates.map((update) => update.studentId))];
+    const months = [...new Set(updates.map((update) => update.month))];
+    const billingPeriods = months.map(getCalendarMonthPeriod);
+
+    if (updates.length === 0 || billingPeriods.length === 0) {
+      throw new ValidationError('Cần có ít nhất một thay đổi học phí');
+    }
+
+    if (updates.some((update) => !update.paid)) {
+      throw new ValidationError(
+        'Không thể bỏ trạng thái đã đóng tại bảng học phí. Hãy dùng nghiệp vụ hoàn tiền và ghi rõ lý do để giữ lịch sử giao dịch'
+      );
+    }
+
+    const firstPeriodStart = billingPeriods.reduce(
+      (earliest, period) => (period.start < earliest ? period.start : earliest),
+      billingPeriods[0]!.start
+    );
+    const lastPeriodEnd = billingPeriods.reduce(
+      (latest, period) => (period.end > latest ? period.end : latest),
+      billingPeriods[0]!.end
+    );
+
+    const { data: enrollments, error: enrollmentsError } = await this.supabase
+      .from('enrollments')
+      .select('student_id, enrollment_date, end_date')
+      .eq('class_id', classId)
+      .in('student_id', studentIds)
+      .lte('enrollment_date', lastPeriodEnd)
+      .or(`end_date.is.null,end_date.gte.${firstPeriodStart}`)
+      .is('deleted_at', null);
+
+    if (enrollmentsError) {
+      throw new Error(`Failed to validate enrollments: ${enrollmentsError.message}`);
+    }
+
+    const enrollmentPeriodsByStudent = new Map<string, any[]>();
+    (enrollments || []).forEach((enrollment) => {
+      const periods = enrollmentPeriodsByStudent.get(enrollment.student_id) || [];
+      periods.push(enrollment);
+      enrollmentPeriodsByStudent.set(enrollment.student_id, periods);
+    });
+
+    const invalidUpdate = updates.find((update) => {
+      const billingPeriod = getCalendarMonthPeriod(update.month);
+      return !(enrollmentPeriodsByStudent.get(update.studentId) || []).some((enrollment) =>
+        doesEnrollmentOverlapPeriod(enrollment, billingPeriod)
+      );
+    });
+
+    if (invalidUpdate) {
+      const monthLabel = `${Number(invalidUpdate.month.slice(5, 7))}/${invalidUpdate.month.slice(0, 4)}`;
+      throw new ValidationError(
+        `Không thể cập nhật học phí tháng ${monthLabel}: học sinh không học lớp này trong tháng đó`
+      );
+    }
+
     // 1. Get default invoice details
     const monthlyFee = await this.determineMonthlyFee(classId, academicYearId);
 
@@ -261,8 +361,6 @@ export class FinanceService {
       throw new Error('Cash payment method is not configured in payment_methods table');
     }
 
-    const studentIds = [...new Set(updates.map((update) => update.studentId))];
-    const months = [...new Set(updates.map((update) => update.month))];
     const existingInvoices = new Map<
       string,
       { id: string; total_amount: number; paid_amount: number; status: string }
@@ -326,55 +424,6 @@ export class FinanceService {
             });
             updatedCount++;
           }
-        } else if (!paid && existingInvoice.status === 'paid') {
-          // Revert payment: Set paid_amount to 0, status to pending, and delete payment allocations/records
-          // 1. Delete allocations
-          await this.supabase
-            .from('payment_allocations')
-            .delete()
-            .eq('invoice_id', existingInvoice.id);
-
-          // 2. Delete payment records for this invoice
-          await this.supabase.from('payments').delete().eq('invoice_id', existingInvoice.id);
-
-          // 3. Update invoice status
-          await this.supabase
-            .from('invoices')
-            .update({
-              paid_amount: 0,
-              status: 'pending',
-            })
-            .eq('id', existingInvoice.id);
-
-          // 4. Update student account balance
-          const { data: account } = await this.supabase
-            .from('student_accounts')
-            .select('*')
-            .eq('student_id', studentId)
-            .eq('academic_year_id', academicYearId)
-            .maybeSingle();
-
-          if (account) {
-            const newTotalPaid = Math.max(
-              0,
-              Number(account.total_paid) - Number(existingInvoice.total_amount)
-            );
-            const newBalance = Number(account.balance) + Number(existingInvoice.total_amount);
-
-            await this.supabase
-              .from('student_accounts')
-              .update({
-                total_paid: newTotalPaid,
-                balance: newBalance,
-              })
-              .eq('id', account.id);
-          }
-          existingInvoices.set(`${studentId}:${month}`, {
-            ...existingInvoice,
-            paid_amount: 0,
-            status: 'pending',
-          });
-          updatedCount++;
         }
       } else {
         // If invoice doesn't exist and we want to set it to paid/unpaid
@@ -444,18 +493,35 @@ export class FinanceService {
     const monthlyFee =
       amount !== undefined ? amount : await this.determineMonthlyFee(classId, academicYearId);
 
-    // 3. Fetch active student enrollments
-    const { data: enrollments } = await this.supabase
-      .from('enrollments')
-      .select('student_id')
-      .eq('class_id', classId)
-      .eq('status', 'enrolled');
+    const billingPeriod = getCalendarMonthPeriod(month);
 
-    if (!enrollments || enrollments.length === 0) {
+    // 3. Include every enrollment overlapping this month, including students
+    // who have since left or transferred. Exclude students who join later.
+    const { data: enrollments, error: enrollmentsError } = await this.supabase
+      .from('enrollments')
+      .select('student_id, enrollment_date, end_date')
+      .eq('class_id', classId)
+      .lte('enrollment_date', billingPeriod.end)
+      .or(`end_date.is.null,end_date.gte.${billingPeriod.start}`)
+      .is('deleted_at', null);
+
+    if (enrollmentsError) {
+      throw new Error(`Failed to fetch enrollments: ${enrollmentsError.message}`);
+    }
+
+    const billableEnrollments = Array.from(
+      new Map(
+        (enrollments || [])
+          .filter((enrollment) => doesEnrollmentOverlapPeriod(enrollment, billingPeriod))
+          .map((enrollment) => [enrollment.student_id, enrollment])
+      ).values()
+    );
+
+    if (billableEnrollments.length === 0) {
       return { success: true, generatedCount: 0 };
     }
 
-    const studentIds = enrollments.map((enrollment) => enrollment.student_id);
+    const studentIds = billableEnrollments.map((enrollment) => enrollment.student_id);
     let { data: existingInvoices, error: invoicesError } = await this.supabase
       .from('invoices')
       .select('student_id')
@@ -484,7 +550,7 @@ export class FinanceService {
     );
     let generatedCount = 0;
 
-    for (const enrollment of enrollments) {
+    for (const enrollment of billableEnrollments) {
       const studentId = enrollment.student_id;
 
       if (!invoicedStudentIds.has(studentId)) {

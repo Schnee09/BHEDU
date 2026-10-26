@@ -44,7 +44,14 @@ interface StudentRow {
 
 interface MatrixCell {
   invoiceId?: string;
-  status: 'not_created' | 'pending' | 'partial' | 'paid' | 'overdue' | 'cancelled';
+  status:
+    | 'not_applicable'
+    | 'not_created'
+    | 'pending'
+    | 'partial'
+    | 'paid'
+    | 'overdue'
+    | 'cancelled';
   total?: number;
   paid?: number;
 }
@@ -156,7 +163,20 @@ function TuitionMatrixContent() {
     setPendingUpdates({});
   }, [selectedClass, selectedYear]);
 
-  const handleCheckboxChange = (studentId: string, month: string, currentPaid: boolean) => {
+  const handleCheckboxChange = (
+    studentId: string,
+    month: string,
+    currentPaid: boolean,
+    originallyPaid: boolean
+  ) => {
+    if (originallyPaid) {
+      toast.error(
+        'Không thể bỏ trạng thái đã đóng',
+        'Khoản đã ghi nhận phải được xử lý bằng nghiệp vụ hoàn tiền để giữ lịch sử giao dịch.'
+      );
+      return;
+    }
+
     const key = `${studentId}_${month}`;
     const newPaidValue = !currentPaid;
 
@@ -506,6 +526,7 @@ function TuitionMatrixContent() {
                         {months.map((month) => {
                           const updateKey = `${student.id}_${month}`;
                           const cell = matrix[student.id]?.[month] || { status: 'not_created' };
+                          const isApplicable = cell.status !== 'not_applicable';
 
                           const isOriginallyPaid = cell.status === 'paid';
                           const isCurrentlyPaid =
@@ -519,38 +540,59 @@ function TuitionMatrixContent() {
                             <td
                               key={month}
                               onClick={() =>
-                                handleCheckboxChange(student.id, month, isCurrentlyPaid)
+                                isApplicable &&
+                                handleCheckboxChange(
+                                  student.id,
+                                  month,
+                                  isCurrentlyPaid,
+                                  isOriginallyPaid
+                                )
+                              }
+                              title={
+                                isApplicable ? undefined : 'Học sinh không học lớp này trong tháng'
                               }
                               className={cn(
-                                'px-2 sm:px-4 py-2.5 sm:py-3 text-center cursor-pointer select-none transition-all border-r border-stone-100 dark:border-stone-800/60 last:border-r-0',
-                                isChanged
-                                  ? 'bg-amber-500/10 dark:bg-amber-500/15 ring-1 ring-inset ring-amber-500/40'
-                                  : isCurrentlyPaid
-                                    ? 'bg-emerald-500/5 dark:bg-emerald-500/10 hover:bg-emerald-500/10'
-                                    : 'hover:bg-stone-100/70 dark:hover:bg-white/5'
+                                'px-2 sm:px-4 py-2.5 sm:py-3 text-center select-none transition-all border-r border-stone-100 dark:border-stone-800/60 last:border-r-0',
+                                !isApplicable
+                                  ? 'cursor-not-allowed bg-stone-100/70 dark:bg-stone-900/70'
+                                  : isChanged
+                                    ? 'bg-amber-500/10 dark:bg-amber-500/15 ring-1 ring-inset ring-amber-500/40'
+                                    : isCurrentlyPaid
+                                      ? 'cursor-pointer bg-emerald-500/5 dark:bg-emerald-500/10 hover:bg-emerald-500/10'
+                                      : 'cursor-pointer hover:bg-stone-100/70 dark:hover:bg-white/5'
                               )}
                             >
                               <div className="flex flex-col items-center justify-center gap-1 py-1">
                                 <div
                                   className={cn(
                                     'w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-2xs',
-                                    isCurrentlyPaid
-                                      ? 'bg-emerald-500 text-white shadow-emerald-500/20'
-                                      : 'border-2 border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900'
+                                    !isApplicable
+                                      ? 'border border-dashed border-stone-300 dark:border-stone-700 bg-transparent'
+                                      : isCurrentlyPaid
+                                        ? 'bg-emerald-500 text-white shadow-emerald-500/20'
+                                        : 'border-2 border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900'
                                   )}
                                 >
-                                  {isCurrentlyPaid && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                  {isApplicable && isCurrentlyPaid && (
+                                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                  )}
                                 </div>
 
                                 <span
                                   className={cn(
                                     'text-[9px] sm:text-[10px] font-bold tracking-tight',
-                                    isCurrentlyPaid
-                                      ? 'text-emerald-600 dark:text-emerald-400'
-                                      : 'text-stone-400 dark:text-stone-500'
+                                    !isApplicable
+                                      ? 'text-stone-400 dark:text-stone-600'
+                                      : isCurrentlyPaid
+                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                        : 'text-stone-400 dark:text-stone-500'
                                   )}
                                 >
-                                  {isCurrentlyPaid ? 'Đã đóng' : 'Chưa'}
+                                  {!isApplicable
+                                    ? 'Không học'
+                                    : isCurrentlyPaid
+                                      ? 'Đã đóng'
+                                      : 'Chưa'}
                                 </span>
                               </div>
                             </td>
@@ -570,10 +612,12 @@ function TuitionMatrixContent() {
               {students.map((student) => {
                 // Calculate paid count for summary
                 let paidMonthsCount = 0;
+                let applicableMonthsCount = 0;
                 months.forEach((month) => {
                   const updateKey = `${student.id}_${month}`;
                   const cell = matrix[student.id]?.[month] || { status: 'not_created' };
                   const isOriginallyPaid = cell.status === 'paid';
+                  if (cell.status !== 'not_applicable') applicableMonthsCount++;
                   const isCurrentlyPaid =
                     pendingUpdates[updateKey] !== undefined
                       ? pendingUpdates[updateKey]
@@ -604,14 +648,14 @@ function TuitionMatrixContent() {
                       <span
                         className={cn(
                           'px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0',
-                          paidMonthsCount === months.length
+                          applicableMonthsCount > 0 && paidMonthsCount === applicableMonthsCount
                             ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
                             : paidMonthsCount > 0
                               ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
                               : 'bg-stone-100 dark:bg-white/5 text-stone-500'
                         )}
                       >
-                        Đã nộp {paidMonthsCount}/{months.length}
+                        Đã nộp {paidMonthsCount}/{applicableMonthsCount}
                       </span>
                     </div>
 
@@ -621,6 +665,7 @@ function TuitionMatrixContent() {
                         const date = new Date(month);
                         const updateKey = `${student.id}_${month}`;
                         const cell = matrix[student.id]?.[month] || { status: 'not_created' };
+                        const isApplicable = cell.status !== 'not_applicable';
 
                         const isOriginallyPaid = cell.status === 'paid';
                         const isCurrentlyPaid =
@@ -633,27 +678,43 @@ function TuitionMatrixContent() {
                         return (
                           <button
                             key={month}
-                            onClick={() => handleCheckboxChange(student.id, month, isCurrentlyPaid)}
+                            onClick={() =>
+                              isApplicable &&
+                              handleCheckboxChange(
+                                student.id,
+                                month,
+                                isCurrentlyPaid,
+                                isOriginallyPaid
+                              )
+                            }
+                            disabled={!isApplicable}
+                            title={
+                              isApplicable ? undefined : 'Học sinh không học lớp này trong tháng'
+                            }
                             className={cn(
-                              'p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer',
-                              isChanged
-                                ? 'bg-amber-500/15 border-amber-500/40 text-amber-800 dark:text-amber-300 ring-1 ring-amber-500/40'
-                                : isCurrentlyPaid
-                                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
-                                  : 'bg-stone-50 dark:bg-stone-900/60 border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400'
+                              'p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all',
+                              !isApplicable
+                                ? 'cursor-not-allowed border-dashed border-stone-200 bg-stone-100/70 text-stone-400 opacity-70 dark:border-stone-800 dark:bg-stone-900/70'
+                                : isChanged
+                                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-800 dark:text-amber-300 ring-1 ring-amber-500/40'
+                                  : isCurrentlyPaid
+                                    ? 'cursor-pointer active:scale-95 bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                                    : 'cursor-pointer active:scale-95 bg-stone-50 dark:bg-stone-900/60 border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400'
                             )}
                           >
                             <span className="text-[11px] font-black">
                               T{date.getMonth() + 1}/{date.getFullYear()}
                             </span>
                             <div className="flex items-center gap-1">
-                              {isCurrentlyPaid ? (
+                              {!isApplicable ? (
+                                <span className="text-stone-400">—</span>
+                              ) : isCurrentlyPaid ? (
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                               ) : (
                                 <Clock className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                               )}
                               <span className="text-[10px] font-bold">
-                                {isCurrentlyPaid ? 'Đã đóng' : 'Chưa'}
+                                {!isApplicable ? 'Không học' : isCurrentlyPaid ? 'Đã đóng' : 'Chưa'}
                               </span>
                             </div>
                           </button>

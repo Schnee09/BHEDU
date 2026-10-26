@@ -46,6 +46,92 @@ export const recordPaymentSchema = z.object({
   notes: z.string().max(500).optional().nullable(),
 });
 
+export const receiveStudentPaymentSchema = recordPaymentSchema
+  .omit({ invoice_id: true })
+  .extend({
+    allocations: z
+      .array(
+        z.object({
+          invoice_id: uuidSchema,
+          amount: z.number().positive('Allocation amount must be positive'),
+        })
+      )
+      .max(100, 'At most 100 allocations are allowed')
+      .optional()
+      .default([]),
+  })
+  .superRefine((value, context) => {
+    const seen = new Set<string>();
+    let allocated = 0;
+    value.allocations.forEach((allocation, index) => {
+      allocated += allocation.amount;
+      if (seen.has(allocation.invoice_id)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Duplicate invoice allocation',
+          path: ['allocations', index, 'invoice_id'],
+        });
+      }
+      seen.add(allocation.invoice_id);
+    });
+    if (allocated > value.amount) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Allocated amount cannot exceed payment amount',
+        path: ['allocations'],
+      });
+    }
+  });
+
+export const allocatePaymentSchema = z.object({
+  allocations: z
+    .array(
+      z.object({
+        invoice_id: uuidSchema,
+        amount: z.number().positive('Allocation amount must be positive'),
+      })
+    )
+    .min(1, 'At least one allocation is required')
+    .max(100)
+    .superRefine((allocations, context) => {
+      const seen = new Set<string>();
+      allocations.forEach((allocation, index) => {
+        if (seen.has(allocation.invoice_id)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Duplicate invoice allocation',
+            path: [index, 'invoice_id'],
+          });
+        }
+        seen.add(allocation.invoice_id);
+      });
+    }),
+});
+
+export const confirmBankTransactionSchema = z.object({
+  student_id: uuidSchema,
+  payment_method_id: uuidSchema,
+  allocations: z
+    .array(
+      z.object({
+        invoice_id: uuidSchema,
+        amount: z.number().positive('Số tiền phân bổ phải lớn hơn 0'),
+      })
+    )
+    .max(100, 'Tối đa 100 khoản phân bổ')
+    .optional()
+    .default([]),
+  notes: z.string().trim().max(500, 'Ghi chú tối đa 500 ký tự').optional().nullable(),
+});
+
+export const ignoreBankTransactionSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(3, 'Lý do cần có ít nhất 3 ký tự')
+    .max(300, 'Lý do tối đa 300 ký tự'),
+});
+
 // Schema for bulk updating the tuition payment matrix
 export const tuitionMatrixUpdateItemSchema = z.object({
   studentId: uuidSchema,

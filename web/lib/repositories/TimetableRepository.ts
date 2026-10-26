@@ -1,6 +1,12 @@
 import { BaseRepository } from './base';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { CreateTimetableSlotInput, UpdateTimetableSlotInput } from '@/lib/schemas';
+import {
+  addDaysToDateOnly,
+  getCurrentDateOnly,
+  getWeekPeriodContaining,
+  isEnrollmentEffectiveOn,
+} from '@/lib/enrollments/effectiveDates';
 
 export interface TimetableSlot {
   id: string;
@@ -221,6 +227,7 @@ export class TimetableRepository extends BaseRepository<
 
     // Student Conflict (Prevent student double-booking across both Tutoring AND Regular Classes)
     if (data.student_id) {
+      const today = getCurrentDateOnly();
       const { data: activeSemester } = await this.supabase
         .from('semesters')
         .select('id')
@@ -228,11 +235,15 @@ export class TimetableRepository extends BaseRepository<
         .maybeSingle();
 
       // 1. Fetch any regular classes the student is currently enrolled in
-      const { data: enrollments } = await this.supabase
+      const { data: enrollments, error: enrollmentsError } = await this.supabase
         .from('enrollments')
         .select('class_id, class:classes(name)')
         .eq('student_id', data.student_id)
-        .in('status', ['enrolled', 'active']);
+        .lte('enrollment_date', today)
+        .or(`end_date.is.null,end_date.gte.${today}`)
+        .is('deleted_at', null);
+
+      if (enrollmentsError) throw enrollmentsError;
 
       const classIds = enrollments?.map((e: any) => e.class_id).filter(Boolean) || [];
 
@@ -296,11 +307,14 @@ export class TimetableRepository extends BaseRepository<
 
     // Class Conflict -> Check if any enrolled student has a tutoring slot conflict
     if (data.class_id && !data.student_id) {
+      const today = getCurrentDateOnly();
       const { data: enrolledStudents } = await this.supabase
         .from('enrollments')
         .select('student_id, student:profiles!enrollments_student_id_fkey(full_name)')
         .eq('class_id', data.class_id)
-        .in('status', ['enrolled', 'active']);
+        .lte('enrollment_date', today)
+        .or(`end_date.is.null,end_date.gte.${today}`)
+        .is('deleted_at', null);
 
       if (enrolledStudents && enrolledStudents.length > 0) {
         const studentIds = enrolledStudents.map((e: any) => e.student_id).filter(Boolean);
@@ -408,15 +422,29 @@ export class TimetableRepository extends BaseRepository<
       .maybeSingle();
 
     if (role === 'student') {
-      // 1. Get Enrolled/Active Classes
-      const { data: enrollments } = await this.supabase
-        .from('enrollments')
-        .select('class_id, classes(id, name)')
-        .eq('student_id', userId)
-        .in('status', ['enrolled']); // Include 'enrolled' status
+      const today = getCurrentDateOnly();
+      const schedulePeriod = getWeekPeriodContaining(weekStartDate || today);
 
-      const classIds = enrollments?.map((e) => e.class_id) || [];
-      classes = enrollments?.map((e: any) => e.classes).filter(Boolean) || [];
+      // 1. Get Enrolled/Active Classes
+      const { data: enrollments, error: enrollmentsError } = await this.supabase
+        .from('enrollments')
+        .select('class_id, enrollment_date, end_date, classes(id, name)')
+        .eq('student_id', userId)
+        .lte('enrollment_date', schedulePeriod.end)
+        .or(`end_date.is.null,end_date.gte.${schedulePeriod.start}`)
+        .is('deleted_at', null);
+
+      if (enrollmentsError) throw enrollmentsError;
+
+      const classIds = [...new Set(enrollments?.map((e) => e.class_id) || [])];
+      classes = Array.from(
+        new Map(
+          (enrollments || [])
+            .map((enrollment: any) => enrollment.classes)
+            .filter(Boolean)
+            .map((classItem: any) => [classItem.id, classItem])
+        ).values()
+      );
 
       // 2. Query Slots (Class OR Direct Student assignment)
       let query = this.supabase
@@ -450,7 +478,20 @@ export class TimetableRepository extends BaseRepository<
 
       const { data, error } = await query;
       if (error) throw error;
-      slots = data || [];
+      const enrollmentPeriodsByClass = new Map<string, any[]>();
+      (enrollments || []).forEach((enrollment: any) => {
+        const periods = enrollmentPeriodsByClass.get(enrollment.class_id) || [];
+        periods.push(enrollment);
+        enrollmentPeriodsByClass.set(enrollment.class_id, periods);
+      });
+
+      slots = (data || []).filter((slot: any) => {
+        if (slot.student_id === userId || !slot.class_id) return true;
+        const slotDate = addDaysToDateOnly(schedulePeriod.start, slot.day_of_week);
+        return (enrollmentPeriodsByClass.get(slot.class_id) || []).some((enrollment) =>
+          isEnrollmentEffectiveOn(enrollment, slotDate)
+        );
+      });
     } else {
       // Teacher/Staff/Admin -> Get assigned slots
       let query = this.supabase
@@ -524,13 +565,6 @@ export class TimetableRepository extends BaseRepository<
    * Get ALL slots (for room view/admin)
    */
   async getAllSlots(weekStartDate?: string) {
-    // Get active semester
-    const { data: activeSemester } = await this.supabase
-      .from('semesters')
-      .select('id')
-      .eq('is_active', true)
-      .maybeSingle();
-
     const query = this.supabase
       .from('timetable_slots')
       .select(

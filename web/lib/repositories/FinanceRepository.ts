@@ -409,6 +409,49 @@ export class FinanceRepository extends BaseRepository<Invoice, any, any> {
     return payment as Payment;
   }
 
+  async receiveStudentPayment(paymentInput: {
+    student_id: string;
+    amount: number;
+    payment_method_id: string;
+    allocations?: Array<{ invoice_id: string; amount: number }>;
+    reference_number?: string | null;
+    payment_date?: string;
+    notes?: string | null;
+    received_by?: string | null;
+  }): Promise<Payment> {
+    const { data, error } = await this.supabase.rpc('record_student_payment_atomic', {
+      p_student_id: paymentInput.student_id,
+      p_amount: paymentInput.amount,
+      p_payment_method_id: paymentInput.payment_method_id,
+      p_allocations: paymentInput.allocations || [],
+      p_reference_number: paymentInput.reference_number || null,
+      p_payment_date: paymentInput.payment_date || null,
+      p_received_by: paymentInput.received_by || null,
+      p_notes: paymentInput.notes || null,
+    });
+
+    const payment = Array.isArray(data) ? data[0] : data;
+    if (error || !payment) {
+      throw new Error(`Failed to record student payment: ${error?.message || 'No data returned'}`);
+    }
+    return payment as Payment;
+  }
+
+  async allocateStudentPayment(
+    paymentId: string,
+    allocations: Array<{ invoice_id: string; amount: number }>
+  ): Promise<Payment> {
+    const { data, error } = await this.supabase.rpc('allocate_student_payment_atomic', {
+      p_payment_id: paymentId,
+      p_allocations: allocations,
+    });
+    const payment = Array.isArray(data) ? data[0] : data;
+    if (error || !payment) {
+      throw new Error(`Failed to allocate payment: ${error?.message || 'No data returned'}`);
+    }
+    return payment as Payment;
+  }
+
   /**
    * Fetch invoice list with filters
    */

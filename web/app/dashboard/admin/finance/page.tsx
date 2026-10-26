@@ -6,6 +6,9 @@ import Icons from '@/components/ui/Icons';
 import { Button } from '@/components/ui';
 import Badge from '@/components/ui/badge';
 import PageGuard from '@/components/PageGuard';
+import ReceivePaymentDialog from '@/components/finance/ReceivePaymentDialog';
+import BankStatementImportDialog from '@/components/finance/BankStatementImportDialog';
+import BankReconciliationPanel from '@/components/finance/BankReconciliationPanel';
 import { useFetch } from '@/hooks/useFetch';
 import {
   BarChart,
@@ -68,7 +71,12 @@ interface PaymentRecord {
   reference_number: string | null;
   student: { id: string; full_name: string; student_code: string | null };
   payment_method: { id: string; name: string; type: string } | null;
-  invoice: { id: string; invoice_number: string; total_amount: number };
+  invoice: { id: string; invoice_number: string; total_amount: number } | null;
+  allocations: Array<{
+    id: string;
+    amount: number;
+    invoice: { id: string; invoice_number: string } | null;
+  }>;
   refunds: Array<{ id: string; refund_number: string; amount: number; reason: string }>;
 }
 
@@ -83,7 +91,9 @@ export default function FinanceDashboardPage() {
 function FinanceDashboardContent() {
   const [mounted, setMounted] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'payments'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'invoices' | 'payments' | 'reconciliation'
+  >('overview');
 
   useEffect(() => {
     setMounted(true);
@@ -106,6 +116,8 @@ function FinanceDashboardContent() {
   const [isSubmittingBulk, setIsSubmittingBulk] = useState(false);
 
   const [showPayModal, setShowPayModal] = useState(false);
+  const [showReceivePayment, setShowReceivePayment] = useState(false);
+  const [showStatementImport, setShowStatementImport] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [payAmount, setPayAmount] = useState('');
   const [payMethod, setPayMethod] = useState('');
@@ -388,6 +400,23 @@ Trung tâm xin gửi thông báo học phí:
           </select>
 
           <Button
+            onClick={() => setShowStatementImport(true)}
+            variant="outline"
+            className="rounded-xl text-sm font-bold flex items-center gap-2"
+          >
+            <Icons.Upload className="w-4 h-4" />
+            Nhập sao kê
+          </Button>
+
+          <Button
+            onClick={() => setShowReceivePayment(true)}
+            className="bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-xl text-sm font-bold flex items-center gap-2"
+          >
+            <Icons.Finance className="w-4 h-4" />
+            Ghi nhận khoản thu
+          </Button>
+
+          <Button
             onClick={() => setShowBulkGenModal(true)}
             className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold flex items-center gap-2"
           >
@@ -403,6 +432,19 @@ Trung tâm xin gửi thông báo học phí:
           </a>
         </div>
       </div>
+
+      <ReceivePaymentDialog
+        open={showReceivePayment}
+        academicYearId={selectedYear}
+        paymentMethods={paymentMethods}
+        onClose={() => setShowReceivePayment(false)}
+        onSuccess={refreshAll}
+      />
+      <BankStatementImportDialog
+        open={showStatementImport}
+        onClose={() => setShowStatementImport(false)}
+        onSuccess={refreshAll}
+      />
 
       {/* Tabs */}
       <div className="flex gap-4 border-b border-stone-200 dark:border-white/10">
@@ -435,6 +477,16 @@ Trung tâm xin gửi thông báo học phí:
           }`}
         >
           Phiếu thu & hoàn tiền
+        </button>
+        <button
+          onClick={() => setActiveTab('reconciliation')}
+          className={`pb-4 px-2 font-bold text-sm uppercase tracking-wider border-b-2 transition-all ${
+            activeTab === 'reconciliation'
+              ? 'border-emerald-600 text-emerald-600'
+              : 'border-transparent text-stone-500 hover:text-stone-700'
+          }`}
+        >
+          Đối soát ngân hàng
         </button>
       </div>
 
@@ -759,7 +811,7 @@ Trung tâm xin gửi thông báo học phí:
             )}
           </Card>
         </div>
-      ) : (
+      ) : activeTab === 'payments' ? (
         <div className="space-y-6 animate-fadeIn">
           <Card className="glass-crystal overflow-hidden rounded-3xl p-6">
             <div className="mb-5 flex items-center justify-between gap-4">
@@ -780,8 +832,8 @@ Trung tâm xin gửi thông báo học phí:
                 <thead>
                   <tr className="text-left text-xs font-bold uppercase tracking-wider text-stone-500">
                     <th className="px-4 py-3">Số phiếu</th>
-                    <th className="px-4 py-3">Học viên</th>
-                    <th className="px-4 py-3">Hóa đơn</th>
+                    <th className="px-4 py-3">Học sinh</th>
+                    <th className="px-4 py-3">Phân bổ</th>
                     <th className="px-4 py-3">Ngày thu</th>
                     <th className="px-4 py-3">Phương thức</th>
                     <th className="px-4 py-3 text-right">Đã thu</th>
@@ -800,6 +852,11 @@ Trung tâm xin gửi thông báo học phí:
                     payments.map((payment) => {
                       const refundable =
                         Number(payment.amount) - Number(payment.refunded_amount || 0);
+                      const allocated = (payment.allocations || []).reduce(
+                        (sum, allocation) => sum + Number(allocation.amount),
+                        0
+                      );
+                      const unallocated = Math.max(0, refundable - allocated);
                       return (
                         <tr key={payment.id} className="hover:bg-stone-50/60 dark:hover:bg-white/5">
                           <td className="px-4 py-3 text-sm font-bold">
@@ -811,8 +868,17 @@ Trung tâm xin gửi thông báo học phí:
                               {payment.student?.student_code || '—'}
                             </p>
                           </td>
-                          <td className="px-4 py-3 text-xs font-mono text-stone-600 dark:text-stone-300">
-                            {payment.invoice?.invoice_number}
+                          <td className="px-4 py-3 text-xs text-stone-600 dark:text-stone-300">
+                            <p className="font-bold">{payment.allocations?.length || 0} khoản</p>
+                            {unallocated > 0 ? (
+                              <p className="mt-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 font-bold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                                Chưa phân bổ ₫{unallocated.toLocaleString('vi-VN')}
+                              </p>
+                            ) : (
+                              <p className="mt-1 text-emerald-600 dark:text-emerald-400">
+                                Đã phân bổ đủ
+                              </p>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-sm text-stone-500">
                             {new Date(payment.payment_date).toLocaleDateString('vi-VN')}
@@ -869,6 +935,8 @@ Trung tâm xin gửi thông báo học phí:
             )}
           </Card>
         </div>
+      ) : (
+        <BankReconciliationPanel />
       )}
 
       {/* Modal 1: Bulk Generate Invoices */}

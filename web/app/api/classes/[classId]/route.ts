@@ -10,6 +10,7 @@ import { ClassRepository } from '@/lib/repositories/ClassRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { canAccessClass } from '@/lib/auth/classAccess';
+import { getCurrentDateOnly, isValidDateOnly } from '@/lib/enrollments/effectiveDates';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,13 @@ export async function GET(
     }
 
     const includeStudents = request.nextUrl.searchParams.get('include_students') === 'true';
+    const rosterDate = request.nextUrl.searchParams.get('date') || getCurrentDateOnly();
+    if (!isValidDateOnly(rosterDate)) {
+      return NextResponse.json(
+        { error: 'date must use a valid YYYY-MM-DD format' },
+        { status: 400 }
+      );
+    }
     const includeTimetable = request.nextUrl.searchParams.get('include_timetable') === 'true';
 
     const supabase = createServiceClient();
@@ -79,9 +87,12 @@ export async function GET(
         supabase
           .from('enrollments')
           .select(
-            'id, student_id, status, enrollment_date, student:profiles!enrollments_student_id_fkey(id, email, full_name, student_code, grade_level)'
+            'id, student_id, status, enrollment_date, end_date, student:profiles!enrollments_student_id_fkey(id, email, full_name, student_code, grade_level)'
           )
           .eq('class_id', classId)
+          .lte('enrollment_date', rosterDate)
+          .or(`end_date.is.null,end_date.gte.${rosterDate}`)
+          .is('deleted_at', null)
           .then((res) => res) as Promise<any>
       );
     } else {
@@ -123,6 +134,7 @@ export async function GET(
           student_id: e.student_id,
           enrollment_id: e.id,
           enrollment_date: e.enrollment_date,
+          end_date: e.end_date,
           status: e.status || 'enrolled',
           ...(e.student || {}),
         }))

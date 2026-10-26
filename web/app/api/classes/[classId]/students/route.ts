@@ -10,6 +10,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { teacherAuth } from '@/lib/auth/adminAuth';
 import { logger } from '@/lib/logger';
 import { canAccessClass } from '@/lib/auth/classAccess';
+import { getCurrentDateOnly, isValidDateOnly } from '@/lib/enrollments/effectiveDates';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ classId: string }> }) {
   try {
@@ -21,6 +22,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
 
     const supabase = createServiceClient();
     const { classId } = await params;
+    const date = req.nextUrl.searchParams.get('date') || getCurrentDateOnly();
+    if (!isValidDateOnly(date)) {
+      return NextResponse.json(
+        { error: 'date must use a valid YYYY-MM-DD format' },
+        { status: 400 }
+      );
+    }
 
     const canViewClass = await canAccessClass(
       supabase,
@@ -40,6 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
         student_id,
         status,
         enrollment_date,
+        end_date,
         profiles:student_id (
           id,
           email,
@@ -49,8 +58,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
         )
       `
       )
-      .eq('class_id', classId);
-    // Note: Include all statuses, not just active - let frontend filter if needed
+      .eq('class_id', classId)
+      .lte('enrollment_date', date)
+      .or(`end_date.is.null,end_date.gte.${date}`)
+      .is('deleted_at', null);
 
     if (enrollError) {
       logger.error('Failed to fetch enrollments', {
@@ -73,6 +84,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
           user_id: studentUuid,
           enrollment_id: e.id,
           enrollment_date: e.enrollment_date,
+          end_date: e.end_date,
           status: e.status || 'enrolled',
           full_name: profile.full_name,
           email: profile.email,
