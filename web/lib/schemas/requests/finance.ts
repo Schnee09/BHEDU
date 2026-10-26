@@ -184,10 +184,10 @@ export const studentTuitionDiscountSchema = z
     class_id: uuidSchema,
     academic_year_id: uuidSchema,
     discount_type: z.enum(['percentage', 'fixed']),
-    discount_value: z.number().nonnegative('Discount value must be non-negative'),
+    discount_value: z.number().positive('Discount value must be greater than zero'),
     effective_from: dateStringSchema,
     effective_to: dateStringSchema.optional().nullable(),
-    reason: z.string().max(500).optional().nullable(),
+    reason: z.string().trim().min(3, 'Discount reason must contain at least 3 characters').max(500),
     is_active: z.boolean().optional().default(true),
   })
   .refine((value) => value.discount_type !== 'percentage' || value.discount_value <= 100, {

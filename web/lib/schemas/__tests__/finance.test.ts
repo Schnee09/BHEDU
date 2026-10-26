@@ -73,6 +73,24 @@ describe('finance configuration schemas', () => {
     ).toBe(false);
   });
 
+  it('requires a positive discount and an auditable reason', () => {
+    const discount = {
+      ...ids,
+      discount_type: 'fixed' as const,
+      discount_value: 200_000,
+      effective_from: '2026-09-01',
+      reason: 'Ưu đãi anh chị em cùng học',
+    };
+
+    expect(studentTuitionDiscountSchema.safeParse(discount).success).toBe(true);
+    expect(studentTuitionDiscountSchema.safeParse({ ...discount, discount_value: 0 }).success).toBe(
+      false
+    );
+    expect(studentTuitionDiscountSchema.safeParse({ ...discount, reason: '  ' }).success).toBe(
+      false
+    );
+  });
+
   it('requires a positive refund and an auditable reason', () => {
     expect(refundPaymentSchema.safeParse({ amount: 500_000, reason: 'Thu nhầm' }).success).toBe(
       true
@@ -81,7 +99,7 @@ describe('finance configuration schemas', () => {
   });
 
   it('requires a cancellation reason', () => {
-    expect(cancelInvoiceSchema.safeParse({ reason: 'Học viên chuyển lớp' }).success).toBe(true);
+    expect(cancelInvoiceSchema.safeParse({ reason: 'Học sinh chuyển lớp' }).success).toBe(true);
     expect(cancelInvoiceSchema.safeParse({ reason: '  ' }).success).toBe(false);
   });
 

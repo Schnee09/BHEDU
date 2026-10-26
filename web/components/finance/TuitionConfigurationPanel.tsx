@@ -192,7 +192,7 @@ export default function TuitionConfigurationPanel(props: Props) {
                   discount_type: discountType,
                   discount_value: Number(discountValue),
                   effective_from: discountDate,
-                  reason: reason || null,
+                  reason,
                   is_active: true,
                 },
                 'discount'
@@ -257,13 +257,15 @@ export default function TuitionConfigurationPanel(props: Props) {
                 />
               </label>
               <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
-                Lý do
+                Lý do ưu đãi
                 <input
+                  required
+                  minLength={3}
                   maxLength={500}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   className={inputClass}
-                  placeholder="VD: Anh chị em"
+                  placeholder="VD: Ưu đãi anh chị em cùng học"
                 />
               </label>
             </div>
