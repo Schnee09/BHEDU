@@ -9,6 +9,7 @@ import PageGuard from '@/components/PageGuard';
 import ReceivePaymentDialog from '@/components/finance/ReceivePaymentDialog';
 import BankStatementImportDialog from '@/components/finance/BankStatementImportDialog';
 import BankReconciliationPanel from '@/components/finance/BankReconciliationPanel';
+import FinanceWorkQueue from '@/components/finance/FinanceWorkQueue';
 import { useFetch } from '@/hooks/useFetch';
 import {
   BarChart,
@@ -492,6 +493,15 @@ Trung tâm xin gửi thông báo học phí:
 
       {activeTab === 'overview' ? (
         <div className="space-y-12 animate-fadeIn">
+          <FinanceWorkQueue
+            academicYearId={selectedYear}
+            onOpenReconciliation={() => setActiveTab('reconciliation')}
+            onOpenPayments={() => setActiveTab('payments')}
+            onOpenInvoices={() => {
+              setSelectedStatus('overdue');
+              setActiveTab('invoices');
+            }}
+          />
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <Card className="glass-crystal rounded-3xl p-6 border-l-4 border-l-blue-500">
