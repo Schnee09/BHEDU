@@ -489,10 +489,6 @@ export class FinanceService {
       throw new NotFoundError('Lớp học không tồn tại');
     }
 
-    // 2. Determine monthly fee if not overridden
-    const monthlyFee =
-      amount !== undefined ? amount : await this.determineMonthlyFee(classId, academicYearId);
-
     const billingPeriod = getCalendarMonthPeriod(month);
 
     // 3. Include every enrollment overlapping this month, including students
@@ -565,7 +561,10 @@ export class FinanceService {
           academic_year_id: academicYearId,
           billing_period: month,
           due_date: dueDate,
-          gross_amount: monthlyFee,
+          // Leave this empty unless the operator explicitly overrides the amount.
+          // The transaction RPC then selects the effective-dated class rate and
+          // applies the student's effective discount for this billing period.
+          gross_amount: amount,
           description: finalDesc,
           notes: `Hóa đơn hàng loạt tạo cho lớp ${classObj.name}`,
         });

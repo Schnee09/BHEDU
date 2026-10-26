@@ -29,6 +29,32 @@ describe('FinanceRepository atomic operations', () => {
     });
   });
 
+  it('lets the transaction RPC resolve the effective tuition rate when no override is supplied', async () => {
+    const invoice = { id: 'invoice-2', class_id: 'class-1', billing_period: '2026-10-01' };
+    const rpc = jest.fn().mockResolvedValue({ data: invoice, error: null });
+    const repository = new FinanceRepository({ rpc } as any);
+
+    await repository.createMonthlyTuitionInvoice({
+      student_id: 'student-1',
+      class_id: 'class-1',
+      academic_year_id: 'year-1',
+      billing_period: '2026-10-01',
+      due_date: '2026-10-15',
+    });
+
+    expect(rpc).toHaveBeenCalledWith('create_monthly_tuition_invoice', {
+      p_student_id: 'student-1',
+      p_class_id: 'class-1',
+      p_academic_year_id: 'year-1',
+      p_billing_period: '2026-10-01',
+      p_due_date: '2026-10-15',
+      p_gross_amount: null,
+      p_discount_amount: null,
+      p_description: null,
+      p_notes: null,
+    });
+  });
+
   it('records a payment through the transaction RPC and accepts row arrays', async () => {
     const payment = { id: 'payment-1', receipt_number: 'BH-PT-2026-000001' };
     const rpc = jest.fn().mockResolvedValue({ data: [payment], error: null });
