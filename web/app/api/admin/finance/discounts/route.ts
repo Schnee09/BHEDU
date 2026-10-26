@@ -31,19 +31,28 @@ export const POST = createApiHandler(
   { permission: 'finance.manage', bodySchema: studentTuitionDiscountSchema },
   async ({ body, user }) => {
     const supabase = createServiceClient();
-    const { data: enrollment, error: enrollmentError } = await supabase
+    let enrollmentQuery = supabase
       .from('enrollments')
       .select('id')
       .eq('student_id', body.student_id)
       .eq('class_id', body.class_id)
-      .eq('status', 'enrolled')
-      .maybeSingle();
+      .is('deleted_at', null)
+      .or(`end_date.is.null,end_date.gte.${body.effective_from}`)
+      .limit(1);
+
+    if (body.effective_to) {
+      enrollmentQuery = enrollmentQuery.lte('enrollment_date', body.effective_to);
+    }
+
+    const { data: enrollment, error: enrollmentError } = await enrollmentQuery.maybeSingle();
 
     if (enrollmentError) {
       throw new Error(`Failed to verify enrollment: ${enrollmentError.message}`);
     }
     if (!enrollment) {
-      throw new ValidationError('Student is not actively enrolled in this class');
+      throw new ValidationError(
+        'Khoảng thời gian ưu đãi không nằm trong thời gian học sinh học lớp này'
+      );
     }
 
     const { data, error } = await supabase

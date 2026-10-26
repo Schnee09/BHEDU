@@ -202,18 +202,18 @@ export default function TuitionConfigurationPanel(props: Props) {
           >
             <div className="flex items-center gap-2">
               <BadgePercent className="h-5 w-5 text-amber-600" />
-              <h3 className="font-black text-stone-900 dark:text-white">Ưu đãi học viên</h3>
+              <h3 className="font-black text-stone-900 dark:text-white">Ưu đãi học sinh</h3>
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="text-xs font-bold text-stone-700 dark:text-stone-300 sm:col-span-2">
-                Học viên
+                Học sinh
                 <select
                   required
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
                   className={inputClass}
                 >
-                  <option value="">Chọn học viên</option>
+                  <option value="">Chọn học sinh</option>
                   {students.map((student) => (
                     <option key={student.id} value={student.id}>
                       {student.full_name}
