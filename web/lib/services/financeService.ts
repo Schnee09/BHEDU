@@ -344,10 +344,8 @@ export class FinanceService {
       );
     }
 
-    // 1. Get default invoice details
-    const monthlyFee = await this.determineMonthlyFee(classId, academicYearId);
-
-    // Get cash payment method id
+    // Get cash payment method id. This matrix action explicitly records a cash
+    // receipt; other methods must use the regular payment workflow.
     const { data: paymentMethods } = await this.supabase
       .from('payment_methods')
       .select('id')
@@ -439,7 +437,6 @@ export class FinanceService {
           academic_year_id: academicYearId,
           billing_period: month,
           due_date: dueDate,
-          gross_amount: monthlyFee,
           description: `Học phí tháng ${new Date(month).getMonth() + 1}/${new Date(month).getFullYear()}`,
           notes: 'Hóa đơn học phí tự động sinh từ Portal',
         });
@@ -449,15 +446,17 @@ export class FinanceService {
           await this.financeRepository.recordInvoicePayment({
             student_id: studentId,
             invoice_id: invoice.id,
-            amount: monthlyFee,
+            // Pay the actual amount after the effective rate and student
+            // discount have been resolved atomically by the invoice RPC.
+            amount: Number(invoice.total_amount),
             payment_method_id: paymentMethodId,
-            notes: 'Thanh toán học phí qua Portal',
+            notes: 'Ghi nhận tiền mặt từ bảng học phí',
           });
         }
         existingInvoices.set(`${studentId}:${month}`, {
           id: invoice.id,
-          total_amount: monthlyFee,
-          paid_amount: paid ? monthlyFee : 0,
+          total_amount: Number(invoice.total_amount),
+          paid_amount: paid ? Number(invoice.total_amount) : 0,
           status: paid ? 'paid' : 'pending',
         });
         updatedCount++;

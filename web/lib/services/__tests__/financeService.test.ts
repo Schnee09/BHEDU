@@ -129,4 +129,76 @@ describe('FinanceService enrollment safeguards', () => {
     expect(supabase.from).toHaveBeenCalledTimes(1);
     expect(supabase.from).toHaveBeenCalledWith('enrollments');
   });
+
+  it('records the discounted invoice total instead of the gross tuition amount', async () => {
+    const enrollmentQuery = {
+      select: jest.fn(),
+      eq: jest.fn(),
+      in: jest.fn(),
+      lte: jest.fn(),
+      or: jest.fn(),
+      is: jest.fn(),
+    };
+    enrollmentQuery.select.mockReturnValue(enrollmentQuery);
+    enrollmentQuery.eq.mockReturnValue(enrollmentQuery);
+    enrollmentQuery.in.mockReturnValue(enrollmentQuery);
+    enrollmentQuery.lte.mockReturnValue(enrollmentQuery);
+    enrollmentQuery.or.mockReturnValue(enrollmentQuery);
+    enrollmentQuery.is.mockResolvedValue({
+      data: [{ student_id: 'student-1', enrollment_date: '2026-09-01', end_date: null }],
+      error: null,
+    });
+
+    const paymentMethodQuery = {
+      select: jest.fn(),
+      eq: jest.fn(),
+      limit: jest.fn(),
+    };
+    paymentMethodQuery.select.mockReturnValue(paymentMethodQuery);
+    paymentMethodQuery.eq.mockReturnValue(paymentMethodQuery);
+    paymentMethodQuery.limit.mockResolvedValue({ data: [{ id: 'cash-1' }], error: null });
+
+    const invoiceQuery = {
+      select: jest.fn(),
+      eq: jest.fn(),
+      in: jest.fn(),
+    };
+    invoiceQuery.select.mockReturnValue(invoiceQuery);
+    invoiceQuery.eq.mockReturnValue(invoiceQuery);
+    invoiceQuery.in.mockImplementation(() => invoiceQuery);
+    (invoiceQuery as any).then = (resolve: (value: unknown) => void) =>
+      resolve({ data: [], error: null });
+
+    const supabase = {
+      from: jest.fn((table: string) => {
+        if (table === 'enrollments') return enrollmentQuery;
+        if (table === 'payment_methods') return paymentMethodQuery;
+        if (table === 'invoices') return invoiceQuery;
+        throw new Error(`Unexpected table access: ${table}`);
+      }),
+    } as any;
+    const createMonthlyTuitionInvoice = jest.fn().mockResolvedValue({
+      id: 'invoice-1',
+      total_amount: 900_000,
+    });
+    const recordInvoicePayment = jest.fn().mockResolvedValue({ id: 'payment-1' });
+    const service = new FinanceService(supabase);
+    (service as any).financeRepository = {
+      createMonthlyTuitionInvoice,
+      recordInvoicePayment,
+    };
+
+    await expect(
+      service.updateTuitionMatrix('class-1', 'year-1', [
+        { studentId: 'student-1', month: '2026-10-01', paid: true },
+      ])
+    ).resolves.toEqual({ success: true, updatedCount: 1 });
+
+    expect(createMonthlyTuitionInvoice).toHaveBeenCalledWith(
+      expect.not.objectContaining({ gross_amount: expect.anything() })
+    );
+    expect(recordInvoicePayment).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 900_000, payment_method_id: 'cash-1' })
+    );
+  });
 });

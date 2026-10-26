@@ -203,6 +203,11 @@ function TuitionMatrixContent() {
 
     if (updateList.length === 0) return;
 
+    const confirmed = window.confirm(
+      `Xác nhận ghi nhận ${updateList.length} khoản thanh toán bằng tiền mặt? Hệ thống sẽ tạo phiếu thu theo số tiền thực phải thu sau giảm giá. Thao tác này chỉ có thể điều chỉnh bằng nghiệp vụ hoàn tiền.`
+    );
+    if (!confirmed) return;
+
     setIsSaving(true);
     try {
       const res = await fetch('/api/admin/finance/tuition-matrix', {
@@ -218,8 +223,8 @@ function TuitionMatrixContent() {
       const data = await res.json();
       if (data.success) {
         toast.success(
-          'Thành công',
-          `Đã lưu thành công ${data.data?.updatedCount || updateList.length} thay đổi học phí!`
+          'Đã ghi nhận thanh toán',
+          `Đã tạo ${data.data?.updatedCount || updateList.length} phiếu thu tiền mặt.`
         );
         setPendingUpdates({});
         refetch();
@@ -295,10 +300,10 @@ function TuitionMatrixContent() {
             )}
             <span>
               {isSaving
-                ? 'Đang lưu...'
+                ? 'Đang ghi nhận...'
                 : hasChanges
-                  ? `Lưu ${changesCount} thay đổi`
-                  : 'Lưu thay đổi'}
+                  ? `Ghi nhận ${changesCount} khoản tiền mặt`
+                  : 'Ghi nhận tiền mặt'}
             </span>
           </button>
         </div>
@@ -592,7 +597,7 @@ function TuitionMatrixContent() {
                                     ? 'Không học'
                                     : isCurrentlyPaid
                                       ? 'Đã đóng'
-                                      : 'Chưa'}
+                                      : 'Chưa thu'}
                                 </span>
                               </div>
                             </td>
@@ -714,7 +719,11 @@ function TuitionMatrixContent() {
                                 <Clock className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                               )}
                               <span className="text-[10px] font-bold">
-                                {!isApplicable ? 'Không học' : isCurrentlyPaid ? 'Đã đóng' : 'Chưa'}
+                                {!isApplicable
+                                  ? 'Không học'
+                                  : isCurrentlyPaid
+                                    ? 'Đã đóng'
+                                    : 'Chưa thu'}
                               </span>
                             </div>
                           </button>
@@ -747,7 +756,7 @@ function TuitionMatrixContent() {
             <div className="flex items-center gap-2 pl-2">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0" />
               <span className="text-xs font-bold text-stone-200">
-                {changesCount} thay đổi chưa lưu
+                {changesCount} khoản tiền mặt chờ ghi nhận
               </span>
             </div>
             <button
@@ -760,7 +769,7 @@ function TuitionMatrixContent() {
               ) : (
                 <Check className="w-3.5 h-3.5" />
               )}
-              <span>{isSaving ? 'Đang lưu...' : 'Lưu ngay'}</span>
+              <span>{isSaving ? 'Đang ghi nhận...' : 'Ghi nhận ngay'}</span>
             </button>
           </div>
         </div>
