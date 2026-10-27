@@ -55,7 +55,27 @@ export const bulkEnrollmentSchema = z.object({
   enrollment_date: dateStringSchema.optional(),
 });
 
+/**
+ * Explicit lifecycle commands. Ending or transferring an enrollment must
+ * always carry an effective date and an auditable business reason.
+ */
+export const enrollmentLifecycleActionSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('end'),
+    end_date: dateStringSchema,
+    status: z.enum(['completed', 'dropped', 'withdrawn']),
+    reason: z.string().trim().min(3).max(500),
+  }),
+  z.object({
+    action: z.literal('transfer'),
+    to_class_id: uuidSchema,
+    effective_date: dateStringSchema,
+    reason: z.string().trim().min(3).max(500),
+  }),
+]);
+
 export type EnrollmentQueryInput = z.infer<typeof enrollmentQuerySchema>;
 export type CreateEnrollmentInput = z.infer<typeof createEnrollmentSchema>;
 export type UpdateEnrollmentInput = z.infer<typeof updateEnrollmentSchema>;
 export type BulkEnrollmentInput = z.infer<typeof bulkEnrollmentSchema>;
+export type EnrollmentLifecycleActionInput = z.infer<typeof enrollmentLifecycleActionSchema>;
