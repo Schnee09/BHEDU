@@ -9,7 +9,6 @@ import {
   MagnifyingGlassIcon,
   AcademicCapIcon,
   CheckIcon,
-  PencilIcon,
   TrashIcon,
   UsersIcon,
   CalendarIcon,
@@ -59,6 +58,13 @@ export default function EnrollmentsPage() {
     'all' | 'enrolled' | 'dropped' | 'completed' | 'withdrawn'
   >('all');
   const [editingEnrollment, setEditingEnrollment] = useState<string | null>(null);
+  const [endDialog, setEndDialog] = useState<{
+    targets: Enrollment[];
+    status: 'withdrawn' | 'dropped' | 'completed';
+  } | null>(null);
+  const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10));
+  const [endReason, setEndReason] = useState('');
+  const [ending, setEnding] = useState(false);
 
   useEffect(() => {
     loadClasses();
@@ -133,7 +139,7 @@ export default function EnrollmentsPage() {
         const data = await response.json();
         toast.error(data.error || 'Không thể ghi danh học sinh');
       }
-    } catch (error) {
+    } catch {
       toast.error('Lỗi khi ghi danh học sinh');
     } finally {
       setEnrolling(false);
@@ -141,68 +147,71 @@ export default function EnrollmentsPage() {
   };
 
   const handleRemoveEnrollment = async (studentId: string) => {
-    if (!confirm('Xác nhận xóa học sinh khỏi lớp?')) return;
-
-    try {
-      const response = await apiFetch(
-        `/api/classes/${selectedClass}/enrollments?studentId=${studentId}`,
-        { method: 'DELETE' }
-      );
-
-      if (response.ok) {
-        toast.success('Đã xóa học sinh khỏi lớp');
-        loadEnrollments();
-        loadClasses();
-      } else {
-        const data = await response.json();
-        toast.error(data.error || 'Không thể xóa học sinh');
-      }
-    } catch (error) {
-      toast.error('Lỗi khi xóa học sinh');
-    }
+    const enrollment = enrolledStudents.find((item) => item.student_id === studentId);
+    if (!enrollment?.enrollment_id) return;
+    setEndDialog({ targets: [enrollment], status: 'withdrawn' });
+    setEndDate(new Date().toISOString().slice(0, 10));
+    setEndReason('');
   };
 
   const handleBulkRemove = async () => {
     if (selectedToRemove.size === 0) return;
-    if (!confirm(`Xác nhận xóa ${selectedToRemove.size} học sinh khỏi lớp?`)) return;
-
-    try {
-      let successCount = 0;
-      for (const studentId of selectedToRemove) {
-        const response = await apiFetch(
-          `/api/classes/${selectedClass}/enrollments?studentId=${studentId}`,
-          { method: 'DELETE' }
-        );
-        if (response.ok) successCount++;
-      }
-
-      toast.success(`Đã xóa ${successCount} học sinh khỏi lớp`);
-      setSelectedToRemove(new Set());
-      loadEnrollments();
-      loadClasses();
-    } catch (error) {
-      toast.error('Lỗi khi xóa học sinh');
+    const targets = enrolledStudents.filter(
+      (item) => selectedToRemove.has(item.student_id) && item.status === 'enrolled'
+    );
+    if (targets.length === 0) {
+      toast.error('Chỉ có thể kết thúc các ghi danh đang học');
+      return;
     }
+    setEndDialog({ targets, status: 'withdrawn' });
+    setEndDate(new Date().toISOString().slice(0, 10));
+    setEndReason('');
   };
 
   const handleUpdateStatus = async (studentId: string, newStatus: string) => {
-    try {
-      const response = await apiFetch(`/api/classes/${selectedClass}/enrollments/${studentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
+    const enrollment = enrolledStudents.find((item) => item.student_id === studentId);
+    if (!enrollment?.enrollment_id || newStatus === 'enrolled') {
+      setEditingEnrollment(null);
+      return;
+    }
+    setEndDialog({
+      targets: [enrollment],
+      status: newStatus as 'withdrawn' | 'dropped' | 'completed',
+    });
+    setEndDate(new Date().toISOString().slice(0, 10));
+    setEndReason('');
+    setEditingEnrollment(null);
+  };
 
-      if (response.ok) {
-        toast.success('Đã cập nhật trạng thái');
-        loadEnrollments();
-        setEditingEnrollment(null);
-      } else {
-        const data = await response.json();
-        toast.error(data.error || 'Không thể cập nhật');
+  const submitEndEnrollments = async () => {
+    if (!endDialog || endReason.trim().length < 3) return;
+
+    try {
+      setEnding(true);
+      let successCount = 0;
+      for (const enrollment of endDialog.targets) {
+        const response = await apiFetch(`/api/enrollments/${enrollment.enrollment_id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'end',
+            end_date: endDate,
+            status: endDialog.status,
+            reason: endReason.trim(),
+          }),
+        });
+        if (response.ok) successCount++;
       }
+
+      if (successCount === 0) throw new Error('Không thể kết thúc ghi danh');
+      toast.success(`Đã kết thúc ${successCount} ghi danh`);
+      setSelectedToRemove(new Set());
+      setEndDialog(null);
+      await Promise.all([loadEnrollments(), loadClasses()]);
     } catch (error) {
-      toast.error('Lỗi khi cập nhật trạng thái');
+      toast.error(error instanceof Error ? error.message : 'Không thể kết thúc ghi danh');
+    } finally {
+      setEnding(false);
     }
   };
 
@@ -227,10 +236,11 @@ export default function EnrollmentsPage() {
   };
 
   const toggleSelectAllForRemove = () => {
-    if (selectedToRemove.size === filteredEnrolled.length) {
+    const activeEnrollments = filteredEnrolled.filter((item) => item.status === 'enrolled');
+    if (selectedToRemove.size === activeEnrollments.length) {
       setSelectedToRemove(new Set());
     } else {
-      setSelectedToRemove(new Set(filteredEnrolled.map((e) => e.student_id)));
+      setSelectedToRemove(new Set(activeEnrollments.map((e) => e.student_id)));
     }
   };
 
@@ -450,7 +460,7 @@ export default function EnrollmentsPage() {
                     className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg flex items-center gap-1"
                   >
                     <TrashIcon className="w-4 h-4" />
-                    Xóa tất cả
+                    Kết thúc ghi danh
                   </button>
                 </div>
               )}
@@ -469,8 +479,9 @@ export default function EnrollmentsPage() {
                     <input
                       type="checkbox"
                       checked={
-                        selectedToRemove.size === filteredEnrolled.length &&
-                        filteredEnrolled.length > 0
+                        selectedToRemove.size ===
+                          filteredEnrolled.filter((item) => item.status === 'enrolled').length &&
+                        filteredEnrolled.some((item) => item.status === 'enrolled')
                       }
                       onChange={toggleSelectAllForRemove}
                       className="w-4 h-4 text-primary rounded"
@@ -487,6 +498,7 @@ export default function EnrollmentsPage() {
                         type="checkbox"
                         checked={selectedToRemove.has(student.student_id)}
                         onChange={() => toggleRemoveSelection(student.student_id)}
+                        disabled={student.status !== 'enrolled'}
                         className="w-4 h-4 text-primary rounded"
                       />
                       <div className="flex-1 min-w-0">
@@ -515,13 +527,15 @@ export default function EnrollmentsPage() {
                             autoFocus
                             className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/20 outline-none"
                           >
-                            <option value="enrolled">Đang học</option>
-                            <option value="dropped">Nghỉ học</option>
+                            <option value="enrolled">Chọn trạng thái kết thúc</option>
+                            <option value="dropped">Trung tâm dừng</option>
                             <option value="completed">Hoàn thành</option>
+                            <option value="withdrawn">Học sinh nghỉ</option>
                           </select>
                         ) : (
                           <button
                             onClick={() => setEditingEnrollment(student.student_id)}
+                            disabled={student.status !== 'enrolled'}
                             className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 ${
                               student.status?.toLowerCase() === 'enrolled' ||
                               student.status?.toLowerCase() === 'active' ||
@@ -569,8 +583,9 @@ export default function EnrollmentsPage() {
 
                       <button
                         onClick={() => handleRemoveEnrollment(student.student_id)}
-                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                        title="Xóa khỏi lớp"
+                        disabled={student.status !== 'enrolled'}
+                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+                        title="Kết thúc ghi danh"
                       >
                         <XMarkIcon className="w-5 h-5" />
                       </button>
@@ -706,6 +721,88 @@ export default function EnrollmentsPage() {
             <p className="text-gray-500 dark:text-gray-400">
               Chọn lớp từ danh sách ở trên để xem và quản lý học sinh
             </p>
+          </div>
+        )}
+
+        {endDialog && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="end-enrollment-title"
+          >
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+              <h2
+                id="end-enrollment-title"
+                className="text-lg font-bold text-gray-900 dark:text-white"
+              >
+                Kết thúc {endDialog.targets.length} ghi danh
+              </h2>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                Lịch sử lớp, điểm danh và học phí vẫn được giữ lại. Hãy ghi rõ ngày hiệu lực và lý
+                do.
+              </p>
+              <div className="mt-5 space-y-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Trạng thái kết thúc
+                  <select
+                    value={endDialog.status}
+                    onChange={(event) =>
+                      setEndDialog({
+                        ...endDialog,
+                        status: event.target.value as 'withdrawn' | 'dropped' | 'completed',
+                      })
+                    }
+                    className="mt-1.5 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-900"
+                  >
+                    <option value="withdrawn">Học sinh nghỉ</option>
+                    <option value="completed">Hoàn thành lớp</option>
+                    <option value="dropped">Trung tâm dừng ghi danh</option>
+                  </select>
+                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Ngày cuối học
+                  <input
+                    required
+                    type="date"
+                    value={endDate}
+                    onChange={(event) => setEndDate(event.target.value)}
+                    className="mt-1.5 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-900"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Lý do
+                  <textarea
+                    required
+                    minLength={3}
+                    maxLength={500}
+                    rows={3}
+                    value={endReason}
+                    onChange={(event) => setEndReason(event.target.value)}
+                    className="mt-1.5 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-900"
+                    placeholder="VD: Phụ huynh xác nhận nghỉ từ ngày này"
+                  />
+                </label>
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={ending}
+                  onClick={() => setEndDialog(null)}
+                  className="cursor-pointer rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={ending || !endDate || endReason.trim().length < 3}
+                  onClick={submitEndEnrollments}
+                  className="cursor-pointer rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {ending ? 'Đang xử lý...' : 'Xác nhận kết thúc'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

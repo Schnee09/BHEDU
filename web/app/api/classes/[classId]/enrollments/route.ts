@@ -22,6 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cla
     const { classId } = await params;
     const body = await req.json();
     const { studentIds } = body;
+    const enrollmentDate = body.enrollment_date || new Date().toISOString().slice(0, 10);
 
     if (!Array.isArray(studentIds) || studentIds.length === 0) {
       return NextResponse.json({ error: 'studentIds array is required' }, { status: 400 });
@@ -38,26 +39,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cla
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
 
-    // Create enrollment records (skip duplicates)
-    const enrollments = studentIds.map((studentId) => ({
-      student_id: studentId,
-      class_id: classId,
-      status: 'enrolled',
-      enrollment_date: new Date().toISOString().split('T')[0],
-    }));
-
-    // Insert one by one to handle duplicates gracefully
+    // Keep this legacy endpoint compatible, but route every write through the
+    // canonical transaction command so re-enrollment never overwrites history.
     let successCount = 0;
     const errors: string[] = [];
 
-    for (const enrollment of enrollments) {
-      const { error } = await supabase
-        .from('enrollments')
-        .upsert(enrollment, { onConflict: 'student_id,class_id' });
+    for (const studentId of studentIds) {
+      const { error } = await supabase.rpc('enroll_student_atomic', {
+        p_student_id: studentId,
+        p_class_id: classId,
+        p_enrollment_date: enrollmentDate,
+        p_notes: body.notes || null,
+        p_source_system: null,
+        p_source_key: null,
+        p_actor_id: authResult.userId,
+      });
 
       if (error) {
         errors.push(error.message);
-        console.error(`[Enrollment] Failed to enroll student ${enrollment.student_id}:`, error);
+        console.error(`[Enrollment] Failed to enroll student ${studentId}:`, error);
       } else {
         successCount++;
       }
@@ -138,8 +138,8 @@ export async function DELETE(
       p_enrollment_id: enrollment.id,
       p_end_date: new Date().toISOString().split('T')[0],
       p_status: 'withdrawn',
-      p_reason: 'Ended from class enrollment management',
-      p_actor_id: null,
+      p_reason: 'Kết thúc từ trang quản lý ghi danh lớp',
+      p_actor_id: authResult.userId,
     });
 
     if (error) {
