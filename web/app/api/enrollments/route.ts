@@ -63,40 +63,28 @@ export const POST = createApiHandler(
     // Bulk enrollment
     const targetStudentIds = studentIds || student_ids;
     if (targetStudentIds && Array.isArray(targetStudentIds)) {
-      const results = await Promise.allSettled(
-        targetStudentIds.map((targetStudentId: string) =>
-          supabase.rpc('enroll_student_atomic', {
-            p_student_id: targetStudentId,
-            p_class_id: targetClassId,
-            p_enrollment_date: enrollmentDate,
-            p_notes: payload.notes || null,
-            p_source_system: null,
-            p_source_key: null,
-            p_actor_id: user.id,
-          })
-        )
-      );
+      const { data, error } = await supabase.rpc('enroll_students_batch_atomic', {
+        p_student_ids: targetStudentIds,
+        p_class_id: targetClassId,
+        p_enrollment_date: enrollmentDate,
+        p_notes: payload.notes || null,
+        p_actor_id: user.id,
+      });
 
-      const successCount = results.filter(
-        (result) => result.status === 'fulfilled' && !result.value.error
-      ).length;
-      const failedCount = results.length - successCount;
+      if (error) throw new ValidationError(error.message);
+      const successCount = Array.isArray(data) ? data.length : targetStudentIds.length;
 
       logger.info('Bulk enrollment completed', {
         classId: targetClassId,
         successCount,
-        failedCount,
+        failedCount: 0,
       });
 
       return apiSuccess({
-        message: `Đã ghi danh ${successCount} học sinh, ${failedCount} thất bại`,
+        message: `Đã ghi danh ${successCount} học sinh`,
         enrolledCount: successCount,
-        failedCount: failedCount,
-        results: results.map((result, index) => ({
-          student_id: targetStudentIds[index],
-          success: result.status === 'fulfilled' && !result.value.error,
-          error: result.status === 'rejected' ? String(result.reason) : result.value.error?.message,
-        })),
+        failedCount: 0,
+        enrollments: data || [],
       });
     }
 

@@ -39,49 +39,35 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cla
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
 
-    // Keep this legacy endpoint compatible, but route every write through the
-    // canonical transaction command so re-enrollment never overwrites history.
-    let successCount = 0;
-    const errors: string[] = [];
+    const { data, error: enrollmentError } = await supabase.rpc('enroll_students_batch_atomic', {
+      p_student_ids: studentIds,
+      p_class_id: classId,
+      p_enrollment_date: enrollmentDate,
+      p_notes: body.notes || null,
+      p_actor_id: authResult.userId,
+    });
 
-    for (const studentId of studentIds) {
-      const { error } = await supabase.rpc('enroll_student_atomic', {
-        p_student_id: studentId,
-        p_class_id: classId,
-        p_enrollment_date: enrollmentDate,
-        p_notes: body.notes || null,
-        p_source_system: null,
-        p_source_key: null,
-        p_actor_id: authResult.userId,
-      });
-
-      if (error) {
-        errors.push(error.message);
-        console.error(`[Enrollment] Failed to enroll student ${studentId}:`, error);
-      } else {
-        successCount++;
-      }
-    }
-
-    if (successCount === 0 && errors.length > 0) {
+    if (enrollmentError) {
       return NextResponse.json(
         {
           success: false,
-          message: `Lỗi ghi danh: ${errors[0]}`,
-          errors: errors,
+          message: `Không thể ghi danh danh sách: ${enrollmentError.message}`,
+          error: enrollmentError.message,
         },
         { status: 400 }
       );
     }
+
+    const successCount = Array.isArray(data) ? data.length : studentIds.length;
 
     return NextResponse.json({
       success: true,
       message:
         successCount > 0
           ? `Đã ghi danh ${successCount} học sinh vào ${classData.name}`
-          : 'Không có học sinh nào được ghi danh (có thể đã được ghi danh trước đó)',
+          : 'Không có học sinh nào được ghi danh',
       enrolled: successCount,
-      errors: errors.length > 0 ? errors : undefined,
+      enrollments: data || [],
     });
   } catch (error) {
     logger.error('Enroll students error', error);
