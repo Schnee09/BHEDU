@@ -1,12 +1,12 @@
-import { z } from "zod";
+import { z } from 'zod';
 import {
-    attendanceStatusSchema,
-    createSortSchema,
-    dateStringSchema,
-    optionalUuidSchema,
-    paginationWithDefaults,
-    uuidSchema,
-} from "../common";
+  attendanceStatusSchema,
+  createSortSchema,
+  dateStringSchema,
+  optionalUuidSchema,
+  paginationWithDefaults,
+  uuidSchema,
+} from '../common';
 
 // ============================================
 // ATTENDANCE REQUEST SCHEMAS
@@ -16,28 +16,28 @@ import {
  * Attendance query parameters
  */
 export const attendanceQuerySchema = z.object({
-    ...paginationWithDefaults(50).shape,
-    ...createSortSchema(["date", "created_at"], "date").shape,
-    class_id: optionalUuidSchema,
-    student_id: optionalUuidSchema,
-    date: dateStringSchema.optional(),
-    start_date: dateStringSchema.optional(),
-    end_date: dateStringSchema.optional(),
-    status: z.enum(["present", "absent", "late", "excused", "all"]).optional(),
-    from_date: dateStringSchema.optional(),
-    to_date: dateStringSchema.optional(),
+  ...paginationWithDefaults(50).shape,
+  ...createSortSchema(['date', 'created_at'], 'date').shape,
+  class_id: optionalUuidSchema,
+  student_id: optionalUuidSchema,
+  date: dateStringSchema.optional(),
+  start_date: dateStringSchema.optional(),
+  end_date: dateStringSchema.optional(),
+  status: z.enum(['present', 'absent', 'late', 'excused', 'all']).optional(),
+  from_date: dateStringSchema.optional(),
+  to_date: dateStringSchema.optional(),
 });
 
 /**
  * Attendance record schema
  */
 export const attendanceRecordSchema = z.object({
-    student_id: uuidSchema,
-    class_id: uuidSchema,
-    date: dateStringSchema,
-    status: attendanceStatusSchema,
-    notes: z.string().max(500).optional().nullable(),
-    excused_reason: z.string().max(200).optional().nullable(),
+  student_id: uuidSchema,
+  class_id: uuidSchema,
+  date: dateStringSchema,
+  status: attendanceStatusSchema,
+  notes: z.string().max(500).optional().nullable(),
+  excused_reason: z.string().max(200).optional().nullable(),
 });
 
 /**
@@ -45,26 +45,44 @@ export const attendanceRecordSchema = z.object({
  */
 export const createAttendanceSchema = attendanceRecordSchema;
 export const updateAttendanceSchema = attendanceRecordSchema.partial().omit({
-    student_id: true,
-    class_id: true,
-    date: true,
+  student_id: true,
+  class_id: true,
+  date: true,
 });
 
 /**
  * Bulk attendance schema
  */
-export const bulkAttendanceSchema = z.object({
+export const bulkAttendanceSchema = z
+  .object({
     class_id: uuidSchema,
     date: dateStringSchema,
-    records: z.array(
+    records: z
+      .array(
         z.object({
-            student_id: uuidSchema,
-            status: attendanceStatusSchema,
-            notes: z.string().max(500).optional().nullable(),
-        }),
-    ).min(1, "At least one record required"),
-    marked_by: z.string().optional(),
-});
+          student_id: uuidSchema,
+          status: attendanceStatusSchema,
+          notes: z.string().max(500).optional().nullable(),
+          enrollment_exception_reason: z.string().trim().min(3).max(500).optional().nullable(),
+        })
+      )
+      .min(1, 'At least one record required')
+      .max(100),
+    marked_by: uuidSchema.optional(),
+  })
+  .superRefine((value, context) => {
+    const seen = new Set<string>();
+    value.records.forEach((record, index) => {
+      if (seen.has(record.student_id)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Duplicate student in attendance batch',
+          path: ['records', index, 'student_id'],
+        });
+      }
+      seen.add(record.student_id);
+    });
+  });
 
 export type AttendanceQueryInput = z.infer<typeof attendanceQuerySchema>;
 export type CreateAttendanceInput = z.infer<typeof createAttendanceSchema>;

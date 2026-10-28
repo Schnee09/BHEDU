@@ -6,7 +6,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BaseRepository, type PaginatedResult, type PaginationParams } from './base';
+import { BaseRepository, type PaginatedResult } from './base';
 
 // ============================================
 // Types
@@ -273,6 +273,7 @@ export class AttendanceRepository
       date: data.date,
       status: record.status,
       remarks: record.notes || null,
+      enrollment_exception_reason: record.enrollment_exception_reason || null,
       marked_by: data.marked_by || null,
     }));
 

@@ -11,6 +11,7 @@ import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { createAbility } from '@/lib/auth/permissions';
+import { canAccessClass } from '@/lib/auth/classAccess';
 import { type BulkAttendanceInput, bulkAttendanceSchema } from '@/lib/schemas';
 
 // POST /api/attendance/bulk
@@ -32,6 +33,15 @@ export const POST = createApiHandler(
     }
 
     const supabase = createServiceClient();
+    const canManageClass = await canAccessClass(
+      supabase,
+      { id: user.id, role: user.role },
+      body.class_id
+    );
+    if (!canManageClass) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
     const repository = new AttendanceRepository(supabase);
     const result = await repository.createBulk({
       ...body,
