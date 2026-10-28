@@ -814,6 +814,46 @@ export async function getAttendance(params?: AttendanceListParams): Promise<{
   };
 }
 
+export interface ClassAttendanceStudent {
+  studentId: string;
+  studentName: string;
+  studentCode?: string;
+  email?: string;
+  status: string;
+  remarks?: string;
+}
+
+export interface ClassAttendanceResponse {
+  class: { id: string; name: string };
+  date: string;
+  students: ClassAttendanceStudent[];
+  summary: {
+    totalStudents: number;
+    presentCount: number;
+    absentCount: number;
+    unmarkedCount: number;
+    attendanceRate: number;
+  };
+}
+
+/** Get the effective class roster and attendance records for one date. */
+export async function getClassAttendance(
+  classId: string,
+  date: string
+): Promise<ClassAttendanceResponse> {
+  const searchParams = new URLSearchParams({ date });
+  const response = await apiFetch(
+    `/api/attendance/class/${encodeURIComponent(classId)}?${searchParams.toString()}`
+  );
+  const result = await safeParseJson(response);
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Failed to fetch class attendance');
+  }
+
+  return result.data;
+}
+
 export async function createAttendance(data: any): Promise<any> {
   const response = await apiFetch('/api/attendance', {
     method: 'POST',

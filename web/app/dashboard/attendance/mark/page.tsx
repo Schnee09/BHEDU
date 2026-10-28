@@ -3,13 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/I18nContext';
-import {
-  apiFetch,
-  getClasses,
-  getClassStudents,
-  getAttendance,
-  bulkCreateAttendance,
-} from '@/lib/api/client';
+import { getClasses, getClassAttendance, bulkCreateAttendance } from '@/lib/api/client';
 import { cn } from '@/lib/utils';
 import { AttendanceStatus } from '@/lib/attendance/types';
 import { Button, LoadingState } from '@/components/ui';
@@ -137,27 +131,15 @@ function AttendanceMarkingPageContent() {
   const loadAttendance = useCallback(async () => {
     setLoading(true);
     try {
-      const [studentsRes, attendanceRes] = await Promise.all([
-        getClassStudents(selectedClass),
-        getAttendance({ class_id: selectedClass, date: date, limit: 1000 }),
-      ]);
-
-      const classStudents = studentsRes || [];
-      const attendanceRecords = attendanceRes.data || [];
-
-      const mappedStudents: StudentAttendanceView[] = classStudents.map((s: any) => {
-        const studentUUID = s.id || s.user_id || s.student_id;
-        const record = attendanceRecords.find((r: any) => r.student_id === studentUUID);
-        return {
-          studentId: studentUUID,
-          studentName: s.full_name || s.name || 'Unknown',
-          studentCode: s.student_code || s.cid || '',
-          email: s.email,
-          status: record ? (record.status as AttendanceStatus) : 'unmarked',
-          remarks: record?.notes || record?.remarks || '',
-          recordId: record?.id,
-        };
-      });
+      const attendance = await getClassAttendance(selectedClass, date);
+      const mappedStudents: StudentAttendanceView[] = attendance.students.map((student) => ({
+        studentId: student.studentId,
+        studentName: student.studentName,
+        studentCode: student.studentCode,
+        email: student.email,
+        status: student.status as AttendanceStatus | 'unmarked',
+        remarks: student.remarks || '',
+      }));
 
       setStudents(mappedStudents);
       calculateSummary(mappedStudents);
