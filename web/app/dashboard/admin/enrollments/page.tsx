@@ -43,6 +43,13 @@ interface Enrollment {
   status?: string;
 }
 
+const getLocalDateInputValue = () => {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+};
+
 export default function EnrollmentsPage() {
   const toast = useToast();
   const [classes, setClasses] = useState<Class[]>([]);
@@ -53,6 +60,8 @@ export default function EnrollmentsPage() {
   const [loading, setLoading] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [selectedToEnroll, setSelectedToEnroll] = useState<Set<string>>(new Set());
+  const [enrollmentDate, setEnrollmentDate] = useState(getLocalDateInputValue);
+  const [enrollmentNotes, setEnrollmentNotes] = useState('');
   const [selectedToRemove, setSelectedToRemove] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'enrolled' | 'dropped' | 'completed' | 'withdrawn'
@@ -120,19 +129,24 @@ export default function EnrollmentsPage() {
   };
 
   const handleEnrollStudents = async () => {
-    if (selectedToEnroll.size === 0 || !selectedClass) return;
+    if (selectedToEnroll.size === 0 || !selectedClass || !enrollmentDate) return;
 
     try {
       setEnrolling(true);
       const response = await apiFetch(`/api/classes/${selectedClass}/enrollments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentIds: Array.from(selectedToEnroll) }),
+        body: JSON.stringify({
+          studentIds: Array.from(selectedToEnroll),
+          enrollment_date: enrollmentDate,
+          notes: enrollmentNotes.trim() || null,
+        }),
       });
 
       if (response.ok) {
         toast.success(`Đã ghi danh ${selectedToEnroll.size} học sinh`);
         setSelectedToEnroll(new Set());
+        setEnrollmentNotes('');
         loadEnrollments();
         loadClasses(); // Refresh count
       } else {
@@ -673,11 +687,38 @@ export default function EnrollmentsPage() {
 
               {/* Enroll Button */}
               {selectedToEnroll.size > 0 && (
-                <div className="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
+                <div className="space-y-4 border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Ngày bắt đầu học
+                      <input
+                        required
+                        type="date"
+                        value={enrollmentDate}
+                        onChange={(event) => setEnrollmentDate(event.target.value)}
+                        className="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      />
+                    </label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Ghi chú (không bắt buộc)
+                      <input
+                        type="text"
+                        maxLength={500}
+                        value={enrollmentNotes}
+                        onChange={(event) => setEnrollmentNotes(event.target.value)}
+                        placeholder="VD: Học thử đã xác nhận"
+                        className="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-300">
+                    Ngày này áp dụng cho cả {selectedToEnroll.size} học sinh và được dùng để tính
+                    lịch học, điểm danh, học phí.
+                  </p>
                   <button
                     onClick={handleEnrollStudents}
-                    disabled={enrolling}
-                    className="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                    disabled={enrolling || !enrollmentDate}
+                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {enrolling ? (
                       <>
