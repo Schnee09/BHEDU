@@ -22,6 +22,7 @@ import type {
 export type EnrollmentFilters = EnrollmentQueryInput;
 
 import type { EnrollmentResponse } from '@/lib/schemas/responses/enrollment';
+import { getCurrentDateOnly } from '@/lib/enrollments/effectiveDates';
 
 // Alias for backwards compatibility if needed, or prefer using the imported types directly
 export type Enrollment = EnrollmentResponse;
@@ -276,53 +277,59 @@ export class EnrollmentRepository
    * Create enrollment with default date
    */
   async create(input: CreateEnrollmentInput): Promise<Enrollment> {
-    const { data, error } = await this.supabase
-      .from(this.tableName)
-      .upsert(
-        {
-          ...input,
-          enrollment_date: input.enrollment_date || new Date().toISOString().split('T')[0],
-          status: (input.status as any) || 'enrolled',
-        },
-        {
-          onConflict: 'student_id,class_id',
-        }
-      )
-      .select()
-      .single();
+    if (input.status && input.status !== 'enrolled') {
+      throw new Error('New enrollments must start with enrolled status');
+    }
+
+    const { data, error } = await this.supabase.rpc('enroll_student_atomic', {
+      p_student_id: input.student_id,
+      p_class_id: input.class_id,
+      p_enrollment_date: input.enrollment_date || getCurrentDateOnly(),
+      p_notes: input.notes || null,
+      p_source_system: null,
+      p_source_key: null,
+      p_actor_id: null,
+    });
 
     if (error) {
       throw new Error(`Failed to create enrollment: ${error.message}`);
     }
 
-    return data as Enrollment;
+    const enrollment = Array.isArray(data) ? data[0] : data;
+    if (!enrollment) throw new Error('Failed to create enrollment: RPC returned no enrollment');
+    return enrollment as Enrollment;
   }
 
   /**
    * Bulk enroll students in a class
    */
   async createBulk(data: BulkEnrollInput): Promise<Enrollment[]> {
-    const enrollmentDate = data.enrollment_date || new Date().toISOString().split('T')[0];
-
-    const records = data.student_ids.map((studentId) => ({
-      student_id: studentId,
-      class_id: data.class_id,
-      enrollment_date: enrollmentDate,
-      status: 'enrolled',
-    }));
-
-    const { data: created, error } = await this.supabase
-      .from(this.tableName)
-      .upsert(records, {
-        onConflict: 'student_id,class_id',
-      })
-      .select();
+    const { data: created, error } = await this.supabase.rpc('enroll_students_batch_atomic', {
+      p_student_ids: data.student_ids,
+      p_class_id: data.class_id,
+      p_enrollment_date: data.enrollment_date || getCurrentDateOnly(),
+      p_notes: data.notes || null,
+      p_actor_id: null,
+    });
 
     if (error) {
       throw new Error(`Failed to bulk enroll students: ${error.message}`);
     }
 
     return (created || []) as Enrollment[];
+  }
+
+  override async update(id: string, data: UpdateEnrollmentInput): Promise<Enrollment> {
+    void id;
+    void data;
+    throw new Error(
+      'Direct enrollment updates are disabled; use an audited end or transfer lifecycle command'
+    );
+  }
+
+  override async delete(id: string): Promise<void> {
+    void id;
+    throw new Error('Direct enrollment deletion is disabled; use an audited end lifecycle command');
   }
 
   /**

@@ -17,9 +17,73 @@ describe('EnrollmentRepository', () => {
     // Create mock Supabase client
     mockSupabase = {
       from: jest.fn(),
+      rpc: jest.fn(),
     };
 
     repository = new EnrollmentRepository(mockSupabase);
+  });
+
+  describe('atomic writes', () => {
+    it('creates an enrollment through the lifecycle RPC', async () => {
+      const enrollment = {
+        id: 'enrollment-1',
+        student_id: 'student-1',
+        class_id: 'class-1',
+        status: 'enrolled',
+      };
+      mockSupabase.rpc.mockResolvedValue({ data: enrollment, error: null });
+
+      await expect(
+        repository.create({
+          student_id: 'student-1',
+          class_id: 'class-1',
+          enrollment_date: '2026-10-28',
+          status: 'enrolled',
+        })
+      ).resolves.toBe(enrollment);
+
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('enroll_student_atomic', {
+        p_student_id: 'student-1',
+        p_class_id: 'class-1',
+        p_enrollment_date: '2026-10-28',
+        p_notes: null,
+        p_source_system: null,
+        p_source_key: null,
+        p_actor_id: null,
+      });
+    });
+
+    it('creates a batch through the all-or-nothing RPC', async () => {
+      const enrollments = [{ id: 'enrollment-1' }, { id: 'enrollment-2' }];
+      mockSupabase.rpc.mockResolvedValue({ data: enrollments, error: null });
+
+      await expect(
+        repository.createBulk({
+          class_id: 'class-1',
+          student_ids: ['student-1', 'student-2'],
+          enrollment_date: '2026-10-28',
+          notes: 'Đợt ghi danh đầu tháng',
+        })
+      ).resolves.toBe(enrollments);
+
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('enroll_students_batch_atomic', {
+        p_student_ids: ['student-1', 'student-2'],
+        p_class_id: 'class-1',
+        p_enrollment_date: '2026-10-28',
+        p_notes: 'Đợt ghi danh đầu tháng',
+        p_actor_id: null,
+      });
+    });
+
+    it('blocks direct updates and deletes', async () => {
+      await expect(repository.update('enrollment-1', { status: 'withdrawn' })).rejects.toThrow(
+        'Direct enrollment updates are disabled'
+      );
+      await expect(repository.delete('enrollment-1')).rejects.toThrow(
+        'Direct enrollment deletion is disabled'
+      );
+      expect(mockSupabase.from).not.toHaveBeenCalled();
+    });
   });
 
   describe('findByStudent', () => {

@@ -53,6 +53,7 @@ export const bulkEnrollmentSchema = z.object({
   class_id: uuidSchema,
   student_ids: z.array(uuidSchema).min(1, 'At least one student required').max(100),
   enrollment_date: dateStringSchema.optional(),
+  notes: z.string().max(500).optional().nullable(),
 });
 
 /**
