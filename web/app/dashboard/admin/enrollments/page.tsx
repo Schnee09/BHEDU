@@ -160,8 +160,8 @@ export default function EnrollmentsPage() {
     }
   };
 
-  const handleRemoveEnrollment = async (studentId: string) => {
-    const enrollment = enrolledStudents.find((item) => item.student_id === studentId);
+  const handleRemoveEnrollment = async (enrollmentId: string) => {
+    const enrollment = enrolledStudents.find((item) => item.enrollment_id === enrollmentId);
     if (!enrollment?.enrollment_id) return;
     setEndDialog({ targets: [enrollment], status: 'withdrawn' });
     setEndDate(new Date().toISOString().slice(0, 10));
@@ -171,7 +171,7 @@ export default function EnrollmentsPage() {
   const handleBulkRemove = async () => {
     if (selectedToRemove.size === 0) return;
     const targets = enrolledStudents.filter(
-      (item) => selectedToRemove.has(item.student_id) && item.status === 'enrolled'
+      (item) => selectedToRemove.has(item.enrollment_id) && item.status === 'enrolled'
     );
     if (targets.length === 0) {
       toast.error('Chỉ có thể kết thúc các ghi danh đang học');
@@ -182,8 +182,8 @@ export default function EnrollmentsPage() {
     setEndReason('');
   };
 
-  const handleUpdateStatus = async (studentId: string, newStatus: string) => {
-    const enrollment = enrolledStudents.find((item) => item.student_id === studentId);
+  const handleUpdateStatus = async (enrollmentId: string, newStatus: string) => {
+    const enrollment = enrolledStudents.find((item) => item.enrollment_id === enrollmentId);
     if (!enrollment?.enrollment_id || newStatus === 'enrolled') {
       setEditingEnrollment(null);
       return;
@@ -239,12 +239,12 @@ export default function EnrollmentsPage() {
     setSelectedToEnroll(newSelection);
   };
 
-  const toggleRemoveSelection = (studentId: string) => {
+  const toggleRemoveSelection = (enrollmentId: string) => {
     const newSelection = new Set(selectedToRemove);
-    if (newSelection.has(studentId)) {
-      newSelection.delete(studentId);
+    if (newSelection.has(enrollmentId)) {
+      newSelection.delete(enrollmentId);
     } else {
-      newSelection.add(studentId);
+      newSelection.add(enrollmentId);
     }
     setSelectedToRemove(newSelection);
   };
@@ -254,7 +254,7 @@ export default function EnrollmentsPage() {
     if (selectedToRemove.size === activeEnrollments.length) {
       setSelectedToRemove(new Set());
     } else {
-      setSelectedToRemove(new Set(activeEnrollments.map((e) => e.student_id)));
+      setSelectedToRemove(new Set(activeEnrollments.map((e) => e.enrollment_id)));
     }
   };
 
@@ -309,10 +309,18 @@ export default function EnrollmentsPage() {
       }
 
       const matchedIds: string[] = [];
+      const activeStudentIds = new Set(
+        enrolledStudents
+          .filter(
+            (enrollment) => enrollment.status === 'enrolled' || enrollment.status === 'active'
+          )
+          .map((enrollment) => enrollment.student_id)
+      );
       availableStudents.forEach((student) => {
         if (
-          (student.email && lookups.has(student.email.toLowerCase())) ||
-          (student.student_code && lookups.has(student.student_code.toLowerCase()))
+          !activeStudentIds.has(student.id) &&
+          ((student.email && lookups.has(student.email.toLowerCase())) ||
+            (student.student_code && lookups.has(student.student_code.toLowerCase())))
         ) {
           matchedIds.push(student.id);
         }
@@ -335,7 +343,11 @@ export default function EnrollmentsPage() {
   };
 
   // Filter available students
-  const enrolledIds = new Set(enrolledStudents.map((e) => e.student_id));
+  const enrolledIds = new Set(
+    enrolledStudents
+      .filter((enrollment) => enrollment.status === 'enrolled' || enrollment.status === 'active')
+      .map((enrollment) => enrollment.student_id)
+  );
   const filteredStudents = availableStudents.filter((s) => {
     if (enrolledIds.has(s.id)) return false;
     if (!searchTerm) return true;
@@ -505,13 +517,13 @@ export default function EnrollmentsPage() {
 
                   {filteredEnrolled.map((student) => (
                     <div
-                      key={student.student_id}
+                      key={student.enrollment_id}
                       className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-3"
                     >
                       <input
                         type="checkbox"
-                        checked={selectedToRemove.has(student.student_id)}
-                        onChange={() => toggleRemoveSelection(student.student_id)}
+                        checked={selectedToRemove.has(student.enrollment_id)}
+                        onChange={() => toggleRemoveSelection(student.enrollment_id)}
                         disabled={student.status !== 'enrolled'}
                         className="w-4 h-4 text-primary rounded"
                       />
@@ -533,10 +545,12 @@ export default function EnrollmentsPage() {
 
                       {/* Status Badge */}
                       <div className="relative">
-                        {editingEnrollment === student.student_id ? (
+                        {editingEnrollment === student.enrollment_id ? (
                           <select
                             defaultValue={student.status || 'enrolled'}
-                            onChange={(e) => handleUpdateStatus(student.student_id, e.target.value)}
+                            onChange={(e) =>
+                              handleUpdateStatus(student.enrollment_id, e.target.value)
+                            }
                             onBlur={() => setEditingEnrollment(null)}
                             autoFocus
                             className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/20 outline-none"
@@ -548,7 +562,7 @@ export default function EnrollmentsPage() {
                           </select>
                         ) : (
                           <button
-                            onClick={() => setEditingEnrollment(student.student_id)}
+                            onClick={() => setEditingEnrollment(student.enrollment_id)}
                             disabled={student.status !== 'enrolled'}
                             className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 ${
                               student.status?.toLowerCase() === 'enrolled' ||
@@ -596,7 +610,7 @@ export default function EnrollmentsPage() {
                       </div>
 
                       <button
-                        onClick={() => handleRemoveEnrollment(student.student_id)}
+                        onClick={() => handleRemoveEnrollment(student.enrollment_id)}
                         disabled={student.status !== 'enrolled'}
                         className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30"
                         title="Kết thúc ghi danh"

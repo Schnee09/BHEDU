@@ -188,7 +188,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
         )
       `
       )
-      .eq('class_id', classId);
+      .eq('class_id', classId)
+      .is('deleted_at', null);
     // Removed active-only filter to show all enrollments
 
     if (error) {
