@@ -133,11 +133,12 @@ export default function EnrollmentsPage() {
 
     try {
       setEnrolling(true);
-      const response = await apiFetch(`/api/classes/${selectedClass}/enrollments`, {
+      const response = await apiFetch('/api/enrollments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           studentIds: Array.from(selectedToEnroll),
+          classId: selectedClass,
           enrollment_date: enrollmentDate,
           notes: enrollmentNotes.trim() || null,
         }),
