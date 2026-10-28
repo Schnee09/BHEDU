@@ -2,10 +2,14 @@
  * @jest-environment node
  */
 import { POST } from '@/app/api/attendance/bulk/route';
+import { canAccessClass } from '@/lib/auth/classAccess';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 
 // Mock dependencies
 jest.mock('@/lib/repositories/AttendanceRepository');
+jest.mock('@/lib/auth/classAccess', () => ({
+  canAccessClass: jest.fn(),
+}));
 
 // The route intentionally uses the service-role client after authorization.
 // Keep this unit test isolated from deployment secrets and Supabase itself.
@@ -25,6 +29,7 @@ jest.mock('@/lib/auth/guard', () => ({
 describe('POST /api/attendance/bulk', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (canAccessClass as jest.Mock).mockResolvedValue(true);
   });
 
   const createMockRequest = (body: any) => {
@@ -85,5 +90,33 @@ describe('POST /api/attendance/bulk', () => {
       ],
       marked_by: 'mock-user-id',
     });
+    expect(canAccessClass).toHaveBeenCalledWith(
+      expect.anything(),
+      { id: 'mock-user-id', role: 'teacher' },
+      '123e4567-e89b-12d3-a456-426614174000'
+    );
+  });
+
+  it('rejects a teacher who cannot access the requested class', async () => {
+    (canAccessClass as jest.Mock).mockResolvedValue(false);
+    const mockCreateBulk = jest.fn();
+    (AttendanceRepository as jest.Mock).mockImplementation(() => ({
+      createBulk: mockCreateBulk,
+    }));
+
+    const req = createMockRequest({
+      class_id: '123e4567-e89b-12d3-a456-426614174000',
+      date: '2023-10-01',
+      records: [
+        {
+          student_id: '223e4567-e89b-12d3-a456-426614174000',
+          status: 'present',
+        },
+      ],
+    });
+
+    const res: any = await POST(req, { params: Promise.resolve({}) } as any);
+    expect(res.status).toBe(403);
+    expect(mockCreateBulk).not.toHaveBeenCalled();
   });
 });
