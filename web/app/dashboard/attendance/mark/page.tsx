@@ -3,11 +3,15 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/I18nContext';
-import { getClasses, getClassAttendance, bulkCreateAttendance } from '@/lib/api/client';
-import { cn } from '@/lib/utils';
+import {
+  getClasses,
+  getClassAttendance,
+  searchAttendanceCandidates,
+  bulkCreateAttendance,
+  type AttendanceCandidate,
+} from '@/lib/api/client';
 import { AttendanceStatus } from '@/lib/attendance/types';
 import { Button, LoadingState } from '@/components/ui';
-import Badge from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import PageGuard from '@/components/PageGuard';
@@ -22,9 +26,9 @@ import {
   ExclamationCircleIcon,
   ChartBarIcon,
   ChatBubbleLeftRightIcon,
-  DocumentDuplicateIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
+  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
@@ -42,6 +46,7 @@ interface StudentAttendanceView {
   status: AttendanceStatus | 'unmarked';
   remarks?: string;
   recordId?: string;
+  enrollmentExceptionReason?: string | null;
 }
 
 interface AttendanceSummary {
@@ -83,6 +88,14 @@ function AttendanceMarkingPageContent() {
   const [students, setStudents] = useState<StudentAttendanceView[]>([]);
   const [summary, setSummary] = useState<AttendanceSummary | null>(null);
   const [studentSearch, setStudentSearch] = useState<string>('');
+  const [showExceptionForm, setShowExceptionForm] = useState(false);
+  const [candidateSearch, setCandidateSearch] = useState('');
+  const [candidates, setCandidates] = useState<AttendanceCandidate[]>([]);
+  const [selectedCandidate, setSelectedCandidate] = useState<AttendanceCandidate | null>(null);
+  const [exceptionType, setExceptionType] = useState<'Học thử' | 'Học bù'>('Học thử');
+  const [exceptionDetail, setExceptionDetail] = useState('');
+  const [searchingCandidates, setSearchingCandidates] = useState(false);
+  const [candidateSearchAttempted, setCandidateSearchAttempted] = useState(false);
 
   // UI State
   const [loading, setLoading] = useState(false);
@@ -139,6 +152,7 @@ function AttendanceMarkingPageContent() {
         email: student.email,
         status: student.status as AttendanceStatus | 'unmarked',
         remarks: student.remarks || '',
+        enrollmentExceptionReason: student.enrollmentExceptionReason,
       }));
 
       setStudents(mappedStudents);
@@ -199,6 +213,7 @@ function AttendanceMarkingPageContent() {
           student_id: student.studentId,
           status: student.status,
           notes: student.remarks,
+          enrollment_exception_reason: student.enrollmentExceptionReason || undefined,
         }));
 
       if (recordsToSave.length === 0) {
@@ -223,6 +238,66 @@ function AttendanceMarkingPageContent() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const findExceptionCandidates = async () => {
+    const search = candidateSearch.trim();
+    if (search.length < 2) {
+      toast.error('Nhập ít nhất 2 ký tự để tìm học sinh');
+      return;
+    }
+
+    setSearchingCandidates(true);
+    setCandidateSearchAttempted(false);
+    setSelectedCandidate(null);
+    try {
+      setCandidates(await searchAttendanceCandidates(selectedClass, date, search));
+    } catch (error) {
+      console.error('Failed to search attendance candidates', error);
+      toast.error('Không thể tìm học sinh lúc này');
+    } finally {
+      setSearchingCandidates(false);
+      setCandidateSearchAttempted(true);
+    }
+  };
+
+  const addExceptionStudent = () => {
+    const detail = exceptionDetail.trim();
+    if (!selectedCandidate) {
+      toast.error('Vui lòng chọn học sinh');
+      return;
+    }
+    if (detail.length < 3) {
+      toast.error('Vui lòng ghi lý do cụ thể');
+      return;
+    }
+
+    const reason = `${exceptionType}: ${detail}`;
+    setStudents((current) => {
+      if (current.some((student) => student.studentId === selectedCandidate.id)) return current;
+      const updated: StudentAttendanceView[] = [
+        ...current,
+        {
+          studentId: selectedCandidate.id,
+          studentName: selectedCandidate.full_name,
+          studentCode: selectedCandidate.student_code || '',
+          email: selectedCandidate.email || undefined,
+          status: 'unmarked',
+          remarks: '',
+          enrollmentExceptionReason: reason,
+        },
+      ];
+      calculateSummary(updated);
+      return updated;
+    });
+    setHasUnsavedChanges(true);
+    setShowExceptionForm(false);
+    setCandidateSearch('');
+    setCandidates([]);
+    setCandidateSearchAttempted(false);
+    setSelectedCandidate(null);
+    setExceptionDetail('');
+    toast.success('Đã thêm học sinh vào buổi điểm danh');
   };
 
   // Generate & copy Zalo report for class group
@@ -378,6 +453,147 @@ function AttendanceMarkingPageContent() {
           )}
         </div>
 
+        <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowExceptionForm((current) => !current)}
+            disabled={!selectedClass}
+            className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-800/60 transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            aria-expanded={showExceptionForm}
+          >
+            <span className="flex items-center gap-2.5 min-w-0">
+              <span className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 shrink-0">
+                <UserPlusIcon className="w-4 h-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-black text-stone-900 dark:text-white uppercase tracking-wide">
+                  Thêm học sinh học thử hoặc học bù
+                </span>
+                <span className="block text-xs text-stone-600 dark:text-stone-400 mt-0.5">
+                  Dùng khi học sinh chưa có trong danh sách lớp của ngày này
+                </span>
+              </span>
+            </span>
+            <span className="text-xs font-bold text-amber-700 dark:text-amber-300 shrink-0">
+              {showExceptionForm ? 'Đóng' : 'Thêm'}
+            </span>
+          </button>
+
+          {showExceptionForm && (
+            <div className="border-t border-stone-200 dark:border-white/10 p-4 space-y-4">
+              <div>
+                <label
+                  htmlFor="attendance-candidate-search"
+                  className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5"
+                >
+                  Tìm theo tên hoặc mã học sinh
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input
+                    id="attendance-candidate-search"
+                    value={candidateSearch}
+                    onChange={(event) => {
+                      setCandidateSearch(event.target.value);
+                      setCandidateSearchAttempted(false);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') void findExceptionCandidates();
+                    }}
+                    placeholder="Ví dụ: Nguyễn An hoặc BH001"
+                    className="flex-1 rounded-xl"
+                  />
+                  <Button
+                    type="button"
+                    onClick={findExceptionCandidates}
+                    disabled={searchingCandidates}
+                    className="rounded-xl sm:w-auto"
+                  >
+                    {searchingCandidates ? 'Đang tìm...' : 'Tìm học sinh'}
+                  </Button>
+                </div>
+              </div>
+
+              {candidates.length > 0 ? (
+                <fieldset>
+                  <legend className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-2">
+                    Chọn học sinh
+                  </legend>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {candidates.map((candidate) => (
+                      <label
+                        key={candidate.id}
+                        className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-colors duration-200 ${selectedCandidate?.id === candidate.id ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/30' : 'border-stone-200 dark:border-white/10 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="attendance-candidate"
+                          checked={selectedCandidate?.id === candidate.id}
+                          onChange={() => setSelectedCandidate(candidate)}
+                          className="accent-amber-600"
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-bold text-stone-900 dark:text-white truncate">
+                            {candidate.full_name}
+                          </span>
+                          <span className="block text-xs text-stone-600 dark:text-stone-400">
+                            {candidate.student_code || candidate.email || 'Chưa có mã học sinh'}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              ) : candidateSearchAttempted && !searchingCandidates ? (
+                <p className="text-xs text-stone-600 dark:text-stone-400">
+                  Không có kết quả phù hợp. Hãy kiểm tra lại tên hoặc mã học sinh.
+                </p>
+              ) : null}
+
+              {selectedCandidate && (
+                <div className="grid sm:grid-cols-[180px_1fr_auto] gap-3 items-end">
+                  <div>
+                    <label
+                      htmlFor="attendance-exception-type"
+                      className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5"
+                    >
+                      Hình thức
+                    </label>
+                    <Select
+                      id="attendance-exception-type"
+                      value={exceptionType}
+                      onChange={(event) =>
+                        setExceptionType(event.target.value as 'Học thử' | 'Học bù')
+                      }
+                      className="rounded-xl"
+                    >
+                      <option value="Học thử">Học thử</option>
+                      <option value="Học bù">Học bù</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="attendance-exception-detail"
+                      className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5"
+                    >
+                      Lý do cụ thể
+                    </label>
+                    <Input
+                      id="attendance-exception-detail"
+                      value={exceptionDetail}
+                      onChange={(event) => setExceptionDetail(event.target.value)}
+                      placeholder="Ví dụ: học bù buổi nghỉ ngày 25/10"
+                      className="rounded-xl"
+                    />
+                  </div>
+                  <Button type="button" onClick={addExceptionStudent} className="rounded-xl">
+                    Thêm vào danh sách
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* ── STICKY FAST ACTION & QUICK-MARK BAR ── */}
         {students.length > 0 && (
           <div className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border border-stone-200/80 dark:border-white/10 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl sticky top-16 z-30 shadow-md space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-3">
@@ -504,6 +720,11 @@ function AttendanceMarkingPageContent() {
                           <div className="text-[10px] font-bold text-stone-400 font-mono">
                             {student.studentCode || 'BH-ID'}
                           </div>
+                          {student.enrollmentExceptionReason && (
+                            <div className="mt-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 normal-case">
+                              {student.enrollmentExceptionReason}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -636,6 +857,11 @@ function AttendanceMarkingPageContent() {
                               <div className="text-[10px] font-mono text-stone-400">
                                 {student.studentCode || 'BH-ID'}
                               </div>
+                              {student.enrollmentExceptionReason && (
+                                <div className="mt-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 normal-case">
+                                  {student.enrollmentExceptionReason}
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-4 py-2.5 text-center">

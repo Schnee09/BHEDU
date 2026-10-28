@@ -821,6 +821,28 @@ export interface ClassAttendanceStudent {
   email?: string;
   status: string;
   remarks?: string;
+  enrollmentExceptionReason?: string | null;
+}
+
+export interface AttendanceCandidate {
+  id: string;
+  full_name: string;
+  student_code?: string | null;
+  email?: string | null;
+}
+
+export async function searchAttendanceCandidates(
+  classId: string,
+  date: string,
+  search: string
+): Promise<AttendanceCandidate[]> {
+  const searchParams = new URLSearchParams({ date, search });
+  const response = await apiFetch(
+    `/api/attendance/class/${encodeURIComponent(classId)}/candidates?${searchParams.toString()}`
+  );
+  const result = await safeParseJson(response);
+  if (!response.ok) throw new Error(result.error || 'Failed to search students');
+  return result.data || [];
 }
 
 export interface ClassAttendanceResponse {

@@ -9,6 +9,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { createGetHandler, AppError, apiSuccess } from '@/lib/api';
 import { getCurrentDateOnly, isValidDateOnly } from '@/lib/enrollments/effectiveDates';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 export const GET = createGetHandler({ requireAuth: true }, async ({ request, user, params }) => {
   try {
@@ -20,25 +21,15 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
       throw new AppError('Date must use a valid YYYY-MM-DD format', 400, 'VALIDATION_ERROR');
     }
 
-    // Verify teacher has access to this class
-    // Admins, Staff and higher see everything
-    const isAdminLike = ['admin', 'staff', 'super_admin', 'owner'].includes(user.role || '');
-
-    if (!isAdminLike) {
-      const { data: classData } = await supabase
-        .from('classes')
-        .select('id')
-        .eq('id', classId)
-        .eq('teacher_id', user.id)
-        .single();
-
-      if (!classData) {
-        throw new AppError(
-          'You do not have permission to view attendance for this class',
-          403,
-          'FORBIDDEN'
-        );
-      }
+    const hasClassAccess =
+      user.role === 'staff' ||
+      (await canAccessClass(supabase, { id: user.id, role: user.role }, classId));
+    if (!hasClassAccess) {
+      throw new AppError(
+        'You do not have permission to view attendance for this class',
+        403,
+        'FORBIDDEN'
+      );
     }
 
     // Get class info
@@ -82,9 +73,13 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
     // Get attendance records for this date
     const { data: attendance } = await supabase
       .from('attendance')
-      .select('student_id, status, remarks')
+      .select(
+        `student_id, status, remarks, enrollment_exception_reason,
+         profiles!student_id (id, full_name, email, student_code)`
+      )
       .eq('class_id', classId)
-      .eq('date', date);
+      .eq('date', date)
+      .is('deleted_at', null);
 
     // Combine enrollment and attendance data
     const attendanceMap = new Map(attendance?.map((a) => [a.student_id, a]) || []);
@@ -96,7 +91,24 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
       email: enrollment.profiles?.email || '',
       status: attendanceMap.get(enrollment.student_id)?.status || 'unmarked',
       remarks: (attendanceMap.get(enrollment.student_id) as any)?.remarks || '',
+      enrollmentExceptionReason: null,
     }));
+
+    const enrolledStudentIds = new Set(records.map((record) => record.studentId));
+    for (const record of attendance || []) {
+      if (!record.enrollment_exception_reason || enrolledStudentIds.has(record.student_id))
+        continue;
+      const profile = record.profiles as any;
+      records.push({
+        studentId: record.student_id,
+        studentName: profile?.full_name || 'Không rõ tên',
+        studentCode: profile?.student_code || profile?.id || '',
+        email: profile?.email || '',
+        status: record.status,
+        remarks: record.remarks || '',
+        enrollmentExceptionReason: record.enrollment_exception_reason,
+      });
+    }
 
     // Calculate summary statistics
     const summary = {
