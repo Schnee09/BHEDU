@@ -9,9 +9,10 @@
  * - Revenue summary
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { createGetHandler } from '@/lib/api';
 import { createClient } from '@/lib/supabase/server';
-import { handleApiError, ValidationError } from '@/lib/api/errors';
+import { ValidationError } from '@/lib/api/errors';
 import { analyticsQuerySchema } from '@/lib/schemas';
 
 export interface DashboardAnalytics {
@@ -64,75 +65,56 @@ export interface DashboardAnalytics {
   }>;
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = await createClient();
+export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ request }) => {
+  const supabase = await createClient();
+  // Get query params and validate
+  const searchParams = Object.fromEntries(request.nextUrl.searchParams);
+  const validatedParams = analyticsQuerySchema.safeParse(searchParams);
 
-    // Verify authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get query params and validate
-    const searchParams = Object.fromEntries(request.nextUrl.searchParams);
-    const validatedParams = analyticsQuerySchema.safeParse(searchParams);
-
-    if (!validatedParams.success) {
-      throw new ValidationError(validatedParams.error.issues[0]?.message ?? 'Dữ liệu không hợp lệ');
-    }
-
-    const scholasticYear = validatedParams.data.academicYear || getCurrentAcademicYear();
-    const scholasticSemester = validatedParams.data.semester || null;
-
-    // Fetch overview stats
-    const overview = await getOverviewStats(supabase, scholasticYear, scholasticSemester);
-
-    // Fetch grade distribution
-    const gradeDistribution = await getGradeDistribution(
-      supabase,
-      scholasticYear,
-      scholasticSemester
-    );
-
-    // Fetch class comparison
-    const classComparison = await getClassComparison(supabase, scholasticYear, scholasticSemester);
-
-    // Fetch trends
-    const trends = await getTrends(supabase, scholasticYear);
-
-    // Fetch top performers
-    const topPerformers = await getTopPerformers(supabase, scholasticYear, scholasticSemester, 5);
-
-    // Fetch at-risk students
-    const atRiskStudents = await getAtRiskStudents(
-      supabase,
-      scholasticYear,
-      scholasticSemester,
-      10
-    );
-
-    // Fetch recent activity
-    const recentActivity = await getRecentActivity(supabase, 10);
-
-    const analytics: DashboardAnalytics = {
-      overview,
-      gradeDistribution,
-      classComparison,
-      trends,
-      topPerformers,
-      atRiskStudents,
-      recentActivity,
-    };
-
-    return NextResponse.json(analytics);
-  } catch (error) {
-    return handleApiError(error);
+  if (!validatedParams.success) {
+    throw new ValidationError(validatedParams.error.issues[0]?.message ?? 'Dữ liệu không hợp lệ');
   }
-}
+
+  const scholasticYear = validatedParams.data.academicYear || getCurrentAcademicYear();
+  const scholasticSemester = validatedParams.data.semester || null;
+
+  // Fetch overview stats
+  const overview = await getOverviewStats(supabase, scholasticYear, scholasticSemester);
+
+  // Fetch grade distribution
+  const gradeDistribution = await getGradeDistribution(
+    supabase,
+    scholasticYear,
+    scholasticSemester
+  );
+
+  // Fetch class comparison
+  const classComparison = await getClassComparison(supabase, scholasticYear, scholasticSemester);
+
+  // Fetch trends
+  const trends = await getTrends(supabase, scholasticYear);
+
+  // Fetch top performers
+  const topPerformers = await getTopPerformers(supabase, scholasticYear, scholasticSemester, 5);
+
+  // Fetch at-risk students
+  const atRiskStudents = await getAtRiskStudents(supabase, scholasticYear, scholasticSemester, 10);
+
+  // Fetch recent activity
+  const recentActivity = await getRecentActivity(supabase, 10);
+
+  const analytics: DashboardAnalytics = {
+    overview,
+    gradeDistribution,
+    classComparison,
+    trends,
+    topPerformers,
+    atRiskStudents,
+    recentActivity,
+  };
+
+  return NextResponse.json(analytics);
+});
 
 function getCurrentAcademicYear(): string {
   const now = new Date();
@@ -294,40 +276,14 @@ async function getClassComparison(supabase: any, academicYear: string, semester:
 }
 
 async function getTrends(supabase: any, academicYear: string) {
-  // This would typically aggregate data by month
-  // For now, return placeholder structure
-  const months = [
-    'Th1',
-    'Th2',
-    'Th3',
-    'Th4',
-    'Th5',
-    'Th6',
-    'Th7',
-    'Th8',
-    'Th9',
-    'Th10',
-    'Th11',
-    'Th12',
-  ];
-  const currentYear = new Date().getFullYear();
-
+  // Do not present generated placeholder values as operational data.
+  // These arrays remain empty until monthly aggregation is implemented.
+  void supabase;
+  void academicYear;
   return {
-    gpaByMonth: months.map((month, i) => ({
-      month,
-      gpa: 6.5 + Math.random() * 1.5, // Placeholder
-      year: currentYear,
-    })),
-    attendanceByMonth: months.map((month, i) => ({
-      month,
-      rate: 85 + Math.random() * 10, // Placeholder
-      year: currentYear,
-    })),
-    enrollmentByMonth: months.map((month, i) => ({
-      month,
-      count: Math.floor(50 + Math.random() * 20), // Placeholder
-      year: currentYear,
-    })),
+    gpaByMonth: [],
+    attendanceByMonth: [],
+    enrollmentByMonth: [],
   };
 }
 
