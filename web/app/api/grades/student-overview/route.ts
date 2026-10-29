@@ -10,6 +10,8 @@ import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { teacherAuth } from '@/lib/auth/adminAuth';
 import { logger } from '@/lib/logger';
+import { canAccessClass } from '@/lib/auth/classAccess';
+import { getCurrentDateOnly } from '@/lib/enrollments/effectiveDates';
 
 export async function GET(request: Request) {
   try {
@@ -27,33 +29,54 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'classId is required' }, { status: 400 });
     }
 
-    // Verify teacher has access to this class
-    const { data: classData } = await supabase
-      .from('classes')
-      .select('teacher_id')
-      .eq('id', classId)
-      .single();
-
-    // Allow access for: class teacher, owner, admin, super_admin, or staff
-    const isOwner = authResult.userRole === 'owner';
-    const isSuperAdmin = authResult.userRole === 'super_admin';
-    const isAdmin = authResult.userRole === 'admin';
-    const isStaff = authResult.userRole === 'staff';
-    const isClassTeacher = classData?.teacher_id === authResult.userId;
-
-    if (!classData || (!isClassTeacher && !isOwner && !isSuperAdmin && !isAdmin && !isStaff)) {
+    if (
+      !(await canAccessClass(
+        supabase,
+        { id: authResult.userId, role: authResult.userRole },
+        classId
+      ))
+    ) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Get students to calculate grades for
     let studentIds: string[] = [];
+    const today = getCurrentDateOnly();
     if (studentId) {
-      studentIds = [studentId];
-    } else {
-      const { data: enrollments } = await supabase
+      const { data: enrollment, error: enrollmentError } = await supabase
         .from('enrollments')
         .select('student_id')
-        .eq('class_id', classId);
+        .eq('class_id', classId)
+        .eq('student_id', studentId)
+        .lte('enrollment_date', today)
+        .or(`end_date.is.null,end_date.gte.${today}`)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (enrollmentError) {
+        logger.error('Failed to verify student enrollment', enrollmentError);
+        return NextResponse.json({ error: 'Failed to verify student enrollment' }, { status: 500 });
+      }
+      if (!enrollment) {
+        return NextResponse.json(
+          { error: 'Student is not enrolled in this class' },
+          { status: 404 }
+        );
+      }
+      studentIds = [studentId];
+    } else {
+      const { data: enrollments, error: enrollmentError } = await supabase
+        .from('enrollments')
+        .select('student_id')
+        .eq('class_id', classId)
+        .lte('enrollment_date', today)
+        .or(`end_date.is.null,end_date.gte.${today}`)
+        .is('deleted_at', null);
+
+      if (enrollmentError) {
+        logger.error('Failed to fetch class enrollments', enrollmentError);
+        return NextResponse.json({ error: 'Failed to fetch class enrollments' }, { status: 500 });
+      }
 
       studentIds = enrollments?.map((e) => e.student_id) || [];
     }
@@ -91,10 +114,7 @@ export async function GET(request: Request) {
         )
         .in('student_id', studentIds)
         .eq('class_id', classId),
-      supabase
-        .from('timetable_slots')
-        .select('subject_id, student_id')
-        .eq('class_id', classId),
+      supabase.from('timetable_slots').select('subject_id, student_id').eq('class_id', classId),
     ]);
 
     const profiles = profilesResponse.data || [];
@@ -164,17 +184,18 @@ export async function GET(request: Request) {
           category_id: subId,
           category_name: data.name,
           percentage: percentage !== null ? Math.round(percentage * 10) / 10 : null,
-          letter_grade: percentage !== null
-            ? percentage >= 80
-              ? 'A'
-              : percentage >= 65
-                ? 'B'
-                : percentage >= 50
-                  ? 'C'
-                  : percentage >= 35
-                    ? 'D'
-                    : 'F'
-            : '-',
+          letter_grade:
+            percentage !== null
+              ? percentage >= 80
+                ? 'A'
+                : percentage >= 65
+                  ? 'B'
+                  : percentage >= 50
+                    ? 'C'
+                    : percentage >= 35
+                      ? 'D'
+                      : 'F'
+              : '-',
           points_earned: avgScore !== null ? Math.round(avgScore * 10) / 10 : null,
           total_points: 10,
         };
@@ -184,26 +205,29 @@ export async function GET(request: Request) {
       const gradedCategories = category_grades.filter((c) => c.percentage !== null);
       const overall_percentage =
         gradedCategories.length > 0
-          ? gradedCategories.reduce((sum, c) => sum + (c.percentage || 0), 0) / gradedCategories.length
+          ? gradedCategories.reduce((sum, c) => sum + (c.percentage || 0), 0) /
+            gradedCategories.length
           : null;
 
-      const letter_grade = overall_percentage !== null
-        ? overall_percentage >= 80
-          ? 'A'
-          : overall_percentage >= 65
-            ? 'B'
-            : overall_percentage >= 50
-              ? 'C'
-              : overall_percentage >= 35
-                ? 'D'
-                : 'F'
-        : '-';
+      const letter_grade =
+        overall_percentage !== null
+          ? overall_percentage >= 80
+            ? 'A'
+            : overall_percentage >= 65
+              ? 'B'
+              : overall_percentage >= 50
+                ? 'C'
+                : overall_percentage >= 35
+                  ? 'D'
+                  : 'F'
+          : '-';
 
       return {
         student_id: sid,
         student_name: student.full_name || student.email || '',
         student_number: student.student_code || '',
-        overall_percentage: overall_percentage !== null ? Math.round(overall_percentage * 10) / 10 : null,
+        overall_percentage:
+          overall_percentage !== null ? Math.round(overall_percentage * 10) / 10 : null,
         letter_grade,
         category_grades,
       };

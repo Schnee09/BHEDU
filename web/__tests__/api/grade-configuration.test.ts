@@ -6,6 +6,7 @@ import {
   POST as createAssignment,
 } from '@/app/api/grades/assignments/route';
 import { GET as getCategories } from '@/app/api/grades/categories/route';
+import { GET as getStudentOverview } from '@/app/api/grades/student-overview/route';
 import { canAccessClass } from '@/lib/auth/classAccess';
 
 jest.mock('@/lib/auth/classAccess', () => ({ canAccessClass: jest.fn() }));
@@ -65,5 +66,18 @@ describe('grade configuration authorization', () => {
     );
 
     expect(response.status).toBe(403);
+  });
+
+  it('rejects a student overview when the student is not enrolled in the class', async () => {
+    (canAccessClass as jest.Mock).mockResolvedValue(true);
+    query.maybeSingle!.mockResolvedValueOnce({ data: null, error: null });
+
+    const response = await getStudentOverview(
+      new Request(
+        `http://localhost/api/grades/student-overview?classId=${CLASS_ID}&studentId=223e4567-e89b-12d3-a456-426614174000`
+      )
+    );
+
+    expect(response.status).toBe(404);
   });
 });

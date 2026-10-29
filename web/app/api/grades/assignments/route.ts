@@ -179,6 +179,7 @@ export async function POST(request: Request) {
       const gradeRecords = enrollments.map((enrollment) => ({
         assignment_id: assignment.id,
         student_id: enrollment.student_id,
+        class_id,
         points_earned: null,
         late: false,
         excused: false,
