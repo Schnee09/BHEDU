@@ -3,50 +3,61 @@ import { ValidationError } from '@/lib/api/errors';
 import { gradeService } from '@/lib/services/gradeService';
 import { EvaluationType } from '@/lib/grades/types';
 import { logger } from '@/lib/logger';
+import { createServiceClient } from '@/lib/supabase/server';
+import { canAccessClass } from '@/lib/auth/classAccess';
+import { AuthorizationError } from '@/lib/api/errors';
 
 // GET: Fetch students with their grades for a specific class, subject, and semester
-export const GET = createGetHandler({ permission: 'grades.view' }, async ({ searchParams }) => {
-  const classId = searchParams.get('class_id') || searchParams.get('classId');
-  const subjectCode = searchParams.get('subject_code') || searchParams.get('subjectCode');
-  const semesterStr = searchParams.get('semester');
-  const semester = semesterStr ? parseInt(semesterStr, 10) : null;
+export const GET = createGetHandler(
+  { permission: 'grades.view' },
+  async ({ searchParams, user }) => {
+    const classId = searchParams.get('class_id') || searchParams.get('classId');
+    const subjectCode = searchParams.get('subject_code') || searchParams.get('subjectCode');
+    const semesterStr = searchParams.get('semester');
+    const semester = semesterStr ? parseInt(semesterStr, 10) : null;
 
-  if (!classId || semester === null || isNaN(semester)) {
-    throw new ValidationError('Missing or invalid classId or semester');
+    if (!classId || semester === null || isNaN(semester)) {
+      throw new ValidationError('Missing or invalid classId or semester');
+    }
+
+    const targetSubjectCode = subjectCode;
+    if (!targetSubjectCode) {
+      throw new ValidationError('subject_code is required');
+    }
+
+    const supabase = createServiceClient();
+    if (!(await canAccessClass(supabase, { id: user.id, role: user.role }, classId))) {
+      throw new AuthorizationError('Bạn không có quyền xem điểm của lớp này');
+    }
+
+    const students = await gradeService.getGrades(classId, targetSubjectCode, semester as any);
+
+    // Map back to the structure expected by the frontend
+    const mappedStudents = students.map((s) => ({
+      id: s.student_id,
+      student_code: s.student_code,
+      full_name: s.full_name,
+      grades: {
+        [EvaluationType.MIDTERM]: s.midterm,
+        [EvaluationType.FINAL]: s.final,
+        average: s.average,
+        // Legacy fields (null for now as we transition to Midterm/Final only)
+        oral: null,
+        fifteen_min: null,
+        one_period: null,
+      },
+    }));
+
+    return apiSuccess({ students: mappedStudents });
   }
-
-  const targetSubjectCode = subjectCode;
-  if (!targetSubjectCode) {
-    throw new ValidationError('subject_code is required');
-  }
-
-  const students = await gradeService.getGrades(classId, targetSubjectCode, semester as any);
-
-  // Map back to the structure expected by the frontend
-  const mappedStudents = students.map((s) => ({
-    id: s.student_id,
-    student_code: s.student_code,
-    full_name: s.full_name,
-    grades: {
-      [EvaluationType.MIDTERM]: s.midterm,
-      [EvaluationType.FINAL]: s.final,
-      average: s.average,
-      // Legacy fields (null for now as we transition to Midterm/Final only)
-      oral: null,
-      fifteen_min: null,
-      one_period: null,
-    },
-  }));
-
-  return apiSuccess({ students: mappedStudents });
-});
+);
 
 // POST: Save grades for multiple students
 export const POST = createApiHandler(
   {
     permission: 'grades.entry',
   },
-  async ({ request }) => {
+  async ({ request, user }) => {
     const body = await request.json();
     const { class_id, subject_code, semester, students } = body as any;
 
@@ -57,6 +68,11 @@ export const POST = createApiHandler(
     const targetSubjectCode = subject_code;
     if (!targetSubjectCode) {
       throw new ValidationError('subject_code is required');
+    }
+
+    const supabase = createServiceClient();
+    if (!(await canAccessClass(supabase, { id: user.id, role: user.role }, class_id))) {
+      throw new AuthorizationError('Bạn không có quyền nhập điểm cho lớp này');
     }
 
     const result = await gradeService.saveGrades({

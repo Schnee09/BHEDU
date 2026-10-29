@@ -4,12 +4,15 @@
 import { POST } from '@/app/api/grades/vietnamese-entry/route';
 import { gradeService } from '@/lib/services/gradeService';
 import { EvaluationType } from '@/lib/grades/types';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 jest.mock('@/lib/services/gradeService', () => ({
   gradeService: {
     saveGrades: jest.fn(),
   },
 }));
+jest.mock('@/lib/auth/classAccess', () => ({ canAccessClass: jest.fn() }));
+jest.mock('@/lib/supabase/server', () => ({ createServiceClient: jest.fn(() => ({})) }));
 
 // Mock auth guard to bypass 401
 jest.mock('@/lib/auth/guard', () => ({
@@ -32,6 +35,7 @@ jest.mock('@/lib/logger', () => ({
 describe('POST /api/grades/vietnamese-entry', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (canAccessClass as jest.Mock).mockResolvedValue(true);
   });
 
   const createMockRequest = (body: any) => {
@@ -93,5 +97,25 @@ describe('POST /api/grades/vietnamese-entry', () => {
         },
       ],
     });
+  });
+
+  it('rejects grade entry for a class outside the teacher assignment', async () => {
+    (canAccessClass as jest.Mock).mockResolvedValue(false);
+    const req = createMockRequest({
+      class_id: 'class-123',
+      subject_code: 'MAT101',
+      semester: 'HK1',
+      students: [
+        {
+          student_id: 'student-123',
+          grades: { [EvaluationType.MIDTERM]: 8.5 },
+        },
+      ],
+    });
+
+    const res: any = await POST(req, { params: Promise.resolve({}) } as any);
+
+    expect(res.status).toBe(403);
+    expect(gradeService.saveGrades).not.toHaveBeenCalled();
   });
 });
