@@ -1,97 +1,144 @@
 import { apiSuccess, createGetHandler } from '@/lib/api';
+import { AuthorizationError } from '@/lib/api/errors';
 import { createServiceClient } from '@/lib/supabase/server';
 import { cached, CACHE_TTL } from '@/lib/cache/cache';
 
-// Dynamic route — cannot use ISR (revalidate) because it requires auth
 export const dynamic = 'force-dynamic';
 
-export const GET = createGetHandler({ requireAuth: true }, async ({ request }) => {
+const GLOBAL_RANKING_ROLES = new Set(['super_admin', 'owner', 'admin']);
+const ASSIGNED_CLASS_ROLES = new Set(['teacher', 'tutor', 'staff']);
+
+interface StudentRanking {
+  studentId: string;
+  studentName: string;
+  className: string;
+  average: number;
+  rank: number;
+  percentile: number;
+  change: number;
+}
+
+interface RankingResult {
+  topStudents: StudentRanking[];
+  atRiskStudents: StudentRanking[];
+}
+
+function toRankingResult(
+  students: Omit<StudentRanking, 'rank' | 'percentile' | 'change'>[],
+  limit: number
+): RankingResult {
+  const ranked = students
+    .sort((a, b) => b.average - a.average || a.studentName.localeCompare(b.studentName, 'vi'))
+    .map((student, index, all) => ({
+      ...student,
+      rank: index + 1,
+      percentile:
+        all.length <= 1 ? 100 : Math.round(((all.length - index - 1) / (all.length - 1)) * 100),
+      change: 0,
+    }));
+
+  return {
+    topStudents: ranked.slice(0, limit),
+    atRiskStudents: ranked
+      .filter((student) => student.average < 5)
+      .reverse()
+      .slice(0, limit),
+  };
+}
+
+export const GET = createGetHandler({ permission: 'grades.view' }, async ({ request, user }) => {
   const url = new URL(request.url);
-  const limit = parseInt(url.searchParams.get('limit') || '10', 10);
-  const teacherId = url.searchParams.get('teacher_id');
+  const parsedLimit = Number.parseInt(url.searchParams.get('limit') || '10', 10);
+  const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 50) : 10;
+  const requestedTeacherId = url.searchParams.get('teacher_id');
+  const supabase = createServiceClient();
 
-  const cacheKey = `rankings:${teacherId || 'global'}:${limit}`;
+  if (!GLOBAL_RANKING_ROLES.has(user.role) && !ASSIGNED_CLASS_ROLES.has(user.role)) {
+    throw new AuthorizationError('Bạn không có quyền xem bảng xếp hạng này');
+  }
 
-  const result = await cached(
+  // Non-admin scopes always come from the authenticated profile, never the URL.
+  const teacherId = GLOBAL_RANKING_ROLES.has(user.role) ? requestedTeacherId : user.id;
+  const cacheKey = `rankings:${teacherId ? `teacher:${teacherId}` : 'global'}:${limit}`;
+
+  const result = await cached<RankingResult>(
     cacheKey,
     async () => {
-      // Use service client to calculate global rankings, bypassing RLS
-      const supabase = createServiceClient();
+      if (!teacherId) {
+        const { data: rankings, error } = await supabase.rpc('get_student_rankings');
+        if (error) throw new Error(`Failed to fetch rankings: ${error.message}`);
 
-      // 1. Fetch rankings from Database RPC (SQL optimized fallback defense)
-      const { data: rankings, error } = await supabase.rpc('get_student_rankings');
-
-      if (error) {
-        console.error('Error fetching rankings from RPC:', error);
-        return {
-          topStudents: [],
-          atRiskStudents: [],
-        };
-      }
-
-      // 2. Query class names if filtering by teacher
-      let teacherClassNames: string[] = [];
-      if (teacherId) {
-        const { data: teacherClasses } = await supabase
-          .from('classes')
-          .select('name')
-          .eq('teacher_id', teacherId);
-        teacherClassNames = teacherClasses?.map((c: any) => c.name) || [];
-      }
-
-      interface StudentRankingRow {
-        student_id: string;
-        student_name: string;
-        class_name: string;
-        average: string | number;
-        rank: string | number;
-        percentile: string | number;
-      }
-
-      // 3. Map database columns
-      const formattedRankings = (rankings || []).map((student: StudentRankingRow) => ({
-        studentId: student.student_id,
-        studentName: student.student_name,
-        className: student.class_name,
-        average: Number(student.average),
-        rank: Number(student.rank),
-        percentile: Number(student.percentile),
-        change: 0,
-      }));
-
-      // 4. Filter by teacher's classes if requested
-      let filteredRankings = formattedRankings;
-      if (teacherId) {
-        if (teacherClassNames.length === 0) {
-          return apiSuccess({
-            topStudents: [],
-            atRiskStudents: [],
-          });
-        }
-        filteredRankings = formattedRankings.filter((student: any) =>
-          teacherClassNames.includes(student.className)
+        return toRankingResult(
+          (rankings || []).map((student: any) => ({
+            studentId: student.student_id,
+            studentName: student.student_name,
+            className: student.class_name,
+            average: Number(student.average),
+          })),
+          limit
         );
       }
 
-      const filteredTotal = filteredRankings.length;
+      const { data: classes, error: classError } = await supabase
+        .from('classes')
+        .select('id, name')
+        .eq('teacher_id', teacherId);
+      if (classError) throw new Error(`Failed to resolve ranking scope: ${classError.message}`);
+      if (!classes?.length) return { topStudents: [], atRiskStudents: [] };
 
-      // 5. Extract Top Performers
-      const topStudents = filteredRankings.slice(0, limit);
+      const classIds = classes.map((item: any) => item.id);
+      const classNames = new Map(classes.map((item: any) => [item.id, item.name]));
+      const { data: grades, error: gradeError } = await supabase
+        .from('grades')
+        .select('student_id, class_id, score')
+        .in('class_id', classIds);
+      if (gradeError) throw new Error(`Failed to fetch scoped grades: ${gradeError.message}`);
+      if (!grades?.length) return { topStudents: [], atRiskStudents: [] };
 
-      // 6. Extract At-Risk (Bottom Performers with average < 5.0)
-      const atRiskStudents = [...filteredRankings]
-        .filter((student) => student.average < 5.0)
-        .reverse()
-        .slice(0, limit)
-        .map((student: any, index: number) => ({
-          ...student,
-          rank: filteredTotal - index,
-        }));
+      const studentIds = [...new Set(grades.map((grade: any) => grade.student_id))];
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', studentIds);
+      if (profileError)
+        throw new Error(`Failed to fetch ranking profiles: ${profileError.message}`);
 
-      return {
-        topStudents,
-        atRiskStudents,
-      };
+      const profileNames = new Map(
+        (profiles || []).map((profile: any) => [profile.id, profile.full_name])
+      );
+      const aggregates = new Map<string, { total: number; count: number; classIds: Set<string> }>();
+
+      for (const grade of grades as any[]) {
+        const score = Number(grade.score);
+        if (!Number.isFinite(score)) continue;
+        const current = aggregates.get(grade.student_id) || {
+          total: 0,
+          count: 0,
+          classIds: new Set<string>(),
+        };
+        current.total += score;
+        current.count += 1;
+        if (grade.class_id) current.classIds.add(grade.class_id);
+        aggregates.set(grade.student_id, current);
+      }
+
+      const students = [...aggregates.entries()].flatMap(([studentId, aggregate]) => {
+        const studentName = profileNames.get(studentId);
+        if (!studentName || aggregate.count === 0) return [];
+        return [
+          {
+            studentId,
+            studentName,
+            className: [...aggregate.classIds]
+              .map((id) => classNames.get(id))
+              .filter(Boolean)
+              .join(', '),
+            average: aggregate.total / aggregate.count,
+          },
+        ];
+      });
+
+      return toRankingResult(students, limit);
     },
     { ttl: CACHE_TTL.SHORT, tags: ['grades', 'rankings'] }
   );
