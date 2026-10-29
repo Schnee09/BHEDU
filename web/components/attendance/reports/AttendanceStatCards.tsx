@@ -8,6 +8,8 @@ interface AttendanceStatCardsProps {
   attendanceRate: number;
   totalPresent: number;
   totalAbsent: number;
+  totalLate: number;
+  totalExcused: number;
   getRateColor: (rate: number) => string;
   t: (key: string) => string;
 }
@@ -17,6 +19,8 @@ export function AttendanceStatCards({
   attendanceRate,
   totalPresent,
   totalAbsent,
+  totalLate,
+  totalExcused,
   getRateColor,
   t,
 }: AttendanceStatCardsProps) {
@@ -29,9 +33,7 @@ export function AttendanceStatCards({
             <p className="text-[11px] font-black uppercase tracking-widest text-stone-400 mb-1">
               {t('attendance.report.totalRecords')}
             </p>
-            <p className="text-4xl font-black text-stone-900 tracking-tighter">
-              {totalRecords}
-            </p>
+            <p className="text-4xl font-black text-stone-900 tracking-tighter">{totalRecords}</p>
           </div>
           <div className="p-3 bg-stone-100 rounded-2xl group-hover:bg-stone-200 transition-colors">
             <ChartBarIcon className="w-8 h-8 text-stone-400" />
@@ -66,25 +68,36 @@ export function AttendanceStatCards({
 
       <div className="glass-premium rounded-[32px] border border-white/20 shadow-xl p-8 col-span-2 overflow-hidden relative">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
-        <div className="relative z-10 flex items-center justify-around h-full">
+        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4 items-center h-full">
           <div className="text-center group">
             <p className="text-[11px] font-black uppercase tracking-widest text-emerald-600/60 mb-2">
               {t('attendance.present')}
             </p>
-            <p className="text-5xl font-black text-emerald-600 tracking-tighter group-hover:scale-110 transition-transform">
-              {totalPresent}
-            </p>
-            <div className="mt-1 text-[10px] font-bold text-stone-400">{t('attendance.report.presentCount')}</div>
+            <p className="text-3xl font-black text-emerald-600 tracking-tighter">{totalPresent}</p>
+            <div className="mt-1 text-[10px] font-bold text-stone-400">
+              {t('attendance.report.presentCount')}
+            </div>
           </div>
-          <div className="w-px h-16 bg-stone-100" />
           <div className="text-center group">
             <p className="text-[11px] font-black uppercase tracking-widest text-red-600/60 mb-2">
               {t('attendance.absent')}
             </p>
-            <p className="text-5xl font-black text-red-600 tracking-tighter group-hover:scale-110 transition-transform">
-              {totalAbsent}
+            <p className="text-3xl font-black text-red-600 tracking-tighter">{totalAbsent}</p>
+            <div className="mt-1 text-[10px] font-bold text-stone-400">
+              {t('attendance.report.absentCount')}
+            </div>
+          </div>
+          <div className="text-center">
+            <p className="text-[11px] font-black uppercase tracking-widest text-amber-600/70 mb-2">
+              {t('attendance.late')}
             </p>
-            <div className="mt-1 text-[10px] font-bold text-stone-400">{t('attendance.report.absentCount')}</div>
+            <p className="text-3xl font-black text-amber-600 tracking-tighter">{totalLate}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[11px] font-black uppercase tracking-widest text-blue-600/70 mb-2">
+              {t('attendance.excused')}
+            </p>
+            <p className="text-3xl font-black text-blue-600 tracking-tighter">{totalExcused}</p>
           </div>
         </div>
       </div>

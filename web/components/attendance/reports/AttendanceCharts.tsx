@@ -2,6 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  ATTENDANCE_STATUS_META,
+  getAttendanceStatusLabel,
+  type AttendanceStatusValue,
+} from '@/lib/attendance/statusPresentation';
+import {
   PieChart,
   Pie,
   Cell,
@@ -15,14 +20,20 @@ import {
 } from 'recharts';
 
 interface AttendanceChartsProps {
-  totalPresent: number;
-  totalAbsent: number;
+  byStatus: Record<string, number>;
   byClass: Record<string, { name: string; rate: number }>;
   t: (key: string) => string;
 }
 
-export function AttendanceCharts({ totalPresent, totalAbsent, byClass, t }: AttendanceChartsProps) {
+export function AttendanceCharts({ byStatus, byClass, t }: AttendanceChartsProps) {
   const [mounted, setMounted] = useState(false);
+  const statusData = (Object.keys(ATTENDANCE_STATUS_META) as AttendanceStatusValue[])
+    .map((status) => ({
+      name: getAttendanceStatusLabel(status, t),
+      value: byStatus[status] || 0,
+      color: ATTENDANCE_STATUS_META[status].chartColor,
+    }))
+    .filter((item) => item.value > 0);
 
   useEffect(() => {
     setMounted(true);
@@ -46,10 +57,7 @@ export function AttendanceCharts({ totalPresent, totalAbsent, byClass, t }: Atte
             >
               <PieChart>
                 <Pie
-                  data={[
-                    { name: t('attendance.present'), value: totalPresent, color: '#10b981' },
-                    { name: t('attendance.absent'), value: totalAbsent, color: '#ef4444' },
-                  ].filter((d) => d.value > 0)}
+                  data={statusData}
                   cx="50%"
                   cy="50%"
                   innerRadius={70}
@@ -57,19 +65,14 @@ export function AttendanceCharts({ totalPresent, totalAbsent, byClass, t }: Atte
                   paddingAngle={8}
                   dataKey="value"
                 >
-                  {[
-                    { name: t('attendance.present'), value: totalPresent, color: '#10b981' },
-                    { name: t('attendance.absent'), value: totalAbsent, color: '#ef4444' },
-                  ]
-                    .filter((d) => d.value > 0)
-                    .map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.color}
-                        stroke="rgba(255,255,255,0.1)"
-                        strokeWidth={2}
-                      />
-                    ))}
+                  {statusData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      stroke="rgba(255,255,255,0.1)"
+                      strokeWidth={2}
+                    />
+                  ))}
                 </Pie>
                 <Tooltip
                   contentStyle={{

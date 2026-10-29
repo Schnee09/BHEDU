@@ -14,6 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { EmptyState } from '@/components/ui';
 import { routes } from '@/lib/routes';
+import {
+  getAttendanceStatusLabel,
+  getAttendanceStatusMeta,
+  type AttendanceStatusValue,
+} from '@/lib/attendance/statusPresentation';
 import PageGuard from '@/components/PageGuard';
 import { ResponsiveTable, MobileCard } from '@/components/ui/ResponsiveTable';
 import { format } from 'date-fns';
@@ -35,7 +40,7 @@ import {
 interface AttendanceRecord {
   id: string;
   date: string;
-  status: 'present' | 'absent';
+  status: AttendanceStatusValue;
   remarks: string | null;
   className: string;
   subjectName?: string;
@@ -295,6 +300,8 @@ function AttendancePage() {
                       <option value="all">{t('common.all')}</option>
                       <option value="present">{t('attendance.present')}</option>
                       <option value="absent">{t('attendance.absent')}</option>
+                      <option value="late">{t('attendance.late')}</option>
+                      <option value="excused">{t('attendance.excused')}</option>
                     </Select>
                   </div>
                 </div>
@@ -325,31 +332,31 @@ function AttendancePage() {
                 <ResponsiveTable
                   mobileView={
                     <div className="space-y-2.5 p-3">
-                      {attendanceRecords.map((record) => (
-                        <MobileCard
-                          key={record.id}
-                          title={record.subjectName || record.className}
-                          subtitle={
-                            record.date
-                              ? format(new Date(record.date), 'EEEE, dd/MM/yyyy', {
-                                  locale: dateLocale,
-                                })
-                              : '---'
-                          }
-                          status={{
-                            label:
-                              record.status === 'present'
-                                ? t('attendance.present')
-                                : t('attendance.absent'),
-                            color: record.status === 'present' ? 'green' : 'red',
-                          }}
-                          fields={[
-                            { label: t('students.class'), value: record.className },
-                            { label: t('common.remarks'), value: record.remarks || '---' },
-                          ]}
-                          className="rounded-2xl border-stone-200/80 dark:border-white/10 shadow-xs"
-                        />
-                      ))}
+                      {attendanceRecords.map((record) => {
+                        const statusMeta = getAttendanceStatusMeta(record.status);
+                        return (
+                          <MobileCard
+                            key={record.id}
+                            title={record.subjectName || record.className}
+                            subtitle={
+                              record.date
+                                ? format(new Date(record.date), 'EEEE, dd/MM/yyyy', {
+                                    locale: dateLocale,
+                                  })
+                                : '---'
+                            }
+                            status={{
+                              label: getAttendanceStatusLabel(record.status, t),
+                              color: statusMeta?.mobileColor || 'gray',
+                            }}
+                            fields={[
+                              { label: t('students.class'), value: record.className },
+                              { label: t('common.remarks'), value: record.remarks || '---' },
+                            ]}
+                            className="rounded-2xl border-stone-200/80 dark:border-white/10 shadow-xs"
+                          />
+                        );
+                      })}
                     </div>
                   }
                 >
@@ -375,35 +382,36 @@ function AttendancePage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-100 dark:divide-white/5">
-                        {attendanceRecords.map((record) => (
-                          <tr
-                            key={record.id}
-                            className="hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-colors group"
-                          >
-                            <td className="px-5 py-3.5 text-xs font-bold text-stone-600 dark:text-stone-300">
-                              {record.date ? format(new Date(record.date), 'dd/MM/yyyy') : '---'}
-                            </td>
-                            <td className="px-5 py-3.5 text-xs font-bold text-stone-900 dark:text-white uppercase">
-                              {record.className}
-                            </td>
-                            <td className="px-5 py-3.5 text-xs font-bold text-stone-600 dark:text-stone-300">
-                              {record.subjectName || '-'}
-                            </td>
-                            <td className="px-5 py-3.5 text-center">
-                              <Badge
-                                variant={record.status === 'present' ? 'success' : 'danger'}
-                                className="rounded-full px-3 py-0.5 font-black uppercase tracking-wider text-[9px]"
-                              >
-                                {record.status === 'present'
-                                  ? t('attendance.present')
-                                  : t('attendance.absent')}
-                              </Badge>
-                            </td>
-                            <td className="px-5 py-3.5 text-xs text-stone-400 italic">
-                              {record.remarks || '-'}
-                            </td>
-                          </tr>
-                        ))}
+                        {attendanceRecords.map((record) => {
+                          const statusMeta = getAttendanceStatusMeta(record.status);
+                          return (
+                            <tr
+                              key={record.id}
+                              className="hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-colors group"
+                            >
+                              <td className="px-5 py-3.5 text-xs font-bold text-stone-600 dark:text-stone-300">
+                                {record.date ? format(new Date(record.date), 'dd/MM/yyyy') : '---'}
+                              </td>
+                              <td className="px-5 py-3.5 text-xs font-bold text-stone-900 dark:text-white uppercase">
+                                {record.className}
+                              </td>
+                              <td className="px-5 py-3.5 text-xs font-bold text-stone-600 dark:text-stone-300">
+                                {record.subjectName || '-'}
+                              </td>
+                              <td className="px-5 py-3.5 text-center">
+                                <Badge
+                                  variant={statusMeta?.badgeVariant || 'default'}
+                                  className="rounded-full px-3 py-0.5 font-black uppercase tracking-wider text-[9px]"
+                                >
+                                  {getAttendanceStatusLabel(record.status, t)}
+                                </Badge>
+                              </td>
+                              <td className="px-5 py-3.5 text-xs text-stone-400 italic">
+                                {record.remarks || '-'}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
