@@ -34,6 +34,17 @@ describe('canAccessClass', () => {
     expect(query.eq).toHaveBeenNthCalledWith(2, 'teacher_id', 'teacher-1');
   });
 
+  it.each(['tutor', 'staff'])(
+    'allows an assigned %s to access the requested class',
+    async (role) => {
+      const { client } = createSupabaseResult({ id: 'class-1' });
+
+      await expect(canAccessClass(client, { id: `${role}-1`, role }, 'class-1')).resolves.toBe(
+        true
+      );
+    }
+  );
+
   it('rejects an unassigned teacher', async () => {
     const { client } = createSupabaseResult(null);
 
@@ -51,7 +62,7 @@ describe('canAccessClass', () => {
     expect(client.from).not.toHaveBeenCalled();
   });
 
-  it.each(['student', 'parent', 'tutor', undefined])(
+  it.each(['student', 'parent', undefined])(
     'rejects non-teacher role %s without a query',
     async (role) => {
       const { client } = createSupabaseResult({ id: 'class-1' });

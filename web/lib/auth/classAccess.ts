@@ -11,7 +11,7 @@ export async function canAccessClass(
     return true;
   }
 
-  if (user.role !== 'teacher' || !user.id || !classId) {
+  if (!['teacher', 'tutor', 'staff'].includes(user.role || '') || !user.id || !classId) {
     return false;
   }
 

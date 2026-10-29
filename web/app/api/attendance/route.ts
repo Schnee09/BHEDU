@@ -11,6 +11,7 @@ import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { createAbility } from '@/lib/auth/permissions';
+import { canAccessClass } from '@/lib/auth/classAccess';
 import {
   type AttendanceQueryInput,
   attendanceQuerySchema,
@@ -50,8 +51,28 @@ export const GET = createGetHandler(
         return apiPaginated(data, pagination);
       }
 
-      if (['teacher', 'tutor'].includes(user.role)) {
-        const { data, ...pagination } = await repository.findAll(validatedQuery);
+      if (['teacher', 'tutor', 'staff'].includes(user.role)) {
+        const { data: assignedClasses, error: classError } = await supabase
+          .from('classes')
+          .select('id')
+          .eq('teacher_id', user.id);
+
+        if (classError) {
+          return NextResponse.json(
+            { success: false, error: 'Failed to verify class access' },
+            { status: 500 }
+          );
+        }
+
+        const assignedClassIds = (assignedClasses || []).map((item) => item.id);
+        if (validatedQuery.class_id && !assignedClassIds.includes(validatedQuery.class_id)) {
+          return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+        }
+
+        const teacherConfig = validatedQuery.class_id
+          ? validatedQuery
+          : { ...validatedQuery, class_ids: assignedClassIds };
+        const { data, ...pagination } = await repository.findAll(teacherConfig);
         return apiPaginated(data, pagination);
       }
 
@@ -135,6 +156,9 @@ export const POST = createApiHandler(
     }
 
     const supabase = createServiceClient();
+    if (!(await canAccessClass(supabase, { id: user.id, role: user.role }, body.class_id))) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
     const repository = new AttendanceRepository(supabase);
     const record = await repository.create(body as CreateAttendanceInput);
 

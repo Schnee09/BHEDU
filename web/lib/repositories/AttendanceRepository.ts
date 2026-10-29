@@ -19,7 +19,7 @@ import type {
   UpdateAttendanceInput,
 } from '@/lib/schemas';
 
-export type AttendanceFilters = AttendanceQueryInput;
+export type AttendanceFilters = AttendanceQueryInput & { class_ids?: string[] };
 
 import type { AttendanceResponse } from '@/lib/schemas/responses/attendance';
 
@@ -148,6 +148,11 @@ export class AttendanceRepository
 
     if (filters.class_id) {
       query = query.eq('class_id', filters.class_id);
+    } else if (filters.class_ids) {
+      if (filters.class_ids.length === 0) {
+        return { data: [], total: 0, page, pageSize, totalPages: 0 };
+      }
+      query = query.in('class_id', filters.class_ids);
     }
 
     if (filters.date) {
