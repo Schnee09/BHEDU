@@ -1,4 +1,5 @@
 import { apiSuccess, createGetHandler, serverError } from '@/lib/api';
+import { AuthorizationError } from '@/lib/api/errors';
 import { createServiceClient } from '@/lib/supabase/server';
 
 // Dashboard data is user-scoped
@@ -9,12 +10,17 @@ interface GradeDistributionRow {
   student_count: string | number;
 }
 
-export const GET = createGetHandler({ requireAuth: true }, async ({ user }) => {
+const GLOBAL_ANALYTICS_ROLES = new Set(['super_admin', 'owner', 'admin']);
+const ASSIGNED_CLASS_ROLES = new Set(['teacher', 'tutor', 'staff']);
+
+export const GET = createGetHandler({ permission: 'grades.view' }, async ({ user }) => {
   const supabase = createServiceClient();
 
-  // Determine if we should filter by teacher
-  const isStaff = user.role === 'super_admin' || user.role === 'owner' || user.role === 'admin';
-  const rpcParams = isStaff ? {} : { p_teacher_id: user.id };
+  if (!GLOBAL_ANALYTICS_ROLES.has(user.role) && !ASSIGNED_CLASS_ROLES.has(user.role)) {
+    throw new AuthorizationError('Bạn không có quyền xem thống kê điểm này');
+  }
+
+  const rpcParams = GLOBAL_ANALYTICS_ROLES.has(user.role) ? {} : { p_teacher_id: user.id };
 
   const { data, error } = await supabase.rpc('get_grade_distribution', rpcParams);
 

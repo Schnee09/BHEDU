@@ -1,16 +1,23 @@
-import { NextResponse } from 'next/server';
 import { apiSuccess, createGetHandler, serverError } from '@/lib/api';
+import { AuthorizationError } from '@/lib/api/errors';
 import { createServiceClient } from '@/lib/supabase/server';
 
 // Prevent cross-teacher data leakage from ISR cache
 export const dynamic = 'force-dynamic';
 
-export const GET = createGetHandler({ requireAuth: true }, async ({ request, user }) => {
+const GLOBAL_ANALYTICS_ROLES = new Set(['super_admin', 'owner', 'admin']);
+const ASSIGNED_CLASS_ROLES = new Set(['teacher', 'tutor', 'staff']);
+
+export const GET = createGetHandler({ permission: 'grades.view' }, async ({ user }) => {
   const supabase = createServiceClient();
 
-  // Teachers only see their own classes; admins see all (pass null)
+  if (!GLOBAL_ANALYTICS_ROLES.has(user.role) && !ASSIGNED_CLASS_ROLES.has(user.role)) {
+    throw new AuthorizationError('Bạn không có quyền xem thống kê lớp này');
+  }
+
+  // Assigned teaching roles only see their own classes; management roles see all.
   const { data: classes, error } = await supabase.rpc('get_class_averages', {
-    p_teacher_id: user.role === 'teacher' ? user.id : null,
+    p_teacher_id: GLOBAL_ANALYTICS_ROLES.has(user.role) ? null : user.id,
   });
 
   if (error) {
