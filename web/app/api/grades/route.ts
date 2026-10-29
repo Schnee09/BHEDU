@@ -11,6 +11,7 @@ import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { bulkGradeEntrySchema, createGradeSchema, gradeQuerySchema } from '@/lib/schemas';
 import { validateQuery } from '@/lib/api/validation';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 // GET /api/grades
 export const GET = createGetHandler({ permission: 'grades.view' }, async ({ request, user }) => {
@@ -55,17 +56,21 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
 
   // ========== TEACHER SCOPE FILTER ==========
   let teacherClassIds: string[] | null = null;
-  if (user.role === 'teacher') {
-    const { data: teacherClasses } = await supabase
+  if (['teacher', 'tutor', 'staff'].includes(user.role)) {
+    const { data: teacherClasses, error: teacherClassesError } = await supabase
       .from('classes')
       .select('id')
       .eq('teacher_id', user.id);
 
-    if (teacherClasses && teacherClasses.length > 0) {
-      teacherClassIds = teacherClasses.map((c) => c.id);
+    if (teacherClassesError) {
+      throw new Error('Failed to verify assigned classes');
     }
-    // Note: If teacher has no classes, teacherClassIds remains null.
-    // They won't be scoped to any classes, but can still see specific students if permitted by RLS/Permissions.
+
+    teacherClassIds = (teacherClasses || []).map((c) => c.id);
+    if (queryParams.class_id && !teacherClassIds.includes(queryParams.class_id)) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+    if (teacherClassIds.length === 0) return apiSuccess([]);
   }
 
   // Build query
@@ -122,8 +127,8 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     }
   }
 
-  // Teacher scoping: Relax scoping for single student history (Transcripts)
-  if (teacherClassIds && !queryParams.student_id) {
+  // Teachers, tutors and assigned staff can only view grades from their own classes.
+  if (teacherClassIds && !queryParams.class_id) {
     query = query.in('class_id', teacherClassIds);
   }
 
@@ -138,7 +143,7 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
 });
 
 // POST /api/grades
-export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ request }) => {
+export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ request, user }) => {
   const supabase = createServiceClient();
   const body = await request.json();
   const data = body as any;
@@ -169,6 +174,34 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
     );
   }
 
+  let targetClassId = validatedData.class_id || null;
+  const targetAssignmentId = validatedData.assignment_id || null;
+  if (!targetClassId && targetAssignmentId) {
+    const { data: assignment, error: assignmentError } = await supabase
+      .from('assignments')
+      .select('class_id')
+      .eq('id', targetAssignmentId)
+      .maybeSingle();
+    if (assignmentError || !assignment?.class_id) {
+      return NextResponse.json(
+        { success: false, error: 'Assignment class could not be resolved' },
+        { status: 400 }
+      );
+    }
+    targetClassId = assignment.class_id;
+  }
+
+  if (!targetClassId) {
+    return NextResponse.json(
+      { success: false, error: 'class_id or assignment_id is required' },
+      { status: 400 }
+    );
+  }
+
+  if (!(await canAccessClass(supabase, { id: user.id, role: user.role }, targetClassId))) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
+
   // Resolve academic year if "current"
   let academicYearId = validatedData.academic_year_id;
   if (academicYearId === 'current') {
@@ -190,7 +223,8 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
 
     return {
       student_id: row.student_id,
-      class_id: row.class_id || metadata.class_id,
+      class_id: row.class_id || metadata.class_id || targetClassId,
+      assignment_id: row.assignment_id || metadata.assignment_id || targetAssignmentId,
       subject_id: row.subject_id || metadata.subject_id,
       semester: row.semester || metadata.semester,
       component_type: row.component_type || metadata.component_type,
