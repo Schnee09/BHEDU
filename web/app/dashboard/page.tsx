@@ -52,6 +52,9 @@ const ParentDashboard = dynamic(() => import('@/components/dashboard/portals/Par
 const TutorDashboard = dynamic(() => import('@/components/dashboard/portals/TutorDashboard'), {
   loading: () => <DashboardSkeleton />,
 });
+const StaffDashboard = dynamic(() => import('@/components/dashboard/portals/StaffDashboard'), {
+  loading: () => <DashboardSkeleton />,
+});
 
 export default function DashboardPage() {
   const { profile, loading: profileLoading } = useProfile();
@@ -76,7 +79,9 @@ export default function DashboardPage() {
       return <ParentDashboard />;
     case 'tutor':
       return <TutorDashboard />;
+    case 'staff':
+      return <StaffDashboard />;
     default:
-      return <AdminDashboard />;
+      return <DashboardSkeleton />;
   }
 }
