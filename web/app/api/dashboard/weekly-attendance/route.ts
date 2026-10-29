@@ -1,8 +1,19 @@
 import { apiSuccess, createGetHandler, serverError } from '@/lib/api';
+import { AuthorizationError } from '@/lib/api/errors';
 import { createServiceClient } from '@/lib/supabase/server';
 
 // Disable static caching for authenticated route
 export const dynamic = 'force-dynamic';
+
+const GLOBAL_ATTENDANCE_ROLES = new Set(['super_admin', 'owner', 'admin']);
+const ASSIGNED_CLASS_ROLES = new Set(['teacher', 'tutor', 'staff']);
+
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export const GET = createGetHandler({ requireAuth: true }, async ({ user }) => {
   const supabase = createServiceClient();
@@ -18,7 +29,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ user }) => {
       .from('attendance')
       .select('date, status')
       .eq('student_id', user.id)
-      .gte('date', monday.toISOString().split('T')[0]);
+      .gte('date', formatLocalDate(monday));
 
     if (error) {
       console.error('Error fetching student weekly attendance:', error);
@@ -30,12 +41,12 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ user }) => {
     const weeklyData = days.map((name, i) => {
       const date = new Date(monday);
       date.setDate(monday.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = formatLocalDate(date);
       const record = (records || []).find((r) => r.date === dateStr);
 
       return {
         name,
-        present: record ? (record.status === 'present' ? 100 : 0) : 0,
+        present: record ? (['present', 'late'].includes(record.status) ? 100 : 0) : 0,
         status: record ? record.status : 'missing',
       };
     });
@@ -43,8 +54,13 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ user }) => {
     return apiSuccess({ weeklyData });
   }
 
-  // Global stats for staff/admins
-  const { data, error } = await supabase.rpc('get_weekly_attendance');
+  if (!GLOBAL_ATTENDANCE_ROLES.has(user.role) && !ASSIGNED_CLASS_ROLES.has(user.role)) {
+    throw new AuthorizationError('Bạn không có quyền xem thống kê chuyên cần này');
+  }
+
+  const { data, error } = await supabase.rpc('get_weekly_attendance', {
+    p_teacher_id: GLOBAL_ATTENDANCE_ROLES.has(user.role) ? null : user.id,
+  });
 
   if (error) {
     console.error('Error fetching weekly attendance:', error);
