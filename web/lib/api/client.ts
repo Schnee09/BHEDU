@@ -821,6 +821,7 @@ export interface ClassAttendanceStudent {
   email?: string;
   status: string;
   remarks?: string;
+  recordId?: string;
   enrollmentExceptionReason?: string | null;
 }
 
@@ -853,6 +854,8 @@ export interface ClassAttendanceResponse {
     totalStudents: number;
     presentCount: number;
     absentCount: number;
+    lateCount: number;
+    excusedCount: number;
     unmarkedCount: number;
     attendanceRate: number;
   };

@@ -74,7 +74,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
     const { data: attendance } = await supabase
       .from('attendance')
       .select(
-        `student_id, status, remarks, enrollment_exception_reason,
+        `id, student_id, status, remarks, enrollment_exception_reason,
          profiles!student_id (id, full_name, email, student_code)`
       )
       .eq('class_id', classId)
@@ -91,6 +91,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
       email: enrollment.profiles?.email || '',
       status: attendanceMap.get(enrollment.student_id)?.status || 'unmarked',
       remarks: (attendanceMap.get(enrollment.student_id) as any)?.remarks || '',
+      recordId: (attendanceMap.get(enrollment.student_id) as any)?.id,
       enrollmentExceptionReason: null,
     }));
 
@@ -106,6 +107,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
         email: profile?.email || '',
         status: record.status,
         remarks: record.remarks || '',
+        recordId: record.id,
         enrollmentExceptionReason: record.enrollment_exception_reason,
       });
     }
@@ -115,14 +117,15 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
       totalStudents: records.length,
       presentCount: records.filter((r) => r.status === 'present').length,
       absentCount: records.filter((r) => r.status === 'absent').length,
+      lateCount: records.filter((r) => r.status === 'late').length,
+      excusedCount: records.filter((r) => r.status === 'excused').length,
       unmarkedCount: records.filter((r) => r.status === 'unmarked').length,
       attendanceRate: 0,
     };
 
+    const markedCount = summary.totalStudents - summary.unmarkedCount;
     summary.attendanceRate =
-      summary.totalStudents > 0
-        ? Math.round((summary.presentCount / summary.totalStudents) * 100 * 100) / 100
-        : 0;
+      markedCount > 0 ? Math.round((summary.presentCount / markedCount) * 100 * 100) / 100 : 0;
 
     return apiSuccess({
       class: classInfo,

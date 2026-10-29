@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/I18nContext';
 import {
@@ -29,6 +29,8 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon,
   UserPlusIcon,
+  ClockIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
@@ -53,8 +55,29 @@ interface AttendanceSummary {
   totalStudents: number;
   presentCount: number;
   absentCount: number;
+  lateCount: number;
+  excusedCount: number;
   unmarkedCount: number;
   attendanceRate: number;
+}
+
+function getAttendanceSummary(currentStudents: StudentAttendanceView[]): AttendanceSummary {
+  const present = currentStudents.filter((s) => s.status === AttendanceStatus.PRESENT).length;
+  const absent = currentStudents.filter((s) => s.status === AttendanceStatus.ABSENT).length;
+  const late = currentStudents.filter((s) => s.status === AttendanceStatus.LATE).length;
+  const excused = currentStudents.filter((s) => s.status === AttendanceStatus.EXCUSED).length;
+  const unmarked = currentStudents.filter((s) => s.status === 'unmarked').length;
+  const marked = present + absent + late + excused;
+
+  return {
+    totalStudents: currentStudents.length,
+    presentCount: present,
+    absentCount: absent,
+    lateCount: late,
+    excusedCount: excused,
+    unmarkedCount: unmarked,
+    attendanceRate: marked > 0 ? Math.round((present / marked) * 100) : 0,
+  };
 }
 
 export default function AttendanceMarkingPage() {
@@ -86,7 +109,7 @@ function AttendanceMarkingPageContent() {
 
   // Data State
   const [students, setStudents] = useState<StudentAttendanceView[]>([]);
-  const [summary, setSummary] = useState<AttendanceSummary | null>(null);
+  const summary = useMemo(() => getAttendanceSummary(students), [students]);
   const [studentSearch, setStudentSearch] = useState<string>('');
   const [showExceptionForm, setShowExceptionForm] = useState(false);
   const [candidateSearch, setCandidateSearch] = useState('');
@@ -114,32 +137,20 @@ function AttendanceMarkingPageContent() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  // Load classes on mount
-  useEffect(() => {
-    loadClasses();
-  }, []);
-
-  // Load attendance when class or date changes
-  useEffect(() => {
-    if (selectedClass && date) {
-      loadAttendance();
-    }
-  }, [selectedClass, date]);
-
-  const loadClasses = async () => {
+  const loadClasses = useCallback(async () => {
     try {
       const res = await getClasses({ limit: 100 });
       const classList = (res.data || []) as any[];
       setClasses(classList.map((c) => ({ id: c.id, name: c.name })));
 
-      if (!selectedClass && classList.length > 0) {
-        setSelectedClass(classList[0].id);
+      if (classList.length > 0) {
+        setSelectedClass((current) => current || classList[0].id);
       }
     } catch (error) {
       console.error('Failed to load classes', error);
       setClasses([]);
     }
-  };
+  }, []);
 
   const loadAttendance = useCallback(async () => {
     setLoading(true);
@@ -152,11 +163,11 @@ function AttendanceMarkingPageContent() {
         email: student.email,
         status: student.status as AttendanceStatus | 'unmarked',
         remarks: student.remarks || '',
+        recordId: student.recordId,
         enrollmentExceptionReason: student.enrollmentExceptionReason,
       }));
 
       setStudents(mappedStudents);
-      calculateSummary(mappedStudents);
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Failed to load attendance', error);
@@ -166,30 +177,19 @@ function AttendanceMarkingPageContent() {
     }
   }, [selectedClass, date, t]);
 
-  const calculateSummary = (currentStudents: StudentAttendanceView[]) => {
-    const total = currentStudents.length;
-    const present = currentStudents.filter((s) => s.status === AttendanceStatus.PRESENT).length;
-    const absent = currentStudents.filter((s) => s.status === AttendanceStatus.ABSENT).length;
-    const unmarked = currentStudents.filter((s) => s.status === 'unmarked').length;
+  useEffect(() => {
+    void loadClasses();
+  }, [loadClasses]);
 
-    const denominator = present + absent;
-    const rate = denominator > 0 ? Math.round((present / denominator) * 100) : 0;
-
-    setSummary({
-      totalStudents: total,
-      presentCount: present,
-      absentCount: absent,
-      unmarkedCount: unmarked,
-      attendanceRate: rate,
-    });
-  };
+  useEffect(() => {
+    if (selectedClass && date) void loadAttendance();
+  }, [selectedClass, date, loadAttendance]);
 
   const updateStudentStatus = (studentId: string, status: string) => {
     setStudents((prev) => {
       const updated = prev.map((student) =>
         student.studentId === studentId ? { ...student, status: status as any } : student
       );
-      calculateSummary(updated);
       return updated;
     });
     setHasUnsavedChanges(true);
@@ -198,13 +198,18 @@ function AttendanceMarkingPageContent() {
   const markAll = (status: AttendanceStatus) => {
     setStudents((prev) => {
       const updated = prev.map((student) => ({ ...student, status }));
-      calculateSummary(updated);
       return updated;
     });
     setHasUnsavedChanges(true);
   };
 
   const saveAttendance = async () => {
+    if (
+      students.some((student) => student.enrollmentExceptionReason && student.status === 'unmarked')
+    ) {
+      toast.error('Vui lòng chọn trạng thái điểm danh cho học sinh học thử hoặc học bù');
+      return;
+    }
     setSaving(true);
     try {
       const recordsToSave = students
@@ -287,7 +292,6 @@ function AttendanceMarkingPageContent() {
           enrollmentExceptionReason: reason,
         },
       ];
-      calculateSummary(updated);
       return updated;
     });
     setHasUnsavedChanges(true);
@@ -308,9 +312,12 @@ function AttendanceMarkingPageContent() {
     const presentStudents = students.filter((s) => s.status === AttendanceStatus.PRESENT);
     const absentStudents = students.filter((s) => s.status === AttendanceStatus.ABSENT);
     const lateStudents = students.filter((s) => s.status === AttendanceStatus.LATE);
+    const excusedStudents = students.filter((s) => s.status === AttendanceStatus.EXCUSED);
+    const unmarkedStudents = students.filter((s) => s.status === 'unmarked');
 
     const absentNames = absentStudents.map((s) => s.studentName).join(', ');
     const lateNames = lateStudents.map((s) => s.studentName).join(', ');
+    const excusedNames = excusedStudents.map((s) => s.studentName).join(', ');
 
     const dateObj = new Date(date);
     const dateFormatted = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
@@ -327,7 +334,19 @@ function AttendanceMarkingPageContent() {
     if (lateStudents.length > 0) {
       report += `⏰ Đi muộn (${lateStudents.length}): ${lateNames}\n`;
     }
-    if (absentStudents.length === 0 && lateStudents.length === 0) {
+    if (excusedStudents.length > 0) {
+      report += `📝 Vắng có phép (${excusedStudents.length}): ${excusedNames}\n`;
+    }
+    if (unmarkedStudents.length > 0) {
+      report += `Chưa điểm danh: ${unmarkedStudents.length} học sinh\n`;
+    }
+    if (
+      absentStudents.length === 0 &&
+      lateStudents.length === 0 &&
+      excusedStudents.length === 0 &&
+      unmarkedStudents.length === 0 &&
+      total > 0
+    ) {
       report += `🎉 Lớp đi học đầy đủ 100%!\n`;
     }
     report += `━━━━━━━━━━━━━━━━━━━━━\n`;
@@ -434,6 +453,28 @@ function AttendanceMarkingPageContent() {
                   </strong>
                 </span>
               </div>
+              {summary.lateCount > 0 && (
+                <div className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/30 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                  <ClockIcon className="w-3.5 h-3.5" />
+                  <span>
+                    Đi muộn:{' '}
+                    <strong className="font-mono text-amber-800 dark:text-amber-200">
+                      {summary.lateCount}
+                    </strong>
+                  </span>
+                </div>
+              )}
+              {summary.excusedCount > 0 && (
+                <div className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/30 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                  <ShieldCheckIcon className="w-3.5 h-3.5" />
+                  <span>
+                    Có phép:{' '}
+                    <strong className="font-mono text-blue-800 dark:text-blue-200">
+                      {summary.excusedCount}
+                    </strong>
+                  </span>
+                </div>
+              )}
               {summary.unmarkedCount > 0 && (
                 <div className="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/30 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                   <ExclamationCircleIcon className="w-3.5 h-3.5 text-amber-600" />
@@ -625,6 +666,7 @@ function AttendanceMarkingPageContent() {
                 type="text"
                 value={studentSearch}
                 onChange={(e) => setStudentSearch(e.target.value)}
+                aria-label="Tìm học sinh trong danh sách điểm danh"
                 placeholder="Tìm học sinh theo tên, mã..."
                 className="w-full pl-8 pr-7 py-1.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-white/10 rounded-xl text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
@@ -694,6 +736,8 @@ function AttendanceMarkingPageContent() {
               {filteredStudents.map((student, idx) => {
                 const isPresent = student.status === AttendanceStatus.PRESENT;
                 const isAbsent = student.status === AttendanceStatus.ABSENT;
+                const isLate = student.status === AttendanceStatus.LATE;
+                const isExcused = student.status === AttendanceStatus.EXCUSED;
                 const isUnmarked = student.status === 'unmarked';
 
                 return (
@@ -704,7 +748,11 @@ function AttendanceMarkingPageContent() {
                         ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/10'
                         : isAbsent
                           ? 'border-rose-200 dark:border-rose-900/50 bg-rose-50/10'
-                          : 'border-stone-200/80 dark:border-white/10'
+                          : isLate
+                            ? 'border-amber-200 dark:border-amber-900/50 bg-amber-50/10'
+                            : isExcused
+                              ? 'border-blue-200 dark:border-blue-900/50 bg-blue-50/10'
+                              : 'border-stone-200/80 dark:border-white/10'
                     }`}
                   >
                     {/* Top Row: Index + Student Info + Status Badge */}
@@ -740,6 +788,16 @@ function AttendanceMarkingPageContent() {
                             Vắng
                           </span>
                         )}
+                        {isLate && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-black uppercase">
+                            Đi muộn
+                          </span>
+                        )}
+                        {isExcused && (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[9px] font-black uppercase">
+                            Có phép
+                          </span>
+                        )}
                         {isUnmarked && (
                           <span className="px-2 py-0.5 rounded-full bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400 text-[9px] font-black uppercase">
                             Chưa
@@ -748,14 +806,14 @@ function AttendanceMarkingPageContent() {
                       </div>
                     </div>
 
-                    {/* Touch Segmented Toggle (3-State Buttons: Touch target >= 44px) */}
-                    <div className="grid grid-cols-3 gap-1.5 p-1 bg-stone-100 dark:bg-stone-800/80 rounded-xl">
+                    {/* Touch controls: labels and icons avoid relying on color alone. */}
+                    <div className="grid grid-cols-2 gap-2 p-1.5 bg-stone-100 dark:bg-stone-800/80 rounded-xl">
                       <button
                         type="button"
                         onClick={() =>
                           updateStudentStatus(student.studentId, AttendanceStatus.PRESENT)
                         }
-                        className={`h-10 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                        className={`min-h-11 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-colors cursor-pointer ${
                           isPresent
                             ? 'bg-emerald-600 text-white shadow-sm'
                             : 'text-stone-600 dark:text-stone-300 hover:text-emerald-600'
@@ -769,7 +827,7 @@ function AttendanceMarkingPageContent() {
                         onClick={() =>
                           updateStudentStatus(student.studentId, AttendanceStatus.ABSENT)
                         }
-                        className={`h-10 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                        className={`min-h-11 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-colors cursor-pointer ${
                           isAbsent
                             ? 'bg-rose-600 text-white shadow-sm'
                             : 'text-stone-600 dark:text-stone-300 hover:text-rose-600'
@@ -780,8 +838,42 @@ function AttendanceMarkingPageContent() {
                       </button>
                       <button
                         type="button"
+                        onClick={() =>
+                          updateStudentStatus(student.studentId, AttendanceStatus.LATE)
+                        }
+                        className={`min-h-11 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-colors cursor-pointer ${
+                          isLate
+                            ? 'bg-amber-500 text-white shadow-sm'
+                            : 'text-stone-600 dark:text-stone-300 hover:text-amber-700'
+                        }`}
+                      >
+                        <ClockIcon className="w-4 h-4 shrink-0" />
+                        <span>Đi muộn</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateStudentStatus(student.studentId, AttendanceStatus.EXCUSED)
+                        }
+                        className={`min-h-11 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-colors cursor-pointer ${
+                          isExcused
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'text-stone-600 dark:text-stone-300 hover:text-blue-700'
+                        }`}
+                      >
+                        <ShieldCheckIcon className="w-4 h-4 shrink-0" />
+                        <span>Có phép</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => updateStudentStatus(student.studentId, 'unmarked')}
-                        className={`h-10 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                        disabled={Boolean(student.recordId)}
+                        title={
+                          student.recordId
+                            ? 'Bản ghi đã lưu cần chọn một trạng thái điểm danh'
+                            : undefined
+                        }
+                        className={`col-span-2 min-h-11 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-colors cursor-pointer ${
                           isUnmarked
                             ? 'bg-stone-600 text-white shadow-sm'
                             : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
@@ -797,6 +889,7 @@ function AttendanceMarkingPageContent() {
                       <input
                         type="text"
                         value={student.remarks || ''}
+                        aria-label={`Ghi chú điểm danh cho ${student.studentName}`}
                         placeholder={t('attendance.mark.table.placeholder')}
                         onChange={(e) => {
                           const newVal = e.target.value;
@@ -839,6 +932,8 @@ function AttendanceMarkingPageContent() {
                     {filteredStudents.map((student, idx) => {
                       const isPresent = student.status === AttendanceStatus.PRESENT;
                       const isAbsent = student.status === AttendanceStatus.ABSENT;
+                      const isLate = student.status === AttendanceStatus.LATE;
+                      const isExcused = student.status === AttendanceStatus.EXCUSED;
                       const isUnmarked = student.status === 'unmarked';
 
                       return (
@@ -865,13 +960,13 @@ function AttendanceMarkingPageContent() {
                             </div>
                           </td>
                           <td className="px-4 py-2.5 text-center">
-                            <div className="inline-flex p-0.5 bg-stone-100 dark:bg-stone-800 rounded-xl gap-1">
+                            <div className="inline-flex p-1 bg-stone-100 dark:bg-stone-800 rounded-xl gap-1">
                               <button
                                 type="button"
                                 onClick={() =>
                                   updateStudentStatus(student.studentId, AttendanceStatus.PRESENT)
                                 }
-                                className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
+                                className={`px-2 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight flex items-center gap-1 transition-colors cursor-pointer ${
                                   isPresent
                                     ? 'bg-emerald-600 text-white shadow-xs'
                                     : 'text-stone-500 hover:text-emerald-600'
@@ -885,7 +980,7 @@ function AttendanceMarkingPageContent() {
                                 onClick={() =>
                                   updateStudentStatus(student.studentId, AttendanceStatus.ABSENT)
                                 }
-                                className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
+                                className={`px-2 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight flex items-center gap-1 transition-colors cursor-pointer ${
                                   isAbsent
                                     ? 'bg-rose-600 text-white shadow-xs'
                                     : 'text-stone-500 hover:text-rose-600'
@@ -896,8 +991,42 @@ function AttendanceMarkingPageContent() {
                               </button>
                               <button
                                 type="button"
+                                onClick={() =>
+                                  updateStudentStatus(student.studentId, AttendanceStatus.LATE)
+                                }
+                                className={`px-2 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight flex items-center gap-1 transition-colors cursor-pointer ${
+                                  isLate
+                                    ? 'bg-amber-500 text-white shadow-xs'
+                                    : 'text-stone-500 hover:text-amber-700'
+                                }`}
+                              >
+                                <ClockIcon className="w-3.5 h-3.5" />
+                                <span>Đi muộn</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateStudentStatus(student.studentId, AttendanceStatus.EXCUSED)
+                                }
+                                className={`px-2 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight flex items-center gap-1 transition-colors cursor-pointer ${
+                                  isExcused
+                                    ? 'bg-blue-600 text-white shadow-xs'
+                                    : 'text-stone-500 hover:text-blue-700'
+                                }`}
+                              >
+                                <ShieldCheckIcon className="w-3.5 h-3.5" />
+                                <span>Có phép</span>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => updateStudentStatus(student.studentId, 'unmarked')}
-                                className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
+                                disabled={Boolean(student.recordId)}
+                                title={
+                                  student.recordId
+                                    ? 'Bản ghi đã lưu cần chọn một trạng thái điểm danh'
+                                    : undefined
+                                }
+                                className={`px-2 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-tight flex items-center gap-1 transition-colors cursor-pointer ${
                                   isUnmarked
                                     ? 'bg-stone-600 text-white shadow-xs'
                                     : 'text-stone-500 hover:text-stone-900'
@@ -912,6 +1041,7 @@ function AttendanceMarkingPageContent() {
                             <input
                               type="text"
                               value={student.remarks || ''}
+                              aria-label={`Ghi chú điểm danh cho ${student.studentName}`}
                               placeholder={t('attendance.mark.table.placeholder')}
                               onChange={(e) => {
                                 const newVal = e.target.value;
