@@ -10,6 +10,9 @@ import { StudentRepository } from '@/lib/repositories/StudentRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { updateStudentSchema } from '@/lib/schemas';
 import { AuthorizationError, NotFoundError } from '@/lib/api/errors';
+import { canAccessStudent } from '@/lib/auth/classAccess';
+
+const GLOBAL_STUDENT_DIRECTORY_ROLES = new Set(['super_admin', 'owner', 'admin', 'staff']);
 
 // GET /api/students/[id]
 export const GET = createGetHandler({ requireAuth: true }, async ({ params, request, user }) => {
@@ -23,7 +26,10 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ params, requ
   const supabase = createServiceClient();
   const repository = new StudentRepository(supabase);
 
-  if (user.role === 'student' && user.id !== id) {
+  const canViewStudent =
+    GLOBAL_STUDENT_DIRECTORY_ROLES.has(user.role) ||
+    (await canAccessStudent(supabase, { id: user.id, role: user.role }, id));
+  if (!canViewStudent) {
     throw new AuthorizationError('Forbidden');
   }
 

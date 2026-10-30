@@ -54,7 +54,7 @@ export async function canAccessStudent(
     return !error && Boolean(data);
   }
 
-  if (user.role !== 'teacher') {
+  if (!['teacher', 'tutor'].includes(user.role || '')) {
     return false;
   }
 

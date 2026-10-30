@@ -74,15 +74,18 @@ describe('canAccessClass', () => {
 });
 
 describe('canAccessStudent', () => {
-  it('allows a teacher when the student is enrolled in one of their classes', async () => {
-    const { client, query } = createSupabaseResult({ class_id: 'class-1' });
+  it.each(['teacher', 'tutor'])(
+    'allows an assigned %s when the student is enrolled in one of their classes',
+    async (role) => {
+      const { client, query } = createSupabaseResult({ class_id: 'class-1' });
 
-    await expect(
-      canAccessStudent(client, { id: 'teacher-1', role: 'teacher' }, 'student-1')
-    ).resolves.toBe(true);
-    expect(query.eq).toHaveBeenNthCalledWith(1, 'student_id', 'student-1');
-    expect(query.eq).toHaveBeenNthCalledWith(2, 'classes.teacher_id', 'teacher-1');
-  });
+      await expect(canAccessStudent(client, { id: `${role}-1`, role }, 'student-1')).resolves.toBe(
+        true
+      );
+      expect(query.eq).toHaveBeenNthCalledWith(1, 'student_id', 'student-1');
+      expect(query.eq).toHaveBeenNthCalledWith(2, 'classes.teacher_id', `${role}-1`);
+    }
+  );
 
   it('rejects a teacher without a shared class', async () => {
     const { client } = createSupabaseResult(null);

@@ -45,6 +45,12 @@ export const GET = createGetHandler(
     const supabase = createServiceClient();
     const repository = new StudentRepository(supabase);
 
+    // Operational staff need the center-wide directory for reception workflows.
+    if (user.role === 'staff') {
+      const { data, ...pagination } = await repository.findAll(queryOpts);
+      return apiPaginated(data, pagination);
+    }
+
     const ability = createAbility({
       userId: user.id,
       role: user.role,
@@ -52,12 +58,7 @@ export const GET = createGetHandler(
     });
 
     if (ability.can('read', 'Student')) {
-      if (
-        user.role === 'admin' ||
-        user.role === ('admin' as any) ||
-        user.role === 'super_admin' ||
-        user.role === 'owner'
-      ) {
+      if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'owner') {
         const { data, ...pagination } = await repository.findAll(queryOpts);
         return apiPaginated(data, pagination);
       }
