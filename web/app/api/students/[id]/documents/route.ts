@@ -12,6 +12,21 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+const DOCUMENT_BUCKET = 'student-documents';
+const SIGNED_URL_TTL_SECONDS = 15 * 60;
+const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
+const ALLOWED_DOCUMENT_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/csv',
+]);
+
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const authResult = await adminAuth(request);
@@ -29,7 +44,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         id,
         name,
         type,
-        url,
+        storage_path,
         size,
         uploaded_at,
         uploaded_by,
@@ -47,15 +62,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       throw error;
     }
 
-    const formattedDocs = (documents || []).map((d: any) => ({
-      id: d.id,
-      name: d.name,
-      type: d.type,
-      url: d.url,
-      size: d.size,
-      uploaded_at: d.uploaded_at,
-      uploaded_by: d.profiles ? { full_name: d.profiles.full_name } : null,
-    }));
+    const formattedDocs = await Promise.all(
+      (documents || []).map(async (document: any) => {
+        let signedUrl = '';
+        if (document.storage_path) {
+          const { data } = await supabase.storage
+            .from(DOCUMENT_BUCKET)
+            .createSignedUrl(document.storage_path, SIGNED_URL_TTL_SECONDS);
+          signedUrl = data?.signedUrl || '';
+        }
+
+        return {
+          id: document.id,
+          name: document.name,
+          type: document.type,
+          url: signedUrl,
+          size: document.size,
+          uploaded_at: document.uploaded_at,
+          uploaded_by: document.profiles ? { full_name: document.profiles.full_name } : null,
+        };
+      })
+    );
 
     return NextResponse.json({ documents: formattedDocs });
   } catch (error) {
@@ -80,12 +107,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Không có file được tải lên' }, { status: 400 });
     }
 
+    if (!ALLOWED_DOCUMENT_TYPES.has(file.type)) {
+      return NextResponse.json(
+        { error: 'Chỉ hỗ trợ tệp PDF, ảnh, Word, Excel hoặc CSV' },
+        { status: 400 }
+      );
+    }
+
+    if (file.size > MAX_DOCUMENT_SIZE) {
+      return NextResponse.json({ error: 'Tệp tải lên không được vượt quá 10 MB' }, { status: 400 });
+    }
+
     const supabase = createServiceClient();
 
     // Upload file to Supabase Storage
-    const fileName = `${id}/${Date.now()}_${file.name}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('student-documents')
+    const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fileName = `${id}/${Date.now()}_${safeFileName}`;
+    const { error: uploadError } = await supabase.storage
+      .from(DOCUMENT_BUCKET)
       .upload(fileName, file);
 
     if (uploadError) {
@@ -102,9 +141,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       throw uploadError;
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage.from('student-documents').getPublicUrl(fileName);
-
     // Save document metadata to database
     const { data: document, error: dbError } = await supabase
       .from('student_documents')
@@ -112,7 +148,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         student_id: id,
         name: file.name,
         type: file.type,
-        url: urlData.publicUrl,
+        url: '',
         size: file.size,
         storage_path: fileName,
         uploaded_by: authResult.userId,
@@ -121,6 +157,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .single();
 
     if (dbError) {
+      await supabase.storage.from(DOCUMENT_BUCKET).remove([fileName]);
       // If table doesn't exist
       if (dbError.code === '42P01') {
         return NextResponse.json(
