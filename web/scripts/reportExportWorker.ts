@@ -4,12 +4,14 @@ import os from 'os';
 import path from 'path';
 import { finished as streamFinished } from 'stream/promises';
 import { createServiceClient } from '@/lib/supabase/server';
+import { intersectClassScopes } from '@/lib/reports/exportScope';
 
 // Simple polling worker to process pending report_exports jobs.
 // Usage: run from project root: `node ./web/scripts/reportExportWorker.js` or use ts-node.
 
 const POLL_INTERVAL_MS = parseInt(process.env.REPORTS_WORKER_POLL_MS || '3000', 10);
 const BUCKET = process.env.REPORTS_STORAGE_BUCKET || 'reports';
+const EMPTY_SCOPE_CLASS_ID = '00000000-0000-0000-0000-000000000000';
 
 async function sleep(ms: number) {
   return new Promise((res) => setTimeout(res, ms));
@@ -37,14 +39,16 @@ async function processJob(job: any, supabase: any) {
       if (filters.dateTo) query = query.lte('date', filters.dateTo);
       if (filters.classId) query = query.eq('class_id', filters.classId);
 
-      // Apply academicYearId / courseId by resolving classes
+      // Apply academicYearId / courseId by resolving their class intersection.
+      // An empty result must remain empty instead of falling back to all classes.
+      let filteredClassIds: string[] | null = null;
       if (filters.academicYearId) {
         const classesForYear: any = await supabase
           .from('classes')
           .select('id')
           .eq('academic_year_id', filters.academicYearId);
         const classIds = (classesForYear?.data || []).map((c: any) => c.id);
-        if (classIds.length > 0) query = query.in('class_id', classIds);
+        filteredClassIds = intersectClassScopes(filteredClassIds, classIds);
       }
       if (filters.courseId) {
         const classesForCourse: any = await supabase
@@ -52,7 +56,13 @@ async function processJob(job: any, supabase: any) {
           .select('id')
           .eq('course_id', filters.courseId);
         const classIds = (classesForCourse?.data || []).map((c: any) => c.id);
-        if (classIds.length > 0) query = query.in('class_id', classIds);
+        filteredClassIds = intersectClassScopes(filteredClassIds, classIds);
+      }
+      if (filteredClassIds !== null) {
+        query = query.in(
+          'class_id',
+          filteredClassIds.length > 0 ? filteredClassIds : [EMPTY_SCOPE_CLASS_ID]
+        );
       }
 
       const limit = job.params?.limit || 10000;
