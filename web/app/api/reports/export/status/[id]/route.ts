@@ -7,6 +7,8 @@ import { rateLimitConfigs } from '@/lib/auth/rateLimit';
 export const dynamic = 'force-dynamic';
 
 const MANAGEMENT_ROLES = new Set(['super_admin', 'owner', 'admin']);
+const REPORTS_BUCKET = process.env.REPORTS_STORAGE_BUCKET || 'reports';
+const DOWNLOAD_TTL_SECONDS = 15 * 60;
 
 export const GET = createGetHandler({ requireAuth: true }, async ({ request, params, user }) => {
   const limited = enforceRateLimit(request, {
@@ -19,7 +21,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, par
   const { data, error } = await supabase
     .from('report_exports')
     .select(
-      'id, status, created_at, started_at, finished_at, result_url, error_message, requested_by'
+      'id, status, created_at, started_at, finished_at, result_path, error_message, requested_by'
     )
     .eq('id', params.id)
     .maybeSingle();
@@ -33,6 +35,15 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, par
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  let downloadUrl: string | null = null;
+  if (data.status === 'succeeded' && data.result_path) {
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from(REPORTS_BUCKET)
+      .createSignedUrl(data.result_path, DOWNLOAD_TTL_SECONDS);
+    if (signedError) throw new Error(`Failed to sign export download: ${signedError.message}`);
+    downloadUrl = signedData?.signedUrl || null;
+  }
+
   return NextResponse.json({
     success: true,
     job: {
@@ -41,7 +52,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, par
       created_at: data.created_at,
       started_at: data.started_at,
       finished_at: data.finished_at,
-      downloadUrl: data.result_url || null,
+      downloadUrl,
       error: data.error_message || null,
     },
   });

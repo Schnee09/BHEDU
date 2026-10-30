@@ -8,8 +8,12 @@ jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/api/rateLimit', () => ({ enforceRateLimit: jest.fn(() => null) }));
 
 const exportQuery = { select: jest.fn(), eq: jest.fn(), maybeSingle: jest.fn() };
+const createSignedUrl = jest.fn();
 jest.mock('@/lib/supabase/server', () => ({
-  createServiceClient: jest.fn(() => ({ from: jest.fn(() => exportQuery) })),
+  createServiceClient: jest.fn(() => ({
+    from: jest.fn(() => exportQuery),
+    storage: { from: jest.fn(() => ({ createSignedUrl })) },
+  })),
 }));
 
 function request() {
@@ -41,10 +45,14 @@ describe('GET /api/reports/export/status/[id]', () => {
         created_at: '2026-10-30T00:00:00Z',
         started_at: null,
         finished_at: null,
-        result_url: null,
+        result_path: null,
         error_message: null,
         requested_by: 'teacher-1',
       },
+      error: null,
+    });
+    createSignedUrl.mockResolvedValue({
+      data: { signedUrl: 'https://signed.example/report' },
       error: null,
     });
   });
@@ -81,4 +89,30 @@ describe('GET /api/reports/export/status/[id]', () => {
       expect(response.status).toBe(200);
     }
   );
+
+  it('creates a fresh short-lived URL for a completed owned export', async () => {
+    authenticate('teacher');
+    exportQuery.maybeSingle.mockResolvedValue({
+      data: {
+        id: 'job-1',
+        status: 'succeeded',
+        created_at: '2026-10-30T00:00:00Z',
+        started_at: '2026-10-30T00:01:00Z',
+        finished_at: '2026-10-30T00:02:00Z',
+        result_path: 'reports/attendance.csv',
+        error_message: null,
+        requested_by: 'teacher-1',
+      },
+      error: null,
+    });
+
+    const response = await GET(request(), {
+      params: Promise.resolve({ id: 'job-1' }),
+    } as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(createSignedUrl).toHaveBeenCalledWith('reports/attendance.csv', 900);
+    expect(body.job.downloadUrl).toBe('https://signed.example/report');
+  });
 });
