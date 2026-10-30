@@ -1,64 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth/adminAuth';
-import { handleApiError } from '@/lib/api/errors';
-import { getDataClient } from '@/lib/auth/dataClient';
+import { z } from 'zod';
+import { apiSuccess, createApiHandler } from '@/lib/api';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
-type Body = {
-  studentIds: string[];
-};
+const bulkArchiveSchema = z.object({
+  studentIds: z
+    .array(z.string().uuid('Mã học sinh không hợp lệ'))
+    .min(1, 'Cần chọn ít nhất một học sinh')
+    .max(500, 'Mỗi lần chỉ được lưu trữ tối đa 500 học sinh'),
+});
 
 /**
- * POST /api/students/bulk-archive
- * Archives multiple students in one request to avoid rate-limit bursts from the UI.
- *
- * Access: admin, staff
- * Body: { studentIds: string[] }
+ * Archives multiple student profiles in a single database update.
+ * Destructive student lifecycle actions are restricted to management roles.
  */
-export async function POST(req: NextRequest) {
-  try {
-    const isStaff = await adminAuth(req);
-    const isAdmin = await adminAuth(req);
-    if (!isStaff.authorized && !isAdmin.authorized) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const body = (await req.json().catch(() => null)) as Body | null;
-    const studentIds = body?.studentIds;
-
-    if (!Array.isArray(studentIds) || studentIds.length === 0) {
-      return NextResponse.json({ error: 'studentIds is required' }, { status: 400 });
-    }
-
-    // Basic sanity guard to avoid accidentally archiving the entire table.
-    if (studentIds.length > 500) {
-      return NextResponse.json({ error: 'Too many studentIds (max 500)' }, { status: 400 });
-    }
-
-    const { supabase } = await getDataClient(req);
-
-    // Convention in this codebase: "archiving" a student means setting status=inactive / is_active=false.
-    // We do this in one update to avoid N delete calls.
+export const POST = createApiHandler(
+  {
+    allowedRoles: ['admin'],
+    bodySchema: bulkArchiveSchema,
+  },
+  async ({ body }) => {
+    const supabase = createServiceClient();
     const { data, error } = await supabase
       .from('profiles')
       .update({ status: 'inactive', is_active: false })
-      .in('id', studentIds)
+      .in('id', body.studentIds)
       .eq('role', 'student')
       .select('id');
 
-    if (error) throw error;
+    if (error) throw new Error(`Failed to archive students: ${error.message}`);
 
-    const archivedIds = (data || []).map((r: any) => r.id);
-    const failedIds = studentIds.filter((id) => !archivedIds.includes(id));
+    const archivedIds = (data || []).map((row) => row.id);
+    const archivedIdSet = new Set(archivedIds);
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       archivedCount: archivedIds.length,
       archivedIds,
-      failedIds,
+      failedIds: body.studentIds.filter((id) => !archivedIdSet.has(id)),
     });
-  } catch (error) {
-    return handleApiError(error);
   }
-}
+);
