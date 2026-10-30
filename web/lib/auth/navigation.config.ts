@@ -732,6 +732,128 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
     },
   ],
 
+  // ── STAFF: Front-desk and daily operations ──
+  staff: [
+    {
+      title: 'Trang chủ',
+      links: [
+        { href: '/dashboard', label: 'Công việc hôm nay', icon: Home },
+        { href: '/dashboard/notifications', label: 'Thông báo', icon: Bell },
+      ],
+    },
+    {
+      title: 'Học sinh & lớp học',
+      links: [
+        {
+          href: routes.admin.reception(),
+          label: 'Tra cứu học sinh',
+          icon: ContactRound,
+          permissions: ['students.view', 'finance.view'],
+        },
+        {
+          href: '/dashboard/students',
+          label: 'Hồ sơ học sinh',
+          icon: Users,
+          permissions: ['students.view'],
+        },
+        {
+          href: '/dashboard/admin/enrollments',
+          label: 'Đăng ký lớp',
+          icon: UserCheck,
+          permissions: ['enrollments.view'],
+        },
+        {
+          href: '/dashboard/classes',
+          label: 'Lớp học',
+          icon: BookOpen,
+          permissions: ['classes.view'],
+        },
+        {
+          href: '/dashboard/timetable',
+          label: 'Lịch học',
+          icon: Clock,
+          permissions: ['timetable.view'],
+        },
+        {
+          href: '/dashboard/admin/students/parent-links',
+          label: 'Liên kết phụ huynh',
+          icon: UserPlus,
+          permissions: ['parent_links.view'],
+        },
+      ],
+    },
+    {
+      title: 'Theo dõi học tập',
+      groups: [
+        {
+          label: 'Chuyên cần',
+          icon: CheckCircle,
+          permissions: ['attendance.view'],
+          links: [
+            {
+              href: '/dashboard/attendance/mark',
+              label: 'Điểm danh hôm nay',
+              icon: CheckCircle,
+              permissions: ['attendance.mark'],
+            },
+            {
+              href: '/dashboard/attendance/history',
+              label: 'Lịch sử điểm danh',
+              icon: FileText,
+              permissions: ['attendance.view'],
+            },
+            {
+              href: '/dashboard/attendance/reports',
+              label: 'Báo cáo chuyên cần',
+              icon: BarChart2,
+              permissions: ['attendance.reports'],
+            },
+          ],
+        },
+        {
+          label: 'Kết quả học tập',
+          icon: TrendingUp,
+          permissions: ['grades.view'],
+          links: [
+            {
+              href: routes.grades.entry(),
+              label: 'Nhập điểm',
+              icon: BarChart2,
+              permissions: ['grades.entry'],
+            },
+            {
+              href: routes.grades.transcripts(),
+              label: 'Bảng điểm',
+              icon: FileText,
+              permissions: ['grades.view'],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Học phí',
+      links: [
+        {
+          href: routes.admin.finance.dashboard(),
+          label: 'Thu học phí',
+          icon: Receipt,
+          permissions: ['finance.view'],
+        },
+        {
+          href: routes.admin.finance.tuitionMatrix(),
+          label: 'Học phí theo lớp',
+          icon: CreditCard,
+          permissions: ['finance.manage'],
+        },
+      ],
+    },
+    {
+      title: 'Cá nhân',
+      links: [{ href: routes.profile(), label: 'Hồ sơ cá nhân', icon: User }],
+    },
+  ],
+
   // ── TEACHER: Teach → Mark → Grade → Review ──
   teacher: [
     {
