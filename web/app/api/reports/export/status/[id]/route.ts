@@ -1,28 +1,41 @@
-import { NextResponse } from 'next/server'
-import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth'
-import { rateLimitConfigs } from '@/lib/auth/rateLimit'
-import { enforceRateLimit } from '@/lib/api/rateLimit'
-import { handleApiError } from '@/lib/api/errors'
+import { NextResponse } from 'next/server';
+import { createGetHandler } from '@/lib/api';
+import { createServiceClient } from '@/lib/supabase/server';
+import { enforceRateLimit } from '@/lib/api/rateLimit';
+import { rateLimitConfigs } from '@/lib/auth/rateLimit';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const limited = enforceRateLimit(request, { bucketConfig: rateLimitConfigs.apiBucket, keyPrefix: 'reports-export-status' })
-    if (limited) return limited.response
+const MANAGEMENT_ROLES = new Set(['super_admin', 'owner', 'admin']);
 
-    const authResult = await adminAuth(request, rateLimitConfigs.auth)
-    if (!authResult.authorized) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const GET = createGetHandler({ requireAuth: true }, async ({ request, params, user }) => {
+  const limited = enforceRateLimit(request, {
+    bucketConfig: rateLimitConfigs.apiBucket,
+    keyPrefix: 'reports-export-status',
+  });
+  if (limited) return limited.response;
 
-    const { supabase } = await getDataClient(request)
-    const { id } = await params
-    const { data, error } = await (supabase as any).from('report_exports').select('*').eq('id', id).maybeSingle()
-    if (error) throw error
-    if (!data) return NextResponse.json({ error: 'not_found' }, { status: 404 })
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from('report_exports')
+    .select(
+      'id, status, created_at, started_at, finished_at, result_url, error_message, requested_by'
+    )
+    .eq('id', params.id)
+    .maybeSingle();
 
-    // Return status and result_url/error_message when available
-    const resp = {
+  if (error) throw new Error(`Failed to load export status: ${error.message}`);
+  if (!data) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+
+  const ownsJob = data.requested_by === user.id;
+  const canManageAll = MANAGEMENT_ROLES.has(user.role);
+  if (!ownsJob && !canManageAll) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  return NextResponse.json({
+    success: true,
+    job: {
       id: data.id,
       status: data.status,
       created_at: data.created_at,
@@ -30,10 +43,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       finished_at: data.finished_at,
       downloadUrl: data.result_url || null,
       error: data.error_message || null,
-    }
-
-    return NextResponse.json({ success: true, job: resp })
-  } catch (error) {
-    return handleApiError(error)
-  }
-}
+    },
+  });
+});

@@ -107,6 +107,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
             type: 'attendance',
             params: jobParams,
             status: 'pending',
+            requested_by: user.id,
           })
           .select('id')
           .single();
