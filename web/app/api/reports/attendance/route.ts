@@ -2,13 +2,12 @@ import { NextResponse } from 'next/server';
 import { apiSuccess, createGetHandler } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
 import { ReportsRepository } from '@/lib/repositories/ReportsRepository';
-import { validateQuery } from '@/lib/api/validation'; // Reuse if we want Strict Query validation, but original had many optional standard params
-// We will parse URL manually or create schema if needed.
-// Standard URL searchParams is fine for optional filters without strict blocking.
+import { canAccessClass } from '@/lib/auth/classAccess';
+import { ValidationError } from '@/lib/api/errors';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = createGetHandler({ requireAuth: true }, async ({ request }) => {
+export const GET = createGetHandler({ requireAuth: true }, async ({ request, user }) => {
   const url = new URL(request.url);
   const format = url.searchParams.get('format') || 'json';
   const dateFrom = url.searchParams.get('date_from') || undefined;
@@ -22,6 +21,17 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request }) =
   );
 
   const supabase = createServiceClient();
+
+  const isManagement = ['super_admin', 'owner', 'admin'].includes(user.role);
+  if (!isManagement) {
+    if (!classId) {
+      throw new ValidationError('class_id is required for class-scoped attendance reports');
+    }
+    if (!(await canAccessClass(supabase, { id: user.id, role: user.role }, classId))) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+  }
+
   const repository = new ReportsRepository(supabase);
 
   const result = await repository.getAttendanceReport({
