@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
+import { createServiceClient } from '@/lib/supabase/server';
+import type { PermissionCode } from '@/lib/auth/core';
 
 const EXPORTABLE_TABLES = new Set([
   'profiles',
@@ -24,31 +26,46 @@ const EXPORTABLE_TABLES = new Set([
   'role_permission_overrides',
 ]);
 
+const EXPORTABLE_MODULES = new Set([
+  'students',
+  'academic',
+  'grades',
+  'attendance',
+  'finance',
+  'system',
+]);
+const SYSTEM_TABLES = new Set(['audit_logs', 'school_settings', 'role_permission_overrides']);
+
 export async function GET(request: Request) {
   try {
-    const auth = await adminAuth(request);
-    if (!auth.authorized) {
-      return NextResponse.json(
-        { error: auth.reason || 'Forbidden' },
-        {
-          status: auth.userId ? 403 : 401,
-        }
-      );
-    }
-
-    const { userId, userEmail, supabase } = auth;
-    if (!supabase) {
-      return NextResponse.json({ error: 'Authorized data client unavailable' }, { status: 500 });
-    }
     const { searchParams } = new URL(request.url);
     const moduleParam = searchParams.get('module');
     const tableParam = searchParams.get('table');
 
+    if (moduleParam && !EXPORTABLE_MODULES.has(moduleParam)) {
+      return NextResponse.json({ error: 'Phạm vi xuất dữ liệu không hợp lệ' }, { status: 400 });
+    }
+    if (tableParam && !EXPORTABLE_TABLES.has(tableParam)) {
+      return NextResponse.json({ error: 'Bảng dữ liệu không được phép xuất' }, { status: 400 });
+    }
+
+    const requiredPermission: PermissionCode =
+      !moduleParam && !tableParam
+        ? 'system.database'
+        : moduleParam === 'system' || (tableParam ? SYSTEM_TABLES.has(tableParam) : false)
+          ? 'system.database'
+          : 'reports.export';
+    const auth = await getAuthContext(request, requiredPermission);
+    if (!auth.authorized || !auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
+    }
+
+    const userId = auth.profile.id;
+    const userEmail = auth.profile.email;
+    const supabase = createServiceClient();
+
     // Single Table Export
     if (tableParam) {
-      if (!EXPORTABLE_TABLES.has(tableParam)) {
-        return NextResponse.json({ error: 'Bảng dữ liệu không được phép xuất' }, { status: 400 });
-      }
       const { data, error } = await supabase.from(tableParam).select('*').limit(5000);
       if (error) {
         return NextResponse.json(
