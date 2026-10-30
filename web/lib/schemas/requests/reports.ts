@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { uuidSchema, optionalUuidSchema } from '../common';
+import { booleanStringSchema, uuidSchema, optionalUuidSchema } from '../common';
 
 export const reportCardQuerySchema = z.object({
   studentId: uuidSchema,
@@ -14,7 +14,7 @@ export const reportCardQuerySchema = z.object({
 
 export const transcriptQuerySchema = z.object({
   studentId: uuidSchema,
-  includePending: z.boolean().optional(),
+  includePending: booleanStringSchema,
   language: z.enum(['vi', 'en']).optional(),
 });
 
