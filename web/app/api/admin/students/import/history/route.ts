@@ -1,52 +1,66 @@
-﻿/**
- * Import History API
- * GET /api/admin/students/import/history
- * 
- * Retrieves the history of bulk import operations
- */
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getAuthContext } from '@/lib/auth/guard';
+import { logger } from '@/lib/logger';
+import { createServiceClient } from '@/lib/supabase/server';
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth'
-import { logger } from '@/lib/logger'
+const historyQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+});
 
 export async function GET(req: NextRequest) {
   try {
-    // Admin authentication
-  const authResult = await adminAuth(req)
-    if (!authResult.authorized) {
+    const auth = await getAuthContext(req, 'students.import');
+    if (!auth.authorized || !auth.profile) {
       return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      )
+        {
+          error: auth.profile
+            ? 'Bạn không có quyền xem lịch sử nhập học sinh'
+            : 'Vui lòng đăng nhập',
+        },
+        { status: auth.profile ? 403 : 401 }
+      );
     }
 
-  const { supabase } = await getDataClient(req)
-    const searchParams = req.nextUrl.searchParams
-    const limit = parseInt(searchParams.get('limit') || '20', 10)
-    const offset = parseInt(searchParams.get('offset') || '0', 10)
+    const parsedQuery = historyQuerySchema.safeParse({
+      limit: req.nextUrl.searchParams.get('limit') || undefined,
+      offset: req.nextUrl.searchParams.get('offset') || undefined,
+    });
+    if (!parsedQuery.success) {
+      return NextResponse.json({ error: 'Tham số phân trang không hợp lệ' }, { status: 400 });
+    }
+    const { limit, offset } = parsedQuery.data;
 
-    // Get import logs with user details
-    const { data: logs, error: logsError, count } = await supabase
+    const supabase = createServiceClient();
+    const {
+      data: logs,
+      error,
+      count,
+    } = await supabase
       .from('import_logs')
-      .select(`
-        *,
-        importer:profiles!import_logs_imported_by_fkey(
+      .select(
+        `
           id,
-          full_name,
-          email
-        )
-      `, { count: 'exact' })
+          import_type,
+          status,
+          total_rows,
+          processed_rows,
+          success_count,
+          error_count,
+          created_at,
+          completed_at,
+          importer:profiles!import_logs_imported_by_fkey(id, full_name)
+        `,
+        { count: 'exact' }
+      )
       .eq('import_type', 'students')
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+      .range(offset, offset + limit - 1);
 
-    if (logsError) {
-      logger.error('Failed to fetch import logs', { error: logsError.message })
-      return NextResponse.json(
-        { error: 'Failed to fetch import history' },
-        { status: 500 }
-      )
+    if (error) {
+      logger.error('Failed to fetch student import history', { error });
+      return NextResponse.json({ error: 'Không thể tải lịch sử nhập học sinh' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -56,15 +70,11 @@ export async function GET(req: NextRequest) {
         total: count || 0,
         limit,
         offset,
-        hasMore: (count || 0) > offset + limit
-      }
-    })
-
+        hasMore: (count || 0) > offset + limit,
+      },
+    });
   } catch (error) {
-    logger.error('Import history error', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    )
+    logger.error('Student import history error', error);
+    return NextResponse.json({ error: 'Không thể tải lịch sử nhập học sinh' }, { status: 500 });
   }
 }
