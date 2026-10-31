@@ -88,4 +88,37 @@ describe('/api/attendance authorization', () => {
     expect(response.status).toBe(403);
     expect(create).not.toHaveBeenCalled();
   });
+
+  it('attributes a new attendance record to the authenticated user', async () => {
+    create.mockResolvedValue({ id: 'attendance-1' });
+    const payload = {
+      student_id: '223e4567-e89b-12d3-a456-426614174000',
+      class_id: '123e4567-e89b-12d3-a456-426614174000',
+      date: '2026-10-29',
+      status: 'present',
+    };
+
+    const response = await POST(createRequest('POST', '', payload), {
+      params: Promise.resolve({}),
+    } as any);
+
+    expect(response.status).toBe(200);
+    expect(create).toHaveBeenCalledWith({ ...payload, marked_by: 'teacher-1' });
+  });
+
+  it('rejects client-supplied attendance attribution', async () => {
+    const response = await POST(
+      createRequest('POST', '', {
+        student_id: '223e4567-e89b-12d3-a456-426614174000',
+        class_id: '123e4567-e89b-12d3-a456-426614174000',
+        date: '2026-10-29',
+        status: 'present',
+        marked_by: '323e4567-e89b-12d3-a456-426614174000',
+      }),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(400);
+    expect(create).not.toHaveBeenCalled();
+  });
 });

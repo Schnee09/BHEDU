@@ -5,7 +5,7 @@
  * Uses Repository pattern, Zod validation, CASL permissions
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
@@ -13,7 +13,6 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { createAbility } from '@/lib/auth/permissions';
 import { canAccessClass } from '@/lib/auth/classAccess';
 import {
-  type AttendanceQueryInput,
   attendanceQuerySchema,
   type CreateAttendanceInput,
   createAttendanceSchema,
@@ -160,7 +159,10 @@ export const POST = createApiHandler(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
     const repository = new AttendanceRepository(supabase);
-    const record = await repository.create(body as CreateAttendanceInput);
+    const record = await repository.create({
+      ...body,
+      marked_by: user.id,
+    } as CreateAttendanceInput);
 
     return apiSuccess(record, { _status: 201 });
   }

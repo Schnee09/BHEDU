@@ -23,7 +23,10 @@ export const attendanceQuerySchema = z.object({
   date: dateStringSchema.optional(),
   start_date: dateStringSchema.optional(),
   end_date: dateStringSchema.optional(),
-  status: z.enum(['present', 'absent', 'late', 'excused', 'all']).optional(),
+  status: z
+    .enum(['present', 'absent', 'late', 'excused', 'all'])
+    .optional()
+    .transform((value) => (value === 'all' ? undefined : value)),
   from_date: dateStringSchema.optional(),
   to_date: dateStringSchema.optional(),
 });
@@ -31,14 +34,16 @@ export const attendanceQuerySchema = z.object({
 /**
  * Attendance record schema
  */
-export const attendanceRecordSchema = z.object({
-  student_id: uuidSchema,
-  class_id: uuidSchema,
-  date: dateStringSchema,
-  status: attendanceStatusSchema,
-  notes: z.string().max(500).optional().nullable(),
-  excused_reason: z.string().max(200).optional().nullable(),
-});
+export const attendanceRecordSchema = z
+  .object({
+    student_id: uuidSchema,
+    class_id: uuidSchema,
+    date: dateStringSchema,
+    status: attendanceStatusSchema,
+    notes: z.string().max(500).optional().nullable(),
+    excused_reason: z.string().max(200).optional().nullable(),
+  })
+  .strict();
 
 /**
  * Create/Update Attendance Schema
@@ -85,7 +90,9 @@ export const bulkAttendanceSchema = z
   });
 
 export type AttendanceQueryInput = z.infer<typeof attendanceQuerySchema>;
-export type CreateAttendanceInput = z.infer<typeof createAttendanceSchema>;
+export type CreateAttendanceInput = z.infer<typeof createAttendanceSchema> & {
+  marked_by?: string;
+};
 export type UpdateAttendanceInput = z.infer<typeof updateAttendanceSchema>;
 export type BulkAttendanceInput = z.infer<typeof bulkAttendanceSchema> & {
   marked_by?: string;

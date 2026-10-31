@@ -1,4 +1,4 @@
-import { bulkAttendanceSchema } from '../requests/attendance';
+import { attendanceQuerySchema, bulkAttendanceSchema } from '../requests/attendance';
 
 const ids = {
   class_id: '11111111-1111-4111-8111-111111111111',
@@ -59,5 +59,11 @@ describe('bulk attendance schema', () => {
         records: [{ student_id: ids.student_id, status: 'present' }],
       }).success
     ).toBe(false);
+  });
+});
+
+describe('attendance query schema', () => {
+  it('treats the all status option as no status filter', () => {
+    expect(attendanceQuerySchema.parse({ status: 'all' }).status).toBeUndefined();
   });
 });
