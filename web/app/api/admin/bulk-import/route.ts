@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { adminAuth } from '@/lib/auth/adminAuth';
 import { logAuditAction } from '@/lib/auditLog';
+import { CsvImportError, MAX_CSV_BYTES, parseCsvImport } from '@/lib/imports/parseCsvImport';
 
 export async function POST(request: Request) {
   try {
@@ -21,10 +22,10 @@ export async function POST(request: Request) {
 
     // Parse form data
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const file = formData.get('file');
     const type = formData.get('type') as string;
 
-    if (!file || !type) {
+    if (!(file instanceof File) || !type) {
       return NextResponse.json(
         { error: 'File and type are required' },
         {
@@ -33,13 +34,26 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      return NextResponse.json({ error: 'Chỉ hỗ trợ file CSV' }, { status: 400 });
+    }
+
+    if (file.size > MAX_CSV_BYTES) {
+      return NextResponse.json({ error: 'File CSV không được vượt quá 2 MB' }, { status: 413 });
+    }
+
     // Read file content
     const text = await file.text();
-    const lines = text.split('\n').filter((line) => line.trim());
-    const headers = (lines[0] || '').split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
-    const rows = lines
-      .slice(1)
-      .map((line) => line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, '')));
+    let headers: string[];
+    let rows: string[][];
+    try {
+      ({ headers, rows } = parseCsvImport(text, type));
+    } catch (error) {
+      if (error instanceof CsvImportError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      throw error;
+    }
 
     let success = 0;
     let failed = 0;
