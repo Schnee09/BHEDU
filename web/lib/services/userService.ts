@@ -371,7 +371,8 @@ export class UserService {
     // Sync Auth metadata if role changed
     if (input.role) {
       try {
-        await this.supabase.auth.admin.updateUserById(id, {
+        const authUserId = profile.user_id || id;
+        await this.supabase.auth.admin.updateUserById(authUserId, {
           user_metadata: { role: input.role },
         });
       } catch (authErr) {
