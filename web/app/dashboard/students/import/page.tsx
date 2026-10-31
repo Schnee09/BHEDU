@@ -16,10 +16,11 @@ import {
   generateCSVTemplate,
   type ImportPreview,
 } from '@/lib/importService';
-import { Button, Card, CardHeader, Badge } from '@/components/ui';
+import { Button, Card, Badge } from '@/components/ui';
 import { Icons } from '@/components/ui/Icons';
 import { cn } from '@/lib/utils';
 import PageGuard from '@/components/PageGuard';
+import { formatVietnameseName } from '@/lib/utils/names';
 
 export default function BulkImportPageGuarded() {
   return (
@@ -39,7 +40,7 @@ function BulkImportPage() {
     total: number;
     successCount: number;
     errorCount: number;
-    errors: Array<{ row: number; email: string; error: string }>;
+    errors: Array<{ row: number; email?: string; error: string }>;
   } | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
@@ -374,14 +375,14 @@ function BulkImportPage() {
                               >
                                 <td className="px-6 py-4">
                                   <p className="font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight">
-                                    {student.firstName} {student.lastName}
+                                    {formatVietnameseName(student.firstName, student.lastName)}
                                   </p>
                                   <p className="text-[9px] font-black text-stone-400 uppercase mt-0.5">
                                     {student.gradeLevel || '—'}
                                   </p>
                                 </td>
                                 <td className="px-6 py-4 text-stone-500 font-medium">
-                                  {student.email}
+                                  {student.email || 'Hệ thống sẽ cấp'}
                                 </td>
                                 <td className="px-6 py-4">
                                   <Badge

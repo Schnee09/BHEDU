@@ -39,9 +39,18 @@ function optionalEnum<const T extends readonly [string, ...string[]]>(values: T)
 }
 
 export const studentImportRowSchema = z.object({
-  firstName: z.string().trim().min(1, 'Họ không được để trống').max(100),
-  lastName: z.string().trim().min(1, 'Tên không được để trống').max(100),
-  email: z.string().trim().toLowerCase().email('Email không hợp lệ').max(254),
+  firstName: z.string().trim().min(1, 'Tên không được để trống').max(100),
+  lastName: z.string().trim().min(1, 'Họ và tên đệm không được để trống').max(100),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .refine((value) => !value || z.string().email().safeParse(value).success, {
+      message: 'Email không hợp lệ',
+    })
+    .max(254)
+    .optional()
+    .transform((value) => value || undefined),
   phone: optionalText(20),
   address: optionalText(500),
   dateOfBirth: optionalDate,
@@ -87,14 +96,16 @@ export const studentImportRequestSchema = z
     const studentIds = new Set<string>();
 
     students.forEach((student, index) => {
-      if (emails.has(student.email)) {
-        context.addIssue({
-          code: 'custom',
-          path: ['students', index, 'email'],
-          message: 'Email bị trùng trong danh sách nhập',
-        });
+      if (student.email) {
+        if (emails.has(student.email)) {
+          context.addIssue({
+            code: 'custom',
+            path: ['students', index, 'email'],
+            message: 'Email bị trùng trong danh sách nhập',
+          });
+        }
+        emails.add(student.email);
       }
-      emails.add(student.email);
 
       if (student.studentId) {
         if (studentIds.has(student.studentId)) {

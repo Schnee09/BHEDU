@@ -6,12 +6,12 @@
 import Papa from 'papaparse';
 
 export interface StudentImportRow {
-  // Required fields
+  // Required name fields
   firstName: string;
   lastName: string;
-  email: string;
 
-  // Optional student fields
+  // Optional contact and student fields
+  email?: string;
   phone?: string;
   address?: string;
   dateOfBirth?: string; // YYYY-MM-DD format
@@ -48,6 +48,18 @@ export interface ImportPreview {
   errorRows: number;
 }
 
+export function normalizeVietnameseNameImportHeader(header: string): string | null {
+  const normalized = header.toLowerCase().trim();
+  const headers: Record<string, string> = {
+    họ: 'lastName',
+    'họ và tên đệm': 'lastName',
+    'họ tên đệm': 'lastName',
+    tên: 'firstName',
+  };
+
+  return headers[normalized] ?? null;
+}
+
 /**
  * Parse CSV file to structured data
  */
@@ -57,22 +69,23 @@ export async function parseCSV(file: File): Promise<StudentImportRow[]> {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header: string) => {
+        const vietnameseNameHeader = normalizeVietnameseNameImportHeader(header);
+        if (vietnameseNameHeader) return vietnameseNameHeader;
+
         // Convert various header formats to camelCase
         const headerMap: Record<string, string> = {
           'first name': 'firstName',
           firstname: 'firstName',
           first_name: 'firstName',
-          'họ': 'firstName',
           'last name': 'lastName',
           lastname: 'lastName',
           last_name: 'lastName',
-          'tên': 'lastName',
           email: 'email',
           'e-mail': 'email',
           phone: 'phone',
           'phone number': 'phone',
           'số điện thoại': 'phone',
-          'sđt': 'phone',
+          sđt: 'phone',
           address: 'address',
           'địa chỉ': 'address',
           'date of birth': 'dateOfBirth',
@@ -87,7 +100,7 @@ export async function parseCSV(file: File): Promise<StudentImportRow[]> {
           id: 'studentId',
           'mã học sinh': 'studentId',
           'mã định danh (cid)': 'studentId',
-          'cid': 'studentId',
+          cid: 'studentId',
           'enrollment date': 'enrollmentDate',
           enrollment_date: 'enrollmentDate',
           'ngày nhập học': 'enrollmentDate',
@@ -95,7 +108,7 @@ export async function parseCSV(file: File): Promise<StudentImportRow[]> {
           'grade level': 'gradeLevel',
           class: 'gradeLevel',
           'khối lớp': 'gradeLevel',
-          'lớp': 'gradeLevel',
+          lớp: 'gradeLevel',
           status: 'status',
           'trạng thái': 'status',
           'guardian name': 'guardianName',
@@ -200,7 +213,7 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
         row: rowNumber,
         field: 'firstName',
         value: row.firstName,
-        message: 'Họ không được để trống',
+        message: 'Tên không được để trống',
         severity: 'error',
       });
       hasError = true;
@@ -211,22 +224,13 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
         row: rowNumber,
         field: 'lastName',
         value: row.lastName,
-        message: 'Tên không được để trống',
+        message: 'Họ và tên đệm không được để trống',
         severity: 'error',
       });
       hasError = true;
     }
 
-    if (!row.email || row.email.trim() === '') {
-      errors.push({
-        row: rowNumber,
-        field: 'email',
-        value: row.email,
-        message: 'Email không được để trống',
-        severity: 'error',
-      });
-      hasError = true;
-    } else if (!isValidEmail(row.email)) {
+    if (row.email && !isValidEmail(row.email)) {
       errors.push({
         row: rowNumber,
         field: 'email',
@@ -235,7 +239,7 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
         severity: 'error',
       });
       hasError = true;
-    } else if (seenEmails.has(row.email.toLowerCase())) {
+    } else if (row.email && seenEmails.has(row.email.toLowerCase())) {
       errors.push({
         row: rowNumber,
         field: 'email',
@@ -244,7 +248,8 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
         severity: 'error',
       });
       hasError = true;
-    } else {
+    } else if (row.email) {
+      row.email = row.email.trim().toLowerCase();
       seenEmails.add(row.email.toLowerCase());
     }
 
@@ -360,8 +365,7 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
         row: rowNumber,
         field: 'guardianRelationship',
         value: row.guardianRelationship,
-        message:
-          'Mối quan hệ không hợp lệ (dùng: father, mother, guardian...)',
+        message: 'Mối quan hệ không hợp lệ (dùng: father, mother, guardian...)',
         severity: 'warning',
       });
     }

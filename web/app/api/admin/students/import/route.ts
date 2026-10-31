@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     const results = {
       importLogId: importLog.id,
       success: [] as string[],
-      errors: [] as { row: number; email: string; error: string }[],
+      errors: [] as { row: number; email?: string; error: string }[],
       successCount: 0,
       errorCount: 0,
     };
