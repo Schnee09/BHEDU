@@ -5,6 +5,15 @@
 
 import Papa from 'papaparse';
 
+export const MAX_STUDENT_IMPORT_FILE_BYTES = 10 * 1024 * 1024;
+export const MAX_STUDENT_IMPORT_ROWS = 1000;
+
+export function validateStudentImportFile(file: Pick<File, 'name' | 'size'>): string | null {
+  if (!file.name.toLowerCase().endsWith('.csv')) return 'Vui lòng chọn file CSV';
+  if (file.size > MAX_STUDENT_IMPORT_FILE_BYTES) return 'File CSV không được vượt quá 10 MB';
+  return null;
+}
+
 export interface StudentImportRow {
   // Required name fields
   firstName: string;
@@ -64,6 +73,9 @@ export function normalizeVietnameseNameImportHeader(header: string): string | nu
  * Parse CSV file to structured data
  */
 export async function parseCSV(file: File): Promise<StudentImportRow[]> {
+  const fileError = validateStudentImportFile(file);
+  if (fileError) throw new Error(fileError);
+
   return new Promise<StudentImportRow[]>((resolve, reject) => {
     Papa.parse<StudentImportRow>(file, {
       header: true,
@@ -139,6 +151,26 @@ export async function parseCSV(file: File): Promise<StudentImportRow[]> {
         return headerMap[normalized] || header;
       },
       complete: (results: Papa.ParseResult<StudentImportRow>) => {
+        if (results.errors.length > 0) {
+          const firstError = results.errors[0];
+          const row = typeof firstError?.row === 'number' ? firstError.row + 2 : null;
+          reject(
+            new Error(row ? `File CSV không hợp lệ tại dòng ${row}` : 'File CSV không hợp lệ')
+          );
+          return;
+        }
+        if (results.data.length === 0) {
+          reject(new Error('File CSV không có dữ liệu học sinh'));
+          return;
+        }
+        if (results.data.length > MAX_STUDENT_IMPORT_ROWS) {
+          reject(
+            new Error(
+              `Mỗi lần chỉ được nhập tối đa ${MAX_STUDENT_IMPORT_ROWS.toLocaleString('vi-VN')} học sinh`
+            )
+          );
+          return;
+        }
         resolve(results.data);
       },
       error: (error: Error) => {

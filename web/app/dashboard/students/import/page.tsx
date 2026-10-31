@@ -45,6 +45,7 @@ function BulkImportPage() {
     errors: Array<{ row: number; email?: string; error: string }>;
   } | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
   const importOutcome = importResults ? getStudentImportOutcome(importResults) : null;
   const outcomeContent = {
     success: {
@@ -76,10 +77,12 @@ function BulkImportPage() {
     if (!selectedFile) {
       setFile(null);
       setPreview(null);
+      setFileError(null);
       return;
     }
 
     setFile(selectedFile);
+    setFileError(null);
 
     try {
       // Parse and validate CSV
@@ -87,7 +90,7 @@ function BulkImportPage() {
       const validation = await validateImportData(rows);
       setPreview(validation);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Không thể đọc tệp CSV');
+      setFileError(error instanceof Error ? error.message : 'Không thể đọc file CSV');
       setFile(null);
       setPreview(null);
     }
@@ -233,6 +236,9 @@ function BulkImportPage() {
                       onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                       className="hidden"
                       id="csv-upload"
+                      aria-describedby={
+                        fileError ? 'csv-upload-help csv-upload-error' : 'csv-upload-help'
+                      }
                     />
                     <label
                       htmlFor="csv-upload"
@@ -244,7 +250,10 @@ function BulkImportPage() {
                       <span className="text-2xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight mb-3">
                         {file ? file.name : 'Kéo thả tệp CSV hoặc nhấn để chọn'}
                       </span>
-                      <span className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.3em]">
+                      <span
+                        id="csv-upload-help"
+                        className="text-[10px] font-black text-stone-500 dark:text-stone-400 uppercase tracking-[0.3em]"
+                      >
                         Định dạng hỗ trợ: .CSV (Bản mã UTF-8) • Tối đa 10 MB
                       </span>
                     </label>
@@ -276,6 +285,16 @@ function BulkImportPage() {
                   )}
                 </div>
               </Card>
+              {fileError && (
+                <div
+                  id="csv-upload-error"
+                  role="alert"
+                  className="mt-4 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200"
+                >
+                  <Icons.Error className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+                  <span>{fileError}</span>
+                </div>
+              )}
             </div>
 
             {/* Preview and Validation Results */}
