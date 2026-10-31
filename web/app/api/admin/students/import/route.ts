@@ -6,22 +6,23 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getDataClient } from '@/lib/auth/dataClient';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
+import { createServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import type { StudentImportRow } from '@/lib/importService';
-import { userService } from '@/lib/services/userService';
+import { UserService } from '@/lib/services/userService';
 import { formatVietnameseName } from '@/lib/utils/names';
 
 export async function POST(req: NextRequest) {
   try {
-    // Admin authentication
-    const authResult = await adminAuth(req);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(req, 'students.import');
+    if (!auth.authorized || !auth.profile || !auth.role) {
+      return NextResponse.json(
+        { error: auth.reason || 'Unauthorized' },
+        { status: auth.profile ? 403 : 401 }
+      );
     }
 
-    const { supabase } = await getDataClient(req);
     const body = await req.json();
     const { students } = body as { students: StudentImportRow[] };
 
@@ -32,8 +33,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (students.length > 1000) {
+      return NextResponse.json({ error: 'Maximum 1000 students per import' }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+    const userService = new UserService(supabase);
+
     logger.info(`Starting bulk import of ${students.length} students`, {
-      userId: authResult.userId,
+      userId: auth.profile.id,
       count: students.length,
     });
 
@@ -41,7 +49,7 @@ export async function POST(req: NextRequest) {
     const { data: importLog, error: logError } = await supabase
       .from('import_logs')
       .insert({
-        imported_by: authResult.userId,
+        imported_by: auth.profile.id,
         import_type: 'students',
         total_rows: students.length,
         status: 'processing',
@@ -107,7 +115,6 @@ export async function POST(req: NextRequest) {
               last_name: student.lastName,
               full_name: formatVietnameseName(student.firstName, student.lastName) || undefined,
               email: student.email || undefined,
-              password: generateTemporaryPassword(),
               role: 'student',
               phone: student.phone,
               address: student.address,
@@ -116,8 +123,8 @@ export async function POST(req: NextRequest) {
               status: (student.status as any) || 'active',
               is_managed: true,
             },
-            'admin',
-            'system_import'
+            auth.role,
+            auth.profile.id
           );
 
           const studentId = createdUser.id;
@@ -198,7 +205,7 @@ export async function POST(req: NextRequest) {
 
     // Log audit
     await supabase.from('audit_logs').insert({
-      actor_id: authResult.userId,
+      actor_id: auth.profile.id,
       action: 'bulk_import_students',
       resource_type: 'student',
       details: {
@@ -221,23 +228,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     logger.error('Bulk import error', error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to import students' }, { status: 500 });
   }
-}
-
-/**
- * Generate a temporary password for new students
- */
-function generateTemporaryPassword(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let password = '';
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
 }
