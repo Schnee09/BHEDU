@@ -11,6 +11,7 @@ import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 // import { createAttendanceSchema } from "@/lib/api/schemas"; // Unused
 import { NotFoundError } from '@/lib/api/errors';
 import { logger } from '@/lib/logger';
+import { updateAttendanceSchema } from '@/lib/schemas';
 
 // GET /api/admin/attendance/[id]
 export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ params, request }) => {
@@ -66,7 +67,7 @@ export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ params
 export const PATCH = createApiHandler(
   {
     allowedRoles: ['admin'],
-    // Manual partial validation for attendance
+    bodySchema: updateAttendanceSchema,
   },
   async ({ params, body, request }) => {
     const { supabase } = await getDataClient(request);
@@ -83,15 +84,8 @@ export const PATCH = createApiHandler(
       throw new NotFoundError('Attendance record not found');
     }
 
-    // Allowed fields to update
-    const allowedFields = ['status', 'notes', 'date'];
-    const updates: Record<string, any> = {};
-
-    for (const field of allowedFields) {
-      if ((body as any)[field] !== undefined) {
-        updates[field] = (body as any)[field];
-      }
-    }
+    const { notes, ...record } = body;
+    const updates = notes === undefined ? record : { ...record, remarks: notes };
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(

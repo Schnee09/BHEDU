@@ -1,4 +1,8 @@
-import { attendanceQuerySchema, bulkAttendanceSchema } from '../requests/attendance';
+import {
+  attendanceQuerySchema,
+  bulkAttendanceSchema,
+  createAttendanceSchema,
+} from '../requests/attendance';
 
 const ids = {
   class_id: '11111111-1111-4111-8111-111111111111',
@@ -65,5 +69,29 @@ describe('bulk attendance schema', () => {
 describe('attendance query schema', () => {
   it('treats the all status option as no status filter', () => {
     expect(attendanceQuerySchema.parse({ status: 'all' }).status).toBeUndefined();
+  });
+});
+
+describe('single attendance schema', () => {
+  const record = {
+    class_id: ids.class_id,
+    student_id: ids.student_id,
+    date: '2026-10-31',
+    status: 'present',
+  };
+
+  it('accepts a supported note', () => {
+    expect(createAttendanceSchema.safeParse({ ...record, notes: 'Đến đúng giờ' }).success).toBe(
+      true
+    );
+  });
+
+  it('rejects retired storage fields and client audit attribution', () => {
+    expect(createAttendanceSchema.safeParse({ ...record, check_in_time: '18:00' }).success).toBe(
+      false
+    );
+    expect(createAttendanceSchema.safeParse({ ...record, marked_by: ids.student_id }).success).toBe(
+      false
+    );
   });
 });
