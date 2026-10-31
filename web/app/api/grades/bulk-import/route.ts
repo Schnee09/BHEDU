@@ -1,135 +1,105 @@
-/**
- * Bulk Grade Import API (Vietnamese Education System)
- * POST /api/grades/bulk-import
- *
- * Import multiple grades from Excel/CSV
- *
- * Required fields:
- * - class_id: UUID of the class
- * - subject_id: UUID of the subject
- * - component_type: Grade component (oral, fifteen_min, one_period, midterm, final)
- * - semester: Semester identifier ("1" or "2")
- * - grades: Array of { student_id, score, notes? }
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { canAccessClass } from '@/lib/auth/classAccess';
+import { getAuthContext } from '@/lib/auth/guard';
 import { logger } from '@/lib/logger';
+import { createServiceClient } from '@/lib/supabase/server';
 
 interface GradeInput {
   student_id: string;
   score: number;
+  component_type: 'midterm' | 'final';
   notes?: string;
 }
 
-const VALID_COMPONENT_TYPES = ['oral', 'fifteen_min', 'one_period', 'midterm', 'final'];
-const VALID_SEMESTERS = ['1', '2'];
+const VALID_COMPONENT_TYPES = new Set(['midterm', 'final']);
+const VALID_SEMESTERS = new Set(['1', '2']);
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
+    const auth = await getAuthContext(request, 'grades.entry');
+    if (!auth.authorized || !auth.profile || !auth.role) {
+      const status = auth.reason?.startsWith('Forbidden') ? 403 : 401;
       return NextResponse.json(
-        { success: false, error: 'Unauthorized - Staff or Admin required' },
-        { status: 401 }
+        { success: false, error: status === 403 ? 'Forbidden' : 'Unauthorized' },
+        { status }
       );
     }
 
-    const body = await request.json();
-    const { class_id, subject_id, component_type, semester, grades } = body as {
-      class_id: string;
-      subject_id: string;
-      component_type: string;
-      semester: string;
-      grades: GradeInput[];
+    const body = (await request.json()) as {
+      class_id?: string;
+      subject_id?: string;
+      semester?: string;
+      grades?: GradeInput[];
     };
+    const { class_id, subject_id, semester, grades } = body;
 
-    // Validate required fields
-    if (!class_id || !subject_id || !component_type || !semester) {
+    if (!class_id || !subject_id || !semester) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'class_id, subject_id, component_type, and semester are required',
-        },
+        { success: false, error: 'class_id, subject_id, and semester are required' },
         { status: 400 }
       );
     }
-
-    if (!grades || !Array.isArray(grades) || grades.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'grades array is required and cannot be empty',
-        },
-        { status: 400 }
-      );
+    if (!VALID_SEMESTERS.has(semester)) {
+      return NextResponse.json({ success: false, error: 'Học kỳ không hợp lệ' }, { status: 400 });
     }
-
-    // Validate component_type
-    if (!VALID_COMPONENT_TYPES.includes(component_type)) {
+    if (!Array.isArray(grades) || grades.length === 0 || grades.length > 1000) {
       return NextResponse.json(
-        {
-          success: false,
-          error: `Invalid component_type. Must be one of: ${VALID_COMPONENT_TYPES.join(', ')}`,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate semester
-    if (!VALID_SEMESTERS.includes(semester)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Invalid semester. Must be one of: ${VALID_SEMESTERS.join(', ')}`,
-        },
+        { success: false, error: 'Danh sách điểm phải có từ 1 đến 1000 dòng' },
         { status: 400 }
       );
     }
 
     const supabase = createServiceClient();
+    if (!(await canAccessClass(supabase, { id: auth.profile.id, role: auth.role }, class_id))) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn không có quyền nhập điểm cho lớp này' },
+        { status: 403 }
+      );
+    }
 
-    // Get students in the class from enrollments
-    const { data: enrollments } = await supabase
+    const { data: enrollments, error: enrollmentError } = await supabase
       .from('enrollments')
-      .select('student_id, profiles!enrollments_student_id_fkey(id, student_id, full_name)')
+      .select(
+        'student_id, profiles!enrollments_student_id_fkey(id, student_id, student_code, full_name)'
+      )
       .eq('class_id', class_id)
-      .in('status', ['enrolled']);
+      .in('status', ['active', 'enrolled']);
+
+    if (enrollmentError) {
+      logger.error('Unable to load class enrollments for grade import', { enrollmentError });
+      return NextResponse.json(
+        { success: false, error: 'Không thể tải danh sách học sinh của lớp' },
+        { status: 500 }
+      );
+    }
 
     const studentMap = new Map<string, string>();
-    enrollments?.forEach((e: any) => {
-      if (e.profiles) {
-        // Map both profile.id and student_id (mã học sinh) to profile.id
-        studentMap.set(e.profiles.id, e.profiles.id);
-        if (e.profiles.student_id) {
-          studentMap.set(e.profiles.student_id, e.profiles.id);
-        }
-      }
+    enrollments?.forEach((enrollment: any) => {
+      const profile = enrollment.profiles;
+      if (!profile) return;
+      studentMap.set(profile.id, profile.id);
+      if (profile.student_id) studentMap.set(profile.student_id, profile.id);
+      if (profile.student_code) studentMap.set(profile.student_code, profile.id);
     });
 
-    // Process grades
-    const results = {
-      imported: 0,
-      failed: 0,
-      errors: [] as string[],
-    };
-
+    const results = { imported: 0, failed: 0, errors: [] as string[] };
     const gradesToUpsert = [];
 
     for (const grade of grades) {
-      // Look up student by ID or student_id code
-      const profileId = studentMap.get(grade.student_id);
+      const profileId = studentMap.get(String(grade.student_id || '').trim());
       if (!profileId) {
         results.failed++;
         results.errors.push(`Không tìm thấy học sinh: ${grade.student_id}`);
         continue;
       }
-
-      // Validate score (Vietnamese 0-10 scale)
-      if (grade.score < 0 || grade.score > 10) {
+      if (!Number.isFinite(grade.score) || grade.score < 0 || grade.score > 10) {
         results.failed++;
         results.errors.push(`Điểm không hợp lệ cho ${grade.student_id}: ${grade.score}`);
+        continue;
+      }
+      if (!VALID_COMPONENT_TYPES.has(grade.component_type)) {
+        results.failed++;
+        results.errors.push(`Loại điểm không hợp lệ cho ${grade.student_id}`);
         continue;
       }
 
@@ -137,50 +107,42 @@ export async function POST(request: NextRequest) {
         student_id: profileId,
         class_id,
         subject_id,
-        component_type,
+        component_type: grade.component_type,
         semester,
         score: grade.score,
         points_earned: grade.score,
         feedback: grade.notes || null,
-        graded_by: authResult.userId,
+        graded_by: auth.profile.id,
         graded_at: new Date().toISOString(),
       });
     }
 
-    // Bulk upsert all valid grades
     if (gradesToUpsert.length > 0) {
       const { error } = await supabase.from('grades').upsert(gradesToUpsert, {
         onConflict: 'student_id,class_id,subject_id,component_type,semester',
       });
-
       if (error) {
-        logger.error('Bulk grade import error', { error });
+        logger.error('Bulk grade import failed', { error });
         return NextResponse.json(
-          { success: false, error: `Database error: ${error.message}` },
+          { success: false, error: 'Không thể lưu dữ liệu điểm' },
           { status: 500 }
         );
       }
-
       results.imported = gradesToUpsert.length;
     }
 
     logger.info('Bulk grade import completed', {
       class_id,
       subject_id,
-      component_type,
       semester,
       total: grades.length,
       imported: results.imported,
       failed: results.failed,
-      user_id: authResult.userId,
+      user_id: auth.profile.id,
     });
-
-    return NextResponse.json({
-      success: true,
-      ...results,
-    });
-  } catch (error: any) {
+    return NextResponse.json({ success: true, ...results });
+  } catch (error: unknown) {
     logger.error('Error in bulk grade import', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Không thể nhập điểm' }, { status: 500 });
   }
 }

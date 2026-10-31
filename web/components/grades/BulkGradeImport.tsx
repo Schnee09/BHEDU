@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api/client';
 import { downloadExcelWorkbook, readFirstWorksheet } from '@/lib/export/excelWorkbook';
+import { normalizeImportedGradeComponent, type ImportedGradeComponent } from '@/lib/grades/import';
 import {
   Upload,
   FileSpreadsheet,
@@ -18,6 +19,7 @@ interface ParsedGrade {
   studentName?: string;
   score: number;
   category?: string;
+  componentType?: ImportedGradeComponent;
   notes?: string;
   isValid: boolean;
   error?: string;
@@ -25,7 +27,8 @@ interface ParsedGrade {
 
 interface BulkGradeImportProps {
   classId: string;
-  assignmentId?: string;
+  subjectId: string;
+  semester: string;
   onSuccess?: () => void;
   onClose?: () => void;
 }
@@ -34,7 +37,8 @@ const MAX_EXCEL_FILE_SIZE = 5 * 1024 * 1024;
 
 export default function BulkGradeImport({
   classId,
-  assignmentId,
+  subjectId,
+  semester,
   onSuccess,
   onClose,
 }: BulkGradeImportProps) {
@@ -80,6 +84,7 @@ export default function BulkGradeImport({
         const studentName = String(row[1] || '').trim();
         const scoreRaw = row[2];
         const category = String(row[3] || '').trim();
+        const componentType = normalizeImportedGradeComponent(category);
         const notes = String(row[4] || '').trim();
 
         // Validate
@@ -100,11 +105,17 @@ export default function BulkGradeImport({
           error = 'Điểm phải từ 0-10';
         }
 
+        if (!componentType) {
+          isValid = false;
+          error = error || 'Loại điểm phải là Giữa kỳ hoặc Cuối kỳ';
+        }
+
         grades.push({
           studentId,
           studentName,
           score: isNaN(score) ? 0 : score,
           category,
+          componentType: componentType ?? undefined,
           notes,
           isValid,
           error,
@@ -134,11 +145,12 @@ export default function BulkGradeImport({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           class_id: classId,
-          assignment_id: assignmentId,
+          subject_id: subjectId,
+          semester,
           grades: validGrades.map((g) => ({
             student_id: g.studentId,
             score: g.score,
-            category: g.category,
+            component_type: g.componentType,
             notes: g.notes,
           })),
         }),
@@ -167,9 +179,9 @@ export default function BulkGradeImport({
   const downloadTemplate = async () => {
     const templateData = [
       ['Mã học sinh', 'Tên học sinh', 'Điểm', 'Loại điểm', 'Ghi chú'],
-      ['HS001', 'Nguyễn Văn A', 8.5, 'Miệng', ''],
-      ['HS002', 'Trần Thị B', 7.0, '15 phút', 'Cần cố gắng hơn'],
-      ['HS003', 'Lê Văn C', 9.0, '1 tiết', 'Xuất sắc'],
+      ['HS001', 'Nguyễn Văn A', 8.5, 'Giữa kỳ', ''],
+      ['HS002', 'Trần Thị B', 7.0, 'Cuối kỳ', 'Cần cố gắng hơn'],
+      ['HS003', 'Lê Văn C', 9.0, 'Giữa kỳ', 'Kết quả tốt'],
     ];
 
     await downloadExcelWorkbook({

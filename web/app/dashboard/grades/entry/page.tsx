@@ -478,7 +478,13 @@ function GradeEntryPageContent() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowExcelImport(true)}
+              onClick={() => {
+                if (!selectedClassId || !selectedSubjectId) {
+                  toast.error('Vui lòng chọn lớp học và môn học trước khi nhập Excel');
+                  return;
+                }
+                setShowExcelImport(true);
+              }}
               className="rounded-xl h-8 px-2.5 text-xs font-bold border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/5"
               leftIcon={<Icons.Chart className="w-3.5 h-3.5" />}
             >
@@ -740,11 +746,13 @@ function GradeEntryPageContent() {
         </AlertDialog>
 
         {/* Excel Import Modal */}
-        {showExcelImport && selectedClassId && (
+        {showExcelImport && selectedClassId && selectedSubjectId && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="max-w-2xl w-full max-h-[90vh] overflow-auto">
               <BulkGradeImport
                 classId={selectedClassId}
+                subjectId={selectedSubjectId}
+                semester={selectedSemester}
                 onSuccess={() => {
                   setShowExcelImport(false);
                   toast.success('Import thành công!');
