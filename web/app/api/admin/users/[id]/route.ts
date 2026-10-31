@@ -5,14 +5,27 @@ import { updateUserSchema } from '@/lib/schemas';
 import { createServiceClient } from '@/lib/supabase/server';
 import { createAbility } from '@/lib/auth/permissions';
 import { UserRepository } from '@/lib/repositories/UserRepository';
-import { NotFoundError } from '@/lib/api/errors';
+import { AuthorizationError, NotFoundError } from '@/lib/api/errors';
+import { getAuthContext } from '@/lib/auth/guard';
+
+const PROTECTED_ROLES = new Set(['owner', 'super_admin']);
+
+function assertCanMutateRole(actorRole: string, targetRole: string, requestedRole?: string) {
+  if (actorRole !== 'super_admin' && PROTECTED_ROLES.has(targetRole)) {
+    throw new AuthorizationError('Chỉ quản trị viên cấp cao mới có thể thay đổi tài khoản này');
+  }
+
+  if (actorRole !== 'super_admin' && requestedRole && PROTECTED_ROLES.has(requestedRole)) {
+    throw new AuthorizationError('Bạn không có quyền cấp vai trò quản trị cấp cao');
+  }
+}
 
 /**
  * GET /api/admin/users/[id]
  * Get user details
  */
 export const GET = createGetHandler<{ id: string }>(
-  { requireAuth: true },
+  { permission: 'users.view' },
   async ({ params, user }) => {
     const contextUser = user;
     const ability = createAbility({
@@ -45,9 +58,10 @@ export const GET = createGetHandler<{ id: string }>(
  * PUT /api/admin/users/[id]
  * Update user
  */
-export const PUT = createApiHandler<{ id: string }>(
+export const PUT = createApiHandler(
   {
-    requireAuth: true,
+    permission: 'users.edit',
+    bodySchema: updateUserSchema,
   },
   async ({ body, params, user }) => {
     const ability = createAbility({
@@ -55,16 +69,20 @@ export const PUT = createApiHandler<{ id: string }>(
       role: user.role,
     });
 
-    // We can fetch the subject first to check permissions,
-    // but updateUserSchema already validates ID?
-    // params.id is the target.
-
-    // Simplistic check for now
     if (ability.cannot('update', 'User')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const id = params.id as string;
+    const supabase = createServiceClient();
+    const repository = new UserRepository(supabase);
+    const target = await repository.findById(id);
+    if (!target) {
+      throw new NotFoundError('Không tìm thấy người dùng');
+    }
+
+    assertCanMutateRole(user.role, target.role, body.role);
+
     // Use UserService for complex update (syncs with other tables)
     const updatedUser = await userService.updateUser(id, body);
     return apiSuccess(updatedUser, {
@@ -78,7 +96,7 @@ export const PUT = createApiHandler<{ id: string }>(
  * Delete or deactivate user
  */
 export const DELETE = createApiHandler<{ id: string }>(
-  { requireAuth: true },
+  { permission: 'users.delete' },
   async ({ params, request, user }) => {
     const ability = createAbility({
       userId: user.id,
@@ -93,14 +111,28 @@ export const DELETE = createApiHandler<{ id: string }>(
     const permanent = searchParams.get('permanent') === 'true';
 
     const id = params.id as string;
+    if (id === user.id) {
+      throw new AuthorizationError('Bạn không thể xóa hoặc khóa tài khoản đang sử dụng');
+    }
+
+    const supabase = createServiceClient();
+    const repository = new UserRepository(supabase);
+    const target = await repository.findById(id);
+    if (!target) {
+      throw new NotFoundError('Không tìm thấy người dùng');
+    }
+
+    assertCanMutateRole(user.role, target.role);
+
     if (permanent) {
+      const hardDeleteAuth = await getAuthContext(request, 'users.delete.hard');
+      if (!hardDeleteAuth.authorized) {
+        throw new AuthorizationError('Bạn không có quyền xóa vĩnh viễn tài khoản');
+      }
       await userService.deleteUser(id);
       return apiSuccess(null, { message: 'Người dùng đã bị xóa vĩnh viễn' });
     } else {
       // Soft delete
-      const supabase = createServiceClient();
-      const repository = new UserRepository(supabase);
-
       // We use base update for simple status change
       await repository.update(id, { is_active: false } as any);
       // Cast as any because UpdateUserInput might not strictly match just {is_active} if strict?
