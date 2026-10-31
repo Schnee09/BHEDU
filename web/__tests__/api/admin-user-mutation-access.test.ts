@@ -82,6 +82,21 @@ describe('admin user mutation access', () => {
     expect(userService.updateUser).not.toHaveBeenCalled();
   });
 
+  it('honors a custom users.edit grant resolved by the centralized guard', async () => {
+    authorize('staff', 'staff-1');
+
+    const response = await PUT(putRequest({ full_name: 'Tên mới' }), {
+      params: Promise.resolve({ id: 'student-1' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'users.edit');
+    expect(userService.updateUser).toHaveBeenCalledWith(
+      'student-1',
+      expect.objectContaining({ full_name: 'Tên mới' })
+    );
+  });
+
   it('prevents users from deleting their current account', async () => {
     const response = await DELETE(deleteRequest('admin-1'), {
       params: Promise.resolve({ id: 'admin-1' }),

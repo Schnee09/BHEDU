@@ -1,9 +1,7 @@
-import { NextResponse } from 'next/server';
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { userService } from '@/lib/services/userService';
 import { updateUserSchema } from '@/lib/schemas';
 import { createServiceClient } from '@/lib/supabase/server';
-import { createAbility } from '@/lib/auth/permissions';
 import { UserRepository } from '@/lib/repositories/UserRepository';
 import { AuthorizationError, NotFoundError } from '@/lib/api/errors';
 import { getAuthContext } from '@/lib/auth/guard';
@@ -26,18 +24,7 @@ function assertCanMutateRole(actorRole: string, targetRole: string, requestedRol
  */
 export const GET = createGetHandler<{ id: string }>(
   { permission: 'users.view' },
-  async ({ params, user }) => {
-    const contextUser = user;
-    const ability = createAbility({
-      userId: contextUser.id,
-      role: contextUser.role,
-    });
-
-    if (ability.cannot('read', 'User')) {
-      // TODO: Check specific user resource
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
+  async ({ params }) => {
     const supabase = createServiceClient();
     const repository = new UserRepository(supabase);
     const userProfile = await repository.findById(params.id);
@@ -64,15 +51,6 @@ export const PUT = createApiHandler(
     bodySchema: updateUserSchema,
   },
   async ({ body, params, user }) => {
-    const ability = createAbility({
-      userId: user.id,
-      role: user.role,
-    });
-
-    if (ability.cannot('update', 'User')) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
     const id = params.id as string;
     const supabase = createServiceClient();
     const repository = new UserRepository(supabase);
@@ -98,15 +76,6 @@ export const PUT = createApiHandler(
 export const DELETE = createApiHandler<{ id: string }>(
   { permission: 'users.delete' },
   async ({ params, request, user }) => {
-    const ability = createAbility({
-      userId: user.id,
-      role: user.role,
-    });
-
-    if (ability.cannot('delete', 'User')) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
     const { searchParams } = new URL(request.url);
     const permanent = searchParams.get('permanent') === 'true';
 
