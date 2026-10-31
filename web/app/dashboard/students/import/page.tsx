@@ -21,6 +21,7 @@ import { Icons } from '@/components/ui/Icons';
 import { cn } from '@/lib/utils';
 import PageGuard from '@/components/PageGuard';
 import { formatVietnameseName } from '@/lib/utils/names';
+import { getStudentImportOutcome } from '@/lib/imports/studentImportResult';
 
 export default function BulkImportPageGuarded() {
   return (
@@ -40,9 +41,35 @@ function BulkImportPage() {
     total: number;
     successCount: number;
     errorCount: number;
+    warningCount?: number;
     errors: Array<{ row: number; email?: string; error: string }>;
   } | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const importOutcome = importResults ? getStudentImportOutcome(importResults) : null;
+  const outcomeContent = {
+    success: {
+      title: 'Nhập dữ liệu thành công',
+      description: 'Toàn bộ hồ sơ hợp lệ đã được thêm vào danh sách học sinh của trung tâm.',
+      icon: <Icons.Success className="h-10 w-10 text-white" />,
+      iconClass: 'bg-emerald-600',
+      borderClass: 'border-emerald-200 dark:border-emerald-500/20',
+    },
+    partial: {
+      title: 'Đã nhập một phần dữ liệu',
+      description: 'Một số hồ sơ đã được tạo. Vui lòng kiểm tra các dòng lỗi trước khi nhập lại.',
+      icon: <Icons.Warning className="h-10 w-10 text-white" />,
+      iconClass: 'bg-amber-500',
+      borderClass: 'border-amber-200 dark:border-amber-500/20',
+    },
+    failed: {
+      title: 'Chưa nhập được dữ liệu',
+      description: 'Không có hồ sơ nào được tạo. Vui lòng sửa các dòng lỗi rồi thử lại.',
+      icon: <Icons.Error className="h-10 w-10 text-white" />,
+      iconClass: 'bg-rose-600',
+      borderClass: 'border-rose-200 dark:border-rose-500/20',
+    },
+  } as const;
+  const currentOutcome = importOutcome ? outcomeContent[importOutcome] : null;
 
   // Handle file selection
   const handleFileChange = async (selectedFile: File | null) => {
@@ -429,21 +456,31 @@ function BulkImportPage() {
           </div>
         ) : (
           <div className="animate-in zoom-in-95 duration-700 max-w-3xl mx-auto">
-            <Card className="border-emerald-500/10 bg-white dark:bg-stone-900 shadow-ultra p-16 text-center rounded-[3rem]">
-              <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-10 shadow-2xl shadow-emerald-500/30 animate-bounce-slow">
-                <Icons.Success className="w-12 h-12 text-white" />
+            <Card
+              className={cn(
+                'bg-white dark:bg-stone-900 shadow-ultra p-8 sm:p-12 text-center rounded-[3rem]',
+                currentOutcome?.borderClass
+              )}
+              aria-live="polite"
+            >
+              <div
+                className={cn(
+                  'w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg',
+                  currentOutcome?.iconClass
+                )}
+              >
+                {currentOutcome?.icon}
               </div>
-              <h2 className="text-4xl md:text-5xl font-serif font-black text-stone-900 dark:text-stone-100 uppercase tracking-tight mb-6">
-                Xử lý <span className="text-emerald-500">Thành công!</span>
+              <h2 className="text-3xl md:text-4xl font-serif font-black text-stone-900 dark:text-stone-100 tracking-tight mb-4">
+                {currentOutcome?.title}
               </h2>
-              <p className="text-stone-500 dark:text-stone-400 font-medium mb-12 max-w-lg mx-auto leading-relaxed text-sm">
-                Hệ thống đã hoàn tất xử lý tệp tin. Toàn bộ hồ sơ hợp lệ đã được tích hợp vào cơ sở
-                dữ liệu học sinh của trung tâm.
+              <p className="text-stone-600 dark:text-stone-300 font-medium mb-10 max-w-lg mx-auto leading-relaxed text-sm">
+                {currentOutcome?.description}
               </p>
 
               {importResults && (
                 <div className="max-w-xl mx-auto mb-12">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-stone-50 dark:bg-stone-950/50 rounded-3xl p-6 border border-stone-100 dark:border-white/5 shadow-inner">
                       <p className="text-3xl font-black text-stone-900 dark:text-white mb-2">
                         {importResults.total}
@@ -457,7 +494,7 @@ function BulkImportPage() {
                         {importResults.successCount}
                       </p>
                       <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-[0.2em]">
-                        Hợp lệ
+                        Đã tạo
                       </p>
                     </div>
                     <div className="bg-rose-50/50 dark:bg-rose-500/[0.03] rounded-3xl p-6 border border-rose-100 dark:border-rose-500/10 shadow-inner">
@@ -468,7 +505,39 @@ function BulkImportPage() {
                         Có lỗi
                       </p>
                     </div>
+                    <div className="bg-amber-50/50 dark:bg-amber-500/[0.03] rounded-3xl p-6 border border-amber-100 dark:border-amber-500/10 shadow-inner">
+                      <p className="text-3xl font-black text-amber-600 mb-2">
+                        {importResults.warningCount || 0}
+                      </p>
+                      <p className="text-[10px] font-black text-amber-700/70 dark:text-amber-300 uppercase tracking-[0.2em]">
+                        Cảnh báo
+                      </p>
+                    </div>
                   </div>
+
+                  {importResults.errors.length > 0 && (
+                    <div
+                      className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-5 text-left dark:border-rose-500/20 dark:bg-rose-500/5"
+                      role="alert"
+                    >
+                      <h3 className="font-bold text-rose-800 dark:text-rose-200">
+                        Các dòng cần kiểm tra
+                      </h3>
+                      <ul className="mt-3 space-y-2 text-sm text-rose-700 dark:text-rose-300">
+                        {importResults.errors.slice(0, 20).map((error, index) => (
+                          <li key={`${error.row}-${index}`}>
+                            <span className="font-semibold">Dòng {error.row}:</span> {error.error}
+                          </li>
+                        ))}
+                      </ul>
+                      {importResults.errors.length > 20 && (
+                        <p className="mt-3 text-xs font-medium text-rose-700 dark:text-rose-300">
+                          Còn {importResults.errors.length - 20} lỗi khác trong lịch sử nhập dữ
+                          liệu.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
