@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient();
     const userService = new UserService(supabase);
+    const startedAt = new Date();
 
     logger.info(`Starting bulk import of ${students.length} students`, {
       userId: auth.profile.id,
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
         import_type: 'students',
         total_rows: students.length,
         status: 'processing',
+        started_at: startedAt.toISOString(),
       })
       .select()
       .single();
@@ -76,6 +78,7 @@ export async function POST(req: NextRequest) {
       errors: [] as { row: number; email?: string; error: string }[],
       successCount: 0,
       errorCount: 0,
+      warningCount: 0,
     };
 
     // Process students in batches
@@ -109,7 +112,6 @@ export async function POST(req: NextRequest) {
                 field_name: 'email',
                 error_type: 'duplicate',
                 error_message: 'Email đã được sử dụng bởi một hồ sơ khác',
-                row_data: student,
                 severity: 'error',
               });
               continue;
@@ -163,10 +165,10 @@ export async function POST(req: NextRequest) {
                 row_number: rowNumber,
                 field_name: 'guardian',
                 error_type: 'database_error',
-                error_message: guardianError.message || 'Failed to create guardian',
-                row_data: { guardianName: student.guardianName },
+                error_message: 'Không thể lưu thông tin phụ huynh',
                 severity: 'warning',
               });
+              results.warningCount++;
             }
           }
 
@@ -188,8 +190,7 @@ export async function POST(req: NextRequest) {
             row_number: rowNumber,
             field_name: 'user_creation',
             error_type: 'service_error',
-            error_message: error instanceof Error ? error.message : 'Không thể tạo hồ sơ học sinh',
-            row_data: student,
+            error_message: 'Không thể tạo hồ sơ học sinh',
             severity: 'error',
           });
         }
@@ -197,12 +198,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Update import log with final results
-    await supabase
+    const completedAt = new Date();
+    const { error: completionError } = await supabase
       .from('import_logs')
       .update({
         processed_rows: students.length,
         success_count: results.successCount,
         error_count: results.errorCount,
+        warning_count: results.warningCount,
         status:
           results.errorCount === 0
             ? 'completed'
@@ -210,12 +213,26 @@ export async function POST(req: NextRequest) {
               ? 'completed'
               : 'failed',
         error_summary:
-          results.errors.length > 0 ? JSON.stringify(results.errors.slice(0, 10)) : null,
+          results.errors.length > 0
+            ? JSON.stringify(results.errors.slice(0, 10).map(({ row, error }) => ({ row, error })))
+            : null,
+        completed_at: completedAt.toISOString(),
+        duration_seconds: Math.max(
+          0,
+          Math.round((completedAt.getTime() - startedAt.getTime()) / 1000)
+        ),
       })
       .eq('id', importLog.id);
 
+    if (completionError) {
+      logger.error('Failed to finalize student import log', {
+        error: completionError,
+        importLogId: importLog.id,
+      });
+    }
+
     // Log audit
-    await supabase.from('audit_logs').insert({
+    const { error: auditError } = await supabase.from('audit_logs').insert({
       actor_id: auth.profile.id,
       action: 'bulk_import_students',
       resource_type: 'student',
@@ -224,8 +241,16 @@ export async function POST(req: NextRequest) {
         total: students.length,
         success: results.successCount,
         errors: results.errorCount,
+        warnings: results.warningCount,
       },
     });
+
+    if (auditError) {
+      logger.error('Failed to audit student import', {
+        error: auditError,
+        importLogId: importLog.id,
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -234,6 +259,7 @@ export async function POST(req: NextRequest) {
         total: students.length,
         successCount: results.successCount,
         errorCount: results.errorCount,
+        warningCount: results.warningCount,
         errors: results.errors,
       },
     });

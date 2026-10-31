@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
           processed_rows,
           success_count,
           error_count,
+          warning_count,
           created_at,
           completed_at,
           importer:profiles!import_logs_imported_by_fkey(id, full_name)
