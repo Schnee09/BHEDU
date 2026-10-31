@@ -80,6 +80,8 @@ export const updateUserSchema = createUserSchema
   })
   .extend({
     id: uuidSchema.optional(),
+    status: z.enum(['active', 'inactive', 'suspended']).optional(),
+    is_managed: z.boolean().optional(),
     is_active: z.boolean().optional(),
   });
 
