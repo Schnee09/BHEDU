@@ -3,65 +3,72 @@
  * POST /api/admin/rate-limit/reset - Clear all or specific rate limits
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getDataClient } from '@/lib/auth/dataClient'
-import { resetRateLimit, clearAllRateLimits, cleanupRateLimits, getRateLimitIdentifier } from '@/lib/auth/rateLimit'
+import { NextRequest, NextResponse } from 'next/server';
+import { getAuthContext } from '@/lib/auth/guard';
+import {
+  resetRateLimit,
+  clearAllRateLimits,
+  cleanupRateLimits,
+  getRateLimitIdentifier,
+} from '@/lib/auth/rateLimit';
 
 export async function POST(request: NextRequest) {
   try {
-    // No rate limit check here to allow reset when blocked
-  const { supabase } = await getDataClient(request)
-    
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Do not rate-limit this recovery endpoint, but require centralized management permission.
+    const auth = await getAuthContext(request, 'permissions.manage');
+    if (!auth.authorized || !auth.profile) {
+      return NextResponse.json(
+        { error: auth.reason || 'Forbidden' },
+        { status: auth.profile ? 403 : 401 }
+      );
     }
 
-    // Check if user is admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    const body = await request.json().catch(() => ({}));
+    const { identifier, all } = body as { identifier?: unknown; all?: unknown };
+
+    if (all !== undefined && typeof all !== 'boolean') {
+      return NextResponse.json({ error: 'all must be a boolean' }, { status: 400 });
     }
 
-    const body = await request.json().catch(() => ({}))
-    const { identifier, all } = body
-
-    if (all) {
-      clearAllRateLimits()
-      return NextResponse.json({ 
-        success: true, 
-        message: 'All rate limits cleared' 
-      })
+    if (
+      identifier !== undefined &&
+      (typeof identifier !== 'string' || !identifier.trim() || identifier.length > 200)
+    ) {
+      return NextResponse.json({ error: 'identifier must be a non-empty string' }, { status: 400 });
     }
 
-    if (identifier) {
-      resetRateLimit(identifier)
-      return NextResponse.json({ 
-        success: true, 
-        message: `Rate limit cleared for ${identifier}` 
-      })
+    if (all === true) {
+      clearAllRateLimits();
+      return NextResponse.json({
+        success: true,
+        message: 'All rate limits cleared',
+      });
+    }
+
+    if (typeof identifier === 'string') {
+      resetRateLimit(identifier.trim());
+      return NextResponse.json({
+        success: true,
+        message: 'Rate limit cleared',
+      });
     }
 
     // Default: cleanup expired and reset current user
-    const cleaned = cleanupRateLimits()
-    const currentIdentifier = getRateLimitIdentifier(request)
-    resetRateLimit(currentIdentifier)
+    const cleaned = cleanupRateLimits();
+    const currentIdentifier = getRateLimitIdentifier(request);
+    resetRateLimit(currentIdentifier);
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: `Rate limit reset for current user. Cleaned ${cleaned} expired entries.`,
-      identifier: currentIdentifier
-    })
+    });
   } catch (error) {
-    console.error('Rate limit reset error:', error)
-    return NextResponse.json({ 
-      error: 'Failed to reset rate limits',
-      details: error instanceof Error ? error.message : String(error)
-    }, { status: 500 })
+    console.error('Rate limit reset error:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to reset rate limits',
+      },
+      { status: 500 }
+    );
   }
 }
