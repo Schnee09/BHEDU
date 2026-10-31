@@ -372,15 +372,17 @@ export class UserService {
     if (input.role) {
       try {
         const authUserId = profile.user_id || id;
-        await this.supabase.auth.admin.updateUserById(authUserId, {
+        const { error: authError } = await this.supabase.auth.admin.updateUserById(authUserId, {
           user_metadata: { role: input.role },
         });
+        if (authError) throw authError;
       } catch (authErr) {
         logger.warn('Failed to sync auth user metadata role on updateUser', {
           id,
           role: input.role,
           authErr,
         });
+        throw new Error('Không thể đồng bộ vai trò đăng nhập. Vui lòng thử lại.');
       }
     }
 

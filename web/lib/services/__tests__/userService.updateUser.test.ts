@@ -48,4 +48,28 @@ describe('UserService.updateUser', () => {
       user_metadata: { role: 'admin' },
     });
   });
+
+  it('fails safely when Supabase Auth returns a synchronization error', async () => {
+    const single = jest.fn().mockResolvedValue({
+      data: { id: 'profile-1', user_id: 'auth-user-1', role: 'admin' },
+      error: null,
+    });
+    const select = jest.fn(() => ({ single }));
+    const eq = jest.fn(() => ({ select }));
+    const update = jest.fn(() => ({ eq }));
+    const updateUserById = jest.fn().mockResolvedValue({
+      data: null,
+      error: new Error('internal auth provider detail'),
+    });
+    const supabase = {
+      from: jest.fn(() => ({ update })),
+      auth: { admin: { updateUserById } },
+    } as any;
+
+    const service = new UserService(supabase);
+
+    await expect(service.updateUser('profile-1', { role: 'admin' })).rejects.toThrow(
+      'Không thể đồng bộ vai trò đăng nhập. Vui lòng thử lại.'
+    );
+  });
 });
