@@ -1,8 +1,6 @@
-import { NextResponse } from 'next/server';
 import { apiSuccess, createApiHandler } from '@/lib/api';
 import { importUsersSchema } from '@/lib/schemas/requests/user';
 import { userService } from '@/lib/services/userService';
-import { createAbility } from '@/lib/auth/permissions';
 
 /**
  * POST /api/admin/users/import
@@ -10,24 +8,10 @@ import { createAbility } from '@/lib/auth/permissions';
  */
 export const POST = createApiHandler(
   {
-    requireAuth: true,
+    permission: 'users.bulk_import',
     bodySchema: importUsersSchema,
   },
   async ({ body, user }) => {
-    const ability = createAbility({
-      userId: user.id,
-      role: user.role,
-    });
-
-    if (ability.cannot('create', 'User')) {
-      return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền nhập người dùng' },
-        { status: 403 }
-      );
-    }
-
-    // Additional check: maybe rely on userService to check specific roles?
-
     const { users } = body;
     const results = {
       total: users.length,
@@ -53,20 +37,6 @@ export const POST = createApiHandler(
         // createUserSchema has first_name, last_name, full_name (optional/ignored?).
         // We need to split full_name if first/last are missing?
 
-        let first_name = '';
-        let last_name = '';
-
-        if (userData.full_name) {
-          const parts = userData.full_name.trim().split(' ');
-          if (parts.length > 1) {
-            last_name = parts.pop() || '';
-            first_name = parts.join(' ');
-          } else {
-            first_name = parts[0] ?? '';
-            last_name = '';
-          }
-        }
-
         // Generate password if missing
         const password = userData.password || Math.random().toString(36).slice(-8) + 'A1!';
 
@@ -74,8 +44,7 @@ export const POST = createApiHandler(
           {
             email: userData.email,
             password: password,
-            first_name: first_name,
-            last_name: last_name,
+            full_name: userData.full_name,
             role: userData.role,
             phone: userData.phone,
             status: 'active', // Default to active
