@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import PageGuard from '@/components/PageGuard';
 import { formatVietnameseName } from '@/lib/utils/names';
 import { getStudentImportOutcome } from '@/lib/imports/studentImportResult';
+import ImportHistoryPanel from '@/components/ImportHistoryPanel';
 
 export default function BulkImportPageGuarded() {
   return (
@@ -581,6 +582,10 @@ function BulkImportPage() {
             </Card>
           </div>
         )}
+
+        <section className="mt-12 border-t border-stone-200 pt-10 dark:border-white/10">
+          <ImportHistoryPanel key={importComplete ? 'after-import' : 'before-import'} />
+        </section>
       </div>
     </div>
   );
