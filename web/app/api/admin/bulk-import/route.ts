@@ -1,24 +1,26 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/guard';
 import { logAuditAction } from '@/lib/auditLog';
 import { CsvImportError, MAX_CSV_BYTES, parseCsvImport } from '@/lib/imports/parseCsvImport';
+import { UserService } from '@/lib/services/userService';
+import { StudentService } from '@/lib/services/studentService';
 
 export async function POST(request: Request) {
   try {
-    // Use the centralized adminAuth helper which supports super_admin via inheritance
-    const auth = await adminAuth(request);
-    if (!auth.authorized) {
+    const auth = await getAuthContext(request, 'users.bulk_import');
+    if (!auth.authorized || !auth.profile || !auth.role) {
       return NextResponse.json(
         { error: auth.reason || 'Forbidden' },
         {
-          status: auth.userId ? 403 : 401,
+          status: auth.profile ? 403 : 401,
         }
       );
     }
 
-    const { userId, userEmail } = auth;
-    const supabase = await createClient();
+    const supabase = createServiceClient();
+    const userService = new UserService(supabase);
+    const studentService = new StudentService(supabase);
 
     // Parse form data
     const formData = await request.formData();
@@ -70,20 +72,29 @@ export async function POST(request: Request) {
             data[header] = row[idx] || '';
           });
 
-          const { error } = await supabase.from('students').insert({
-            full_name: data.full_name,
-            email: data.email || null,
-            phone: data.phone || null,
-            date_of_birth: data.date_of_birth || null,
-            class_id: data.class_id || null,
-          });
-
-          if (error) {
-            failed++;
-            errors.push(`Row ${i + 2}: ${error.message}`);
-          } else {
-            success++;
+          if (!data.full_name?.trim()) {
+            throw new Error('Họ và tên là bắt buộc');
           }
+
+          const created = await userService.createUser(
+            {
+              full_name: data.full_name.trim(),
+              email: data.email || undefined,
+              phone: data.phone || undefined,
+              date_of_birth: data.date_of_birth || undefined,
+              role: 'student',
+              status: 'active',
+              is_managed: true,
+            },
+            auth.role,
+            auth.profile.id
+          );
+
+          if (data.class_id) {
+            await studentService.enrollStudent(created.id, data.class_id);
+          }
+
+          success++;
         } catch (err) {
           failed++;
           errors.push(`Row ${i + 2}: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -157,7 +168,7 @@ export async function POST(request: Request) {
 
     // Standardized audit logging using centralized helper
     await logAuditAction({
-      actor_id: userId!,
+      actor_id: auth.profile.id,
       action: 'import',
       resource_type: type,
       resource_id: 'bulk-import',
