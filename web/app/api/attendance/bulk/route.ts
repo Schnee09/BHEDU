@@ -45,7 +45,7 @@ export const POST = createApiHandler(
     const repository = new AttendanceRepository(supabase);
     const result = await repository.createBulk({
       ...body,
-      marked_by: body.marked_by || user.id,
+      marked_by: user.id,
     } as BulkAttendanceInput);
 
     return apiSuccess(result, { _status: 201 });

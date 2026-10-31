@@ -49,4 +49,15 @@ describe('bulk attendance schema', () => {
       }).success
     ).toBe(false);
   });
+
+  it('rejects client-supplied audit attribution', () => {
+    expect(
+      bulkAttendanceSchema.safeParse({
+        class_id: ids.class_id,
+        date: '2026-10-28',
+        marked_by: '33333333-3333-4333-8333-333333333333',
+        records: [{ student_id: ids.student_id, status: 'present' }],
+      }).success
+    ).toBe(false);
+  });
 });

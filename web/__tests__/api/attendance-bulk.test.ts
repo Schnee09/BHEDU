@@ -119,4 +119,28 @@ describe('POST /api/attendance/bulk', () => {
     expect(res.status).toBe(403);
     expect(mockCreateBulk).not.toHaveBeenCalled();
   });
+
+  it('rejects attempts to attribute attendance to another user', async () => {
+    const mockCreateBulk = jest.fn();
+    (AttendanceRepository as jest.Mock).mockImplementation(() => ({
+      createBulk: mockCreateBulk,
+    }));
+
+    const req = createMockRequest({
+      class_id: '123e4567-e89b-12d3-a456-426614174000',
+      date: '2023-10-01',
+      marked_by: '323e4567-e89b-12d3-a456-426614174000',
+      records: [
+        {
+          student_id: '223e4567-e89b-12d3-a456-426614174000',
+          status: 'present',
+        },
+      ],
+    });
+
+    const res: any = await POST(req, { params: Promise.resolve({}) } as any);
+
+    expect(res.status).toBe(400);
+    expect(mockCreateBulk).not.toHaveBeenCalled();
+  });
 });

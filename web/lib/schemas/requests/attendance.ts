@@ -68,8 +68,8 @@ export const bulkAttendanceSchema = z
       )
       .min(1, 'At least one record required')
       .max(100),
-    marked_by: uuidSchema.optional(),
   })
+  .strict()
   .superRefine((value, context) => {
     const seen = new Set<string>();
     value.records.forEach((record, index) => {
@@ -87,4 +87,6 @@ export const bulkAttendanceSchema = z
 export type AttendanceQueryInput = z.infer<typeof attendanceQuerySchema>;
 export type CreateAttendanceInput = z.infer<typeof createAttendanceSchema>;
 export type UpdateAttendanceInput = z.infer<typeof updateAttendanceSchema>;
-export type BulkAttendanceInput = z.infer<typeof bulkAttendanceSchema>;
+export type BulkAttendanceInput = z.infer<typeof bulkAttendanceSchema> & {
+  marked_by?: string;
+};
