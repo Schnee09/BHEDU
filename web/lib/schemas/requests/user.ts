@@ -47,8 +47,13 @@ export const createUserSchema = z.object({
   role: userRoleSchema,
   phone: phoneSchema.optional().nullable(),
   status: z.enum(['active', 'inactive', 'suspended']).optional().default('active'),
+  is_active: z.boolean().optional(),
   address: z.string().max(255).optional().nullable(),
   photo_url: z.string().url().optional().nullable(),
+  date_of_birth: z.string().optional().nullable(),
+  gender: z.string().max(30).optional().nullable(),
+  emergency_contact: z.string().max(100).optional().nullable(),
+  enrollment_date: z.string().optional().nullable(),
 
   personal_email: z.string().email('Invalid personal email format').optional().nullable(),
 
@@ -82,7 +87,6 @@ export const updateUserSchema = createUserSchema
     id: uuidSchema.optional(),
     status: z.enum(['active', 'inactive', 'suspended']).optional(),
     is_managed: z.boolean().optional(),
-    is_active: z.boolean().optional(),
   });
 
 /**
