@@ -69,10 +69,17 @@ export async function GET(request: Request) {
       const { data, error } = await supabase.from(tableParam).select('*').limit(5000);
       if (error) {
         return NextResponse.json(
-          { error: `Không thể xuất dữ liệu bảng ${tableParam}: ${error.message}` },
-          { status: 400 }
+          { error: `Không thể xuất dữ liệu bảng ${tableParam}` },
+          { status: 500 }
         );
       }
+      await supabase.from('audit_logs').insert({
+        user_id: userId,
+        user_email: userEmail,
+        action: 'export',
+        resource_type: 'backup',
+        new_data: { scope: `table:${tableParam}`, count: data?.length || 0 },
+      });
       return NextResponse.json({
         table: tableParam,
         exportedAt: new Date().toISOString(),
@@ -121,6 +128,7 @@ export async function GET(request: Request) {
 
     const fetchPromises = tableList.map(async (table) => {
       const res = await supabase.from(table).select('*').limit(5000);
+      if (res.error) throw new Error(`Failed to export table ${table}`);
       return { table, data: res.data || [], count: res.data?.length || 0 };
     });
 
@@ -151,6 +159,6 @@ export async function GET(request: Request) {
     return NextResponse.json(exportData);
   } catch (error: any) {
     console.error('Export data error:', error);
-    return NextResponse.json({ error: error?.message || 'Failed to export data' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to export data' }, { status: 500 });
   }
 }

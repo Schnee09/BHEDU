@@ -7,7 +7,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 
-const tableQuery = { select: jest.fn(), limit: jest.fn() };
+const tableQuery = { select: jest.fn(), limit: jest.fn(), insert: jest.fn() };
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(() => ({ from: jest.fn(() => tableQuery) })),
 }));
@@ -29,6 +29,7 @@ describe('GET /api/admin/export-data', () => {
     jest.clearAllMocks();
     tableQuery.select.mockReturnValue(tableQuery);
     tableQuery.limit.mockResolvedValue({ data: [], error: null });
+    tableQuery.insert.mockResolvedValue({ error: null });
   });
 
   it('rejects an unknown module before authentication or data access', async () => {
@@ -68,5 +69,26 @@ describe('GET /api/admin/export-data', () => {
 
     expect(response.status).toBe(200);
     expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'reports.export');
+    expect(tableQuery.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'export',
+        new_data: { scope: 'table:profiles', count: 0 },
+      })
+    );
+  });
+
+  it('does not expose database error details to the client', async () => {
+    authorize();
+    tableQuery.limit.mockResolvedValue({
+      data: null,
+      error: { message: 'relation profiles_internal_secret does not exist' },
+    });
+
+    const response = await GET(request('?table=profiles'));
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.error).toBe('Không thể xuất dữ liệu bảng profiles');
+    expect(JSON.stringify(body)).not.toContain('internal_secret');
   });
 });
