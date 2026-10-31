@@ -5,16 +5,19 @@ import { DEFAULT_ACADEMIC_MILESTONES } from '@/lib/utils/academicMasterPlan';
 export const POST = createApiHandler(
   {
     requireAuth: true,
-    allowedRoles: ['super_admin', 'owner', 'admin', 'staff', 'teacher'],
+    permission: 'classes.manage',
+    allowedRoles: ['super_admin', 'owner', 'admin'],
   },
   async ({ user }) => {
     const supabase = createServiceClient();
 
     // Delete existing events
-    await supabase
+    const { error: deleteError } = await supabase
       .from('calendar_events')
       .delete()
       .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (deleteError) throw deleteError;
 
     // Insert standard milestones
     const insertData = DEFAULT_ACADEMIC_MILESTONES.map((m) => ({
