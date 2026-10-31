@@ -8,18 +8,10 @@ import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/
 import { adminAuth, teacherAuth } from '@/lib/auth/adminAuth';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 import { createServiceClient } from '@/lib/supabase/server';
-import { z } from 'zod';
 import { canAccessClass } from '@/lib/auth/classAccess';
+import { updateAttendanceSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
-
-// Validation Schemas
-const updateSchema = z.object({
-  status: z.enum(['present', 'absent', 'late', 'excused']).optional(),
-  notes: z.string().optional().nullable(),
-  check_in_time: z.string().optional().nullable(),
-  check_out_time: z.string().optional().nullable(),
-});
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -117,7 +109,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       );
     }
 
-    const parsed = updateSchema.safeParse(body);
+    const parsed = updateAttendanceSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         {

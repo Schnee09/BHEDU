@@ -2,6 +2,7 @@ import {
   attendanceQuerySchema,
   bulkAttendanceSchema,
   createAttendanceSchema,
+  updateAttendanceSchema,
 } from '../requests/attendance';
 
 const ids = {
@@ -93,5 +94,13 @@ describe('single attendance schema', () => {
     expect(createAttendanceSchema.safeParse({ ...record, marked_by: ids.student_id }).success).toBe(
       false
     );
+  });
+
+  it('allows supported partial updates and rejects retired time fields', () => {
+    expect(updateAttendanceSchema.safeParse({ status: 'late', notes: 'Đến muộn' }).success).toBe(
+      true
+    );
+    expect(updateAttendanceSchema.safeParse({ check_out_time: '20:00' }).success).toBe(false);
+    expect(updateAttendanceSchema.safeParse({}).success).toBe(false);
   });
 });

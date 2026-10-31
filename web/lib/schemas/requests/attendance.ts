@@ -48,11 +48,16 @@ export const attendanceRecordSchema = z
  * Create/Update Attendance Schema
  */
 export const createAttendanceSchema = attendanceRecordSchema;
-export const updateAttendanceSchema = attendanceRecordSchema.partial().omit({
-  student_id: true,
-  class_id: true,
-  date: true,
-});
+export const updateAttendanceSchema = attendanceRecordSchema
+  .partial()
+  .omit({
+    student_id: true,
+    class_id: true,
+    date: true,
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'At least one attendance field is required',
+  });
 
 /**
  * Bulk attendance schema
