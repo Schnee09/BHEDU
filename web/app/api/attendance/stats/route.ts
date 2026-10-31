@@ -8,6 +8,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { teacherAuth } from '@/lib/auth/adminAuth';
 import { logger } from '@/lib/logger';
 import { canAccessClass } from '@/lib/auth/classAccess';
+import { summarizeAttendanceStatuses } from '@/lib/attendance/metrics';
 
 export async function GET(req: NextRequest) {
   try {
@@ -37,18 +38,15 @@ export async function GET(req: NextRequest) {
     const { data: attendance, error } = await supabase
       .from('attendance')
       .select('status')
-      .eq('class_id', classId);
+      .eq('class_id', classId)
+      .is('deleted_at', null);
 
     if (error) {
       logger.error(`Failed to fetch stats for class ${classId}`, error);
       return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
     }
 
-    const stats = {
-      present: attendance.filter((a) => a.status === 'present').length,
-      absent: attendance.filter((a) => a.status === 'absent').length,
-      total: attendance.length,
-    };
+    const stats = summarizeAttendanceStatuses(attendance || []);
 
     return NextResponse.json(stats);
   } catch (error) {
