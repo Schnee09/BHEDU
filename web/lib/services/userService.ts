@@ -57,12 +57,16 @@ export class UserService {
    */
   async createUser(input: CreateUserInput, currentUserRole: string, createdBy?: string) {
     // 1. Role Escalation / Protection Logic
-    if ((input.role as string) === 'super_admin' && currentUserRole !== 'super_admin') {
-      throw new AuthorizationError('Bạn không có quyền tạo tài khoản super_admin');
+    if (
+      ['owner', 'super_admin'].includes(input.role as string) &&
+      currentUserRole !== 'super_admin'
+    ) {
+      throw new AuthorizationError('Chỉ quản trị viên cấp cao mới có thể tạo tài khoản này');
     }
 
     if (
-      ['owner', 'admin', 'staff'].includes(input.role as string) &&
+      ['admin', 'staff'].includes(input.role as string) &&
+      !['owner', 'super_admin'].includes(currentUserRole) &&
       !isAtLeast(currentUserRole as UserRole, 'admin')
     ) {
       throw new AuthorizationError('Bạn không có quyền tạo tài khoản với vai trò này');
