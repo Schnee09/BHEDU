@@ -53,4 +53,26 @@ describe('POST /api/admin/students/import access control', () => {
     expect(response.status).toBe(400);
     expect(createServiceClient).not.toHaveBeenCalled();
   });
+
+  it('rejects malformed student rows before creating a service client', async () => {
+    (getAuthContext as jest.Mock).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'admin-1', email: 'admin@example.com' },
+      role: 'admin',
+    });
+
+    const response = await POST(
+      request([{ firstName: 'An', lastName: 'Nguyễn', email: 'khong-hop-le' }])
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toMatchObject({ error: 'Dữ liệu nhập học sinh không hợp lệ' });
+    expect(body.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: 'students.0.email', message: 'Email không hợp lệ' }),
+      ])
+    );
+    expect(createServiceClient).not.toHaveBeenCalled();
+  });
 });

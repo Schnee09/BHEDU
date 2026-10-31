@@ -9,33 +9,41 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth/guard';
 import { createServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
-import type { StudentImportRow } from '@/lib/importService';
 import { UserService } from '@/lib/services/userService';
 import { formatVietnameseName } from '@/lib/utils/names';
+import { studentImportRequestSchema } from '@/lib/schemas/requests/studentImport';
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await getAuthContext(req, 'students.import');
     if (!auth.authorized || !auth.profile || !auth.role) {
       return NextResponse.json(
-        { error: auth.reason || 'Unauthorized' },
+        { error: auth.profile ? 'Bạn không có quyền nhập học sinh' : 'Vui lòng đăng nhập' },
         { status: auth.profile ? 403 : 401 }
       );
     }
 
-    const body = await req.json();
-    const { students } = body as { students: StudentImportRow[] };
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Dữ liệu JSON không hợp lệ' }, { status: 400 });
+    }
 
-    if (!students || !Array.isArray(students) || students.length === 0) {
+    const parsed = studentImportRequestSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Invalid request: students array is required' },
+        {
+          error: 'Dữ liệu nhập học sinh không hợp lệ',
+          details: parsed.error.issues.slice(0, 20).map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
         { status: 400 }
       );
     }
-
-    if (students.length > 1000) {
-      return NextResponse.json({ error: 'Maximum 1000 students per import' }, { status: 400 });
-    }
+    const { students } = parsed.data;
 
     const supabase = createServiceClient();
     const userService = new UserService(supabase);
@@ -59,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     if (logError || !importLog) {
       logger.error('Failed to create import log', logError);
-      return NextResponse.json({ error: 'Failed to create import log' }, { status: 500 });
+      return NextResponse.json({ error: 'Không thể tạo nhật ký nhập dữ liệu' }, { status: 500 });
     }
 
     const results = {
@@ -91,7 +99,7 @@ export async function POST(req: NextRequest) {
               results.errors.push({
                 row: rowNumber,
                 email: student.email,
-                error: 'Student with this email already exists',
+                error: 'Email đã được sử dụng bởi một hồ sơ khác',
               });
               results.errorCount++;
 
@@ -100,7 +108,7 @@ export async function POST(req: NextRequest) {
                 row_number: rowNumber,
                 field_name: 'email',
                 error_type: 'duplicate',
-                error_message: 'Student with this email already exists',
+                error_message: 'Email đã được sử dụng bởi một hồ sơ khác',
                 row_data: student,
                 severity: 'error',
               });
@@ -165,13 +173,13 @@ export async function POST(req: NextRequest) {
           results.success.push(studentId);
           results.successCount++;
           logger.info(`Successfully imported student: ${student.email || studentId}`);
-        } catch (error: any) {
+        } catch (error: unknown) {
           logger.error(`Import failed for row ${rowNumber}`, error);
 
           results.errors.push({
             row: rowNumber,
             email: student.email,
-            error: error.message || 'Failed to create student',
+            error: 'Không thể tạo hồ sơ học sinh',
           });
           results.errorCount++;
 
@@ -180,7 +188,7 @@ export async function POST(req: NextRequest) {
             row_number: rowNumber,
             field_name: 'user_creation',
             error_type: 'service_error',
-            error_message: error.message || 'Failed to create student via service',
+            error_message: error instanceof Error ? error.message : 'Không thể tạo hồ sơ học sinh',
             row_data: student,
             severity: 'error',
           });
@@ -231,6 +239,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     logger.error('Bulk import error', error);
-    return NextResponse.json({ error: 'Failed to import students' }, { status: 500 });
+    return NextResponse.json({ error: 'Không thể nhập danh sách học sinh' }, { status: 500 });
   }
 }
