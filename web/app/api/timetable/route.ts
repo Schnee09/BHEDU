@@ -4,40 +4,44 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
 import { createTimetableSlotSchema, timetableQuerySchema } from '@/lib/schemas';
 import { validateQuery } from '@/lib/api/validation';
-import { ConflictError, ValidationError } from '@/lib/api/errors';
+import { AuthorizationError, ConflictError, ValidationError } from '@/lib/api/errors';
+import { canAccessClass, canAccessStudent } from '@/lib/auth/classAccess';
 
-export const GET = createGetHandler(
-  { requireAuth: false }, // Public/Authenticated - original check was manual classId check
-  async ({ request }) => {
-    // 1. Validation
-    const query = validateQuery(request, timetableQuerySchema);
-    // Original code allowed no auth for GET?
-    // "export async function GET(req: NextRequest) { ... }"
-    // It didn't have specific auth guards besides standard RLS if applied.
-    // However, POST had explicit adminAuth.
-    // We'll keep GET open or requireAuth depending on strictness.
-    // Safest is public read if shared, but usually requires login.
-    // Let's assume requireAuth=false to match "maybe public schedule" or client handling.
+export const GET = createGetHandler({ requireAuth: true }, async ({ request, user }) => {
+  const query = validateQuery(request, timetableQuerySchema);
 
-    const supabase = createServiceClient();
-    const repository = new TimetableRepository(supabase);
+  const supabase = createServiceClient();
+  const repository = new TimetableRepository(supabase);
 
-    const { class_id, student_id, week_start_date } = query;
+  const { class_id, student_id, week_start_date } = query;
 
-    if (!class_id && !student_id) {
-      // Original returned empty slots success
-      return apiSuccess({ slots: [] });
-    }
-
-    const slots = await repository.getSlots({
-      class_id,
-      student_id,
-      week_start_date,
-    });
-
-    return apiSuccess({ slots });
+  if (!class_id && !student_id) {
+    // Original returned empty slots success
+    return apiSuccess({ slots: [] });
   }
-);
+
+  if (class_id) {
+    const allowed = await canAccessClass(supabase, user, class_id);
+    if (!allowed) {
+      throw new AuthorizationError('Bạn không có quyền xem lịch học của lớp này');
+    }
+  }
+
+  if (student_id) {
+    const allowed = await canAccessStudent(supabase, user, student_id);
+    if (!allowed) {
+      throw new AuthorizationError('Bạn không có quyền xem lịch học của học sinh này');
+    }
+  }
+
+  const slots = await repository.getSlots({
+    class_id,
+    student_id,
+    week_start_date,
+  });
+
+  return apiSuccess({ slots });
+});
 
 const DAY_LABELS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
 
