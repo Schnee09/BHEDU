@@ -10,6 +10,16 @@ export async function GET(request: NextRequest) {
     timestamp: new Date().toISOString(),
   };
 
+  // Public callers only need process liveness. Avoid service-role queries, outbound requests,
+  // and runtime details unless the caller has explicit system diagnostics permission.
+  if (!canViewDetails) {
+    return NextResponse.json({
+      status: 'ok',
+      duration_total_ms: Date.now() - start,
+      timestamp: checks.timestamp,
+    });
+  }
+
   try {
     // 1. Check External Connectivity (Ping Google)
     const googleStart = Date.now();
@@ -64,7 +74,7 @@ export async function GET(request: NextRequest) {
       timestamp: checks.timestamp,
     };
 
-    return NextResponse.json(canViewDetails ? { ...publicHealth, ...checks } : publicHealth);
+    return NextResponse.json({ ...publicHealth, ...checks });
   } catch (err: any) {
     return NextResponse.json(
       {
