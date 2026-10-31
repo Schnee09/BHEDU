@@ -189,30 +189,23 @@ function isValidEmail(email: string): boolean {
 }
 
 /**
- * Validate date format (YYYY-MM-DD or common formats)
+ * Validate an actual calendar date in YYYY-MM-DD format.
  */
 function parseDate(dateString: string): Date | null {
   if (!dateString) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString.trim());
+  if (!match) return null;
 
-  // Try ISO format first (YYYY-MM-DD)
-  const isoDate = new Date(dateString);
-  if (!isNaN(isoDate.getTime())) {
-    return isoDate;
-  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
 
-  // Try common formats: MM/DD/YYYY, DD/MM/YYYY, etc.
-  const parts = dateString.split(/[-\/]/);
-  if (parts.length === 3) {
-    // Try MM/DD/YYYY
-    const date1 = new Date(`${parts[2]}-${parts[0]}-${parts[1]}`);
-    if (!isNaN(date1.getTime())) return date1;
-
-    // Try DD/MM/YYYY
-    const date2 = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-    if (!isNaN(date2.getTime())) return date2;
-  }
-
-  return null;
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+    ? date
+    : null;
 }
 
 /**
@@ -222,7 +215,7 @@ function isValidPhone(phone: string): boolean {
   // Remove common formatting characters
   const cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
   // Check if it's between 10-15 digits
-  return /^\d{10,15}$/.test(cleaned);
+  return /^\+?\d{10,15}$/.test(cleaned);
 }
 
 /**
@@ -294,6 +287,7 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
         message: 'Định dạng số điện thoại không hợp lệ',
         severity: 'warning',
       });
+      row.phone = undefined;
     }
 
     if (row.dateOfBirth) {
@@ -306,6 +300,7 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
           message: 'Định dạng ngày không hợp lệ (hỗ trợ YYYY-MM-DD)',
           severity: 'warning',
         });
+        row.dateOfBirth = undefined;
       } else {
         // Convert to ISO format
         row.dateOfBirth = dob.toISOString().split('T')[0] ?? '';
@@ -320,6 +315,7 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
         message: 'Giới tính không hợp lệ (dùng: male, female, other)',
         severity: 'warning',
       });
+      row.gender = undefined;
     }
 
     if (row.studentId) {
@@ -347,6 +343,7 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
           message: 'Định dạng ngày nhập học không hợp lệ',
           severity: 'warning',
         });
+        row.enrollmentDate = undefined;
       } else {
         row.enrollmentDate = enrollDate.toISOString().split('T')[0] ?? '';
       }
@@ -375,6 +372,7 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
         message: 'Định dạng Email phụ huynh không hợp lệ',
         severity: 'warning',
       });
+      row.guardianEmail = undefined;
     }
 
     if (row.guardianPhone && !isValidPhone(row.guardianPhone)) {
@@ -385,6 +383,7 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
         message: 'Định dạng SĐT phụ huynh không hợp lệ',
         severity: 'warning',
       });
+      row.guardianPhone = undefined;
     }
 
     if (
@@ -400,6 +399,7 @@ export async function validateImportData(rows: StudentImportRow[]): Promise<Impo
         message: 'Mối quan hệ không hợp lệ (dùng: father, mother, guardian...)',
         severity: 'warning',
       });
+      row.guardianRelationship = undefined;
     }
 
     // Convert boolean strings to actual booleans

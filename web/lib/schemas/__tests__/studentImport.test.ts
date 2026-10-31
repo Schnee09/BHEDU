@@ -48,6 +48,22 @@ describe('studentImportRequestSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('rejects invalid phone numbers from direct API callers', () => {
+    const result = studentImportRequestSchema.safeParse({
+      students: [{ ...validStudent, phone: 'abc', guardianPhone: '123' }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts common Vietnamese international phone formatting', () => {
+    const result = studentImportRequestSchema.safeParse({
+      students: [{ ...validStudent, phone: '+84 901 234 567' }],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it('rejects duplicate email and student codes in one batch', () => {
     const result = studentImportRequestSchema.safeParse({
       students: [validStudent, { ...validStudent, firstName: 'Trần' }],

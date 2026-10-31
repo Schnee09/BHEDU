@@ -8,6 +8,16 @@ const optionalText = (max: number) =>
     .optional()
     .transform((value) => value || undefined);
 
+const optionalPhone = z
+  .string()
+  .trim()
+  .refine((value) => !value || /^\+?\d{10,15}$/.test(value.replace(/[\s\-().]/g, '')), {
+    message: 'Số điện thoại không hợp lệ',
+  })
+  .max(20)
+  .optional()
+  .transform((value) => value || undefined);
+
 function isValidIsoDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return false;
@@ -51,7 +61,7 @@ export const studentImportRowSchema = z.object({
     .max(254)
     .optional()
     .transform((value) => value || undefined),
-  phone: optionalText(20),
+  phone: optionalPhone,
   address: optionalText(500),
   dateOfBirth: optionalDate,
   gender: optionalEnum(['male', 'female', 'other', 'prefer_not_to_say']),
@@ -68,7 +78,7 @@ export const studentImportRowSchema = z.object({
     'sibling',
     'other',
   ]),
-  guardianPhone: optionalText(20),
+  guardianPhone: optionalPhone,
   guardianEmail: z
     .string()
     .trim()
