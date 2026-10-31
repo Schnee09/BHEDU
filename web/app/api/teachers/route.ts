@@ -5,7 +5,7 @@ import { z } from 'zod';
 /**
  * GET /api/teachers - List all classroom teachers
  */
-export const GET = createGetHandler({}, async ({ searchParams }) => {
+export const GET = createGetHandler({ permission: 'users.view' }, async ({ searchParams }) => {
   const search = searchParams.get('search') || undefined;
   const department = searchParams.get('department') || undefined;
 

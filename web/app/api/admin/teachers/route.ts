@@ -1,9 +1,13 @@
-import { CreateUserInput } from '@/lib/schemas';
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
-import { teacherQuerySchema } from '@/lib/schemas';
+import { createUserSchema, teacherQuerySchema } from '@/lib/schemas';
 import { teacherService } from '@/lib/services/teacherService';
 import { userService } from '@/lib/services/userService';
 import { validateQuery } from '@/lib/api/validation';
+import { z } from 'zod';
+
+const createTeachingUserSchema = createUserSchema.extend({
+  role: z.enum(['teacher', 'tutor', 'staff']).default('teacher'),
+});
 
 /**
  * GET /api/admin/teachers
@@ -47,23 +51,13 @@ export const GET = createGetHandler({ permission: 'users.view' }, async ({ reque
  * POST /api/admin/teachers
  * Standardized teacher/staff creation
  */
-export const POST = createApiHandler<CreateUserInput>(
+export const POST = createApiHandler(
   {
     permission: 'users.create',
-    // bodySchema: createUserSchema, // Shared with userService for now
+    bodySchema: createTeachingUserSchema,
   },
   async ({ body, user }) => {
-    // Role defaults to teacher if not specified
-    const role = (body as any).role || 'teacher';
-
-    const result = await userService.createUser(
-      {
-        ...(body as any),
-        role,
-      },
-      user.role,
-      user.id
-    );
+    const result = await userService.createUser(body, user.role, user.id);
 
     return apiSuccess(result, {
       message: 'Người dùng đã được tạo thành công.',
