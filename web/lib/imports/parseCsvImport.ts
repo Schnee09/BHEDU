@@ -5,8 +5,6 @@ export const MAX_CSV_ROWS = 1000;
 
 const REQUIRED_HEADERS: Record<string, string[]> = {
   students: ['full_name'],
-  grades: ['student_id', 'subject', 'score'],
-  attendance: ['student_id', 'class_id', 'date'],
 };
 
 export class CsvImportError extends Error {}

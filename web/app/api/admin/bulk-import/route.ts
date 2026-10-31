@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const auth = await getAuthContext(request, 'users.bulk_import');
     if (!auth.authorized || !auth.profile || !auth.role) {
       return NextResponse.json(
-        { error: auth.reason || 'Forbidden' },
+        { error: auth.profile ? 'Bạn không có quyền nhập dữ liệu' : 'Vui lòng đăng nhập' },
         {
           status: auth.profile ? 403 : 401,
         }
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     if (!(file instanceof File) || !type) {
       return NextResponse.json(
-        { error: 'File and type are required' },
+        { error: 'Vui lòng chọn file CSV cần nhập' },
         {
           status: 400,
         }
@@ -97,69 +97,12 @@ export async function POST(request: Request) {
           success++;
         } catch (err) {
           failed++;
-          errors.push(`Row ${i + 2}: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        }
-      }
-    } else if (type === 'grades') {
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row) continue;
-        try {
-          const data: Record<string, string> = {};
-          headers.forEach((header, idx) => {
-            data[header] = row[idx] || '';
-          });
-
-          const { error } = await supabase.from('grades').insert({
-            student_id: data.student_id,
-            subject: data.subject,
-            category: data.category || 'Test',
-            score: parseFloat(data.score || '0') || 0,
-            date: data.date || new Date().toISOString().split('T')[0],
-          });
-
-          if (error) {
-            failed++;
-            errors.push(`Row ${i + 2}: ${error.message}`);
-          } else {
-            success++;
-          }
-        } catch (err) {
-          failed++;
-          errors.push(`Row ${i + 2}: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        }
-      }
-    } else if (type === 'attendance') {
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row) continue;
-        try {
-          const data: Record<string, string> = {};
-          headers.forEach((header, idx) => {
-            data[header] = row[idx] || '';
-          });
-
-          const { error } = await supabase.from('attendance').insert({
-            student_id: data.student_id,
-            class_id: data.class_id,
-            date: data.date,
-            status: data.status || 'present',
-          });
-
-          if (error) {
-            failed++;
-            errors.push(`Row ${i + 2}: ${error.message}`);
-          } else {
-            success++;
-          }
-        } catch (err) {
-          failed++;
-          errors.push(`Row ${i + 2}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          errors.push(`Dòng ${i + 2}: ${err instanceof Error ? err.message : 'Không thể xử lý'}`);
         }
       }
     } else {
       return NextResponse.json(
-        { error: 'Invalid import type' },
+        { error: 'Loại dữ liệu nhập không hợp lệ' },
         {
           status: 400,
         }
@@ -178,6 +121,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success, failed, errors });
   } catch (error) {
     console.error('Bulk import error:', error);
-    return NextResponse.json({ error: 'Failed to process import' }, { status: 500 });
+    return NextResponse.json({ error: 'Không thể xử lý file nhập dữ liệu' }, { status: 500 });
   }
 }

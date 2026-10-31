@@ -15,13 +15,13 @@ describe('parseCsvImport', () => {
 
   it('removes a UTF-8 BOM from the first header', () => {
     expect(
-      parseCsvImport('\uFEFFstudent_id,class_id,date\ns1,c1,2026-10-31', 'attendance').headers
-    ).toEqual(['student_id', 'class_id', 'date']);
+      parseCsvImport('\uFEFFfull_name,email\nNguyễn Văn A,a@example.com', 'students').headers
+    ).toEqual(['full_name', 'email']);
   });
 
-  it('rejects missing required headers', () => {
+  it('rejects legacy import types that bypass their dedicated workflows', () => {
     expect(() => parseCsvImport('student_id,score\ns1,8', 'grades')).toThrow(
-      'Thiếu cột bắt buộc: subject'
+      'Loại dữ liệu nhập không hợp lệ'
     );
   });
 

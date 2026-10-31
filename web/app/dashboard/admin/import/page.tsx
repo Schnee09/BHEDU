@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useProfile } from '@/hooks/useProfile';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/api/client';
 import {
   Upload,
   FileSpreadsheet,
@@ -11,12 +9,11 @@ import {
   CheckCircle,
   Download,
   X,
-  Users,
   BookOpen,
   Calendar,
 } from 'lucide-react';
-import { usePermissions } from '@/hooks/usePermissions';
 import PageGuard from '@/components/PageGuard';
+import { CsvImportError, MAX_CSV_BYTES, parseCsvImport } from '@/lib/imports/parseCsvImport';
 
 interface ImportResult {
   success: number;
@@ -24,29 +21,7 @@ interface ImportResult {
   errors: string[];
 }
 
-type ImportType = 'students' | 'grades' | 'attendance';
-
-const importTypes: { id: ImportType; label: string; icon: React.ReactNode; description: string }[] =
-  [
-    {
-      id: 'students',
-      label: 'Học sinh',
-      icon: <Users className="w-6 h-6" />,
-      description: 'Nhập danh sách học sinh từ file CSV',
-    },
-    {
-      id: 'grades',
-      label: 'Điểm số',
-      icon: <BookOpen className="w-6 h-6" />,
-      description: 'Nhập điểm số từ file CSV',
-    },
-    {
-      id: 'attendance',
-      label: 'Điểm danh',
-      icon: <Calendar className="w-6 h-6" />,
-      description: 'Nhập dữ liệu điểm danh từ file CSV',
-    },
-  ];
+type ImportType = 'students';
 
 export default function BulkImportPage() {
   return (
@@ -57,12 +32,10 @@ export default function BulkImportPage() {
 }
 
 function BulkImportContent() {
-  const { profile, loading: profileLoading } = useProfile();
-  const { isAdmin } = usePermissions();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [selectedType, setSelectedType] = useState<ImportType>('students');
+  const selectedType: ImportType = 'students';
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string[][]>([]);
   const [importing, setImporting] = useState(false);
@@ -73,8 +46,15 @@ function BulkImportContent() {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
-    if (!selectedFile.name.endsWith('.csv')) {
+    if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
       setError('Vui lòng chọn file CSV');
+      e.target.value = '';
+      return;
+    }
+
+    if (selectedFile.size > MAX_CSV_BYTES) {
+      setError('File CSV không được vượt quá 2 MB');
+      e.target.value = '';
       return;
     }
 
@@ -86,11 +66,16 @@ function BulkImportContent() {
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      const lines = text.split('\n').slice(0, 6); // First 5 rows + header
-      const rows = lines.map((line) =>
-        line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, ''))
-      );
-      setPreview(rows);
+      try {
+        const { headers, rows } = parseCsvImport(text, selectedType);
+        setPreview([headers, ...rows.slice(0, 5)]);
+      } catch (parseError) {
+        setFile(null);
+        setPreview([]);
+        setError(
+          parseError instanceof CsvImportError ? parseError.message : 'Không thể đọc file CSV'
+        );
+      }
     };
     reader.readAsText(selectedFile);
   };
@@ -139,14 +124,6 @@ function BulkImportContent() {
           'class-uuid-here',
         ],
       },
-      grades: {
-        headers: ['student_id', 'subject', 'category', 'score', 'date'],
-        sample: ['student-uuid', 'Toán', 'Kiểm tra 15 phút', '8.5', '2024-01-15'],
-      },
-      attendance: {
-        headers: ['student_id', 'class_id', 'date', 'status'],
-        sample: ['student-uuid', 'class-uuid', '2024-01-15', 'present'],
-      },
     };
 
     const template = templates[type];
@@ -173,37 +150,38 @@ function BulkImportContent() {
           </p>
         </div>
 
-        {/* Import Type Selection */}
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard/grades/entry')}
+            className="cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors duration-200 hover:border-blue-400 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500 dark:hover:bg-blue-900/20"
+          >
+            <BookOpen className="mb-2 h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <h2 className="font-semibold text-gray-900 dark:text-white">Nhập điểm số</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              Chọn lớp, môn học và học kỳ trước khi nhập file Excel.
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard/attendance/mark')}
+            className="cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors duration-200 hover:border-emerald-400 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/20"
+          >
+            <Calendar className="mb-2 h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="font-semibold text-gray-900 dark:text-white">Điểm danh buổi học</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              Thực hiện điểm danh theo lớp và buổi học để bảo đảm dữ liệu chính xác.
+            </p>
+          </button>
+        </div>
+
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Chọn loại dữ liệu
+            Nhập danh sách học sinh
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {importTypes.map((type) => (
-              <button
-                key={type.id}
-                onClick={() => {
-                  setSelectedType(type.id);
-                  setFile(null);
-                  setPreview([]);
-                  setResult(null);
-                }}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  selectedType === type.id
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                }`}
-              >
-                <div
-                  className={`mb-2 ${selectedType === type.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
-                >
-                  {type.icon}
-                </div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">{type.label}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{type.description}</p>
-              </button>
-            ))}
-          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Dùng file CSV để tạo nhiều hồ sơ học sinh và xếp lớp ban đầu.
+          </p>
         </div>
 
         {/* Download Template */}
