@@ -133,8 +133,12 @@ export function createApiHandler<TBody = unknown>(
 
         const auth = await getAuthContext(request, permissionToCheck as any);
 
-        if (!auth.authorized || !auth.profile) {
+        if (!auth.profile) {
           throw new AuthenticationError(auth.reason || 'Vui lòng đăng nhập để tiếp tục');
+        }
+
+        if (!auth.authorized) {
+          throw new AuthorizationError(auth.reason || 'Bạn không có quyền thực hiện thao tác này');
         }
 
         // Check allowed roles if specified (supports hierarchy and dynamic bypasses)
