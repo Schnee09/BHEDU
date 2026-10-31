@@ -41,7 +41,6 @@ export const attendanceRecordSchema = z
     date: dateStringSchema,
     status: attendanceStatusSchema,
     notes: z.string().max(500).optional().nullable(),
-    excused_reason: z.string().max(200).optional().nullable(),
   })
   .strict();
 

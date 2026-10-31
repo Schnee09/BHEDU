@@ -71,6 +71,20 @@ export class AttendanceRepository
     super(supabase);
   }
 
+  override async create(data: CreateAttendanceInput): Promise<Attendance> {
+    const { notes, ...record } = data;
+    return super.create({
+      ...record,
+      remarks: notes ?? null,
+    } as CreateAttendanceInput);
+  }
+
+  override async update(id: string, data: UpdateAttendanceInput): Promise<Attendance> {
+    const { notes, ...record } = data;
+    const updates = notes === undefined ? record : { ...record, remarks: notes };
+    return super.update(id, updates as UpdateAttendanceInput);
+  }
+
   /**
    * Find attendance by ID with student and class details
    */
