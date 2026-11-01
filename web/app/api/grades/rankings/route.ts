@@ -91,7 +91,8 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
       const { data: grades, error: gradeError } = await supabase
         .from('grades')
         .select('student_id, class_id, score')
-        .in('class_id', classIds);
+        .in('class_id', classIds)
+        .is('deleted_at', null);
       if (gradeError) throw new Error(`Failed to fetch scoped grades: ${gradeError.message}`);
       if (!grades?.length) return { topStudents: [], atRiskStudents: [] };
 

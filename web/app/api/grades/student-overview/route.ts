@@ -113,7 +113,8 @@ export async function GET(request: Request) {
         `
         )
         .in('student_id', studentIds)
-        .eq('class_id', classId),
+        .eq('class_id', classId)
+        .is('deleted_at', null),
       supabase.from('timetable_slots').select('subject_id, student_id').eq('class_id', classId),
     ]);
 

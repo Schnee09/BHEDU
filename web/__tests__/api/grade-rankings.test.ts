@@ -12,7 +12,7 @@ jest.mock('@/lib/cache/cache', () => ({
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 
 const classQuery = { select: jest.fn(), eq: jest.fn() };
-const gradeQuery = { select: jest.fn(), in: jest.fn() };
+const gradeQuery = { select: jest.fn(), in: jest.fn(), is: jest.fn() };
 const profileQuery = { select: jest.fn(), in: jest.fn() };
 const rpc = jest.fn();
 
@@ -50,7 +50,8 @@ describe('GET /api/grades/rankings authorization', () => {
     classQuery.select.mockReturnValue(classQuery);
     classQuery.eq.mockResolvedValue({ data: [{ id: 'class-1', name: 'Toán 9' }], error: null });
     gradeQuery.select.mockReturnValue(gradeQuery);
-    gradeQuery.in.mockResolvedValue({
+    gradeQuery.in.mockReturnValue(gradeQuery);
+    gradeQuery.is.mockResolvedValue({
       data: [
         { student_id: 'student-1', class_id: 'class-1', score: 8 },
         { student_id: 'student-1', class_id: 'class-1', score: 6 },
@@ -76,6 +77,7 @@ describe('GET /api/grades/rankings authorization', () => {
     expect(response.status).toBe(200);
     expect(classQuery.eq).toHaveBeenCalledWith('teacher_id', 'teacher-1');
     expect(gradeQuery.in).toHaveBeenCalledWith('class_id', ['class-1']);
+    expect(gradeQuery.is).toHaveBeenCalledWith('deleted_at', null);
     expect(body.topStudents[0]).toMatchObject({
       studentId: 'student-1',
       className: 'Toán 9',

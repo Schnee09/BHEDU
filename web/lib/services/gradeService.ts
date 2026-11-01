@@ -71,7 +71,8 @@ export class GradeService {
       )
       .eq('class_id', classId)
       .eq('subject_id', subject.id)
-      .eq('semester', semester);
+      .eq('semester', semester)
+      .is('deleted_at', null);
 
     if (error) throw error;
 
@@ -187,7 +188,11 @@ export class GradeService {
         subject:subjects!subject_id(name, code)
       `;
 
-    let query = this.supabase.from('grades').select(selectCols).eq('student_id', studentId);
+    let query = this.supabase
+      .from('grades')
+      .select(selectCols)
+      .eq('student_id', studentId)
+      .is('deleted_at', null);
 
     if (academicYearId) {
       query = query.eq('class.academic_year_id', academicYearId);
