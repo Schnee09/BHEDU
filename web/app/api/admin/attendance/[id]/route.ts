@@ -31,6 +31,7 @@ export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ params
       `
     )
     .eq('id', params.id)
+    .is('deleted_at', null)
     .single();
 
   if (error || !record) {
@@ -78,6 +79,7 @@ export const PATCH = createApiHandler(
       .from('attendance')
       .select('id')
       .eq('id', id)
+      .is('deleted_at', null)
       .single();
 
     if (fetchError || !existingRecord) {
@@ -124,14 +126,18 @@ export const DELETE = createGetHandler({ allowedRoles: ['admin'] }, async ({ par
     .from('attendance')
     .select('id')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
 
   if (fetchError || !record) {
     throw new NotFoundError('Attendance record not found');
   }
 
-  // Delete the record
-  const { error: deleteError } = await supabase.from('attendance').delete().eq('id', id);
+  // Preserve the audit trail and allow an intentional restore through the create/upsert flow.
+  const { error: deleteError } = await supabase
+    .from('attendance')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
 
   if (deleteError) {
     logger.error('Error deleting attendance record:', deleteError);

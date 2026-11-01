@@ -77,6 +77,7 @@ export class AttendanceRepository
     return super.create({
       ...record,
       remarks: notes ?? null,
+      deleted_at: null,
     } as CreateAttendanceInput);
   }
 
@@ -295,6 +296,7 @@ export class AttendanceRepository
       remarks: record.notes || null,
       enrollment_exception_reason: record.enrollment_exception_reason || null,
       marked_by: data.marked_by || null,
+      deleted_at: null,
     }));
 
     const { data: created, error } = await this.supabase

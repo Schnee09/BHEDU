@@ -33,6 +33,7 @@ describe('AttendanceRepository write mapping', () => {
       status: 'present',
       remarks: 'Đến đúng giờ',
       marked_by: 'teacher-1',
+      deleted_at: null,
     });
   });
 

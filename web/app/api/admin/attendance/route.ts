@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('attendance')
       .select('*')
+      .is('deleted_at', null)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
       status,
       remarks: notes ?? null,
       marked_by: authResult.userId,
+      deleted_at: null,
     };
 
     // Check if record exists for this student/class/date
