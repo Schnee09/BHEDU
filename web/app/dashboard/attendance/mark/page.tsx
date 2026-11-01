@@ -11,6 +11,7 @@ import {
   type AttendanceCandidate,
 } from '@/lib/api/client';
 import { AttendanceStatus } from '@/lib/attendance/types';
+import { calculateAttendanceRate } from '@/lib/attendance/metrics';
 import { Button, LoadingState } from '@/components/ui';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -76,7 +77,7 @@ function getAttendanceSummary(currentStudents: StudentAttendanceView[]): Attenda
     lateCount: late,
     excusedCount: excused,
     unmarkedCount: unmarked,
-    attendanceRate: marked > 0 ? Math.round((present / marked) * 100) : 0,
+    attendanceRate: calculateAttendanceRate(present, late, marked),
   };
 }
 

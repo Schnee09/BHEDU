@@ -17,7 +17,8 @@ import { type BulkAttendanceInput, bulkAttendanceSchema } from '@/lib/schemas';
 // POST /api/attendance/bulk
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin', 'super_admin', 'owner', 'teacher', 'tutor'],
+    allowedRoles: ['admin', 'teacher'],
+    permission: 'attendance.mark',
     bodySchema: bulkAttendanceSchema,
   },
   async ({ request, body, user }) => {

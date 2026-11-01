@@ -12,7 +12,6 @@ import {
   hasHigherOrEqualRole,
   isValidRole,
   ROLE_CONFIG,
-  type UserRole,
 } from '@/lib/role-utils';
 
 describe('Role Utilities', () => {
@@ -150,6 +149,7 @@ describe('Unified Permission Checks (hasPermission)', () => {
     expect(hasPermission('owner', 'finance.view')).toBe(true);
     expect(hasPermission('owner', 'reports.view')).toBe(true);
     expect(hasPermission('owner', 'system.settings')).toBe(false);
+    expect(hasPermission('owner', 'attendance.mark')).toBe(false);
   });
 
   it('admin should have full operational permissions including analytics, exports, and import', () => {

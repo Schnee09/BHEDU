@@ -139,7 +139,8 @@ export const GET = createGetHandler(
 // POST /api/attendance
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin', 'super_admin', 'owner', 'teacher', 'tutor'],
+    allowedRoles: ['admin', 'teacher'],
+    permission: 'attendance.mark',
     bodySchema: createAttendanceSchema,
   },
   async ({ request, body, user }) => {
