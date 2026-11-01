@@ -10,12 +10,9 @@ describe('AttendanceRepository write mapping', () => {
     remarks: 'Đến đúng giờ',
   };
 
-  it('maps the API notes field to the database remarks column on create', async () => {
-    const single = jest.fn().mockResolvedValue({ data: storedRecord, error: null });
-    const select = jest.fn(() => ({ single }));
-    const insert = jest.fn(() => ({ select }));
-    const supabase = { from: jest.fn(() => ({ insert })) } as any;
-    const repository = new AttendanceRepository(supabase);
+  it('uses the atomic daily attendance RPC on create', async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: [storedRecord], error: null });
+    const repository = new AttendanceRepository({ rpc } as any);
 
     await repository.create({
       student_id: storedRecord.student_id,
@@ -26,15 +23,34 @@ describe('AttendanceRepository write mapping', () => {
       marked_by: 'teacher-1',
     });
 
-    expect(insert).toHaveBeenCalledWith({
-      student_id: storedRecord.student_id,
-      class_id: storedRecord.class_id,
-      date: storedRecord.date,
-      status: 'present',
-      remarks: 'Đến đúng giờ',
-      marked_by: 'teacher-1',
-      deleted_at: null,
+    expect(rpc).toHaveBeenCalledWith('upsert_daily_attendance_batch', {
+      p_class_id: storedRecord.class_id,
+      p_date: storedRecord.date,
+      p_records: [
+        {
+          student_id: storedRecord.student_id,
+          status: 'present',
+          notes: 'Đến đúng giờ',
+        },
+      ],
+      p_marked_by: 'teacher-1',
     });
+  });
+
+  it('fails create when the RPC returns no record', async () => {
+    const repository = new AttendanceRepository({
+      rpc: jest.fn().mockResolvedValue({ data: [], error: null }),
+    } as any);
+
+    await expect(
+      repository.create({
+        student_id: storedRecord.student_id,
+        class_id: storedRecord.class_id,
+        date: storedRecord.date,
+        status: 'present',
+        marked_by: 'teacher-1',
+      })
+    ).rejects.toThrow('no record returned');
   });
 
   it('maps notes to remarks on update without clearing omitted remarks', async () => {

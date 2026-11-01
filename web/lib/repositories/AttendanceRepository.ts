@@ -73,12 +73,24 @@ export class AttendanceRepository
   }
 
   override async create(data: CreateAttendanceInput): Promise<Attendance> {
-    const { notes, ...record } = data;
-    return super.create({
-      ...record,
-      remarks: notes ?? null,
-      deleted_at: null,
-    } as CreateAttendanceInput);
+    const { student_id, class_id, date, status, notes, marked_by } = data;
+    const { data: created, error } = await this.supabase.rpc('upsert_daily_attendance_batch', {
+      p_class_id: class_id,
+      p_date: date,
+      p_records: [{ student_id, status, notes }],
+      p_marked_by: marked_by || null,
+    });
+
+    if (error) {
+      throw new Error(`Failed to create ${this.tableName}: ${error.message}`);
+    }
+
+    const record = created?.[0];
+    if (!record) {
+      throw new Error(`Failed to create ${this.tableName}: no record returned`);
+    }
+
+    return record as Attendance;
   }
 
   override async update(id: string, data: UpdateAttendanceInput): Promise<Attendance> {
