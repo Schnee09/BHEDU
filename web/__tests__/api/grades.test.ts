@@ -17,6 +17,8 @@ const gradeQuery = {
   in: jest.fn(),
   order: jest.fn(),
   range: jest.fn(),
+  upsert: jest.fn(),
+  single: jest.fn(),
 };
 
 jest.mock('@/lib/supabase/server', () => ({
@@ -57,6 +59,8 @@ describe('/api/grades authorization', () => {
     gradeQuery.in.mockReturnValue(gradeQuery);
     gradeQuery.order.mockReturnValue(gradeQuery);
     gradeQuery.range.mockResolvedValue({ data: [], error: null, count: 0 });
+    gradeQuery.upsert.mockReturnValue(gradeQuery);
+    gradeQuery.single.mockResolvedValue({ data: { id: 'grade-1' }, error: null });
     (canAccessClass as jest.Mock).mockResolvedValue(true);
   });
 
@@ -102,5 +106,28 @@ describe('/api/grades authorization', () => {
 
     expect(response.status).toBe(403);
     expect(gradeQuery.in).not.toHaveBeenCalled();
+  });
+
+  it('restores a soft-deleted grade and records the authenticated grader', async () => {
+    const response = await POST(
+      createRequest('POST', '', {
+        student_id: '223e4567-e89b-12d3-a456-426614174000',
+        class_id: ASSIGNED_CLASS_ID,
+        subject_id: '423e4567-e89b-12d3-a456-426614174000',
+        score: 8,
+        component_type: 'midterm',
+        semester: '1',
+      }),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(200);
+    expect(gradeQuery.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        graded_by: 'teacher-1',
+        deleted_at: null,
+      }),
+      { onConflict: 'student_id,class_id,subject_id,component_type,semester' }
+    );
   });
 });

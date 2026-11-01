@@ -138,6 +138,7 @@ export class GradeService {
           semester,
           component_type: EvaluationType.MIDTERM,
           score: s.grades[EvaluationType.MIDTERM],
+          deleted_at: null,
         });
       }
       if (s.grades[EvaluationType.FINAL] !== undefined) {
@@ -148,6 +149,7 @@ export class GradeService {
           semester,
           component_type: EvaluationType.FINAL,
           score: s.grades[EvaluationType.FINAL],
+          deleted_at: null,
         });
       }
     }

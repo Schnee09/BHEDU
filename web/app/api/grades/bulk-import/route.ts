@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
         feedback: grade.notes || null,
         graded_by: auth.profile.id,
         graded_at: new Date().toISOString(),
+        deleted_at: null,
       });
     }
 

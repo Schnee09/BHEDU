@@ -230,6 +230,8 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
       score: pointsEarned, // Ensure score matches points_earned for compatibility
       feedback: row.feedback ?? row.notes ?? null,
       graded_at: row.graded_at || metadata.graded_at,
+      graded_by: user.id,
+      deleted_at: null,
     };
   };
 
