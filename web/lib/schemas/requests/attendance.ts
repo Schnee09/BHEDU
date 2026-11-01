@@ -15,21 +15,38 @@ import {
 /**
  * Attendance query parameters
  */
-export const attendanceQuerySchema = z.object({
-  ...paginationWithDefaults(50).shape,
-  ...createSortSchema(['date', 'created_at'], 'date').shape,
-  class_id: optionalUuidSchema,
-  student_id: optionalUuidSchema,
-  date: dateStringSchema.optional(),
-  start_date: dateStringSchema.optional(),
-  end_date: dateStringSchema.optional(),
-  status: z
-    .enum(['present', 'absent', 'late', 'excused', 'all'])
-    .optional()
-    .transform((value) => (value === 'all' ? undefined : value)),
-  from_date: dateStringSchema.optional(),
-  to_date: dateStringSchema.optional(),
-});
+export const attendanceQuerySchema = z
+  .object({
+    ...paginationWithDefaults(50).shape,
+    ...createSortSchema(['date', 'created_at'], 'date').shape,
+    class_id: optionalUuidSchema,
+    student_id: optionalUuidSchema,
+    date: dateStringSchema.optional(),
+    start_date: dateStringSchema.optional(),
+    end_date: dateStringSchema.optional(),
+    startDate: dateStringSchema.optional(),
+    endDate: dateStringSchema.optional(),
+    status: z
+      .enum(['present', 'absent', 'late', 'excused', 'all'])
+      .optional()
+      .transform((value) => (value === 'all' ? undefined : value)),
+    from_date: dateStringSchema.optional(),
+    to_date: dateStringSchema.optional(),
+  })
+  .transform((value) => ({
+    ...value,
+    from_date: value.from_date ?? value.start_date ?? value.startDate,
+    to_date: value.to_date ?? value.end_date ?? value.endDate,
+  }))
+  .superRefine((value, context) => {
+    if (value.from_date && value.to_date && value.from_date > value.to_date) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Start date cannot be after end date',
+        path: ['from_date'],
+      });
+    }
+  });
 
 /**
  * Attendance record schema

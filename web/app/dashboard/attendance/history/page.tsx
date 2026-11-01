@@ -136,8 +136,8 @@ function AttendanceHistoryPageContent() {
       const params = new URLSearchParams();
       if (selectedClass) params.append('classId', selectedClass);
       if (selectedStatus) params.append('status', selectedStatus);
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
+      if (startDate) params.append('from_date', startDate);
+      if (endDate) params.append('to_date', endDate);
       params.append('page', page.toString());
       params.append('limit', limit.toString());
 

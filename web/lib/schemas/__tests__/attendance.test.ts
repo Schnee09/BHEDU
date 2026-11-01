@@ -71,6 +71,22 @@ describe('attendance query schema', () => {
   it('treats the all status option as no status filter', () => {
     expect(attendanceQuerySchema.parse({ status: 'all' }).status).toBeUndefined();
   });
+
+  it.each([
+    [{ startDate: '2026-10-01', endDate: '2026-10-31' }],
+    [{ start_date: '2026-10-01', end_date: '2026-10-31' }],
+    [{ from_date: '2026-10-01', to_date: '2026-10-31' }],
+  ])('normalizes supported date range aliases', (query) => {
+    expect(attendanceQuerySchema.parse(query)).toEqual(
+      expect.objectContaining({ from_date: '2026-10-01', to_date: '2026-10-31' })
+    );
+  });
+
+  it('rejects a reversed date range', () => {
+    expect(
+      attendanceQuerySchema.safeParse({ from_date: '2026-11-01', to_date: '2026-10-01' }).success
+    ).toBe(false);
+  });
 });
 
 describe('single attendance schema', () => {
