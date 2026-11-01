@@ -15,6 +15,8 @@ const gradeQuery = {
   is: jest.fn(),
   eq: jest.fn(),
   in: jest.fn(),
+  order: jest.fn(),
+  range: jest.fn(),
 };
 
 jest.mock('@/lib/supabase/server', () => ({
@@ -52,7 +54,9 @@ describe('/api/grades authorization', () => {
     gradeQuery.select.mockReturnValue(gradeQuery);
     gradeQuery.is.mockReturnValue(gradeQuery);
     gradeQuery.eq.mockReturnValue(gradeQuery);
-    gradeQuery.in.mockResolvedValue({ data: [], error: null });
+    gradeQuery.in.mockReturnValue(gradeQuery);
+    gradeQuery.order.mockReturnValue(gradeQuery);
+    gradeQuery.range.mockResolvedValue({ data: [], error: null, count: 0 });
     (canAccessClass as jest.Mock).mockResolvedValue(true);
   });
 
@@ -61,6 +65,7 @@ describe('/api/grades authorization', () => {
 
     expect(response.status).toBe(200);
     expect(gradeQuery.in).toHaveBeenCalledWith('class_id', [ASSIGNED_CLASS_ID]);
+    expect(gradeQuery.range).toHaveBeenCalledWith(0, 24);
   });
 
   it('rejects a teacher requesting an unassigned class', async () => {

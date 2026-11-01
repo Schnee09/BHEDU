@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
+import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { bulkGradeEntrySchema, createGradeSchema, gradeQuerySchema } from '@/lib/schemas';
 import { validateQuery } from '@/lib/api/validation';
@@ -18,6 +18,9 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
   // Validate query parameters
   const queryParams = validateQuery(request, gradeQuerySchema);
   const supabase = createServiceClient();
+  const { page, limit } = queryParams;
+  const rangeStart = (page - 1) * limit;
+  const rangeEnd = rangeStart + limit - 1;
 
   // FORCE STUDENT SCOPING
   if (user.role === 'student') {
@@ -36,13 +39,13 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     const linkedStudentIds = (links || []).map((l) => l.student_id);
 
     if (linkedStudentIds.length === 0) {
-      return apiSuccess([]);
+      return apiPaginated([], { page, pageSize: limit, total: 0 });
     }
 
     if (queryParams.student_id) {
       // If parent requested a specific student, verify they are linked
       if (!linkedStudentIds.includes(queryParams.student_id)) {
-        return apiSuccess([]);
+        return apiPaginated([], { page, pageSize: limit, total: 0 });
       }
     } else {
       // If no student specified, filter by all linked students
@@ -70,7 +73,9 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     if (queryParams.class_id && !teacherClassIds.includes(queryParams.class_id)) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
-    if (teacherClassIds.length === 0) return apiSuccess([]);
+    if (teacherClassIds.length === 0) {
+      return apiPaginated([], { page, pageSize: limit, total: 0 });
+    }
   }
 
   // Build query
@@ -81,7 +86,8 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     *,
     subject:subjects(id, name, code),
     academic_year:academic_years(id, name)
-  `
+  `,
+      { count: 'exact' }
     )
     .is('deleted_at', null);
 
@@ -119,14 +125,18 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     query = query.in('class_id', teacherClassIds);
   }
 
-  const { data: grades, error } = await query;
+  const {
+    data: grades,
+    error,
+    count,
+  } = await query.order('graded_at', { ascending: false }).range(rangeStart, rangeEnd);
 
   if (error) {
     logger.error('Failed to fetch grades:', error);
     throw new Error(`Database error: ${error.message}`);
   }
 
-  return apiSuccess(grades || []);
+  return apiPaginated(grades || [], { page, pageSize: limit, total: count || 0 });
 });
 
 // POST /api/grades

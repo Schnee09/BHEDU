@@ -35,4 +35,11 @@ describe('grades schemas (points-based)', () => {
       gradeQuerySchema.safeParse({ student_id: 'student-code),status.eq.published' }).success
     ).toBe(false);
   });
+
+  test('gradeQuerySchema bounds pagination', () => {
+    expect(gradeQuerySchema.parse({ page: '2', limit: '1000' })).toEqual(
+      expect.objectContaining({ page: 2, limit: 1000 })
+    );
+    expect(gradeQuerySchema.safeParse({ limit: '1001' }).success).toBe(false);
+  });
 });

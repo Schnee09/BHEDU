@@ -128,6 +128,8 @@ export const conductGradeSchema = z.object({
 // ============================================
 
 export const gradeQuerySchema = paginationSchema.extend({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(1000).default(25),
   student_id: uuidSchema.optional(),
   class_id: uuidSchema.optional(),
   subject_id: uuidSchema.optional(),

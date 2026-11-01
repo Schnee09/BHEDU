@@ -681,9 +681,14 @@ export async function getGrades(params?: GradeListParams): Promise<{
   }
 
   const listData = Array.isArray(result.data) ? result.data : result.data?.data || [];
-  const pagination =
-    result.pagination ||
-    (result.data?.total !== undefined
+  const pagination = result.pagination
+    ? {
+        ...result.pagination,
+        pageSize: result.pagination.pageSize,
+        limit: result.pagination.limit || result.pagination.pageSize,
+        totalItems: result.pagination.totalItems ?? result.pagination.total ?? 0,
+      }
+    : result.data?.total !== undefined
       ? {
           page: result.data.page || params?.page || 1,
           pageSize: result.data.limit || result.data.pageSize || params?.limit || 10,
@@ -698,7 +703,7 @@ export async function getGrades(params?: GradeListParams): Promise<{
           limit: params?.limit || 10,
           totalItems: 0,
           totalPages: 0,
-        });
+        };
 
   return {
     data: listData,
