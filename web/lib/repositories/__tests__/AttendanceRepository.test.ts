@@ -51,4 +51,30 @@ describe('AttendanceRepository write mapping', () => {
     await repository.update(storedRecord.id, { notes: 'Đến muộn 10 phút' });
     expect(update).toHaveBeenLastCalledWith({ remarks: 'Đến muộn 10 phút' });
   });
+
+  it('uses the atomic daily attendance RPC for bulk writes', async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: [storedRecord], error: null });
+    const repository = new AttendanceRepository({ rpc } as any);
+    const records = [
+      {
+        student_id: storedRecord.student_id,
+        status: 'present' as const,
+        notes: 'Đến đúng giờ',
+      },
+    ];
+
+    await repository.createBulk({
+      class_id: storedRecord.class_id,
+      date: storedRecord.date,
+      records,
+      marked_by: 'teacher-1',
+    });
+
+    expect(rpc).toHaveBeenCalledWith('upsert_daily_attendance_batch', {
+      p_class_id: storedRecord.class_id,
+      p_date: storedRecord.date,
+      p_records: records,
+      p_marked_by: 'teacher-1',
+    });
+  });
 });

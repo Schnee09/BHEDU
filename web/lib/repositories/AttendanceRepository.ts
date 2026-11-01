@@ -288,24 +288,12 @@ export class AttendanceRepository
    * Create bulk attendance records (for taking attendance for a whole class)
    */
   async createBulk(data: BulkAttendanceInput): Promise<Attendance[]> {
-    const records = data.records.map((record) => ({
-      student_id: record.student_id,
-      class_id: data.class_id,
-      date: data.date,
-      status: record.status,
-      remarks: record.notes || null,
-      enrollment_exception_reason: record.enrollment_exception_reason || null,
-      marked_by: data.marked_by || null,
-      deleted_at: null,
-    }));
-
-    const { data: created, error } = await this.supabase
-      .from(this.tableName)
-      .upsert(records, {
-        onConflict: 'student_id,class_id,date',
-        ignoreDuplicates: false,
-      })
-      .select();
+    const { data: created, error } = await this.supabase.rpc('upsert_daily_attendance_batch', {
+      p_class_id: data.class_id,
+      p_date: data.date,
+      p_records: data.records,
+      p_marked_by: data.marked_by || null,
+    });
 
     if (error) {
       throw new Error(`Failed to create bulk attendance: ${error.message}`);
