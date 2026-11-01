@@ -10,11 +10,16 @@ import { logger } from '@/lib/logger';
 import { createGetHandler, AppError, apiSuccess } from '@/lib/api';
 import { getCurrentDateOnly, isValidDateOnly } from '@/lib/enrollments/effectiveDates';
 import { canAccessClass } from '@/lib/auth/classAccess';
+import { uuidSchema } from '@/lib/schemas';
+import { calculateAttendanceRate } from '@/lib/attendance/metrics';
 
 export const GET = createGetHandler({ requireAuth: true }, async ({ request, user, params }) => {
   try {
     const supabase = createServiceClient();
     const { classId } = (await params) as { classId: string };
+    if (!uuidSchema.safeParse(classId).success) {
+      throw new AppError('Class ID is invalid', 400, 'VALIDATION_ERROR');
+    }
     const url = new URL(request.url);
     const date = url.searchParams.get('date') || getCurrentDateOnly();
     if (!isValidDateOnly(date)) {
@@ -71,7 +76,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
     }
 
     // Get attendance records for this date
-    const { data: attendance } = await supabase
+    const { data: attendance, error: attendanceError } = await supabase
       .from('attendance')
       .select(
         `id, student_id, status, remarks, enrollment_exception_reason,
@@ -80,6 +85,11 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
       .eq('class_id', classId)
       .eq('date', date)
       .is('deleted_at', null);
+
+    if (attendanceError) {
+      logger.error('Failed to fetch attendance records', new Error(attendanceError.message));
+      throw new AppError('Failed to fetch attendance records', 500, 'INTERNAL_SERVER_ERROR');
+    }
 
     // Combine enrollment and attendance data
     const attendanceMap = new Map(attendance?.map((a) => [a.student_id, a]) || []);
@@ -102,7 +112,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
       const profile = record.profiles as any;
       records.push({
         studentId: record.student_id,
-        studentName: profile?.full_name || 'Không rõ tên',
+        studentName: profile?.full_name || 'Chưa có tên',
         studentCode: profile?.student_code || profile?.id || '',
         email: profile?.email || '',
         status: record.status,
@@ -124,8 +134,11 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
     };
 
     const markedCount = summary.totalStudents - summary.unmarkedCount;
-    summary.attendanceRate =
-      markedCount > 0 ? Math.round((summary.presentCount / markedCount) * 100 * 100) / 100 : 0;
+    summary.attendanceRate = calculateAttendanceRate(
+      summary.presentCount,
+      summary.lateCount,
+      markedCount
+    );
 
     return apiSuccess({
       class: classInfo,

@@ -9,6 +9,10 @@ export interface AttendanceSummary {
   attendanceRate: number;
 }
 
+export function calculateAttendanceRate(present: number, late: number, total: number): number {
+  return total > 0 ? Math.round(((present + late) / total) * 100) : 0;
+}
+
 export function summarizeAttendanceStatuses(
   records: ReadonlyArray<{ status: string }>
 ): AttendanceSummary {
@@ -34,8 +38,7 @@ export function summarizeAttendanceStatuses(
   );
 
   const total = records.length;
-  const attendanceRate =
-    total > 0 ? Math.round(((summary.present + summary.late) / total) * 100) : 0;
+  const attendanceRate = calculateAttendanceRate(summary.present, summary.late, total);
 
   return { ...summary, total, attendanceRate };
 }

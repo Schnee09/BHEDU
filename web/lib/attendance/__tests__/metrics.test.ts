@@ -1,4 +1,4 @@
-import { summarizeAttendanceStatuses } from '../metrics';
+import { calculateAttendanceRate, summarizeAttendanceStatuses } from '../metrics';
 
 describe('summarizeAttendanceStatuses', () => {
   it('counts every supported status and treats late students as attending', () => {
@@ -29,5 +29,15 @@ describe('summarizeAttendanceStatuses', () => {
       total: 0,
       attendanceRate: 0,
     });
+  });
+});
+
+describe('calculateAttendanceRate', () => {
+  it('counts late students as attending', () => {
+    expect(calculateAttendanceRate(2, 1, 4)).toBe(75);
+  });
+
+  it('returns zero when no attendance has been marked', () => {
+    expect(calculateAttendanceRate(0, 0, 0)).toBe(0);
   });
 });
