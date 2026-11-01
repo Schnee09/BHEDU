@@ -5,7 +5,6 @@
  * DELETE /api/admin/grades/[id] - Delete grade
  */
 
-import { NextResponse } from 'next/server';
 import { getDataClient } from '@/lib/auth/dataClient';
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { updateGradeSchema } from '@/lib/schemas';
@@ -63,6 +62,7 @@ export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ params
       `
     )
     .eq('id', params.id)
+    .is('deleted_at', null)
     .single();
 
   if (error || !grade) {
@@ -113,6 +113,7 @@ export const PATCH = createApiHandler(
       `
       )
       .eq('id', id)
+      .is('deleted_at', null)
       .single();
 
     if (fetchError || !existingGrade) {
@@ -145,6 +146,7 @@ export const PATCH = createApiHandler(
       .from('grades')
       .update(updates)
       .eq('id', id)
+      .is('deleted_at', null)
       .select()
       .single();
 
@@ -181,28 +183,45 @@ export const PATCH = createApiHandler(
 );
 
 // DELETE /api/admin/grades/[id]
-export const DELETE = createGetHandler({ allowedRoles: ['admin'] }, async ({ params, request }) => {
-  const { supabase } = await getDataClient(request);
-  const id = params.id;
+export const DELETE = createGetHandler(
+  { allowedRoles: ['admin'] },
+  async ({ params, request, user }) => {
+    const { supabase } = await getDataClient(request);
+    const id = params.id;
 
-  // Check if grade exists
-  const { data: grade, error: fetchError } = await supabase
-    .from('grades')
-    .select('id')
-    .eq('id', id)
-    .single();
+    // Check if grade exists
+    const { data: grade, error: fetchError } = await supabase
+      .from('grades')
+      .select('id, student_id, class_id, subject_id')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single();
 
-  if (fetchError || !grade) {
-    throw new NotFoundError('Grade not found');
+    if (fetchError || !grade) {
+      throw new NotFoundError('Grade not found');
+    }
+
+    const deletedAt = new Date().toISOString();
+    const { error: deleteError } = await supabase
+      .from('grades')
+      .update({ deleted_at: deletedAt, updated_at: deletedAt })
+      .eq('id', id)
+      .is('deleted_at', null);
+
+    if (deleteError) {
+      logger.error('Error deleting grade:', deleteError);
+      throw new Error(`Failed to delete grade: ${deleteError.message}`);
+    }
+
+    await supabase.from('audit_logs').insert({
+      actor_id: user.id,
+      action: 'grade_delete',
+      resource_type: 'grade',
+      resource_id: id,
+      old_data: grade,
+      new_data: { deleted_at: deletedAt },
+    });
+
+    return apiSuccess(null, { message: 'Grade deleted successfully' });
   }
-
-  // Delete the grade
-  const { error: deleteError } = await supabase.from('grades').delete().eq('id', id);
-
-  if (deleteError) {
-    logger.error('Error deleting grade:', deleteError);
-    throw new Error(`Failed to delete grade: ${deleteError.message}`);
-  }
-
-  return apiSuccess(null, { message: 'Grade deleted successfully' });
-});
+);
