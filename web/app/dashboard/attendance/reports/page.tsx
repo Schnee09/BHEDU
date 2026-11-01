@@ -5,7 +5,7 @@ import { useTranslation } from '@/contexts/I18nContext';
 import { apiFetch, getClasses, getAttendance } from '@/lib/api/client';
 import { toast } from 'react-hot-toast';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
-import { parseISO, format, subDays, subMonths } from 'date-fns';
+import { parseISO, format } from 'date-fns';
 import { Button, LoadingState } from '@/components/ui';
 import PageGuard from '@/components/PageGuard';
 
@@ -28,6 +28,12 @@ import { PerformerLists } from '@/components/attendance/reports/PerformerLists';
 import { DetailedAttendanceTable } from '@/components/attendance/reports/DetailedAttendanceTable';
 import { AttendanceFilters } from '@/components/attendance/reports/AttendanceFilters';
 import { getAttendanceStatusLabel } from '@/lib/attendance/statusPresentation';
+import { calculateAttendanceRate } from '@/lib/attendance/metrics';
+import {
+  addDaysToDateOnly,
+  addMonthsToDateOnly,
+  getCurrentDateOnly,
+} from '@/lib/enrollments/effectiveDates';
 
 // Types
 interface AttendanceRecord {
@@ -118,18 +124,18 @@ function AttendanceReportsContent() {
   const loadReports = async () => {
     try {
       setLoading(true);
-      const today = new Date();
+      const today = getCurrentDateOnly();
       let start = '';
-      let end = today.toISOString().split('T')[0] ?? '';
+      let end = today;
 
       if (dateRange === 'today') {
         start = end;
       } else if (dateRange === 'week') {
-        start = subDays(today, 7).toISOString().split('T')[0] ?? '';
+        start = addDaysToDateOnly(today, -7);
       } else if (dateRange === 'month') {
-        start = subMonths(today, 1).toISOString().split('T')[0] ?? '';
+        start = addMonthsToDateOnly(today, -1);
       } else if (dateRange === 'term') {
-        start = format(subMonths(today, 3), 'yyyy-MM-dd');
+        start = addMonthsToDateOnly(today, -3);
       } else if (dateRange === 'custom') {
         start = startDate;
         end = endDate;
@@ -161,7 +167,7 @@ function AttendanceReportsContent() {
     const totalAbsent = data.filter((r) => r.status === 'absent').length;
     const totalLate = data.filter((r) => r.status === 'late').length;
     const totalExcused = data.filter((r) => r.status === 'excused').length;
-    const attendanceRate = Math.round((totalPresent / totalRecords) * 100);
+    const attendanceRate = calculateAttendanceRate(totalPresent, totalLate, totalRecords);
     const byStatus: Record<string, number> = {};
     const byClass: Record<string, any> = {};
     const byStudent: Record<string, any> = {};
@@ -229,7 +235,7 @@ function AttendanceReportsContent() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `attendance-report-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `attendance-report-${getCurrentDateOnly()}.csv`;
       a.click();
     } catch (error) {
       toast.error(t('common.error'));

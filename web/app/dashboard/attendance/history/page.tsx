@@ -11,6 +11,8 @@ import Badge from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProfile } from '@/hooks/useProfile';
 import { cn } from '@/lib/utils';
+import { calculateAttendanceRate } from '@/lib/attendance/metrics';
+import { addDaysToDateOnly, getCurrentDateOnly } from '@/lib/enrollments/effectiveDates';
 import {
   CalendarIcon,
   MagnifyingGlassIcon,
@@ -204,15 +206,14 @@ function AttendanceHistoryPageContent() {
     const absent = filteredRecords.filter((r) => r.status === 'absent').length;
     const late = filteredRecords.filter((r) => r.status === 'late').length;
     const excused = filteredRecords.filter((r) => r.status === 'excused').length;
-    const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+    const rate = calculateAttendanceRate(present, late, total);
     return { total, present, absent, late, excused, rate };
   }, [filteredRecords]);
 
   // Quick Date Preset Filter Handlers
   const handleDatePreset = (preset: 'all' | 'today' | '7days' | 'month') => {
     setActiveDatePreset(preset);
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0] ?? '';
+    const todayStr = getCurrentDateOnly();
 
     if (preset === 'all') {
       setStartDate('');
@@ -221,12 +222,10 @@ function AttendanceHistoryPageContent() {
       setStartDate(todayStr);
       setEndDate(todayStr);
     } else if (preset === '7days') {
-      const past7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      setStartDate(past7.toISOString().split('T')[0] ?? '');
+      setStartDate(addDaysToDateOnly(todayStr, -7));
       setEndDate(todayStr);
     } else if (preset === 'month') {
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      setStartDate(firstDay.toISOString().split('T')[0] ?? '');
+      setStartDate(`${todayStr.slice(0, 7)}-01`);
       setEndDate(todayStr);
     }
     setPage(1);
@@ -268,10 +267,7 @@ function AttendanceHistoryPageContent() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute(
-        'download',
-        `lich-su-diem-danh-${new Date().toISOString().split('T')[0]}.csv`
-      );
+      link.setAttribute('download', `lich-su-diem-danh-${getCurrentDateOnly()}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

@@ -83,6 +83,21 @@ export function addDaysToDateOnly(value: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+export function addMonthsToDateOnly(value: string, months: number): string {
+  assertDateOnly(value, 'date');
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const target = new Date(Date.UTC(year, month - 1 + months, 1));
+  const targetYear = target.getUTCFullYear();
+  const targetMonth = target.getUTCMonth();
+  const lastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+
+  return `${targetYear.toString().padStart(4, '0')}-${(targetMonth + 1)
+    .toString()
+    .padStart(2, '0')}-${Math.min(day, lastDay).toString().padStart(2, '0')}`;
+}
+
 export function getWeekPeriodContaining(value: string): DatePeriod {
   assertDateOnly(value, 'date');
   const date = new Date(`${value}T00:00:00Z`);

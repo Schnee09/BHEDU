@@ -13,6 +13,7 @@ import {
 import { AttendanceStatus } from '@/lib/attendance/types';
 import { calculateAttendanceRate } from '@/lib/attendance/metrics';
 import { getAttendanceClassId } from '@/lib/attendance/navigation';
+import { getCurrentDateOnly } from '@/lib/enrollments/effectiveDates';
 import { Button, LoadingState } from '@/components/ui';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -107,7 +108,7 @@ function AttendanceMarkingPageContent() {
   // Selection State
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>(initialClassId || '');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0] ?? '');
+  const [date, setDate] = useState<string>(() => getCurrentDateOnly());
 
   // Data State
   const [students, setStudents] = useState<StudentAttendanceView[]>([]);
@@ -417,7 +418,7 @@ function AttendanceMarkingPageContent() {
                 <Input
                   type="date"
                   value={date}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={getCurrentDateOnly()}
                   onChange={(e) => setDate(e.target.value)}
                   className="rounded-xl border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-stone-800 h-9 sm:h-10 text-xs font-bold uppercase tracking-tight"
                 />

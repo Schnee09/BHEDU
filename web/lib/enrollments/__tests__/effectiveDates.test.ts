@@ -1,5 +1,6 @@
 import {
   addDaysToDateOnly,
+  addMonthsToDateOnly,
   doesEnrollmentOverlapPeriod,
   getCalendarMonthPeriod,
   getCurrentDateOnly,
@@ -73,5 +74,10 @@ describe('enrollment effective dates', () => {
 
   it('uses the center timezone for the current business date', () => {
     expect(getCurrentDateOnly(new Date('2026-10-24T18:30:00Z'))).toBe('2026-10-25');
+  });
+
+  it('shifts date-only values by month without overflowing short months', () => {
+    expect(addMonthsToDateOnly('2026-03-31', -1)).toBe('2026-02-28');
+    expect(addMonthsToDateOnly('2028-03-31', -1)).toBe('2028-02-29');
   });
 });
