@@ -12,6 +12,7 @@ import {
 } from '@/lib/api/client';
 import { AttendanceStatus } from '@/lib/attendance/types';
 import { calculateAttendanceRate } from '@/lib/attendance/metrics';
+import { getAttendanceClassId } from '@/lib/attendance/navigation';
 import { Button, LoadingState } from '@/components/ui';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -101,7 +102,7 @@ function AttendanceMarkingPageContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialClassId = searchParams.get('classId');
+  const initialClassId = getAttendanceClassId(searchParams);
 
   // Selection State
   const [classes, setClasses] = useState<Class[]>([]);

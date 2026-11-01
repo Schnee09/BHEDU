@@ -378,7 +378,7 @@ export default function ClassDetailPage() {
                 }
               >
                 <Link
-                  href={`/dashboard/attendance/mark?class=${classId}`}
+                  href={`/dashboard/attendance/mark?classId=${classId}`}
                   className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-white/10 hover:border-emerald-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-4 group"
                 >
                   <div className="flex items-start justify-between">

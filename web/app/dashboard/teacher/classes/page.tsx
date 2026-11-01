@@ -142,7 +142,7 @@ function ClassCard({ cls }: { cls: ClassItem }) {
       {/* Quick 1-Tap Action Buttons for Teachers */}
       <div className="flex items-center gap-2 pt-2 border-t border-stone-100 dark:border-white/5 relative z-20">
         <Link
-          href={`/dashboard/attendance/mark?class=${cls.id}`}
+          href={`/dashboard/attendance/mark?classId=${cls.id}`}
           onClick={(e) => e.stopPropagation()}
           className="flex-1 py-2 px-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-xl text-center text-xs font-bold transition-all border border-emerald-200/60 dark:border-emerald-800/40"
         >
