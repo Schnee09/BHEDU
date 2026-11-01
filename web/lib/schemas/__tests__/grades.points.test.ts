@@ -1,10 +1,10 @@
-import { bulkGradeEntrySchema, createGradeSchema } from "../requests/grade";
+import { bulkGradeEntrySchema, createGradeSchema, gradeQuerySchema } from '../requests/grade';
 
-describe("grades schemas (points-based)", () => {
-  test("createGradeSchema accepts decimal points_earned", () => {
+describe('grades schemas (points-based)', () => {
+  test('createGradeSchema accepts decimal points_earned', () => {
     const parsed = createGradeSchema.parse({
-      student_id: "11111111-1111-4111-8111-111111111111",
-      assignment_id: "22222222-2222-4222-8222-222222222222",
+      student_id: '11111111-1111-4111-8111-111111111111',
+      assignment_id: '22222222-2222-4222-8222-222222222222',
       points_earned: 7.5,
       late: false,
       excused: false,
@@ -14,12 +14,12 @@ describe("grades schemas (points-based)", () => {
     expect(parsed.points_earned).toBe(7.5);
   });
 
-  test("bulkGradeEntrySchema accepts decimal points_earned entries", () => {
+  test('bulkGradeEntrySchema accepts decimal points_earned entries', () => {
     const parsed = bulkGradeEntrySchema.parse({
-      assignment_id: "22222222-2222-4222-8222-222222222222",
+      assignment_id: '22222222-2222-4222-8222-222222222222',
       grades: [
         {
-          student_id: "11111111-1111-4111-8111-111111111111",
+          student_id: '11111111-1111-4111-8111-111111111111',
           points_earned: 9.25,
           missing: false,
           excused: false,
@@ -28,5 +28,11 @@ describe("grades schemas (points-based)", () => {
     });
 
     expect(parsed.grades[0]?.points_earned).toBe(9.25);
+  });
+
+  test('gradeQuerySchema requires a UUID for student_id', () => {
+    expect(
+      gradeQuerySchema.safeParse({ student_id: 'student-code),status.eq.published' }).success
+    ).toBe(false);
   });
 });

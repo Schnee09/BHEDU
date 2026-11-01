@@ -12,6 +12,7 @@ const OTHER_CLASS_ID = '323e4567-e89b-12d3-a456-426614174000';
 const classQuery = { select: jest.fn(), eq: jest.fn() };
 const gradeQuery = {
   select: jest.fn(),
+  is: jest.fn(),
   eq: jest.fn(),
   in: jest.fn(),
 };
@@ -49,6 +50,7 @@ describe('/api/grades authorization', () => {
     classQuery.select.mockReturnValue(classQuery);
     classQuery.eq.mockResolvedValue({ data: [{ id: ASSIGNED_CLASS_ID }], error: null });
     gradeQuery.select.mockReturnValue(gradeQuery);
+    gradeQuery.is.mockReturnValue(gradeQuery);
     gradeQuery.eq.mockReturnValue(gradeQuery);
     gradeQuery.in.mockResolvedValue({ data: [], error: null });
     (canAccessClass as jest.Mock).mockResolvedValue(true);
@@ -67,6 +69,15 @@ describe('/api/grades authorization', () => {
     } as any);
 
     expect(response.status).toBe(403);
+    expect(gradeQuery.select).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed student identifier before querying grades', async () => {
+    const response = await GET(createRequest('GET', '?student_id=student-code%29%2Cstatus.eq.10'), {
+      params: Promise.resolve({}),
+    } as any);
+
+    expect(response.status).toBe(400);
     expect(gradeQuery.select).not.toHaveBeenCalled();
   });
 

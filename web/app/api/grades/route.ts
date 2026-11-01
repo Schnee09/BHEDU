@@ -74,11 +74,16 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
   }
 
   // Build query
-  let query = supabase.from('grades').select(`
+  let query = supabase
+    .from('grades')
+    .select(
+      `
     *,
     subject:subjects(id, name, code),
     academic_year:academic_years(id, name)
-  `);
+  `
+    )
+    .is('deleted_at', null);
 
   // Academic Filters
   if (queryParams.class_id) {
@@ -105,25 +110,7 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     if (Array.isArray(queryParams.student_id)) {
       query = query.in('student_id', queryParams.student_id);
     } else {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        queryParams.student_id
-      );
-      if (isUUID) {
-        query = query.eq('student_id', queryParams.student_id);
-      } else {
-        const { data: st } = await supabase
-          .from('profiles')
-          .select('id')
-          .or(
-            `student_code.ilike.${queryParams.student_id},student_id.ilike.${queryParams.student_id},phone.eq.${queryParams.student_id}`
-          )
-          .maybeSingle();
-        if (st) {
-          query = query.eq('student_id', st.id);
-        } else {
-          return apiSuccess([]);
-        }
-      }
+      query = query.eq('student_id', queryParams.student_id);
     }
   }
 

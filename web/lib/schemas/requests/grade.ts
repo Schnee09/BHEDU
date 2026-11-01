@@ -128,7 +128,7 @@ export const conductGradeSchema = z.object({
 // ============================================
 
 export const gradeQuerySchema = paginationSchema.extend({
-  student_id: z.string().optional(),
+  student_id: uuidSchema.optional(),
   class_id: uuidSchema.optional(),
   subject_id: uuidSchema.optional(),
   assignment_id: uuidSchema.optional(),
