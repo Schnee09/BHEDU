@@ -22,6 +22,7 @@ import type {
 export type AttendanceFilters = AttendanceQueryInput & { class_ids?: string[] };
 
 import type { AttendanceResponse } from '@/lib/schemas/responses/attendance';
+import { summarizeAttendanceStatuses } from '@/lib/attendance/metrics';
 
 // Alias for backwards compatibility if needed, or prefer using the imported types directly
 export type Attendance = AttendanceResponse;
@@ -326,7 +327,11 @@ export class AttendanceRepository
     }
 
     // Fallback if RPC fails
-    let query = this.supabase.from(this.tableName).select('status').eq('student_id', studentId);
+    let query = this.supabase
+      .from(this.tableName)
+      .select('status')
+      .eq('student_id', studentId)
+      .is('deleted_at', null);
 
     if (classId) {
       query = query.eq('class_id', classId);
@@ -338,10 +343,7 @@ export class AttendanceRepository
       throw new Error(`Failed to calculate attendance rate: ${queryError.message}`);
     }
 
-    if (!data || data.length === 0) return 0;
-
-    const present = data.filter((r) => r.status === 'present' || r.status === 'late').length;
-    return (present / data.length) * 100;
+    return summarizeAttendanceStatuses(data || []).attendanceRate;
   }
 
   /**
@@ -375,26 +377,20 @@ export class AttendanceRepository
       .from(this.tableName)
       .select('status')
       .eq('class_id', classId)
-      .eq('date', date);
+      .eq('date', date)
+      .is('deleted_at', null);
 
     if (queryError) {
       throw new Error(`Failed to get attendance stats: ${queryError.message}`);
     }
 
-    const stats = {
-      total: data?.length || 0,
-      present: 0,
-      absent: 0,
-      late: 0,
-      excused: 0,
+    const summary = summarizeAttendanceStatuses(data || []);
+    return {
+      total: summary.total,
+      present: summary.present,
+      absent: summary.absent,
+      late: summary.late,
+      excused: summary.excused,
     };
-
-    for (const record of data || []) {
-      if (record.status in stats) {
-        stats[record.status as keyof typeof stats]++;
-      }
-    }
-
-    return stats;
   }
 }

@@ -1,4 +1,5 @@
 import { BaseRepository } from './base';
+import { summarizeAttendanceStatuses } from '@/lib/attendance/metrics';
 import { UserRole } from '@/lib/auth/core';
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -348,13 +349,10 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
     const { data: attData } = await this.supabase
       .from('attendance')
       .select('status')
-      .eq('student_id', studentId);
+      .eq('student_id', studentId)
+      .is('deleted_at', null);
 
-    let attendanceRate = 100;
-    if (attData && attData.length > 0) {
-      const presentCount = attData.filter((a: any) => a.status === 'present').length;
-      attendanceRate = parseFloat(((presentCount / attData.length) * 100).toFixed(1));
-    }
+    const attendanceRate = summarizeAttendanceStatuses(attData || []).attendanceRate;
 
     // 4. Upcoming assignments due in 7 days
     const today = new Date();
