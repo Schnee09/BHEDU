@@ -402,7 +402,8 @@ export class ClassService {
     const { data: grades } = await this.supabase
       .from('grades')
       .select('score')
-      .eq('class_id', classId);
+      .eq('class_id', classId)
+      .is('deleted_at', null);
 
     if (!grades || grades.length === 0) {
       return {

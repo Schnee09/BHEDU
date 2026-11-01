@@ -147,7 +147,7 @@ async function getOverviewStats(supabase: any, academicYear: string, semester: s
     .select('*', { count: 'exact', head: true });
 
   // Calculate average GPA (from grades table)
-  const { data: gradeData } = await supabase.from('grades').select('score');
+  const { data: gradeData } = await supabase.from('grades').select('score').is('deleted_at', null);
 
   const averageGPA =
     gradeData && gradeData.length > 0
@@ -179,7 +179,7 @@ async function getOverviewStats(supabase: any, academicYear: string, semester: s
 }
 
 async function getGradeDistribution(supabase: any, academicYear: string, semester: string | null) {
-  const { data: grades } = await supabase.from('grades').select('score');
+  const { data: grades } = await supabase.from('grades').select('score').is('deleted_at', null);
 
   const distribution = {
     excellent: 0,
@@ -229,7 +229,8 @@ async function getClassComparison(supabase: any, academicYear: string, semester:
   const { data: allGrades } = await supabase
     .from('grades')
     .select('class_id, score')
-    .in('class_id', classIds);
+    .in('class_id', classIds)
+    .is('deleted_at', null);
 
   // Batch fetch attendance
   const { data: allAttendance } = await supabase
@@ -306,7 +307,8 @@ async function getTopPerformers(
     const { data: grades } = await supabase
       .from('grades')
       .select('score')
-      .eq('student_id', student.id);
+      .eq('student_id', student.id)
+      .is('deleted_at', null);
 
     const gpa =
       grades && grades.length > 0
@@ -342,7 +344,8 @@ async function getAtRiskStudents(
     const { data: grades } = await supabase
       .from('grades')
       .select('score')
-      .eq('student_id', student.id);
+      .eq('student_id', student.id)
+      .is('deleted_at', null);
 
     const gpa =
       grades && grades.length > 0
@@ -380,6 +383,7 @@ async function getRecentActivity(supabase: any, limit: number) {
   const { data: recentGrades } = await supabase
     .from('grades')
     .select('created_at, score, student:student_id(full_name)')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(5);
 

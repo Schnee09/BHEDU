@@ -191,6 +191,7 @@ export class StudentService {
       `
       )
       .eq('student_id', studentId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (classId) {

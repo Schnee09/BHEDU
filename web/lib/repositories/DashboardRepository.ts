@@ -400,6 +400,7 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
       .from('grades')
       .select('score, created_at')
       .eq('student_id', studentId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(5);
 
