@@ -145,7 +145,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       `
       )
       .eq('student_id', realStudentId)
-      .eq('academic_year_id', academicYearId);
+      .eq('academic_year_id', academicYearId)
+      .is('deleted_at', null);
 
     // Add semester filter if not "CN" (whole year)
     if (semester !== 'CN') {

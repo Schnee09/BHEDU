@@ -94,6 +94,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           `
         )
         .eq('student_id', realStudentId)
+        .is('deleted_at', null)
         .order('created_at', { ascending: true }),
 
       supabase

@@ -64,6 +64,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       `
       )
       .eq('student_id', studentId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: true });
 
     const { data: grades, error: gradesError } = await gradesQuery;

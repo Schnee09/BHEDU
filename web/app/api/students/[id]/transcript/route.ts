@@ -167,7 +167,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         subject:subjects(id, name, code)
       `
       )
-      .eq('student_id', realStudentId);
+      .eq('student_id', realStudentId)
+      .is('deleted_at', null);
 
     if (academicYearId && academicYearId !== 'all') {
       gradesQuery = gradesQuery.eq('academic_year_id', academicYearId);

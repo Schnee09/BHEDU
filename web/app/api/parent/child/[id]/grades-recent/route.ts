@@ -40,6 +40,7 @@ export const GET = createGetHandler({ allowedRoles: ['parent'] }, async ({ param
     `
     )
     .eq('student_id', childId)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(10);
 
