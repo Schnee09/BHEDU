@@ -29,6 +29,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ user }) => {
       .from('attendance')
       .select('date, status')
       .eq('student_id', user.id)
+      .is('deleted_at', null)
       .gte('date', formatLocalDate(monday));
 
     if (error) {

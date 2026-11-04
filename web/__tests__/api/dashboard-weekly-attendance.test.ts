@@ -7,9 +7,15 @@ import { getAuthContext } from '@/lib/auth/guard';
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 
 const rpc = jest.fn();
+const attendanceQuery = {
+  select: jest.fn(),
+  eq: jest.fn(),
+  is: jest.fn(),
+  gte: jest.fn(),
+};
 
 jest.mock('@/lib/supabase/server', () => ({
-  createServiceClient: jest.fn(() => ({ rpc })),
+  createServiceClient: jest.fn(() => ({ rpc, from: jest.fn(() => attendanceQuery) })),
 }));
 
 function request() {
@@ -33,6 +39,10 @@ describe('GET /api/dashboard/weekly-attendance authorization', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     rpc.mockResolvedValue({ data: [], error: null });
+    attendanceQuery.select.mockReturnValue(attendanceQuery);
+    attendanceQuery.eq.mockReturnValue(attendanceQuery);
+    attendanceQuery.is.mockReturnValue(attendanceQuery);
+    attendanceQuery.gte.mockResolvedValue({ data: [], error: null });
   });
 
   it.each(['teacher', 'tutor', 'staff'])(
@@ -67,6 +77,16 @@ describe('GET /api/dashboard/weekly-attendance authorization', () => {
     const response = await GET(request(), { params: Promise.resolve({}) } as any);
 
     expect(response.status).toBe(403);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('excludes deleted attendance from a student weekly summary', async () => {
+    authenticate('student', 'student-1');
+
+    const response = await GET(request(), { params: Promise.resolve({}) } as any);
+
+    expect(response.status).toBe(200);
+    expect(attendanceQuery.is).toHaveBeenCalledWith('deleted_at', null);
     expect(rpc).not.toHaveBeenCalled();
   });
 });
