@@ -14,13 +14,15 @@ import { canAccessClass } from '@/lib/auth/classAccess';
 export const dynamic = 'force-dynamic';
 
 // Validation Schemas
-const updateSchema = z.object({
-  score: z.coerce.number().min(0).optional(),
-  max_score: z.coerce.number().min(0).optional(),
-  weight: z.coerce.number().min(0).optional(),
-  notes: z.string().optional().nullable(),
-  graded_at: z.string().optional(),
-});
+const updateSchema = z
+  .object({
+    score: z.coerce.number().min(0).max(10).optional().nullable(),
+    points_earned: z.coerce.number().min(0).max(10).optional().nullable(),
+    feedback: z.string().max(2000).optional().nullable(),
+    notes: z.string().optional().nullable(),
+    graded_at: z.string().datetime().optional(),
+  })
+  .strict();
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -146,7 +148,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const updated = await repository.update(id, parsed.data);
+    const { notes, feedback, score, points_earned, ...metadata } = parsed.data;
+    const normalizedScore = points_earned !== undefined ? points_earned : score;
+    const updated = await repository.update(id, {
+      ...metadata,
+      ...(normalizedScore !== undefined
+        ? { score: normalizedScore, points_earned: normalizedScore }
+        : {}),
+      ...(feedback !== undefined || notes !== undefined
+        ? { feedback: feedback ?? notes ?? null }
+        : {}),
+    });
     return NextResponse.json({ success: true, grade: updated });
   } catch (error) {
     console.error('[API] PATCH /api/grades/[id] error:', error);
