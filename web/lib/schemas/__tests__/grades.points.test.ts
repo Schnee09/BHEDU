@@ -1,4 +1,9 @@
-import { bulkGradeEntrySchema, createGradeSchema, gradeQuerySchema } from '../requests/grade';
+import {
+  bulkGradeEntrySchema,
+  createGradeSchema,
+  gradeQuerySchema,
+  updateGradeSchema,
+} from '../requests/grade';
 
 describe('grades schemas (points-based)', () => {
   test('createGradeSchema accepts decimal points_earned', () => {
@@ -41,5 +46,15 @@ describe('grades schemas (points-based)', () => {
       expect.objectContaining({ page: 2, limit: 1000 })
     );
     expect(gradeQuerySchema.safeParse({ limit: '1001' }).success).toBe(false);
+  });
+
+  test('updateGradeSchema only accepts mutable grade fields', () => {
+    expect(updateGradeSchema.safeParse({ points_earned: 8, reason: 'Chấm lại' }).success).toBe(
+      true
+    );
+    expect(
+      updateGradeSchema.safeParse({ student_id: '11111111-1111-4111-8111-111111111111' }).success
+    ).toBe(false);
+    expect(updateGradeSchema.safeParse({ weight: 2 }).success).toBe(false);
   });
 });

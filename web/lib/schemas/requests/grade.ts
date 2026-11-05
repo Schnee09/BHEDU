@@ -62,9 +62,16 @@ export const createGradeSchema = z.object({
   graded_at: z.string().datetime().optional(),
 });
 
-export const updateGradeSchema = createGradeSchema.partial().extend({
-  id: uuidSchema.optional(),
-});
+export const updateGradeSchema = z
+  .object({
+    score: scoreSchema.optional().nullable(),
+    points_earned: pointsEarnedSchema.optional().nullable(),
+    feedback: z.string().max(2000).optional().nullable(),
+    notes: z.string().max(500).optional().nullable(),
+    graded_at: z.string().datetime().optional(),
+    reason: z.string().max(500).optional(),
+  })
+  .strict();
 
 // ============================================
 // BULK OPERATIONS

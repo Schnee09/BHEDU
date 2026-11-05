@@ -131,14 +131,29 @@ export const PATCH = createApiHandler(
       }
     }
 
-    // Add metadata for grading
+    const { reason, notes, feedback, points_earned, score, graded_at } = body;
+    const hasScoreUpdate = points_earned !== undefined || score !== undefined;
+    const normalizedScore =
+      points_earned !== undefined
+        ? points_earned === null
+          ? null
+          : (points_earned / existingGrade.assignment.total_points) * 10
+        : score;
+
+    // Only persist columns that exist in the grades table. Audit-only fields
+    // such as reason must never be spread into the database update payload.
     const updates = {
-      ...body,
+      ...(points_earned !== undefined ? { points_earned } : {}),
+      ...(normalizedScore !== undefined ? { score: normalizedScore } : {}),
+      ...(feedback !== undefined || notes !== undefined
+        ? { feedback: feedback ?? notes ?? null }
+        : {}),
       updated_at: new Date().toISOString(),
-      graded_at:
-        body.points_earned !== undefined || (body as any).letter_grade !== undefined
-          ? new Date().toISOString()
-          : undefined,
+      ...(graded_at !== undefined
+        ? { graded_at }
+        : hasScoreUpdate
+          ? { graded_at: new Date().toISOString() }
+          : {}),
     };
 
     // Update grade
@@ -174,7 +189,7 @@ export const PATCH = createApiHandler(
       metadata: {
         student_id: existingGrade.student_id,
         assignment_id: existingGrade.assignment_id,
-        reason: (body as any).reason || 'Admin override',
+        reason: reason || 'Admin override',
       },
     });
 
