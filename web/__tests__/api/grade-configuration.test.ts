@@ -23,6 +23,7 @@ for (const method of ['select', 'order', 'eq', 'lte', 'or', 'is', 'insert']) {
   query[method] = jest.fn(() => query);
 }
 query.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+query.single = jest.fn();
 
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(() => ({ from: jest.fn(() => query) })),
@@ -36,6 +37,7 @@ describe('grade configuration authorization', () => {
     for (const method of ['select', 'order', 'eq', 'lte', 'or', 'is', 'insert']) {
       query[method]!.mockReturnValue(query);
     }
+    query.single!.mockResolvedValue({ data: null, error: null });
     (canAccessClass as jest.Mock).mockResolvedValue(false);
   });
 
@@ -66,6 +68,41 @@ describe('grade configuration authorization', () => {
     );
 
     expect(response.status).toBe(403);
+  });
+
+  it('creates only the assignment and maps max_points to the web contract', async () => {
+    (canAccessClass as jest.Mock).mockResolvedValue(true);
+    query.single!.mockResolvedValueOnce({
+      data: {
+        id: 'assignment-1',
+        class_id: CLASS_ID,
+        title: 'Kiểm tra giữa kỳ',
+        max_points: 10,
+        assigned_date: '2026-11-05T00:00:00.000Z',
+      },
+      error: null,
+    });
+
+    const response = await createAssignment(
+      new Request('http://localhost/api/grades/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          class_id: CLASS_ID,
+          title: 'Kiểm tra giữa kỳ',
+          total_points: 10,
+        }),
+      })
+    );
+
+    expect(response.status).toBe(201);
+    expect(query.insert).toHaveBeenCalledTimes(1);
+    expect(query.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ max_points: 10, title: 'Kiểm tra giữa kỳ' })
+    );
+    await expect(response.json()).resolves.toMatchObject({
+      assignment: { max_points: 10, total_points: 10 },
+    });
   });
 
   it('rejects a student overview when the student is not enrolled in the class', async () => {

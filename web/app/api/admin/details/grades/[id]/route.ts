@@ -32,8 +32,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (!grade) return NextResponse.json({ error: 'Grade not found' }, { status: 404 });
 
     // Optionally calculate percentage
-    if (grade.points_earned != null && grade.assignment?.total_points) {
-      grade.percentage = (grade.points_earned / grade.assignment.total_points) * 100;
+    const totalPoints = grade.assignment?.max_points ?? grade.assignment?.total_points;
+    if (grade.points_earned != null && totalPoints) {
+      grade.percentage = (grade.points_earned / totalPoints) * 100;
     }
 
     return NextResponse.json({ success: true, data: grade });

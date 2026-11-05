@@ -24,8 +24,7 @@ export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ params
           id,
           title,
           description,
-          total_points,
-          type,
+          total_points:max_points,
           due_date,
           published,
           class:classes!assignments_class_id_fkey(
@@ -108,7 +107,7 @@ export const PATCH = createApiHandler(
         *,
         assignment:assignments!grades_assignment_id_fkey(
           id,
-          total_points
+          total_points:max_points
         )
       `
       )

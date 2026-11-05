@@ -10,7 +10,6 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { teacherAuth } from '@/lib/auth/adminAuth';
 import { logger } from '@/lib/logger';
 import { canAccessClass } from '@/lib/auth/classAccess';
-import { getCurrentDateOnly } from '@/lib/enrollments/effectiveDates';
 
 export async function GET(request: Request) {
   try {
@@ -86,7 +85,11 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      assignments: assignments || [],
+      assignments: (assignments || []).map((assignment) => ({
+        ...assignment,
+        total_points: assignment.max_points,
+        assigned_date: assignment.assigned_date || assignment.created_at,
+      })),
     });
   } catch (error) {
     logger.error('Assignments API error:', error);
@@ -153,7 +156,7 @@ export async function POST(request: Request) {
         category_id: category_id || null,
         title,
         description: description || null,
-        total_points,
+        max_points: total_points,
         due_date: due_date || null,
         assigned_date: new Date().toISOString(),
         published: published !== undefined ? published : true,
@@ -166,33 +169,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create assignment' }, { status: 500 });
     }
 
-    // Create grade records for all enrolled students
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('student_id')
-      .eq('class_id', class_id)
-      .lte('enrollment_date', getCurrentDateOnly())
-      .or(`end_date.is.null,end_date.gte.${getCurrentDateOnly()}`)
-      .is('deleted_at', null);
-
-    if (enrollments && enrollments.length > 0) {
-      const gradeRecords = enrollments.map((enrollment) => ({
-        assignment_id: assignment.id,
-        student_id: enrollment.student_id,
-        class_id,
-        points_earned: null,
-        late: false,
-        excused: false,
-        missing: false,
-      }));
-
-      await supabase.from('grades').insert(gradeRecords);
-    }
-
     return NextResponse.json(
       {
         success: true,
-        assignment,
+        assignment: {
+          ...assignment,
+          total_points: assignment.max_points,
+          assigned_date: assignment.assigned_date || assignment.created_at,
+        },
       },
       { status: 201 }
     );

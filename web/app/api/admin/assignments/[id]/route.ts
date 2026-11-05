@@ -5,27 +5,25 @@
  * DELETE /api/admin/assignments/[id] - Delete assignment
  */
 
-import { NextResponse } from 'next/server'
-import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth'
+import { NextResponse } from 'next/server';
+import { getDataClient } from '@/lib/auth/dataClient';
+import { adminAuth } from '@/lib/auth/adminAuth';
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request)
+    const authResult = await adminAuth(request);
     if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-  const { supabase } = await getDataClient(request)
-    const { id } = await context.params
+    const { supabase } = await getDataClient(request);
+    const { id } = await context.params;
 
     // Get assignment with full details
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
-      .select(`
+      .select(
+        `
         *,
         class:classes!assignments_class_id_fkey(
           id,
@@ -49,35 +47,34 @@ export async function GET(
           name,
           weight
         ),
-        grades:grades(
+        grades:grades!grades_assignment_id_fkey(
           id,
           score,
-          submitted_at,
+          points_earned,
           graded_at,
-          enrollment:enrollments(
+          student:profiles!grades_student_id_fkey(
             id,
-            student:profiles!enrollments_student_id_fkey(
-              id,
-              full_name,
-              email
-            )
+            full_name,
+            email
           )
         )
-      `)
+      `
+      )
       .eq('id', id)
-      .single()
+      .single();
 
     if (assignmentError || !assignment) {
-      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 });
     }
 
     // Calculate statistics
-    const grades = assignment.grades || []
-    const totalSubmissions = grades.length
-    const gradedSubmissions = grades.filter((g: any) => g.graded_at).length
-    const averageScore = grades.length > 0
-      ? grades.reduce((sum: number, g: any) => sum + (g.score || 0), 0) / grades.length
-      : 0
+    const grades = assignment.grades || [];
+    const totalSubmissions = grades.length;
+    const gradedSubmissions = grades.filter((g: any) => g.graded_at).length;
+    const averageScore =
+      grades.length > 0
+        ? grades.reduce((sum: number, g: any) => sum + (g.score || 0), 0) / grades.length
+        : 0;
 
     return NextResponse.json({
       success: true,
@@ -88,63 +85,61 @@ export async function GET(
           graded_submissions: gradedSubmissions,
           pending_submissions: totalSubmissions - gradedSubmissions,
           average_score: averageScore,
-          total_points: assignment.total_points
-        }
-      }
-    })
-
+          total_points: assignment.max_points,
+        },
+      },
+    });
   } catch (error) {
-    console.error('Error in GET /api/admin/assignments/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error in GET /api/admin/assignments/[id]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function PATCH(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request)
+    const authResult = await adminAuth(request);
     if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-  const { supabase } = await getDataClient(request)
-    const { id } = await context.params
-    const body = await request.json()
+    const { supabase } = await getDataClient(request);
+    const { id } = await context.params;
+    const body = await request.json();
 
     // Verify assignment exists
     const { data: existingAssignment, error: fetchError } = await supabase
       .from('assignments')
       .select('id')
       .eq('id', id)
-      .single()
+      .single();
 
     if (fetchError || !existingAssignment) {
-      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 });
     }
 
     // Allowed fields to update
     const allowedFields = [
       'title',
       'description',
-      'type',
-      'total_points',
+      'max_points',
       'due_date',
       'published',
       'category_id',
-      'class_id'
-    ]
+      'class_id',
+    ];
 
-    const updates: Record<string, unknown> = {}
+    const updates: Record<string, unknown> = {};
+    if (body.total_points !== undefined) {
+      updates.max_points = body.total_points;
+    }
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
-        updates[field] = body[field]
+        updates[field] = body[field];
       }
     }
 
     if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
     // If class_id is being changed, verify it exists
@@ -153,10 +148,10 @@ export async function PATCH(
         .from('classes')
         .select('id')
         .eq('id', updates.class_id as string)
-        .single()
+        .single();
 
       if (classError || !classData) {
-        return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+        return NextResponse.json({ error: 'Class not found' }, { status: 404 });
       }
     }
 
@@ -166,10 +161,10 @@ export async function PATCH(
         .from('assignment_categories')
         .select('id')
         .eq('id', updates.category_id as string)
-        .single()
+        .single();
 
       if (categoryError || !categoryData) {
-        return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+        return NextResponse.json({ error: 'Category not found' }, { status: 404 });
       }
     }
 
@@ -179,78 +174,76 @@ export async function PATCH(
       .update(updates)
       .eq('id', id)
       .select()
-      .single()
+      .single();
 
     if (updateError) {
-      console.error('Error updating assignment:', updateError)
-      return NextResponse.json({ error: 'Failed to update assignment' }, { status: 500 })
+      console.error('Error updating assignment:', updateError);
+      return NextResponse.json({ error: 'Failed to update assignment' }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      assignment: updatedAssignment
-    })
-
+      assignment: {
+        ...updatedAssignment,
+        total_points: updatedAssignment.max_points,
+      },
+    });
   } catch (error) {
-    console.error('Error in PATCH /api/admin/assignments/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error in PATCH /api/admin/assignments/[id]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request)
+    const authResult = await adminAuth(request);
     if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-  const { supabase } = await getDataClient(request)
-    const { id } = await context.params
+    const { supabase } = await getDataClient(request);
+    const { id } = await context.params;
 
     // Check if assignment exists
     const { data: assignment, error: fetchError } = await supabase
       .from('assignments')
       .select('id, title')
       .eq('id', id)
-      .single()
+      .single();
 
     if (fetchError || !assignment) {
-      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Assignment not found' }, { status: 404 });
     }
 
     // Check if there are any grades
     const { count: gradesCount } = await supabase
       .from('grades')
       .select('id', { count: 'exact', head: true })
-      .eq('assignment_id', id)
+      .eq('assignment_id', id);
 
     if (gradesCount && gradesCount > 0) {
-      return NextResponse.json({
-        error: `Cannot delete assignment with ${gradesCount} grade(s). Consider unpublishing instead.`
-      }, { status: 409 })
+      return NextResponse.json(
+        {
+          error: `Cannot delete assignment with ${gradesCount} grade(s). Consider unpublishing instead.`,
+        },
+        { status: 409 }
+      );
     }
 
     // Delete the assignment
-    const { error: deleteError } = await supabase
-      .from('assignments')
-      .delete()
-      .eq('id', id)
+    const { error: deleteError } = await supabase.from('assignments').delete().eq('id', id);
 
     if (deleteError) {
-      console.error('Error deleting assignment:', deleteError)
-      return NextResponse.json({ error: 'Failed to delete assignment' }, { status: 500 })
+      console.error('Error deleting assignment:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete assignment' }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      message: `Assignment "${assignment.title}" deleted successfully`
-    })
-
+      message: `Assignment "${assignment.title}" deleted successfully`,
+    });
   } catch (error) {
-    console.error('Error in DELETE /api/admin/assignments/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error in DELETE /api/admin/assignments/[id]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
