@@ -172,11 +172,13 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
   }
 
   let targetClassId = validatedData.class_id || null;
+  let targetSubjectId = validatedData.subject_id || null;
+  let assignmentMaxPoints: number | null = null;
   const targetAssignmentId = validatedData.assignment_id || null;
-  if (!targetClassId && targetAssignmentId) {
+  if (targetAssignmentId) {
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
-      .select('class_id')
+      .select('class_id, max_points')
       .eq('id', targetAssignmentId)
       .maybeSingle();
     if (assignmentError || !assignment?.class_id) {
@@ -185,7 +187,41 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
         { status: 400 }
       );
     }
+
+    if (targetClassId && targetClassId !== assignment.class_id) {
+      return NextResponse.json(
+        { success: false, error: 'Assignment does not belong to the provided class' },
+        { status: 400 }
+      );
+    }
+
     targetClassId = assignment.class_id;
+    assignmentMaxPoints = Number(assignment.max_points);
+    if (!Number.isFinite(assignmentMaxPoints) || assignmentMaxPoints <= 0) {
+      return NextResponse.json(
+        { success: false, error: 'Assignment has an invalid point scale' },
+        { status: 400 }
+      );
+    }
+
+    const { data: targetClass, error: classError } = await supabase
+      .from('classes')
+      .select('subject_id')
+      .eq('id', targetClassId)
+      .maybeSingle();
+    if (classError || !targetClass?.subject_id) {
+      return NextResponse.json(
+        { success: false, error: 'Assignment subject could not be resolved' },
+        { status: 400 }
+      );
+    }
+    if (targetSubjectId && targetSubjectId !== targetClass.subject_id) {
+      return NextResponse.json(
+        { success: false, error: 'Assignment does not belong to the provided subject' },
+        { status: 400 }
+      );
+    }
+    targetSubjectId = targetClass.subject_id;
   }
 
   if (!targetClassId) {
@@ -215,19 +251,37 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
     academicYearId = currentAY.id;
   }
 
+  const submittedRows = 'grades' in validatedData ? validatedData.grades : [validatedData];
+  if (
+    assignmentMaxPoints !== null &&
+    submittedRows.some((row) => (row.points_earned ?? row.score ?? 0) > assignmentMaxPoints)
+  ) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Points earned cannot exceed assignment maximum (${assignmentMaxPoints})`,
+      },
+      { status: 400 }
+    );
+  }
+
   const normalizeRow = (row: any, metadata: any = {}) => {
     const pointsEarned = row.points_earned ?? row.score ?? null;
+    const normalizedScore =
+      pointsEarned !== null && assignmentMaxPoints !== null
+        ? Math.round(((pointsEarned / assignmentMaxPoints) * 10 + Number.EPSILON) * 100) / 100
+        : pointsEarned;
 
     return {
       student_id: row.student_id,
       class_id: row.class_id || metadata.class_id || targetClassId,
       assignment_id: row.assignment_id || metadata.assignment_id || targetAssignmentId,
-      subject_id: row.subject_id || metadata.subject_id,
+      subject_id: row.subject_id || metadata.subject_id || targetSubjectId,
       semester: row.semester || metadata.semester,
       component_type: row.component_type || metadata.component_type,
       academic_year_id: academicYearId || row.academic_year_id || metadata.academic_year_id,
       points_earned: pointsEarned,
-      score: pointsEarned, // Ensure score matches points_earned for compatibility
+      score: normalizedScore,
       feedback: row.feedback ?? row.notes ?? null,
       graded_at: row.graded_at || metadata.graded_at,
       graded_by: user.id,

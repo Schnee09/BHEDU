@@ -9,7 +9,11 @@ jest.mock('@/lib/auth/classAccess', () => ({ canAccessClass: jest.fn() }));
 const ASSIGNED_CLASS_ID = '123e4567-e89b-12d3-a456-426614174000';
 const OTHER_CLASS_ID = '323e4567-e89b-12d3-a456-426614174000';
 
-const classQuery = { select: jest.fn(), eq: jest.fn() };
+const SUBJECT_ID = '423e4567-e89b-12d3-a456-426614174000';
+const ASSIGNMENT_ID = '523e4567-e89b-12d3-a456-426614174000';
+
+const classQuery = { select: jest.fn(), eq: jest.fn(), maybeSingle: jest.fn() };
+const assignmentQuery = { select: jest.fn(), eq: jest.fn(), maybeSingle: jest.fn() };
 const gradeQuery = {
   select: jest.fn(),
   is: jest.fn(),
@@ -23,7 +27,11 @@ const gradeQuery = {
 
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(() => ({
-    from: jest.fn((table: string) => (table === 'classes' ? classQuery : gradeQuery)),
+    from: jest.fn((table: string) => {
+      if (table === 'classes') return classQuery;
+      if (table === 'assignments') return assignmentQuery;
+      return gradeQuery;
+    }),
   })),
 }));
 
@@ -52,7 +60,18 @@ describe('/api/grades authorization', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     classQuery.select.mockReturnValue(classQuery);
-    classQuery.eq.mockResolvedValue({ data: [{ id: ASSIGNED_CLASS_ID }], error: null });
+    classQuery.eq.mockImplementation((field: string) =>
+      field === 'teacher_id'
+        ? Promise.resolve({ data: [{ id: ASSIGNED_CLASS_ID }], error: null })
+        : classQuery
+    );
+    classQuery.maybeSingle.mockResolvedValue({ data: { subject_id: SUBJECT_ID }, error: null });
+    assignmentQuery.select.mockReturnValue(assignmentQuery);
+    assignmentQuery.eq.mockReturnValue(assignmentQuery);
+    assignmentQuery.maybeSingle.mockResolvedValue({
+      data: { class_id: ASSIGNED_CLASS_ID, max_points: 20 },
+      error: null,
+    });
     gradeQuery.select.mockReturnValue(gradeQuery);
     gradeQuery.is.mockReturnValue(gradeQuery);
     gradeQuery.eq.mockReturnValue(gradeQuery);
@@ -129,5 +148,43 @@ describe('/api/grades authorization', () => {
       }),
       { onConflict: 'student_id,class_id,subject_id,component_type,semester' }
     );
+  });
+
+  it('resolves assignment metadata and converts raw points to the 10-point scale', async () => {
+    const response = await POST(
+      createRequest('POST', '', {
+        student_id: '223e4567-e89b-12d3-a456-426614174000',
+        assignment_id: ASSIGNMENT_ID,
+        points_earned: 15,
+      }),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(200);
+    expect(assignmentQuery.select).toHaveBeenCalledWith('class_id, max_points');
+    expect(gradeQuery.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assignment_id: ASSIGNMENT_ID,
+        class_id: ASSIGNED_CLASS_ID,
+        subject_id: SUBJECT_ID,
+        points_earned: 15,
+        score: 7.5,
+      }),
+      { onConflict: 'student_id,class_id,subject_id,component_type,semester' }
+    );
+  });
+
+  it('rejects points above the assignment maximum', async () => {
+    const response = await POST(
+      createRequest('POST', '', {
+        student_id: '223e4567-e89b-12d3-a456-426614174000',
+        assignment_id: ASSIGNMENT_ID,
+        points_earned: 21,
+      }),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(400);
+    expect(gradeQuery.upsert).not.toHaveBeenCalled();
   });
 });
