@@ -52,6 +52,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
           score,
           points_earned,
           graded_at,
+          deleted_at,
           student:profiles!grades_student_id_fkey(
             id,
             full_name,
@@ -68,7 +69,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     }
 
     // Calculate statistics
-    const grades = assignment.grades || [];
+    const grades = (assignment.grades || []).filter((grade: any) => !grade.deleted_at);
     const totalSubmissions = grades.length;
     const gradedSubmissions = grades.filter((g: any) => g.graded_at).length;
     const averageScore =
@@ -80,6 +81,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       success: true,
       assignment: {
         ...assignment,
+        grades,
         statistics: {
           total_submissions: totalSubmissions,
           graded_submissions: gradedSubmissions,
@@ -219,7 +221,8 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     const { count: gradesCount } = await supabase
       .from('grades')
       .select('id', { count: 'exact', head: true })
-      .eq('assignment_id', id);
+      .eq('assignment_id', id)
+      .is('deleted_at', null);
 
     if (gradesCount && gradesCount > 0) {
       return NextResponse.json(
