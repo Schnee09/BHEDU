@@ -1,18 +1,24 @@
 /**
  * @jest-environment node
  */
-import { DELETE, GET } from '@/app/api/admin/assignments/[id]/route';
+import { DELETE, GET, PATCH } from '@/app/api/admin/assignments/[id]/route';
 
 const assignmentQuery = {
   select: jest.fn(),
   eq: jest.fn(),
   single: jest.fn(),
   delete: jest.fn(),
+  update: jest.fn(),
 };
 const gradeQuery = {
   select: jest.fn(),
   eq: jest.fn(),
   is: jest.fn(),
+};
+const classQuery = {
+  select: jest.fn(),
+  eq: jest.fn(),
+  single: jest.fn(),
 };
 
 jest.mock('@/lib/auth/adminAuth', () => ({
@@ -22,7 +28,11 @@ jest.mock('@/lib/auth/adminAuth', () => ({
 jest.mock('@/lib/auth/dataClient', () => ({
   getDataClient: jest.fn().mockResolvedValue({
     supabase: {
-      from: jest.fn((table: string) => (table === 'grades' ? gradeQuery : assignmentQuery)),
+      from: jest.fn((table: string) => {
+        if (table === 'grades') return gradeQuery;
+        if (table === 'classes') return classQuery;
+        return assignmentQuery;
+      }),
     },
   }),
 }));
@@ -35,9 +45,13 @@ describe('/api/admin/assignments/[id] grade lifecycle', () => {
     assignmentQuery.select.mockReturnValue(assignmentQuery);
     assignmentQuery.eq.mockReturnValue(assignmentQuery);
     assignmentQuery.delete.mockReturnValue(assignmentQuery);
+    assignmentQuery.update.mockReturnValue(assignmentQuery);
     gradeQuery.select.mockReturnValue(gradeQuery);
     gradeQuery.eq.mockReturnValue(gradeQuery);
     gradeQuery.is.mockResolvedValue({ count: 0, error: null });
+    classQuery.select.mockReturnValue(classQuery);
+    classQuery.eq.mockReturnValue(classQuery);
+    classQuery.single.mockResolvedValue({ data: { id: 'class-new' }, error: null });
   });
 
   it('excludes soft-deleted grades from details and statistics', async () => {
@@ -89,5 +103,45 @@ describe('/api/admin/assignments/[id] grade lifecycle', () => {
     expect(response.status).toBe(200);
     expect(gradeQuery.is).toHaveBeenCalledWith('deleted_at', null);
     expect(assignmentQuery.delete).toHaveBeenCalled();
+  });
+
+  it('rejects an invalid assignment point scale', async () => {
+    assignmentQuery.single.mockResolvedValue({
+      data: { id: 'assignment-1', class_id: 'class-current' },
+      error: null,
+    });
+
+    const response = await PATCH(
+      new Request('http://localhost/api/admin/assignments/assignment-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ total_points: 0 }),
+      }),
+      context
+    );
+
+    expect(response.status).toBe(400);
+    expect(assignmentQuery.update).not.toHaveBeenCalled();
+  });
+
+  it('does not move an assignment with active grades to another class', async () => {
+    assignmentQuery.single.mockResolvedValue({
+      data: { id: 'assignment-1', class_id: 'class-current' },
+      error: null,
+    });
+    gradeQuery.is.mockResolvedValue({ count: 2, error: null });
+
+    const response = await PATCH(
+      new Request('http://localhost/api/admin/assignments/assignment-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ class_id: 'class-new' }),
+      }),
+      context
+    );
+
+    expect(response.status).toBe(409);
+    expect(gradeQuery.is).toHaveBeenCalledWith('deleted_at', null);
+    expect(assignmentQuery.update).not.toHaveBeenCalled();
   });
 });

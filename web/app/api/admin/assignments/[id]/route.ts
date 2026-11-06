@@ -111,7 +111,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     // Verify assignment exists
     const { data: existingAssignment, error: fetchError } = await supabase
       .from('assignments')
-      .select('id')
+      .select('id, class_id')
       .eq('id', id)
       .single();
 
@@ -144,8 +144,26 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
+    if (
+      updates.max_points !== undefined &&
+      (typeof updates.max_points !== 'number' ||
+        !Number.isFinite(updates.max_points) ||
+        updates.max_points <= 0)
+    ) {
+      return NextResponse.json(
+        { error: 'total_points must be a number greater than 0' },
+        { status: 400 }
+      );
+    }
+
+    if (updates.title !== undefined && String(updates.title).trim().length === 0) {
+      return NextResponse.json({ error: 'title cannot be empty' }, { status: 400 });
+    }
+
     // If class_id is being changed, verify it exists
-    if (updates.class_id) {
+    const isChangingClass =
+      typeof updates.class_id === 'string' && updates.class_id !== existingAssignment.class_id;
+    if (isChangingClass) {
       const { data: classData, error: classError } = await supabase
         .from('classes')
         .select('id')
@@ -155,6 +173,21 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       if (classError || !classData) {
         return NextResponse.json({ error: 'Class not found' }, { status: 404 });
       }
+
+      const { count: activeGradesCount, error: gradesError } = await supabase
+        .from('grades')
+        .select('id', { count: 'exact', head: true })
+        .eq('assignment_id', id)
+        .is('deleted_at', null);
+      if (gradesError) {
+        return NextResponse.json({ error: 'Failed to verify assignment grades' }, { status: 500 });
+      }
+      if (activeGradesCount && activeGradesCount > 0) {
+        return NextResponse.json(
+          { error: 'Cannot move an assignment that already has grades' },
+          { status: 409 }
+        );
+      }
     }
 
     // If category_id is being changed, verify it exists
@@ -163,6 +196,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         .from('assignment_categories')
         .select('id')
         .eq('id', updates.category_id as string)
+        .eq('class_id', (updates.class_id as string) || existingAssignment.class_id)
         .single();
 
       if (categoryError || !categoryData) {
