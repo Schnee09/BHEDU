@@ -86,10 +86,36 @@ export async function POST(request: NextRequest) {
 
     const { supabase } = await getDataClient(request);
     const body = await request.json();
-    const { class_id, category_id, title, description, due_date, max_points = 100 } = body;
+    const { class_id, category_id, description, due_date } = body;
+    const title = typeof body.title === 'string' ? body.title.trim() : '';
+    const maxPoints = body.total_points ?? body.max_points ?? 100;
 
     if (!class_id || !title) {
       throw new ValidationError('Class ID and title are required');
+    }
+    if (typeof maxPoints !== 'number' || !Number.isFinite(maxPoints) || maxPoints <= 0) {
+      throw new ValidationError('total_points must be a number greater than 0');
+    }
+
+    const { data: targetClass, error: classError } = await supabase
+      .from('classes')
+      .select('id')
+      .eq('id', class_id)
+      .maybeSingle();
+    if (classError || !targetClass) {
+      throw new ValidationError('Class not found');
+    }
+
+    if (category_id) {
+      const { data: category, error: categoryError } = await supabase
+        .from('assignment_categories')
+        .select('id')
+        .eq('id', category_id)
+        .eq('class_id', class_id)
+        .maybeSingle();
+      if (categoryError || !category) {
+        throw new ValidationError('Category does not belong to this class');
+      }
     }
 
     const { data, error } = await supabase
@@ -100,7 +126,7 @@ export async function POST(request: NextRequest) {
         title,
         description,
         due_date,
-        max_points,
+        max_points: maxPoints,
       })
       .select()
       .single();
