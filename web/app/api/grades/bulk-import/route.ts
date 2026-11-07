@@ -3,6 +3,7 @@ import { canAccessClass } from '@/lib/auth/classAccess';
 import { getAuthContext } from '@/lib/auth/guard';
 import { logger } from '@/lib/logger';
 import { createServiceClient } from '@/lib/supabase/server';
+import { normalizeGradeSemester } from '@/lib/grades/semester';
 
 interface GradeInput {
   student_id: string;
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
       grades?: GradeInput[];
     };
     const { class_id, subject_id, semester, grades } = body;
+    const normalizedSemester = normalizeGradeSemester(semester);
 
     if (!class_id || !subject_id || !semester) {
       return NextResponse.json(
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (!VALID_SEMESTERS.has(semester)) {
+    if (!normalizedSemester || !VALID_SEMESTERS.has(normalizedSemester)) {
       return NextResponse.json({ success: false, error: 'Học kỳ không hợp lệ' }, { status: 400 });
     }
     if (!Array.isArray(grades) || grades.length === 0 || grades.length > 1000) {
@@ -108,7 +110,7 @@ export async function POST(request: NextRequest) {
         class_id,
         subject_id,
         component_type: grade.component_type,
-        semester,
+        semester: normalizedSemester,
         score: grade.score,
         points_earned: grade.score,
         feedback: grade.notes || null,
@@ -135,7 +137,7 @@ export async function POST(request: NextRequest) {
     logger.info('Bulk grade import completed', {
       class_id,
       subject_id,
-      semester,
+      semester: normalizedSemester,
       total: grades.length,
       imported: results.imported,
       failed: results.failed,
