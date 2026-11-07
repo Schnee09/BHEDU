@@ -12,6 +12,7 @@ import { teacherAuth } from '@/lib/auth/adminAuth';
 import { logger } from '@/lib/logger';
 import { canAccessClass } from '@/lib/auth/classAccess';
 import { getCurrentDateOnly } from '@/lib/enrollments/effectiveDates';
+import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 
 export async function GET(request: Request) {
   try {
@@ -165,9 +166,10 @@ export async function GET(request: Request) {
       studentSpecificGrades.forEach((g) => {
         const subId = g.subject_id;
         if (subId && subjectGrades[subId]) {
-          // Score is already 0-10 scale (normalized)
-          const score = g.points_earned ?? g.score ?? 0;
-          subjectGrades[subId].scores.push(score);
+          const score = getNormalizedGradeScore(g);
+          if (score !== null) {
+            subjectGrades[subId].scores.push(score);
+          }
         }
       });
 

@@ -10,6 +10,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/guard';
 import { canAccessStudent } from '@/lib/auth/classAccess';
 import { logger } from '@/lib/logger';
+import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -23,8 +24,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id: studentId } = await params;
-    const { searchParams } = new URL(request.url);
-    const period = searchParams.get('period') || 'all'; // semester, year, all
 
     const supabase = createServiceClient();
 
@@ -86,7 +85,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const subjectAverages: Record<string, { name: string; grades: number[] }> = {};
 
     grades?.forEach((grade: any) => {
-      const score = grade.points_earned ?? grade.score ?? 0;
+      const score = getNormalizedGradeScore(grade);
+      if (score === null) return;
       const date = new Date(grade.created_at);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
@@ -147,7 +147,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .sort((a, b) => b.average - a.average);
 
     // Overall statistics
-    const allGrades = grades?.map((g: any) => g.points_earned ?? g.score ?? 0) || [];
+    const allGrades = (grades || [])
+      .map((grade: any) => getNormalizedGradeScore(grade))
+      .filter((score): score is number => score !== null);
     const overallAverage =
       allGrades.length > 0
         ? allGrades.reduce((s: number, g: number) => s + g, 0) / allGrades.length
