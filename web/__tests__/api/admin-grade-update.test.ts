@@ -96,4 +96,45 @@ describe('PATCH /api/admin/grades/[id]', () => {
       expect.objectContaining({ points_earned: null, score: null })
     );
   });
+
+  it('converts an assignment score back to raw points', async () => {
+    const response = await PATCH(request({ score: 9 }), {
+      params: Promise.resolve({ id: 'grade-1' }),
+    } as any);
+
+    expect(response.status).toBe(200);
+    expect(mockQuery.update).toHaveBeenCalledWith(
+      expect.objectContaining({ points_earned: 45, score: 9 })
+    );
+  });
+
+  it('updates a traditional grade without requiring an assignment', async () => {
+    mockQuery.single
+      .mockReset()
+      .mockResolvedValueOnce({
+        data: {
+          id: 'grade-1',
+          student_id: 'student-1',
+          assignment_id: null,
+          points_earned: 7,
+          score: 7,
+          feedback: null,
+          assignment: null,
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: { id: 'grade-1', points_earned: 8, score: 8 },
+        error: null,
+      });
+
+    const response = await PATCH(request({ points_earned: 8 }), {
+      params: Promise.resolve({ id: 'grade-1' }),
+    } as any);
+
+    expect(response.status).toBe(200);
+    expect(mockQuery.update).toHaveBeenCalledWith(
+      expect.objectContaining({ points_earned: 8, score: 8 })
+    );
+  });
 });

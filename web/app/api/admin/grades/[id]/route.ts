@@ -119,30 +119,45 @@ export const PATCH = createApiHandler(
       throw new NotFoundError('Grade not found');
     }
 
-    // Business Logic: Validate points if being updated
-    if (body.points_earned !== undefined && body.points_earned !== null) {
-      const totalPoints = existingGrade.assignment?.total_points;
-      if (!totalPoints) {
-        throw new ValidationError('Assignment total_points not found');
-      }
-      if (body.points_earned < 0 || body.points_earned > totalPoints) {
-        throw new ValidationError(`Points must be between 0 and ${totalPoints}`);
-      }
-    }
-
     const { reason, notes, feedback, points_earned, score, graded_at } = body;
     const hasScoreUpdate = points_earned !== undefined || score !== undefined;
-    const normalizedScore =
-      points_earned !== undefined
-        ? points_earned === null
-          ? null
-          : (points_earned / existingGrade.assignment.total_points) * 10
-        : score;
+    let normalizedScore = score;
+    let normalizedPoints = points_earned;
+
+    if (hasScoreUpdate) {
+      if (existingGrade.assignment_id) {
+        const totalPoints = Number(existingGrade.assignment?.total_points);
+        if (!Number.isFinite(totalPoints) || totalPoints <= 0) {
+          throw new ValidationError('Assignment point scale not found');
+        }
+        if (points_earned !== undefined) {
+          if (points_earned !== null && points_earned > totalPoints) {
+            throw new ValidationError(`Points must be between 0 and ${totalPoints}`);
+          }
+          normalizedScore =
+            points_earned === null
+              ? null
+              : Math.round(((points_earned / totalPoints) * 10 + Number.EPSILON) * 100) / 100;
+        } else if (score !== undefined) {
+          normalizedPoints =
+            score === null
+              ? null
+              : Math.round(((score / 10) * totalPoints + Number.EPSILON) * 100) / 100;
+        }
+      } else {
+        const traditionalValue = points_earned !== undefined ? points_earned : score;
+        if (traditionalValue !== null && traditionalValue !== undefined && traditionalValue > 10) {
+          throw new ValidationError('Points must be between 0 and 10');
+        }
+        normalizedScore = traditionalValue;
+        normalizedPoints = traditionalValue;
+      }
+    }
 
     // Only persist columns that exist in the grades table. Audit-only fields
     // such as reason must never be spread into the database update payload.
     const updates = {
-      ...(points_earned !== undefined ? { points_earned } : {}),
+      ...(normalizedPoints !== undefined ? { points_earned: normalizedPoints } : {}),
       ...(normalizedScore !== undefined ? { score: normalizedScore } : {}),
       ...(feedback !== undefined || notes !== undefined
         ? { feedback: feedback ?? notes ?? null }
