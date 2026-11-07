@@ -13,6 +13,7 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import ReportCardPDF from '@/components/reports/ReportCardPDF';
 import { settingsService } from '@/lib/services/settingsService';
 import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
+import { getVietnameseClassification, normalizeConductRating } from '@/lib/grades/conduct';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -271,10 +272,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const { data: conductGrades } = await conductQuery;
 
     // Determine conduct
-    let conduct = 'Tốt';
-    if (conductGrades && conductGrades.length > 0) {
-      conduct = conductGrades[0].conduct_grade || 'Tốt';
-    }
+    const conduct = normalizeConductRating(conductGrades?.[0]?.conduct_grade);
 
     // Get Vietnamese academic classification
     const classification = getVietnameseClassification(Math.round(gpa * 100) / 100, conduct);
@@ -295,8 +293,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       gpa: Math.round(gpa * 100) / 100,
       conduct,
       academic_classification: classification,
-      teacher_comment:
-        conductGrades && conductGrades.length > 0 ? conductGrades[0].teacher_comment : null,
+      teacher_comment: conductGrades?.[0]?.comments || null,
       homeroom_teacher: currentClass?.teacher?.full_name || null,
       principal_name: 'Hiệu trưởng',
       report_date: formatDate(new Date().toISOString()),
@@ -318,48 +315,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       { error: 'Internal server error', details: error.message },
       { status: 500 }
     );
-  }
-}
-
-// Helper functions
-function getVietnameseClassification(
-  gpa: number,
-  conduct: string
-): {
-  classification: string;
-  classification_vi: string;
-  description: string;
-} {
-  if (gpa >= 9.0 && conduct === 'Xuất sắc') {
-    return {
-      classification: 'Excellent',
-      classification_vi: 'Xuất sắc',
-      description: 'Outstanding academic performance with excellent conduct',
-    };
-  } else if (gpa >= 8.0 && conduct !== 'Yếu') {
-    return {
-      classification: 'Good',
-      classification_vi: 'Giỏi',
-      description: 'Strong academic performance with good conduct',
-    };
-  } else if (gpa >= 6.5 && conduct !== 'Yếu') {
-    return {
-      classification: 'Fair',
-      classification_vi: 'Khá',
-      description: 'Satisfactory academic performance',
-    };
-  } else if (gpa >= 5.0) {
-    return {
-      classification: 'Average',
-      classification_vi: 'Trung bình',
-      description: 'Average academic performance, needs improvement',
-    };
-  } else {
-    return {
-      classification: 'Weak',
-      classification_vi: 'Yếu',
-      description: 'Below average performance, significant improvement needed',
-    };
   }
 }
 

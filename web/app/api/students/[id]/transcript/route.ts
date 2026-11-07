@@ -10,50 +10,9 @@ import { createClientFromRequest, createServiceClient } from '@/lib/supabase/ser
 import { getAuthContext } from '@/lib/auth/guard';
 import { canAccessStudent } from '@/lib/auth/classAccess';
 import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
+import { getVietnameseClassification, normalizeConductRating } from '@/lib/grades/conduct';
 import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
 import { settingsService } from '@/lib/services/settingsService';
-
-// Vietnamese Academic Classification Function
-function getVietnameseClassification(
-  gpa: number,
-  conduct: string
-): {
-  classification: string;
-  classification_vi: string;
-  description: string;
-} {
-  if (gpa >= 9.0 && conduct === 'Xuất sắc') {
-    return {
-      classification: 'Excellent',
-      classification_vi: 'Xuất sắc',
-      description: 'Outstanding academic performance with excellent conduct',
-    };
-  } else if (gpa >= 8.0 && conduct !== 'Yếu') {
-    return {
-      classification: 'Good',
-      classification_vi: 'Giỏi',
-      description: 'Strong academic performance with good conduct',
-    };
-  } else if (gpa >= 6.5 && conduct !== 'Yếu') {
-    return {
-      classification: 'Fair',
-      classification_vi: 'Khá',
-      description: 'Satisfactory academic performance',
-    };
-  } else if (gpa >= 5.0) {
-    return {
-      classification: 'Average',
-      classification_vi: 'Trung bình',
-      description: 'Average academic performance, needs improvement',
-    };
-  } else {
-    return {
-      classification: 'Weak',
-      classification_vi: 'Yếu',
-      description: 'Below average performance, significant improvement needed',
-    };
-  }
-}
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -332,16 +291,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     // Determine conduct
-    let conduct = 'Tốt';
-    if (conductGrades && conductGrades.length > 0) {
-      conduct = conductGrades[0].conduct_grade || 'Tốt';
-    } else {
+    let conduct = normalizeConductRating(conductGrades?.[0]?.conduct_grade);
+    if (!conductGrades || conductGrades.length === 0) {
       if (attendanceRate < 80 || (gpa > 0 && gpa < 5)) {
-        conduct = 'Yếu';
+        conduct = 'Chưa đạt';
       } else if (attendanceRate < 90 || (gpa > 0 && gpa < 6.5)) {
-        conduct = 'Trung bình';
+        conduct = 'Đạt';
       } else if (gpa >= 8 && attendanceRate >= 95) {
-        conduct = 'Xuất sắc';
+        conduct = 'Tốt';
       }
     }
 
@@ -374,8 +331,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       conduct,
       attendance_rate: attendanceRate,
       academic_classification: classification,
-      teacher_comment:
-        conductGrades && conductGrades.length > 0 ? conductGrades[0].teacher_comment : null,
+      teacher_comment: conductGrades?.[0]?.comments || null,
       homeroom_teacher: currentClass?.teacher?.full_name || null,
       principal_name: 'Hiệu trưởng',
       report_date: formatDate(new Date().toISOString()),
