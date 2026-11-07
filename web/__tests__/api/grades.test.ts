@@ -18,6 +18,7 @@ const gradeQuery = {
   select: jest.fn(),
   is: jest.fn(),
   eq: jest.fn(),
+  gte: jest.fn(),
   in: jest.fn(),
   order: jest.fn(),
   range: jest.fn(),
@@ -77,6 +78,7 @@ describe('/api/grades authorization', () => {
     gradeQuery.select.mockReturnValue(gradeQuery);
     gradeQuery.is.mockReturnValue(gradeQuery);
     gradeQuery.eq.mockReturnValue(gradeQuery);
+    gradeQuery.gte.mockReturnValue(gradeQuery);
     gradeQuery.in.mockReturnValue(gradeQuery);
     gradeQuery.order.mockReturnValue(gradeQuery);
     gradeQuery.range.mockResolvedValue({ data: [], error: null, count: 0 });
@@ -111,6 +113,17 @@ describe('/api/grades authorization', () => {
 
     expect(response.status).toBe(400);
     expect(gradeQuery.select).not.toHaveBeenCalled();
+  });
+
+  it('applies assignment and minimum score filters', async () => {
+    const response = await GET(
+      createRequest('GET', `?assignment_id=${ASSIGNMENT_ID}&min_score=7.5`),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(200);
+    expect(gradeQuery.eq).toHaveBeenCalledWith('assignment_id', ASSIGNMENT_ID);
+    expect(gradeQuery.gte).toHaveBeenCalledWith('score', 7.5);
   });
 
   it('rejects creating a grade for an inaccessible class', async () => {

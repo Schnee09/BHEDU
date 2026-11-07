@@ -112,6 +112,14 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     query = query.eq('academic_year_id', queryParams.academic_year_id);
   }
 
+  if (queryParams.assignment_id) {
+    query = query.eq('assignment_id', queryParams.assignment_id);
+  }
+
+  if (queryParams.min_score !== undefined) {
+    query = query.gte('score', queryParams.min_score);
+  }
+
   if (queryParams.student_id) {
     if (Array.isArray(queryParams.student_id)) {
       query = query.in('student_id', queryParams.student_id);
