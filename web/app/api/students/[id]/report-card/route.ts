@@ -12,6 +12,7 @@ import { canAccessStudent } from '@/lib/auth/classAccess';
 import { renderToBuffer } from '@react-pdf/renderer';
 import ReportCardPDF from '@/components/reports/ReportCardPDF';
 import { settingsService } from '@/lib/services/settingsService';
+import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -121,26 +122,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const currentClass = enrollment ? (enrollment as any).classes : null;
 
     // Get all grades for the student in this academic year and semester
-    const gradesQuery = supabase
+    let gradesQuery = supabase
       .from('grades')
       .select(
         `
         id,
+        score,
         points_earned,
         component_type,
         graded_at,
-        assignment:assignments!inner(
-          id,
-          title,
-          class_id,
-          subject:subjects!assignments_subject_id_fkey(
-            name,
-            code
-          ),
-          category:grade_categories!inner(
-            name,
-            code
-          )
+        subject:subjects!grades_subject_id_fkey(
+          name,
+          code
         )
       `
       )
@@ -150,7 +143,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     // Add semester filter if not "CN" (whole year)
     if (semester !== 'CN') {
-      gradesQuery.eq('semester', semester);
+      gradesQuery = gradesQuery.eq('semester', semester);
     }
 
     const { data: grades, error: gradesError } = await gradesQuery;
@@ -164,9 +157,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const subjectMap = new Map();
 
     grades?.forEach((grade: any) => {
-      const subjectCode = grade.assignment.subject.code;
-      const subjectName = grade.assignment.subject.name;
+      const subjectCode = grade.subject?.code;
+      const subjectName = grade.subject?.name;
       const componentType = grade.component_type;
+      const normalizedScore = getNormalizedGradeScore(grade);
+
+      if (!subjectCode || !subjectName || normalizedScore === null) return;
 
       if (!subjectMap.has(subjectCode)) {
         subjectMap.set(subjectCode, {
@@ -186,15 +182,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       const subject = subjectMap.get(subjectCode);
 
       if (componentType === 'oral' || componentType === 'mieng') {
-        subject.component_grades.oral.push(grade.points_earned);
+        subject.component_grades.oral.push(normalizedScore);
       } else if (componentType === 'fifteen_min' || componentType === '15_phut') {
-        subject.component_grades.fifteen_min.push(grade.points_earned);
+        subject.component_grades.fifteen_min.push(normalizedScore);
       } else if (componentType === 'one_period' || componentType === '1_tiet') {
-        subject.component_grades.one_period.push(grade.points_earned);
+        subject.component_grades.one_period.push(normalizedScore);
       } else if (componentType === 'midterm' || componentType === 'giua_ky') {
-        subject.component_grades.midterm.push(grade.points_earned);
+        subject.component_grades.midterm.push(normalizedScore);
       } else if (componentType === 'final' || componentType === 'cuoi_ky') {
-        subject.component_grades.final.push(grade.points_earned);
+        subject.component_grades.final.push(normalizedScore);
       }
     });
 
@@ -246,11 +242,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         grade_letter: getVietnameseGradeLetter(finalGrade),
         grade_description: getGradeDescription(finalGrade),
         component_grades: {
-          oral: oralAvg ? Math.round(oralAvg * 100) / 100 : null,
-          fifteen_min: fifteenMinAvg ? Math.round(fifteenMinAvg * 100) / 100 : null,
-          one_period: onePeriodAvg ? Math.round(onePeriodAvg * 100) / 100 : null,
-          midterm: midtermAvg ? Math.round(midtermAvg * 100) / 100 : null,
-          final: finalAvg ? Math.round(finalAvg * 100) / 100 : null,
+          oral: oralAvg !== null ? Math.round(oralAvg * 100) / 100 : null,
+          fifteen_min: fifteenMinAvg !== null ? Math.round(fifteenMinAvg * 100) / 100 : null,
+          one_period: onePeriodAvg !== null ? Math.round(onePeriodAvg * 100) / 100 : null,
+          midterm: midtermAvg !== null ? Math.round(midtermAvg * 100) / 100 : null,
+          final: finalAvg !== null ? Math.round(finalAvg * 100) / 100 : null,
         },
       };
     });

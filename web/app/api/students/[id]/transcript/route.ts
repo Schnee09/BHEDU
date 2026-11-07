@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/guard';
 import { canAccessStudent } from '@/lib/auth/classAccess';
+import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
 import { settingsService } from '@/lib/services/settingsService';
 
@@ -212,7 +213,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         const subjectName = subjectObj.name || 'Môn học';
         const subjectCode = subjectObj.code || subjectObj.id || 'GEN';
         const componentType = (grade.component_type || '').toLowerCase();
-        const scoreVal = grade.score ?? grade.points_earned ?? 0;
+        const scoreVal = getNormalizedGradeScore(grade);
+
+        if (scoreVal === null) return;
 
         if (!subjectMap.has(subjectCode)) {
           subjectMap.set(subjectCode, {
