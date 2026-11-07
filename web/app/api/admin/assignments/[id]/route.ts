@@ -111,7 +111,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     // Verify assignment exists
     const { data: existingAssignment, error: fetchError } = await supabase
       .from('assignments')
-      .select('id, class_id')
+      .select('id, class_id, max_points')
       .eq('id', id)
       .single();
 
@@ -163,6 +163,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     // If class_id is being changed, verify it exists
     const isChangingClass =
       typeof updates.class_id === 'string' && updates.class_id !== existingAssignment.class_id;
+    const isChangingPointScale =
+      typeof updates.max_points === 'number' &&
+      updates.max_points !== Number(existingAssignment.max_points);
     if (isChangingClass) {
       const { data: classData, error: classError } = await supabase
         .from('classes')
@@ -173,7 +176,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       if (classError || !classData) {
         return NextResponse.json({ error: 'Class not found' }, { status: 404 });
       }
+    }
 
+    if (isChangingClass || isChangingPointScale) {
       const { count: activeGradesCount, error: gradesError } = await supabase
         .from('grades')
         .select('id', { count: 'exact', head: true })
@@ -184,7 +189,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       }
       if (activeGradesCount && activeGradesCount > 0) {
         return NextResponse.json(
-          { error: 'Cannot move an assignment that already has grades' },
+          {
+            error: isChangingClass
+              ? 'Cannot move an assignment that already has grades'
+              : 'Cannot change the point scale of an assignment that already has grades',
+          },
           { status: 409 }
         );
       }

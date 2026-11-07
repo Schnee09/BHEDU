@@ -126,7 +126,7 @@ describe('/api/admin/assignments/[id] grade lifecycle', () => {
 
   it('does not move an assignment with active grades to another class', async () => {
     assignmentQuery.single.mockResolvedValue({
-      data: { id: 'assignment-1', class_id: 'class-current' },
+      data: { id: 'assignment-1', class_id: 'class-current', max_points: 20 },
       error: null,
     });
     gradeQuery.is.mockResolvedValue({ count: 2, error: null });
@@ -136,6 +136,27 @@ describe('/api/admin/assignments/[id] grade lifecycle', () => {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ class_id: 'class-new' }),
+      }),
+      context
+    );
+
+    expect(response.status).toBe(409);
+    expect(gradeQuery.is).toHaveBeenCalledWith('deleted_at', null);
+    expect(assignmentQuery.update).not.toHaveBeenCalled();
+  });
+
+  it('does not change the point scale after grades have been recorded', async () => {
+    assignmentQuery.single.mockResolvedValue({
+      data: { id: 'assignment-1', class_id: 'class-current', max_points: 20 },
+      error: null,
+    });
+    gradeQuery.is.mockResolvedValue({ count: 1, error: null });
+
+    const response = await PATCH(
+      new Request('http://localhost/api/admin/assignments/assignment-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ total_points: 25 }),
       }),
       context
     );
