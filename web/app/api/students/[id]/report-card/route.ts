@@ -14,6 +14,7 @@ import ReportCardPDF from '@/components/reports/ReportCardPDF';
 import { settingsService } from '@/lib/services/settingsService';
 import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 import { getVietnameseClassification, normalizeConductRating } from '@/lib/grades/conduct';
+import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/semester';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -32,6 +33,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const { academicYear: currentAY, semester: activeSem } =
       await settingsService.getAcademicContext();
     const semester = paramSemester || activeSem.code || 'HK1';
+    const canonicalSemester = normalizeGradeSemester(semester);
+    const isWholeYear = canonicalSemester === 'final';
 
     if (!academicYearId || academicYearId === 'current') {
       academicYearId = currentAY.id;
@@ -143,8 +146,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .is('deleted_at', null);
 
     // Add semester filter if not "CN" (whole year)
-    if (semester !== 'CN') {
-      gradesQuery = gradesQuery.eq('semester', semester);
+    if (!isWholeYear) {
+      gradesQuery = gradesQuery.in('semester', getGradeSemesterAliases(semester));
     }
 
     const { data: grades, error: gradesError } = await gradesQuery;
@@ -259,14 +262,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         : 0;
 
     // Get conduct grade
-    const conductQuery = supabase
+    let conductQuery = supabase
       .from('conduct_grades')
       .select('*')
       .eq('student_id', realStudentId)
       .eq('academic_year_id', academicYearId);
 
-    if (semester !== 'CN') {
-      conductQuery.eq('semester', semester);
+    if (!isWholeYear) {
+      conductQuery = conductQuery.in('semester', getGradeSemesterAliases(semester));
     }
 
     const { data: conductGrades } = await conductQuery;
@@ -288,7 +291,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       class_name: currentClass?.name || 'Chưa có lớp',
       grade_level: student.grade_level || 'N/A',
       academic_year: academicYear.name,
-      semester: semester === 'CN' ? 'Cả năm' : semester === 'HK1' ? 'Học kỳ 1' : 'Học kỳ 2',
+      semester:
+        canonicalSemester === 'final'
+          ? 'Cả năm'
+          : canonicalSemester === '1'
+            ? 'Học kỳ 1'
+            : 'Học kỳ 2',
       subjects: subjects.sort((a, b) => a.subject_name.localeCompare(b.subject_name)),
       gpa: Math.round(gpa * 100) / 100,
       conduct,

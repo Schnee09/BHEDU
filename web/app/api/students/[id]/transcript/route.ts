@@ -11,6 +11,7 @@ import { getAuthContext } from '@/lib/auth/guard';
 import { canAccessStudent } from '@/lib/auth/classAccess';
 import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 import { getVietnameseClassification, normalizeConductRating } from '@/lib/grades/conduct';
+import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/semester';
 import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
 import { settingsService } from '@/lib/services/settingsService';
 
@@ -74,6 +75,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const { academicYear: currentAY, semester: activeSem } =
       await settingsService.getAcademicContext();
     const semester = paramSemester || activeSem.code || 'HK1';
+    const canonicalSemester = normalizeGradeSemester(semester);
+    const isWholeYear = canonicalSemester === 'final';
 
     let academicYear: { id: string; name: string } | null = null;
     if (academicYearId) {
@@ -134,8 +137,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       gradesQuery = gradesQuery.eq('academic_year_id', academicYearId);
     }
 
-    if (semester && semester !== 'CN') {
-      gradesQuery = gradesQuery.eq('semester', semester);
+    if (!isWholeYear) {
+      gradesQuery = gradesQuery.in('semester', getGradeSemesterAliases(semester));
     }
 
     const { data: grades, error: gradesError } = await gradesQuery;
@@ -151,8 +154,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       conductQuery = conductQuery.eq('academic_year_id', academicYearId);
     }
 
-    if (semester !== 'CN') {
-      conductQuery = conductQuery.eq('semester', semester);
+    if (!isWholeYear) {
+      conductQuery = conductQuery.in('semester', getGradeSemesterAliases(semester));
     }
 
     const { data: conductGrades } = await conductQuery;
@@ -260,8 +263,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return {
         subject_name: subject.subject_name,
         subject_code: subject.subject_code,
-        semester_1_grade: semester === 'HK1' ? finalGrade : null,
-        semester_2_grade: semester === 'HK2' ? finalGrade : null,
+        semester_1_grade: canonicalSemester === '1' ? finalGrade : null,
+        semester_2_grade: canonicalSemester === '2' ? finalGrade : null,
         final_grade: finalGrade,
         credits: subject.credits,
         component_grades: {
@@ -325,7 +328,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       class_name: currentClass?.name || 'Chưa có lớp',
       grade_level: student.grade_level || 'N/A',
       academic_year: academicYear.name,
-      semester: semester === 'CN' ? 'Cả năm' : semester === 'HK1' ? 'Học kỳ 1' : 'Học kỳ 2',
+      semester:
+        canonicalSemester === 'final'
+          ? 'Cả năm'
+          : canonicalSemester === '1'
+            ? 'Học kỳ 1'
+            : 'Học kỳ 2',
       subjects: subjects.sort((a: any, b: any) => a.subject_name.localeCompare(b.subject_name)),
       gpa: gpa > 0 ? gpa.toFixed(1) : '—',
       conduct,

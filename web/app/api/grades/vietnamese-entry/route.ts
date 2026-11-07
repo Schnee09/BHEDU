@@ -6,6 +6,7 @@ import { logger } from '@/lib/logger';
 import { createServiceClient } from '@/lib/supabase/server';
 import { canAccessClass } from '@/lib/auth/classAccess';
 import { AuthorizationError } from '@/lib/api/errors';
+import { normalizeGradeSemester } from '@/lib/grades/semester';
 
 // GET: Fetch students with their grades for a specific class, subject, and semester
 export const GET = createGetHandler(
@@ -14,9 +15,9 @@ export const GET = createGetHandler(
     const classId = searchParams.get('class_id') || searchParams.get('classId');
     const subjectCode = searchParams.get('subject_code') || searchParams.get('subjectCode');
     const semesterStr = searchParams.get('semester');
-    const semester = semesterStr ? parseInt(semesterStr, 10) : null;
+    const semester = normalizeGradeSemester(semesterStr);
 
-    if (!classId || semester === null || isNaN(semester)) {
+    if (!classId || !semester || semester === 'final') {
       throw new ValidationError('Missing or invalid classId or semester');
     }
 
@@ -60,8 +61,14 @@ export const POST = createApiHandler(
   async ({ request, user }) => {
     const body = await request.json();
     const { class_id, subject_code, semester, students } = body as any;
+    const normalizedSemester = normalizeGradeSemester(semester);
 
-    if (!class_id || !semester || !Array.isArray(students)) {
+    if (
+      !class_id ||
+      !normalizedSemester ||
+      normalizedSemester === 'final' ||
+      !Array.isArray(students)
+    ) {
       throw new ValidationError('Invalid request data');
     }
 
@@ -78,7 +85,7 @@ export const POST = createApiHandler(
     const result = await gradeService.saveGrades({
       class_id,
       subject_code: targetSubjectCode,
-      semester,
+      semester: normalizedSemester,
       students: students.map((s: any) => ({
         student_id: s.student_id,
         grades: {

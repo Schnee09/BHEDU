@@ -12,6 +12,7 @@ import { logger } from '@/lib/logger';
 import { bulkGradeEntrySchema, createGradeSchema, gradeQuerySchema } from '@/lib/schemas';
 import { validateQuery } from '@/lib/api/validation';
 import { canAccessClass } from '@/lib/auth/classAccess';
+import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/semester';
 
 // GET /api/grades
 export const GET = createGetHandler({ permission: 'grades.view' }, async ({ request, user }) => {
@@ -101,7 +102,11 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
   }
 
   if (queryParams.semester) {
-    query = query.eq('semester', queryParams.semester);
+    const semesterAliases = getGradeSemesterAliases(queryParams.semester);
+    if (semesterAliases.length === 0) {
+      return apiPaginated([], { page, pageSize: limit, total: 0 });
+    }
+    query = query.in('semester', semesterAliases);
   }
 
   if (queryParams.component_type) {
@@ -239,6 +244,10 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
     );
   }
 
+  if (validatedData.semester && !normalizeGradeSemester(validatedData.semester)) {
+    return NextResponse.json({ success: false, error: 'Invalid semester' }, { status: 400 });
+  }
+
   if (!(await canAccessClass(supabase, { id: user.id, role: user.role }, targetClassId))) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
@@ -275,6 +284,7 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
 
   const normalizeRow = (row: any, metadata: any = {}) => {
     const pointsEarned = row.points_earned ?? row.score ?? null;
+    const submittedSemester = row.semester || metadata.semester;
     const normalizedScore =
       pointsEarned !== null && assignmentMaxPoints !== null
         ? Math.round(((pointsEarned / assignmentMaxPoints) * 10 + Number.EPSILON) * 100) / 100
@@ -285,7 +295,7 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
       class_id: row.class_id || metadata.class_id || targetClassId,
       assignment_id: row.assignment_id || metadata.assignment_id || targetAssignmentId,
       subject_id: row.subject_id || metadata.subject_id || targetSubjectId,
-      semester: row.semester || metadata.semester,
+      semester: submittedSemester ? normalizeGradeSemester(submittedSemester) : null,
       component_type: row.component_type || metadata.component_type,
       academic_year_id: academicYearId || row.academic_year_id || metadata.academic_year_id,
       points_earned: pointsEarned,

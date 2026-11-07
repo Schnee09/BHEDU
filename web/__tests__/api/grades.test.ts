@@ -126,6 +126,15 @@ describe('/api/grades authorization', () => {
     expect(gradeQuery.gte).toHaveBeenCalledWith('score', 7.5);
   });
 
+  it('reads both canonical and transitional semester codes', async () => {
+    const response = await GET(createRequest('GET', '?semester=2026-2027-HK2'), {
+      params: Promise.resolve({}),
+    } as any);
+
+    expect(response.status).toBe(200);
+    expect(gradeQuery.in).toHaveBeenCalledWith('semester', ['2', '2026-2027-HK2']);
+  });
+
   it('rejects creating a grade for an inaccessible class', async () => {
     (canAccessClass as jest.Mock).mockResolvedValue(false);
     const response = await POST(

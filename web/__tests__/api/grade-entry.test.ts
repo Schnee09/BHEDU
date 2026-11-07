@@ -66,7 +66,7 @@ describe('POST /api/grades/vietnamese-entry', () => {
     const req = createMockRequest({
       class_id: 'class-123',
       subject_code: 'MAT101',
-      semester: 'HK1',
+      semester: '2026-2027-HK1',
       students: [
         {
           student_id: 'student-123',
@@ -86,7 +86,7 @@ describe('POST /api/grades/vietnamese-entry', () => {
     expect(gradeService.saveGrades).toHaveBeenCalledWith({
       class_id: 'class-123',
       subject_code: 'MAT101', // provided subject_code
-      semester: 'HK1',
+      semester: '1',
       students: [
         {
           student_id: 'student-123',
