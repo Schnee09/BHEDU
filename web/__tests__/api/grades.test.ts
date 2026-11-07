@@ -21,8 +21,10 @@ const gradeQuery = {
   in: jest.fn(),
   order: jest.fn(),
   range: jest.fn(),
+  limit: jest.fn(),
   upsert: jest.fn(),
   single: jest.fn(),
+  maybeSingle: jest.fn(),
 };
 
 jest.mock('@/lib/supabase/server', () => ({
@@ -78,8 +80,10 @@ describe('/api/grades authorization', () => {
     gradeQuery.in.mockReturnValue(gradeQuery);
     gradeQuery.order.mockReturnValue(gradeQuery);
     gradeQuery.range.mockResolvedValue({ data: [], error: null, count: 0 });
+    gradeQuery.limit.mockReturnValue(gradeQuery);
     gradeQuery.upsert.mockReturnValue(gradeQuery);
     gradeQuery.single.mockResolvedValue({ data: { id: 'grade-1' }, error: null });
+    gradeQuery.maybeSingle.mockResolvedValue({ data: null, error: null });
     (canAccessClass as jest.Mock).mockResolvedValue(true);
   });
 
@@ -170,7 +174,66 @@ describe('/api/grades authorization', () => {
         points_earned: 15,
         score: 7.5,
       }),
-      { onConflict: 'student_id,class_id,subject_id,component_type,semester' }
+      { onConflict: 'id' }
+    );
+  });
+
+  it('restores the existing assignment grade instead of creating a duplicate', async () => {
+    gradeQuery.maybeSingle.mockResolvedValueOnce({
+      data: { id: 'existing-grade', deleted_at: '2026-11-01T00:00:00.000Z' },
+      error: null,
+    });
+
+    const response = await POST(
+      createRequest('POST', '', {
+        student_id: '223e4567-e89b-12d3-a456-426614174000',
+        assignment_id: ASSIGNMENT_ID,
+        points_earned: 18,
+      }),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(200);
+    expect(gradeQuery.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'existing-grade', deleted_at: null, score: 9 }),
+      { onConflict: 'id' }
+    );
+  });
+
+  it('updates existing rows when saving assignment grades in bulk', async () => {
+    gradeQuery.in.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'deleted-grade',
+          student_id: '223e4567-e89b-12d3-a456-426614174000',
+          deleted_at: '2026-11-01T00:00:00.000Z',
+        },
+        {
+          id: 'active-grade',
+          student_id: '223e4567-e89b-12d3-a456-426614174000',
+          deleted_at: null,
+        },
+      ],
+      error: null,
+    });
+
+    const response = await POST(
+      createRequest('POST', '', {
+        assignment_id: ASSIGNMENT_ID,
+        grades: [
+          {
+            student_id: '223e4567-e89b-12d3-a456-426614174000',
+            points_earned: 16,
+          },
+        ],
+      }),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(200);
+    expect(gradeQuery.upsert).toHaveBeenCalledWith(
+      [expect.objectContaining({ id: 'active-grade', deleted_at: null, score: 8 })],
+      { onConflict: 'id' }
     );
   });
 

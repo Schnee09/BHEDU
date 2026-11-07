@@ -302,6 +302,41 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
       })
     );
 
+    if (targetAssignmentId) {
+      const studentIds = gradeRows.map((grade) => grade.student_id);
+      const { data: existingGrades, error: existingGradesError } = await supabase
+        .from('grades')
+        .select('id, student_id, deleted_at')
+        .eq('assignment_id', targetAssignmentId)
+        .in('student_id', studentIds);
+      if (existingGradesError) {
+        throw new Error(`Failed to resolve assignment grades: ${existingGradesError.message}`);
+      }
+
+      const existingByStudent = new Map<string, { id: string; deleted_at: string | null }>();
+      for (const existing of existingGrades || []) {
+        const selected = existingByStudent.get(existing.student_id);
+        if (!selected || (selected.deleted_at && !existing.deleted_at)) {
+          existingByStudent.set(existing.student_id, existing);
+        }
+      }
+      const assignmentRows = gradeRows.map((grade) => {
+        const existing = existingByStudent.get(grade.student_id);
+        return existing ? { ...grade, id: existing.id } : grade;
+      });
+
+      const { data: insertedData, error } = await supabase
+        .from('grades')
+        .upsert(assignmentRows, { onConflict: 'id' })
+        .select();
+      if (error) {
+        logger.error('Bulk assignment grade save failed:', error);
+        throw new Error(`Failed to create grades: ${error.message}`);
+      }
+
+      return apiSuccess(insertedData, { _status: 201 });
+    }
+
     const { data: insertedData, error } = await supabase
       .from('grades')
       .upsert(gradeRows, { onConflict: 'student_id,class_id,subject_id,component_type,semester' })
@@ -316,6 +351,36 @@ export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ r
   } else {
     // Single insert
     const gradeRow = normalizeRow(validatedData);
+    if (targetAssignmentId) {
+      const { data: existingGrade, error: existingGradeError } = await supabase
+        .from('grades')
+        .select('id, deleted_at')
+        .eq('assignment_id', targetAssignmentId)
+        .eq('student_id', gradeRow.student_id)
+        .order('deleted_at', { ascending: true, nullsFirst: true })
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingGradeError) {
+        throw new Error(`Failed to resolve assignment grade: ${existingGradeError.message}`);
+      }
+
+      const assignmentGradeRow = existingGrade?.id
+        ? { ...gradeRow, id: existingGrade.id }
+        : gradeRow;
+      const { data: insertedData, error } = await supabase
+        .from('grades')
+        .upsert(assignmentGradeRow, { onConflict: 'id' })
+        .select()
+        .single();
+      if (error) {
+        logger.error('Assignment grade save failed:', error);
+        throw new Error(`Failed to create grade: ${error.message}`);
+      }
+
+      return apiSuccess(insertedData, { _status: 201 });
+    }
+
     const { data: insertedData, error } = await supabase
       .from('grades')
       .upsert(gradeRow, { onConflict: 'student_id,class_id,subject_id,component_type,semester' })
