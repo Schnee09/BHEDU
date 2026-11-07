@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 const updateSchema = z
   .object({
     score: z.coerce.number().min(0).max(10).optional().nullable(),
-    points_earned: z.coerce.number().min(0).max(10).optional().nullable(),
+    points_earned: z.coerce.number().min(0).optional().nullable(),
     feedback: z.string().max(2000).optional().nullable(),
     notes: z.string().optional().nullable(),
     graded_at: z.string().datetime().optional(),
@@ -149,11 +149,55 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const { notes, feedback, score, points_earned, ...metadata } = parsed.data;
-    const normalizedScore = points_earned !== undefined ? points_earned : score;
+    let normalizedScore = score;
+    let normalizedPoints = points_earned;
+
+    if (score !== undefined || points_earned !== undefined) {
+      if (existing.assignment_id) {
+        const { data: assignment, error: assignmentError } = await supabase
+          .from('assignments')
+          .select('max_points')
+          .eq('id', existing.assignment_id)
+          .maybeSingle();
+        const maxPoints = Number(assignment?.max_points);
+        if (assignmentError || !Number.isFinite(maxPoints) || maxPoints <= 0) {
+          return NextResponse.json({ error: 'Assignment point scale not found' }, { status: 400 });
+        }
+
+        if (points_earned !== undefined) {
+          if (points_earned !== null && points_earned > maxPoints) {
+            return NextResponse.json(
+              { error: `Points earned cannot exceed assignment maximum (${maxPoints})` },
+              { status: 400 }
+            );
+          }
+          normalizedScore =
+            points_earned === null
+              ? null
+              : Math.round(((points_earned / maxPoints) * 10 + Number.EPSILON) * 100) / 100;
+        } else if (score !== undefined) {
+          normalizedPoints =
+            score === null
+              ? null
+              : Math.round(((score / 10) * maxPoints + Number.EPSILON) * 100) / 100;
+        }
+      } else {
+        const traditionalValue = points_earned !== undefined ? points_earned : score;
+        if (traditionalValue !== null && traditionalValue !== undefined && traditionalValue > 10) {
+          return NextResponse.json(
+            { error: 'Points earned cannot exceed 10 without an assignment point scale' },
+            { status: 400 }
+          );
+        }
+        normalizedScore = traditionalValue;
+        normalizedPoints = traditionalValue;
+      }
+    }
+
     const updated = await repository.update(id, {
       ...metadata,
-      ...(normalizedScore !== undefined
-        ? { score: normalizedScore, points_earned: normalizedScore }
+      ...(normalizedScore !== undefined || normalizedPoints !== undefined
+        ? { score: normalizedScore, points_earned: normalizedPoints }
         : {}),
       ...(feedback !== undefined || notes !== undefined
         ? { feedback: feedback ?? notes ?? null }
