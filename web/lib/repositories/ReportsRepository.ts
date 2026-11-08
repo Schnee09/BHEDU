@@ -5,6 +5,7 @@ import {
   TranscriptGenerationOptions,
 } from '@/lib/grades/transcriptService';
 import { SubjectGrade } from '@/lib/grades/gpaCalculator';
+import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/semester';
 
 export class ReportsRepository {
   private supabase: SupabaseClient;
@@ -79,14 +80,14 @@ export class ReportsRepository {
 
     for (const grade of rawGrades) {
       const yearId = grade.academic_year_id || 'unknown';
-      const semester = grade.semester || 'HK1';
+      const semester = normalizeGradeSemester(grade.semester) || '1';
       const key = `${yearId}-${semester}`;
 
       if (!semesterMap.has(key)) {
         const year = academicYears?.find((y) => y.id === yearId);
         semesterMap.set(key, {
           semesterId: key,
-          semesterName: semester,
+          semesterName: semester === 'final' ? 'Cả năm' : `Học kỳ ${semester}`,
           academicYear: year?.name || 'Unknown',
           startDate: year?.start_date || '',
           endDate: year?.end_date || '',
@@ -251,7 +252,11 @@ export class ReportsRepository {
       .is('deleted_at', null);
 
     if (options.semesterId) {
-      gradesQuery = gradesQuery.eq('semester', options.semesterId);
+      const semesterAliases = getGradeSemesterAliases(options.semesterId);
+      if (semesterAliases.length === 0) {
+        return { student, enrollment, grades: [], attendance: [] };
+      }
+      gradesQuery = gradesQuery.in('semester', semesterAliases);
     }
     if (options.academicYearId) {
       gradesQuery = gradesQuery.eq('academic_year_id', options.academicYearId);

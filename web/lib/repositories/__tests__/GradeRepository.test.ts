@@ -2,7 +2,17 @@ import { GradeRepository } from '../GradeRepository';
 
 function createQuery(result: Record<string, unknown> = { data: [], error: null, count: 0 }) {
   const query: any = {};
-  for (const method of ['select', 'eq', 'is', 'range', 'order', 'update', 'delete', 'upsert']) {
+  for (const method of [
+    'select',
+    'eq',
+    'in',
+    'is',
+    'range',
+    'order',
+    'update',
+    'delete',
+    'upsert',
+  ]) {
     query[method] = jest.fn(() => query);
   }
   query.single = jest.fn().mockResolvedValue(result);
@@ -18,6 +28,15 @@ describe('GradeRepository soft-delete lifecycle', () => {
     await repository.findAll();
 
     expect(query.is).toHaveBeenCalledWith('deleted_at', null);
+  });
+
+  it('finds grades using canonical and transitional semester codes', async () => {
+    const query = createQuery();
+    const repository = new GradeRepository({ from: jest.fn(() => query) } as any);
+
+    await repository.findAll({ semester: '2026-2027-HK2' });
+
+    expect(query.in).toHaveBeenCalledWith('semester', ['2', '2026-2027-HK2']);
   });
 
   it('updates active grades only', async () => {

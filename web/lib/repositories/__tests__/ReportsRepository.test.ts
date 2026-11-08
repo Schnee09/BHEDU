@@ -30,4 +30,39 @@ describe('ReportsRepository grade reports', () => {
     expect(query.is).toHaveBeenCalledWith('deleted_at', null);
     expect(result).toEqual({ data: [{ id: 'grade-1' }] });
   });
+
+  it('queries report-card grades using transitional semester aliases', async () => {
+    const studentQuery = createQuery({
+      data: { id: 'student-1', full_name: 'Nguyen Van A' },
+      error: null,
+    });
+    const enrollmentQuery = createQuery({ data: null, error: null });
+    const gradesQuery = createQuery({ data: [], error: null });
+    const attendanceQuery = createQuery({ data: [], error: null });
+    const supabase = {
+      from: jest
+        .fn()
+        .mockReturnValueOnce(studentQuery)
+        .mockReturnValueOnce(enrollmentQuery)
+        .mockReturnValueOnce(gradesQuery)
+        .mockReturnValueOnce(attendanceQuery),
+    } as any;
+
+    await new ReportsRepository(supabase).getReportCard('student-1', {
+      semesterId: '2026-2027-HK1',
+    });
+
+    expect(gradesQuery.in).toHaveBeenCalledWith('semester', ['1', '2026-2027-HK1']);
+  });
 });
+
+function createQuery(result: { data: unknown; error: unknown }) {
+  const query: Record<string, any> = { ...result };
+  for (const method of ['select', 'eq', 'is', 'in']) {
+    query[method] = jest.fn().mockReturnValue(query);
+  }
+  query.single = jest.fn().mockResolvedValue(result);
+  query.maybeSingle = jest.fn().mockResolvedValue(result);
+  query.order = jest.fn().mockResolvedValue(result);
+  return query;
+}

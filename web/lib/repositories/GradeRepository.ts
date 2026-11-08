@@ -6,6 +6,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getGradeSemesterAliases } from '@/lib/grades/semester';
 import { BaseRepository, type PaginatedResult, type PaginationParams } from './base';
 
 // ============================================
@@ -181,7 +182,11 @@ export class GradeRepository
 
     // CRITICAL: Filter by semester - this was missing and caused grades to appear in all semesters
     if (filters.semester) {
-      query = query.eq('semester', filters.semester);
+      const semesterAliases = getGradeSemesterAliases(filters.semester);
+      if (semesterAliases.length === 0) {
+        return { data: [], total: 0, page, pageSize, totalPages: 0 };
+      }
+      query = query.in('semester', semesterAliases);
     }
 
     if (filters.from_date) {
