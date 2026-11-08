@@ -14,6 +14,7 @@ import { createGetHandler } from '@/lib/api';
 import { createClient } from '@/lib/supabase/server';
 import { ValidationError } from '@/lib/api/errors';
 import { analyticsQuerySchema } from '@/lib/schemas';
+import { getGradeSemesterAliases } from '@/lib/grades/semester';
 
 export interface DashboardAnalytics {
   overview: {
@@ -77,28 +78,32 @@ export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ reques
 
   const scholasticYear = validatedParams.data.academicYear || getCurrentAcademicYear();
   const scholasticSemester = validatedParams.data.semester || null;
+  const academicYearId = await resolveAcademicYearId(supabase, scholasticYear);
+  if (!academicYearId) {
+    throw new ValidationError('Năm học không tồn tại');
+  }
 
   // Fetch overview stats
-  const overview = await getOverviewStats(supabase, scholasticYear, scholasticSemester);
+  const overview = await getOverviewStats(supabase, academicYearId, scholasticSemester);
 
   // Fetch grade distribution
   const gradeDistribution = await getGradeDistribution(
     supabase,
-    scholasticYear,
+    academicYearId,
     scholasticSemester
   );
 
   // Fetch class comparison
-  const classComparison = await getClassComparison(supabase, scholasticYear, scholasticSemester);
+  const classComparison = await getClassComparison(supabase, academicYearId, scholasticSemester);
 
   // Fetch trends
   const trends = await getTrends(supabase, scholasticYear);
 
   // Fetch top performers
-  const topPerformers = await getTopPerformers(supabase, scholasticYear, scholasticSemester, 5);
+  const topPerformers = await getTopPerformers(supabase, academicYearId, scholasticSemester, 5);
 
   // Fetch at-risk students
-  const atRiskStudents = await getAtRiskStudents(supabase, scholasticYear, scholasticSemester, 10);
+  const atRiskStudents = await getAtRiskStudents(supabase, academicYearId, scholasticSemester, 10);
 
   // Fetch recent activity
   const recentActivity = await getRecentActivity(supabase, 10);
@@ -128,7 +133,35 @@ function getCurrentAcademicYear(): string {
   return `${year - 1}-${year}`;
 }
 
-async function getOverviewStats(supabase: any, academicYear: string, semester: string | null) {
+async function resolveAcademicYearId(supabase: any, academicYear: string): Promise<string | null> {
+  let query = supabase.from('academic_years').select('id');
+  query = isUuid(academicYear) ? query.eq('id', academicYear) : query.eq('name', academicYear);
+  const { data } = await query.maybeSingle();
+  return data?.id || null;
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+export function applyGradeScope(
+  query: any,
+  academicYearId: string | null,
+  semester: string | null
+) {
+  if (academicYearId) query = query.eq('academic_year_id', academicYearId);
+  if (semester) {
+    const aliases = getGradeSemesterAliases(semester);
+    query = aliases.length > 0 ? query.in('semester', aliases) : query.in('semester', []);
+  }
+  return query;
+}
+
+async function getOverviewStats(
+  supabase: any,
+  academicYearId: string | null,
+  semester: string | null
+) {
   // Count students
   const { count: totalStudents } = await supabase
     .from('profiles')
@@ -142,12 +175,14 @@ async function getOverviewStats(supabase: any, academicYear: string, semester: s
     .eq('role', 'teacher');
 
   // Count classes
-  const { count: totalClasses } = await supabase
-    .from('classes')
-    .select('*', { count: 'exact', head: true });
+  let classesQuery = supabase.from('classes').select('*', { count: 'exact', head: true });
+  if (academicYearId) classesQuery = classesQuery.eq('academic_year_id', academicYearId);
+  const { count: totalClasses } = await classesQuery;
 
   // Calculate average GPA (from grades table)
-  const { data: gradeData } = await supabase.from('grades').select('score').is('deleted_at', null);
+  let gradeQuery = supabase.from('grades').select('score').is('deleted_at', null);
+  gradeQuery = applyGradeScope(gradeQuery, academicYearId, semester);
+  const { data: gradeData } = await gradeQuery;
 
   const averageGPA =
     gradeData && gradeData.length > 0
@@ -178,8 +213,14 @@ async function getOverviewStats(supabase: any, academicYear: string, semester: s
   };
 }
 
-async function getGradeDistribution(supabase: any, academicYear: string, semester: string | null) {
-  const { data: grades } = await supabase.from('grades').select('score').is('deleted_at', null);
+async function getGradeDistribution(
+  supabase: any,
+  academicYearId: string | null,
+  semester: string | null
+) {
+  let query = supabase.from('grades').select('score').is('deleted_at', null);
+  query = applyGradeScope(query, academicYearId, semester);
+  const { data: grades } = await query;
 
   const distribution = {
     excellent: 0,
@@ -203,17 +244,20 @@ async function getGradeDistribution(supabase: any, academicYear: string, semeste
   return distribution;
 }
 
-async function getClassComparison(supabase: any, academicYear: string, semester: string | null) {
-  const { data: classes } = await supabase
-    .from('classes')
-    .select(
-      `
+async function getClassComparison(
+  supabase: any,
+  academicYearId: string | null,
+  semester: string | null
+) {
+  let classesQuery = supabase.from('classes').select(
+    `
       id,
       name,
       teacher:teacher_id(full_name)
     `
-    )
-    .limit(20);
+  );
+  if (academicYearId) classesQuery = classesQuery.eq('academic_year_id', academicYearId);
+  const { data: classes } = await classesQuery.limit(20);
 
   if (!classes || classes.length === 0) return [];
 
@@ -226,11 +270,13 @@ async function getClassComparison(supabase: any, academicYear: string, semester:
     .in('class_id', classIds);
 
   // Batch fetch grades
-  const { data: allGrades } = await supabase
+  let gradesQuery = supabase
     .from('grades')
     .select('class_id, score')
     .in('class_id', classIds)
     .is('deleted_at', null);
+  gradesQuery = applyGradeScope(gradesQuery, academicYearId, semester);
+  const { data: allGrades } = await gradesQuery;
 
   // Batch fetch attendance
   const { data: allAttendance } = await supabase
@@ -290,7 +336,7 @@ async function getTrends(supabase: any, academicYear: string) {
 
 async function getTopPerformers(
   supabase: any,
-  academicYear: string,
+  academicYearId: string | null,
   semester: string | null,
   limit: number
 ) {
@@ -304,11 +350,13 @@ async function getTopPerformers(
   // For each student, calculate GPA (simplified)
   const performers = [];
   for (const student of students || []) {
-    const { data: grades } = await supabase
+    let gradesQuery = supabase
       .from('grades')
       .select('score')
       .eq('student_id', student.id)
       .is('deleted_at', null);
+    gradesQuery = applyGradeScope(gradesQuery, academicYearId, semester);
+    const { data: grades } = await gradesQuery;
 
     const gpa =
       grades && grades.length > 0
@@ -329,7 +377,7 @@ async function getTopPerformers(
 
 async function getAtRiskStudents(
   supabase: any,
-  academicYear: string,
+  academicYearId: string | null,
   semester: string | null,
   limit: number
 ) {
@@ -341,11 +389,13 @@ async function getAtRiskStudents(
 
   const atRisk = [];
   for (const student of students || []) {
-    const { data: grades } = await supabase
+    let gradesQuery = supabase
       .from('grades')
       .select('score')
       .eq('student_id', student.id)
       .is('deleted_at', null);
+    gradesQuery = applyGradeScope(gradesQuery, academicYearId, semester);
+    const { data: grades } = await gradesQuery;
 
     const gpa =
       grades && grades.length > 0

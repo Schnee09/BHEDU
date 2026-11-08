@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { GET } from '@/app/api/dashboard/analytics/route';
+import { applyGradeScope, GET } from '@/app/api/dashboard/analytics/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { createClient } from '@/lib/supabase/server';
 
@@ -35,4 +35,20 @@ describe('GET /api/dashboard/analytics authorization', () => {
       expect(createClient).not.toHaveBeenCalled();
     }
   );
+});
+
+describe('dashboard grade scope', () => {
+  it('filters by academic year and transitional semester aliases', () => {
+    const query = {
+      eq: jest.fn(),
+      in: jest.fn(),
+    } as any;
+    query.eq.mockReturnValue(query);
+    query.in.mockReturnValue(query);
+
+    applyGradeScope(query, 'year-1', '2026-2027-HK1');
+
+    expect(query.eq).toHaveBeenCalledWith('academic_year_id', 'year-1');
+    expect(query.in).toHaveBeenCalledWith('semester', ['1', '2026-2027-HK1']);
+  });
 });
