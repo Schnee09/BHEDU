@@ -14,6 +14,7 @@ import { getVietnameseClassification, normalizeConductRating } from '@/lib/grade
 import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/semester';
 import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
 import { settingsService } from '@/lib/services/settingsService';
+import { findSemesterPeriod, type SemesterPeriod } from '@/lib/grades/academicPeriod';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -78,18 +79,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const canonicalSemester = normalizeGradeSemester(semester);
     const isWholeYear = canonicalSemester === 'final';
 
-    let academicYear: { id: string; name: string } | null = null;
+    let academicYear: {
+      id: string;
+      name: string;
+      start_date?: string;
+      end_date?: string;
+    } | null = null;
     if (academicYearId) {
       const { data: yr } = await supabase
         .from('academic_years')
-        .select('id, name')
+        .select('id, name, start_date, end_date')
         .eq('id', academicYearId)
         .maybeSingle();
       academicYear = yr;
     }
 
     if (!academicYear) {
-      academicYear = { id: currentAY.id, name: currentAY.name };
+      academicYear = currentAY;
     }
 
     // 3. Get student's class
@@ -133,9 +139,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       .eq('student_id', realStudentId)
       .is('deleted_at', null);
 
-    if (academicYearId && academicYearId !== 'all') {
-      gradesQuery = gradesQuery.eq('academic_year_id', academicYearId);
-    }
+    gradesQuery = gradesQuery.eq('academic_year_id', academicYear.id);
 
     if (!isWholeYear) {
       gradesQuery = gradesQuery.in('semester', getGradeSemesterAliases(semester));
@@ -150,9 +154,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     // 5. Get conduct grade
     let conductQuery = supabase.from('conduct_grades').select('*').eq('student_id', realStudentId);
 
-    if (academicYearId && academicYearId !== 'all') {
-      conductQuery = conductQuery.eq('academic_year_id', academicYearId);
-    }
+    conductQuery = conductQuery.eq('academic_year_id', academicYear.id);
 
     if (!isWholeYear) {
       conductQuery = conductQuery.in('semester', getGradeSemesterAliases(semester));
@@ -160,11 +162,33 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     const { data: conductGrades } = await conductQuery;
 
-    // 6. Get attendance records
-    const { data: attendance } = await supabase
+    // 6. Get attendance records for the same academic period as the grades
+    let attendanceQuery = supabase
       .from('attendance')
       .select('id, status, date')
       .eq('student_id', realStudentId);
+
+    if (isWholeYear && academicYear.start_date && academicYear.end_date) {
+      attendanceQuery = attendanceQuery
+        .gte('date', academicYear.start_date)
+        .lte('date', academicYear.end_date);
+    } else if (!isWholeYear) {
+      const { data: semesterPeriods } = await supabase
+        .from('semesters')
+        .select('code, start_date, end_date');
+      const period = findSemesterPeriod(
+        (semesterPeriods || []) as SemesterPeriod[],
+        academicYear.name,
+        semester
+      );
+      if (period) {
+        attendanceQuery = attendanceQuery
+          .gte('date', period.start_date)
+          .lte('date', period.end_date);
+      }
+    }
+
+    const { data: attendance } = await attendanceQuery;
 
     // 7. Process grades by subject and component type
     const subjectMap = new Map<string, any>();
