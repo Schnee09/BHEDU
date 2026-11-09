@@ -31,6 +31,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const identifier = resolvedParams.id;
     const academicYearId = searchParams.get('academic_year_id');
     const paramSemester = searchParams.get('semester');
+    if (paramSemester && !normalizeGradeSemester(paramSemester)) {
+      return NextResponse.json({ error: 'Học kỳ không hợp lệ' }, { status: 400 });
+    }
 
     // 1. Get student profile info with flexible lookup
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -77,6 +80,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       await settingsService.getAcademicContext();
     const semester = paramSemester || activeSem.code || 'HK1';
     const canonicalSemester = normalizeGradeSemester(semester);
+    if (!canonicalSemester) {
+      return NextResponse.json({ error: 'Học kỳ không hợp lệ' }, { status: 400 });
+    }
     const isWholeYear = canonicalSemester === 'final';
 
     let academicYear: {
@@ -92,6 +98,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         .eq('id', academicYearId)
         .maybeSingle();
       academicYear = yr;
+    }
+
+    if (academicYearId && !academicYear) {
+      return NextResponse.json({ error: 'Không tìm thấy năm học' }, { status: 404 });
     }
 
     if (!academicYear) {

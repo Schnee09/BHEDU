@@ -34,6 +34,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       await settingsService.getAcademicContext();
     const semester = paramSemester || activeSem.code || 'HK1';
     const canonicalSemester = normalizeGradeSemester(semester);
+    if (!canonicalSemester) {
+      return NextResponse.json({ error: 'Học kỳ không hợp lệ' }, { status: 400 });
+    }
     const isWholeYear = canonicalSemester === 'final';
 
     if (!academicYearId || academicYearId === 'current') {
@@ -98,9 +101,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       academicYear = yr;
     }
 
+    if (academicYearId && !academicYear) {
+      return NextResponse.json({ error: 'Không tìm thấy năm học' }, { status: 404 });
+    }
+
     if (!academicYear) {
       academicYear = currentAY;
     }
+    academicYearId = academicYear.id;
 
     // Get student's current class
     const { data: enrollment } = await supabase
