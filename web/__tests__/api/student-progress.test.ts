@@ -84,8 +84,9 @@ describe('GET /api/students/[id]/progress', () => {
       },
       attendance: {
         data: [
-          { id: 'attendance-1', class_id: 'class-1', status: 'present' },
-          { id: 'attendance-2', class_id: 'class-2', status: 'absent' },
+          { id: 'attendance-1', class_id: 'class-1', status: 'present', date: '2025-10-10' },
+          { id: 'attendance-2', class_id: 'class-2', status: 'absent', date: '2025-10-10' },
+          { id: 'attendance-3', class_id: 'class-1', status: 'absent', date: '2026-03-10' },
         ],
         error: null,
       },
@@ -99,6 +100,16 @@ describe('GET /api/students/[id]/progress', () => {
             academic_year_id: 'year-old',
             semester: '2025-2026-HK1',
             conduct_grade: 'Kha',
+          },
+        ],
+        error: null,
+      },
+      semesters: {
+        data: [
+          {
+            code: '2025-2026-HK1',
+            start_date: '2025-09-01',
+            end_date: '2026-01-15',
           },
         ],
         error: null,

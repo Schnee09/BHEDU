@@ -69,6 +69,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       attendanceResponse,
       academicYearsResponse,
       conductResponse,
+      semestersResponse,
     ] = await Promise.all([
       supabase
         .from('enrollments')
@@ -117,6 +118,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         .from('conduct_grades')
         .select('academic_year_id, semester, conduct_grade')
         .eq('student_id', realStudentId),
+
+      supabase.from('semesters').select('code, start_date, end_date'),
     ]);
 
     const enrollments = enrollmentsResponse.data || [];
@@ -124,6 +127,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const attendance = attendanceResponse.data || [];
     const academicYears = academicYearsResponse.data || [];
     const conductGrades = conductResponse.data || [];
+    const semesterPeriods = semestersResponse.data || [];
 
     // Load active academic context (Year & Semester)
     const { academicYear: currentAY, semester: activeSem } =
@@ -201,13 +205,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     // Add attendance data
     if (attendance && attendance.length > 0) {
-      attendance.forEach((record: any) => {
-        for (const data of classMap.values()) {
-          if (data.class_id === 'default' || record.class_id === data.class_id) {
+      for (const data of classMap.values()) {
+        const period = semesterPeriods.find(
+          (candidate: any) =>
+            normalizeGradeSemester(candidate.code) === data.semester_code &&
+            candidate.code?.includes(data.academic_year)
+        );
+
+        for (const record of attendance as any[]) {
+          const matchesClass = data.class_id === 'default' || record.class_id === data.class_id;
+          const matchesPeriod =
+            !period ||
+            (record.date && record.date >= period.start_date && record.date <= period.end_date);
+          if (matchesClass && matchesPeriod) {
             data.attendance_records.push(record.status);
           }
         }
-      });
+      }
     }
 
     // If no grades yet, create an empty semester representation using active context
