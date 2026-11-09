@@ -1,6 +1,10 @@
 import { getVietnameseClassification, normalizeConductRating } from '../conduct';
 
 describe('conduct and academic classification', () => {
+  it('does not invent a conduct rating when none was recorded', () => {
+    expect(normalizeConductRating(undefined)).toBeNull();
+    expect(normalizeConductRating('unknown')).toBeNull();
+  });
   it.each([
     ['Tot', 'Tốt'],
     ['Kha', 'Khá'],

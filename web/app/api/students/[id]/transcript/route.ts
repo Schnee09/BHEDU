@@ -294,16 +294,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     // Determine conduct
-    let conduct = normalizeConductRating(conductGrades?.[0]?.conduct_grade);
-    if (!conductGrades || conductGrades.length === 0) {
-      if (attendanceRate < 80 || (gpa > 0 && gpa < 5)) {
-        conduct = 'Chưa đạt';
-      } else if (attendanceRate < 90 || (gpa > 0 && gpa < 6.5)) {
-        conduct = 'Đạt';
-      } else if (gpa >= 8 && attendanceRate >= 95) {
-        conduct = 'Tốt';
-      }
-    }
+    const conduct = normalizeConductRating(conductGrades?.[0]?.conduct_grade);
 
     // Get Vietnamese academic classification
     const classification = getVietnameseClassification(gpa, conduct);
@@ -336,7 +327,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             : 'Học kỳ 2',
       subjects: subjects.sort((a: any, b: any) => a.subject_name.localeCompare(b.subject_name)),
       gpa: gpa > 0 ? gpa.toFixed(1) : '—',
-      conduct,
+      conduct: conduct ?? 'Chưa đánh giá',
       attendance_rate: attendanceRate,
       academic_classification: classification,
       teacher_comment: conductGrades?.[0]?.comments || null,

@@ -13,6 +13,7 @@ import { canAccessStudent } from '@/lib/auth/classAccess';
 import { settingsService } from '@/lib/services/settingsService';
 import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 import { normalizeGradeSemester } from '@/lib/grades/semester';
+import { normalizeConductRating } from '@/lib/grades/conduct';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -62,12 +63,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     // 2. Parallelize data fetching using resolved realStudentId
-    const [enrollmentsResponse, gradesResponse, attendanceResponse, academicYearsResponse] =
-      await Promise.all([
-        supabase
-          .from('enrollments')
-          .select(
-            `
+    const [
+      enrollmentsResponse,
+      gradesResponse,
+      attendanceResponse,
+      academicYearsResponse,
+      conductResponse,
+    ] = await Promise.all([
+      supabase
+        .from('enrollments')
+        .select(
+          `
             class_id,
             enrollment_date,
             status,
@@ -76,14 +82,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
               name
             )
           `
-          )
-          .eq('student_id', realStudentId)
-          .in('status', ['enrolled', 'active']),
+        )
+        .eq('student_id', realStudentId)
+        .in('status', ['enrolled', 'active']),
 
-        supabase
-          .from('grades')
-          .select(
-            `
+      supabase
+        .from('grades')
+        .select(
+          `
             id,
             score,
             points_earned,
@@ -95,23 +101,29 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             subject:subjects(id, name, code),
             class:classes(id, name)
           `
-          )
-          .eq('student_id', realStudentId)
-          .is('deleted_at', null)
-          .order('created_at', { ascending: true }),
+        )
+        .eq('student_id', realStudentId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true }),
 
-        supabase
-          .from('attendance')
-          .select('id, status, date, class_id')
-          .eq('student_id', realStudentId),
+      supabase
+        .from('attendance')
+        .select('id, status, date, class_id')
+        .eq('student_id', realStudentId),
 
-        supabase.from('academic_years').select('id, name'),
-      ]);
+      supabase.from('academic_years').select('id, name'),
+
+      supabase
+        .from('conduct_grades')
+        .select('academic_year_id, semester, conduct_grade')
+        .eq('student_id', realStudentId),
+    ]);
 
     const enrollments = enrollmentsResponse.data || [];
     const grades = gradesResponse.data || [];
     const attendance = attendanceResponse.data || [];
     const academicYears = academicYearsResponse.data || [];
+    const conductGrades = conductResponse.data || [];
 
     // Load active academic context (Year & Semester)
     const { academicYear: currentAY, semester: activeSem } =
@@ -121,6 +133,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const academicYearNames = new Map(
       academicYears.map((year: any) => [year.id, year.name] as const)
     );
+    const conductByPeriod = new Map<string, ReturnType<typeof normalizeConductRating>>();
+    for (const conductGrade of conductGrades as any[]) {
+      const semester = normalizeGradeSemester(conductGrade.semester);
+      if (semester) {
+        conductByPeriod.set(
+          `${conductGrade.academic_year_id}-${semester}`,
+          normalizeConductRating(conductGrade.conduct_grade)
+        );
+      }
+    }
 
     // Process data by class / semester
     const classMap = new Map<string, any>();
@@ -139,6 +161,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           classMap.set(key, {
             semester: semester === 'final' ? 'Cả năm' : `Học kỳ ${semester}`,
             semester_code: semester,
+            academic_year_id: academicYearId,
             academic_year: academicYearName,
             class_id: classId,
             class_name: className,
@@ -193,6 +216,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       classMap.set(`default-${activeSemester}`, {
         semester: activeSemester === 'final' ? 'Cả năm' : `Học kỳ ${activeSemester}`,
         semester_code: activeSemester,
+        academic_year_id: currentAY.id,
         academic_year: activeYearName,
         class_name: className,
         class_id: (enrollments[0] as any)?.class_id || 'default',
@@ -243,7 +267,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         semester: data.semester,
         academic_year: data.academic_year,
         gpa,
-        conduct: 'Chưa đánh giá',
+        conduct:
+          conductByPeriod.get(`${data.academic_year_id}-${data.semester_code}`) ?? 'Chưa đánh giá',
         attendance_rate: attendanceRate,
         subjects,
         rank_in_class: null,

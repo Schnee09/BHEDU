@@ -6,20 +6,20 @@ export interface AcademicClassification {
   description: string;
 }
 
-export function normalizeConductRating(value: unknown): ConductRating {
-  if (typeof value !== 'string') return 'Tốt';
+export function normalizeConductRating(value: unknown): ConductRating | null {
+  if (typeof value !== 'string') return null;
 
   const normalized = value.trim().toLocaleLowerCase('vi-VN');
   if (['tốt', 'tot', 'xuất sắc'].includes(normalized)) return 'Tốt';
   if (['khá', 'kha'].includes(normalized)) return 'Khá';
   if (['đạt', 'dat', 'tb', 'trung bình'].includes(normalized)) return 'Đạt';
   if (['chưa đạt', 'chua dat', 'yếu', 'yeu'].includes(normalized)) return 'Chưa đạt';
-  return 'Tốt';
+  return null;
 }
 
 export function getVietnameseClassification(
   gpa: number,
-  conduct: ConductRating
+  conduct: ConductRating | null
 ): AcademicClassification {
   if (gpa >= 9 && conduct === 'Tốt') {
     return {

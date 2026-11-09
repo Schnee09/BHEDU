@@ -299,7 +299,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             : 'Học kỳ 2',
       subjects: subjects.sort((a, b) => a.subject_name.localeCompare(b.subject_name)),
       gpa: Math.round(gpa * 100) / 100,
-      conduct,
+      conduct: conduct ?? 'Chưa đánh giá',
       academic_classification: classification,
       teacher_comment: conductGrades?.[0]?.comments || null,
       homeroom_teacher: currentClass?.teacher?.full_name || null,

@@ -93,6 +93,16 @@ describe('GET /api/students/[id]/progress', () => {
         data: [{ id: 'year-old', name: '2025-2026' }],
         error: null,
       },
+      conduct_grades: {
+        data: [
+          {
+            academic_year_id: 'year-old',
+            semester: '2025-2026-HK1',
+            conduct_grade: 'Kha',
+          },
+        ],
+        error: null,
+      },
     };
     const supabase = { from: jest.fn((table: string) => query(results[table]!)) };
     (createClientFromRequest as jest.Mock).mockReturnValue(supabase);
@@ -109,7 +119,7 @@ describe('GET /api/students/[id]/progress', () => {
       academic_year: '2025-2026',
       gpa: 8,
       attendance_rate: 100,
-      conduct: 'Chưa đánh giá',
+      conduct: 'Khá',
     });
     expect(body.data.semesters[0].subjects[0]).toMatchObject({
       final_grade: 8,
