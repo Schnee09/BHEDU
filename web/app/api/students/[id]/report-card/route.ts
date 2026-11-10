@@ -15,6 +15,7 @@ import { settingsService } from '@/lib/services/settingsService';
 import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 import { getVietnameseClassification, normalizeConductRating } from '@/lib/grades/conduct';
 import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/semester';
+import { normalizeGradeComponent } from '@/lib/grades/component';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -171,10 +172,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     grades?.forEach((grade: any) => {
       const subjectCode = grade.subject?.code;
       const subjectName = grade.subject?.name;
-      const componentType = grade.component_type;
+      const componentType = normalizeGradeComponent(grade.component_type);
       const normalizedScore = getNormalizedGradeScore(grade);
 
-      if (!subjectCode || !subjectName || normalizedScore === null) return;
+      if (!subjectCode || !subjectName || normalizedScore === null || !componentType) return;
 
       if (!subjectMap.has(subjectCode)) {
         subjectMap.set(subjectCode, {
@@ -193,15 +194,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
       const subject = subjectMap.get(subjectCode);
 
-      if (componentType === 'oral' || componentType === 'mieng') {
+      if (componentType === 'oral') {
         subject.component_grades.oral.push(normalizedScore);
-      } else if (componentType === 'fifteen_min' || componentType === '15_phut') {
+      } else if (componentType === 'fifteen_min') {
         subject.component_grades.fifteen_min.push(normalizedScore);
-      } else if (componentType === 'one_period' || componentType === '1_tiet') {
+      } else if (componentType === 'one_period') {
         subject.component_grades.one_period.push(normalizedScore);
-      } else if (componentType === 'midterm' || componentType === 'giua_ky') {
+      } else if (componentType === 'midterm') {
         subject.component_grades.midterm.push(normalizedScore);
-      } else if (componentType === 'final' || componentType === 'cuoi_ky') {
+      } else if (componentType === 'final') {
         subject.component_grades.final.push(normalizedScore);
       }
     });

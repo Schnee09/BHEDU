@@ -15,6 +15,7 @@ import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/se
 import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
 import { settingsService } from '@/lib/services/settingsService';
 import { findSemesterPeriod, type SemesterPeriod } from '@/lib/grades/academicPeriod';
+import { normalizeGradeComponent } from '@/lib/grades/component';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -208,10 +209,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         const subjectObj = grade.subject || { name: 'Môn học', code: 'GENERAL' };
         const subjectName = subjectObj.name || 'Môn học';
         const subjectCode = subjectObj.code || subjectObj.id || 'GEN';
-        const componentType = (grade.component_type || '').toLowerCase();
+        const componentType = normalizeGradeComponent(grade.component_type);
         const scoreVal = getNormalizedGradeScore(grade);
 
-        if (scoreVal === null) return;
+        if (scoreVal === null || !componentType) return;
 
         if (!subjectMap.has(subjectCode)) {
           subjectMap.set(subjectCode, {
@@ -225,31 +226,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
               midterm: [] as number[],
               final: [] as number[],
             },
-            all_grades: [] as number[],
           });
         }
 
         const subject = subjectMap.get(subjectCode);
-        subject.all_grades.push(scoreVal);
-
         // Group by component type
-        if (componentType === 'oral' || componentType.includes('mieng')) {
+        if (componentType === 'oral') {
           subject.component_grades.oral.push(scoreVal);
-        } else if (componentType === 'fifteen_min' || componentType.includes('15')) {
+        } else if (componentType === 'fifteen_min') {
           subject.component_grades.fifteen_min.push(scoreVal);
-        } else if (
-          componentType === 'one_period' ||
-          componentType.includes('1_tiet') ||
-          componentType.includes('tiet')
-        ) {
+        } else if (componentType === 'one_period') {
           subject.component_grades.one_period.push(scoreVal);
-        } else if (componentType === 'midterm' || componentType.includes('giua')) {
+        } else if (componentType === 'midterm') {
           subject.component_grades.midterm.push(scoreVal);
-        } else if (componentType === 'final' || componentType.includes('cuoi')) {
+        } else if (componentType === 'final') {
           subject.component_grades.final.push(scoreVal);
-        } else {
-          // Default fallback
-          subject.component_grades.fifteen_min.push(scoreVal);
         }
       });
     }

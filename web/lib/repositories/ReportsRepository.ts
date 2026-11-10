@@ -6,6 +6,7 @@ import {
 } from '@/lib/grades/transcriptService';
 import { SubjectGrade } from '@/lib/grades/gpaCalculator';
 import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/semester';
+import { normalizeGradeComponent } from '@/lib/grades/component';
 
 export class ReportsRepository {
   private supabase: SupabaseClient;
@@ -98,6 +99,9 @@ export class ReportsRepository {
       const semData = semesterMap.get(key)!;
       const subjectId = grade.subject?.id || 'unknown';
       const subjectName = grade.subject?.name || 'Unknown';
+      const evalType = normalizeGradeComponent(grade.component_type);
+
+      if (!evalType) continue;
 
       if (!semData.grades.has(subjectId)) {
         semData.grades.set(subjectId, {
@@ -108,19 +112,18 @@ export class ReportsRepository {
       }
 
       const subjectGrade = semData.grades.get(subjectId)!;
-      const evalType = grade.component_type?.toLowerCase() || '';
       const score = grade.score;
 
       if (score !== null) {
-        if (evalType.includes('oral') || evalType.includes('miệng')) {
+        if (evalType === 'oral') {
           subjectGrade.oralScore = score;
-        } else if (evalType.includes('15')) {
+        } else if (evalType === 'fifteen_min') {
           subjectGrade.fifteenMinScore = score;
-        } else if (evalType.includes('45') || evalType.includes('1 tiết')) {
+        } else if (evalType === 'one_period') {
           subjectGrade.fortyFiveMinScore = score;
-        } else if (evalType.includes('midterm') || evalType.includes('giữa')) {
+        } else if (evalType === 'midterm') {
           subjectGrade.midtermScore = score;
-        } else if (evalType.includes('final') || evalType.includes('cuối')) {
+        } else if (evalType === 'final') {
           subjectGrade.finalScore = score;
         }
       }
