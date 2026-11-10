@@ -15,7 +15,7 @@ import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/se
 import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
 import { settingsService } from '@/lib/services/settingsService';
 import { findSemesterPeriod, type SemesterPeriod } from '@/lib/grades/academicPeriod';
-import { normalizeGradeComponent } from '@/lib/grades/component';
+import { calculateComponentAverage, normalizeGradeComponent } from '@/lib/grades/component';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -258,32 +258,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const midtermAvg = calculateAverage(subject.component_grades.midterm);
       const finalAvg = calculateAverage(subject.component_grades.final);
 
-      // Weighted formula: (Miệng*1 + 15phút*1 + 1tiết*2 + Giữa kỳ*2 + Cuối kỳ*3) / total_weight
-      let totalWeighted = 0;
-      let totalWeight = 0;
-
-      if (oralAvg !== null) {
-        totalWeighted += oralAvg * 1;
-        totalWeight += 1;
-      }
-      if (fifteenMinAvg !== null) {
-        totalWeighted += fifteenMinAvg * 1;
-        totalWeight += 1;
-      }
-      if (onePeriodAvg !== null) {
-        totalWeighted += onePeriodAvg * 2;
-        totalWeight += 2;
-      }
-      if (midtermAvg !== null) {
-        totalWeighted += midtermAvg * 2;
-        totalWeight += 2;
-      }
-      if (finalAvg !== null) {
-        totalWeighted += finalAvg * 3;
-        totalWeight += 3;
-      }
-
-      const finalGrade = totalWeight > 0 ? Math.round((totalWeighted / totalWeight) * 10) / 10 : 0;
+      const componentAverage = calculateComponentAverage({
+        oral: oralAvg,
+        fifteen_min: fifteenMinAvg,
+        one_period: onePeriodAvg,
+        midterm: midtermAvg,
+        final: finalAvg,
+      });
+      const finalGrade = componentAverage !== null ? Math.round(componentAverage * 10) / 10 : 0;
 
       return {
         subject_name: subject.subject_name,

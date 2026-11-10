@@ -1,4 +1,4 @@
-import { normalizeGradeComponent } from '../component';
+import { calculateComponentAverage, normalizeGradeComponent } from '../component';
 
 describe('normalizeGradeComponent', () => {
   it.each([
@@ -15,5 +15,31 @@ describe('normalizeGradeComponent', () => {
   it('does not guess an unknown component', () => {
     expect(normalizeGradeComponent('weekly_quiz')).toBeNull();
     expect(normalizeGradeComponent(null)).toBeNull();
+  });
+});
+
+describe('calculateComponentAverage', () => {
+  it('uses the current 50:50 formula for midterm and final grades', () => {
+    expect(
+      calculateComponentAverage({
+        oral: null,
+        fifteen_min: null,
+        one_period: null,
+        midterm: 8,
+        final: 6,
+      })
+    ).toBe(7);
+  });
+
+  it('preserves coefficient weighting for legacy component records', () => {
+    expect(
+      calculateComponentAverage({
+        oral: 8,
+        fifteen_min: null,
+        one_period: null,
+        midterm: 6,
+        final: 10,
+      })
+    ).toBeCloseTo(8.33, 2);
   });
 });
