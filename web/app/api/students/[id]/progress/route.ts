@@ -14,6 +14,7 @@ import { settingsService } from '@/lib/services/settingsService';
 import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 import { normalizeGradeSemester } from '@/lib/grades/semester';
 import { normalizeConductRating } from '@/lib/grades/conduct';
+import { calculateComponentAverage, normalizeGradeComponent } from '@/lib/grades/component';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -170,7 +171,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             class_id: classId,
             class_name: className,
             subjects: new Map(),
-            total_grades: [] as number[],
             attendance_records: [] as string[],
           });
         }
@@ -180,12 +180,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         const subjectName = subjectObj.name || 'Môn học';
         const subjectCode = subjectObj.code || subjectObj.id || 'GEN';
         const scoreVal = getNormalizedGradeScore(grade);
+        const componentType = normalizeGradeComponent(grade.component_type);
+
+        if (scoreVal === null || !componentType) return;
 
         if (!classData.subjects.has(subjectCode)) {
           classData.subjects.set(subjectCode, {
             subject_name: subjectName,
             subject_code: subjectCode,
-            grades: [] as number[],
+            component_grades: {
+              oral: [] as number[],
+              fifteen_min: [] as number[],
+              one_period: [] as number[],
+              midterm: [] as number[],
+              final: [] as number[],
+            },
             semester_1_grade: null,
             semester_2_grade: null,
             final_grade: null,
@@ -193,13 +202,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           });
         }
 
-        if (scoreVal != null) {
-          const numScore = Number(scoreVal);
-          if (!isNaN(numScore)) {
-            classData.subjects.get(subjectCode).grades.push(numScore);
-            classData.total_grades.push(numScore);
-          }
-        }
+        classData.subjects.get(subjectCode).component_grades[componentType].push(scoreVal);
       });
     }
 
@@ -235,7 +238,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         class_name: className,
         class_id: (enrollments[0] as any)?.class_id || 'default',
         subjects: new Map(),
-        total_grades: [],
         attendance_records: attendance.map((a: any) => a.status),
       });
     }
@@ -243,29 +245,33 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     // Calculate class statistics
     const semesters = Array.from(classMap.values()).map((data) => {
       const subjects = Array.from(data.subjects.values()).map((subject: any) => {
-        const avg =
-          subject.grades.length > 0
-            ? Math.round(
-                (subject.grades.reduce((a: number, b: number) => a + b, 0) /
-                  subject.grades.length) *
-                  10
-              ) / 10
-            : 0;
+        const average = (scores: number[]) =>
+          scores.length > 0
+            ? scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length
+            : null;
+        const componentAverage = calculateComponentAverage({
+          oral: average(subject.component_grades.oral),
+          fifteen_min: average(subject.component_grades.fifteen_min),
+          one_period: average(subject.component_grades.one_period),
+          midterm: average(subject.component_grades.midterm),
+          final: average(subject.component_grades.final),
+        });
+        const avg = componentAverage !== null ? Math.round(componentAverage * 10) / 10 : null;
 
         return {
           ...subject,
           final_grade: avg,
           semester_1_grade: data.semester_code === '1' ? avg : null,
           semester_2_grade: data.semester_code === '2' ? avg : null,
-          grades: undefined,
+          component_grades: undefined,
         };
       });
 
       const gpa =
-        data.total_grades.length > 0
+        subjects.length > 0
           ? Math.round(
-              (data.total_grades.reduce((a: number, b: number) => a + b, 0) /
-                data.total_grades.length) *
+              (subjects.reduce((sum: number, subject: any) => sum + subject.final_grade, 0) /
+                subjects.length) *
                 10
             ) / 10
           : null;

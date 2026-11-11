@@ -63,6 +63,7 @@ describe('GET /api/students/[id]/progress', () => {
             id: 'grade-1',
             score: 8,
             points_earned: 40,
+            component_type: 'midterm',
             semester: '1',
             academic_year_id: 'year-old',
             class_id: 'class-1',
@@ -73,6 +74,17 @@ describe('GET /api/students/[id]/progress', () => {
             id: 'grade-2',
             score: null,
             points_earned: 50,
+            semester: '2025-2026-HK1',
+            academic_year_id: 'year-old',
+            class_id: 'class-1',
+            subject: { id: 'math', name: 'Toán', code: 'MATH' },
+            class: { id: 'class-1', name: 'Lớp 9A' },
+          },
+          {
+            id: 'grade-3',
+            score: 6,
+            points_earned: 6,
+            component_type: 'final',
             semester: '2025-2026-HK1',
             academic_year_id: 'year-old',
             class_id: 'class-1',
@@ -128,13 +140,13 @@ describe('GET /api/students/[id]/progress', () => {
     expect(body.data.semesters[0]).toMatchObject({
       semester: 'Học kỳ 1',
       academic_year: '2025-2026',
-      gpa: 8,
+      gpa: 7,
       attendance_rate: 100,
       conduct: 'Khá',
     });
     expect(body.data.semesters[0].subjects[0]).toMatchObject({
-      final_grade: 8,
-      semester_1_grade: 8,
+      final_grade: 7,
+      semester_1_grade: 7,
       semester_2_grade: null,
     });
   });
