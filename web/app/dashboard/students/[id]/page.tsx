@@ -28,6 +28,7 @@ import StudentPhotoUpload from '@/components/StudentPhotoUpload';
 import { ZaloCopyButton } from '@/components/ui/ZaloCopyButton';
 import { generateAttendanceZaloMessage } from '@/lib/utils/zaloTemplates';
 import { cn } from '@/lib/utils';
+import { calculateAttendanceRate } from '@/lib/attendance/rate';
 
 const isUUID = (str: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
@@ -88,6 +89,7 @@ async function fetchStudentWithClient(supabase: any, identifier: string) {
       .from('attendance')
       .select('id, class_id, date, status, remarks, classes(id, name)')
       .eq('student_id', realId)
+      .is('deleted_at', null)
       .order('date', { ascending: false })
       .limit(30),
     supabase
@@ -96,6 +98,7 @@ async function fetchStudentWithClient(supabase: any, identifier: string) {
         'id, score, points_earned, component_type, semester, graded_at, subjects(code, name), classes(name)'
       )
       .eq('student_id', realId)
+      .is('deleted_at', null)
       .order('graded_at', { ascending: false })
       .limit(30),
     supabase
@@ -181,10 +184,7 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
     late: attendance.filter((a: any) => a.status === 'late').length,
     absent: attendance.filter((a: any) => a.status === 'absent').length,
   };
-  const attendanceRate =
-    attendanceStats.total > 0
-      ? Math.round(((attendanceStats.present + attendanceStats.late) / attendanceStats.total) * 100)
-      : 100;
+  const attendanceRate = calculateAttendanceRate(attendance.map((record: any) => record.status));
 
   const gradeScores = grades
     .map((g: any) => Number(g.score ?? g.points_earned))
@@ -396,24 +396,31 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                   stroke="currentColor"
                   strokeWidth="8"
                   fill="none"
-                  strokeDasharray={`${attendanceRate * 3.01} 301`}
+                  strokeDasharray={`${(attendanceRate ?? 0) * 3.01} 301`}
                   strokeLinecap="round"
                   className={cn(
                     'transition-all duration-700',
-                    attendanceRate >= 80
-                      ? 'text-emerald-500'
-                      : attendanceRate >= 60
-                        ? 'text-amber-500'
-                        : 'text-rose-500'
+                    attendanceRate === null
+                      ? 'text-stone-300 dark:text-stone-600'
+                      : attendanceRate >= 80
+                        ? 'text-emerald-500'
+                        : attendanceRate >= 60
+                          ? 'text-amber-500'
+                          : 'text-rose-500'
                   )}
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black text-stone-900 dark:text-white leading-none">
-                  {attendanceRate}%
+                <span
+                  className={cn(
+                    'font-black leading-none text-stone-900 dark:text-white',
+                    attendanceRate === null ? 'text-sm' : 'text-2xl'
+                  )}
+                >
+                  {attendanceRate === null ? 'Chưa có' : `${attendanceRate}%`}
                 </span>
-                <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mt-0.5">
-                  Đạt chuẩn
+                <span className="mt-1 text-[9px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                  {attendanceRate === null ? 'dữ liệu' : 'chuyên cần'}
                 </span>
               </div>
             </div>
@@ -776,8 +783,15 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400 block truncate">
                   Chuyên cần
                 </span>
-                <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
-                  {attendanceRate}%
+                <span
+                  className={cn(
+                    'text-xs font-black tabular-nums sm:text-sm',
+                    attendanceRate === null
+                      ? 'text-stone-600 dark:text-stone-300'
+                      : 'text-emerald-600 dark:text-emerald-400'
+                  )}
+                >
+                  {attendanceRate === null ? 'Chưa có dữ liệu' : `${attendanceRate}%`}
                 </span>
               </div>
             </div>
