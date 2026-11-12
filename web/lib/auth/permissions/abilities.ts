@@ -114,7 +114,7 @@ export function defineAbilitiesFor(context: PermissionContext): AbilityRule[] {
         conditions: {
           enrollments: {
             class_id: { $in: classIds },
-            status: 'active',
+            status: 'enrolled',
           },
         },
         reason: 'Teachers can view students enrolled in their classes',
@@ -238,7 +238,7 @@ export function defineAbilitiesFor(context: PermissionContext): AbilityRule[] {
         conditions: {
           enrollments: {
             student_id: userId,
-            status: 'active',
+            status: 'enrolled',
           },
         },
       },

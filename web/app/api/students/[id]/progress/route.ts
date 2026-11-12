@@ -86,7 +86,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           `
         )
         .eq('student_id', realStudentId)
-        .in('status', ['enrolled', 'active']),
+        .eq('status', 'enrolled'),
 
       supabase
         .from('grades')

@@ -324,7 +324,7 @@ export class ClassRepository
       .from('enrollments')
       .select('class_id')
       .eq('student_id', studentId)
-      .in('status', ['enrolled', 'active']);
+      .eq('status', 'enrolled');
 
     const classIds = enrollments?.map((e: any) => e.class_id) || [];
 
@@ -500,7 +500,7 @@ export class ClassRepository
       .from('enrollments')
       .select('id', { count: 'exact', head: true })
       .eq('class_id', classId)
-      .in('status', ['enrolled', 'active']);
+      .eq('status', 'enrolled');
 
     if (error) {
       throw new Error(`Failed to count enrollments: ${error.message}`);

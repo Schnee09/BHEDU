@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         'student_id, profiles!enrollments_student_id_fkey(id, student_id, student_code, full_name)'
       )
       .eq('class_id', class_id)
-      .in('status', ['active', 'enrolled']);
+      .eq('status', 'enrolled');
 
     if (enrollmentError) {
       logger.error('Unable to load class enrollments for grade import', { enrollmentError });
