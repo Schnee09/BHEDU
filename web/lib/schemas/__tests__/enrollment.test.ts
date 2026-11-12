@@ -1,4 +1,30 @@
-import { enrollmentLifecycleActionSchema } from '../requests/enrollment';
+import {
+  bulkEnrollmentSchema,
+  createEnrollmentSchema,
+  enrollmentLifecycleActionSchema,
+} from '../requests/enrollment';
+
+describe('enrollment creation schemas', () => {
+  const studentId = '11111111-1111-4111-8111-111111111111';
+  const classId = '22222222-2222-4222-8222-222222222222';
+
+  it('defaults a valid single enrollment to enrolled', () => {
+    const result = createEnrollmentSchema.parse({ student_id: studentId, class_id: classId });
+    expect(result.status).toBe('enrolled');
+  });
+
+  it('rejects invalid identifiers and oversized bulk requests', () => {
+    expect(
+      createEnrollmentSchema.safeParse({ student_id: 'invalid', class_id: classId }).success
+    ).toBe(false);
+    expect(
+      bulkEnrollmentSchema.safeParse({
+        class_id: classId,
+        student_ids: Array.from({ length: 101 }, () => studentId),
+      }).success
+    ).toBe(false);
+  });
+});
 
 describe('enrollment lifecycle action schema', () => {
   it('accepts an explicit end command with an auditable reason', () => {

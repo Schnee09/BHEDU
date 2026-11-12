@@ -203,6 +203,7 @@ export async function POST(request: Request) {
         .select('id')
         .eq('student_id', studentId)
         .eq('class_id', parsed.data.class_id)
+        .eq('status', 'enrolled')
         .maybeSingle();
 
       if (!enrollment) {

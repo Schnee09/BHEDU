@@ -1,5 +1,5 @@
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api/apiHandler';
-import { enrollmentQuerySchema } from '@/lib/schemas';
+import { bulkEnrollmentSchema, createEnrollmentSchema, enrollmentQuerySchema } from '@/lib/schemas';
 import { logger } from '@/lib/logger';
 import { ValidationError } from '@/lib/api/errors';
 import { EnrollmentRepository } from '@/lib/repositories/EnrollmentRepository';
@@ -22,15 +22,10 @@ export const GET = createGetHandler(
       limit: searchParams.get('limit') || searchParams.get('pageSize'),
     });
 
-    const validatedQuery = query.success
-      ? query.data
-      : {
-          page: 1,
-          limit: 50,
-          status: 'enrolled' as const,
-          sort: 'created_at',
-          order: 'desc' as const,
-        };
+    if (!query.success) {
+      throw new ValidationError(query.error.issues[0]?.message || 'Tham số ghi danh không hợp lệ');
+    }
+    const validatedQuery = query.data;
 
     const result = await repository.findAll(validatedQuery);
     return apiSuccess({
@@ -63,11 +58,22 @@ export const POST = createApiHandler(
     // Bulk enrollment
     const targetStudentIds = studentIds || student_ids;
     if (targetStudentIds && Array.isArray(targetStudentIds)) {
+      const parsed = bulkEnrollmentSchema.safeParse({
+        class_id: targetClassId,
+        student_ids: targetStudentIds,
+        enrollment_date: enrollmentDate,
+        notes: payload.notes,
+      });
+      if (!parsed.success) {
+        throw new ValidationError(
+          parsed.error.issues[0]?.message || 'Dữ liệu ghi danh không hợp lệ'
+        );
+      }
       const { data, error } = await supabase.rpc('enroll_students_batch_atomic', {
-        p_student_ids: targetStudentIds,
-        p_class_id: targetClassId,
-        p_enrollment_date: enrollmentDate,
-        p_notes: payload.notes || null,
+        p_student_ids: parsed.data.student_ids,
+        p_class_id: parsed.data.class_id,
+        p_enrollment_date: parsed.data.enrollment_date || enrollmentDate,
+        p_notes: parsed.data.notes || null,
         p_actor_id: user.id,
       });
 
@@ -93,12 +99,21 @@ export const POST = createApiHandler(
     if (!targetStudentId) {
       throw new ValidationError('Mã học sinh là bắt buộc');
     }
+    const parsed = createEnrollmentSchema.safeParse({
+      student_id: targetStudentId,
+      class_id: targetClassId,
+      enrollment_date: enrollmentDate,
+      notes: payload.notes,
+    });
+    if (!parsed.success) {
+      throw new ValidationError(parsed.error.issues[0]?.message || 'Dữ liệu ghi danh không hợp lệ');
+    }
 
     const { data, error } = await supabase.rpc('enroll_student_atomic', {
-      p_student_id: targetStudentId,
-      p_class_id: targetClassId,
-      p_enrollment_date: enrollmentDate,
-      p_notes: payload.notes || null,
+      p_student_id: parsed.data.student_id,
+      p_class_id: parsed.data.class_id,
+      p_enrollment_date: parsed.data.enrollment_date || enrollmentDate,
+      p_notes: parsed.data.notes || null,
       p_source_system: null,
       p_source_key: null,
       p_actor_id: user.id,
