@@ -44,7 +44,7 @@ interface SemesterData {
   academic_year: string;
   gpa: number;
   conduct: string;
-  attendance_rate: number;
+  attendance_rate: number | null;
   subjects: SubjectGrade[];
   rank_in_class?: number;
   total_students?: number;
@@ -355,8 +355,10 @@ function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
                   <span className="text-[9px] font-bold text-stone-400 uppercase block">
                     Chuyên cần
                   </span>
-                  <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
-                    {semester.attendance_rate}%
+                  <span className="text-xs font-black text-emerald-700 dark:text-emerald-300 tabular-nums">
+                    {semester.attendance_rate !== null
+                      ? `${semester.attendance_rate}%`
+                      : 'Chưa có dữ liệu'}
                   </span>
                 </div>
 

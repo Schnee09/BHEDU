@@ -15,6 +15,7 @@ import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 import { normalizeGradeSemester } from '@/lib/grades/semester';
 import { normalizeConductRating } from '@/lib/grades/conduct';
 import { calculateComponentAverage, normalizeGradeComponent } from '@/lib/grades/component';
+import { calculateAttendanceRate } from '@/lib/attendance/rate';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -276,12 +277,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             ) / 10
           : null;
 
-      const totalAttendance = data.attendance_records.length;
-      const presentCount = data.attendance_records.filter(
-        (s: string) => s === 'present' || s === 'late'
-      ).length;
-      const attendanceRate =
-        totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 100;
+      const attendanceRate = calculateAttendanceRate(data.attendance_records);
 
       return {
         semester: data.semester,

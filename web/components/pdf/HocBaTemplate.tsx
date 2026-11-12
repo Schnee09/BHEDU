@@ -207,7 +207,7 @@ export interface TranscriptData {
   subjects: SubjectGrade[];
   gpa: number;
   conduct: string;
-  attendance_rate: number;
+  attendance_rate: number | null;
   rank_in_class?: number;
   total_students?: number;
   teacher_comment?: string;
@@ -320,7 +320,11 @@ export const HocBaDocument: React.FC<{ data: TranscriptData }> = ({ data }) => {
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Chuyên cần:</Text>
-            <Text style={styles.summaryValue}>{data.attendance_rate.toFixed(1)}%</Text>
+            <Text style={styles.summaryValue}>
+              {data.attendance_rate !== null
+                ? `${data.attendance_rate.toFixed(1)}%`
+                : 'Chưa có dữ liệu'}
+            </Text>
           </View>
           {data.rank_in_class && data.total_students && (
             <View style={styles.summaryRow}>

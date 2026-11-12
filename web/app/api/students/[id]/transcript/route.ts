@@ -16,6 +16,7 @@ import { VIETNAMESE_LOCALE } from '@/lib/utils/vietnamese';
 import { settingsService } from '@/lib/services/settingsService';
 import { findSemesterPeriod, type SemesterPeriod } from '@/lib/grades/academicPeriod';
 import { calculateComponentAverage, normalizeGradeComponent } from '@/lib/grades/component';
+import { calculateAttendanceRate } from '@/lib/attendance/rate';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -292,13 +293,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         : 0;
 
     // Calculate attendance rate
-    let attendanceRate = 100;
-    if (attendance && attendance.length > 0) {
-      const presentCount = attendance.filter(
-        (a: any) => a.status === 'present' || a.status === 'late'
-      ).length;
-      attendanceRate = Math.round((presentCount / attendance.length) * 100);
-    }
+    const attendanceRate = calculateAttendanceRate(
+      (attendance || []).map((record: any) => record.status)
+    );
 
     // Determine conduct
     const conduct = normalizeConductRating(conductGrades?.[0]?.conduct_grade);

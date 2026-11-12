@@ -265,7 +265,9 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
             <Card className="p-4 sm:p-5 bg-stone-900 shadow-xs border-none text-white rounded-2xl">
               <p className="text-xs font-medium opacity-90 mb-1">Chuyên cần</p>
               <p className="text-2xl sm:text-3xl font-bold font-mono">
-                {transcriptData.attendance_rate.toFixed(1)}%
+                {transcriptData.attendance_rate !== null
+                  ? `${transcriptData.attendance_rate.toFixed(1)}%`
+                  : 'Chưa có dữ liệu'}
               </p>
             </Card>
             <Card className="p-4 sm:p-5 bg-white dark:bg-stone-800 shadow-xs border-stone-200/80 dark:border-white/5 rounded-2xl">
@@ -370,7 +372,7 @@ Kính gửi Quý Phụ huynh học sinh ${student.full_name},
 Trung tâm xin gửi phiếu kết quả học tập kỳ ${semLabel} (${yearName}):
 - Điểm trung bình (GPA): ${transcriptData.gpa}
 - Hạnh kiểm: ${transcriptData.conduct}
-- Tỷ lệ chuyên cần: ${transcriptData.attendance_rate}%
+- Tỷ lệ chuyên cần: ${transcriptData.attendance_rate !== null ? `${transcriptData.attendance_rate}%` : 'Chưa có dữ liệu'}
 - Số môn học: ${transcriptData.subjects.length} môn
 - Tra cứu chi tiết kết quả tại: ${reportUrl}
 (Mọi thắc mắc xin vui lòng liên hệ Hotline trung tâm: 0899 060 686).`;
