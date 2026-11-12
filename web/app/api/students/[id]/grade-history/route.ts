@@ -56,7 +56,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         score,
         points_earned,
         component_type,
-        semester_id,
+        semester,
+        academic_year_id,
         created_at,
         subject_id,
         subjects (id, name, code)
