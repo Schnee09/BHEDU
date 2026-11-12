@@ -1,5 +1,5 @@
 import { apiPaginated, createGetHandler } from '@/lib/api';
-import { gradeService, classService, studentService } from '@/lib/services';
+import { classService, studentService } from '@/lib/services';
 import { GradeRepository } from '@/lib/repositories/GradeRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 
@@ -35,10 +35,11 @@ export const GET = createGetHandler(
     // But typically grades are viewed per class or per student.
 
     if (studentId) {
-      const grades = await studentService.getStudentGrades(
-        studentId,
-        requestedClassId || undefined
+      const scopedClassIds = requestedClassId ? [requestedClassId] : classIds;
+      const gradeGroups = await Promise.all(
+        scopedClassIds.map((classId) => studentService.getStudentGrades(studentId, classId))
       );
+      const grades = gradeGroups.flat();
       return apiPaginated(grades, { page: 1, pageSize: grades.length, total: grades.length });
     }
 

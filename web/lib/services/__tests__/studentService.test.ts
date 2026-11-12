@@ -14,9 +14,8 @@ jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(() => mockSupabase),
 }));
 
-import { NotFoundError, ValidationError } from '@/lib/api/errors';
 // @ts-ignore
-const { StudentService, studentService } = require('@/lib/services/studentService');
+const { StudentService } = require('@/lib/services/studentService');
 
 describe('StudentService', () => {
   let fluentMock: any;
@@ -27,6 +26,7 @@ describe('StudentService', () => {
     fluentMock = {};
     fluentMock.select = jest.fn().mockReturnValue(fluentMock);
     fluentMock.eq = jest.fn().mockReturnValue(fluentMock);
+    fluentMock.is = jest.fn().mockReturnValue(fluentMock);
     fluentMock.or = jest.fn().mockReturnValue(fluentMock);
     fluentMock.in = jest.fn().mockReturnValue(fluentMock);
     fluentMock.order = jest.fn().mockReturnValue(fluentMock);
@@ -69,6 +69,20 @@ describe('StudentService', () => {
       const service = new StudentService(mockSupabase);
       const student = await service.getStudentById('1');
       expect(student.full_name).toBe('John');
+    });
+  });
+
+  describe('getStudentGrades', () => {
+    it('filters traditional and assignment grades by the grade class_id', async () => {
+      fluentMock.then.mockImplementationOnce((resolve: (value: any) => void) =>
+        resolve({ data: [], error: null })
+      );
+
+      await new StudentService(mockSupabase).getStudentGrades('student-1', 'class-1');
+
+      expect(fluentMock.eq).toHaveBeenCalledWith('student_id', 'student-1');
+      expect(fluentMock.eq).toHaveBeenCalledWith('class_id', 'class-1');
+      expect(fluentMock.eq).not.toHaveBeenCalledWith('assignments.class_id', 'class-1');
     });
   });
 

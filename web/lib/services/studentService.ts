@@ -195,7 +195,7 @@ export class StudentService {
       .order('created_at', { ascending: false });
 
     if (classId) {
-      query = query.eq('assignments.class_id', classId);
+      query = query.eq('class_id', classId);
     }
 
     const { data, error } = await query;
