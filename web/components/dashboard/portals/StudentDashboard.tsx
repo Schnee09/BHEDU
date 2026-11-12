@@ -9,7 +9,6 @@ import { Icons } from '@/components/ui/Icons';
 import TodayScheduleWidget from '@/components/dashboard/widgets/TodayScheduleWidget';
 import AttendanceStatsWidget from '@/components/dashboard/widgets/AttendanceStatsWidget';
 import GradeProgressWidget from '@/components/dashboard/widgets/GradeProgressWidget';
-import UpcomingDeadlinesWidget from '@/components/dashboard/widgets/UpcomingDeadlinesWidget';
 import AnnouncementsFeedWidget from '@/components/dashboard/widgets/AnnouncementsFeedWidget';
 import StudentRequestWidget from '@/components/dashboard/widgets/StudentRequestWidget';
 import { QuickActionsWidget } from '@/components/dashboard/QuickActionsWidget';
@@ -18,7 +17,7 @@ interface StudentStats {
   gpa: number;
   rank: number;
   totalRanked: number;
-  attendanceRate: number;
+  attendanceRate: number | null;
   totalClasses: number;
   upcomingAssignments: number;
   trend: 'up' | 'down' | 'stable';
@@ -35,16 +34,10 @@ export default function StudentDashboard() {
     gpa: 0,
     rank: 0,
     totalRanked: 0,
-    attendanceRate: 100,
+    attendanceRate: null,
     totalClasses: 0,
     upcomingAssignments: 0,
     trend: 'stable',
-  };
-
-  const getTrendColor = (trend: string) => {
-    if (trend === 'up') return 'text-emerald-500';
-    if (trend === 'down') return 'text-red-500';
-    return 'text-stone-500';
   };
 
   const getTrendSubtitle = (trend: string) => {

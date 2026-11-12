@@ -1,5 +1,5 @@
 import { BaseRepository } from './base';
-import { summarizeAttendanceStatuses } from '@/lib/attendance/metrics';
+import { calculateAttendanceRate } from '@/lib/attendance/rate';
 import { UserRole } from '@/lib/auth/core';
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -322,7 +322,7 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
     gpa: number;
     rank: number;
     totalRanked: number;
-    attendanceRate: number;
+    attendanceRate: number | null;
     totalClasses: number;
     upcomingAssignments: number;
     upcomingAssignmentsList: any[];
@@ -352,7 +352,9 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
       .eq('student_id', studentId)
       .is('deleted_at', null);
 
-    const attendanceRate = summarizeAttendanceStatuses(attData || []).attendanceRate;
+    const attendanceRate = calculateAttendanceRate(
+      (attData || []).map((record: { status: string }) => record.status)
+    );
 
     // 4. Upcoming assignments due in 7 days
     const today = new Date();

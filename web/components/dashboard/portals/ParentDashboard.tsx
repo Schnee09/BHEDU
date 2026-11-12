@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { useFetch } from '@/hooks/useFetch';
 import { StatCard } from '@/components/ui/Card';
@@ -30,7 +30,7 @@ interface ParentChildSummary {
   gpa: number;
   rank: number;
   totalRanked: number;
-  attendanceRate: number;
+  attendanceRate: number | null;
   totalClasses: number;
   upcomingAssignments: number;
   trend: 'up' | 'down' | 'stable';
@@ -57,25 +57,20 @@ export default function ParentDashboard() {
     }));
 
   const [selectedChildId, setSelectedChildId] = useState<string>('');
-
-  useEffect(() => {
-    if (links.length > 0 && links[0] && !selectedChildId) {
-      setSelectedChildId(links[0].student_id);
-    }
-  }, [links, selectedChildId]);
+  const activeChildId = selectedChildId || links[0]?.student_id || '';
 
   // Fetch summary for selected child
   const { data: summary, loading: summaryLoading } = useFetch<ParentChildSummary>(
-    selectedChildId ? `/api/parent/child/${selectedChildId}/summary` : null
+    activeChildId ? `/api/parent/child/${activeChildId}/summary` : null
   );
 
-  const activeChild = links.find((l) => l.student_id === selectedChildId)?.student;
+  const activeChild = links.find((l) => l.student_id === activeChildId)?.student;
 
   const displayStats = summary || {
     gpa: 0,
     rank: 0,
     totalRanked: 0,
-    attendanceRate: 100,
+    attendanceRate: null,
     totalClasses: 0,
     upcomingAssignments: 0,
     trend: 'stable',
@@ -168,7 +163,7 @@ export default function ParentDashboard() {
         {/* Child Switcher (Only visible if > 1 child) */}
         <ChildSwitcher
           childrenList={childrenList}
-          selectedChildId={selectedChildId}
+          selectedChildId={activeChildId}
           onSelectChild={setSelectedChildId}
         />
 
@@ -224,12 +219,12 @@ export default function ParentDashboard() {
           {/* Left Column */}
           <div className="xl:col-span-8 space-y-4 sm:space-y-6">
             {/* Child's Schedule Today */}
-            {selectedChildId && <TodayScheduleWidget role="parent" studentId={selectedChildId} />}
+            {activeChildId && <TodayScheduleWidget role="parent" studentId={activeChildId} />}
 
             {/* Recent Grades */}
-            {selectedChildId && (
+            {activeChildId && (
               <RecentGradesWidget
-                dataUrl={`/api/parent/child/${selectedChildId}/grades-recent`}
+                dataUrl={`/api/parent/child/${activeChildId}/grades-recent`}
                 title={`Điểm số gần đây của ${activeChild?.full_name ?? 'con'}`}
               />
             )}
@@ -238,10 +233,10 @@ export default function ParentDashboard() {
           {/* Right Column */}
           <div className="xl:col-span-4 space-y-4 sm:space-y-6">
             {/* Daily Attendance Card */}
-            {selectedChildId && <ChildAttendanceTodayWidget childId={selectedChildId} />}
+            {activeChildId && <ChildAttendanceTodayWidget childId={activeChildId} />}
 
             {/* Parent Online Request Service */}
-            {selectedChildId && <StudentRequestWidget role="parent" studentId={selectedChildId} />}
+            {activeChildId && <StudentRequestWidget role="parent" studentId={activeChildId} />}
 
             {/* School Announcements */}
             <AnnouncementsFeedWidget />

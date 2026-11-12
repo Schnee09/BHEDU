@@ -3,15 +3,14 @@
 import React from 'react';
 import { useFetch } from '@/hooks/useFetch';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
-import { Icons } from '@/components/ui/Icons';
-import { Award, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function AttendanceStatsWidget() {
   const { data: stats, loading } = useFetch<any>('/api/student/dashboard');
 
-  const attendanceRate = stats?.attendanceRate ?? 100;
-  const roundedRate = Math.round(attendanceRate);
+  const attendanceRate: number | null = stats?.attendanceRate ?? null;
+  const roundedRate = attendanceRate === null ? 0 : Math.round(attendanceRate);
 
   // SVG parameters for the circular progress
   const radius = 55;
@@ -79,18 +78,25 @@ export default function AttendanceStatsWidget() {
                   strokeLinecap="round"
                   className={cn(
                     'transition-all duration-1000 ease-out',
-                    attendanceRate >= 90
-                      ? 'text-emerald-500'
-                      : attendanceRate >= 80
-                        ? 'text-amber-500'
-                        : 'text-red-500'
+                    attendanceRate === null
+                      ? 'text-stone-300 dark:text-stone-600'
+                      : attendanceRate >= 90
+                        ? 'text-emerald-500'
+                        : attendanceRate >= 80
+                          ? 'text-amber-500'
+                          : 'text-red-500'
                   )}
                 />
               </svg>
               {/* Central Text */}
               <div className="absolute text-center">
-                <span className="text-3xl font-black text-stone-950 dark:text-white tabular-nums tracking-tighter">
-                  {attendanceRate.toFixed(1)}%
+                <span
+                  className={cn(
+                    'font-black tracking-tighter text-stone-950 dark:text-white',
+                    attendanceRate === null ? 'text-sm' : 'text-3xl tabular-nums'
+                  )}
+                >
+                  {attendanceRate === null ? 'Chưa có dữ liệu' : `${attendanceRate.toFixed(1)}%`}
                 </span>
               </div>
             </div>
@@ -102,10 +108,14 @@ export default function AttendanceStatsWidget() {
               <p
                 className={cn(
                   'text-base font-black uppercase tracking-tight',
-                  getStatusColorClass(attendanceRate)
+                  attendanceRate === null
+                    ? 'text-stone-600 dark:text-stone-300'
+                    : getStatusColorClass(attendanceRate)
                 )}
               >
-                {getStatusText(attendanceRate)}
+                {attendanceRate === null
+                  ? 'Chưa ghi nhận điểm danh'
+                  : getStatusText(attendanceRate)}
               </p>
             </div>
           </div>

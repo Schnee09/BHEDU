@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useProfile } from '@/hooks/useProfile';
+import React, { useState, useMemo } from 'react';
 import { useFetch } from '@/hooks/useFetch';
 import ChildSwitcher from '@/components/dashboard/widgets/ChildSwitcher';
 import { StatCard } from '@/components/ui/Card';
@@ -9,9 +8,9 @@ import { SkeletonStatCard } from '@/components/ui/skeleton';
 import Badge from '@/components/ui/badge';
 import Empty from '@/components/ui/empty';
 import { Card } from '@/components/ui';
-import { Loader2, CheckCircle, Clock, FileText, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import EmptyState from '@/components/EmptyState';
-import { cn } from '@/lib/utils';
+import { calculateAttendanceRate } from '@/lib/attendance/rate';
 
 interface LinkRecord {
   id: string;
@@ -24,19 +23,7 @@ interface LinkRecord {
   };
 }
 
-interface ParentChildSummary {
-  gpa: number;
-  rank: number;
-  totalRanked: number;
-  attendanceRate: number;
-  totalClasses: number;
-  upcomingAssignments: number;
-  trend: 'up' | 'down' | 'stable';
-}
-
 export default function ParentAttendancePage() {
-  const { profile } = useProfile();
-
   // Fetch approved linked children
   const { data: linksData, loading: linksLoading } = useFetch<any>('/api/parent/links');
 
@@ -45,25 +32,15 @@ export default function ParentAttendancePage() {
   );
 
   const [selectedChildId, setSelectedChildId] = useState<string>('');
-
-  useEffect(() => {
-    if (links.length > 0 && links[0] && !selectedChildId) {
-      setSelectedChildId(links[0].student_id);
-    }
-  }, [links, selectedChildId]);
-
-  // Fetch summary stats (contains attendanceRate)
-  const { data: summary, loading: summaryLoading } = useFetch<ParentChildSummary>(
-    selectedChildId ? `/api/parent/child/${selectedChildId}/summary` : null
-  );
+  const activeChildId = selectedChildId || links[0]?.student_id || '';
 
   // Fetch full attendance history
   const { data: attendanceData, loading: attendanceLoading } = useFetch<any>(
-    selectedChildId ? `/api/attendance?student_id=${selectedChildId}&limit=100` : null
+    activeChildId ? `/api/attendance?student_id=${activeChildId}&limit=100` : null
   );
 
-  const activeChild = links.find((l) => l.student_id === selectedChildId)?.student;
-  const attendance = attendanceData?.data || [];
+  const activeChild = links.find((l) => l.student_id === activeChildId)?.student;
+  const attendance = useMemo(() => attendanceData?.data || [], [attendanceData]);
 
   // Calculate detailed counts from attendance history
   const attendanceStats = useMemo(() => {
@@ -75,12 +52,10 @@ export default function ParentAttendancePage() {
     return { total, present, late, absent, excused };
   }, [attendance]);
 
-  const calculatedRate = useMemo(() => {
-    if (attendanceStats.total === 0) return 100;
-    // (Present + Late + Excused) / Total
-    const positiveDays = attendanceStats.present + attendanceStats.late + attendanceStats.excused;
-    return Math.round((positiveDays / attendanceStats.total) * 100);
-  }, [attendanceStats]);
+  const calculatedRate = useMemo(
+    () => calculateAttendanceRate(attendance.map((record: any) => record.status)),
+    [attendance]
+  );
 
   if (linksLoading) {
     return (
@@ -129,14 +104,14 @@ export default function ParentAttendancePage() {
       {/* Switcher */}
       <ChildSwitcher
         childrenList={childrenList}
-        selectedChildId={selectedChildId}
+        selectedChildId={activeChildId}
         onSelectChild={setSelectedChildId}
       />
 
-      {selectedChildId && (
+      {activeChildId && (
         <>
           {/* Summary Stats */}
-          {summaryLoading || attendanceLoading ? (
+          {attendanceLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <SkeletonStatCard />
               <SkeletonStatCard />
@@ -147,10 +122,22 @@ export default function ParentAttendancePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard
                 label="Tỷ lệ chuyên cần"
-                value={`${calculatedRate}%`}
-                color={calculatedRate >= 90 ? 'emerald' : calculatedRate >= 75 ? 'orange' : 'slate'}
+                value={calculatedRate === null ? 'Chưa có dữ liệu' : `${calculatedRate}%`}
+                color={
+                  calculatedRate === null
+                    ? 'slate'
+                    : calculatedRate >= 90
+                      ? 'emerald'
+                      : calculatedRate >= 75
+                        ? 'orange'
+                        : 'slate'
+                }
                 icon={<CheckCircle className="w-5 h-5" />}
-                subtitle={`Tính trên ${attendanceStats.total} buổi học`}
+                subtitle={
+                  calculatedRate === null
+                    ? 'Chưa ghi nhận buổi điểm danh'
+                    : `Tính trên ${attendanceStats.total} buổi học`
+                }
               />
               <StatCard
                 label="Có mặt"
