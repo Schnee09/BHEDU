@@ -100,6 +100,9 @@ describe('StudentService', () => {
       const service = new StudentService(mockSupabase);
       const enrollment = await service.enrollStudent('1', 'c1');
       expect(enrollment.id).toBe('e1');
+      expect(fluentMock.insert).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'enrolled' })
+      );
     });
   });
 

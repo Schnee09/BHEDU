@@ -255,7 +255,7 @@ export class StudentService {
         student_id: studentId,
         class_id: classId,
         enrollment_date: new Date().toISOString().split('T')[0],
-        status: 'active',
+        status: 'enrolled',
       })
       .select()
       .single();

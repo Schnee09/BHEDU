@@ -121,9 +121,6 @@ async function main() {
   // Maps teacher names to their profiles
   const teacherMap = new Map<string, string>(); // name -> id
 
-  // Map to hold classes mapped to monthly fees
-  const classFeeMap = new Map<string, number>(); // className -> amount
-
   console.log('\n👤 Syncing Teachers...');
   for (let i = 1; i < configData.length; i++) {
     const row = configData[i];
@@ -304,8 +301,6 @@ async function main() {
         const enrollDate = row[5]
           ? excelSerialToDate(row[5])
           : new Date().toISOString().split('T')[0];
-        const endDate = row[6] ? excelSerialToDate(row[6]) : null;
-
         // Try to find existing student profile (de-duplicate)
         let studentProfileId: string | null = null;
 
@@ -387,7 +382,7 @@ async function main() {
               student_id: studentProfileId,
               class_id: currentClassId,
               enrollment_date: enrollDate,
-              status: 'active',
+              status: 'enrolled',
             });
           }
 

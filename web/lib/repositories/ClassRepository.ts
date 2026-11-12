@@ -456,11 +456,9 @@ export class ClassRepository
    * Delete class with cleanup for related records
    */
   override async delete(id: string): Promise<void> {
-    const now = new Date().toISOString();
-
     // Clean up associated enrollments and timetable slots
     await Promise.allSettled([
-      this.supabase.from('enrollments').update({ status: 'cancelled' }).eq('class_id', id),
+      this.supabase.from('enrollments').update({ status: 'dropped' }).eq('class_id', id),
       this.supabase.from('timetable_slots').delete().eq('class_id', id),
     ]);
 
