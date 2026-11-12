@@ -4,13 +4,20 @@
  */
 
 import { z } from 'zod';
-import { booleanStringSchema, uuidSchema, optionalUuidSchema } from '../common';
+import { booleanStringSchema, dateStringSchema, uuidSchema, optionalUuidSchema } from '../common';
 
-export const reportCardQuerySchema = z.object({
-  studentId: uuidSchema,
-  semesterId: optionalUuidSchema,
-  academicYearId: optionalUuidSchema,
-});
+export const reportCardQuerySchema = z
+  .object({
+    studentId: uuidSchema,
+    semesterId: optionalUuidSchema,
+    academicYearId: optionalUuidSchema,
+    dateFrom: dateStringSchema.optional(),
+    dateTo: dateStringSchema.optional(),
+  })
+  .refine((value) => !value.dateFrom || !value.dateTo || value.dateFrom <= value.dateTo, {
+    message: 'dateFrom must be before or equal to dateTo',
+    path: ['dateFrom'],
+  });
 
 export const transcriptQuerySchema = z.object({
   studentId: uuidSchema,

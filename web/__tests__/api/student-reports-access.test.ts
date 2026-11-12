@@ -20,9 +20,11 @@ jest.mock('@/lib/repositories/ReportsRepository', () => ({
   })),
 }));
 
-const findAttendance = jest.fn();
+const findAttendanceByStudent = jest.fn();
 jest.mock('@/lib/repositories/AttendanceRepository', () => ({
-  AttendanceRepository: jest.fn().mockImplementation(() => ({ findAll: findAttendance })),
+  AttendanceRepository: jest.fn().mockImplementation(() => ({
+    findByStudent: findAttendanceByStudent,
+  })),
 }));
 
 jest.mock('@/lib/services', () => ({
@@ -55,9 +57,11 @@ describe('student report access', () => {
     getTranscriptData.mockResolvedValue({ student: { id: STUDENT_ID } });
     (studentService.getStudentById as jest.Mock).mockResolvedValue({ id: STUDENT_ID });
     (gradeService.getStudentTranscript as jest.Mock).mockResolvedValue([]);
-    findAttendance.mockResolvedValue({
-      data: [{ status: 'present' }, { status: 'late' }, { status: 'absent' }],
-    });
+    findAttendanceByStudent.mockResolvedValue([
+      { status: 'present' },
+      { status: 'late' },
+      { status: 'absent' },
+    ]);
   });
 
   it.each(['teacher', 'tutor', 'parent', 'student', 'staff'])(
@@ -114,5 +118,56 @@ describe('student report access', () => {
       presentDays: 2,
       attendanceRate: 66.7,
     });
+  });
+
+  it('returns no attendance rate when the selected period has no records', async () => {
+    authenticate('parent');
+    (canAccessStudent as jest.Mock).mockResolvedValue(true);
+    findAttendanceByStudent.mockResolvedValue([]);
+
+    const response = await getReportCard(
+      request(`/api/reports/report-card?studentId=${STUDENT_ID}`),
+      { params: Promise.resolve({}) } as any
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.attendanceSummary).toEqual({
+      totalDays: 0,
+      presentDays: 0,
+      attendanceRate: null,
+    });
+  });
+
+  it('passes the selected date range to attendance lookup', async () => {
+    authenticate('parent');
+    (canAccessStudent as jest.Mock).mockResolvedValue(true);
+
+    const response = await getReportCard(
+      request(
+        `/api/reports/report-card?studentId=${STUDENT_ID}&dateFrom=2026-10-01&dateTo=2026-10-31`
+      ),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(200);
+    expect(findAttendanceByStudent).toHaveBeenCalledWith(STUDENT_ID, {
+      from_date: '2026-10-01',
+      to_date: '2026-10-31',
+    });
+  });
+
+  it('rejects an inverted report date range', async () => {
+    authenticate('parent');
+
+    const response = await getReportCard(
+      request(
+        `/api/reports/report-card?studentId=${STUDENT_ID}&dateFrom=2026-11-01&dateTo=2026-10-01`
+      ),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(400);
+    expect(canAccessStudent).not.toHaveBeenCalled();
   });
 });

@@ -4,6 +4,9 @@ import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { NotFoundError } from '@/lib/api/errors';
 import { canAccessStudent } from '@/lib/auth/classAccess';
+import { reportCardQuerySchema } from '@/lib/schemas';
+import { validateQuery } from '@/lib/api/validation';
+import { calculateAttendanceRate } from '@/lib/attendance/rate';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,13 +16,11 @@ export const dynamic = 'force-dynamic';
  *
  * Aggregates student, grade, and attendance data for a printable report card
  */
-export const GET = createGetHandler({ requireAuth: true }, async ({ searchParams, user }) => {
-  const studentId = searchParams.get('studentId') || (user.role === 'student' ? user.id : null);
-  const academicYearId = searchParams.get('academicYearId');
-
-  if (!studentId) {
-    throw new NotFoundError('studentId is required');
-  }
+export const GET = createGetHandler({ requireAuth: true }, async ({ request, user }) => {
+  const { studentId, academicYearId, dateFrom, dateTo } = validateQuery(
+    request,
+    reportCardQuerySchema
+  );
 
   const supabase = createServiceClient();
   const allowed = await canAccessStudent(supabase, { id: user.id, role: user.role }, studentId);
@@ -33,7 +34,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ searchParams
   const [student, transcript, attendance] = await Promise.all([
     studentService.getStudentById(studentId),
     gradeService.getStudentTranscript(studentId, academicYearId || undefined),
-    attendanceRepo.findAll({ student_id: studentId }),
+    attendanceRepo.findByStudent(studentId, { from_date: dateFrom, to_date: dateTo }),
   ]);
 
   if (!student) {
@@ -41,12 +42,11 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ searchParams
   }
 
   // Simple attendance summary
-  const attendanceRecords = attendance.data;
+  const attendanceRecords = attendance;
   const totalDays = attendanceRecords.length;
-  const presentDays = attendanceRecords.filter((a: any) =>
-    ['present', 'late'].includes(a.status)
-  ).length;
-  const attendanceRate = totalDays > 0 ? (presentDays / totalDays) * 100 : 100;
+  const statuses = attendanceRecords.map((record) => record.status);
+  const presentDays = statuses.filter((status) => ['present', 'late'].includes(status)).length;
+  const attendanceRate = calculateAttendanceRate(statuses, 1);
 
   return apiSuccess({
     student,
@@ -54,7 +54,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ searchParams
     attendanceSummary: {
       totalDays,
       presentDays,
-      attendanceRate: Math.round(attendanceRate * 10) / 10,
+      attendanceRate,
     },
   });
 });
