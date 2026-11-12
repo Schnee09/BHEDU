@@ -14,7 +14,7 @@ import { createGetHandler } from '@/lib/api';
 import { createClient } from '@/lib/supabase/server';
 import { ValidationError } from '@/lib/api/errors';
 import { analyticsQuerySchema } from '@/lib/schemas';
-import { getGradeSemesterAliases } from '@/lib/grades/semester';
+import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/semester';
 
 export interface DashboardAnalytics {
   overview: {
@@ -66,6 +66,11 @@ export interface DashboardAnalytics {
   }>;
 }
 
+interface AttendanceDateRange {
+  from: string;
+  to: string;
+}
+
 export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ request }) => {
   const supabase = await createClient();
   // Get query params and validate
@@ -82,9 +87,19 @@ export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ reques
   if (!academicYearId) {
     throw new ValidationError('Năm học không tồn tại');
   }
+  const attendanceDateRange = await resolveAttendanceDateRange(
+    supabase,
+    academicYearId,
+    scholasticSemester
+  );
 
   // Fetch overview stats
-  const overview = await getOverviewStats(supabase, academicYearId, scholasticSemester);
+  const overview = await getOverviewStats(
+    supabase,
+    academicYearId,
+    scholasticSemester,
+    attendanceDateRange
+  );
 
   // Fetch grade distribution
   const gradeDistribution = await getGradeDistribution(
@@ -94,7 +109,12 @@ export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ reques
   );
 
   // Fetch class comparison
-  const classComparison = await getClassComparison(supabase, academicYearId, scholasticSemester);
+  const classComparison = await getClassComparison(
+    supabase,
+    academicYearId,
+    scholasticSemester,
+    attendanceDateRange
+  );
 
   // Fetch trends
   const trends = await getTrends(supabase, scholasticYear);
@@ -144,6 +164,56 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
+async function resolveAttendanceDateRange(
+  supabase: any,
+  academicYearId: string,
+  semester: string | null
+): Promise<AttendanceDateRange | null> {
+  const { data: academicYear } = await supabase
+    .from('academic_years')
+    .select('start_date, end_date')
+    .eq('id', academicYearId)
+    .maybeSingle();
+
+  if (semester) {
+    const aliases = getGradeSemesterAliases(semester);
+    const canonicalSemester = normalizeGradeSemester(semester);
+    let semesterQuery = supabase
+      .from('semesters')
+      .select('start_date, end_date')
+      .is('deleted_at', null);
+
+    if (academicYear?.start_date && academicYear?.end_date) {
+      semesterQuery = semesterQuery
+        .gte('start_date', academicYear.start_date)
+        .lte('end_date', academicYear.end_date);
+    }
+
+    semesterQuery =
+      canonicalSemester === '1' || canonicalSemester === '2'
+        ? semesterQuery.ilike('code', `%HK${canonicalSemester}`)
+        : semesterQuery.in('code', aliases);
+
+    const { data: semesterRecord } = await semesterQuery.maybeSingle();
+
+    if (semesterRecord?.start_date && semesterRecord?.end_date) {
+      return { from: semesterRecord.start_date, to: semesterRecord.end_date };
+    }
+  }
+
+  return academicYear?.start_date && academicYear?.end_date
+    ? { from: academicYear.start_date, to: academicYear.end_date }
+    : null;
+}
+
+export function applyAttendanceScope(query: any, dateRange: AttendanceDateRange | null) {
+  query = query.is('deleted_at', null);
+  if (dateRange) {
+    query = query.gte('date', dateRange.from).lte('date', dateRange.to);
+  }
+  return query;
+}
+
 export function applyGradeScope(
   query: any,
   academicYearId: string | null,
@@ -160,7 +230,8 @@ export function applyGradeScope(
 async function getOverviewStats(
   supabase: any,
   academicYearId: string | null,
-  semester: string | null
+  semester: string | null,
+  attendanceDateRange: AttendanceDateRange | null
 ) {
   // Count students
   const { count: totalStudents } = await supabase
@@ -191,7 +262,9 @@ async function getOverviewStats(
       : 0;
 
   // Calculate attendance rate
-  const { data: attendanceData } = await supabase.from('attendance').select('status');
+  let attendanceQuery = supabase.from('attendance').select('status');
+  attendanceQuery = applyAttendanceScope(attendanceQuery, attendanceDateRange);
+  const { data: attendanceData } = await attendanceQuery;
 
   const totalAttendance = attendanceData?.length || 0;
   const presentCount =
@@ -247,7 +320,8 @@ async function getGradeDistribution(
 async function getClassComparison(
   supabase: any,
   academicYearId: string | null,
-  semester: string | null
+  semester: string | null,
+  attendanceDateRange: AttendanceDateRange | null
 ) {
   let classesQuery = supabase.from('classes').select(
     `
@@ -279,10 +353,12 @@ async function getClassComparison(
   const { data: allGrades } = await gradesQuery;
 
   // Batch fetch attendance
-  const { data: allAttendance } = await supabase
+  let attendanceQuery = supabase
     .from('attendance')
     .select('class_id, status')
     .in('class_id', classIds);
+  attendanceQuery = applyAttendanceScope(attendanceQuery, attendanceDateRange);
+  const { data: allAttendance } = await attendanceQuery;
 
   const comparisons = classes.map((cls: any) => {
     const classId = cls.id;

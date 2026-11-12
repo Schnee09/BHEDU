@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { applyGradeScope, GET } from '@/app/api/dashboard/analytics/route';
+import { applyAttendanceScope, applyGradeScope, GET } from '@/app/api/dashboard/analytics/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { createClient } from '@/lib/supabase/server';
 
@@ -50,5 +50,24 @@ describe('dashboard grade scope', () => {
 
     expect(query.eq).toHaveBeenCalledWith('academic_year_id', 'year-1');
     expect(query.in).toHaveBeenCalledWith('semester', ['1', '2026-2027-HK1']);
+  });
+});
+
+describe('dashboard attendance scope', () => {
+  it('excludes deleted records and filters the selected academic period', () => {
+    const query = {
+      is: jest.fn(),
+      gte: jest.fn(),
+      lte: jest.fn(),
+    } as any;
+    query.is.mockReturnValue(query);
+    query.gte.mockReturnValue(query);
+    query.lte.mockReturnValue(query);
+
+    applyAttendanceScope(query, { from: '2026-09-01', to: '2027-01-15' });
+
+    expect(query.is).toHaveBeenCalledWith('deleted_at', null);
+    expect(query.gte).toHaveBeenCalledWith('date', '2026-09-01');
+    expect(query.lte).toHaveBeenCalledWith('date', '2027-01-15');
   });
 });
