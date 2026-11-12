@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 const GLOBAL_CLASS_ROLES = new Set(['admin', 'owner', 'super_admin']);
+const GLOBAL_STUDENT_ROLES = new Set(['admin', 'owner', 'super_admin', 'staff']);
 
 export async function canAccessClass(
   supabase: SupabaseClient,
@@ -30,7 +31,7 @@ export async function canAccessStudent(
   user: { id?: string; role?: string },
   studentId: string
 ): Promise<boolean> {
-  if (user.role && GLOBAL_CLASS_ROLES.has(user.role)) {
+  if (user.role && GLOBAL_STUDENT_ROLES.has(user.role)) {
     return true;
   }
 
@@ -62,6 +63,7 @@ export async function canAccessStudent(
     .from('enrollments')
     .select('class_id, classes!inner(teacher_id)')
     .eq('student_id', studentId)
+    .eq('status', 'enrolled')
     .eq('classes.teacher_id', user.id)
     .limit(1)
     .maybeSingle();
