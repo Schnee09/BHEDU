@@ -457,10 +457,21 @@ export class ClassRepository
    */
   override async delete(id: string): Promise<void> {
     // Clean up associated enrollments and timetable slots
-    await Promise.allSettled([
-      this.supabase.from('enrollments').update({ status: 'dropped' }).eq('class_id', id),
+    const [enrollmentCleanup, timetableCleanup] = await Promise.all([
+      this.supabase
+        .from('enrollments')
+        .update({ status: 'dropped' })
+        .eq('class_id', id)
+        .eq('status', 'enrolled'),
       this.supabase.from('timetable_slots').delete().eq('class_id', id),
     ]);
+
+    if (enrollmentCleanup.error) {
+      throw new Error(`Failed to end class enrollments: ${enrollmentCleanup.error.message}`);
+    }
+    if (timetableCleanup.error) {
+      throw new Error(`Failed to remove class timetable: ${timetableCleanup.error.message}`);
+    }
 
     await super.delete(id);
   }
