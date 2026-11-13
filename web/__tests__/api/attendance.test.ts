@@ -43,6 +43,7 @@ function createRequest(method: 'GET' | 'POST', search = '', body?: unknown) {
 
 describe('/api/attendance authorization', () => {
   const findAll = jest.fn();
+  const getSummary = jest.fn();
   const create = jest.fn();
 
   beforeEach(() => {
@@ -50,7 +51,19 @@ describe('/api/attendance authorization', () => {
     classQuery.select.mockReturnValue(classQuery);
     classQuery.eq.mockResolvedValue({ data: [{ id: 'class-1' }], error: null });
     findAll.mockResolvedValue({ data: [], total: 0, page: 1, pageSize: 50, totalPages: 0 });
-    (AttendanceRepository as jest.Mock).mockImplementation(() => ({ findAll, create }));
+    getSummary.mockResolvedValue({
+      total: 0,
+      present: 0,
+      late: 0,
+      absent: 0,
+      excused: 0,
+      attendanceRate: 0,
+    });
+    (AttendanceRepository as jest.Mock).mockImplementation(() => ({
+      findAll,
+      getSummary,
+      create,
+    }));
     (canAccessClass as jest.Mock).mockResolvedValue(true);
   });
 
@@ -59,6 +72,7 @@ describe('/api/attendance authorization', () => {
 
     expect(response.status).toBe(200);
     expect(findAll).toHaveBeenCalledWith(expect.objectContaining({ class_ids: ['class-1'] }));
+    expect(getSummary).toHaveBeenCalledWith(expect.objectContaining({ class_ids: ['class-1'] }));
   });
 
   it('rejects a teacher requesting an unassigned class', async () => {

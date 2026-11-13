@@ -93,4 +93,30 @@ describe('AttendanceRepository write mapping', () => {
       p_marked_by: 'teacher-1',
     });
   });
+
+  it('summarizes the complete filtered attendance scope', async () => {
+    const result = {
+      data: [{ status: 'present' }, { status: 'late' }, { status: 'absent' }],
+      error: null,
+    };
+    const query: Record<string, any> = { ...result };
+    for (const method of ['select', 'is', 'eq', 'in', 'gte', 'lte']) {
+      query[method] = jest.fn().mockReturnValue(query);
+    }
+    const repository = new AttendanceRepository({
+      from: jest.fn().mockReturnValue(query),
+    } as any);
+
+    const summary = await repository.getSummary({
+      student_id: storedRecord.student_id,
+      from_date: '2026-10-01',
+      to_date: '2026-10-31',
+    });
+
+    expect(query.is).toHaveBeenCalledWith('deleted_at', null);
+    expect(query.eq).toHaveBeenCalledWith('student_id', storedRecord.student_id);
+    expect(query.gte).toHaveBeenCalledWith('date', '2026-10-01');
+    expect(query.lte).toHaveBeenCalledWith('date', '2026-10-31');
+    expect(summary).toMatchObject({ total: 3, present: 1, late: 1, attendanceRate: 67 });
+  });
 });

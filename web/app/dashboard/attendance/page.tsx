@@ -7,7 +7,6 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { useProfile } from '@/hooks/useProfile';
 import { usePermissions } from '@/hooks/usePermissions';
 import { apiFetch, getAttendance } from '@/lib/api/client';
-import { Table } from '@/components/ui/table';
 import Badge from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +49,7 @@ interface AttendanceStats {
   totalDays: number;
   presentDays: number;
   absentDays: number;
-  attendanceRate: number;
+  attendanceRate: number | null;
 }
 
 export default function AttendancePageGuarded() {
@@ -70,7 +69,7 @@ function AttendancePage() {
     totalDays: 0,
     presentDays: 0,
     absentDays: 0,
-    attendanceRate: 0,
+    attendanceRate: null,
   });
   const [recentClasses, setRecentClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,12 +98,14 @@ function AttendancePage() {
 
       setAttendanceRecords(recordsData);
 
-      const totalDays = recordsData.length;
-      const presentDays = recordsData.filter(
-        (r: AttendanceRecord) => r.status === 'present'
-      ).length;
-      const absentDays = recordsData.filter((r: AttendanceRecord) => r.status === 'absent').length;
-      const attendanceRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
+      const totalDays = res.summary?.total ?? recordsData.length;
+      const presentDays =
+        res.summary?.present ??
+        recordsData.filter((r: AttendanceRecord) => r.status === 'present').length;
+      const absentDays =
+        res.summary?.absent ??
+        recordsData.filter((r: AttendanceRecord) => r.status === 'absent').length;
+      const attendanceRate = totalDays > 0 ? (res.summary?.attendanceRate ?? 0) : null;
 
       setStats({ totalDays, presentDays, absentDays, attendanceRate });
     } catch (err: unknown) {
@@ -184,6 +185,19 @@ function AttendancePage() {
             </div>
           </div>
 
+          {error && (
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200"
+            >
+              <InformationCircleIcon className="mt-0.5 h-5 w-5 shrink-0" />
+              <div>
+                <p className="text-sm font-bold">Không thể tải dữ liệu điểm danh</p>
+                <p className="mt-1 text-xs">{error}</p>
+              </div>
+            </div>
+          )}
+
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
             <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-xs p-3.5 sm:p-4">
@@ -230,12 +244,12 @@ function AttendancePage() {
                 <ChartBarIcon className="w-4 h-4 text-amber-500" />
               </div>
               <p className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 tracking-tight">
-                {stats.attendanceRate}%
+                {stats.attendanceRate === null ? 'Chưa có dữ liệu' : `${stats.attendanceRate}%`}
               </p>
               <div className="mt-2 h-1 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-amber-500"
-                  style={{ width: `${stats.attendanceRate}%` }}
+                  style={{ width: `${stats.attendanceRate ?? 0}%` }}
                 />
               </div>
             </div>

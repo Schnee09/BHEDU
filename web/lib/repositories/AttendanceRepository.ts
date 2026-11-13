@@ -22,7 +22,7 @@ import type {
 export type AttendanceFilters = AttendanceQueryInput & { class_ids?: string[] };
 
 import type { AttendanceResponse } from '@/lib/schemas/responses/attendance';
-import { summarizeAttendanceStatuses } from '@/lib/attendance/metrics';
+import { summarizeAttendanceStatuses, type AttendanceSummary } from '@/lib/attendance/metrics';
 
 // Alias for backwards compatibility if needed, or prefer using the imported types directly
 export type Attendance = AttendanceResponse;
@@ -36,6 +36,7 @@ export interface IAttendanceRepository {
   findById(id: string): Promise<Attendance | null>;
   findByIdWithDetails(id: string): Promise<AttendanceWithDetails | null>;
   findAll(filters?: AttendanceFilters): Promise<PaginatedResult<Attendance>>;
+  getSummary(filters?: AttendanceFilters): Promise<AttendanceSummary>;
   findByStudent(studentId: string, filters?: AttendanceFilters): Promise<Attendance[]>;
   findByClass(classId: string, date?: string): Promise<AttendanceWithDetails[]>;
   findByClassAndDate(classId: string, date: string): Promise<AttendanceWithDetails[]>;
@@ -214,6 +215,33 @@ export class AttendanceRepository
       pageSize,
       totalPages: Math.ceil((count || 0) / pageSize),
     };
+  }
+
+  async getSummary(filters: Partial<AttendanceFilters> = {}): Promise<AttendanceSummary> {
+    let query = this.supabase.from(this.tableName).select('status');
+
+    if (this.useSoftDelete) {
+      query = query.is('deleted_at', null);
+    }
+
+    if (filters.student_id) query = query.eq('student_id', filters.student_id);
+    if (filters.class_id) {
+      query = query.eq('class_id', filters.class_id);
+    } else if (filters.class_ids) {
+      if (filters.class_ids.length === 0) return summarizeAttendanceStatuses([]);
+      query = query.in('class_id', filters.class_ids);
+    }
+    if (filters.date) query = query.eq('date', filters.date);
+    if (filters.from_date) query = query.gte('date', filters.from_date);
+    if (filters.to_date) query = query.lte('date', filters.to_date);
+    if (filters.status) query = query.eq('status', filters.status);
+
+    const { data, error } = await query;
+    if (error) {
+      throw new Error(`Failed to summarize attendance: ${error.message}`);
+    }
+
+    return summarizeAttendanceStatuses(data || []);
   }
 
   /**

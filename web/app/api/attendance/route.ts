@@ -37,6 +37,13 @@ export const GET = createGetHandler(
 
     const supabase = createServiceClient();
     const repository = new AttendanceRepository(supabase);
+    const respondWithAttendance = async (filters: Parameters<typeof repository.findAll>[0]) => {
+      const [{ data, ...pagination }, summary] = await Promise.all([
+        repository.findAll(filters),
+        repository.getSummary(filters),
+      ]);
+      return apiPaginated(data, pagination, { summary });
+    };
 
     const ability = createAbility({
       userId: user.id,
@@ -46,8 +53,7 @@ export const GET = createGetHandler(
 
     if (ability.can('read', 'Attendance')) {
       if (['admin', 'super_admin', 'owner'].includes(user.role)) {
-        const { data, ...pagination } = await repository.findAll(validatedQuery);
-        return apiPaginated(data, pagination);
+        return respondWithAttendance(validatedQuery);
       }
 
       if (['teacher', 'tutor', 'staff'].includes(user.role)) {
@@ -71,8 +77,7 @@ export const GET = createGetHandler(
         const teacherConfig = validatedQuery.class_id
           ? validatedQuery
           : { ...validatedQuery, class_ids: assignedClassIds };
-        const { data, ...pagination } = await repository.findAll(teacherConfig);
-        return apiPaginated(data, pagination);
+        return respondWithAttendance(teacherConfig);
       }
 
       if (user.role === 'student') {
@@ -80,8 +85,7 @@ export const GET = createGetHandler(
           ...validatedQuery,
           student_id: user.id,
         };
-        const { data, ...pagination } = await repository.findAll(studentConfig);
-        return apiPaginated(data, pagination);
+        return respondWithAttendance(studentConfig);
       }
 
       if (user.role === 'parent') {
@@ -119,8 +123,7 @@ export const GET = createGetHandler(
           ...validatedQuery,
           student_id: studentId,
         };
-        const { data, ...pagination } = await repository.findAll(parentConfig);
-        return apiPaginated(data, pagination);
+        return respondWithAttendance(parentConfig);
       }
 
       return apiPaginated([], { page: 1, pageSize: 50, total: 0 });

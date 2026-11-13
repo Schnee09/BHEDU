@@ -762,6 +762,14 @@ export interface AttendanceListParams extends PaginationParams {
 
 export async function getAttendance(params?: AttendanceListParams): Promise<{
   data: any[];
+  summary?: {
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+    total: number;
+    attendanceRate: number;
+  };
   pagination?: {
     page: number;
     pageSize: number;
@@ -816,6 +824,7 @@ export async function getAttendance(params?: AttendanceListParams): Promise<{
   return {
     data: listData,
     pagination,
+    summary: result.summary,
   };
 }
 
