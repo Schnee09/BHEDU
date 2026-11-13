@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useTranslation } from '@/contexts/I18nContext';
-import { apiFetch, getClasses, getAttendance } from '@/lib/api/client';
+import { getClasses, getAttendance } from '@/lib/api/client';
 import { toast } from 'react-hot-toast';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
 import { parseISO, format } from 'date-fns';
@@ -63,10 +63,13 @@ interface Analytics {
   totalExcused: number;
   attendanceRate: number;
   byStatus: Record<string, number>;
-  byClass: Record<string, { name: string; count: number; present: number; rate: number }>;
+  byClass: Record<
+    string,
+    { name: string; count: number; present: number; late: number; rate: number }
+  >;
   byStudent: Record<
     string,
-    { name: string; studentId: string; count: number; present: number; rate: number }
+    { name: string; studentId: string; count: number; present: number; late: number; rate: number }
   >;
 }
 
@@ -141,12 +144,19 @@ function AttendanceReportsContent() {
         end = endDate;
       }
 
-      const params: any = { limit: 1000, startDate: start, endDate: end };
+      const params: any = { limit: 1000, page: 1, startDate: start, endDate: end };
       if (selectedClass) params.class_id = selectedClass;
       if (statusFilter && statusFilter !== 'all') params.status = statusFilter;
 
-      const res = await getAttendance(params);
-      const data = (res.data || []) as AttendanceRecord[];
+      const firstPage = await getAttendance(params);
+      const data = [...((firstPage.data || []) as AttendanceRecord[])];
+      const totalPages = firstPage.pagination?.totalPages ?? 1;
+
+      for (let page = 2; page <= totalPages; page += 1) {
+        const nextPage = await getAttendance({ ...params, page });
+        data.push(...((nextPage.data || []) as AttendanceRecord[]));
+      }
+
       setRecords(data);
       computeAnalytics(data);
     } catch (error) {
@@ -176,9 +186,16 @@ function AttendanceReportsContent() {
       byStatus[r.status] = (byStatus[r.status] || 0) + 1;
       const clsId = r.class_id;
       if (!byClass[clsId])
-        byClass[clsId] = { name: r.class?.name || 'Class', count: 0, present: 0, rate: 0 };
+        byClass[clsId] = {
+          name: r.class?.name || 'Class',
+          count: 0,
+          present: 0,
+          late: 0,
+          rate: 0,
+        };
       byClass[clsId].count++;
       if (r.status === 'present') byClass[clsId].present++;
+      if (r.status === 'late') byClass[clsId].late++;
 
       const stuId = r.student_id;
       if (!byStudent[stuId])
@@ -187,14 +204,20 @@ function AttendanceReportsContent() {
           studentId: r.student?.student_code || stuId,
           count: 0,
           present: 0,
+          late: 0,
           rate: 0,
         };
       byStudent[stuId].count++;
       if (r.status === 'present') byStudent[stuId].present++;
+      if (r.status === 'late') byStudent[stuId].late++;
     });
 
-    Object.values(byClass).forEach((c) => (c.rate = Math.round((c.present / c.count) * 100)));
-    Object.values(byStudent).forEach((s) => (s.rate = Math.round((s.present / s.count) * 100)));
+    Object.values(byClass).forEach(
+      (item) => (item.rate = calculateAttendanceRate(item.present, item.late, item.count))
+    );
+    Object.values(byStudent).forEach(
+      (item) => (item.rate = calculateAttendanceRate(item.present, item.late, item.count))
+    );
     setAnalytics({
       totalRecords,
       totalPresent,
@@ -237,7 +260,8 @@ function AttendanceReportsContent() {
       a.href = url;
       a.download = `attendance-report-${getCurrentDateOnly()}.csv`;
       a.click();
-    } catch (error) {
+      window.URL.revokeObjectURL(url);
+    } catch {
       toast.error(t('common.error'));
     } finally {
       setExporting(false);
