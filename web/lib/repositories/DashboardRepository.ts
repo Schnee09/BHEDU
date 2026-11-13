@@ -107,10 +107,12 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
             .select('id', { count: 'exact', head: true })
             .eq('date', today)
             .eq('student_id', profileId)
+            .is('deleted_at', null)
         : this.supabase
             .from('attendance')
             .select('id', { count: 'exact', head: true })
-            .eq('date', today),
+            .eq('date', today)
+            .is('deleted_at', null),
 
       // 6. Global Analytics from RPC (only needed for Staff/Teachers)
       isStaff || role === 'teacher'
@@ -292,7 +294,8 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
         .from('attendance')
         .select('id', { count: 'exact', head: true })
         .eq('date', today)
-        .in('class_id', classIds);
+        .in('class_id', classIds)
+        .is('deleted_at', null);
       todayAttendanceMarked = (count || 0) > 0;
     }
 

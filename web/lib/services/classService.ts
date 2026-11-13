@@ -379,6 +379,7 @@ export class ClassService {
       `
       )
       .eq('class_id', classId)
+      .is('deleted_at', null)
       .order('date', { ascending: false });
 
     if (date) {

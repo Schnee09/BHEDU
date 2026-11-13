@@ -525,6 +525,7 @@ async function getRecentActivity(supabase: any, limit: number) {
   const { data: recentAttendance } = await supabase
     .from('attendance')
     .select('created_at, status, student:student_id(full_name)')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(5);
 
