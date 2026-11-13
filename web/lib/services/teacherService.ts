@@ -59,38 +59,51 @@ export class TeacherService {
       resolvedSubjectUuids = validUuids;
     }
 
-    const { error } = await this.supabase.from('teacher_profiles').upsert(
-      {
-        profile_id: profileId,
-        teacher_type: data.teacher_type || 'full_time',
-        department: data.department,
-        specialization: data.specialization,
-        teaching_subjects: resolvedSubjectUuids.length > 0 ? resolvedSubjectUuids : null,
-        hourly_rate: data.hourly_rate,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'profile_id' }
-    );
+    const profileUpdates: Record<string, unknown> = {
+      profile_id: profileId,
+      teacher_type: data.teacher_type || 'full_time',
+      department: data.department,
+      specialization: data.specialization,
+      hourly_rate: data.hourly_rate,
+      updated_at: new Date().toISOString(),
+    };
+    if (Array.isArray(data.teaching_subjects)) {
+      profileUpdates.teaching_subjects =
+        resolvedSubjectUuids.length > 0 ? resolvedSubjectUuids : null;
+    }
+
+    const { error } = await this.supabase
+      .from('teacher_profiles')
+      .upsert(profileUpdates, { onConflict: 'profile_id' });
 
     if (error) {
       console.error('Failed to sync teacher profile:', error);
       throw new Error('Failed to sync teacher details');
     }
 
-    // Also sync teacher_subjects join table if any
-    if (resolvedSubjectUuids.length > 0) {
-      try {
-        await this.supabase.from('teacher_subjects').delete().eq('profile_id', profileId);
+    // Keep the join table unchanged unless the caller explicitly supplied subjects.
+    if (Array.isArray(data.teaching_subjects)) {
+      const { error: deleteError } = await this.supabase
+        .from('teacher_subjects')
+        .delete()
+        .eq('profile_id', profileId);
+      if (deleteError) {
+        throw new Error(`Failed to replace teacher subjects: ${deleteError.message}`);
+      }
 
+      if (resolvedSubjectUuids.length > 0) {
         const joinRows = resolvedSubjectUuids.map((subId, idx) => ({
           profile_id: profileId,
           subject_id: subId,
           is_primary: idx === 0,
         }));
 
-        await this.supabase.from('teacher_subjects').insert(joinRows);
-      } catch (joinErr) {
-        console.warn('Could not sync teacher_subjects join table:', joinErr);
+        const { error: insertError } = await this.supabase
+          .from('teacher_subjects')
+          .insert(joinRows);
+        if (insertError) {
+          throw new Error(`Failed to replace teacher subjects: ${insertError.message}`);
+        }
       }
     }
   }
