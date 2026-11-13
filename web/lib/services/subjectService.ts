@@ -201,7 +201,8 @@ export class SubjectService {
     const { count: gradeCount } = await this.supabase
       .from('grades')
       .select('*', { count: 'exact', head: true })
-      .eq('subject_id', id);
+      .eq('subject_id', id)
+      .is('deleted_at', null);
 
     if (gradeCount && gradeCount > 0 && !hardDelete) {
       throw new ValidationError(`Không thể xóa môn học có ${gradeCount} bản ghi điểm`);
@@ -209,9 +210,7 @@ export class SubjectService {
 
     if (hardDelete) {
       // 1. Delete related grades
-      if (gradeCount && gradeCount > 0) {
-        await this.supabase.from('grades').delete().eq('subject_id', id);
-      }
+      await this.supabase.from('grades').delete().eq('subject_id', id);
 
       // 2. Delete related timetable slots
       await this.supabase.from('timetable_slots').delete().eq('subject_id', id);
