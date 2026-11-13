@@ -55,3 +55,32 @@ describe('TeacherService.syncTeacherProfile', () => {
     ).rejects.toThrow('Failed to replace teacher subjects: Insert failed');
   });
 });
+
+describe('TeacherService.createTeacher', () => {
+  it('upserts details into the row provisioned by the profile trigger', async () => {
+    const profile = { id: 'teacher-1', full_name: 'Nguyễn Văn An', role: 'teacher' };
+    const profileQuery: Record<string, any> = {};
+    profileQuery.insert = jest.fn().mockReturnValue(profileQuery);
+    profileQuery.select = jest.fn().mockReturnValue(profileQuery);
+    profileQuery.single = jest.fn().mockResolvedValue({ data: profile, error: null });
+    const upsert = jest.fn().mockResolvedValue({ error: null });
+    const supabase = {
+      from: jest.fn((table: string) => {
+        if (table === 'profiles') return profileQuery;
+        if (table === 'teacher_profiles') return { upsert };
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+    } as any;
+
+    const result = await new TeacherService(supabase).createTeacher({
+      full_name: 'Nguyễn Văn An',
+      department: 'Toán',
+    });
+
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ profile_id: 'teacher-1', department: 'Toán' }),
+      { onConflict: 'profile_id' }
+    );
+    expect(result).toMatchObject(profile);
+  });
+});

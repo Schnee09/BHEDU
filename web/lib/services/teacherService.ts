@@ -296,14 +296,17 @@ export class TeacherService {
       throw profileError;
     }
 
-    // Create teacher profile
-    const { error: teacherError } = await this.supabase.from('teacher_profiles').insert({
-      profile_id: profile.id,
-      teacher_type: input.teacher_type || 'full_time',
-      department: input.department || null,
-      specialization: input.specialization || null,
-      bio: input.bio || null,
-    });
+    // The profiles trigger may already provision this row, so update it atomically when present.
+    const { error: teacherError } = await this.supabase.from('teacher_profiles').upsert(
+      {
+        profile_id: profile.id,
+        teacher_type: input.teacher_type || 'full_time',
+        department: input.department || null,
+        specialization: input.specialization || null,
+        bio: input.bio || null,
+      },
+      { onConflict: 'profile_id' }
+    );
 
     if (teacherError) {
       // Rollback
