@@ -123,4 +123,28 @@ describe('aggregate report scopes', () => {
     expect(getAttendanceData).toHaveBeenCalledWith(expect.objectContaining({ classId: CLASS_ID }));
     expect(classService.getClassById).toHaveBeenCalledWith(CLASS_ID);
   });
+
+  it('maps stored attendance remarks to the report notes field', async () => {
+    authenticate('admin');
+    getAttendanceData.mockResolvedValue({
+      data: [
+        {
+          id: 'attendance-1',
+          date: '2026-11-12',
+          status: 'late',
+          remarks: 'Đến muộn 10 phút',
+          student_id: 'student-1',
+          class_id: CLASS_ID,
+        },
+      ],
+    });
+
+    const response = await getAttendanceReport(request('/api/reports/attendance'), {
+      params: Promise.resolve({}),
+    } as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.data[0]).toMatchObject({ notes: 'Đến muộn 10 phút' });
+  });
 });

@@ -54,6 +54,26 @@ describe('ReportsRepository grade reports', () => {
 
     expect(gradesQuery.in).toHaveBeenCalledWith('semester', ['1', '2026-2027-HK1']);
   });
+
+  it('uses the current attendance remarks column and excludes deleted report rows', async () => {
+    const result = { data: [], error: null };
+    const query: Record<string, any> = { ...result };
+    for (const method of ['select', 'is', 'order', 'gte', 'lte', 'eq', 'in', 'limit']) {
+      query[method] = jest.fn().mockReturnValue(query);
+    }
+    const supabase = { from: jest.fn().mockReturnValue(query) } as any;
+
+    await new ReportsRepository(supabase).getAttendanceReport({
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-31',
+    });
+
+    expect(query.select).toHaveBeenCalledWith(expect.stringContaining('remarks'));
+    expect(query.select).toHaveBeenCalledWith(expect.not.stringContaining('notes'));
+    expect(query.is).toHaveBeenCalledWith('deleted_at', null);
+    expect(query.gte).toHaveBeenCalledWith('date', '2026-10-01');
+    expect(query.lte).toHaveBeenCalledWith('date', '2026-10-31');
+  });
 });
 
 function createQuery(result: { data: unknown; error: unknown }) {

@@ -163,11 +163,12 @@ export class ReportsRepository {
       .from('attendance')
       .select(
         `
-                id, date, status, notes, class_id, student_id,
+                id, date, status, remarks, class_id, student_id,
                 student:profiles!student_id(id, full_name),
                 class:classes(id, name)
             `
       )
+      .is('deleted_at', null)
       .order('date', { ascending: false });
 
     if (filters.dateFrom) query = query.gte('date', filters.dateFrom);

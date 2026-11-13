@@ -59,7 +59,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
     id: r.id,
     date: r.date,
     status: r.status,
-    notes: r.notes || '',
+    notes: r.remarks || '',
     student_id: r.student_id || '',
     student_name: r.student?.full_name || '',
     class_id: r.class_id || '',
@@ -101,7 +101,7 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
         // We need admin client for this insert usually if RLS protects it?
         // createServiceClient uses cookies, so it is the user.
         // If user is Admin, it works.
-        const { data: job, error } = await supabase
+        const { data: job } = await supabase
           .from('report_exports')
           .insert({
             type: 'attendance',
