@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useTranslation } from '@/contexts/I18nContext';
 import { getClasses, getAttendance } from '@/lib/api/client';
 import { toast } from 'react-hot-toast';
-import { ChartBarIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { parseISO, format } from 'date-fns';
 import { Button, LoadingState } from '@/components/ui';
 import PageGuard from '@/components/PageGuard';
@@ -105,16 +105,7 @@ function AttendanceReportsContent() {
   const [viewMode, setViewMode] = useState<'overview' | 'details'>('overview');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  useEffect(() => {
-    loadClasses();
-  }, []);
-
-  useEffect(() => {
-    loadReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedClass, dateRange, startDate, endDate, statusFilter]);
-
-  const loadClasses = async () => {
+  async function loadClasses() {
     try {
       const res = await getClasses({ limit: 100 });
       const classList = (res.data || []) as any[];
@@ -122,9 +113,9 @@ function AttendanceReportsContent() {
     } catch (error) {
       console.error('Failed to load classes:', error);
     }
-  };
+  }
 
-  const loadReports = async () => {
+  async function loadReports() {
     try {
       setLoading(true);
       const today = getCurrentDateOnly();
@@ -140,6 +131,11 @@ function AttendanceReportsContent() {
       } else if (dateRange === 'term') {
         start = addMonthsToDateOnly(today, -3);
       } else if (dateRange === 'custom') {
+        if (!startDate || !endDate || startDate > endDate) {
+          setRecords([]);
+          setAnalytics(null);
+          return;
+        }
         start = startDate;
         end = endDate;
       }
@@ -165,9 +161,9 @@ function AttendanceReportsContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const computeAnalytics = (data: AttendanceRecord[]) => {
+  function computeAnalytics(data: AttendanceRecord[]) {
     const totalRecords = data.length;
     if (totalRecords === 0) {
       setAnalytics(null);
@@ -229,7 +225,18 @@ function AttendanceReportsContent() {
       byClass,
       byStudent,
     });
-  };
+  }
+
+  /* eslint-disable react-hooks/set-state-in-effect -- effects initiate remote data synchronization */
+  useEffect(() => {
+    loadClasses();
+  }, []);
+
+  useEffect(() => {
+    loadReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClass, dateRange, startDate, endDate, statusFilter]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleExport = () => {
     if (records.length === 0) return toast.error(t('common.noData'));
@@ -314,7 +321,8 @@ function AttendanceReportsContent() {
               disabled={exporting || records.length === 0}
               className="px-8 h-12 rounded-2xl shadow-xl shadow-emerald-500/20 font-black uppercase tracking-widest text-[11px]"
             >
-              {exporting ? t('common.loading') : `📥 ${t('attendance.report.exportCsv')}`}
+              <ArrowDownTrayIcon className="h-4 w-4" />
+              {exporting ? t('common.loading') : t('attendance.report.exportCsv')}
             </Button>
           </div>
         </div>
@@ -326,6 +334,10 @@ function AttendanceReportsContent() {
           setSelectedClass={setSelectedClass}
           dateRange={dateRange}
           setDateRange={setDateRange}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
           viewMode={viewMode}

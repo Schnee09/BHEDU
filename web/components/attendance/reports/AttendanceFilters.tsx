@@ -3,6 +3,7 @@
 import React from 'react';
 import { FunnelIcon, Squares2X2Icon, TableCellsIcon } from '@heroicons/react/24/outline';
 import { Select } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 interface ClassOption {
   id: string;
@@ -15,6 +16,10 @@ interface AttendanceFiltersProps {
   setSelectedClass: (id: string) => void;
   dateRange: string;
   setDateRange: (range: string) => void;
+  startDate: string;
+  setStartDate: (date: string) => void;
+  endDate: string;
+  setEndDate: (date: string) => void;
   statusFilter: string;
   setStatusFilter: (status: string) => void;
   viewMode: 'overview' | 'details';
@@ -28,6 +33,10 @@ export function AttendanceFilters({
   setSelectedClass,
   dateRange,
   setDateRange,
+  startDate,
+  setStartDate,
+  endDate,
+  setEndDate,
   statusFilter,
   setStatusFilter,
   viewMode,
@@ -116,6 +125,51 @@ export function AttendanceFilters({
           </div>
         </div>
       </div>
+
+      {dateRange === 'custom' && (
+        <div className="mt-6 grid grid-cols-1 gap-4 border-t border-stone-200 pt-6 dark:border-white/10 md:grid-cols-2">
+          <div className="space-y-2">
+            <label
+              htmlFor="attendance-report-start-date"
+              className="ml-1 text-[11px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300"
+            >
+              Từ ngày
+            </label>
+            <Input
+              id="attendance-report-start-date"
+              type="date"
+              value={startDate}
+              max={endDate || undefined}
+              onChange={(event) => setStartDate(event.target.value)}
+              className="h-12 rounded-2xl border-stone-200 bg-white/80 font-bold focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-white/10 dark:bg-stone-900"
+            />
+          </div>
+          <div className="space-y-2">
+            <label
+              htmlFor="attendance-report-end-date"
+              className="ml-1 text-[11px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300"
+            >
+              Đến ngày
+            </label>
+            <Input
+              id="attendance-report-end-date"
+              type="date"
+              value={endDate}
+              min={startDate || undefined}
+              onChange={(event) => setEndDate(event.target.value)}
+              className="h-12 rounded-2xl border-stone-200 bg-white/80 font-bold focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-white/10 dark:bg-stone-900"
+            />
+          </div>
+          {startDate && endDate && startDate > endDate && (
+            <p
+              role="alert"
+              className="text-sm font-semibold text-red-700 dark:text-red-300 md:col-span-2"
+            >
+              Ngày bắt đầu không được sau ngày kết thúc.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
