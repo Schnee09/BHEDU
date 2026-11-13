@@ -127,7 +127,13 @@ describe('GET /api/students/[id]/progress', () => {
         error: null,
       },
     };
-    const supabase = { from: jest.fn((table: string) => query(results[table]!)) };
+    const queries: Record<string, any> = {};
+    const supabase = {
+      from: jest.fn((table: string) => {
+        queries[table] = query(results[table]!);
+        return queries[table];
+      }),
+    };
     (createClientFromRequest as jest.Mock).mockReturnValue(supabase);
 
     const response = await GET(new Request('http://localhost/api/students/student-1/progress'), {
@@ -149,5 +155,6 @@ describe('GET /api/students/[id]/progress', () => {
       semester_1_grade: 7,
       semester_2_grade: null,
     });
+    expect(queries.attendance.is).toHaveBeenCalledWith('deleted_at', null);
   });
 });

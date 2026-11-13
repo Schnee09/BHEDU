@@ -86,6 +86,16 @@ describe('StudentService', () => {
     });
   });
 
+  describe('getStudentAttendance', () => {
+    it('excludes soft-deleted attendance records', async () => {
+      await new StudentService(mockSupabase).getStudentAttendance('student-1', 'class-1');
+
+      expect(fluentMock.eq).toHaveBeenCalledWith('student_id', 'student-1');
+      expect(fluentMock.eq).toHaveBeenCalledWith('class_id', 'class-1');
+      expect(fluentMock.is).toHaveBeenCalledWith('deleted_at', null);
+    });
+  });
+
   describe('enrollStudent', () => {
     it('should enroll', async () => {
       // 1st then (check existing)

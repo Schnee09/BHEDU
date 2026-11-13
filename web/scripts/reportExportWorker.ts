@@ -33,7 +33,8 @@ async function processJob(job: any, supabase: any) {
       const filters = params.filters || {};
       let query: any = supabase
         .from('attendance')
-        .select(`id, date, status, notes, class_id, student_id`)
+        .select(`id, date, status, remarks, class_id, student_id`)
+        .is('deleted_at', null)
         .order('date', { ascending: false });
       if (filters.dateFrom) query = query.gte('date', filters.dateFrom);
       if (filters.dateTo) query = query.lte('date', filters.dateTo);
@@ -104,7 +105,7 @@ async function processJob(job: any, supabase: any) {
         id: r.id,
         date: r.date,
         status: r.status,
-        notes: r.notes || '',
+        notes: r.remarks || '',
         student_id: r.student_id || '',
         student_name: studentMap[r.student_id]?.full_name || '',
         class_id: r.class_id || '',
@@ -173,7 +174,7 @@ async function processJob(job: any, supabase: any) {
       } finally {
         try {
           if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
-        } catch (_e) {
+        } catch {
           /* ignore */
         }
       }

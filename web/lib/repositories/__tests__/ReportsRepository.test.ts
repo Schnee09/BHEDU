@@ -53,6 +53,7 @@ describe('ReportsRepository grade reports', () => {
     });
 
     expect(gradesQuery.in).toHaveBeenCalledWith('semester', ['1', '2026-2027-HK1']);
+    expect(attendanceQuery.is).toHaveBeenCalledWith('deleted_at', null);
   });
 
   it('uses the current attendance remarks column and excludes deleted report rows', async () => {

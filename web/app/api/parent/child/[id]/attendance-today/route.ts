@@ -4,10 +4,6 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-interface RouteParams {
-  params: Promise<{ id: string }>;
-}
-
 export const GET = createGetHandler({ allowedRoles: ['parent'] }, async ({ params, user }) => {
   const { id: childId } = params as { id: string };
   const supabase = createServiceClient();
@@ -32,6 +28,7 @@ export const GET = createGetHandler({ allowedRoles: ['parent'] }, async ({ param
     .select('status')
     .eq('student_id', childId)
     .eq('date', today)
+    .is('deleted_at', null)
     .maybeSingle();
 
   if (attError) {

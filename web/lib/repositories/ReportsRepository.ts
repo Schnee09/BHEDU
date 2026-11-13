@@ -278,7 +278,8 @@ export class ReportsRepository {
     const { data: attendance } = await this.supabase
       .from('attendance')
       .select('status')
-      .eq('student_id', studentId);
+      .eq('student_id', studentId)
+      .is('deleted_at', null);
 
     return {
       student,

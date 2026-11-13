@@ -112,7 +112,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       supabase
         .from('attendance')
         .select('id, status, date, class_id')
-        .eq('student_id', realStudentId),
+        .eq('student_id', realStudentId)
+        .is('deleted_at', null),
 
       supabase.from('academic_years').select('id, name'),
 

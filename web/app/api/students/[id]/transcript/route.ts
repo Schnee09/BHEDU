@@ -178,7 +178,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     let attendanceQuery = supabase
       .from('attendance')
       .select('id, status, date')
-      .eq('student_id', realStudentId);
+      .eq('student_id', realStudentId)
+      .is('deleted_at', null);
 
     if (isWholeYear && academicYear.start_date && academicYear.end_date) {
       attendanceQuery = attendanceQuery
