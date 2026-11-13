@@ -89,31 +89,24 @@ export class StudentRequestService {
         const studentId = updated.student_id;
         const classId = updated.class_id;
 
-        // Check if attendance row already exists for this date and class
-        const { data: existingAtt } = await this.supabase
-          .from('attendance')
-          .select('id')
-          .eq('student_id', studentId)
-          .eq('class_id', classId)
-          .eq('date', dateStr)
-          .maybeSingle();
+        const { error: attendanceError } = await this.supabase.rpc(
+          'upsert_daily_attendance_batch',
+          {
+            p_class_id: classId,
+            p_date: dateStr,
+            p_records: [
+              {
+                student_id: studentId,
+                status: 'excused',
+                notes: `Nghỉ có phép (Đơn duyệt: ${updated.reason})`,
+              },
+            ],
+            p_marked_by: review.reviewer_id,
+          }
+        );
 
-        if (existingAtt) {
-          await this.supabase
-            .from('attendance')
-            .update({
-              status: 'excused',
-              remarks: `Nghỉ có phép (Đơn duyệt: ${updated.reason})`,
-            })
-            .eq('id', existingAtt.id);
-        } else {
-          await this.supabase.from('attendance').insert({
-            student_id: studentId,
-            class_id: classId,
-            date: dateStr,
-            status: 'excused',
-            remarks: `Nghỉ có phép (Đơn duyệt: ${updated.reason})`,
-          });
+        if (attendanceError) {
+          throw new Error(attendanceError.message);
         }
       } catch (attErr) {
         console.error('Failed to auto-update attendance for approved leave request:', attErr);
