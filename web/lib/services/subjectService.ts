@@ -210,10 +210,22 @@ export class SubjectService {
 
     if (hardDelete) {
       // 1. Delete related grades
-      await this.supabase.from('grades').delete().eq('subject_id', id);
+      const { error: gradesError } = await this.supabase
+        .from('grades')
+        .delete()
+        .eq('subject_id', id);
+      if (gradesError) {
+        throw gradesError;
+      }
 
       // 2. Delete related timetable slots
-      await this.supabase.from('timetable_slots').delete().eq('subject_id', id);
+      const { error: timetableError } = await this.supabase
+        .from('timetable_slots')
+        .delete()
+        .eq('subject_id', id);
+      if (timetableError) {
+        throw timetableError;
+      }
 
       // 3. Delete the subject
       const { error } = await this.supabase.from('subjects').delete().eq('id', id);

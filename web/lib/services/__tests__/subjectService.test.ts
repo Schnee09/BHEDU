@@ -44,4 +44,23 @@ describe('SubjectService.deleteSubject', () => {
     expect(timetable.delete).toHaveBeenCalled();
     expect(subjects.delete).toHaveBeenCalled();
   });
+
+  it('stops a hard delete when removing related grades fails', async () => {
+    const countQuery = createQuery({ count: 0, error: null });
+    const gradesDelete = createQuery({
+      data: null,
+      error: { message: 'Cannot delete related grades' },
+    });
+    const supabase = {
+      from: jest.fn().mockReturnValueOnce(countQuery).mockReturnValueOnce(gradesDelete),
+    } as any;
+
+    await expect(new SubjectService(supabase).deleteSubject('subject-1', true)).rejects.toEqual({
+      message: 'Cannot delete related grades',
+    });
+
+    expect(supabase.from).toHaveBeenCalledTimes(2);
+    expect(supabase.from).not.toHaveBeenCalledWith('timetable_slots');
+    expect(supabase.from).not.toHaveBeenCalledWith('subjects');
+  });
 });
