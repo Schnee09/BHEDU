@@ -437,21 +437,24 @@ export class UserService {
       throw new NotFoundError('Không tìm thấy người dùng');
     }
 
-    // 2. Delete from Auth (this will trigger profile deletion via DB trigger if configured,
-    // but we'll be explicit for safety)
+    // 2. Delete the business profile first. Related profile and operational data use
+    // ON DELETE CASCADE, so this remains one database operation and must succeed before
+    // the login account is removed.
+    const { error: profileDeleteError } = await this.supabase
+      .from('profiles')
+      .delete()
+      .eq('id', id);
+    if (profileDeleteError) {
+      throw profileDeleteError;
+    }
+
+    // 3. Remove the Auth account only after the business data was deleted successfully.
     if (user.user_id) {
       const { error: authError } = await this.supabase.auth.admin.deleteUser(user.user_id);
       if (authError) {
-        console.error('Auth deletion failed:', authError);
-        // Fallback: try to delete profile anyway
+        throw authError;
       }
     }
-
-    // 3. Delete Profiles (Explicit cleanup)
-    // Usually handled by ON DELETE CASCADE in DB, but being explicit is safer
-    await this.supabase.from('teacher_profiles').delete().eq('profile_id', id);
-    await this.supabase.from('student_profiles').delete().eq('profile_id', id);
-    await this.supabase.from('profiles').delete().eq('id', id);
   }
 
   /**
