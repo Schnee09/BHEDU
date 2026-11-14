@@ -6,6 +6,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getCurrentDateOnly } from '@/lib/enrollments/effectiveDates';
 import { BaseRepository, type PaginatedResult, type PaginationParams } from './base';
 
 // ============================================
@@ -465,11 +466,12 @@ export class ClassRepository
   override async delete(id: string): Promise<void> {
     // Clean up associated enrollments and timetable slots
     const [enrollmentCleanup, timetableCleanup] = await Promise.all([
-      this.supabase
-        .from('enrollments')
-        .update({ status: 'dropped' })
-        .eq('class_id', id)
-        .eq('status', 'enrolled'),
+      this.supabase.rpc('end_class_enrollments_atomic', {
+        p_class_id: id,
+        p_end_date: getCurrentDateOnly(),
+        p_reason: 'Lớp đã kết thúc',
+        p_actor_id: null,
+      }),
       this.supabase.from('timetable_slots').delete().eq('class_id', id),
     ]);
 

@@ -11,34 +11,39 @@ function query(result: { error: { message: string } | null } = { error: null }) 
 }
 
 describe('ClassRepository enrollment cleanup', () => {
-  it('uses a valid enrollment status when deleting a class', async () => {
-    const enrollmentQuery = query();
+  it('ends class enrollments through the lifecycle RPC', async () => {
     const timetableQuery = query();
     const classQuery = query();
+    const rpc = jest.fn().mockResolvedValue({ data: 2, error: null });
     const supabase = {
       from: jest.fn((table: string) => {
-        if (table === 'enrollments') return enrollmentQuery;
         if (table === 'timetable_slots') return timetableQuery;
         return classQuery;
       }),
+      rpc,
     } as any;
 
     await new ClassRepository(supabase).delete('class-1');
 
-    expect(enrollmentQuery.update).toHaveBeenCalledWith({ status: 'dropped' });
-    expect(enrollmentQuery.update).not.toHaveBeenCalledWith({ status: 'cancelled' });
-    expect(enrollmentQuery.eq).toHaveBeenCalledWith('status', 'enrolled');
+    expect(rpc).toHaveBeenCalledWith('end_class_enrollments_atomic', {
+      p_class_id: 'class-1',
+      p_end_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      p_reason: 'Lớp đã kết thúc',
+      p_actor_id: null,
+    });
   });
 
   it('does not delete the class when enrollment cleanup fails', async () => {
-    const enrollmentQuery = query({ error: { message: 'database unavailable' } });
     const timetableQuery = query();
     const classQuery = query();
     const supabase = {
       from: jest.fn((table: string) => {
-        if (table === 'enrollments') return enrollmentQuery;
         if (table === 'timetable_slots') return timetableQuery;
         return classQuery;
+      }),
+      rpc: jest.fn().mockResolvedValue({
+        data: null,
+        error: { message: 'database unavailable' },
       }),
     } as any;
 
