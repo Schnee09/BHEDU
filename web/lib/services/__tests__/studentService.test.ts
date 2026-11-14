@@ -114,6 +114,47 @@ describe('StudentService', () => {
         expect.objectContaining({ status: 'enrolled' })
       );
     });
+
+    it('restores a withdrawn enrollment instead of inserting a duplicate', async () => {
+      fluentMock.then.mockImplementationOnce((resolve: (value: any) => void) =>
+        resolve({
+          data: { id: 'enrollment-1', status: 'withdrawn', deleted_at: null },
+          error: null,
+        })
+      );
+      fluentMock.then.mockImplementationOnce((resolve: (value: any) => void) =>
+        resolve({ data: { id: 'enrollment-1', status: 'enrolled' }, error: null })
+      );
+
+      const enrollment = await new StudentService(mockSupabase).enrollStudent(
+        'student-1',
+        'class-1'
+      );
+
+      expect(fluentMock.update).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'enrolled', end_date: null, deleted_at: null })
+      );
+      expect(fluentMock.eq).toHaveBeenCalledWith('id', 'enrollment-1');
+      expect(fluentMock.insert).not.toHaveBeenCalled();
+      expect(enrollment.status).toBe('enrolled');
+    });
+  });
+
+  describe('unenrollStudent', () => {
+    it('records the end date on the active enrollment', async () => {
+      fluentMock.then.mockImplementationOnce((resolve: (value: any) => void) =>
+        resolve({ data: { id: 'enrollment-1', status: 'withdrawn' }, error: null })
+      );
+
+      await new StudentService(mockSupabase).unenrollStudent('student-1', 'class-1');
+
+      expect(fluentMock.update).toHaveBeenCalledWith({
+        status: 'withdrawn',
+        end_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      });
+      expect(fluentMock.eq).toHaveBeenCalledWith('status', 'enrolled');
+      expect(fluentMock.is).toHaveBeenCalledWith('deleted_at', null);
+    });
   });
 
   describe('Static methods', () => {

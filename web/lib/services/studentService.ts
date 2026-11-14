@@ -239,15 +239,39 @@ export class StudentService {
   }
 
   async enrollStudent(studentId: string, classId: string) {
-    const { data: existing } = await this.supabase
+    const enrollmentDate = new Date().toISOString().split('T')[0];
+    const { data: existing, error: existingError } = await this.supabase
       .from('enrollments')
-      .select('id')
+      .select('id, status, deleted_at')
       .eq('student_id', studentId)
       .eq('class_id', classId)
       .single();
 
-    if (existing) {
+    if (existingError && existingError.code !== 'PGRST116') {
+      throw new Error('Failed to check existing enrollment');
+    }
+
+    if (existing?.status === 'enrolled' && !existing.deleted_at) {
       throw new ValidationError('Student already enrolled in this class');
+    }
+
+    if (existing) {
+      const { data: restored, error: restoreError } = await this.supabase
+        .from('enrollments')
+        .update({
+          status: 'enrolled',
+          enrollment_date: enrollmentDate,
+          end_date: null,
+          deleted_at: null,
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (restoreError) {
+        throw new Error('Failed to restore student enrollment');
+      }
+      return restored;
     }
 
     const { data, error } = await this.supabase
@@ -255,7 +279,7 @@ export class StudentService {
       .insert({
         student_id: studentId,
         class_id: classId,
-        enrollment_date: new Date().toISOString().split('T')[0],
+        enrollment_date: enrollmentDate,
         status: 'enrolled',
       })
       .select()
@@ -270,11 +294,14 @@ export class StudentService {
   }
 
   async unenrollStudent(studentId: string, classId: string) {
+    const endDate = new Date().toISOString().split('T')[0];
     const { data, error } = await this.supabase
       .from('enrollments')
-      .update({ status: 'withdrawn' })
+      .update({ status: 'withdrawn', end_date: endDate })
       .eq('student_id', studentId)
       .eq('class_id', classId)
+      .eq('status', 'enrolled')
+      .is('deleted_at', null)
       .select()
       .single();
 
