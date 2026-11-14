@@ -107,13 +107,18 @@ export async function adminAuth(
 
     // Try to get profile from cache
     const cacheKey = `profile:${user.id}`;
-    let profile = getCached<{ id: string; full_name?: string; role: UserRole }>(cacheKey, 'auth');
+    let profile = getCached<{
+      id: string;
+      full_name?: string;
+      role: UserRole;
+      is_active?: boolean;
+    }>(cacheKey, 'auth');
 
     if (!profile) {
       // Get user profile to check role
       const { data: fetchedProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, role')
+        .select('id, full_name, role, is_active')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -151,6 +156,25 @@ export async function adminAuth(
 
       profile = fetchedProfile;
       setCached(cacheKey, profile, 'auth', cacheConfigs.profile);
+    }
+
+    if (profile.is_active === false) {
+      logAuthAttempt({
+        success: false,
+        userId: profile.id,
+        userEmail: user.email,
+        userRole: profile.role,
+        reason: 'Account disabled',
+        request,
+      });
+
+      return {
+        authorized: false,
+        userId: profile.id,
+        userEmail: user.email,
+        userRole: profile.role,
+        reason: 'Account disabled',
+      };
     }
 
     if (
@@ -277,12 +301,12 @@ export async function teacherAuth(
 
     // Try to get profile from cache
     const cacheKey = `profile:${user.id}`;
-    let profile = getCached<{ id: string; role: string }>(cacheKey, 'auth');
+    let profile = getCached<{ id: string; role: string; is_active?: boolean }>(cacheKey, 'auth');
 
     if (!profile) {
       const { data: fetchedProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, role')
+        .select('id, role, is_active')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -310,6 +334,25 @@ export async function teacherAuth(
 
       // Cache the profile
       setCached(cacheKey, profile, 'auth', cacheConfigs.profile);
+    }
+
+    if (profile.is_active === false) {
+      logAuthAttempt({
+        success: false,
+        userId: profile.id,
+        userEmail: user.email,
+        userRole: profile.role,
+        reason: 'Account disabled',
+        request,
+      });
+
+      return {
+        authorized: false,
+        userId: profile.id,
+        userEmail: user.email,
+        userRole: profile.role,
+        reason: 'Account disabled',
+      };
     }
 
     if (!canUseTeacherRoutes(profile.role)) {
