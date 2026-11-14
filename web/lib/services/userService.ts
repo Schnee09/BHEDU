@@ -272,12 +272,17 @@ export class UserService {
       }
 
       // 7. Log activity
-      await this.supabase.from('user_activity_logs').insert({
-        user_id: userId,
-        action: 'user_created',
-        description: `User created by ${currentUserRole}`,
-        metadata: { created_by: createdBy, role: input.role },
-      });
+      try {
+        const { error: activityError } = await this.supabase.from('user_activity_logs').insert({
+          user_id: userId,
+          action: 'user_created',
+          description: `User created by ${currentUserRole}`,
+          metadata: { created_by: createdBy, role: input.role },
+        });
+        if (activityError) throw activityError;
+      } catch (activityError) {
+        logger.warn('Failed to record user creation activity', { userId, activityError });
+      }
 
       // 8. Send welcome email (Intelligent Routing)
       const isManagedEmail = MANAGED_DOMAINS.some((domain) => email.toLowerCase().endsWith(domain));
@@ -290,20 +295,24 @@ export class UserService {
             : null;
 
       if (recipientEmail) {
-        const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`;
-        const emailContent = generateWelcomeEmail({
-          firstName: firstName,
-          email: email,
-          password: password,
-          role: input.role,
-          loginUrl,
-        });
+        try {
+          const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`;
+          const emailContent = generateWelcomeEmail({
+            firstName: firstName,
+            email: email,
+            password: password,
+            role: input.role,
+            loginUrl,
+          });
 
-        await sendEmail({
-          to: recipientEmail,
-          subject: 'Chào mừng đến với BH-EDU - Thông tin tài khoản của bạn',
-          ...emailContent,
-        });
+          await sendEmail({
+            to: recipientEmail,
+            subject: 'Chào mừng đến với BH-EDU - Thông tin tài khoản của bạn',
+            ...emailContent,
+          });
+        } catch (emailError) {
+          logger.warn('Failed to send welcome email for created user', { userId, emailError });
+        }
       }
 
       return {
@@ -311,7 +320,24 @@ export class UserService {
         tempPassword: password, // Return password for UI display
       };
     } catch (error) {
-      await this.supabase.auth.admin.deleteUser(userId);
+      const { error: cleanupProfileError } = await this.supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', userId);
+      if (cleanupProfileError) {
+        logger.error('Failed to clean up profile after user provisioning error', {
+          userId,
+          cleanupProfileError,
+        });
+      }
+
+      const { error: cleanupAuthError } = await this.supabase.auth.admin.deleteUser(userId);
+      if (cleanupAuthError) {
+        logger.error('Failed to clean up Auth account after user provisioning error', {
+          userId,
+          cleanupAuthError,
+        });
+      }
       throw error;
     }
   }
