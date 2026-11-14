@@ -72,4 +72,35 @@ describe('UserService.updateUser', () => {
       'Không thể đồng bộ vai trò đăng nhập. Vui lòng thử lại.'
     );
   });
+
+  it('reports student profile synchronization failures', async () => {
+    const single = jest.fn().mockResolvedValue({
+      data: { id: 'student-1', user_id: 'auth-student-1', role: 'student' },
+      error: null,
+    });
+    const select = jest.fn(() => ({ single }));
+    const eq = jest.fn(() => ({ select }));
+    const update = jest.fn(() => ({ eq }));
+    const upsert = jest.fn().mockResolvedValue({
+      data: null,
+      error: { message: 'Student profile update failed' },
+    });
+    const supabase = {
+      from: jest.fn((table: string) => {
+        if (table === 'profiles') return { update };
+        if (table === 'student_profiles') return { upsert };
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+      auth: { admin: { updateUserById: jest.fn() } },
+    } as any;
+
+    await expect(
+      new UserService(supabase).updateUser('student-1', { student_code: 'HS001' })
+    ).rejects.toThrow('Không thể cập nhật thông tin học sinh');
+
+    expect(upsert).toHaveBeenCalledWith(
+      { profile_id: 'student-1', student_code: 'HS001' },
+      { onConflict: 'profile_id' }
+    );
+  });
 });

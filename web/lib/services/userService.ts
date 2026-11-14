@@ -405,9 +405,12 @@ export class UserService {
           studentProfilePayload.student_code = input.student_code;
         if (input.grade_level !== undefined) studentProfilePayload.grade_level = input.grade_level;
 
-        await this.supabase
+        const { error: studentProfileError } = await this.supabase
           .from('student_profiles')
           .upsert(studentProfilePayload, { onConflict: 'profile_id' });
+        if (studentProfileError) {
+          throw new Error('Không thể cập nhật thông tin học sinh');
+        }
       }
     } else if (profile.role === 'teacher' || profile.role === 'tutor') {
       await teacherService.syncTeacherProfile(id, {
