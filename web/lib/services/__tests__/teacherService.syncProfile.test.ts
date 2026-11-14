@@ -57,6 +57,7 @@ describe('TeacherService.syncTeacherProfile', () => {
     });
 
     expect(upsert.mock.calls[0]?.[0]).not.toHaveProperty('teaching_subjects');
+    expect(upsert.mock.calls[0]?.[0]).not.toHaveProperty('teacher_type');
     expect(deleteSubjects).not.toHaveBeenCalled();
   });
 

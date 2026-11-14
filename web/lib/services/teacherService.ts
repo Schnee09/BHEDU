@@ -71,12 +71,14 @@ export class TeacherService {
 
     const profileUpdates: Record<string, unknown> = {
       profile_id: profileId,
-      teacher_type: data.teacher_type || 'full_time',
       department: data.department,
       specialization: data.specialization,
       hourly_rate: data.hourly_rate,
       updated_at: new Date().toISOString(),
     };
+    if (data.teacher_type !== undefined) {
+      profileUpdates.teacher_type = data.teacher_type;
+    }
     if (Array.isArray(data.teaching_subjects)) {
       profileUpdates.teaching_subjects =
         resolvedSubjectUuids.length > 0 ? resolvedSubjectUuids : null;
