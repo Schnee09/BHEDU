@@ -1,6 +1,7 @@
 import { createLazyService } from './lazyService';
 
 import { createServiceClient } from '@/lib/supabase/server';
+import { getCurrentDateOnly } from '@/lib/enrollments/effectiveDates';
 import { NotFoundError, ValidationError } from '@/lib/api/errors';
 import type { CreateStudentInput, UpdateStudentInput } from '@/lib/schemas';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -239,7 +240,7 @@ export class StudentService {
   }
 
   async enrollStudent(studentId: string, classId: string) {
-    const enrollmentDate = new Date().toISOString().split('T')[0];
+    const enrollmentDate = getCurrentDateOnly();
     const { data: existing, error: existingError } = await this.supabase
       .from('enrollments')
       .select('id, status, deleted_at')
@@ -294,7 +295,7 @@ export class StudentService {
   }
 
   async unenrollStudent(studentId: string, classId: string) {
-    const endDate = new Date().toISOString().split('T')[0];
+    const endDate = getCurrentDateOnly();
     const { data, error } = await this.supabase
       .from('enrollments')
       .update({ status: 'withdrawn', end_date: endDate })

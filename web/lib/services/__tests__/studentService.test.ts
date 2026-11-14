@@ -142,15 +142,20 @@ describe('StudentService', () => {
 
   describe('unenrollStudent', () => {
     it('records the end date on the active enrollment', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-10-24T18:30:00Z'));
       fluentMock.then.mockImplementationOnce((resolve: (value: any) => void) =>
         resolve({ data: { id: 'enrollment-1', status: 'withdrawn' }, error: null })
       );
 
-      await new StudentService(mockSupabase).unenrollStudent('student-1', 'class-1');
+      try {
+        await new StudentService(mockSupabase).unenrollStudent('student-1', 'class-1');
+      } finally {
+        jest.useRealTimers();
+      }
 
       expect(fluentMock.update).toHaveBeenCalledWith({
         status: 'withdrawn',
-        end_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        end_date: '2026-10-25',
       });
       expect(fluentMock.eq).toHaveBeenCalledWith('status', 'enrolled');
       expect(fluentMock.is).toHaveBeenCalledWith('deleted_at', null);
