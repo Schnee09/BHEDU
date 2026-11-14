@@ -127,6 +127,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       )
       .eq('student_id', realStudentId)
       .eq('status', 'enrolled')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();

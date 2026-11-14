@@ -195,7 +195,8 @@ export class StudentRepository
         )
       `
       )
-      .eq('student_id', realId);
+      .eq('student_id', realId)
+      .is('deleted_at', null);
 
     if (this.useSoftDelete && typeof (enrollmentsQuery as any).is === 'function') {
       enrollmentsQuery = (enrollmentsQuery as any).is('deleted_at', null);

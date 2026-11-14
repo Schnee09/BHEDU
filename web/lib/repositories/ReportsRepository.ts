@@ -37,6 +37,8 @@ export class ReportsRepository {
       .from('enrollments')
       .select('class:class_id(id, name)')
       .eq('student_id', studentId)
+      .eq('status', 'enrolled')
+      .is('deleted_at', null)
       .single();
 
     // 3. Fetch Academic Years
@@ -237,6 +239,8 @@ export class ReportsRepository {
             `
       )
       .eq('student_id', studentId)
+      .eq('status', 'enrolled')
+      .is('deleted_at', null)
       .maybeSingle();
 
     // 2. Fetch Grades

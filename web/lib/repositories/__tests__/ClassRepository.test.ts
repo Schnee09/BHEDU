@@ -48,3 +48,20 @@ describe('ClassRepository enrollment cleanup', () => {
     expect(classQuery.update).not.toHaveBeenCalled();
   });
 });
+
+describe('ClassRepository enrollment reads', () => {
+  it('counts only active, non-deleted enrollments', async () => {
+    const enrollmentQuery: Record<string, any> = { count: 2, error: null };
+    for (const method of ['select', 'eq', 'is']) {
+      enrollmentQuery[method] = jest.fn().mockReturnValue(enrollmentQuery);
+    }
+    const supabase = { from: jest.fn().mockReturnValue(enrollmentQuery) } as any;
+
+    const count = await new ClassRepository(supabase).getEnrollmentCount('class-1');
+
+    expect(count).toBe(2);
+    expect(enrollmentQuery.eq).toHaveBeenCalledWith('class_id', 'class-1');
+    expect(enrollmentQuery.eq).toHaveBeenCalledWith('status', 'enrolled');
+    expect(enrollmentQuery.is).toHaveBeenCalledWith('deleted_at', null);
+  });
+});

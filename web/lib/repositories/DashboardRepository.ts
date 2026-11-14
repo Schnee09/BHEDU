@@ -49,7 +49,8 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
         .from('enrollments')
         .select('class_id')
         .eq('student_id', profileId)
-        .in('status', ['enrolled']);
+        .in('status', ['enrolled'])
+        .is('deleted_at', null);
       studentClassIds = data?.map((e: any) => e.class_id) || [];
     }
 
@@ -269,7 +270,8 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
         .from('enrollments')
         .select('student_id')
         .in('class_id', classIds)
-        .in('status', ['enrolled']);
+        .in('status', ['enrolled'])
+        .is('deleted_at', null);
       const studentIds = enrollmentsData?.map((e: any) => e.student_id) || [];
       myStudentCount = new Set(studentIds).size;
     }
@@ -344,7 +346,8 @@ export class DashboardRepository extends BaseRepository<any, any, any> {
       .from('enrollments')
       .select('class_id')
       .eq('student_id', studentId)
-      .in('status', ['enrolled']);
+      .in('status', ['enrolled'])
+      .is('deleted_at', null);
     const classIds = enrollments?.map((e: any) => e.class_id) || [];
     const totalClasses = classIds.length;
 

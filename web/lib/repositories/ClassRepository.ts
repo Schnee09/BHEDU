@@ -166,7 +166,9 @@ export class ClassRepository
       this.supabase
         .from('enrollments')
         .select('id', { count: 'exact', head: true })
-        .eq('class_id', id),
+        .eq('class_id', id)
+        .eq('status', 'enrolled')
+        .is('deleted_at', null),
     ]);
 
     const subject = subjectRes.data || null;
@@ -212,7 +214,11 @@ export class ClassRepository
         ? this.supabase.from('academic_years').select('id, name').in('id', academicYearIds)
         : Promise.resolve({ data: [] }),
       classIds.length > 0
-        ? this.supabase.from('enrollments').select('class_id')
+        ? this.supabase
+            .from('enrollments')
+            .select('class_id')
+            .eq('status', 'enrolled')
+            .is('deleted_at', null)
         : Promise.resolve({ data: [] }),
     ]);
 
@@ -324,7 +330,8 @@ export class ClassRepository
       .from('enrollments')
       .select('class_id')
       .eq('student_id', studentId)
-      .eq('status', 'enrolled');
+      .eq('status', 'enrolled')
+      .is('deleted_at', null);
 
     const classIds = enrollments?.map((e: any) => e.class_id) || [];
 
@@ -511,7 +518,8 @@ export class ClassRepository
       .from('enrollments')
       .select('id', { count: 'exact', head: true })
       .eq('class_id', classId)
-      .eq('status', 'enrolled');
+      .eq('status', 'enrolled')
+      .is('deleted_at', null);
 
     if (error) {
       throw new Error(`Failed to count enrollments: ${error.message}`);
@@ -541,7 +549,8 @@ export class ClassRepository
         )
       `
       )
-      .eq('class_id', classId);
+      .eq('class_id', classId)
+      .is('deleted_at', null);
 
     if (error) {
       throw new Error(`Failed to fetch class students: ${error.message}`);

@@ -155,6 +155,7 @@ describe('GET /api/students/[id]/progress', () => {
       semester_1_grade: 7,
       semester_2_grade: null,
     });
+    expect(queries.enrollments.is).toHaveBeenCalledWith('deleted_at', null);
     expect(queries.attendance.is).toHaveBeenCalledWith('deleted_at', null);
   });
 });

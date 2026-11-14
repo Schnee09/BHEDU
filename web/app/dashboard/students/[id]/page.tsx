@@ -84,6 +84,7 @@ async function fetchStudentWithClient(supabase: any, identifier: string) {
         'id, class_id, enrollment_date, status, classes(id, name, schedule, sessions_per_week, room, grade_level)'
       )
       .eq('student_id', realId)
+      .is('deleted_at', null)
       .order('enrollment_date', { ascending: false }),
     supabase
       .from('attendance')
