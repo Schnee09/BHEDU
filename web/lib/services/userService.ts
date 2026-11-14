@@ -329,14 +329,14 @@ export class UserService {
           userId,
           cleanupProfileError,
         });
-      }
-
-      const { error: cleanupAuthError } = await this.supabase.auth.admin.deleteUser(userId);
-      if (cleanupAuthError) {
-        logger.error('Failed to clean up Auth account after user provisioning error', {
-          userId,
-          cleanupAuthError,
-        });
+      } else {
+        const { error: cleanupAuthError } = await this.supabase.auth.admin.deleteUser(userId);
+        if (cleanupAuthError) {
+          logger.error('Failed to clean up Auth account after user provisioning error', {
+            userId,
+            cleanupAuthError,
+          });
+        }
       }
       throw error;
     }

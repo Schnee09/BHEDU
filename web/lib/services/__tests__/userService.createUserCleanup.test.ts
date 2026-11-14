@@ -19,8 +19,15 @@ function profileUpsert(result: Record<string, unknown>) {
 }
 
 describe('UserService.createUser cleanup', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it('keeps a successfully provisioned user when the welcome email fails', async () => {
@@ -106,5 +113,52 @@ describe('UserService.createUser cleanup', () => {
     expect(deleteProfileEq.mock.invocationCallOrder[0]!).toBeLessThan(
       deleteAuthUser.mock.invocationCallOrder[0]!
     );
+  });
+
+  it('keeps the Auth account when profile cleanup fails', async () => {
+    const upsert = profileUpsert({
+      data: null,
+      error: { message: 'Profile insert failed', code: 'PGRST116' },
+    });
+    const deleteProfileEq = jest.fn().mockResolvedValue({
+      error: { message: 'Profile cleanup failed' },
+    });
+    const deleteAuthUser = jest.fn();
+    const supabase = {
+      auth: {
+        admin: {
+          createUser: jest.fn().mockResolvedValue({
+            data: { user: { id: 'auth-1' } },
+            error: null,
+          }),
+          deleteUser: deleteAuthUser,
+        },
+      },
+      from: jest.fn((table: string) => {
+        if (table === 'profiles') {
+          return {
+            upsert,
+            delete: jest.fn().mockReturnValue({ eq: deleteProfileEq }),
+          };
+        }
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+    } as any;
+
+    await expect(
+      new UserService(supabase).createUser(
+        {
+          role: 'staff',
+          full_name: 'Nguyễn Văn An',
+          email: 'an@example.com',
+          status: 'active',
+          is_managed: false,
+        },
+        'owner'
+      )
+    ).rejects.toThrow('Không thể tạo hồ sơ người dùng trong cơ sở dữ liệu.');
+
+    expect(deleteProfileEq).toHaveBeenCalledWith('user_id', 'auth-1');
+    expect(deleteAuthUser).not.toHaveBeenCalled();
   });
 });
