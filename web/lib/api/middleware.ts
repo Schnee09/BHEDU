@@ -69,10 +69,10 @@ export function withAdmin(handler: AuthenticatedHandler): RouteHandler {
   return withAuth(async (request, context) => {
     try {
       const supabase = createClientFromRequest(request);
-      
+
       // Check if user has admin role via RLS helper
       const { data, error } = await supabase.rpc('is_admin', {
-        uid: context.userId,
+        user_id: context.userId,
       });
 
       if (error) {
@@ -98,10 +98,10 @@ export function withTeacher(handler: AuthenticatedHandler): RouteHandler {
   return withAuth(async (request, context) => {
     try {
       const supabase = createClientFromRequest(request);
-      
+
       // Check if user has teacher role via RLS helper
       const { data, error } = await supabase.rpc('is_teacher', {
-        uid: context.userId,
+        user_id: context.userId,
       });
 
       if (error) {
@@ -149,7 +149,7 @@ export function getQueryParam(
 export function getPaginationParams(request: NextRequest) {
   const page = parseInt(getQueryParam(request, 'page', '1') || '1', 10);
   const pageSize = parseInt(getQueryParam(request, 'pageSize', '20') || '20', 10);
-  
+
   return {
     page: Math.max(1, page),
     pageSize: Math.min(Math.max(1, pageSize), 100), // Cap at 100
