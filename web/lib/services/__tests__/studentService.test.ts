@@ -6,6 +6,7 @@
 
 const mockSupabase: any = {
   from: jest.fn(),
+  rpc: jest.fn(),
   auth: { admin: { createUser: jest.fn(), deleteUser: jest.fn() } },
 };
 
@@ -33,6 +34,7 @@ describe('StudentService', () => {
     fluentMock.range = jest.fn().mockReturnValue(fluentMock);
     fluentMock.limit = jest.fn().mockReturnValue(fluentMock);
     fluentMock.single = jest.fn().mockReturnValue(fluentMock);
+    fluentMock.maybeSingle = jest.fn().mockReturnValue(fluentMock);
     fluentMock.insert = jest.fn().mockReturnValue(fluentMock);
     fluentMock.update = jest.fn().mockReturnValue(fluentMock);
     fluentMock.delete = jest.fn().mockReturnValue(fluentMock);
@@ -98,43 +100,32 @@ describe('StudentService', () => {
 
   describe('enrollStudent', () => {
     it('should enroll', async () => {
-      // 1st then (check existing)
-      fluentMock.then.mockImplementationOnce((resolve: (value: any) => void) =>
-        resolve({ data: null, error: null })
-      );
-      // 2nd then (insert result)
-      fluentMock.then.mockImplementationOnce((resolve: (value: any) => void) =>
-        resolve({ data: { id: 'e1' }, error: null })
-      );
+      mockSupabase.rpc.mockResolvedValueOnce({ data: { id: 'e1' }, error: null });
 
       const service = new StudentService(mockSupabase);
       const enrollment = await service.enrollStudent('1', 'c1');
       expect(enrollment.id).toBe('e1');
-      expect(fluentMock.insert).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'enrolled' })
+      expect(mockSupabase.rpc).toHaveBeenCalledWith(
+        'enroll_student_atomic',
+        expect.objectContaining({ p_student_id: '1', p_class_id: 'c1' })
       );
     });
 
-    it('restores a withdrawn enrollment instead of inserting a duplicate', async () => {
-      fluentMock.then.mockImplementationOnce((resolve: (value: any) => void) =>
-        resolve({
-          data: { id: 'enrollment-1', status: 'withdrawn', deleted_at: null },
-          error: null,
-        })
-      );
-      fluentMock.then.mockImplementationOnce((resolve: (value: any) => void) =>
-        resolve({ data: { id: 'enrollment-1', status: 'enrolled' }, error: null })
-      );
+    it('creates a new effective-dated period through the lifecycle RPC', async () => {
+      mockSupabase.rpc.mockResolvedValueOnce({
+        data: { id: 'enrollment-2', status: 'enrolled' },
+        error: null,
+      });
 
       const enrollment = await new StudentService(mockSupabase).enrollStudent(
         'student-1',
         'class-1'
       );
 
-      expect(fluentMock.update).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'enrolled', end_date: null, deleted_at: null })
+      expect(mockSupabase.rpc).toHaveBeenCalledWith(
+        'enroll_student_atomic',
+        expect.objectContaining({ p_student_id: 'student-1', p_class_id: 'class-1' })
       );
-      expect(fluentMock.eq).toHaveBeenCalledWith('id', 'enrollment-1');
       expect(fluentMock.insert).not.toHaveBeenCalled();
       expect(enrollment.status).toBe('enrolled');
     });
@@ -144,8 +135,12 @@ describe('StudentService', () => {
     it('records the end date on the active enrollment', async () => {
       jest.useFakeTimers().setSystemTime(new Date('2026-10-24T18:30:00Z'));
       fluentMock.then.mockImplementationOnce((resolve: (value: any) => void) =>
-        resolve({ data: { id: 'enrollment-1', status: 'withdrawn' }, error: null })
+        resolve({ data: { id: 'enrollment-1' }, error: null })
       );
+      mockSupabase.rpc.mockResolvedValueOnce({
+        data: { id: 'enrollment-1', status: 'withdrawn' },
+        error: null,
+      });
 
       try {
         await new StudentService(mockSupabase).unenrollStudent('student-1', 'class-1');
@@ -153,12 +148,13 @@ describe('StudentService', () => {
         jest.useRealTimers();
       }
 
-      expect(fluentMock.update).toHaveBeenCalledWith({
-        status: 'withdrawn',
-        end_date: '2026-10-25',
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('end_enrollment_atomic', {
+        p_enrollment_id: 'enrollment-1',
+        p_end_date: '2026-10-25',
+        p_status: 'withdrawn',
+        p_reason: 'Rút khỏi lớp',
+        p_actor_id: null,
       });
-      expect(fluentMock.eq).toHaveBeenCalledWith('status', 'enrolled');
-      expect(fluentMock.is).toHaveBeenCalledWith('deleted_at', null);
     });
   });
 

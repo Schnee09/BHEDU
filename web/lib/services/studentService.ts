@@ -241,53 +241,20 @@ export class StudentService {
 
   async enrollStudent(studentId: string, classId: string) {
     const enrollmentDate = getCurrentDateOnly();
-    const { data: existing, error: existingError } = await this.supabase
-      .from('enrollments')
-      .select('id, status, deleted_at')
-      .eq('student_id', studentId)
-      .eq('class_id', classId)
-      .single();
-
-    if (existingError && existingError.code !== 'PGRST116') {
-      throw new Error('Failed to check existing enrollment');
-    }
-
-    if (existing?.status === 'enrolled' && !existing.deleted_at) {
-      throw new ValidationError('Student already enrolled in this class');
-    }
-
-    if (existing) {
-      const { data: restored, error: restoreError } = await this.supabase
-        .from('enrollments')
-        .update({
-          status: 'enrolled',
-          enrollment_date: enrollmentDate,
-          end_date: null,
-          deleted_at: null,
-        })
-        .eq('id', existing.id)
-        .select()
-        .single();
-
-      if (restoreError) {
-        throw new Error('Failed to restore student enrollment');
-      }
-      return restored;
-    }
-
-    const { data, error } = await this.supabase
-      .from('enrollments')
-      .insert({
-        student_id: studentId,
-        class_id: classId,
-        enrollment_date: enrollmentDate,
-        status: 'enrolled',
-      })
-      .select()
-      .single();
+    const { data, error } = await this.supabase.rpc('enroll_student_atomic', {
+      p_student_id: studentId,
+      p_class_id: classId,
+      p_enrollment_date: enrollmentDate,
+      p_notes: null,
+      p_source_system: null,
+      p_source_key: null,
+      p_actor_id: null,
+    });
 
     if (error) {
-      console.error('Failed to enroll student:', error);
+      if (error.message?.includes('already enrolled')) {
+        throw new ValidationError('Student already enrolled in this class');
+      }
       throw new Error('Failed to enroll student');
     }
 
@@ -296,18 +263,28 @@ export class StudentService {
 
   async unenrollStudent(studentId: string, classId: string) {
     const endDate = getCurrentDateOnly();
-    const { data, error } = await this.supabase
+    const { data: enrollment, error: enrollmentError } = await this.supabase
       .from('enrollments')
-      .update({ status: 'withdrawn', end_date: endDate })
+      .select('id')
       .eq('student_id', studentId)
       .eq('class_id', classId)
       .eq('status', 'enrolled')
       .is('deleted_at', null)
-      .select()
-      .single();
+      .maybeSingle();
+
+    if (enrollmentError || !enrollment) {
+      throw new Error('Active enrollment not found');
+    }
+
+    const { data, error } = await this.supabase.rpc('end_enrollment_atomic', {
+      p_enrollment_id: enrollment.id,
+      p_end_date: endDate,
+      p_status: 'withdrawn',
+      p_reason: 'Rút khỏi lớp',
+      p_actor_id: null,
+    });
 
     if (error) {
-      console.error('Failed to unenroll student:', error);
       throw new Error('Failed to unenroll student');
     }
 
