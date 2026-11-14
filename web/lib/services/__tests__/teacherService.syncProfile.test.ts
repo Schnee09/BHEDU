@@ -2,7 +2,14 @@ import { TeacherService } from '@/lib/services/teacherService';
 
 const SUBJECT_ID = '11111111-1111-4111-8111-111111111111';
 
-function setupSupabase(options: { deleteError?: unknown; insertError?: unknown } = {}) {
+function setupSupabase(
+  options: {
+    deleteError?: unknown;
+    insertError?: unknown;
+    subjects?: Array<{ id: string; name: string; code: string }>;
+    subjectsError?: unknown;
+  } = {}
+) {
   const upsert = jest.fn().mockResolvedValue({ error: null });
   const eq = jest.fn().mockResolvedValue({ error: options.deleteError || null });
   const deleteSubjects = jest.fn().mockReturnValue({ eq });
@@ -12,6 +19,14 @@ function setupSupabase(options: { deleteError?: unknown; insertError?: unknown }
       if (table === 'teacher_profiles') return { upsert };
       if (table === 'teacher_subjects') {
         return { delete: deleteSubjects, insert: insertSubjects };
+      }
+      if (table === 'subjects') {
+        return {
+          select: jest.fn().mockResolvedValue({
+            data: options.subjects || [],
+            error: options.subjectsError || null,
+          }),
+        };
       }
       throw new Error(`Unexpected table: ${table}`);
     }),
@@ -53,6 +68,36 @@ describe('TeacherService.syncTeacherProfile', () => {
         teaching_subjects: [SUBJECT_ID],
       })
     ).rejects.toThrow('Failed to replace teacher subjects: Insert failed');
+  });
+
+  it('rejects unknown subject names without changing teacher data', async () => {
+    const { supabase, upsert, deleteSubjects } = setupSupabase({
+      subjects: [{ id: SUBJECT_ID, name: 'Toán', code: 'TOAN' }],
+    });
+
+    await expect(
+      new TeacherService(supabase).syncTeacherProfile('teacher-1', {
+        teaching_subjects: ['Môn không tồn tại'],
+      })
+    ).rejects.toThrow('Không tìm thấy môn học: Môn không tồn tại');
+
+    expect(upsert).not.toHaveBeenCalled();
+    expect(deleteSubjects).not.toHaveBeenCalled();
+  });
+
+  it('preserves teacher data when the subject catalog cannot be loaded', async () => {
+    const { supabase, upsert, deleteSubjects } = setupSupabase({
+      subjectsError: { message: 'Database unavailable' },
+    });
+
+    await expect(
+      new TeacherService(supabase).syncTeacherProfile('teacher-1', {
+        teaching_subjects: ['Toán'],
+      })
+    ).rejects.toThrow('Failed to resolve teaching subjects: Database unavailable');
+
+    expect(upsert).not.toHaveBeenCalled();
+    expect(deleteSubjects).not.toHaveBeenCalled();
   });
 });
 

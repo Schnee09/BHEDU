@@ -1,5 +1,6 @@
 import { createLazyService } from './lazyService';
 
+import { ValidationError } from '@/lib/api/errors';
 import { createServiceClient } from '@/lib/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TeacherRepository } from '../repositories/TeacherRepository';
@@ -40,20 +41,29 @@ export class TeacherService {
       const namesToLookup = rawItems.filter((item) => !UUID_REGEX.test(item));
 
       if (namesToLookup.length > 0) {
-        const { data: matchedSubjects } = await this.supabase
+        const { data: matchedSubjects, error: subjectsError } = await this.supabase
           .from('subjects')
           .select('id, name, code');
+        if (subjectsError) {
+          throw new Error(`Failed to resolve teaching subjects: ${subjectsError.message}`);
+        }
 
-        if (matchedSubjects) {
-          for (const name of namesToLookup) {
-            const trimmed = name.trim().toLowerCase();
-            const found = matchedSubjects.find(
-              (s) => s.name?.toLowerCase() === trimmed || s.code?.toLowerCase() === trimmed
-            );
-            if (found && !validUuids.includes(found.id)) {
-              validUuids.push(found.id);
-            }
+        const unresolvedNames: string[] = [];
+        for (const name of namesToLookup) {
+          const trimmed = name.trim().toLowerCase();
+          const found = (matchedSubjects || []).find(
+            (subject) =>
+              subject.name?.trim().toLowerCase() === trimmed ||
+              subject.code?.trim().toLowerCase() === trimmed
+          );
+          if (found && !validUuids.includes(found.id)) {
+            validUuids.push(found.id);
+          } else if (!found) {
+            unresolvedNames.push(name);
           }
+        }
+        if (unresolvedNames.length > 0) {
+          throw new ValidationError(`Không tìm thấy môn học: ${unresolvedNames.join(', ')}`);
         }
       }
       resolvedSubjectUuids = validUuids;
