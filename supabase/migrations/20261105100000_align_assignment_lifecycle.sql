@@ -12,7 +12,9 @@ CREATE INDEX IF NOT EXISTS idx_assignments_class_published
   ON public.assignments (class_id, published);
 
 ALTER TABLE public.grades
-  ADD COLUMN IF NOT EXISTS assignment_id UUID;
+  ADD COLUMN IF NOT EXISTS assignment_id UUID,
+  ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
 
 ALTER TABLE public.grades
   DROP CONSTRAINT IF EXISTS grades_assignment_id_fkey;
