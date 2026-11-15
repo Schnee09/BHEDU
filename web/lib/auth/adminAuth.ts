@@ -67,7 +67,11 @@ export async function adminAuth(
 
     // Use the centralized data-client helper so server pages/APIs will use a
     // service-role client for admin viewers when appropriate.
-    const { supabase, user: detectedUser } = await getDataClient(request as Request | undefined);
+    const {
+      supabase,
+      user: detectedUser,
+      viewerIsActive,
+    } = await getDataClient(request as Request | undefined);
 
     // Get current user (may already be provided by getDataClient)
     let user = detectedUser;
@@ -103,6 +107,23 @@ export async function adminAuth(
           reason: authError?.message || 'Not authenticated',
         };
       }
+    }
+
+    if (!viewerIsActive) {
+      logAuthAttempt({
+        success: false,
+        userId: user.id,
+        userEmail: user.email,
+        reason: 'Account disabled or profile unavailable',
+        request,
+      });
+
+      return {
+        authorized: false,
+        userId: user.id,
+        userEmail: user.email,
+        reason: 'Account disabled or profile unavailable',
+      };
     }
 
     // Try to get profile from cache
@@ -273,7 +294,11 @@ export async function teacherAuth(
       }
     }
 
-    const { supabase, user: detectedUser } = await getDataClient(request as Request | undefined);
+    const {
+      supabase,
+      user: detectedUser,
+      viewerIsActive,
+    } = await getDataClient(request as Request | undefined);
 
     let user = detectedUser;
     let authError: any = null;
@@ -307,6 +332,23 @@ export async function teacherAuth(
           reason: 'Not authenticated',
         };
       }
+    }
+
+    if (!viewerIsActive) {
+      logAuthAttempt({
+        success: false,
+        userId: user.id,
+        userEmail: user.email,
+        reason: 'Account disabled or profile unavailable',
+        request,
+      });
+
+      return {
+        authorized: false,
+        userId: user.id,
+        userEmail: user.email,
+        reason: 'Account disabled or profile unavailable',
+      };
     }
 
     // Try to get profile from cache
