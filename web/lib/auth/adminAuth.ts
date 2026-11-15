@@ -116,11 +116,21 @@ export async function adminAuth(
 
     if (!profile) {
       // Get user profile to check role
-      const { data: fetchedProfile, error: profileError } = await supabase
+      let { data: fetchedProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id, full_name, role, is_active')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      if (!fetchedProfile && !profileError) {
+        const legacyResult = await supabase
+          .from('profiles')
+          .select('id, full_name, role, is_active')
+          .eq('id', user.id)
+          .maybeSingle();
+        fetchedProfile = legacyResult.data;
+        profileError = legacyResult.error;
+      }
 
       if (profileError) {
         console.error('[adminAuth/teacherAuth] Auth failure:', profileError);
@@ -304,11 +314,21 @@ export async function teacherAuth(
     let profile = getCached<{ id: string; role: string; is_active?: boolean }>(cacheKey, 'auth');
 
     if (!profile) {
-      const { data: fetchedProfile, error: profileError } = await supabase
+      let { data: fetchedProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id, role, is_active')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      if (!fetchedProfile && !profileError) {
+        const legacyResult = await supabase
+          .from('profiles')
+          .select('id, role, is_active')
+          .eq('id', user.id)
+          .maybeSingle();
+        fetchedProfile = legacyResult.data;
+        profileError = legacyResult.error;
+      }
 
       if (profileError || !fetchedProfile) {
         console.error('[adminAuth/teacherAuth] Auth failure:', profileError);
