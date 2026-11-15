@@ -9,10 +9,23 @@ ALTER TABLE IF EXISTS public.profiles_backup_student_codes ENABLE ROW LEVEL SECU
 ALTER TABLE IF EXISTS public.qr_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.report_exports ENABLE ROW LEVEL SECURITY;
 
-GRANT ALL ON TABLE public.attendance_reports TO service_role;
-GRANT ALL ON TABLE public.guardians TO service_role;
-GRANT ALL ON TABLE public.import_errors TO service_role;
-GRANT ALL ON TABLE public.import_logs TO service_role;
-GRANT ALL ON TABLE public.profiles_backup_student_codes TO service_role;
-GRANT ALL ON TABLE public.qr_codes TO service_role;
-GRANT ALL ON TABLE public.report_exports TO service_role;
+DO $$
+DECLARE
+  table_name TEXT;
+BEGIN
+  FOREACH table_name IN ARRAY ARRAY[
+    'attendance_reports',
+    'guardians',
+    'import_errors',
+    'import_logs',
+    'profiles_backup_student_codes',
+    'qr_codes',
+    'report_exports'
+  ]
+  LOOP
+    IF to_regclass(format('public.%I', table_name)) IS NOT NULL THEN
+      EXECUTE format('GRANT ALL ON TABLE public.%I TO service_role', table_name);
+    END IF;
+  END LOOP;
+END
+$$;
