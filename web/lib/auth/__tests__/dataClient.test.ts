@@ -12,9 +12,13 @@ jest.mock('@/lib/supabase/server', () => ({
 
 import { getDataClient } from '../dataClient';
 
-function makeAuthClient(user: { id: string } | null, role: string | null) {
+function makeAuthClient(
+  user: { id: string } | null,
+  role: string | null,
+  isActive = role !== null
+) {
   const maybeSingle = jest.fn().mockResolvedValue({
-    data: role ? { role } : null,
+    data: role ? { role, is_active: isActive } : null,
     error: null,
   });
   const or = jest.fn().mockReturnValue({ maybeSingle });
@@ -88,5 +92,18 @@ describe('getDataClient', () => {
     expect(createClientFromRequest).not.toHaveBeenCalled();
     expect(result.usingServiceClient).toBe(true);
     expect(result.supabase).toBe(serviceClient);
+  });
+
+  it('does not elevate a disabled administrator to the service client', async () => {
+    const authClient = makeAuthClient({ id: 'disabled-admin' }, 'admin', false);
+    createClientFromRequest.mockReturnValue(authClient);
+
+    const result = await getDataClient(new Request('https://example.test/api/data'));
+
+    expect(result.viewerRole).toBe('admin');
+    expect(result.viewerIsActive).toBe(false);
+    expect(result.usingServiceClient).toBe(false);
+    expect(result.supabase).toBe(authClient);
+    expect(createServiceClient).not.toHaveBeenCalled();
   });
 });
