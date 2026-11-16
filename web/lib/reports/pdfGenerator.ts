@@ -323,7 +323,6 @@ export function generateTranscriptHTML(
           (course, i) => `
       <tr class="${i % 2 === 0 ? 'bg-gray-50' : ''}">
         <td class="border px-2 py-1">${course.courseName}</td>
-        <td class="border px-2 py-1 text-center">${course.credits}</td>
         <td class="border px-2 py-1 text-center">${course.averageScore?.toFixed(2) || '-'}</td>
         <td class="border px-2 py-1 text-center">${course.letterGrade}</td>
         <td class="border px-2 py-1 text-center ${course.status === 'passed' ? 'text-green-600' : 'text-red-600'}">${course.status === 'passed' ? 'Đạt' : course.status === 'failed' ? 'Chưa đạt' : 'Đang học'}</td>
@@ -339,7 +338,6 @@ export function generateTranscriptHTML(
           <thead>
             <tr class="bg-gray-100">
               <th class="border px-2 py-1 text-left">Môn học</th>
-              <th class="border px-2 py-1 w-20">Tín chỉ</th>
               <th class="border px-2 py-1 w-20">Điểm</th>
               <th class="border px-2 py-1 w-20">Xếp loại</th>
               <th class="border px-2 py-1 w-24">Trạng thái</th>
@@ -351,7 +349,6 @@ export function generateTranscriptHTML(
           <tfoot>
             <tr class="bg-blue-50 font-semibold">
               <td class="border px-2 py-1">Điểm TB học kỳ</td>
-              <td class="border px-2 py-1 text-center">${semester.semesterCredits}</td>
               <td class="border px-2 py-1 text-center text-blue-600">${semester.semesterGPA.toFixed(2)}</td>
               <td class="border px-2 py-1" colspan="2"></td>
             </tr>
@@ -400,18 +397,14 @@ export function generateTranscriptHTML(
   <!-- Summary -->
   <div class="bg-blue-100 rounded-lg p-4 mt-6">
     <h4 class="font-bold mb-2">TỔNG KẾT</h4>
-    <div class="grid grid-cols-4 gap-4">
+    <div class="grid grid-cols-3 gap-4">
       <div>
-        <p class="text-sm text-gray-600">Điểm TB tích lũy</p>
+        <p class="text-sm text-gray-600">Điểm trung bình</p>
         <p class="text-2xl font-bold text-blue-600">${transcript.cumulativeGPA.toFixed(2)}</p>
       </div>
       <div>
-        <p class="text-sm text-gray-600">Điểm GPA (4.0)</p>
-        <p class="text-2xl font-bold text-blue-600">${transcript.cumulativeGPA4.toFixed(2)}</p>
-      </div>
-      <div>
-        <p class="text-sm text-gray-600">Tín chỉ tích lũy</p>
-        <p class="text-2xl font-bold">${transcript.totalCreditsEarned}/${transcript.totalCredits}</p>
+        <p class="text-sm text-gray-600">Số kỳ đã tổng hợp</p>
+        <p class="text-2xl font-bold">${transcript.semesters.length}</p>
       </div>
       <div>
         <p class="text-sm text-gray-600">Học lực</p>

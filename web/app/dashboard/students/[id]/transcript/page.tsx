@@ -8,11 +8,9 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api/client';
-import { routes } from '@/lib/routes';
 import { Icons } from '@/components/ui/Icons';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import PageGuard from '@/components/PageGuard';
 import { QRCode } from '@/components/ui/QRCode';
 
@@ -70,22 +68,7 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch student info
-  useEffect(() => {
-    fetchStudent();
-    fetchAcademicYears();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Fetch transcript data when selections change
-  useEffect(() => {
-    if (selectedYear && selectedSemester) {
-      fetchTranscriptData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear, selectedSemester]);
-
-  const fetchStudent = async () => {
+  async function fetchStudent() {
     try {
       const res = await apiFetch(`/api/students/${resolvedParams.id}`);
       const data = await res.json();
@@ -96,9 +79,9 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
       console.error('Error fetching student:', error);
       setError('Không thể tải thông tin học sinh');
     }
-  };
+  }
 
-  const fetchAcademicYears = async () => {
+  async function fetchAcademicYears() {
     try {
       const res = await apiFetch('/api/admin/academic-years');
       const data = await res.json();
@@ -112,9 +95,9 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
     } catch (error) {
       console.error('Error fetching academic years:', error);
     }
-  };
+  }
 
-  const fetchTranscriptData = async () => {
+  async function fetchTranscriptData() {
     if (!selectedYear || !selectedSemester) return;
 
     setLoading(true);
@@ -137,7 +120,22 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  // Fetch student info
+  useEffect(() => {
+    fetchStudent();
+    fetchAcademicYears();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch transcript data when selections change
+  useEffect(() => {
+    if (selectedYear && selectedSemester) {
+      fetchTranscriptData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedYear, selectedSemester]);
 
   if (!student) {
     return (
@@ -253,7 +251,7 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
             <Card className="p-4 sm:p-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-xs border-none rounded-2xl">
-              <p className="text-xs font-medium opacity-90 mb-1">Điểm trung bình (GPA)</p>
+              <p className="text-xs font-medium opacity-90 mb-1">Điểm trung bình</p>
               <p className="text-2xl sm:text-3xl font-bold font-mono">
                 {transcriptData.gpa.toFixed(2)}
               </p>
@@ -370,7 +368,7 @@ function TranscriptPage({ params }: { params: Promise<{ id: string }> }) {
                   const textToCopy = `[TRUNG TÂM GIÁO DỤC BÙI HOÀNG - KẾT QUẢ HỌC TẬP]
 Kính gửi Quý Phụ huynh học sinh ${student.full_name},
 Trung tâm xin gửi phiếu kết quả học tập kỳ ${semLabel} (${yearName}):
-- Điểm trung bình (GPA): ${transcriptData.gpa}
+- Điểm trung bình: ${transcriptData.gpa}
 - Hạnh kiểm: ${transcriptData.conduct}
 - Tỷ lệ chuyên cần: ${transcriptData.attendance_rate !== null ? `${transcriptData.attendance_rate}%` : 'Chưa có dữ liệu'}
 - Số môn học: ${transcriptData.subjects.length} môn

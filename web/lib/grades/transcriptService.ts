@@ -12,7 +12,6 @@
 import {
   SubjectGrade,
   SemesterGPA,
-  CumulativeGPA,
   calculateSubjectAverage,
   calculateSemesterGPA,
   calculateCumulativeGPA,
@@ -212,17 +211,12 @@ export function calculateClassRankings(
 
   let currentRank = 1;
   let prevGpa = -1;
-  let sameRankCount = 0;
-
   for (let i = 0; i < sorted.length; i++) {
     const student = sorted[i];
     if (!student) continue;
 
     if (student.gpa !== prevGpa) {
       currentRank = i + 1;
-      sameRankCount = 1;
-    } else {
-      sameRankCount++;
     }
 
     const percentile = Math.round(((total - i) / total) * 100);
@@ -242,15 +236,18 @@ export function calculateClassRankings(
  * Format transcript for display (Vietnamese)
  */
 export function formatTranscriptSummary(transcript: StudentTranscript): string {
+  const subjectCount = new Set(
+    transcript.semesters.flatMap((semester) => semester.courses.map((course) => course.courseId))
+  ).size;
   const lines = [
     `PHIẾU KẾT QUẢ HỌC TẬP - ${transcript.fullName}`,
     `Mã học sinh: ${transcript.studentCode}`,
     `Lớp: ${transcript.className}`,
     ``,
     `TỔNG KẾT`,
-    `- Điểm trung bình tích lũy: ${transcript.cumulativeGPA.toFixed(2)}`,
-    `- Điểm GPA (thang 4.0): ${transcript.cumulativeGPA4.toFixed(2)}`,
-    `- Tổng số tín chỉ: ${transcript.totalCreditsEarned}/${transcript.totalCredits}`,
+    `- Điểm trung bình: ${transcript.cumulativeGPA.toFixed(2)}`,
+    `- Số môn có kết quả: ${subjectCount}`,
+    `- Số kỳ đã tổng hợp: ${transcript.semesters.length}`,
     `- Học lực: ${transcript.academicStanding}`,
     ``,
     `CHI TIẾT THEO HỌC KỲ`,
