@@ -44,23 +44,7 @@ export async function POST(request: NextRequest) {
 
     const serviceSupabase = createServiceClient();
 
-    // 3. Ensure 'avatars' bucket exists in Supabase Storage
-    try {
-      const { data: buckets } = await serviceSupabase.storage.listBuckets();
-      const hasAvatarBucket = buckets?.some((b) => b.name === 'avatars');
-      if (!hasAvatarBucket) {
-        await serviceSupabase.storage.createBucket('avatars', {
-          public: true,
-          fileSizeLimit: 5242880, // 5MB
-        });
-      }
-    } catch (bucketErr: any) {
-      logger.warn('Bucket verification warning:', {
-        error: bucketErr?.message || String(bucketErr),
-      });
-    }
-
-    // 4. Fetch current profile to get old photo for cleanup
+    // 3. Fetch current profile to get old photo for cleanup
     let { data: profile } = await serviceSupabase
       .from('profiles')
       .select('id, user_id, photo_url')
@@ -79,7 +63,7 @@ export async function POST(request: NextRequest) {
     const profileId = profile?.id || user.id;
     const filePath = `profiles/profile-${profileId}-${Date.now()}.${extension}`;
 
-    // 5. Convert file to buffer and upload via admin service client
+    // 4. Convert file to buffer and upload via admin service client
     const fileBuffer = Buffer.from(arrayBuffer);
 
     const { error: uploadError } = await serviceSupabase.storage
@@ -97,12 +81,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. Get public URL
+    // 5. Get public URL
     const { data: urlData } = serviceSupabase.storage.from('avatars').getPublicUrl(filePath);
 
     const publicUrl = urlData.publicUrl;
 
-    // 7. Update database record
+    // 6. Update database record
     const updatePayload = {
       photo_url: publicUrl,
       updated_at: new Date().toISOString(),
@@ -140,7 +124,7 @@ export async function POST(request: NextRequest) {
       logger.warn('Failed to sync auth user_metadata:', { error: String(metaErr) });
     }
 
-    // 8. Cleanup old avatar if it was on Supabase Storage
+    // 7. Cleanup old avatar if it was on Supabase Storage
     if (profile?.photo_url && profile.photo_url.includes('avatars/profiles/')) {
       try {
         const oldRelPath = profile.photo_url.split('avatars/')[1];
