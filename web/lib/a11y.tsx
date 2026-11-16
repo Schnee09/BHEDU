@@ -5,6 +5,8 @@
  * including ARIA labels, keyboard navigation, and focus management.
  */
 
+import { useId } from 'react';
+
 /**
  * Skip Navigation Link Component
  * Allows keyboard users to skip repetitive content (nav, sidebar, etc.)
@@ -28,9 +30,9 @@ export function SkipToMainContent() {
       href="#main-content"
       onClick={handleClick}
       className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-blue-600 focus:text-white focus:px-4 focus:py-2 focus:rounded"
-      aria-label="Skip to main content"
+      aria-label="Chuyển đến nội dung chính"
     >
-      Skip to main content
+      Chuyển đến nội dung chính
     </a>
   );
 }
@@ -329,7 +331,7 @@ interface AccessibleTooltipProps {
 }
 
 export function AccessibleTooltip({ children, content, side = 'top' }: AccessibleTooltipProps) {
-  const id = `tooltip-${Math.random().toString(36).substr(2, 9)}`;
+  const id = `tooltip-${useId()}`;
 
   return (
     <div className="relative inline-block group">
