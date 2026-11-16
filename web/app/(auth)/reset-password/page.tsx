@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/ui/Icons';
-import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 
 const supabase = getBrowserSupabase();

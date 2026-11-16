@@ -2,20 +2,16 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase/client';
 import GuestGuard from '@/components/GuestGuard';
 import {
   KeyRound,
   Mail,
-  User,
   ArrowRight,
   ArrowLeft,
   AlertCircle,
   CheckCircle2,
   HelpCircle,
-  Phone,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default function ForgotPasswordPage() {
   const [identifier, setIdentifier] = useState('');
@@ -54,7 +50,9 @@ export default function ForgotPasswordPage() {
       if (data.data?.requiresAdminContact) {
         setIsManagedNotice(true);
       } else {
-        setMessage(data.data?.message || 'Đã gửi hướng dẫn khôi phục mật khẩu. Vui lòng kiểm tra hộp thư.');
+        setMessage(
+          data.data?.message || 'Đã gửi hướng dẫn khôi phục mật khẩu. Vui lòng kiểm tra hộp thư.'
+        );
       }
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi gửi yêu cầu khôi phục.');
@@ -121,7 +119,9 @@ export default function ForgotPasswordPage() {
                 Tài khoản học sinh này chưa liên kết email cá nhân ngoài.
               </p>
               <div className="p-2.5 rounded-xl bg-white dark:bg-[#1C1A16] border border-amber-200 dark:border-amber-900/40 text-[11px] font-semibold text-stone-800 dark:text-stone-200">
-                👉 <strong>Cách xử lý:</strong> Vui lòng báo Giáo viên phụ trách lớp hoặc Quản trị viên trung tâm để được <strong>đặt lại mật khẩu ngay lập tức</strong> trong vòng 1 phút.
+                👉 <strong>Cách xử lý:</strong> Vui lòng báo Giáo viên phụ trách lớp hoặc Quản trị
+                viên trung tâm để được <strong>đặt lại mật khẩu ngay lập tức</strong> trong vòng 1
+                phút.
               </div>
             </div>
           )}

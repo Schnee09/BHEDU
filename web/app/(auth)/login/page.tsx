@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -15,12 +15,9 @@ import {
   ArrowRight,
   ArrowLeft,
   Globe,
-  ShieldCheck,
   AlertCircle,
-  Sparkles,
   KeyRound,
   CheckCircle2,
-  HelpCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -62,23 +59,21 @@ function LoginContent() {
   // State
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  // Handle URL errors (e.g. from Google OAuth callback)
-  useEffect(() => {
-    const err = searchParams.get('error');
+  const [error, setError] = useState<string | null>(() => {
+    const urlError = searchParams.get('error');
     const email = searchParams.get('email');
-    if (err === 'account_not_found') {
-      setError(
-        `Tài khoản Google (${email || 'này'}) chưa được liên kết với bất kỳ hồ sơ học vụ nào tại BH-EDU. Vui lòng liên hệ trung tâm để được cấp hồ sơ hoặc đăng nhập bằng Mã UID / Số điện thoại.`
-      );
-    } else if (err === 'account_deactivated') {
-      setError('Tài khoản này đang bị tạm khóa. Vui lòng liên hệ trung tâm để được hỗ trợ.');
-    } else if (err === 'oauth_exchange_failed' || err === 'auth_failed') {
-      setError('Xác thực với Google không thành công. Vui lòng thử lại.');
+    if (urlError === 'account_not_found') {
+      return `Tài khoản Google (${email || 'này'}) chưa được liên kết với hồ sơ nào tại BH-EDU. Vui lòng liên hệ trung tâm để được hỗ trợ hoặc đăng nhập bằng mã UID / số điện thoại.`;
     }
-  }, [searchParams]);
+    if (urlError === 'account_deactivated') {
+      return 'Tài khoản này đang bị tạm khóa. Vui lòng liên hệ trung tâm để được hỗ trợ.';
+    }
+    if (urlError === 'oauth_exchange_failed' || urlError === 'auth_failed') {
+      return 'Xác thực với Google không thành công. Vui lòng thử lại.';
+    }
+    return null;
+  });
+  const [message, setMessage] = useState<string | null>(null);
 
   const handleRedirect = (role: string | null | undefined) => {
     switch (role) {

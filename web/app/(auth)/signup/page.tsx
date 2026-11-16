@@ -16,10 +16,8 @@ import {
   Mail,
   User,
   ArrowRight,
-  ShieldCheck,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -45,7 +43,7 @@ function SignupContent() {
   const [newPassword, setNewPassword] = useState('');
 
   // Invite token support
-  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const inviteToken = searchParams.get('token');
   const [invitedRole, setInvitedRole] = useState<string | null>(null);
 
   // States
@@ -54,29 +52,27 @@ function SignupContent() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    if (token) {
-      setInviteToken(token);
-      verifyInviteToken(token);
-    }
-  }, [searchParams]);
+    if (!inviteToken) return;
 
-  const verifyInviteToken = async (token: string) => {
-    try {
-      const res = await fetch(`/api/auth/verify-invite?token=${token}`);
-      const data = await res.json();
-      if (res.ok && data.success && data.invite) {
-        setEmail(data.invite.email || '');
-        setPhone(data.invite.phone || '');
-        setInvitedRole(data.invite.role || 'parent');
-        setSuccessMessage(`Bạn đang đăng ký theo lời mời từ Quản trị viên.`);
-      } else {
-        setError(data.error || 'Mã mời không hợp lệ hoặc đã hết hạn.');
+    async function verifyInviteToken(token: string) {
+      try {
+        const res = await fetch(`/api/auth/verify-invite?token=${token}`);
+        const data = await res.json();
+        if (res.ok && data.success && data.invite) {
+          setEmail(data.invite.email || '');
+          setPhone(data.invite.phone || '');
+          setInvitedRole(data.invite.role || 'parent');
+          setSuccessMessage('Bạn đang đăng ký theo lời mời từ quản trị viên.');
+        } else {
+          setError(data.error || 'Mã mời không hợp lệ hoặc đã hết hạn.');
+        }
+      } catch {
+        setError('Không thể kiểm tra mã mời.');
       }
-    } catch {
-      setError('Không thể kiểm tra mã mời.');
     }
-  };
+
+    void verifyInviteToken(inviteToken);
+  }, [inviteToken]);
 
   // 1. Parent Registration
   const handleParentRegister = async (e: React.FormEvent) => {
@@ -110,7 +106,7 @@ function SignupContent() {
       const registerEmail = email.trim() || `${phone.replace(/\D/g, '')}@parent.bhedu.vn`;
       const formattedPhone = phone.startsWith('0') ? `+84${phone.substring(1)}` : phone;
 
-      const { data: authData, error: authErr } = await supabase.auth.signUp({
+      const { error: authErr } = await supabase.auth.signUp({
         email: registerEmail,
         password,
         options: {
@@ -184,7 +180,7 @@ function SignupContent() {
           : `${code.toLowerCase()}@student.bhedu.vn`;
 
       // 2. Sign in with initial password
-      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
         email: studentEmail,
         password: initialPassword,
       });
@@ -242,8 +238,8 @@ function SignupContent() {
               {inviteToken
                 ? 'Đăng Ký Theo Lời Mời'
                 : signupType === 'parent'
-                ? 'Đăng Ký Phụ Huynh'
-                : 'Kích Hoạt Học Sinh'}
+                  ? 'Đăng Ký Phụ Huynh'
+                  : 'Kích Hoạt Học Sinh'}
             </h1>
             <p className="text-xs text-stone-500 dark:text-stone-400">
               Hệ thống Quản lý & Học tập Trực tuyến
@@ -400,7 +396,11 @@ function SignupContent() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
                   >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    {showPassword ? (
+                      <EyeOff className="w-3.5 h-3.5" />
+                    ) : (
+                      <Eye className="w-3.5 h-3.5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -490,7 +490,11 @@ function SignupContent() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
                 >
-                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-3.5 h-3.5" />
+                  ) : (
+                    <Eye className="w-3.5 h-3.5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -519,7 +523,8 @@ function SignupContent() {
           </p>
 
           <p className="text-[10px] text-stone-400 dark:text-stone-500">
-            © {new Date().getFullYear()} Trung tâm Giáo dục BH. Bảo mật thông tin học sinh chuẩn EdTech.
+            © {new Date().getFullYear()} Trung tâm Giáo dục BH. Bảo mật thông tin học sinh chuẩn
+            EdTech.
           </p>
         </div>
       </div>
@@ -530,7 +535,9 @@ function SignupContent() {
 export default function SignupPage() {
   return (
     <GuestGuard>
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Đang tải...</div>}>
+      <Suspense
+        fallback={<div className="min-h-screen flex items-center justify-center">Đang tải...</div>}
+      >
         <SignupContent />
       </Suspense>
     </GuestGuard>
