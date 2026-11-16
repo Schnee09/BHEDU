@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Shortcut {
   key: string;
@@ -21,17 +21,50 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
   const router = useRouter();
   const [showHelp, setShowHelp] = useState(false);
 
-  const shortcuts: Shortcut[] = [
-    { key: "k", ctrl: true, description: "Tìm kiếm", action: () => {} }, // Handled by CommandPalette
-    { key: "/", description: "Hiện phím tắt", action: () => setShowHelp(true) },
-    { key: "Escape", description: "Đóng", action: () => setShowHelp(false) },
-    { key: "h", alt: true, description: "Trang chủ", action: () => router.push("/dashboard") },
-    { key: "s", alt: true, description: "Học sinh", action: () => router.push("/dashboard/students") },
-    { key: "c", alt: true, description: "Lớp học", action: () => router.push("/dashboard/classes") },
-    { key: "g", alt: true, description: "Điểm số", action: () => router.push("/dashboard/grades") },
-    { key: "a", alt: true, description: "Điểm danh", action: () => router.push("/dashboard/attendance") },
-    { key: "r", alt: true, description: "Báo cáo", action: () => router.push("/dashboard/reports") },
-  ];
+  const shortcuts = useMemo<Shortcut[]>(
+    () => [
+      { key: 'k', ctrl: true, description: 'Tìm kiếm', action: () => {} }, // Handled by CommandPalette
+      { key: '/', description: 'Hiện phím tắt', action: () => setShowHelp(true) },
+      { key: 'Escape', description: 'Đóng', action: () => setShowHelp(false) },
+      { key: 'h', alt: true, description: 'Trang chủ', action: () => router.push('/dashboard') },
+      {
+        key: 's',
+        alt: true,
+        description: 'Học sinh',
+        action: () => router.push('/dashboard/students'),
+      },
+      {
+        key: 'c',
+        alt: true,
+        description: 'Lớp học',
+        action: () => router.push('/dashboard/classes'),
+      },
+      {
+        key: 'g',
+        alt: true,
+        description: 'Điểm số',
+        action: () => router.push('/dashboard/grades'),
+      },
+      {
+        key: 'a',
+        alt: true,
+        description: 'Điểm danh',
+        action: () => router.push('/dashboard/attendance'),
+      },
+      {
+        key: 'r',
+        alt: true,
+        description: 'Báo cáo',
+        action: () => router.push('/dashboard/reports'),
+      },
+    ],
+    [router]
+  );
+
+  const visibleShortcuts = useMemo(
+    () => shortcuts.filter((shortcut) => !(shortcut.key === 'k' && shortcut.ctrl)),
+    [shortcuts]
+  );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -39,13 +72,9 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
 
       // Don't trigger if typing in input, textarea, or contenteditable
       const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
-      ) {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         // Allow Escape in inputs
-        if (e.key !== "Escape") return;
+        if (e.key !== 'Escape') return;
       }
 
       for (const shortcut of shortcuts) {
@@ -60,7 +89,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
           altMatch
         ) {
           // Skip Ctrl+K as it's handled by CommandPalette
-          if (shortcut.key === "k" && shortcut.ctrl) continue;
+          if (shortcut.key === 'k' && shortcut.ctrl) continue;
 
           e.preventDefault();
           shortcut.action();
@@ -72,13 +101,13 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
   );
 
   useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
   return {
     showHelp,
     setShowHelp,
-    shortcuts: shortcuts.filter((s) => !(s.key === "k" && s.ctrl)), // Exclude Ctrl+K from display
+    shortcuts: visibleShortcuts,
   };
 }
