@@ -20,7 +20,7 @@ export const adminQuickActions: QuickActionItem[] = [
   {
     href: routes.users.list(),
     icon: <Icons.Teachers />,
-    title: 'Giảng viên',
+    title: 'Giáo viên',
     color: 'emerald',
   },
   {

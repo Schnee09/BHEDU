@@ -156,7 +156,7 @@ export function CreateRequestModal({
                 Gửi đơn trực tuyến
               </h2>
               <p className="text-xs text-stone-400">
-                {studentName ? `Học sinh: ${studentName}` : 'Dịch vụ một cửa học viên'}
+                {studentName ? `Học sinh: ${studentName}` : 'Yêu cầu hỗ trợ học sinh'}
               </p>
             </div>
           </div>

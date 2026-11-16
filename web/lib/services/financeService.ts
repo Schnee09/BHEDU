@@ -413,7 +413,7 @@ export class FinanceService {
               invoice_id: existingInvoice.id,
               amount: balance,
               payment_method_id: paymentMethodId,
-              notes: 'Thanh toán học phí qua cổng học viên',
+              notes: 'Thanh toán học phí qua cổng học sinh',
             });
             existingInvoices.set(`${studentId}:${month}`, {
               ...existingInvoice,

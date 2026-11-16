@@ -1582,7 +1582,7 @@ export default function AcademicCalendarPage() {
 
                   <div>
                     <label className="block text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                      Ghi chú / Hướng dẫn học viên
+                      Ghi chú / Hướng dẫn học sinh
                     </label>
                     <textarea
                       rows={2}

@@ -168,7 +168,7 @@ function TutorsContent() {
             Đội ngũ Gia sư
           </h1>
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-            Quản lý danh sách sinh viên dạy kèm, học phí theo giờ và môn kèm 1-1
+            Quản lý giáo viên dạy kèm, học phí theo giờ và môn học kèm 1-1
           </p>
         </div>
 

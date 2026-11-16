@@ -391,7 +391,7 @@ export const SYSTEM_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     id: 'subjects.view',
     code: 'subjects.view',
     name: 'Xem danh mục môn học',
-    description: 'Tra cứu môn học, khối lớp và học phần',
+    description: 'Tra cứu môn học, khối lớp và chương trình học',
     category: 'subjects',
   },
   {
