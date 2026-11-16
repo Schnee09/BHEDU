@@ -1,12 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { Award, Plus, Trash2, CheckCircle2 } from 'lucide-react';
@@ -25,15 +20,17 @@ const DEFAULT_LEVELS: GradingScaleLevel[] = [
   { letter: 'B', min: 7.0, max: 8.4, description: 'Khá', gpa: 3.0, color: '#3B82F6' },
   { letter: 'C', min: 5.5, max: 6.9, description: 'Trung bình khá', gpa: 2.0, color: '#F59E0B' },
   { letter: 'D', min: 4.0, max: 5.4, description: 'Trung bình', gpa: 1.0, color: '#EA580C' },
-  { letter: 'F', min: 0.0, max: 3.9, description: 'Yếu / Kém (Không đạt)', gpa: 0.0, color: '#EF4444' },
+  {
+    letter: 'F',
+    min: 0.0,
+    max: 3.9,
+    description: 'Yếu / Kém (Không đạt)',
+    gpa: 0.0,
+    color: '#EF4444',
+  },
 ];
 
-export function GradingScaleModal({
-  isOpen,
-  onClose,
-  scale,
-  onSave,
-}: GradingScaleModalProps) {
+export function GradingScaleModal({ isOpen, onClose, scale, onSave }: GradingScaleModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isDefault, setIsDefault] = useState(false);
@@ -66,9 +63,7 @@ export function GradingScaleModal({
   };
 
   const handleUpdateLevel = (index: number, field: keyof GradingScaleLevel, val: any) => {
-    setLevels((prev) =>
-      prev.map((lvl, i) => (i === index ? { ...lvl, [field]: val } : lvl))
-    );
+    setLevels((prev) => prev.map((lvl, i) => (i === index ? { ...lvl, [field]: val } : lvl)));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,7 +101,7 @@ export function GradingScaleModal({
                   {scale ? 'Chỉnh sửa thang điểm' : 'Thiết lập thang điểm mới'}
                 </DialogTitle>
                 <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                  Quy định các khoảng điểm số, điểm chữ và GPA tương ứng.
+                  Quy định các khoảng điểm số, điểm chữ và mức quy đổi tương ứng.
                 </p>
               </div>
             </div>

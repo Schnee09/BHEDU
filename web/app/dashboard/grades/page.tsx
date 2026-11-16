@@ -74,7 +74,7 @@ const navCards: NavCard[] = [
   {
     href: '/dashboard/grades/analytics',
     title: 'Phân tích học lực',
-    description: 'Biểu đồ phân bố điểm số và GPA toàn trung tâm',
+    description: 'Biểu đồ phân bố điểm số và kết quả học tập toàn trung tâm',
     icon: DocumentChartBarIcon,
     permission: 'grades.analytics',
     color: 'emerald',

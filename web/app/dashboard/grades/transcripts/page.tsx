@@ -210,7 +210,7 @@ export default function TranscriptsPage() {
                 <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
                   <span>
-                    Điểm TB (GPA):{' '}
+                    Điểm trung bình:{' '}
                     <strong className="font-mono font-bold text-emerald-900 dark:text-emerald-100">
                       {averageScore > 0 ? averageScore.toFixed(2) : '-'}
                     </strong>

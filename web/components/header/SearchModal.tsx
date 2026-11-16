@@ -158,7 +158,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         type: 'feature',
         category: 'Cấu hình Học vụ',
         name: 'Thang điểm & Xếp loại',
-        sub: 'Quy chuẩn tính GPA và xếp loại',
+        sub: 'Quy chuẩn tính điểm trung bình và xếp loại',
         href: '/dashboard/admin/grading-scales',
         icon: SparklesIcon,
       },

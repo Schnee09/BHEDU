@@ -31,7 +31,7 @@ export function GradingSettingsTab({
               Thang điểm & Xếp loại học lực
             </h3>
             <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-              Quy đổi điểm thi số sang điểm chữ, GPA và phân loại học lực cho bảng điểm học sinh.
+              Quy đổi điểm số sang điểm chữ và phân loại kết quả học tập của học sinh.
             </p>
           </div>
         </div>
@@ -118,7 +118,7 @@ export function GradingSettingsTab({
                             </span>
                             {lvl.gpa !== undefined && (
                               <span className="px-2 py-0.5 rounded-md bg-stone-200/50 dark:bg-white/5 font-mono text-[10px] font-bold text-stone-600 dark:text-stone-400">
-                                GPA {lvl.gpa.toFixed(1)}
+                                Điểm quy đổi {lvl.gpa.toFixed(1)}
                               </span>
                             )}
                           </div>
@@ -152,7 +152,9 @@ export function GradingSettingsTab({
         {gradingScales.length === 0 && (
           <div className="col-span-1 md:col-span-2 p-16 text-center space-y-4 rounded-3xl bg-stone-50 dark:bg-white/5 border border-dashed border-stone-200 dark:border-white/10">
             <Award className="w-12 h-12 text-stone-400 mx-auto opacity-40" />
-            <p className="text-stone-500 font-bold text-sm">Chưa có thang điểm nào được thiết lập.</p>
+            <p className="text-stone-500 font-bold text-sm">
+              Chưa có thang điểm nào được thiết lập.
+            </p>
           </div>
         )}
       </div>

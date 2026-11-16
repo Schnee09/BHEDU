@@ -768,7 +768,7 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
               </div>
               <div className="min-w-0">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400 block truncate">
-                  Điểm TB (GPA)
+                  Điểm trung bình
                 </span>
                 <span className="text-xs sm:text-sm font-black text-amber-600 dark:text-amber-400 tabular-nums">
                   {averageGrade}

@@ -39,33 +39,128 @@ interface TableMeta {
 
 const SYSTEM_TABLES: TableMeta[] = [
   // Users & Profiles
-  { name: 'profiles', label: 'Hồ sơ tài khoản', category: 'users', description: 'Thông tin cá nhân, vai trò và phân quyền người dùng' },
-  { name: 'students', label: 'Học sinh', category: 'users', description: 'Hồ sơ học sinh, ngày sinh, giới tính và mã học sinh' },
-  { name: 'guardians', label: 'Phụ huynh & Người giám hộ', category: 'users', description: 'Liên kết thông tin phụ huynh và học sinh' },
-  { name: 'enrollments', label: 'Ghi danh lớp học', category: 'users', description: 'Lịch sử và trạng thái đăng ký lớp của học sinh' },
-  
+  {
+    name: 'profiles',
+    label: 'Hồ sơ tài khoản',
+    category: 'users',
+    description: 'Thông tin cá nhân, vai trò và phân quyền người dùng',
+  },
+  {
+    name: 'students',
+    label: 'Học sinh',
+    category: 'users',
+    description: 'Hồ sơ học sinh, ngày sinh, giới tính và mã học sinh',
+  },
+  {
+    name: 'guardians',
+    label: 'Phụ huynh & Người giám hộ',
+    category: 'users',
+    description: 'Liên kết thông tin phụ huynh và học sinh',
+  },
+  {
+    name: 'enrollments',
+    label: 'Ghi danh lớp học',
+    category: 'users',
+    description: 'Lịch sử và trạng thái đăng ký lớp của học sinh',
+  },
+
   // Academic & Classes
-  { name: 'classes', label: 'Lớp học', category: 'academic', description: 'Danh sách lớp học, giáo viên phụ trách, phòng học' },
-  { name: 'courses', label: 'Khóa học & Môn học', category: 'academic', description: 'Khung chương trình đào tạo và môn học' },
-  { name: 'lessons', label: 'Buổi học / Bài giảng', category: 'academic', description: 'Chi tiết từng buổi học và lịch dạy' },
-  { name: 'academic_years', label: 'Năm học & Học kỳ', category: 'academic', description: 'Khung niên khóa và học kỳ toàn trung tâm' },
-  
+  {
+    name: 'classes',
+    label: 'Lớp học',
+    category: 'academic',
+    description: 'Danh sách lớp học, giáo viên phụ trách, phòng học',
+  },
+  {
+    name: 'courses',
+    label: 'Khóa học & Môn học',
+    category: 'academic',
+    description: 'Khung chương trình đào tạo và môn học',
+  },
+  {
+    name: 'lessons',
+    label: 'Buổi học / Bài giảng',
+    category: 'academic',
+    description: 'Chi tiết từng buổi học và lịch dạy',
+  },
+  {
+    name: 'academic_years',
+    label: 'Năm học & Học kỳ',
+    category: 'academic',
+    description: 'Khung niên khóa và học kỳ toàn trung tâm',
+  },
+
   // Attendance & Grades
-  { name: 'attendance', label: 'Điểm danh', category: 'grades', description: 'Nhật ký điểm danh chuyên cần hàng ngày' },
-  { name: 'grades', label: 'Điểm số học tập', category: 'grades', description: 'Điểm thi, điểm kiểm tra và điểm tổng kết' },
-  { name: 'grading_scales', label: 'Thang điểm & Xếp loại', category: 'grades', description: 'Quy chuẩn tính điểm và xếp loại học lực' },
-  { name: 'assignments', label: 'Bài tập & Đánh giá', category: 'grades', description: 'Danh mục bài tập và kiểm tra định kỳ' },
-  
+  {
+    name: 'attendance',
+    label: 'Điểm danh',
+    category: 'grades',
+    description: 'Nhật ký điểm danh chuyên cần hàng ngày',
+  },
+  {
+    name: 'grades',
+    label: 'Điểm số học tập',
+    category: 'grades',
+    description: 'Điểm thi, điểm kiểm tra và điểm tổng kết',
+  },
+  {
+    name: 'grading_scales',
+    label: 'Thang điểm & Xếp loại',
+    category: 'grades',
+    description: 'Quy chuẩn tính điểm và xếp loại học lực',
+  },
+  {
+    name: 'assignments',
+    label: 'Bài tập & Đánh giá',
+    category: 'grades',
+    description: 'Danh mục bài tập và kiểm tra định kỳ',
+  },
+
   // Finance
-  { name: 'fee_types', label: 'Danh mục khoản thu', category: 'finance', description: 'Các loại phí đào tạo, giáo trình và phụ phí' },
-  { name: 'invoices', label: 'Hóa đơn học phí', category: 'finance', description: 'Phiếu thu, hóa đơn học phí của từng học sinh' },
-  { name: 'invoice_items', label: 'Chi tiết hóa đơn', category: 'finance', description: 'Từng mục chi tiết trong hóa đơn học phí' },
-  { name: 'payments', label: 'Giao dịch thanh toán', category: 'finance', description: 'Nhật ký thanh toán, chuyển khoản, tiền mặt' },
-  
+  {
+    name: 'fee_types',
+    label: 'Danh mục khoản thu',
+    category: 'finance',
+    description: 'Các loại phí đào tạo, giáo trình và phụ phí',
+  },
+  {
+    name: 'invoices',
+    label: 'Hóa đơn học phí',
+    category: 'finance',
+    description: 'Phiếu thu, hóa đơn học phí của từng học sinh',
+  },
+  {
+    name: 'invoice_items',
+    label: 'Chi tiết hóa đơn',
+    category: 'finance',
+    description: 'Từng mục chi tiết trong hóa đơn học phí',
+  },
+  {
+    name: 'payments',
+    label: 'Giao dịch thanh toán',
+    category: 'finance',
+    description: 'Nhật ký thanh toán, chuyển khoản, tiền mặt',
+  },
+
   // System & Logs
-  { name: 'school_settings', label: 'Cấu hình trung tâm', category: 'system', description: 'Thông tin nhận diện, quy định và thiết lập chung' },
-  { name: 'audit_logs', label: 'Nhật ký kiểm toán', category: 'system', description: 'Lịch sử thao tác và thay đổi dữ liệu nhạy cảm' },
-  { name: 'role_permission_overrides', label: 'Phân quyền vai trò', category: 'system', description: 'Cấu hình ghi đè quyền hạn của vai trò' },
+  {
+    name: 'school_settings',
+    label: 'Cấu hình trung tâm',
+    category: 'system',
+    description: 'Thông tin nhận diện, quy định và thiết lập chung',
+  },
+  {
+    name: 'audit_logs',
+    label: 'Nhật ký kiểm toán',
+    category: 'system',
+    description: 'Lịch sử thao tác và thay đổi dữ liệu nhạy cảm',
+  },
+  {
+    name: 'role_permission_overrides',
+    label: 'Phân quyền vai trò',
+    category: 'system',
+    description: 'Cấu hình ghi đè quyền hạn của vai trò',
+  },
 ];
 
 type ActiveTab = 'snapshot' | 'modules' | 'tables';
@@ -93,7 +188,7 @@ function BackupDataCenterContent() {
       const res = await apiFetch('/api/admin/export-data');
       if (!res.ok) throw new Error('Không thể tạo bản sao lưu');
       const data = await res.json();
-      
+
       const fileName = `bh-edu-full-backup-${new Date().toISOString().split('T')[0]}`;
       exportToJSON(data, fileName);
       toast.success('Thành công', 'Đã tải về bản sao lưu Snapshot toàn diện!');
@@ -110,7 +205,7 @@ function BackupDataCenterContent() {
       const res = await apiFetch(`/api/admin/export-data?module=${moduleKey}`);
       if (!res.ok) throw new Error(`Không thể xuất dữ liệu phân hệ ${moduleLabel}`);
       const data = await res.json();
-      
+
       const fileName = `bh-edu-${moduleKey}-${new Date().toISOString().split('T')[0]}`;
       exportToJSON(data, fileName);
       toast.success('Thành công', `Đã xuất dữ liệu phân hệ "${moduleLabel}"!`);
@@ -127,7 +222,7 @@ function BackupDataCenterContent() {
       const res = await apiFetch(`/api/admin/export-data?table=${tableName}`);
       if (!res.ok) throw new Error(`Không thể xuất bảng ${tableName}`);
       const data = await res.json();
-      
+
       const fileName = `table-${tableName}-${new Date().toISOString().split('T')[0]}`;
       exportToJSON(data, fileName);
       toast.success('Thành công', `Đã tải về dữ liệu bảng "${tableName}"!`);
@@ -178,7 +273,8 @@ function BackupDataCenterContent() {
               Sao lưu & <span className="text-amber-500">Dữ liệu</span>
             </h1>
             <p className="text-xs text-stone-500 font-medium">
-              Trung tâm quản lý sao lưu snapshot, xuất dữ liệu theo phân hệ và trình khám phá cơ sở dữ liệu an toàn
+              Trung tâm quản lý sao lưu snapshot, xuất dữ liệu theo phân hệ và trình khám phá cơ sở
+              dữ liệu an toàn
             </p>
           </div>
 
@@ -206,7 +302,9 @@ function BackupDataCenterContent() {
             </div>
             <div>
               <p className="text-xs text-stone-400 font-bold uppercase">Hạ tầng DB</p>
-              <h4 className="text-lg font-black text-stone-900 dark:text-white">Supabase Postgres</h4>
+              <h4 className="text-lg font-black text-stone-900 dark:text-white">
+                Supabase Postgres
+              </h4>
             </div>
           </div>
 
@@ -216,7 +314,9 @@ function BackupDataCenterContent() {
             </div>
             <div>
               <p className="text-xs text-stone-400 font-bold uppercase">Trạng thái kết nối</p>
-              <h4 className="text-lg font-black text-emerald-600 dark:text-emerald-400">Trực tuyến (Online)</h4>
+              <h4 className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                Trực tuyến (Online)
+              </h4>
             </div>
           </div>
 
@@ -226,7 +326,9 @@ function BackupDataCenterContent() {
             </div>
             <div>
               <p className="text-xs text-stone-400 font-bold uppercase">Bảng dữ liệu cốt lõi</p>
-              <h4 className="text-lg font-black text-stone-900 dark:text-white">{SYSTEM_TABLES.length} Bảng</h4>
+              <h4 className="text-lg font-black text-stone-900 dark:text-white">
+                {SYSTEM_TABLES.length} Bảng
+              </h4>
             </div>
           </div>
 
@@ -236,7 +338,9 @@ function BackupDataCenterContent() {
             </div>
             <div>
               <p className="text-xs text-stone-400 font-bold uppercase">Mã hóa & Bảo vệ</p>
-              <h4 className="text-lg font-black text-stone-900 dark:text-white">TLS 1.3 / AES-256</h4>
+              <h4 className="text-lg font-black text-stone-900 dark:text-white">
+                TLS 1.3 / AES-256
+              </h4>
             </div>
           </div>
         </div>
@@ -355,8 +459,9 @@ function BackupDataCenterContent() {
                   Cảnh báo an toàn dữ liệu:
                 </p>
                 <p className="text-[11px] leading-relaxed">
-                  Thao tác khôi phục sẽ đối chiếu và cập nhật các bản ghi hiện tại. Để đảm bảo an toàn tuyệt đối,
-                  hãy tạo một bản sao lưu snapshot mới trước khi thực hiện khôi phục.
+                  Thao tác khôi phục sẽ đối chiếu và cập nhật các bản ghi hiện tại. Để đảm bảo an
+                  toàn tuyệt đối, hãy tạo một bản sao lưu snapshot mới trước khi thực hiện khôi
+                  phục.
                 </p>
               </div>
 
@@ -368,7 +473,10 @@ function BackupDataCenterContent() {
                   accept=".json"
                   className="hidden"
                   onChange={() => {
-                    toast.info('Thông báo', 'Tính năng khôi phục trực tiếp yêu cầu xác thực bảo mật Super Admin 2FA.');
+                    toast.info(
+                      'Thông báo',
+                      'Tính năng khôi phục trực tiếp yêu cầu xác thực bảo mật Super Admin 2FA.'
+                    );
                   }}
                 />
               </label>
@@ -390,9 +498,12 @@ function BackupDataCenterContent() {
                     4 Bảng
                   </span>
                 </div>
-                <h4 className="font-black text-base text-stone-950 dark:text-white">Phân hệ Học sinh & Phụ huynh</h4>
+                <h4 className="font-black text-base text-stone-950 dark:text-white">
+                  Phân hệ Học sinh & Phụ huynh
+                </h4>
                 <p className="text-xs text-stone-500">
-                  Gồm hồ sơ học sinh, thông tin người giám hộ, tài khoản liên kết và lịch sử ghi danh lớp học.
+                  Gồm hồ sơ học sinh, thông tin người giám hộ, tài khoản liên kết và lịch sử ghi
+                  danh lớp học.
                 </p>
               </div>
 
@@ -401,7 +512,11 @@ function BackupDataCenterContent() {
                 disabled={exporting === 'students'}
                 className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-xs font-bold flex items-center justify-center gap-2 transition-all"
               >
-                {exporting === 'students' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                {exporting === 'students' ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
                 Xuất Phân hệ Học sinh (.JSON)
               </button>
             </div>
@@ -417,7 +532,9 @@ function BackupDataCenterContent() {
                     5 Bảng
                   </span>
                 </div>
-                <h4 className="font-black text-base text-stone-950 dark:text-white">Phân hệ Lớp học & Đào tạo</h4>
+                <h4 className="font-black text-base text-stone-950 dark:text-white">
+                  Phân hệ Lớp học & Đào tạo
+                </h4>
                 <p className="text-xs text-stone-500">
                   Gồm danh sách lớp, môn học, bài giảng, khung năm học và phân kỳ giai đoạn học tập.
                 </p>
@@ -428,7 +545,11 @@ function BackupDataCenterContent() {
                 disabled={exporting === 'academic'}
                 className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-xs font-bold flex items-center justify-center gap-2 transition-all"
               >
-                {exporting === 'academic' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                {exporting === 'academic' ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
                 Xuất Phân hệ Đào tạo (.JSON)
               </button>
             </div>
@@ -444,9 +565,11 @@ function BackupDataCenterContent() {
                     3 Bảng
                   </span>
                 </div>
-                <h4 className="font-black text-base text-stone-950 dark:text-white">Phân hệ Điểm số & Học lực</h4>
+                <h4 className="font-black text-base text-stone-950 dark:text-white">
+                  Phân hệ Điểm số & Học lực
+                </h4>
                 <p className="text-xs text-stone-500">
-                  Gồm toàn bộ kết quả thi, thang điểm chữ, điểm GPA và danh mục bài tập đánh giá.
+                  Gồm toàn bộ kết quả học tập, thang điểm, mức xếp loại và danh mục bài đánh giá.
                 </p>
               </div>
 
@@ -455,7 +578,11 @@ function BackupDataCenterContent() {
                 disabled={exporting === 'grades'}
                 className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-xs font-bold flex items-center justify-center gap-2 transition-all"
               >
-                {exporting === 'grades' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                {exporting === 'grades' ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
                 Xuất Phân hệ Điểm số (.JSON)
               </button>
             </div>
@@ -471,7 +598,9 @@ function BackupDataCenterContent() {
                     5 Bảng
                   </span>
                 </div>
-                <h4 className="font-black text-base text-stone-950 dark:text-white">Phân hệ Tài chính & Học phí</h4>
+                <h4 className="font-black text-base text-stone-950 dark:text-white">
+                  Phân hệ Tài chính & Học phí
+                </h4>
                 <p className="text-xs text-stone-500">
                   Gồm hóa đơn thu phí, khoản thu định kỳ, nhật ký thanh toán và đối soát dòng tiền.
                 </p>
@@ -482,7 +611,11 @@ function BackupDataCenterContent() {
                 disabled={exporting === 'finance'}
                 className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-xs font-bold flex items-center justify-center gap-2 transition-all"
               >
-                {exporting === 'finance' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                {exporting === 'finance' ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
                 Xuất Phân hệ Tài chính (.JSON)
               </button>
             </div>
@@ -498,7 +631,9 @@ function BackupDataCenterContent() {
                     3 Bảng
                   </span>
                 </div>
-                <h4 className="font-black text-base text-stone-950 dark:text-white">Phân hệ Cấu hình & Logs</h4>
+                <h4 className="font-black text-base text-stone-950 dark:text-white">
+                  Phân hệ Cấu hình & Logs
+                </h4>
                 <p className="text-xs text-stone-500">
                   Gồm thông tin cấu hình trung tâm, phân quyền RBAC vai trò và toàn bộ Audit Logs.
                 </p>
@@ -509,7 +644,11 @@ function BackupDataCenterContent() {
                 disabled={exporting === 'system'}
                 className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-xs font-bold flex items-center justify-center gap-2 transition-all"
               >
-                {exporting === 'system' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                {exporting === 'system' ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
                 Xuất Phân hệ Hệ thống (.JSON)
               </button>
             </div>
@@ -551,7 +690,9 @@ function BackupDataCenterContent() {
                         {table.category}
                       </span>
                     </div>
-                    <h5 className="text-xs font-bold text-stone-700 dark:text-stone-300">{table.label}</h5>
+                    <h5 className="text-xs font-bold text-stone-700 dark:text-stone-300">
+                      {table.label}
+                    </h5>
                     <p className="text-[11px] text-stone-400 line-clamp-2">{table.description}</p>
                   </div>
 
@@ -586,7 +727,8 @@ function BackupDataCenterContent() {
                   <div className="flex items-center gap-2">
                     <Database className="w-5 h-5 text-amber-500" />
                     <h4 className="text-sm font-black text-stone-900 dark:text-white">
-                      Xem trước 10 bản ghi gần nhất: <span className="font-mono text-amber-500">{previewingTable}</span>
+                      Xem trước 10 bản ghi gần nhất:{' '}
+                      <span className="font-mono text-amber-500">{previewingTable}</span>
                     </h4>
                   </div>
                   <button
@@ -608,7 +750,10 @@ function BackupDataCenterContent() {
                       <thead>
                         <tr className="border-b border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/50">
                           {Object.keys(previewData[0] || {}).map((col) => (
-                            <th key={col} className="p-2.5 font-mono font-bold text-stone-600 dark:text-stone-300">
+                            <th
+                              key={col}
+                              className="p-2.5 font-mono font-bold text-stone-600 dark:text-stone-300"
+                            >
                               {col}
                             </th>
                           ))}
@@ -618,7 +763,10 @@ function BackupDataCenterContent() {
                         {previewData.map((row, idx) => (
                           <tr key={idx} className="hover:bg-stone-50/60 dark:hover:bg-white/[0.02]">
                             {Object.values(row).map((val: any, vIdx) => (
-                              <td key={vIdx} className="p-2.5 text-stone-600 dark:text-stone-400 font-mono truncate max-w-xs">
+                              <td
+                                key={vIdx}
+                                className="p-2.5 text-stone-600 dark:text-stone-400 font-mono truncate max-w-xs"
+                              >
                                 {typeof val === 'object' ? JSON.stringify(val) : String(val ?? '')}
                               </td>
                             ))}

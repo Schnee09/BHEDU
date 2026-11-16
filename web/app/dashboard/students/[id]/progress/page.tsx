@@ -297,7 +297,7 @@ function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-black text-amber-400 uppercase tracking-wider">
-                  Xu hướng GPA
+                  Xu hướng điểm trung bình
                 </p>
                 <p className="text-xl font-black tabular-nums">
                   {trend.value > 0 ? '+' : ''}
@@ -390,7 +390,7 @@ function StudentProgressPage({ params }: { params: Promise<{ id: string }> }) {
               <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
                 <Icons.TrendUp className="w-4 h-4" />
               </span>
-              Xu hướng điểm TB (GPA)
+              Xu hướng điểm trung bình
             </h2>
             <p className="text-[11px] text-stone-400 mt-0.5">
               Diễn biến điểm số học kỳ theo thời gian

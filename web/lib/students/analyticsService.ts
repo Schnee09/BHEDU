@@ -263,14 +263,14 @@ export function getMilestones(
   return [
     {
       id: 'excellent_gpa',
-      title: 'Học sinh Xuất sắc (GPA ≥ 9.0)',
+      title: 'Học sinh xuất sắc (điểm trung bình ≥ 9,0)',
       achieved: gpa >= 9.0,
       progress: Math.min(100, (gpa / 9.0) * 100),
       icon: '🏆',
     },
     {
       id: 'good_gpa',
-      title: 'Học sinh Giỏi (GPA ≥ 8.0)',
+      title: 'Học sinh giỏi (điểm trung bình ≥ 8,0)',
       achieved: gpa >= 8.0,
       progress: Math.min(100, (gpa / 8.0) * 100),
       icon: '⭐',
@@ -291,7 +291,7 @@ export function getMilestones(
     },
     {
       id: 'passing',
-      title: 'Đạt yêu cầu (GPA ≥ 5.0)',
+      title: 'Đạt yêu cầu (điểm trung bình ≥ 5,0)',
       achieved: gpa >= 5.0,
       progress: Math.min(100, (gpa / 5.0) * 100),
       icon: '📚',

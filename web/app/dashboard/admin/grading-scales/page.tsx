@@ -14,12 +14,7 @@ import {
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -86,7 +81,7 @@ export default function GradingScalesPage() {
     setEditingScale(null);
     setFormData({
       name: 'Thang điểm chuẩn',
-      description: 'Quy đổi điểm thi số sang điểm chữ và GPA',
+      description: 'Quy đổi điểm số sang điểm chữ và mức xếp loại',
       is_default: false,
       scale: DEFAULT_SCALE,
     });
@@ -107,10 +102,7 @@ export default function GradingScalesPage() {
   const handleAddLevel = () => {
     setFormData((prev) => ({
       ...prev,
-      scale: [
-        ...prev.scale,
-        { letter: 'Mới', min: 0, max: 10, description: 'Mức điểm', gpa: 0 },
-      ],
+      scale: [...prev.scale, { letter: 'Mới', min: 0, max: 10, description: 'Mức điểm', gpa: 0 }],
     }));
   };
 
@@ -322,7 +314,7 @@ export default function GradingScalesPage() {
                               </span>
                               {lvl.gpa !== undefined && (
                                 <span className="px-2 py-0.5 rounded-md bg-stone-200/50 dark:bg-white/5 font-mono text-[10px] font-bold text-stone-600 dark:text-stone-400">
-                                  GPA {lvl.gpa.toFixed(1)}
+                                  Điểm quy đổi {lvl.gpa.toFixed(1)}
                                 </span>
                               )}
                             </div>
