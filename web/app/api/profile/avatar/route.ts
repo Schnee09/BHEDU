@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: 'Chưa đăng nhập. Vui lòng đăng nhập lại.', code: 'UNAUTHENTICATED' },
+        { error: 'Bạn chưa đăng nhập. Vui lòng đăng nhập lại.', code: 'UNAUTHENTICATED' },
         { status: 401 }
       );
     }
@@ -24,22 +24,22 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return NextResponse.json({ error: 'Không tìm thấy file tải lên' }, { status: 400 });
+      return NextResponse.json({ error: 'Không tìm thấy tệp ảnh tải lên.' }, { status: 400 });
     }
 
     const extension = getAvatarExtension(file.type);
     if (!extension) {
-      return NextResponse.json({ error: 'Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP' }, { status: 400 });
+      return NextResponse.json({ error: 'Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP.' }, { status: 400 });
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'Dung lượng ảnh tối đa là 5MB' }, { status: 400 });
+      return NextResponse.json({ error: 'Dung lượng ảnh tối đa là 5 MB.' }, { status: 400 });
     }
 
     const arrayBuffer = await file.arrayBuffer();
     const fileBytes = new Uint8Array(arrayBuffer);
     if (!hasValidImageSignature(fileBytes, file.type)) {
-      return NextResponse.json({ error: 'Nội dung file ảnh không hợp lệ' }, { status: 400 });
+      return NextResponse.json({ error: 'Nội dung tệp ảnh không hợp lệ.' }, { status: 400 });
     }
 
     const serviceSupabase = createServiceClient();
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       logger.error('Supabase storage upload error:', { error: uploadError.message });
       return NextResponse.json(
-        { error: `Lỗi tải ảnh lên Storage: ${uploadError.message}` },
+        { error: 'Không thể tải ảnh lên. Vui lòng thử lại.' },
         { status: 500 }
       );
     }
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
       if (rollbackError) {
         logger.warn('Failed to rollback uploaded avatar:', { error: rollbackError.message });
       }
-      return NextResponse.json({ error: 'Không tìm thấy hồ sơ để cập nhật' }, { status: 500 });
+      return NextResponse.json({ error: 'Không tìm thấy hồ sơ để cập nhật.' }, { status: 500 });
     }
 
     if (dbErr) {
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
         logger.warn('Failed to rollback uploaded avatar:', { error: rollbackError.message });
       }
       logger.error('Database update error in avatar upload:', { error: dbErr.message });
-      return NextResponse.json({ error: `Lỗi cập nhật CSDL: ${dbErr.message}` }, { status: 500 });
+      return NextResponse.json({ error: 'Không thể cập nhật ảnh đại diện.' }, { status: 500 });
     }
 
     // Sync auth user_metadata
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
       error: error?.message || String(error),
     });
     return NextResponse.json(
-      { error: error.message || 'Lỗi xử lý tải ảnh đại diện' },
+      { error: 'Không thể xử lý yêu cầu tải ảnh đại diện.' },
       { status: 500 }
     );
   }
@@ -183,7 +183,7 @@ export async function DELETE(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: 'Chưa đăng nhập. Vui lòng đăng nhập lại.', code: 'UNAUTHENTICATED' },
+        { error: 'Bạn chưa đăng nhập. Vui lòng đăng nhập lại.', code: 'UNAUTHENTICATED' },
         { status: 401 }
       );
     }
@@ -232,11 +232,11 @@ export async function DELETE(request: NextRequest) {
 
     if (dbErr) {
       logger.error('Database update error in avatar delete:', { error: dbErr.message });
-      return NextResponse.json({ error: `Lỗi cập nhật CSDL: ${dbErr.message}` }, { status: 500 });
+      return NextResponse.json({ error: 'Không thể cập nhật ảnh đại diện.' }, { status: 500 });
     }
 
     if (!updated) {
-      return NextResponse.json({ error: 'Không tìm thấy hồ sơ để cập nhật' }, { status: 500 });
+      return NextResponse.json({ error: 'Không tìm thấy hồ sơ để cập nhật.' }, { status: 500 });
     }
 
     // 4. Remove the old file only after the database no longer references it
@@ -279,7 +279,7 @@ export async function DELETE(request: NextRequest) {
       error: error?.message || String(error),
     });
     return NextResponse.json(
-      { error: error.message || 'Lỗi khi gỡ ảnh đại diện' },
+      { error: 'Không thể xử lý yêu cầu gỡ ảnh đại diện.' },
       { status: 500 }
     );
   }

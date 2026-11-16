@@ -9,13 +9,13 @@ const resetRequestSchema = z.object({
   identifier: z
     .string()
     .trim()
-    .min(1, 'Vui lòng nhập Email, Mã định danh (UID) hoặc Số điện thoại')
+    .min(1, 'Vui lòng nhập email, mã định danh (UID) hoặc số điện thoại.')
     .max(200)
-    .regex(/^[A-Za-z0-9@._+\-]+$/, 'Thông tin tài khoản chứa ký tự không hợp lệ'),
+    .regex(/^[A-Za-z0-9@._+\-]+$/, 'Thông tin tài khoản chứa ký tự không hợp lệ.'),
 });
 
 const GENERIC_RESET_MESSAGE =
-  'Nếu thông tin khớp với một tài khoản hợp lệ, hướng dẫn khôi phục mật khẩu sẽ được gửi tới email đã đăng ký.';
+  'Nếu thông tin khớp với tài khoản hợp lệ, hướng dẫn đặt lại mật khẩu sẽ được gửi đến email đã đăng ký.';
 const PASSWORD_RESET_RATE_LIMIT = {
   maxAttempts: 5,
   windowMs: 15 * 60 * 1000,
@@ -118,7 +118,7 @@ export const POST = createApiHandler(
       const safeRecoveryUrl = escapeHtml(recoveryUrl);
 
       // 4. Send email to recipient
-      const safeName = escapeHtml(profile.full_name || 'Quý học sinh / Phụ huynh');
+      const safeName = escapeHtml(profile.full_name || 'Quý phụ huynh hoặc học sinh');
       const safeAccountEmail = escapeHtml(profile.email);
       const emailHtml = `
 <!DOCTYPE html>
@@ -137,17 +137,17 @@ export const POST = createApiHandler(
   <div class="container">
     <div class="header">
       <h2 style="margin: 0;">TRUNG TÂM GIÁO DỤC BÙI HOÀNG (BH-EDU)</h2>
-      <p style="margin: 6px 0 0 0; color: #D6D3D1; font-size: 13px;">Yêu cầu đặt lại mật khẩu tài khoản học vụ</p>
+      <p style="margin: 6px 0 0 0; color: #D6D3D1; font-size: 13px;">Yêu cầu đặt lại mật khẩu</p>
     </div>
     <div class="content">
       <p>Kính gửi <strong>${safeName}</strong>,</p>
-      <p>Hệ thống BH-EDU vừa nhận được yêu cầu đặt lại mật khẩu cho tài khoản: <strong>${safeAccountEmail}</strong>.</p>
-      <p>Vui lòng bấm vào nút bên dưới để tiến hành tạo mật khẩu mới:</p>
+      <p>BH-EDU vừa nhận được yêu cầu đặt lại mật khẩu cho tài khoản <strong>${safeAccountEmail}</strong>.</p>
+      <p>Vui lòng chọn nút bên dưới để tạo mật khẩu mới:</p>
       <div style="text-align: center;">
-        <a href="${safeRecoveryUrl}" class="button">Đặt Lại Mật Khẩu Ngay</a>
+        <a href="${safeRecoveryUrl}" class="button">Đặt lại mật khẩu</a>
       </div>
-      <p style="font-size: 12px; color: #78716C;">* Liên kết có hiệu lực trong vòng 24 giờ. Nếu bạn không yêu cầu hành động này, vui lòng bỏ qua email.</p>
-      <p>Hotline hỗ trợ kỹ thuật học vụ: <strong>0899 060 686</strong></p>
+      <p style="font-size: 12px; color: #78716C;">Liên kết có hiệu lực trong 24 giờ. Nếu bạn không gửi yêu cầu này, vui lòng bỏ qua email.</p>
+      <p>Hotline hỗ trợ: <strong>0899 060 686</strong></p>
       <p style="margin-top: 24px;">Trân trọng,<br><strong>Ban Quản trị BH-EDU</strong></p>
     </div>
     <div class="footer">
@@ -160,7 +160,7 @@ export const POST = createApiHandler(
 
       await sendEmail({
         to: targetRecipientEmail,
-        subject: '[BH-EDU] Hướng dẫn đặt lại mật khẩu tài khoản học vụ',
+        subject: '[BH-EDU] Hướng dẫn đặt lại mật khẩu',
         html: emailHtml,
         text: `Kính gửi ${profile.full_name}, vui lòng truy cập liên kết sau để đặt lại mật khẩu: ${recoveryUrl}`,
       });

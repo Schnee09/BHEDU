@@ -134,11 +134,11 @@ export function createApiHandler<TBody = unknown>(
         const auth = await getAuthContext(request, permissionToCheck as any);
 
         if (!auth.profile) {
-          throw new AuthenticationError(auth.reason || 'Vui lòng đăng nhập để tiếp tục');
+          throw new AuthenticationError(auth.reason || 'Vui lòng đăng nhập để tiếp tục.');
         }
 
         if (!auth.authorized) {
-          throw new AuthorizationError(auth.reason || 'Bạn không có quyền thực hiện thao tác này');
+          throw new AuthorizationError(auth.reason || 'Bạn không có quyền thực hiện thao tác này.');
         }
 
         // Check allowed roles if specified (supports hierarchy and dynamic bypasses)
@@ -155,7 +155,7 @@ export function createApiHandler<TBody = unknown>(
             });
 
             if (!hasAccess) {
-              throw new AuthorizationError('Bạn không có quyền thực hiện thao tác này');
+              throw new AuthorizationError('Bạn không có quyền thực hiện thao tác này.');
             }
           }
         }
@@ -180,7 +180,7 @@ export function createApiHandler<TBody = unknown>(
             if (!result.success) {
               const firstError = result.error.issues[0];
               if (!firstError) {
-                throw new ValidationError('Dữ liệu gửi lên không hợp lệ');
+                throw new ValidationError('Dữ liệu gửi lên không hợp lệ.');
               }
               const fieldName = firstError.path.join('.');
               const message = fieldName
@@ -197,7 +197,7 @@ export function createApiHandler<TBody = unknown>(
           if (e instanceof ValidationError) throw e;
           // If bodySchema is explicitly provided, JSON parsing failure is a ValidationError
           if (config.bodySchema) {
-            throw new ValidationError('Dữ liệu gửi lên không hợp lệ');
+            throw new ValidationError('Dữ liệu gửi lên không hợp lệ.');
           }
           // Otherwise leave body as empty object
           body = {} as TBody;
