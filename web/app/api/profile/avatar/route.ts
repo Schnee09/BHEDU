@@ -110,16 +110,35 @@ export async function POST(request: NextRequest) {
       dbErr = fb.error;
     }
 
+    if (!updated && !dbErr) {
+      const { error: rollbackError } = await serviceSupabase.storage
+        .from('avatars')
+        .remove([filePath]);
+      if (rollbackError) {
+        logger.warn('Failed to rollback uploaded avatar:', { error: rollbackError.message });
+      }
+      return NextResponse.json({ error: 'Không tìm thấy hồ sơ để cập nhật' }, { status: 500 });
+    }
+
     if (dbErr) {
+      const { error: rollbackError } = await serviceSupabase.storage
+        .from('avatars')
+        .remove([filePath]);
+      if (rollbackError) {
+        logger.warn('Failed to rollback uploaded avatar:', { error: rollbackError.message });
+      }
       logger.error('Database update error in avatar upload:', { error: dbErr.message });
       return NextResponse.json({ error: `Lỗi cập nhật CSDL: ${dbErr.message}` }, { status: 500 });
     }
 
     // Sync auth user_metadata
     try {
-      await serviceSupabase.auth.admin.updateUserById(user.id, {
+      const { error: metadataError } = await serviceSupabase.auth.admin.updateUserById(user.id, {
         user_metadata: { photo_url: publicUrl, avatar_url: publicUrl },
       });
+      if (metadataError) {
+        logger.warn('Failed to sync auth user_metadata:', { error: metadataError.message });
+      }
     } catch (metaErr) {
       logger.warn('Failed to sync auth user_metadata:', { error: String(metaErr) });
     }
@@ -187,19 +206,6 @@ export async function DELETE(request: NextRequest) {
       profile = fallback.data;
     }
 
-    if (profile?.photo_url && profile.photo_url.includes('avatars/profiles/')) {
-      try {
-        const oldRelPath = profile.photo_url.split('avatars/')[1];
-        if (oldRelPath) {
-          await serviceSupabase.storage.from('avatars').remove([oldRelPath]);
-        }
-      } catch (cleanErr: any) {
-        logger.warn('Failed to delete avatar from storage:', {
-          error: cleanErr?.message || String(cleanErr),
-        });
-      }
-    }
-
     // 3. Clear database field
     const updatePayload = {
       photo_url: null,
@@ -229,11 +235,37 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: `Lỗi cập nhật CSDL: ${dbErr.message}` }, { status: 500 });
     }
 
+    if (!updated) {
+      return NextResponse.json({ error: 'Không tìm thấy hồ sơ để cập nhật' }, { status: 500 });
+    }
+
+    // 4. Remove the old file only after the database no longer references it
+    if (profile?.photo_url && profile.photo_url.includes('avatars/profiles/')) {
+      try {
+        const oldRelPath = profile.photo_url.split('avatars/')[1];
+        if (oldRelPath) {
+          const { error: removeError } = await serviceSupabase.storage
+            .from('avatars')
+            .remove([oldRelPath]);
+          if (removeError) {
+            logger.warn('Failed to delete avatar from storage:', { error: removeError.message });
+          }
+        }
+      } catch (cleanErr: any) {
+        logger.warn('Failed to delete avatar from storage:', {
+          error: cleanErr?.message || String(cleanErr),
+        });
+      }
+    }
+
     // Clear auth user_metadata
     try {
-      await serviceSupabase.auth.admin.updateUserById(user.id, {
+      const { error: metadataError } = await serviceSupabase.auth.admin.updateUserById(user.id, {
         user_metadata: { photo_url: null, avatar_url: null },
       });
+      if (metadataError) {
+        logger.warn('Failed to clear auth user_metadata:', { error: metadataError.message });
+      }
     } catch (metaErr) {
       logger.warn('Failed to clear auth user_metadata:', { error: String(metaErr) });
     }
