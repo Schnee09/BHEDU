@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 // Breakpoints matching Tailwind defaults
 const BREAKPOINTS = {
@@ -21,20 +21,17 @@ type Breakpoint = keyof typeof BREAKPOINTS;
  * Hook to detect current screen size
  */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      const media = window.matchMedia(query);
+      media.addEventListener('change', onStoreChange);
+      return () => media.removeEventListener('change', onStoreChange);
+    },
+    [query]
+  );
+  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
 
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    if (media.matches !== matches) {
-      setMatches(media.matches);
-    }
-
-    const listener = () => setMatches(media.matches);
-    media.addEventListener('change', listener);
-    return () => media.removeEventListener('change', listener);
-  }, [matches, query]);
-
-  return matches;
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
 
 /**
@@ -90,13 +87,11 @@ export function useIsDesktop(): boolean {
  * Hook to detect touch devices
  */
 export function useIsTouchDevice(): boolean {
-  const [isTouch, setIsTouch] = useState(false);
-
-  useEffect(() => {
-    setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
-
-  return isTouch;
+  return useSyncExternalStore(
+    () => () => undefined,
+    () => 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+    () => false
+  );
 }
 
 /**
