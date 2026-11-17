@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { requestCache } from '@/lib/api/requestCache';
 
 import LoadingScreen from '@/components/LoadingScreen';
 
@@ -39,6 +40,10 @@ export default function AuthGuard({ children }: Props) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (!mounted) return;
+
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        requestCache.clear();
+      }
 
       if (session) {
         setLoading(false);
