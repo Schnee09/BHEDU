@@ -55,7 +55,10 @@ export async function GET(request: Request) {
     }
 
     if (!profile) {
-      return NextResponse.json({ success: true, data: [], total: 0 });
+      return NextResponse.json(
+        { success: false, error: 'Không tìm thấy hồ sơ người dùng đang hoạt động.' },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(request.url);

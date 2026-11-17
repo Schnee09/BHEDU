@@ -209,9 +209,6 @@ export class ReportsRepository {
 
     const { data, error } = await query;
     if (error) {
-      if (error.code === '42P01' || error.message?.includes('does not exist')) {
-        return { data: [], note: 'attendance table not available' };
-      }
       throw error;
     }
 
@@ -329,9 +326,6 @@ export class ReportsRepository {
 
     const { data, error } = await query;
     if (error) {
-      if (error.code === '42P01' || error.message?.includes('does not exist')) {
-        return { data: [], note: 'grades table not available' };
-      }
       throw error;
     }
 

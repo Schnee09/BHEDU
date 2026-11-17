@@ -77,6 +77,28 @@ describe('ReportsRepository grade reports', () => {
     expect(query.gte).toHaveBeenCalledWith('date', '2026-10-01');
     expect(query.lte).toHaveBeenCalledWith('date', '2026-10-31');
   });
+
+  it('surfaces attendance storage errors instead of reporting an empty result', async () => {
+    const storageError = { code: '42P01', message: 'relation attendance does not exist' };
+    const query: Record<string, any> = { data: null, error: storageError };
+    for (const method of ['select', 'is', 'order', 'gte', 'lte', 'eq', 'in', 'limit']) {
+      query[method] = jest.fn().mockReturnValue(query);
+    }
+    const repository = new ReportsRepository({ from: jest.fn().mockReturnValue(query) } as any);
+
+    await expect(repository.getAttendanceReport({})).rejects.toEqual(storageError);
+  });
+
+  it('surfaces grade storage errors instead of reporting an empty result', async () => {
+    const storageError = { code: '42P01', message: 'relation grades does not exist' };
+    const query: Record<string, any> = { data: null, error: storageError };
+    for (const method of ['select', 'is', 'order', 'eq', 'limit']) {
+      query[method] = jest.fn().mockReturnValue(query);
+    }
+    const repository = new ReportsRepository({ from: jest.fn().mockReturnValue(query) } as any);
+
+    await expect(repository.getGradesReport({ limit: 50 })).rejects.toEqual(storageError);
+  });
 });
 
 function createQuery(result: { data: unknown; error: unknown }) {
