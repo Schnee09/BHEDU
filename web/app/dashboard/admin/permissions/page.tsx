@@ -196,7 +196,7 @@ function UnauthorizedMessage() {
         <Shield className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold">Không có quyền truy cập</h2>
         <p className="text-muted-foreground mt-2">
-          Bạn cần quyền quản trị cao cấp để xem trang này
+          Bạn cần quyền quản trị hệ thống để xem trang này
         </p>
       </div>
     </div>

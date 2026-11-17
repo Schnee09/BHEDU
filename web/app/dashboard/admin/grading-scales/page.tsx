@@ -196,7 +196,7 @@ export default function GradingScalesPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
               <Award className="w-4 h-4" />
-              <span>CẤU HÌNH HỌC VỤ • GRADING SCALES</span>
+              <span>CẤU HÌNH THANG ĐIỂM</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tight text-stone-950 dark:text-white">
               Thang điểm & <span className="text-amber-500">Xếp loại</span>

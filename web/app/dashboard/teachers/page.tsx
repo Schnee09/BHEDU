@@ -185,7 +185,7 @@ function TeachersContent() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-              Học vụ & Giảng dạy
+              Lớp học & Giảng dạy
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-white tracking-tight">

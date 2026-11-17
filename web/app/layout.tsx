@@ -14,9 +14,9 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { CustomizationProvider } from '@/contexts/CustomizationContext';
 
 export const metadata: Metadata = {
-  title: 'BH-EDU | Hệ thống quản lý giáo dục cao cấp',
+  title: 'BH-EDU | Quản lý trung tâm giáo dục',
   description:
-    'Giải pháp quản lý giáo dục toàn diện, hiện đại và bảo mật - Premium Education Management System',
+    'Hệ thống quản lý học sinh, lớp học, lịch học, điểm danh, kết quả học tập và học phí tại Trung tâm Giáo dục Bùi Hoàng.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -30,7 +30,13 @@ export const metadata: Metadata = {
     icon: '/favicon.ico',
     apple: '/icons/icon-192x192.png',
   },
-  keywords: ['giáo dục', 'quản lý học sinh', 'phần mềm quản lý trung tâm', 'BH-EDU', 'EMS'],
+  keywords: [
+    'Trung tâm Giáo dục Bùi Hoàng',
+    'quản lý học sinh',
+    'quản lý lớp học',
+    'quản lý học phí',
+    'BH-EDU',
+  ],
 };
 
 export const viewport: Viewport = {

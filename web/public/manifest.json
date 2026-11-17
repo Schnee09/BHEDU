@@ -1,7 +1,7 @@
 {
-  "name": "BH-EDU — Hệ Thống Quản Lý Giáo Dục",
+  "name": "BH-EDU – Quản lý Trung tâm Giáo dục Bùi Hoàng",
   "short_name": "BH-EDU",
-  "description": "Nền tảng quản lý giáo dục thông minh, điểm danh QR và học bạ điện tử.",
+  "description": "Quản lý học sinh, lớp học, lịch học, điểm danh, kết quả học tập và học phí tại Trung tâm Giáo dục Bùi Hoàng.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
@@ -45,14 +45,14 @@
     {
       "name": "Điểm danh",
       "short_name": "Điểm danh",
-      "description": "Điểm danh lớp học và quét mã QR",
+      "description": "Theo dõi và cập nhật tình trạng đi học của học sinh",
       "url": "/dashboard/attendance",
       "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Sổ điểm",
-      "short_name": "Nhập điểm",
-      "description": "Nhập và tính điểm học sinh",
+      "name": "Kết quả học tập",
+      "short_name": "Kết quả",
+      "description": "Xem và cập nhật kết quả học tập của học sinh",
       "url": "/dashboard/grades",
       "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     }

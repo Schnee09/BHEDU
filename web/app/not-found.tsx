@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Home, ArrowLeft, Search, Compass, BookOpen, Clock, HelpCircle } from 'lucide-react';
+import { Home, ArrowLeft, Compass, BookOpen, Clock, HelpCircle } from 'lucide-react';
 import Image from 'next/image';
 
 export default function NotFound() {
@@ -111,7 +111,7 @@ export default function NotFound() {
       {/* Bottom Footer */}
       <footer className="text-center py-2 z-10">
         <p className="text-[10px] text-stone-400 dark:text-stone-600">
-          Trung tâm Giáo dục Bùi Hoàng • Cổng thông tin học vụ điện tử BH-EDU
+          Trung tâm Giáo dục Bùi Hoàng • Cổng thông tin BH-EDU
         </p>
       </footer>
     </div>
