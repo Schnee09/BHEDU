@@ -309,13 +309,6 @@ export function canDeactivateUser(actorRole: string, targetRole: string): boolea
 }
 
 /**
- * Check if role can impersonate other users
- */
-export function canImpersonateUser(role: string): boolean {
-  return role === 'super_admin';
-}
-
-/**
  * Check if role can access system configuration
  */
 export function canAccessSystemConfig(role: string): boolean {

@@ -23,7 +23,6 @@ export type PermissionCode =
   | 'system.settings'
   | 'system.audit'
   | 'system.database'
-  | 'system.impersonate'
   | 'system.deploy'
   // Roles & Permissions
   | 'roles.view'
@@ -131,13 +130,6 @@ export const SYSTEM_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     code: 'system.database',
     name: 'Quản trị cơ sở dữ liệu',
     description: 'Sao lưu, khôi phục và tối ưu dữ liệu',
-    category: 'system',
-  },
-  {
-    id: 'system.impersonate',
-    code: 'system.impersonate',
-    name: 'Đăng nhập giả lập',
-    description: 'Đăng nhập tạm thời với tư cách tài khoản khác để hỗ trợ',
     category: 'system',
   },
   {

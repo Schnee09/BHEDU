@@ -30,7 +30,6 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: PermissionCode }[] = [
   { prefix: '/dashboard/admin/health', permission: 'system.settings' },
   { prefix: '/dashboard/admin/data-dump', permission: 'system.settings' },
   { prefix: '/dashboard/admin/diagnostic', permission: 'system.settings' },
-  { prefix: '/dashboard/admin/impersonate', permission: 'system.impersonate' },
   { prefix: '/dashboard/admin', permission: 'users.view' },
 
   // ── System & Audit ──
