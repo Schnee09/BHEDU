@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export interface Notification {
@@ -14,13 +14,16 @@ export interface Notification {
 }
 
 export function useNotifications(userId: string | undefined) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+  const requestIdRef = useRef(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // ─── Fetch from API ──────────────────────────────────────────────────────────
   const fetchNotifications = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
     if (!userId) {
       setNotifications([]);
       setUnreadCount(0);
@@ -35,9 +38,11 @@ export function useNotifications(userId: string | undefined) {
       const json = await res.json();
       const data = json.notifications || [];
 
+      if (requestId !== requestIdRef.current) return;
       setNotifications(data);
 
       const countRes = await fetch('/api/notifications/unread-count');
+      if (requestId !== requestIdRef.current) return;
       if (countRes.ok) {
         const countJson = await countRes.json();
         setUnreadCount(countJson.count || 0);
@@ -45,9 +50,11 @@ export function useNotifications(userId: string | undefined) {
         setUnreadCount(data.filter((n: Notification) => !n.is_read).length);
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      if (requestId === requestIdRef.current) {
+        console.error('Error fetching notifications:', error);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [userId]);
 
@@ -119,9 +126,14 @@ export function useNotifications(userId: string | undefined) {
 
   // ─── Realtime Logic ──────────────────────────────────────────────────────────
   useEffect(() => {
-    fetchNotifications();
+    const initialFetchId = window.setTimeout(() => void fetchNotifications(), 0);
 
-    if (!userId) return;
+    if (!userId) {
+      return () => {
+        window.clearTimeout(initialFetchId);
+        requestIdRef.current += 1;
+      };
+    }
 
     // Full Real-time (INSERT, UPDATE, DELETE)
     const channel = supabase
@@ -142,6 +154,8 @@ export function useNotifications(userId: string | undefined) {
       .subscribe();
 
     return () => {
+      window.clearTimeout(initialFetchId);
+      requestIdRef.current += 1;
       supabase.removeChannel(channel);
     };
   }, [userId, fetchNotifications, supabase]);
