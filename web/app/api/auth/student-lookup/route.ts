@@ -14,16 +14,18 @@ export const POST = createApiHandler(
   },
   async ({ body, user }) => {
     if (!LOOKUP_ROLES.has(user.role)) {
-      throw new AuthorizationError('Bạn không có quyền tra cứu học sinh');
+      throw new AuthorizationError('Bạn không có quyền tra cứu học sinh.');
     }
 
     const rateCheck = checkRateLimit(`student-lookup:${user.id}`, rateLimitConfigs.authStrict);
     if (!rateCheck.allowed) {
-      return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
+      return NextResponse.json(
+        { success: false, error: 'Bạn đã tra cứu quá nhiều lần. Vui lòng thử lại sau.' },
+        { status: 429 }
+      );
     }
 
     const student = await studentService.getStudentByCode(body.student_code);
-
     return apiSuccess({
       id: student.id,
       full_name: student.full_name,
