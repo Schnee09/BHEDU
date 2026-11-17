@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useProfile } from '@/hooks/useProfile';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import {
   Monitor,
@@ -66,98 +66,77 @@ function getDeviceIcon(device: string) {
 }
 
 export default function SessionsPage() {
-  const { profile, loading: profileLoading } = useProfile();
+  const router = useRouter();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const [revoking, setRevoking] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
   );
 
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     setLoading(true);
     try {
       const {
         data: { session: currentSession },
       } = await supabase.auth.getSession();
       if (currentSession) {
-        const mockSessions: Session[] = [
+        const currentSessions: Session[] = [
           {
             id: currentSession.access_token.slice(0, 16),
             user_agent: navigator.userAgent,
-            ip: '113.161.x.x (Địa chỉ hiện tại)',
-            created_at: new Date(currentSession.expires_at! * 1000 - 3600000).toISOString(),
+            ip: 'Thiết bị hiện tại',
+            created_at: currentSession.user.last_sign_in_at || new Date().toISOString(),
             updated_at: new Date().toISOString(),
             is_current: true,
           },
-          {
-            id: 'fake-id-2',
-            user_agent:
-              'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-            ip: '42.113.x.x',
-            created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-            updated_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-            is_current: false,
-          },
         ];
-        setSessions(mockSessions);
+        setSessions(currentSessions);
+      } else {
+        setSessions([]);
       }
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
-    fetchSessions();
-  }, []);
+    const timer = window.setTimeout(() => void fetchSessions(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchSessions]);
 
-  const revokeSession = async (sessionId: string) => {
-    if (sessions.find((s) => s.id === sessionId)?.is_current) {
-      if (!confirm('Bạn có chắc muốn đăng xuất khỏi phiên hiện tại?')) return;
-      await supabase.auth.signOut();
-      window.location.href = '/login';
-      return;
-    }
-
-    setRevoking(sessionId);
+  const signOutCurrentSession = async () => {
+    if (!confirm('Bạn có chắc muốn đăng xuất khỏi phiên hiện tại?')) return;
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-      setMessage({ type: 'success', text: 'Phiên đăng nhập đã được thu hồi bảo mật' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Không thể thu hồi phiên' });
-    } finally {
-      setRevoking(null);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      router.replace('/login');
+      router.refresh();
+    } catch {
+      setMessage({ type: 'error', text: 'Không thể đăng xuất phiên hiện tại' });
     }
   };
 
   const revokeAllOtherSessions = async () => {
     if (!confirm('Bạn có chắc muốn đăng xuất khỏi tất cả các thiết bị khác?')) return;
     try {
-      await supabase.auth.signOut({ scope: 'others' });
+      const { error } = await supabase.auth.signOut({ scope: 'others' });
+      if (error) throw error;
       const current = sessions.find((s) => s.is_current);
       setSessions(current ? [current] : []);
       setMessage({ type: 'success', text: 'Đã thu hồi tất cả các phiên đăng nhập khác' });
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Không thể thu hồi các phiên khác' });
     }
   };
-
-  if (profileLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
-        <p className="font-black text-stone-400 uppercase tracking-widest text-[10px]">
-          Đang quét thiết bị bảo mật
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 animate-fade-in relative">
@@ -175,7 +154,7 @@ export default function SessionsPage() {
             Thiết bị đăng nhập
           </h1>
           <p className="text-stone-500 dark:text-stone-400 font-medium tracking-tight">
-            Quản lý và giám sát các phiên hoạt động trên mọi nền tảng
+            Kiểm tra thiết bị hiện tại và đăng xuất khỏi các thiết bị khác
           </p>
         </div>
 
@@ -186,14 +165,12 @@ export default function SessionsPage() {
           >
             <RefreshCw className={cn('w-5 h-5 text-stone-400', loading && 'animate-spin')} />
           </button>
-          {sessions.length > 1 && (
-            <button
-              onClick={revokeAllOtherSessions}
-              className="h-14 px-6 bg-red-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all hover:shadow-xl hover:shadow-red-500/20 active:scale-95 press-effect flex items-center gap-2"
-            >
-              <LogOut className="w-4 h-4" /> Thu hồi tất cả
-            </button>
-          )}
+          <button
+            onClick={revokeAllOtherSessions}
+            className="h-14 px-6 bg-red-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all hover:shadow-xl hover:shadow-red-500/20 active:scale-95 press-effect flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" /> Đăng xuất thiết bị khác
+          </button>
         </div>
       </div>
 
@@ -201,20 +178,20 @@ export default function SessionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-6 rounded-[32px] bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/10 space-y-2">
           <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">
-            Trạng thái bảo mật
+            Trạng thái phiên
           </p>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-500/20 rounded-lg text-green-600">
               <CheckCircle className="w-5 h-5" />
             </div>
             <p className="text-lg font-black text-green-700 dark:text-green-400 tracking-tight">
-              Rất an toàn
+              Đang hoạt động
             </p>
           </div>
         </div>
         <div className="p-6 rounded-[32px] bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10 space-y-2">
           <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
-            Thiết bị tin cậy
+            Phiên đang hiển thị
           </p>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500/20 rounded-lg text-blue-600">
@@ -258,12 +235,12 @@ export default function SessionsPage() {
       <div className="glass-premium rounded-[48px] overflow-hidden border border-stone-100 dark:border-white/5 shadow-sm">
         <div className="px-10 py-8 border-b border-stone-100 dark:border-white/5 flex items-center justify-between bg-stone-50/50 dark:bg-white/2">
           <h2 className="text-sm font-black uppercase tracking-[0.2em] text-stone-400">
-            Danh sách phiên hoạt động
+            Phiên đăng nhập hiện tại
           </h2>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             <span className="text-[10px] font-black uppercase text-stone-400 tracking-widest">
-              Thời gian thực
+              Đã xác thực
             </span>
           </div>
         </div>
@@ -343,8 +320,7 @@ export default function SessionsPage() {
 
                   {/* Revoke Button */}
                   <button
-                    onClick={() => revokeSession(session.id)}
-                    disabled={revoking === session.id}
+                    onClick={signOutCurrentSession}
                     className={cn(
                       'h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all press-effect',
                       session.is_current
@@ -352,11 +328,7 @@ export default function SessionsPage() {
                         : 'text-stone-400 bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10'
                     )}
                   >
-                    {revoking === session.id
-                      ? '...'
-                      : session.is_current
-                        ? 'Xác nhận Đăng xuất'
-                        : 'Thu hồi thiết bị'}
+                    {session.is_current ? 'Đăng xuất' : 'Thu hồi thiết bị'}
                   </button>
                 </div>
               );
@@ -384,10 +356,10 @@ export default function SessionsPage() {
 
       <div className="flex justify-center pt-4">
         <button
-          onClick={() => window.history.back()}
+          onClick={() => router.back()}
           className="text-[10px] font-black uppercase text-stone-400 tracking-[0.3em] hover:text-stone-600 transition-colors"
         >
-          Trở về Control Center
+          Quay lại
         </button>
       </div>
     </div>
