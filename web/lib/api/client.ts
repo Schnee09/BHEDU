@@ -2,7 +2,7 @@
  * API client utilities for making authenticated requests
  */
 
-import { getTTL, requestCache } from '@/lib/api/requestCache';
+import { requestCache } from '@/lib/api/requestCache';
 import { logger, logRequest, logResponse } from '@/lib/logger';
 
 // Types
@@ -189,10 +189,7 @@ export async function apiFetch(url: string, options?: RequestInit, maxRetries = 
         });
       }
 
-      if (response.ok && method === 'GET') {
-        const ttl = getTTL(url);
-        // ... cache setting logic if needed
-      } else if (response.ok && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      if (response.ok && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
         // Invalidate relevant cache on mutations
         const baseUrl = url.split('?')[0] ?? url;
         requestCache.invalidate(baseUrl);
@@ -228,20 +225,6 @@ export async function apiFetch(url: string, options?: RequestInit, maxRetries = 
 
       const duration = performance.now() - startTime;
       logResponse(method, url, response.status, duration);
-
-      // Cache successful GET responses if configured
-      if (response.ok && method === 'GET') {
-        const ttl = getTTL(url);
-        if (ttl) {
-          // Clone again for caching
-          const responseToCache = response.clone();
-          // We can't cache Response objects directly easily because body is a stream
-          // Ideally we cache the DATA not the Response, but apiFetch returns Response.
-          // For now, we only cache duplication promises.
-          // Future: change apiFetch to return parsed data or handle Response caching carefully.
-          // Let's rely on deduplication for now and specific data caching in data hooks.
-        }
-      }
 
       return response;
     } catch (error) {
@@ -481,9 +464,10 @@ export async function deleteEnrollment(enrollmentId: string): Promise<void> {
  * @deprecated Use deleteEnrollment instead
  */
 export async function unenrollStudent(studentId: string, classId: string): Promise<void> {
-  // Legacy support or throw error?
-  // Ideally we should find the enrollment ID first, but for now let's error or warn
-  console.warn('unenrollStudent is deprecated. Use deleteEnrollment(enrollmentId).');
+  logger.warn('unenrollStudent is deprecated. Use deleteEnrollment(enrollmentId).', {
+    studentId,
+    classId,
+  });
   throw new Error('unenrollStudent is deprecated. Use deleteEnrollment(enrollmentId).');
 }
 
