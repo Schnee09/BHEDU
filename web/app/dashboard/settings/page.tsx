@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api/client';
+import { getBrowserSupabase } from '@/lib/supabase/browser';
 import { cn } from '@/lib/utils';
 import PageGuard from '@/components/PageGuard';
 import {
@@ -37,6 +39,8 @@ import { SecuritySettingsTab } from '@/components/settings/SecuritySettingsTab';
 import { NotificationSettingsTab } from '@/components/settings/NotificationSettingsTab';
 import { ResourceSettingsTab } from '@/components/settings/ResourceSettingsTab';
 
+const supabase = getBrowserSupabase();
+
 export default function SettingsPage() {
   return (
     <PageGuard permissions="system.settings">
@@ -46,6 +50,7 @@ export default function SettingsPage() {
 }
 
 function SettingsPageContent() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('general');
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,17 +70,77 @@ function SettingsPageContent() {
   // Notification states
   const [channels, setChannels] = useState<NotificationChannel[]>([
     { id: 'email', label: 'Email', description: 'Gửi qua máy chủ SMTP / Resend', active: true },
-    { id: 'sms', label: 'SMS Brandname', description: 'Gửi tin nhắn SMS tới số phụ huynh/học sinh', active: false },
-    { id: 'push', label: 'Web / App Push', description: 'Thông báo đẩy trực tiếp trên trình duyệt & di động', active: true },
-    { id: 'zalo', label: 'Zalo ZNS', description: 'Gửi tin chăm sóc khách hàng qua Zalo OA', active: false },
+    {
+      id: 'sms',
+      label: 'SMS Brandname',
+      description: 'Gửi tin nhắn SMS tới số phụ huynh/học sinh',
+      active: false,
+    },
+    {
+      id: 'push',
+      label: 'Web / App Push',
+      description: 'Thông báo đẩy trực tiếp trên trình duyệt & di động',
+      active: true,
+    },
+    {
+      id: 'zalo',
+      label: 'Zalo ZNS',
+      description: 'Gửi tin chăm sóc khách hàng qua Zalo OA',
+      active: false,
+    },
   ]);
 
   const [events, setEvents] = useState<NotificationEvent[]>([
-    { id: 'scores', label: 'Điểm số mới', description: 'Thông báo khi hệ thống cập nhật điểm cho học sinh', category: 'academic', push: true, email: true, sms: false, zalo: true },
-    { id: 'billing', label: 'Yêu cầu thanh toán', description: 'Thông báo khi có hóa đơn học phí mới cần thanh toán', category: 'finance', push: true, email: true, sms: true, zalo: true },
-    { id: 'attendance', label: 'Điểm danh / Vắng học', description: 'Báo cáo khi học sinh vắng hoặc đến muộn trong buổi học', category: 'academic', push: true, email: false, sms: true, zalo: true },
-    { id: 'schedule', label: 'Thay đổi thời khóa biểu', description: 'Thông báo khi lịch học hoặc giáo viên thay đổi', category: 'timetable', push: true, email: true, sms: false, zalo: false },
-    { id: 'system', label: 'Cập nhật hệ thống', description: 'Thông báo về các bảo trì hoặc tính năng mới', category: 'system', push: true, email: true, sms: false, zalo: false },
+    {
+      id: 'scores',
+      label: 'Điểm số mới',
+      description: 'Thông báo khi hệ thống cập nhật điểm cho học sinh',
+      category: 'academic',
+      push: true,
+      email: true,
+      sms: false,
+      zalo: true,
+    },
+    {
+      id: 'billing',
+      label: 'Yêu cầu thanh toán',
+      description: 'Thông báo khi có hóa đơn học phí mới cần thanh toán',
+      category: 'finance',
+      push: true,
+      email: true,
+      sms: true,
+      zalo: true,
+    },
+    {
+      id: 'attendance',
+      label: 'Điểm danh / Vắng học',
+      description: 'Báo cáo khi học sinh vắng hoặc đến muộn trong buổi học',
+      category: 'academic',
+      push: true,
+      email: false,
+      sms: true,
+      zalo: true,
+    },
+    {
+      id: 'schedule',
+      label: 'Thay đổi thời khóa biểu',
+      description: 'Thông báo khi lịch học hoặc giáo viên thay đổi',
+      category: 'timetable',
+      push: true,
+      email: true,
+      sms: false,
+      zalo: false,
+    },
+    {
+      id: 'system',
+      label: 'Cập nhật hệ thống',
+      description: 'Thông báo về các bảo trì hoặc tính năng mới',
+      category: 'system',
+      push: true,
+      email: true,
+      sms: false,
+      zalo: false,
+    },
   ]);
 
   const [notificationTemplates, setNotificationTemplates] = useState<NotificationTemplate[]>([]);
@@ -205,7 +270,7 @@ function SettingsPageContent() {
       });
       if (!res.ok) throw new Error('Failed to save notification settings');
       toast.success('Thành công', 'Cấu hình kênh & mẫu thông báo đã được lưu.');
-    } catch (e) {
+    } catch {
       toast.error('Lỗi', 'Không thể lưu cấu hình thông báo');
     } finally {
       setSavingNotificationConfig(false);
@@ -267,36 +332,46 @@ function SettingsPageContent() {
 
   const handleLogoutSession = async (sessionId: string) => {
     try {
-      const res = await apiFetch(`/api/auth/sessions?sessionId=${sessionId}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        toast.success('Thành công', 'Đã đăng xuất phiên thành công');
-        fetchSecurityData();
+      const session = sessionsData.find((item) => item.id === sessionId);
+      if (!session?.current) {
+        throw new Error('Supabase không hỗ trợ thu hồi từng phiên từ trình duyệt hiện tại.');
       }
-    } catch (e) {
+
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success('Thành công', 'Đã đăng xuất phiên hiện tại');
+      router.replace('/login');
+      router.refresh();
+    } catch {
       toast.error('Lỗi', 'Không thể hủy phiên đăng nhập');
     }
   };
 
   const handleLogoutOthers = async () => {
     try {
-      const res = await apiFetch('/api/auth/sessions?allExceptCurrent=true', {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        toast.success('Thành công', 'Đã đăng xuất toàn bộ các thiết bị khác');
-        fetchSecurityData();
-      }
-    } catch (e) {
+      const { error } = await supabase.auth.signOut({ scope: 'others' });
+      if (error) throw error;
+      toast.success('Thành công', 'Đã đăng xuất toàn bộ các thiết bị khác');
+      await fetchSecurityData();
+    } catch {
       toast.error('Lỗi', 'Không thể đăng xuất các thiết bị khác');
     }
   };
 
   const tabs = [
     { id: 'general', label: 'Hồ sơ Trung tâm', icon: Settings, count: null },
-    { id: 'academic', label: 'Năm học & Học vụ', icon: Calendar, count: academicYears.length || null },
-    { id: 'notifications', label: 'Thông báo & Mẫu tin', icon: Bell, count: channels.filter((c) => c.active).length },
+    {
+      id: 'academic',
+      label: 'Năm học & Học vụ',
+      icon: Calendar,
+      count: academicYears.length || null,
+    },
+    {
+      id: 'notifications',
+      label: 'Thông báo & Mẫu tin',
+      icon: Bell,
+      count: channels.filter((c) => c.active).length,
+    },
     { id: 'security', label: 'Bảo mật & Nhật ký', icon: Shield, count: null },
     { id: 'resources', label: 'Cơ sở & Tài nguyên', icon: Database, count: null },
   ];
