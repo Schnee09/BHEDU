@@ -1,49 +1,35 @@
-import {
-    apiPaginated,
-    apiSuccess,
-    createApiHandler,
-    createGetHandler,
-} from "@/lib/api/apiHandler";
-import { linkService } from "@/lib/services/linkService";
-import { paginationSchema, updateLinkStatusSchema } from "@/lib/schemas";
+import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/lib/api/apiHandler';
+import { linkService } from '@/lib/services/linkService';
+import { updateLinkStatusSchema } from '@/lib/schemas';
 
-export const GET = createGetHandler(
-    { permission: "users.view" },
-    async ({ searchParams }) => {
-        const page = parseInt(searchParams.get("page") || "1");
-        const limit = parseInt(searchParams.get("limit") || "20");
-        const status = searchParams.get("status") || "all";
+export const GET = createGetHandler({ permission: 'users.view' }, async ({ searchParams }) => {
+  const parsedPage = Number(searchParams.get('page'));
+  const parsedLimit = Number(searchParams.get('limit'));
+  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const limit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 100) : 20;
+  const requestedStatus = searchParams.get('status');
+  const status = ['pending', 'approved', 'rejected', 'revoked'].includes(requestedStatus ?? '')
+    ? requestedStatus!
+    : 'all';
 
-        const { links, total } = await linkService.getLinks({
-            page,
-            pageSize: limit,
-            status,
-        });
+  const { links, total } = await linkService.getLinks({
+    page,
+    pageSize: limit,
+    status,
+  });
 
-        return apiPaginated(links, { page, pageSize: limit, total });
-    },
-);
+  return apiPaginated(links, { page, pageSize: limit, total });
+});
 
-export const PATCH = createApiHandler({
-    permission: "users.create", // Permissions for approving links
+export const PATCH = createApiHandler(
+  {
+    permission: 'users.create',
     bodySchema: updateLinkStatusSchema,
-}, async ({ body }) => {
+  },
+  async ({ body }) => {
     const link = await linkService.updateLinkStatus(body);
     return apiSuccess(link, {
-        message: "Trạng thái liên kết đã được cập nhật",
+      message: 'Đã cập nhật trạng thái liên kết',
     });
-});
-
-export const POST = createApiHandler({
-    permission: "users.create",
-    bodySchema: updateLinkStatusSchema.omit({ id: true }).extend({
-        parent_id: updateLinkStatusSchema.shape.id,
-        student_id: updateLinkStatusSchema.shape.id,
-        relationship: updateLinkStatusSchema.shape.status.transform(() =>
-            "other"
-        ), // Placeholder logic
-    }),
-}, async ({ body }) => {
-    // Not used via admin for now, but good to have standardized
-    throw new Error("POST not implemented for admin links");
-});
+  }
+);
