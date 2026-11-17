@@ -91,11 +91,17 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ success: true, data: guardians });
     }
 
-    // If both tables returned empty or table missing, return empty list gracefully
-    return NextResponse.json({ success: true, data: [] });
+    logger.error('Failed to fetch guardians table:', { error: guardErr?.message });
+    return NextResponse.json(
+      { success: false, error: 'Không thể tải thông tin người giám hộ.' },
+      { status: 500 }
+    );
   } catch (error) {
     logger.error('Failed to fetch guardians:', error);
-    return NextResponse.json({ success: true, data: [] });
+    return NextResponse.json(
+      { success: false, error: 'Không thể tải thông tin người giám hộ.' },
+      { status: 500 }
+    );
   }
 }
 
@@ -150,30 +156,16 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       .maybeSingle();
 
     if (insertError) {
-      // Fallback: If table guardians does not exist, return mock success item
-      logger.warn('guardians table not present, returning structured success item', {
+      logger.error('Failed to persist guardian:', {
         error: insertError.message,
       });
-      return NextResponse.json({
-        success: true,
-        data: {
-          id: `temp-${Date.now()}`,
-          student_id: id,
-          name: body.name.trim(),
-          relationship: body.relationship || 'guardian',
-          phone: body.phone || null,
-          email: body.email || null,
-          address: body.address || null,
-          is_primary_contact: body.is_primary_contact || false,
-          is_emergency_contact: body.is_emergency_contact || false,
-          occupation: body.occupation || null,
-          workplace: body.workplace || null,
-          work_phone: body.work_phone || null,
-          notes: body.notes || null,
-          created_at: new Date().toISOString(),
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Không thể lưu thông tin người giám hộ. Vui lòng thử lại.',
         },
-        message: 'Đã lưu thông tin người giám hộ',
-      });
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({

@@ -80,7 +80,7 @@ export class DashboardService {
 
       return { items: mappedItems, total };
     } catch (error) {
-      logger.warn('Recent activity query failed, returning mockup', {
+      logger.warn('Recent activity query failed, returning an empty activity list', {
         error,
       });
       return { items: [], total: 0 };
@@ -98,25 +98,6 @@ export class DashboardService {
             : 'Hệ thống';
 
     return `${item.action === 'create' ? 'Tạo mới' : 'Cập nhật'} ${entity}`;
-  }
-
-  private getMockActivity() {
-    return [
-      {
-        id: '1',
-        type: 'login',
-        message: 'Đăng nhập vào hệ thống',
-        user: 'Admin',
-        timestamp: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        type: 'create',
-        message: 'Tạo lớp học mới: Math 101',
-        user: 'Teacher',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-      },
-    ];
   }
 
   // Static delegates for backward compatibility

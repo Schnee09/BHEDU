@@ -1,6 +1,6 @@
 import { createGetHandler, apiSuccess } from '@/lib/api';
 
-export const GET = createGetHandler({ requireAuth: true }, async ({ request, user }) => {
+export const GET = createGetHandler({ requireAuth: true }, async ({ request }) => {
   // Try to parse User-Agent
   const userAgent = request.headers.get('user-agent') || 'Unknown Device';
   const ip =
@@ -21,8 +21,8 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
         ? 'Firefox'
         : 'Browser';
 
-  // Mocking real session array and logs since Supabase GoTrue doesn't easily expose session lists to the standard client without admin keys
-  // In a real production system, this would query a discrete user_sessions table and audit_logs table
+  // Supabase does not expose a complete per-user session list here. Return only
+  // metadata from the authenticated request instead of inventing other devices.
   return apiSuccess({
     sessions: [
       {
@@ -30,10 +30,10 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
         device: isSetup,
         browser: browser,
         ip: ip,
-        location: 'Đang phân tích...',
+        location: 'Không xác định',
         current: true,
       },
     ],
-    logs: [], // Empty state for logs until an audit_log system is fully wired
+    logs: [],
   });
 });
