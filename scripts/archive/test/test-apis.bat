@@ -1,7 +1,10 @@
 @echo off
 REM Test all API endpoints with proper JSON escaping for Windows cmd
 
-set INTERNAL_API_KEY=23685fb84b01f55cf50d871a6d71e5bc3d12e01a48b95e54986ab279521fa5b6
+if "%INTERNAL_API_KEY%"=="" (
+  echo INTERNAL_API_KEY is required. Set it before running this script.
+  exit /b 1
+)
 REM Update PREVIEW_URL to latest deployment if needed
 set PREVIEW_URL=https://bhedu-lym5yqxpw-schnees-projects-fc5cc4c6.vercel.app
 set COURSE_ID=f6d33292-02f5-48d4-a567-5bc114b6a84e

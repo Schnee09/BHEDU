@@ -1,8 +1,11 @@
 # HMAC-Signed API Request Test Script
 # Tests the deployed endpoints with HMAC authentication
 
-# Set your INTERNAL_API_KEY here (same as Vercel env var)
-$env:INTERNAL_API_KEY = "23685fb84b01f55cf50d871a6d71e5bc3d12e01a48b95e54986ab279521fa5b6"
+# Provide the key in the current shell before running this script.
+if ([string]::IsNullOrWhiteSpace($env:INTERNAL_API_KEY)) {
+    Write-Error "INTERNAL_API_KEY is required. Set it in the current shell before running this script."
+    exit 1
+}
 
 $baseUrl = "https://bhedu-2hffss3ha-schnees-projects-fc5cc4c6.vercel.app"
 

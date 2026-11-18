@@ -1,8 +1,11 @@
 # Complete API Test Suite
 # Tests profiles and courses endpoints after migration
 
-# Configuration
-$env:INTERNAL_API_KEY = "23685fb84b01f55cf50d871a6d71e5bc3d12e01a48b95e54986ab279521fa5b6"
+# Configuration: provide the key in the current shell before running this script.
+if ([string]::IsNullOrWhiteSpace($env:INTERNAL_API_KEY)) {
+    Write-Error "INTERNAL_API_KEY is required. Set it in the current shell before running this script."
+    exit 1
+}
 
 # Get preview URL from user input or use default
 $baseUrl = Read-Host "Enter preview URL (or press Enter to use last known)"
