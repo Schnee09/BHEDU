@@ -8,7 +8,6 @@ Essential scripts for deployment and maintenance of BH-EDU.
 |--------|---------|
 | `pre-deploy-check.ps1` | Run before deployment to verify configuration |
 | `post-deployment-setup.ps1` | Run after deployment to set up initial data |
-| `generate-api-key.ps1` | Generate secure API keys |
 | `set-vercel-org.ps1` | Configure Vercel organization |
 | `validate-migrations-schema.js` | Validate database migrations |
 | `fix-payment-installments.js` | Fix payment installment data |

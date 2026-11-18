@@ -92,9 +92,9 @@ try {
     $warnings += "Could not check git status"
 }
 
-# Check 8: Verify test scripts exist
-Write-Host "[8/8] Checking test scripts..." -ForegroundColor Yellow
-$scripts = @("web/scripts/hmac-request.mjs", "web/scripts/production-test.mjs")
+# Check 8: Verify deployment audit script exists
+Write-Host "[8/8] Checking deployment audit script..." -ForegroundColor Yellow
+$scripts = @("web/scripts/audit-production.mjs")
 foreach ($script in $scripts) {
     if (Test-Path $script) {
         Write-Host "  ✓ Found $script" -ForegroundColor Green
