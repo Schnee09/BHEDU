@@ -16,14 +16,10 @@ if ([string]::IsNullOrWhiteSpace($baseUrl)) {
 Write-Host "`n🚀 Testing API at: $baseUrl`n" -ForegroundColor Green
 
 # ========================================
-# PROFILES API TESTS (formerly users)
+# AUTH USER API TEST
 # ========================================
 
-Write-Host "=== 1. GET /api/users (list profiles) ===" -ForegroundColor Cyan
-node web\scripts\hmac-request.mjs --url "$baseUrl/api/users"
-Start-Sleep -Seconds 1
-
-Write-Host "`n=== 2. POST /api/admin/create-user (create user + profile) ===" -ForegroundColor Cyan
+Write-Host "`n=== 1. POST /api/admin/create-user (create auth user) ===" -ForegroundColor Cyan
 $timestamp = Get-Date -Format "MMddHHmmss"
 $createUserBody = "{`"email`":`"teacher$timestamp@example.com`",`"password`":`"SecurePass123!`",`"full_name`":`"Test Teacher`",`"role`":`"teacher`"}"
 node web\scripts\hmac-request.mjs --url "$baseUrl/api/admin/create-user" --method POST --body $createUserBody
@@ -33,11 +29,11 @@ Start-Sleep -Seconds 1
 # COURSES API TESTS (new feature)
 # ========================================
 
-Write-Host "`n=== 3. GET /api/courses (list courses) ===" -ForegroundColor Cyan
+Write-Host "`n=== 2. GET /api/courses (list courses) ===" -ForegroundColor Cyan
 node web\scripts\hmac-request.mjs --url "$baseUrl/api/courses"
 Start-Sleep -Seconds 1
 
-Write-Host "`n=== 4. POST /api/courses (create course) ===" -ForegroundColor Cyan
+Write-Host "`n=== 3. POST /api/courses (create course) ===" -ForegroundColor Cyan
 $createCourseBody = "{`"title`":`"Introduction to Mathematics`",`"description`":`"Basic math concepts for beginners`",`"is_published`":false}"
 node web\scripts\hmac-request.mjs --url "$baseUrl/api/courses" --method POST --body $createCourseBody
 Start-Sleep -Seconds 1
@@ -46,7 +42,7 @@ Start-Sleep -Seconds 1
 # LESSONS API TESTS (new feature)
 # ========================================
 
-Write-Host "`n=== 5. GET /api/lessons?course_id=<uuid> (list lessons) ===" -ForegroundColor Yellow
+Write-Host "`n=== 4. GET /api/lessons?course_id=<uuid> (list lessons) ===" -ForegroundColor Yellow
 Write-Host "Note: Requires a valid course_id from previous test" -ForegroundColor Yellow
 Write-Host "Skipping for now - manual test with actual course_id needed" -ForegroundColor Gray
 
