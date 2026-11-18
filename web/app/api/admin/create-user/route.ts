@@ -30,14 +30,13 @@ export async function POST(req: Request) {
     const internalKey = process.env.INTERNAL_API_KEY; // secret used for signing
 
     if (!supabaseUrl || !serviceRoleKey) {
-      return new Response(JSON.stringify({ error: 'Server environment not configured: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing' }), { status: 500 });
-    }
-
-    // Rate-limit by provided internal key if present, otherwise by IP
-    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    const rlKey = internalKey ? `key:${internalKey}` : `ip:${ip}`;
-    if (isRateLimited(rlKey)) {
-      return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), { status: 429 });
+      return new Response(
+        JSON.stringify({
+          error:
+            'Server environment not configured: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing',
+        }),
+        { status: 500 }
+      );
     }
 
     // Read raw body for signature verification
@@ -47,15 +46,29 @@ export async function POST(req: Request) {
     const providedSig = req.headers.get('x-internal-signature');
     if (!internalKey || !providedSig) {
       // If INTERNAL_API_KEY is not set in env, we deny to avoid accidental exposure.
-      return new Response(JSON.stringify({ error: 'Unauthorized: missing signature or internal key' }), { status: 401 });
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: missing signature or internal key' }),
+        { status: 401 }
+      );
     }
 
     const expected = computeHmac(internalKey, raw);
     // Use timing-safe compare
     const providedBuf = Buffer.from(providedSig, 'hex');
     const expectedBuf = Buffer.from(expected, 'hex');
-    if (providedBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(providedBuf, expectedBuf)) {
+    if (
+      providedBuf.length !== expectedBuf.length ||
+      !crypto.timingSafeEqual(providedBuf, expectedBuf)
+    ) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    }
+
+    // Only authenticated requests consume the limiter. Otherwise an attacker
+    // could exhaust the shared quota with unsigned requests and block the
+    // trusted internal caller.
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    if (isRateLimited(`ip:${ip}`)) {
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), { status: 429 });
     }
 
     // Parse JSON after verification
@@ -68,13 +81,23 @@ export async function POST(req: Request) {
 
     const { email, password } = body ?? {};
     if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
-      return new Response(JSON.stringify({ error: 'email and password required' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'email and password required' }), {
+        status: 400,
+      });
     }
 
     const sb = createClient(supabaseUrl, serviceRoleKey);
 
     // Use the server-side admin API to create a user (requires service role key)
-    const { data, error } = await (sb.auth.admin as { createUser: (params: { email: string; password: string; email_confirm: boolean }) => Promise<{ data: unknown; error: Error | null }> }).createUser({
+    const { data, error } = await (
+      sb.auth.admin as {
+        createUser: (params: {
+          email: string;
+          password: string;
+          email_confirm: boolean;
+        }) => Promise<{ data: unknown; error: Error | null }>;
+      }
+    ).createUser({
       email,
       password,
       email_confirm: true,
