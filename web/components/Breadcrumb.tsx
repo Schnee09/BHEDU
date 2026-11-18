@@ -38,7 +38,6 @@ const routeLabels: Record<string, string> = {
   'academic-years': 'Năm học',
   'grading-scales': 'Thang điểm',
   'fee-types': 'Loại phí',
-  diagnostic: 'Chẩn đoán',
   notifications: 'Thông báo',
   edit: 'Chỉnh sửa',
   progress: 'Tiến độ',

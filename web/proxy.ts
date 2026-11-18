@@ -29,11 +29,9 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: PermissionCode }[] = [
   { prefix: '/dashboard/admin/backup', permission: 'system.settings' },
   { prefix: '/dashboard/admin/health', permission: 'system.settings' },
   { prefix: '/dashboard/admin/data-dump', permission: 'system.settings' },
-  { prefix: '/dashboard/admin/diagnostic', permission: 'system.settings' },
   { prefix: '/dashboard/admin', permission: 'users.view' },
 
   // ── System & Audit ──
-  { prefix: '/dashboard/debug-all-apis', permission: 'system.audit' },
   { prefix: '/dashboard/settings', permission: 'system.settings' },
   { prefix: '/dashboard/reports', permission: 'reports.view' },
 
