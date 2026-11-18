@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDataClient } from '@/lib/auth/dataClient';
+import { getAuthContext } from '@/lib/auth/guard';
 import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/semester';
 
 const VALID_COMPONENT_TYPES = ['oral', 'fifteen_min', 'one_period', 'midterm', 'final'];
@@ -21,6 +22,17 @@ const VALID_SEMESTERS = ['1', '2'];
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await getAuthContext(request, 'grades.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập.' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn không có quyền quản lý điểm.' },
+        { status: 403 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const studentId = searchParams.get('student_id');
     const classId = searchParams.get('class_id');
@@ -72,8 +84,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, user } = await getDataClient(request);
-    const userId = user?.id;
+    const auth = await getAuthContext(request, 'grades.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập.' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn không có quyền quản lý điểm.' },
+        { status: 403 }
+      );
+    }
+
+    const { supabase } = await getDataClient(request);
     const body = await request.json();
     const { student_id, class_id, subject_id, component_type, semester, score, feedback } = body;
     const normalizedSemester = normalizeGradeSemester(semester);
@@ -139,7 +161,7 @@ export async function POST(request: NextRequest) {
           score,
           points_earned: score,
           feedback: feedback || null,
-          graded_by: userId,
+          graded_by: auth.profile.id,
           graded_at: new Date().toISOString(),
           deleted_at: null,
         },

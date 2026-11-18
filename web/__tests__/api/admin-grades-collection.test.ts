@@ -2,6 +2,9 @@
  * @jest-environment node
  */
 import { GET, POST } from '@/app/api/admin/grades/route';
+import { getAuthContext } from '@/lib/auth/guard';
+
+jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 
 const query: Record<string, jest.Mock> = {};
 for (const method of ['select', 'is', 'order', 'eq', 'in', 'upsert']) {
@@ -32,6 +35,11 @@ function request(method: 'GET' | 'POST', search = '', body?: unknown) {
 describe('/api/admin/grades collection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'admin-1' },
+      role: 'admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
     for (const method of ['select', 'is', 'order', 'eq', 'in', 'upsert']) {
       query[method]!.mockReturnValue(query);
     }
@@ -60,8 +68,26 @@ describe('/api/admin/grades collection', () => {
 
     expect(response.status).toBe(200);
     expect(query.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ semester: '1', score: 8, deleted_at: null }),
+      expect.objectContaining({
+        semester: '1',
+        score: 8,
+        deleted_at: null,
+        graded_by: 'admin-1',
+      }),
       { onConflict: 'student_id,class_id,subject_id,component_type,semester' }
     );
+  });
+
+  it('rejects requests without grade management permission before querying data', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: false,
+      profile: { id: 'student-1' },
+      role: 'student',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const response = await GET(request('GET'));
+
+    expect(response.status).toBe(403);
+    expect(query.select).not.toHaveBeenCalled();
   });
 });
