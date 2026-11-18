@@ -25,82 +25,104 @@ Since Supabase CLI is not installed locally, use the **Supabase Dashboard SQL Ed
 **IMPORTANT**: Apply these migrations in the exact order listed. Each migration builds on the previous ones.
 
 #### Migration 001: Core Schema
+
 ```sql
 -- Copy entire contents of: supabase/migrations/001_schema.sql
 -- Creates: profiles, classes, enrollments, assignments, submissions, scores, attendance
 ```
+
 **Run** → Wait for success ✅
 
 #### Migration 002: RLS Policies
+
 ```sql
 -- Copy entire contents of: supabase/migrations/002_rls_policies.sql
 -- Creates: Row-Level Security policies for all base tables
 ```
+
 **Run** → Wait for success ✅
 
 #### Migration 003: RPC Functions
+
 ```sql
 -- Copy entire contents of: supabase/migrations/003_rpc_get_student_metrics.sql
 -- Creates: get_student_metrics() function for dashboard
 ```
+
 **Run** → Wait for success ✅
 
 #### Migration 004: Courses & Lessons Schema
+
 ```sql
 -- Copy entire contents of: supabase/migrations/004_courses_lessons_schema.sql
 -- Creates: courses and lessons tables with triggers
 ```
+
 **Run** → Wait for success ✅
 
 #### Migration 005: Courses/Lessons RLS
+
 ```sql
 -- Copy entire contents of: supabase/migrations/005_courses_lessons_rls.sql
 -- Creates: RLS policies for courses and lessons
 ```
+
 **Run** → Wait for success ✅
 
 #### Migration 006: Fix RLS Circular Dependencies
+
 ```sql
 -- Copy entire contents of: supabase/migrations/006_fix_rls_circular_dependency.sql
 -- Fixes: Recursive RLS policy issues using IN subqueries
 ```
+
 **Run** → Wait for success ✅
 
 #### Migration 007: Security Definer Functions
+
 ```sql
 -- Copy entire contents of: supabase/migrations/007_rls_security_definer_functions.sql
 -- Creates: Helper functions to break RLS recursion
 -- Critical for dashboard queries to work properly
 ```
+
 **Run** → Wait for success ✅
 
 #### Migration 008: Users Compatibility View
+
 ```sql
 -- Copy entire contents of: supabase/migrations/008_users_compat_view.sql
 -- Creates: public.users view mapping to profiles
 ```
+
 **Run** → Wait for success ✅
 
 #### Migration 009: Add Email to Users View
+
 ```sql
 -- Copy entire contents of: supabase/migrations/009_users_view_add_email.sql
 -- Updates: public.users view to include email from auth.users
 ```
+
 **Run** → Wait for success ✅
 
 #### Migration 010: Performance Indexes ⚡
+
 ```sql
 -- Copy entire contents of: supabase/migrations/010_add_performance_indexes.sql
 -- Creates: 20+ indexes on foreign keys and query patterns
 -- This improves query performance significantly
 ```
+
 **Run** → Wait for success ✅
 
 #### Migration 011: Audit Logs 📝
+
 ```sql
 -- Copy entire contents of: supabase/migrations/011_audit_logs.sql
 -- Creates: audit_logs table for tracking admin actions
 ```
+
 **Run** → Wait for success ✅
 
 ### 1.3 Verify Migrations
@@ -109,24 +131,24 @@ Run this verification query in SQL Editor:
 
 ```sql
 -- Check all tables exist
-SELECT table_name 
-FROM information_schema.tables 
+SELECT table_name
+FROM information_schema.tables
 WHERE table_schema = 'public'
 ORDER BY table_name;
 
 -- Expected tables:
--- assignments, attendance, audit_logs, classes, courses, 
+-- assignments, attendance, audit_logs, classes, courses,
 -- enrollments, lessons, profiles, scores, submissions, users (view)
 
 -- Check indexes
-SELECT indexname, tablename 
-FROM pg_indexes 
+SELECT indexname, tablename
+FROM pg_indexes
 WHERE schemaname = 'public'
 ORDER BY tablename, indexname;
 
 -- Check RLS is enabled
-SELECT schemaname, tablename, rowsecurity 
-FROM pg_tables 
+SELECT schemaname, tablename, rowsecurity
+FROM pg_tables
 WHERE schemaname = 'public';
 -- All tables should have rowsecurity = true
 
@@ -151,8 +173,8 @@ You need at least one admin user to access `/admin/courses`.
 
 ```sql
 -- Update user to admin
-UPDATE profiles 
-SET role = 'admin' 
+UPDATE profiles
+SET role = 'admin'
 WHERE id = 'USER_ID_HERE';
 
 -- Verify
@@ -176,24 +198,14 @@ UPDATE profiles SET role = 'admin' WHERE id = (
 ### 3.1 Get Supabase Credentials
 
 From Supabase Dashboard:
+
 1. Go to **Settings** → **API**
 2. Copy these values:
    - **Project URL** (NEXT_PUBLIC_SUPABASE_URL)
    - **anon/public key** (NEXT_PUBLIC_SUPABASE_ANON_KEY)
    - **service_role key** (SUPABASE_SERVICE_ROLE_KEY) ⚠️ Keep secret!
 
-### 3.2 Generate Internal API Key
-
-Run this in your terminal:
-
-```powershell
-# PowerShell
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-
-Copy the output - this is your `INTERNAL_API_KEY`.
-
-### 3.3 Deploy to Vercel
+### 3.2 Deploy to Vercel
 
 #### Option A: Via Vercel Dashboard (Recommended for First Deploy)
 
@@ -215,10 +227,9 @@ Copy the output - this is your `INTERNAL_API_KEY`.
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
    SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
-   INTERNAL_API_KEY=your-generated-key-here
    ```
 
-   ⚠️ **IMPORTANT**: 
+   ⚠️ **IMPORTANT**:
    - Check "Production", "Preview", and "Development" for all variables
    - Double-check there are no extra spaces or newlines
 
@@ -241,7 +252,7 @@ git push origin chore/vercel-integration
 
 3. Vercel will automatically deploy
 
-### 3.4 Verify Deployment
+### 3.3 Verify Deployment
 
 Once deployed, test these endpoints:
 
@@ -251,25 +262,25 @@ curl https://your-app.vercel.app/api/health
 
 # Expected: {"status":"ok","timestamp":"...","database":"connected"}
 
-# 2. Test HMAC authentication (use your INTERNAL_API_KEY)
-node web/scripts/hmac-request.mjs `
-  --url https://your-app.vercel.app/api/courses `
-  --method GET
+# 2. Run repository verification from the web directory
+npm run typecheck
+npm test -- --runInBand
+npm run build
 
-# Expected: {"data":[]} (empty array if no courses yet)
+# Expected: all checks pass
 ```
 
-### 3.5 Run Production Test Suite
+### 3.4 Verify Authenticated Workflows
 
-Set environment variables and run comprehensive tests:
+Sign in with a valid administrator account and verify the main workflows:
 
 ```powershell
-$env:BASE_URL="https://your-app.vercel.app"
-$env:INTERNAL_API_KEY="your-key-here"
-node web/scripts/production-test.mjs
+# Verify students, classes, attendance, grades, and finance according to the account's permissions.
+# Administrative APIs use the application session and granular permissions.
 ```
 
 Expected output:
+
 ```
 🚀 Production Readiness Test Suite
 ✅ Health Check - Status: 200
@@ -287,7 +298,7 @@ Expected output:
 ### 4.1 Security Verification
 
 - [ ] Service role key is **not** exposed in client-side code
-- [ ] INTERNAL_API_KEY is kept secret (not in git)
+- [ ] Administrative APIs reject unauthenticated and unauthorized requests
 - [ ] HTTPS enabled (Vercel does this automatically)
 - [ ] Rate limiting tested (65 rapid requests should trigger 429)
 - [ ] Admin pages require authentication
@@ -312,16 +323,19 @@ Expected output:
 ### 4.4 Set Up Monitoring
 
 **Vercel:**
+
 - Go to your project → **Settings** → **Integrations**
 - Consider adding: Sentry (errors), Logtail (logs), Checkly (uptime)
 
 **Supabase:**
+
 - Go to **Database** → **Query Performance** - monitor slow queries
 - Go to **Auth** → **Users** - monitor user growth
 - Go to **Storage** (if using) - monitor usage
 
 **Health Check Monitoring:**
 Set up external monitoring on `https://your-app.vercel.app/api/health`
+
 - UptimeRobot (free): https://uptimerobot.com
 - Checkly: https://www.checklyhq.com
 - StatusCake: https://www.statuscake.com
@@ -341,6 +355,7 @@ Set up external monitoring on `https://your-app.vercel.app/api/health`
 ### 5.2 Update Environment Variables
 
 If using custom domain, update:
+
 ```
 NEXT_PUBLIC_BASE_URL=https://bh-edu.com
 ```
@@ -352,6 +367,7 @@ NEXT_PUBLIC_BASE_URL=https://bh-edu.com
 ### Build Fails
 
 **"Module not found" errors:**
+
 ```powershell
 cd web
 rm -rf node_modules package-lock.json
@@ -360,6 +376,7 @@ npm run build
 ```
 
 **TypeScript errors:**
+
 - Check `get_errors` output
 - Ensure all migrations applied correctly
 - Verify environment variables are set
@@ -367,27 +384,32 @@ npm run build
 ### Runtime Errors
 
 **"Cannot read properties of undefined":**
+
 - Check browser console for client-side errors
 - Verify Supabase anon key is correct
 - Check that RLS policies allow the operation
 
 **500 Internal Server Error:**
+
 - Check Vercel Function Logs (Dashboard → Your Project → Logs)
 - Verify SUPABASE_SERVICE_ROLE_KEY is set
 - Check that database migrations completed successfully
 
 **401 Unauthorized on API routes:**
-- Verify INTERNAL_API_KEY matches on both client and server
-- Check HMAC signature calculation in request
+
+- Verify that the browser has a valid Supabase session
+- Verify that the account is active and has the required permission
 
 ### Database Errors
 
 **"permission denied for table":**
+
 - Verify RLS policies were created (migrations 002, 005, 006, 007)
 - Check that security definer functions exist (migration 007)
 - Ensure service role key is set correctly
 
 **"relation does not exist":**
+
 - Check that all migrations were applied in order
 - Verify table names match exactly (case-sensitive)
 
@@ -396,25 +418,27 @@ npm run build
 ## Quick Reference Commands
 
 ### Test API Endpoints
+
 ```powershell
-# Set environment variables
-$env:BASE_URL="https://your-app.vercel.app"
-$env:INTERNAL_API_KEY="your-key"
+# Public health check
+Invoke-WebRequest https://your-app.vercel.app/api/health
 
-# Run HMAC-signed request
-node web/scripts/hmac-request.mjs --url $env:BASE_URL/api/courses --method GET
-
-# Run full test suite
-node web/scripts/production-test.mjs
+# Repository verification
+Set-Location web
+npm run typecheck
+npm test -- --runInBand
+npm run build
 ```
 
 ### View Logs
+
 ```powershell
 # Vercel logs (install Vercel CLI)
 vercel logs https://your-app.vercel.app
 ```
 
 ### Query Database
+
 ```sql
 -- Check audit logs
 SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 20;
@@ -426,8 +450,8 @@ SELECT email, role, created_at FROM profiles ORDER BY created_at DESC;
 SELECT id, title, is_published, author_id FROM courses;
 
 -- Check RLS policy usage
-SELECT schemaname, tablename, policyname 
-FROM pg_policies 
+SELECT schemaname, tablename, policyname
+FROM pg_policies
 WHERE schemaname = 'public';
 ```
 
@@ -448,11 +472,13 @@ WHERE schemaname = 'public';
 You've successfully deployed:
 
 ✅ **Supabase Database**
+
 - 11 migrations applied
 - All tables, views, indexes, and RLS policies in place
 - Audit logging configured
 
 ✅ **Next.js Web App on Vercel**
+
 - Production build deployed
 - Environment variables configured
 - Security headers enabled
@@ -460,6 +486,7 @@ You've successfully deployed:
 - Health check endpoint live
 
 ✅ **Production Ready**
+
 - Error handling in place
 - Structured logging configured
 - Admin UI functional

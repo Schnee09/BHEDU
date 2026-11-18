@@ -1,153 +1,67 @@
-# Pre-Deployment Verification Script
-# Run this before deploying to catch any issues early
+$ErrorActionPreference = "Stop"
 
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "BH-EDU Pre-Deployment Verification" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host ""
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
+Set-Location $repositoryRoot
 
-$errors = @()
-$warnings = @()
+$errors = [System.Collections.Generic.List[string]]::new()
+$warnings = [System.Collections.Generic.List[string]]::new()
 
-# Check 1: Verify we're in the right directory
-Write-Host "[1/8] Checking directory..." -ForegroundColor Yellow
-if (Test-Path "web/package.json") {
-    Write-Host "  ✓ Found web/package.json" -ForegroundColor Green
-} else {
-    $errors += "Not in project root (web/package.json not found)"
-}
+function Test-RequiredPath {
+    param(
+        [string]$Path,
+        [string]$Description
+    )
 
-# Check 2: Verify migrations exist
-Write-Host "[2/8] Checking migrations..." -ForegroundColor Yellow
-$migrations = @(
-    "001_schema.sql",
-    "002_rls_policies.sql", 
-    "003_rpc_get_student_metrics.sql",
-    "004_courses_lessons_schema.sql",
-    "005_courses_lessons_rls.sql",
-    "006_fix_rls_circular_dependency.sql",
-    "007_rls_security_definer_functions.sql",
-    "008_users_compat_view.sql",
-    "009_users_view_add_email.sql",
-    "010_add_performance_indexes.sql",
-    "011_audit_logs.sql"
-)
-
-$migrationCount = 0
-foreach ($migration in $migrations) {
-    if (Test-Path "supabase/migrations/$migration") {
-        $migrationCount++
+    if (Test-Path -LiteralPath $Path) {
+        Write-Host "[OK] $Description" -ForegroundColor Green
     } else {
-        $errors += "Missing migration: $migration"
+        $errors.Add("Missing $Description ($Path)")
+        Write-Host "[ERROR] Missing $Description" -ForegroundColor Red
     }
 }
-Write-Host "  ✓ Found $migrationCount/11 migrations" -ForegroundColor Green
 
-# Check 3: Verify example env file
-Write-Host "[3/8] Checking environment templates..." -ForegroundColor Yellow
-if (Test-Path "web/.env.local.example") {
-    Write-Host "  ✓ Found web/.env.local.example" -ForegroundColor Green
+Write-Host "BH-EDU pre-deployment structure check" -ForegroundColor Cyan
+
+Test-RequiredPath "web/package.json" "web package manifest"
+Test-RequiredPath "web/package-lock.json" "npm lockfile"
+Test-RequiredPath "web/.env.example" "environment template"
+Test-RequiredPath "supabase/config.toml" "Supabase configuration"
+Test-RequiredPath ".github/workflows/ci.yml" "CI workflow"
+Test-RequiredPath "web/scripts/audit-production.mjs" "production security audit"
+Test-RequiredPath "docs/deployment/DEPLOYMENT_GUIDE.md" "deployment guide"
+Test-RequiredPath "docs/deployment/PRODUCTION_HARDENING.md" "production hardening guide"
+
+$migrations = @(Get-ChildItem -LiteralPath "supabase/migrations" -Filter "*.sql" -File)
+if ($migrations.Count -eq 0) {
+    $errors.Add("No Supabase migrations found")
+    Write-Host "[ERROR] No Supabase migrations found" -ForegroundColor Red
 } else {
-    $warnings += "No .env.local.example file (not critical)"
+    Write-Host "[OK] Found $($migrations.Count) Supabase migrations" -ForegroundColor Green
 }
 
-# Check 4: Check if .env.local exists (should NOT be committed)
-Write-Host "[4/8] Checking .env.local..." -ForegroundColor Yellow
-if (Test-Path "web/.env.local") {
-    $warnings += ".env.local exists locally (ensure it's in .gitignore)"
-} else {
-    Write-Host "  ✓ No .env.local file (will use Vercel env vars)" -ForegroundColor Green
+if (Test-Path -LiteralPath "web/.env.local") {
+    $warnings.Add("web/.env.local exists; confirm it remains ignored and is never staged")
 }
 
-# Check 5: Verify deployment docs
-Write-Host "[5/8] Checking deployment documentation..." -ForegroundColor Yellow
-$docs = @("DEPLOYMENT_GUIDE.md", "DEPLOYMENT_CHECKLIST.md", "PRODUCTION_HARDENING.md")
-foreach ($doc in $docs) {
-    if (Test-Path $doc) {
-        Write-Host "  ✓ Found $doc" -ForegroundColor Green
-    } else {
-        $warnings += "Missing documentation: $doc"
-    }
+$gitStatus = git status --porcelain
+if ($gitStatus) {
+    $warnings.Add("Working tree contains uncommitted changes")
 }
 
-# Check 6: Verify GitHub workflow
-Write-Host "[6/8] Checking GitHub Actions..." -ForegroundColor Yellow
-if (Test-Path ".github/workflows/deploy-vercel.yml") {
-    Write-Host "  ✓ Found deploy-vercel.yml workflow" -ForegroundColor Green
-} else {
-    $errors += "Missing .github/workflows/deploy-vercel.yml"
+foreach ($warning in $warnings) {
+    Write-Host "[WARNING] $warning" -ForegroundColor Yellow
 }
 
-# Check 7: Check git status
-Write-Host "[7/8] Checking git status..." -ForegroundColor Yellow
-try {
-    $gitStatus = git status --porcelain
-    if ($gitStatus) {
-        $warnings += "Uncommitted changes detected. Consider committing before deploy."
-        Write-Host "  ⚠ Uncommitted changes found" -ForegroundColor Yellow
-    } else {
-        Write-Host "  ✓ Working directory clean" -ForegroundColor Green
-    }
-} catch {
-    $warnings += "Could not check git status"
+if ($errors.Count -gt 0) {
+    Write-Host "Pre-deployment structure check failed with $($errors.Count) error(s)." -ForegroundColor Red
+    exit 1
 }
 
-# Check 8: Verify deployment audit script exists
-Write-Host "[8/8] Checking deployment audit script..." -ForegroundColor Yellow
-$scripts = @("web/scripts/audit-production.mjs")
-foreach ($script in $scripts) {
-    if (Test-Path $script) {
-        Write-Host "  ✓ Found $script" -ForegroundColor Green
-    } else {
-        $warnings += "Missing test script: $script"
-    }
-}
-
-# Summary
-Write-Host ""
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "SUMMARY" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
-
-if ($errors.Count -eq 0 -and $warnings.Count -eq 0) {
-    Write-Host ""
-    Write-Host "✅ All checks passed!" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "You're ready to deploy!" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "Next steps:" -ForegroundColor Cyan
-    Write-Host "1. Review DEPLOYMENT_CHECKLIST.md" -ForegroundColor White
-    Write-Host "2. Apply Supabase migrations via Dashboard SQL Editor" -ForegroundColor White
-    Write-Host "3. Deploy to Vercel (see DEPLOYMENT_GUIDE.md)" -ForegroundColor White
-    Write-Host ""
-} else {
-    if ($errors.Count -gt 0) {
-        Write-Host ""
-        Write-Host "❌ ERRORS ($($errors.Count)):" -ForegroundColor Red
-        foreach ($error in $errors) {
-            Write-Host "  • $error" -ForegroundColor Red
-        }
-    }
-    
-    if ($warnings.Count -gt 0) {
-        Write-Host ""
-        Write-Host "⚠️  WARNINGS ($($warnings.Count)):" -ForegroundColor Yellow
-        foreach ($warning in $warnings) {
-            Write-Host "  • $warning" -ForegroundColor Yellow
-        }
-    }
-    
-    Write-Host ""
-    if ($errors.Count -gt 0) {
-        Write-Host "Please fix errors before deploying." -ForegroundColor Red
-        exit 1
-    } else {
-        Write-Host "Warnings detected but you can proceed with deployment." -ForegroundColor Yellow
-    }
-}
-
-Write-Host ""
-Write-Host "For detailed deployment instructions, see:" -ForegroundColor Cyan
-Write-Host "  • DEPLOYMENT_GUIDE.md (complete guide)" -ForegroundColor White
-Write-Host "  • DEPLOYMENT_CHECKLIST.md (quick reference)" -ForegroundColor White
-Write-Host ""
+Write-Host "Structure check passed." -ForegroundColor Green
+Write-Host "Before deployment, run these commands from web:" -ForegroundColor Cyan
+Write-Host "  npm ci"
+Write-Host "  npm run typecheck"
+Write-Host "  npm run lint"
+Write-Host "  npm test -- --runInBand"
+Write-Host "  npm run build"
+Write-Host "  npm run security:audit"
