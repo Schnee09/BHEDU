@@ -36,9 +36,9 @@ jobs:
         run: npm ci
 
       - name: Security audit
-        # Runtime dependencies block CI. Dev-tool advisories are tracked
-        # separately because npm currently proposes breaking downgrades for them.
-        run: npm audit --omit=dev --audit-level=high
+        # Keep high/critical findings blocking. The script contains one narrow,
+        # documented exception for an unpatched Sentry build-time dependency.
+        run: npm run security:audit
 
       - name: Typecheck
         run: npm run typecheck
