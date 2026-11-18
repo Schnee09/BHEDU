@@ -8,7 +8,7 @@
  * - Performance forecasting
  */
 
-import { SubjectGrade, calculateSubjectAverage, getAcademicStanding } from './gpaCalculator';
+import { SubjectGrade, calculateSubjectAverage } from './gpaCalculator';
 
 export interface GradeTrend {
   slope: number; // Rate of change per time unit
@@ -39,14 +39,6 @@ export interface PredictionResult {
   requiredEffort: 'minimal' | 'moderate' | 'significant' | 'extreme';
 }
 
-export interface PerformanceMetrics {
-  currentAverage: number;
-  trend: GradeTrend;
-  risk: RiskAssessment;
-  prediction: PredictionResult;
-  comparisonToClassAverage: number; // positive = above, negative = below
-}
-
 /**
  * Calculate linear regression for grade trend
  */
@@ -65,7 +57,7 @@ export function calculateGradeTrend(grades: Array<{ date: Date; score: number }>
 
   // Convert dates to numeric x values (days from first date)
   const firstDate = sorted[0]?.date.getTime() ?? 0;
-  const points = sorted.map((g, i) => ({
+  const points = sorted.map((g) => ({
     x: (g.date.getTime() - firstDate) / (1000 * 60 * 60 * 24), // days
     y: g.score,
   }));
@@ -354,41 +346,5 @@ export function calculateRequiredFinalScore(
     requiredScore: Math.round(requiredFinal * 100) / 100,
     isPossible: true,
     message: `Cần đạt ít nhất ${requiredFinal.toFixed(1)} điểm ở bài thi cuối kỳ`,
-  };
-}
-
-/**
- * Get performance comparison metrics
- */
-export function getPerformanceMetrics(
-  studentGrades: SubjectGrade[],
-  classAverageGPA: number,
-  attendanceRate: number = 100,
-  missingAssignments: number = 0
-): PerformanceMetrics {
-  // Calculate current average
-  const validGrades = studentGrades.filter((g) => calculateSubjectAverage(g) !== null);
-  const currentAverage =
-    validGrades.length > 0
-      ? validGrades.reduce((sum, g) => sum + (calculateSubjectAverage(g) || 0), 0) /
-        validGrades.length
-      : 0;
-
-  // Create grade history for trend (mock dates for now)
-  const gradeHistory = validGrades.map((g, i) => ({
-    date: new Date(Date.now() - (validGrades.length - i) * 7 * 24 * 60 * 60 * 1000),
-    score: calculateSubjectAverage(g) || 0,
-  }));
-
-  const trend = calculateGradeTrend(gradeHistory);
-  const risk = assessRisk(currentAverage, trend, missingAssignments, attendanceRate);
-  const prediction = predictFinalGrade(studentGrades, 50, trend);
-
-  return {
-    currentAverage,
-    trend,
-    risk,
-    prediction,
-    comparisonToClassAverage: Math.round((currentAverage - classAverageGPA) * 100) / 100,
   };
 }

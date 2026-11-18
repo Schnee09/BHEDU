@@ -1,6 +1,6 @@
 /**
  * Grades Module Exports
- * 
+ *
  * Central export point for all grade-related services and utilities.
  */
 
@@ -42,10 +42,8 @@ export {
   assessRisk,
   predictFinalGrade,
   calculateRequiredFinalScore,
-  getPerformanceMetrics,
   type GradeTrend,
   type RiskAssessment,
   type RiskFactor,
   type PredictionResult,
-  type PerformanceMetrics,
 } from './gradePredictor';
