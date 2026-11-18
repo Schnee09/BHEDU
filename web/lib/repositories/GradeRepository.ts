@@ -96,8 +96,6 @@ export interface IGradeRepository {
   upsertMany(data: CreateGradeInput[]): Promise<Grade[]>;
   update(id: string, data: UpdateGradeInput): Promise<Grade>;
   delete(id: string): Promise<void>;
-  getAverageByStudent(studentId: string, classId?: string): Promise<number | null>;
-  getAverageByClass(classId: string): Promise<number | null>;
 }
 
 // ============================================
@@ -337,58 +335,5 @@ export class GradeRepository
     }
 
     return data as Grade;
-  }
-
-  /**
-   * Calculate average score for a student
-   */
-  async getAverageByStudent(studentId: string, classId?: string): Promise<number | null> {
-    let query = this.supabase
-      .from(this.tableName)
-      .select('score')
-      .eq('student_id', studentId)
-      .is('deleted_at', null);
-
-    if (classId) {
-      query = query.eq('class_id', classId);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      throw new Error(`Failed to calculate student average: ${error.message}`);
-    }
-
-    if (!data || data.length === 0) return null;
-
-    // TODO: Implement actual weighting based on component_type if needed
-    const scores = data.map((g) => g.score).filter((s) => s !== null) as number[];
-    if (scores.length === 0) return null;
-
-    const total = scores.reduce((sum, s) => sum + s, 0);
-    return total / scores.length;
-  }
-
-  /**
-   * Calculate average score for a class
-   */
-  async getAverageByClass(classId: string): Promise<number | null> {
-    const { data, error } = await this.supabase
-      .from(this.tableName)
-      .select('score')
-      .eq('class_id', classId)
-      .is('deleted_at', null);
-
-    if (error) {
-      throw new Error(`Failed to calculate class average: ${error.message}`);
-    }
-
-    if (!data || data.length === 0) return null;
-
-    const scores = data.map((g) => g.score).filter((s) => s !== null) as number[];
-    if (scores.length === 0) return null;
-
-    const total = scores.reduce((sum, s) => sum + s, 0);
-    return total / scores.length;
   }
 }
