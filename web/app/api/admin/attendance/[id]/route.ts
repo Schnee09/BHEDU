@@ -8,19 +8,20 @@
 import { NextResponse } from 'next/server';
 import { getDataClient } from '@/lib/auth/dataClient';
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
-// import { createAttendanceSchema } from "@/lib/api/schemas"; // Unused
 import { NotFoundError } from '@/lib/api/errors';
 import { logger } from '@/lib/logger';
 import { updateAttendanceSchema } from '@/lib/schemas';
 
 // GET /api/admin/attendance/[id]
-export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ params, request }) => {
-  const { supabase } = await getDataClient(request);
+export const GET = createGetHandler(
+  { permission: 'attendance.view' },
+  async ({ params, request }) => {
+    const { supabase } = await getDataClient(request);
 
-  const { data: record, error } = await supabase
-    .from('attendance')
-    .select(
-      `
+    const { data: record, error } = await supabase
+      .from('attendance')
+      .select(
+        `
         *,
         student:profiles!attendance_student_id_fkey(
           id,
@@ -29,45 +30,46 @@ export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ params
           student_code
         )
       `
-    )
-    .eq('id', params.id)
-    .is('deleted_at', null)
-    .single();
+      )
+      .eq('id', params.id)
+      .is('deleted_at', null)
+      .single();
 
-  if (error || !record) {
-    throw new NotFoundError('Attendance record not found');
-  }
+    if (error || !record) {
+      throw new NotFoundError('Attendance record not found');
+    }
 
-  // Fetch class info separately if needed (preserving previous logic)
-  let classInfo = null;
-  if (record.class_id) {
-    const { data: classData } = await supabase
-      .from('classes')
-      .select(
-        `
+    // Fetch class info separately if needed (preserving previous logic)
+    let classInfo = null;
+    if (record.class_id) {
+      const { data: classData } = await supabase
+        .from('classes')
+        .select(
+          `
           id,
           name,
           teacher:profiles!classes_teacher_id_fkey(
             full_name
           )
         `
-      )
-      .eq('id', record.class_id)
-      .single();
+        )
+        .eq('id', record.class_id)
+        .single();
 
-    classInfo = classData;
+      classInfo = classData;
+    }
+
+    return apiSuccess({
+      ...record,
+      class: classInfo,
+    });
   }
-
-  return apiSuccess({
-    ...record,
-    class: classInfo,
-  });
-});
+);
 
 // PATCH /api/admin/attendance/[id]
 export const PATCH = createApiHandler(
   {
-    allowedRoles: ['admin'],
+    permission: 'attendance.manage',
     bodySchema: updateAttendanceSchema,
   },
   async ({ params, body, request }) => {
@@ -117,34 +119,37 @@ export const PATCH = createApiHandler(
 );
 
 // DELETE /api/admin/attendance/[id]
-export const DELETE = createGetHandler({ allowedRoles: ['admin'] }, async ({ params, request }) => {
-  const { supabase } = await getDataClient(request);
-  const id = params.id;
+export const DELETE = createGetHandler(
+  { permission: 'attendance.manage' },
+  async ({ params, request }) => {
+    const { supabase } = await getDataClient(request);
+    const id = params.id;
 
-  // Check if record exists
-  const { data: record, error: fetchError } = await supabase
-    .from('attendance')
-    .select('id')
-    .eq('id', id)
-    .is('deleted_at', null)
-    .single();
+    // Check if record exists
+    const { data: record, error: fetchError } = await supabase
+      .from('attendance')
+      .select('id')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single();
 
-  if (fetchError || !record) {
-    throw new NotFoundError('Attendance record not found');
+    if (fetchError || !record) {
+      throw new NotFoundError('Attendance record not found');
+    }
+
+    // Preserve the audit trail and allow an intentional restore through the create/upsert flow.
+    const { error: deleteError } = await supabase
+      .from('attendance')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (deleteError) {
+      logger.error('Error deleting attendance record:', deleteError);
+      throw new Error(`Failed to delete attendance record: ${deleteError.message}`);
+    }
+
+    return apiSuccess(null, {
+      message: 'Attendance record deleted successfully',
+    });
   }
-
-  // Preserve the audit trail and allow an intentional restore through the create/upsert flow.
-  const { error: deleteError } = await supabase
-    .from('attendance')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id);
-
-  if (deleteError) {
-    logger.error('Error deleting attendance record:', deleteError);
-    throw new Error(`Failed to delete attendance record: ${deleteError.message}`);
-  }
-
-  return apiSuccess(null, {
-    message: 'Attendance record deleted successfully',
-  });
-});
+);
