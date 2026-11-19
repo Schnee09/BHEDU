@@ -7,13 +7,23 @@
 
 import { NextResponse } from 'next/server';
 import { getDataClient } from '@/lib/auth/dataClient';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
+
+type AssignmentGrade = {
+  deleted_at?: string | null;
+  graded_at?: string | null;
+  score?: number | null;
+  [key: string]: unknown;
+};
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    const auth = await getAuthContext(request, 'grades.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const { supabase } = await getDataClient(request);
@@ -69,12 +79,14 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     }
 
     // Calculate statistics
-    const grades = (assignment.grades || []).filter((grade: any) => !grade.deleted_at);
+    const grades = ((assignment.grades || []) as AssignmentGrade[]).filter(
+      (grade) => !grade.deleted_at
+    );
     const totalSubmissions = grades.length;
-    const gradedSubmissions = grades.filter((g: any) => g.graded_at).length;
+    const gradedSubmissions = grades.filter((grade) => grade.graded_at).length;
     const averageScore =
       grades.length > 0
-        ? grades.reduce((sum: number, g: any) => sum + (g.score || 0), 0) / grades.length
+        ? grades.reduce((sum, grade) => sum + (grade.score || 0), 0) / grades.length
         : 0;
 
     return NextResponse.json({
@@ -99,9 +111,12 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    const auth = await getAuthContext(request, 'grades.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const { supabase } = await getDataClient(request);
@@ -241,9 +256,12 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    const auth = await getAuthContext(request, 'grades.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const { supabase } = await getDataClient(request);

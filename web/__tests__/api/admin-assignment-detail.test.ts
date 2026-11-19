@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { DELETE, GET, PATCH } from '@/app/api/admin/assignments/[id]/route';
+import { getAuthContext } from '@/lib/auth/guard';
 
 const assignmentQuery = {
   select: jest.fn(),
@@ -21,8 +22,12 @@ const classQuery = {
   single: jest.fn(),
 };
 
-jest.mock('@/lib/auth/adminAuth', () => ({
-  adminAuth: jest.fn().mockResolvedValue({ authorized: true, userId: 'admin-1' }),
+jest.mock('@/lib/auth/guard', () => ({
+  getAuthContext: jest.fn().mockResolvedValue({
+    authorized: true,
+    profile: { id: 'admin-1' },
+    role: 'admin',
+  }),
 }));
 
 jest.mock('@/lib/auth/dataClient', () => ({
@@ -42,6 +47,11 @@ const context = { params: Promise.resolve({ id: 'assignment-1' }) };
 describe('/api/admin/assignments/[id] grade lifecycle', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'admin-1' },
+      role: 'admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
     assignmentQuery.select.mockReturnValue(assignmentQuery);
     assignmentQuery.eq.mockReturnValue(assignmentQuery);
     assignmentQuery.delete.mockReturnValue(assignmentQuery);
@@ -164,5 +174,49 @@ describe('/api/admin/assignments/[id] grade lifecycle', () => {
     expect(response.status).toBe(409);
     expect(gradeQuery.is).toHaveBeenCalledWith('deleted_at', null);
     expect(assignmentQuery.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['GET', GET, 'grades.view'],
+    ['PATCH', PATCH, 'grades.manage'],
+    ['DELETE', DELETE, 'grades.manage'],
+  ] as const)(
+    'returns 403 for %s without the required permission',
+    async (method, handler, permission) => {
+      jest.mocked(getAuthContext).mockResolvedValue({
+        authorized: false,
+        profile: { id: 'student-1' },
+        role: 'student',
+      } as Awaited<ReturnType<typeof getAuthContext>>);
+
+      const response = await handler(
+        new Request('http://localhost/api/admin/assignments/assignment-1', {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: method === 'PATCH' ? JSON.stringify({ title: 'Kiểm tra' }) : undefined,
+        }),
+        context
+      );
+
+      expect(response.status).toBe(403);
+      expect(getAuthContext).toHaveBeenCalledWith(expect.any(Request), permission);
+      expect(assignmentQuery.select).not.toHaveBeenCalled();
+    }
+  );
+
+  it('returns 401 when no authenticated profile is available', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: false,
+      profile: null,
+      role: null,
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const response = await GET(
+      new Request('http://localhost/api/admin/assignments/assignment-1'),
+      context
+    );
+
+    expect(response.status).toBe(401);
+    expect(assignmentQuery.select).not.toHaveBeenCalled();
   });
 });
