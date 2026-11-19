@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
 import { getDataClient } from '@/lib/auth/dataClient';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized)
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(request, 'grades.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
+    }
 
     const { id } = await params;
     const { supabase } = await getDataClient(request);
