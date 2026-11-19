@@ -1,26 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getDataClient } from '@/lib/auth/dataClient';
+import { getAuthContext } from '@/lib/auth/guard';
 
 /**
  * GET /api/admin/grading-scales/[id]
  * Get a single grading scale by ID
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
+    const auth = await getAuthContext(request, 'grades.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const resolvedParams = await params;
-  const { supabase } = await getDataClient(request);
+    const { supabase } = await getDataClient(request);
     const { data, error } = await supabase
       .from('grading_scales')
       .select('*')
@@ -29,10 +26,7 @@ export async function GET(
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Grading scale not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Grading scale not found' }, { status: 404 });
       }
       console.error('Error fetching grading scale:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -51,17 +45,14 @@ export async function GET(
  * Update a grading scale
  * Body: { name?, description?, scale?, is_default? }
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
+    const auth = await getAuthContext(request, 'grades.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const resolvedParams = await params;
@@ -71,10 +62,7 @@ export async function PATCH(
     // Validate scale array if provided
     if (scale !== undefined) {
       if (!Array.isArray(scale) || scale.length === 0) {
-        return NextResponse.json(
-          { error: 'scale must be a non-empty array' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'scale must be a non-empty array' }, { status: 400 });
       }
 
       // Validate each grade entry
@@ -94,7 +82,7 @@ export async function PATCH(
       }
     }
 
-  const { supabase } = await getDataClient(request);
+    const { supabase } = await getDataClient(request);
 
     // If setting as default, unset any other default scale
     if (is_default) {
@@ -120,10 +108,7 @@ export async function PATCH(
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Grading scale not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Grading scale not found' }, { status: 404 });
       }
       console.error('Error updating grading scale:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -146,16 +131,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
+    const auth = await getAuthContext(request, 'grades.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const resolvedParams = await params;
-  const { supabase } = await getDataClient(request);
+    const { supabase } = await getDataClient(request);
 
     // Check if scale exists
     const { data: existing } = await supabase
@@ -165,10 +150,7 @@ export async function DELETE(
       .single();
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Grading scale not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Grading scale not found' }, { status: 404 });
     }
 
     // Prevent deleting the default scale
@@ -179,10 +161,7 @@ export async function DELETE(
       );
     }
 
-    const { error } = await supabase
-      .from('grading_scales')
-      .delete()
-      .eq('id', resolvedParams.id);
+    const { error } = await supabase.from('grading_scales').delete().eq('id', resolvedParams.id);
 
     if (error) {
       console.error('Error deleting grading scale:', error);
