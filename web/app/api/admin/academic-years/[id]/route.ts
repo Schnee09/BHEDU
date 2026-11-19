@@ -1,26 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDataClient } from '@/lib/auth/dataClient'
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getDataClient } from '@/lib/auth/dataClient';
+import { getAuthContext } from '@/lib/auth/guard';
 
 /**
  * GET /api/admin/academic-years/[id]
  * Get a single academic year by ID
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
+    const auth = await getAuthContext(request, 'classes.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const resolvedParams = await params;
-  const { supabase } = await getDataClient(request);
+    const { supabase } = await getDataClient(request);
     const { data, error } = await supabase
       .from('academic_years')
       .select('*')
@@ -29,19 +26,17 @@ export async function GET(
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Academic year not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Academic year not found' }, { status: 404 });
       }
       console.error('Error fetching academic year:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in GET /api/admin/academic-years/[id]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -50,17 +45,14 @@ export async function GET(
  * Update an academic year
  * Body: { name?, start_date?, end_date?, is_current?, terms? }
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
+    const auth = await getAuthContext(request, 'classes.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const resolvedParams = await params;
@@ -69,13 +61,10 @@ export async function PATCH(
 
     // Validate date range if both dates are provided
     if (start_date && end_date && new Date(end_date) <= new Date(start_date)) {
-      return NextResponse.json(
-        { error: 'end_date must be after start_date' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'end_date must be after start_date' }, { status: 400 });
     }
 
-  const { supabase } = await getDataClient(request);
+    const { supabase } = await getDataClient(request);
 
     // If setting as current, unset any other current year
     if (is_current) {
@@ -102,10 +91,7 @@ export async function PATCH(
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Academic year not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Academic year not found' }, { status: 404 });
       }
       console.error('Error updating academic year:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -128,16 +114,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || 'Unauthorized' },
-        { status: 401 }
-      );
+    const auth = await getAuthContext(request, 'classes.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const resolvedParams = await params;
-  const { supabase } = await getDataClient(request);
+    const { supabase } = await getDataClient(request);
 
     // Check if year exists
     const { data: existing } = await supabase
@@ -147,16 +133,10 @@ export async function DELETE(
       .single();
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Academic year not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Academic year not found' }, { status: 404 });
     }
 
-    const { error } = await supabase
-      .from('academic_years')
-      .delete()
-      .eq('id', resolvedParams.id);
+    const { error } = await supabase.from('academic_years').delete().eq('id', resolvedParams.id);
 
     if (error) {
       console.error('Error deleting academic year:', error);
