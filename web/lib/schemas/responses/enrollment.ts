@@ -33,8 +33,14 @@ export interface EnrollmentResponse {
   class?: {
     id: string;
     name: string;
+    code?: string | null;
+    schedule?: string | null;
     subject_id?: string | null;
     teacher_id?: string | null;
+    teacher?: {
+      id: string;
+      full_name: string;
+    } | null;
   };
 }
 

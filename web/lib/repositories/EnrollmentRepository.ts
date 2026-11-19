@@ -188,6 +188,7 @@ export class EnrollmentRepository
         class:classes (
           id,
           name,
+          code,
           schedule,
           subject_id,
           teacher_id,

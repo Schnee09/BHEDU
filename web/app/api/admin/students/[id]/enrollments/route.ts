@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
 import { getDataClient } from '@/lib/auth/dataClient';
 import { logger } from '@/lib/logger';
 import { EnrollmentRepository } from '@/lib/repositories/EnrollmentRepository';
@@ -17,9 +17,12 @@ interface RouteParams {
 
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await adminAuth(req);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(req, 'students.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const { id } = await params;
@@ -40,7 +43,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     const enrollmentRows = await repository.findByStudent(id);
 
-    const enrollments = (enrollmentRows || []).map((row: any) => ({
+    const enrollments = (enrollmentRows || []).map((row) => ({
       id: row.id,
       class_id: row.class_id,
       class_name: row.class?.name ?? row.class_id,
