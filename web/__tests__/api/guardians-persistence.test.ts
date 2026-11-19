@@ -1,11 +1,11 @@
 /**
  * @jest-environment node
  */
-import { POST } from '@/app/api/admin/students/[id]/guardians/route';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { GET, POST } from '@/app/api/admin/students/[id]/guardians/route';
+import { getAuthContext } from '@/lib/auth/guard';
 import { getDataClient } from '@/lib/auth/dataClient';
 
-jest.mock('@/lib/auth/adminAuth', () => ({ adminAuth: jest.fn() }));
+jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/auth/dataClient', () => ({ getDataClient: jest.fn() }));
 jest.mock('@/lib/logger', () => ({
   logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
@@ -22,7 +22,11 @@ function request(body: unknown) {
 describe('guardian persistence', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (adminAuth as jest.Mock).mockResolvedValue({ authorized: true });
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'admin-1' },
+      role: 'admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
 
     const profiles = {
       select: jest.fn(() => ({
@@ -61,5 +65,38 @@ describe('guardian persistence', () => {
     expect(json.success).toBe(false);
     expect(json.data).toBeUndefined();
     expect(JSON.stringify(json)).not.toContain('temp-');
+  });
+
+  it('requires students.view to read guardians', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: false,
+      profile: { id: 'student-2' },
+      role: 'student',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const response = await GET(
+      new Request('http://localhost/api/admin/students/student-1/guardians') as any,
+      { params: Promise.resolve({ id: 'student-1' }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(getAuthContext).toHaveBeenCalledWith(expect.any(Request), 'students.view');
+    expect(getDataClient).not.toHaveBeenCalled();
+  });
+
+  it('requires students.edit to create a guardian', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: false,
+      profile: { id: 'teacher-1' },
+      role: 'teacher',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const response = await POST(request({ name: 'Người giám hộ' }), {
+      params: Promise.resolve({ id: 'student-1' }),
+    });
+
+    expect(response.status).toBe(403);
+    expect(getAuthContext).toHaveBeenCalledWith(expect.any(Request), 'students.edit');
+    expect(getDataClient).not.toHaveBeenCalled();
   });
 });

@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDataClient } from '@/lib/auth/dataClient';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
 import { logger } from '@/lib/logger';
 
 interface RouteParams {
@@ -15,9 +15,12 @@ interface RouteParams {
 
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await adminAuth(req);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(req, 'students.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const { id } = await params;
@@ -107,9 +110,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await adminAuth(req);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(req, 'students.edit');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const { id } = await params;
