@@ -6,15 +6,18 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDataClient } from '@/lib/auth/dataClient';
-import { adminAuth } from '@/lib/auth/adminAuth';
-import { handleApiError, AuthenticationError, ValidationError } from '@/lib/api/errors';
+import { getAuthContext } from '@/lib/auth/guard';
+import { handleApiError, ValidationError } from '@/lib/api/errors';
 import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
+    const auth = await getAuthContext(request, 'grades.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const { supabase } = await getDataClient(request);
@@ -79,9 +82,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
+    const auth = await getAuthContext(request, 'grades.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const { supabase } = await getDataClient(request);

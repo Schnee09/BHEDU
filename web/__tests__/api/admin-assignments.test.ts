@@ -1,7 +1,8 @@
 /**
  * @jest-environment node
  */
-import { POST } from '@/app/api/admin/assignments/route';
+import { GET, POST } from '@/app/api/admin/assignments/route';
+import { getAuthContext } from '@/lib/auth/guard';
 
 const assignmentQuery = {
   insert: jest.fn(),
@@ -19,8 +20,12 @@ const categoryQuery = {
   maybeSingle: jest.fn(),
 };
 
-jest.mock('@/lib/auth/adminAuth', () => ({
-  adminAuth: jest.fn().mockResolvedValue({ authorized: true, userId: 'admin-1' }),
+jest.mock('@/lib/auth/guard', () => ({
+  getAuthContext: jest.fn().mockResolvedValue({
+    authorized: true,
+    profile: { id: 'admin-1' },
+    role: 'admin',
+  }),
 }));
 
 jest.mock('@/lib/auth/dataClient', () => ({
@@ -45,9 +50,20 @@ function createRequest(body: Record<string, unknown>) {
   return request;
 }
 
+function createGetRequest() {
+  const request: any = new Request('http://localhost/api/admin/assignments');
+  request.nextUrl = { pathname: '/api/admin/assignments', searchParams: new URLSearchParams() };
+  return request;
+}
+
 describe('POST /api/admin/assignments', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'admin-1' },
+      role: 'admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
     assignmentQuery.insert.mockReturnValue(assignmentQuery);
     assignmentQuery.select.mockReturnValue(assignmentQuery);
     assignmentQuery.single.mockResolvedValue({
@@ -100,5 +116,35 @@ describe('POST /api/admin/assignments', () => {
     expect(response.status).toBe(400);
     expect(categoryQuery.eq).toHaveBeenCalledWith('class_id', 'class-1');
     expect(assignmentQuery.insert).not.toHaveBeenCalled();
+  });
+
+  it('rejects creation without grades.manage before querying data', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: false,
+      profile: { id: 'teacher-1' },
+      role: 'teacher',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const response = await POST(
+      createRequest({ class_id: 'class-1', title: 'Kiểm tra', total_points: 20 })
+    );
+
+    expect(response.status).toBe(403);
+    expect(getAuthContext).toHaveBeenCalledWith(expect.any(Request), 'grades.manage');
+    expect(assignmentQuery.insert).not.toHaveBeenCalled();
+  });
+
+  it('requires grades.view for collection reads', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: false,
+      profile: { id: 'student-1' },
+      role: 'student',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const response = await GET(createGetRequest());
+
+    expect(response.status).toBe(403);
+    expect(getAuthContext).toHaveBeenCalledWith(expect.any(Request), 'grades.view');
+    expect(assignmentQuery.select).not.toHaveBeenCalled();
   });
 });
