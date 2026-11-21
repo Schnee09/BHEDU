@@ -4,9 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 import { createServiceClient } from '@/lib/supabase/server';
-import { handleApiError, AuthenticationError } from '@/lib/api/errors';
+import { handleApiError, AuthenticationError, AuthorizationError } from '@/lib/api/errors';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -14,13 +15,19 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
+    const auth = await getAuthContext(request, 'students.edit');
+    if (!auth.profile) {
+      throw new AuthenticationError(auth.reason || 'Unauthorized');
+    }
+    if (!auth.authorized || !auth.role) {
+      throw new AuthorizationError(auth.reason || 'Forbidden');
     }
 
     const { id } = await params;
     const supabase = createServiceClient();
+    if (!(await canAccessStudent(supabase, { id: auth.profile.id, role: auth.role }, id))) {
+      throw new AuthorizationError('Forbidden');
+    }
 
     const { data: notes, error } = await supabase
       .from('student_notes')
@@ -66,9 +73,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
+    const auth = await getAuthContext(request, 'students.edit');
+    if (!auth.profile) {
+      throw new AuthenticationError(auth.reason || 'Unauthorized');
+    }
+    if (!auth.authorized || !auth.role) {
+      throw new AuthorizationError(auth.reason || 'Forbidden');
     }
 
     const { id } = await params;
@@ -80,13 +90,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const supabase = createServiceClient();
+    if (!(await canAccessStudent(supabase, { id: auth.profile.id, role: auth.role }, id))) {
+      throw new AuthorizationError('Forbidden');
+    }
 
     const { data: note, error } = await supabase
       .from('student_notes')
       .insert({
         student_id: id,
         content: content.trim(),
-        created_by: authResult.userId,
+        created_by: auth.profile.id,
       })
       .select()
       .single();
