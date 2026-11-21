@@ -7,7 +7,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { hasPermission, UserRole, PermissionCode } from './lib/auth/core';
+import { UserRole, PermissionCode } from './lib/auth/core';
+import { resolveProxyPermission } from './lib/auth/proxyPermission';
 
 // Map of route prefixes to required permission codes.
 // Sorted by specificity (longest prefix first) for correct precedence matching.
@@ -15,6 +16,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: PermissionCode }[] = [
   // ── Admin Sub-routes ──
   { prefix: '/dashboard/admin/students/parent-links', permission: 'parent_links.view' },
   { prefix: '/dashboard/admin/permissions', permission: 'permissions.manage' },
+  { prefix: '/dashboard/admin/reception', permission: 'students.view' },
   { prefix: '/dashboard/admin/announcements', permission: 'announcements.manage' },
   { prefix: '/dashboard/admin/academic-years', permission: 'classes.manage' },
   { prefix: '/dashboard/admin/grading-scales', permission: 'classes.manage' },
@@ -143,7 +145,7 @@ export async function proxy(request: NextRequest) {
   // Never trust a client-supplied role cookie for an authorization decision.
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('role')
+    .select('id, role')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -155,7 +157,7 @@ export async function proxy(request: NextRequest) {
   const role = profile.role as UserRole;
 
   // 4. Permission check
-  if (!hasPermission(role, requiredPermission)) {
+  if (!(await resolveProxyPermission(supabase, profile.id, role, requiredPermission))) {
     console.warn(
       `[Proxy] Access denied — user ${user.id} (role: ${role}) → ${pathname}. Required: ${requiredPermission}`
     );

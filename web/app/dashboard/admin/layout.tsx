@@ -1,12 +1,8 @@
-import { adminAuth } from '@/lib/auth/adminAuth'
-import { redirect } from 'next/navigation'
+export const dynamic = 'force-dynamic';
 
-export const dynamic = 'force-dynamic'
-
-export default async function AdminSectionLayout({ children }: { children: React.ReactNode }) {
-  const auth = await adminAuth()
-  if (!auth.authorized) {
-    redirect('/unauthorized')
-  }
-  return <>{children}</>
+// Authentication and fine-grained authorization are enforced by proxy.ts.
+// Keeping a role-only guard here would incorrectly reject staff/custom roles
+// that have been granted access through the dynamic permission system.
+export default function AdminSectionLayout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }
