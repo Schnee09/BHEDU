@@ -3,26 +3,22 @@
  * POST /api/admin/users/[id]/reset-password - Reset user password
  */
 
-import { NextResponse } from "next/server";
-import { getDataClient } from "@/lib/auth/dataClient";
-import { adminAuth } from "@/lib/auth/adminAuth";
-import {
-  generatePasswordResetEmail,
-  sendEmail,
-} from "@/lib/email/emailService";
-import { logger } from "@/lib/logger";
+import { NextResponse } from 'next/server';
+import { getDataClient } from '@/lib/auth/dataClient';
+import { getAuthContext } from '@/lib/auth/guard';
+import { generatePasswordResetEmail, sendEmail } from '@/lib/email/emailService';
+import { logger } from '@/lib/logger';
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+const PROTECTED_ROLES = new Set(['owner', 'super_admin']);
+
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json(
-        { error: authResult.reason || "Unauthorized" },
-        { status: 401 },
-      );
+    const auth = await getAuthContext(request, 'users.edit');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const { id } = await params;
@@ -31,58 +27,65 @@ export async function POST(
 
     if (!new_password || new_password.length < 6) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters long" },
-        { status: 400 },
+        { error: 'Password must be at least 6 characters long' },
+        { status: 400 }
       );
     }
 
     const { supabase } = await getDataClient(request);
 
-    // Update user password
-    const { error: passwordError } = await supabase.auth.admin.updateUserById(
-      id,
-      { password: new_password },
-    );
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, user_id, role, full_name, email, is_managed')
+      .eq('id', id)
+      .maybeSingle();
 
-    if (passwordError) {
-      logger.error("Error resetting password", passwordError);
+    if (profileError || !userProfile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    if (auth.role !== 'super_admin' && PROTECTED_ROLES.has(userProfile.role)) {
       return NextResponse.json(
-        { error: "Failed to reset password" },
-        { status: 500 },
+        { error: 'Only a super administrator can reset this account' },
+        { status: 403 }
+      );
+    }
+    if (!userProfile.user_id) {
+      return NextResponse.json(
+        { error: 'User profile is not linked to a login account' },
+        { status: 409 }
       );
     }
 
-    // Log activity
-    await supabase
-      .from("user_activity_logs")
-      .insert({
-        user_id: id,
-        action: "password_reset",
-        description: `Password reset by admin: ${authResult.userEmail}`,
-        metadata: { reset_by: authResult.userId },
-      });
+    // Update user password
+    const { error: passwordError } = await supabase.auth.admin.updateUserById(userProfile.user_id, {
+      password: new_password,
+    });
 
-    // Get user profile to check managed status and email
-    const { data: userProfile } = await supabase
-      .from("profiles")
-      .select("full_name, email, is_managed")
-      .eq("id", id)
-      .single();
+    if (passwordError) {
+      logger.error('Error resetting password', passwordError);
+      return NextResponse.json({ error: 'Failed to reset password' }, { status: 500 });
+    }
+
+    // Log activity
+    await supabase.from('user_activity_logs').insert({
+      user_id: id,
+      action: 'password_reset',
+      description: `Password reset by admin: ${auth.profile.email}`,
+      metadata: { reset_by: auth.profile.id },
+    });
 
     // Send email notification to user if requested and valid email exists
     if (send_email && userProfile?.email && !userProfile.is_managed) {
-      const loginUrl = `${
-        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-      }/login`;
+      const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`;
       const emailContent = generatePasswordResetEmail({
-        firstName: userProfile.full_name || "User",
+        firstName: userProfile.full_name || 'User',
         newPassword: new_password,
         loginUrl,
       });
 
       await sendEmail({
         to: userProfile.email,
-        subject: "Your Password Has Been Reset - BH-EDU",
+        subject: 'Your Password Has Been Reset - BH-EDU',
         ...emailContent,
       });
     }
@@ -90,15 +93,12 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: send_email
-        ? "Password reset successfully. Notification email sent."
-        : "Password reset successfully.",
+        ? 'Password reset successfully. Notification email sent.'
+        : 'Password reset successfully.',
       new_password: new_password, // Return to admin for on-screen display
     });
   } catch (error) {
-    logger.error("Error in POST /api/admin/users/[id]/reset-password", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    logger.error('Error in POST /api/admin/users/[id]/reset-password', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
