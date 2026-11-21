@@ -4,9 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 import { createServiceClient } from '@/lib/supabase/server';
-import { handleApiError, AuthenticationError } from '@/lib/api/errors';
+import { handleApiError, AuthenticationError, AuthorizationError } from '@/lib/api/errors';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -29,13 +30,19 @@ const ALLOWED_DOCUMENT_TYPES = new Set([
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
+    const auth = await getAuthContext(request, 'students.view');
+    if (!auth.profile) {
+      throw new AuthenticationError(auth.reason || 'Unauthorized');
+    }
+    if (!auth.authorized || !auth.role) {
+      throw new AuthorizationError(auth.reason || 'Forbidden');
     }
 
     const { id } = await params;
     const supabase = createServiceClient();
+    if (!(await canAccessStudent(supabase, { id: auth.profile.id, role: auth.role }, id))) {
+      throw new AuthorizationError('Forbidden');
+    }
 
     const { data: documents, error } = await supabase
       .from('student_documents')
@@ -92,9 +99,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const authResult = await adminAuth(request);
-    if (!authResult.authorized) {
-      throw new AuthenticationError(authResult.reason || 'Unauthorized');
+    const auth = await getAuthContext(request, 'students.edit');
+    if (!auth.profile) {
+      throw new AuthenticationError(auth.reason || 'Unauthorized');
+    }
+    if (!auth.authorized || !auth.role) {
+      throw new AuthorizationError(auth.reason || 'Forbidden');
     }
 
     const { id } = await params;
@@ -119,6 +129,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const supabase = createServiceClient();
+    if (!(await canAccessStudent(supabase, { id: auth.profile.id, role: auth.role }, id))) {
+      throw new AuthorizationError('Forbidden');
+    }
 
     // Upload file to Supabase Storage
     const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -151,7 +164,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         url: '',
         size: file.size,
         storage_path: fileName,
-        uploaded_by: authResult.userId,
+        uploaded_by: auth.profile.id,
       })
       .select()
       .single();

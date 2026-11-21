@@ -2,10 +2,12 @@
  * @jest-environment node
  */
 import { GET, POST } from '@/app/api/students/[id]/documents/route';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 import { createServiceClient } from '@/lib/supabase/server';
 
-jest.mock('@/lib/auth/adminAuth', () => ({ adminAuth: jest.fn() }));
+jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
+jest.mock('@/lib/auth/classAccess', () => ({ canAccessStudent: jest.fn() }));
 
 const documentQuery = {
   select: jest.fn(),
@@ -32,11 +34,12 @@ function params() {
 describe('/api/students/[id]/documents', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (adminAuth as jest.Mock).mockResolvedValue({
+    (getAuthContext as jest.Mock).mockResolvedValue({
       authorized: true,
-      userId: 'admin-1',
-      userRole: 'admin',
+      profile: { id: 'admin-1' },
+      role: 'admin',
     });
+    (canAccessStudent as jest.Mock).mockResolvedValue(true);
     documentQuery.select.mockReturnValue(documentQuery);
     documentQuery.eq.mockReturnValue(documentQuery);
     documentQuery.order.mockResolvedValue({
