@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth/guard';
 import { createServiceClient } from '@/lib/supabase/server';
-import { isAtLeast, UserRole } from '@/lib/auth/core';
 import { z } from 'zod';
 
 const announcementSchema = z.object({
@@ -13,23 +12,21 @@ const announcementSchema = z.object({
 });
 
 async function checkAnnouncementAccess(request: Request) {
-  const auth = await getAuthContext(request);
-  if (!auth.authorized || !auth.role) {
-    return { authorized: false, reason: auth.reason || 'Unauthorized', auth };
+  const auth = await getAuthContext(request, 'announcements.manage');
+  if (!auth.profile) {
+    return { authorized: false, reason: auth.reason || 'Unauthorized', status: 401, auth };
   }
-  // Admin and above, OR owner (who has announcements.manage) can manage announcements
-  const allowedRoles = ['admin', 'owner', 'super_admin'];
-  if (!isAtLeast(auth.role, 'admin') && !allowedRoles.includes(auth.role)) {
-    return { authorized: false, reason: 'Insufficient permissions', auth };
+  if (!auth.authorized) {
+    return { authorized: false, reason: auth.reason || 'Forbidden', status: 403, auth };
   }
-  return { authorized: true, auth };
+  return { authorized: true, status: 200, auth };
 }
 
 export async function GET(request: Request) {
   try {
-    const { authorized, reason, auth } = await checkAnnouncementAccess(request);
+    const { authorized, reason, status } = await checkAnnouncementAccess(request);
     if (!authorized) {
-      return NextResponse.json({ error: reason }, { status: 403 });
+      return NextResponse.json({ error: reason }, { status });
     }
 
     const { searchParams } = new URL(request.url);
@@ -47,16 +44,17 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ data: data || [] });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const { authorized, reason, auth } = await checkAnnouncementAccess(request);
+    const { authorized, reason, status, auth } = await checkAnnouncementAccess(request);
     if (!authorized) {
-      return NextResponse.json({ error: reason }, { status: 403 });
+      return NextResponse.json({ error: reason }, { status });
     }
 
     const body = await request.json();
@@ -78,10 +76,11 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues }, { status: 400 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
