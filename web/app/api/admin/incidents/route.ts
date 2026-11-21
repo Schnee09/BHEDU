@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
 import { getRecentIncidents, recordIncident } from '@/lib/incidentLogger';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const auth = await adminAuth();
-  if (!auth.authorized) {
+  const auth = await getAuthContext(request, 'system.audit');
+  if (!auth.profile) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!auth.authorized) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
   const incidents = getRecentIncidents();
@@ -21,9 +24,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await adminAuth();
-  if (!auth.authorized) {
+  const auth = await getAuthContext(request, 'system.audit');
+  if (!auth.profile) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!auth.authorized) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
   try {
@@ -31,14 +37,15 @@ export async function POST(request: NextRequest) {
     const incident = recordIncident({
       type: body.type || 'CRASH',
       message: body.message || 'Manual admin reported incident',
-      userEmail: auth.userEmail || 'admin@bhedu.vn',
-      userRole: auth.userRole || 'admin',
+      userEmail: auth.profile.email || 'admin@bhedu.vn',
+      userRole: auth.role || 'admin',
       url: body.url || request.nextUrl.pathname,
       metadata: body.metadata,
     });
 
     return NextResponse.json({ success: true, data: incident });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message }, { status: 400 });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Invalid incident data';
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 400 });
   }
 }
