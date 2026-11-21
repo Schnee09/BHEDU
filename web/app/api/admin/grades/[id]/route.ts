@@ -12,7 +12,7 @@ import { NotFoundError, ValidationError } from '@/lib/api/errors';
 import { logger } from '@/lib/logger';
 
 // GET /api/admin/grades/[id]
-export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ params, request }) => {
+export const GET = createGetHandler({ permission: 'grades.view' }, async ({ params, request }) => {
   const { supabase } = await getDataClient(request);
 
   const { data: grade, error } = await supabase
@@ -92,7 +92,7 @@ export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ params
 // PATCH /api/admin/grades/[id]
 export const PATCH = createApiHandler(
   {
-    allowedRoles: ['admin'],
+    permission: 'grades.manage',
     bodySchema: updateGradeSchema,
   },
   async ({ params, body, request, user }) => {
@@ -213,7 +213,7 @@ export const PATCH = createApiHandler(
 
 // DELETE /api/admin/grades/[id]
 export const DELETE = createGetHandler(
-  { allowedRoles: ['admin'] },
+  { permission: 'grades.delete' },
   async ({ params, request, user }) => {
     const { supabase } = await getDataClient(request);
     const id = params.id;

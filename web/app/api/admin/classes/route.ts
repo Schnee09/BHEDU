@@ -3,13 +3,12 @@
  * GET/POST /api/admin/classes
  */
 
-import { NextResponse } from 'next/server';
 import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { createClassSchema } from '@/lib/schemas';
 import { ClassService } from '@/lib/services/classService';
 
 // GET /api/admin/classes
-export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ searchParams }) => {
+export const GET = createGetHandler({ permission: 'classes.view' }, async ({ searchParams }) => {
   const search = searchParams.get('search') || undefined;
   const teacherId = searchParams.get('teacher_id') || undefined;
   const academicYearId = searchParams.get('academic_year_id') || undefined;
@@ -46,7 +45,7 @@ export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ search
 // POST /api/admin/classes
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin'],
+    permission: 'classes.create',
     bodySchema: createClassSchema,
   },
   async ({ body }) => {
