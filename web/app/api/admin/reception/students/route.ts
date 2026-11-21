@@ -1,13 +1,21 @@
 import { apiSuccess, createGetHandler } from '@/lib/api';
-import { ValidationError } from '@/lib/api/errors';
+import { AuthorizationError, ValidationError } from '@/lib/api/errors';
+import { getAuthContext } from '@/lib/auth/guard';
 import { createServiceClient } from '@/lib/supabase/server';
 import { normalizeReceptionSearch, summarizeStudentFinance } from '@/lib/students/reception360';
 
 const RECEPTION_ROLES = ['staff', 'admin', 'owner', 'super_admin'] as const;
 
 export const GET = createGetHandler(
-  { allowedRoles: [...RECEPTION_ROLES] },
-  async ({ searchParams }) => {
+  { permission: 'students.view', allowedRoles: [...RECEPTION_ROLES] },
+  async ({ request, searchParams }) => {
+    const financeAuth = await getAuthContext(request, 'finance.view');
+    if (!financeAuth.authorized) {
+      throw new AuthorizationError(
+        financeAuth.reason || 'Bạn không có quyền xem thông tin học phí.'
+      );
+    }
+
     const query = normalizeReceptionSearch(searchParams.get('q') || '');
     if (query.length < 2) {
       throw new ValidationError('Nhập ít nhất 2 ký tự để tra cứu học sinh');
