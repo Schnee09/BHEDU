@@ -10,11 +10,11 @@ import { GET as getStudentOverview } from '@/app/api/grades/student-overview/rou
 import { canAccessClass } from '@/lib/auth/classAccess';
 
 jest.mock('@/lib/auth/classAccess', () => ({ canAccessClass: jest.fn() }));
-jest.mock('@/lib/auth/adminAuth', () => ({
-  teacherAuth: jest.fn().mockResolvedValue({
+jest.mock('@/lib/auth/guard', () => ({
+  getAuthContext: jest.fn().mockResolvedValue({
     authorized: true,
-    userId: 'teacher-1',
-    userRole: 'teacher',
+    profile: { id: 'teacher-1' },
+    role: 'teacher',
   }),
 }));
 

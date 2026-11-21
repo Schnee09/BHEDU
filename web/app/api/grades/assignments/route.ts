@@ -7,15 +7,18 @@
 
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { teacherAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
 import { logger } from '@/lib/logger';
 import { canAccessClass } from '@/lib/auth/classAccess';
 
 export async function GET(request: Request) {
   try {
-    const authResult = await teacherAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(request, 'grades.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     // Use service client to bypass RLS and avoid recursion
@@ -39,18 +42,12 @@ export async function GET(request: Request) {
       )
       .order('due_date', { ascending: false });
 
-    const isAdminLike = ['admin', 'super_admin', 'owner'].includes(authResult.userRole || '');
+    const isAdminLike = ['admin', 'super_admin', 'owner'].includes(auth.role);
 
     if (classId) {
       query = query.eq('class_id', classId);
 
-      if (
-        !(await canAccessClass(
-          supabase,
-          { id: authResult.userId, role: authResult.userRole },
-          classId
-        ))
-      ) {
+      if (!(await canAccessClass(supabase, { id: auth.profile.id, role: auth.role }, classId))) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       }
     } else if (!isAdminLike) {
@@ -58,7 +55,7 @@ export async function GET(request: Request) {
       const { data: teacherClasses } = await supabase
         .from('classes')
         .select('id')
-        .eq('teacher_id', authResult.userId);
+        .eq('teacher_id', auth.profile.id);
 
       const classIds = teacherClasses?.map((c) => c.id) || [];
       if (classIds.length > 0) {
@@ -99,9 +96,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authResult = await teacherAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(request, 'grades.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -122,13 +122,7 @@ export async function POST(request: Request) {
     // Use service client to bypass RLS
     const supabase = createServiceClient();
 
-    if (
-      !(await canAccessClass(
-        supabase,
-        { id: authResult.userId, role: authResult.userRole },
-        class_id
-      ))
-    ) {
+    if (!(await canAccessClass(supabase, { id: auth.profile.id, role: auth.role }, class_id))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 

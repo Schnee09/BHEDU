@@ -8,7 +8,7 @@
 
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { teacherAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
 import { logger } from '@/lib/logger';
 import { canAccessClass } from '@/lib/auth/classAccess';
 import { getCurrentDateOnly } from '@/lib/enrollments/effectiveDates';
@@ -16,9 +16,12 @@ import { getNormalizedGradeScore } from '@/lib/grades/normalizedScore';
 
 export async function GET(request: Request) {
   try {
-    const authResult = await teacherAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(request, 'grades.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();
@@ -30,13 +33,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'classId is required' }, { status: 400 });
     }
 
-    if (
-      !(await canAccessClass(
-        supabase,
-        { id: authResult.userId, role: authResult.userRole },
-        classId
-      ))
-    ) {
+    if (!(await canAccessClass(supabase, { id: auth.profile.id, role: auth.role }, classId))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
