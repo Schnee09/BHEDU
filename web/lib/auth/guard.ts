@@ -90,7 +90,7 @@ export async function getAuthContext(
 
     const role = (profile.role as string).toLowerCase() as UserRole;
 
-    // 3. Permission Check (if requested) — uses 3-layer DB-aware resolver
+    // 3. Permission check (if requested) uses the database-aware resolver.
     if (requiredPermission) {
       // Check if there is a custom user-level database override (not denied, not expired)
       const { data: customGrant } = await serviceClient

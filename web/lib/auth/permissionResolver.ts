@@ -1,13 +1,14 @@
 /**
  * Server-Side Permission Resolver
  *
- * Implements 3-layer permission resolution using the database:
+ * Implements 4-layer permission resolution using the database:
  *   Layer 1 (highest): User-level overrides (user_permissions table)
  *   Layer 2 (mid):     Role-level DB overrides (role_permission_overrides table)
- *   Layer 3 (base):    Code defaults (BASE_ROLE_PERMISSIONS + ROLE_HIERARCHY)
+ *   Layer 3 (base):    Database role defaults (role_permissions table)
+ *   Layer 4 (fallback): Code defaults (BASE_ROLE_PERMISSIONS + ROLE_HIERARCHY)
  *
  * Only used server-side (API routes, Server Actions).
- * Client-side uses usePermissions hook which fetches the same layers.
+ * Client-side uses usePermissions, which resolves the same database layers.
  */
 
 import { createServiceClient } from '@/lib/supabase/server';
@@ -56,6 +57,18 @@ export async function resolveServerPermission(
     if (rolePerm !== null) {
       return !rolePerm.is_denied;
     }
+
+    // Layer 3: database defaults assigned to the role.
+    const { data: roleDefault } = await supabase
+      .from('role_permissions')
+      .select('permission_code')
+      .eq('role', role)
+      .eq('permission_code', permission)
+      .maybeSingle();
+
+    if (roleDefault !== null) {
+      return true;
+    }
   } catch (err) {
     // DB unavailable — fall back to code defaults
     console.warn('[resolveServerPermission] DB check failed, falling back to code defaults:', err);
@@ -84,6 +97,16 @@ export async function getEffectivePermissions(
 
   try {
     const supabase = createServiceClient();
+
+    // Add database role defaults before applying explicit overrides.
+    const { data: roleDefaults } = await supabase
+      .from('role_permissions')
+      .select('permission_code')
+      .eq('role', role);
+
+    for (const permission of roleDefaults || []) {
+      granted.add(permission.permission_code as PermissionCode);
+    }
 
     // Fetch role overrides
     const { data: roleOverrides } = await supabase
