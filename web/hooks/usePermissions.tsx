@@ -35,6 +35,10 @@ interface RoleOverrideRow {
   is_denied: boolean;
 }
 
+interface RolePermissionRow {
+  permission_code: string;
+}
+
 interface PermissionRow {
   permission_code: string;
   is_denied: boolean;
@@ -50,7 +54,7 @@ export function usePermissions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch custom permissions (user-level overrides) + role-level DB overrides
+  // Fetch database role defaults, role overrides, and user-level overrides.
   useEffect(() => {
     async function fetchPermissions() {
       if (!profileId) {
@@ -58,7 +62,7 @@ export function usePermissions() {
         return;
       }
 
-      // super_admin has everything — no DB fetch needed
+      // super_admin has every permission, so no database fetch is needed.
       if (role === 'super_admin') {
         setLoading(false);
         return;
@@ -67,24 +71,31 @@ export function usePermissions() {
       try {
         const supabase = createClient();
 
-        // Parallel: user overrides + role overrides
-        const [userRes, roleRes] = await Promise.all([
-          supabase
-            .from('user_permissions')
-            .select('permission_code, is_denied, expires_at')
-            .eq('user_id', profileId),
+        // Fetch all database permission layers in parallel.
+        const [roleDefaultsRes, roleOverridesRes, userRes] = await Promise.all([
+          supabase.from('role_permissions').select('permission_code').eq('role', role),
           supabase
             .from('role_permission_overrides')
             .select('permission_code, is_denied')
             .eq('role', role),
+          supabase
+            .from('user_permissions')
+            .select('permission_code, is_denied, expires_at')
+            .eq('user_id', profileId),
         ]);
 
         const now = new Date();
         const granted = new Set<PermissionCode>();
         const denied = new Set<PermissionCode>();
 
-        // ── Layer 2: Role-level DB overrides ──
-        const roleRows = (roleRes.data || []) as RoleOverrideRow[];
+        // Layer 1: database defaults assigned to the role.
+        const roleDefaultRows = (roleDefaultsRes.data || []) as RolePermissionRow[];
+        for (const row of roleDefaultRows) {
+          granted.add(row.permission_code as PermissionCode);
+        }
+
+        // Layer 2: role-level overrides.
+        const roleRows = (roleOverridesRes.data || []) as RoleOverrideRow[];
         for (const row of roleRows) {
           const code = row.permission_code as PermissionCode;
           if (row.is_denied) {
@@ -94,7 +105,7 @@ export function usePermissions() {
           }
         }
 
-        // ── Layer 1: User-level overrides (highest priority — can override role overrides) ──
+        // Layer 3: user-level overrides have the highest priority.
         const userRows = (userRes.data || []) as unknown as PermissionRow[];
         const validUserRows = userRows.filter((p) => !p.expires_at || new Date(p.expires_at) > now);
 

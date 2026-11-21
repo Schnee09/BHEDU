@@ -55,4 +55,33 @@ describe('usePermissions', () => {
     expect(result.current.permissions.has('students.delete')).toBe(false);
     expect(result.current.error).toBeNull();
   });
+
+  it('loads database role defaults for staff and custom roles', async () => {
+    mockUseProfile.mockReturnValue({
+      profile: { id: 'staff-1', role: 'staff' },
+      loading: false,
+    } as ReturnType<typeof useProfile>);
+
+    const from = jest.fn((table: string) => ({
+      select: jest.fn(() => ({
+        eq: jest
+          .fn()
+          .mockResolvedValue(
+            table === 'role_permissions'
+              ? {
+                  data: [{ permission_code: 'students.view' }, { permission_code: 'finance.view' }],
+                }
+              : { data: [] }
+          ),
+      })),
+    }));
+    mockCreateClient.mockReturnValue({ from } as unknown as ReturnType<typeof createClient>);
+
+    const { result } = renderHook(() => usePermissions());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.can('students.view')).toBe(true);
+    expect(result.current.can('finance.view')).toBe(true);
+    expect(result.current.permissions.has('students.view')).toBe(true);
+  });
 });
