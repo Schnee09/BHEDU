@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { BASE_ROLE_PERMISSIONS, UserRole, PermissionCode } from '@/lib/auth/core';
+import { BASE_ROLE_PERMISSIONS, PermissionCode } from '@/lib/auth/core';
 import { getAuthContext } from '@/lib/auth/guard';
 import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 import { isValidPermissionCode } from '@/lib/auth/permissionManagement';
@@ -88,17 +88,18 @@ const SYSTEM_ROLES: RoleInfo[] = [
   },
 ];
 
-async function getSuperAdminProfile(request: NextRequest) {
-  const auth = await getAuthContext(request, 'permissions.manage');
-  if (!auth.authorized || !auth.profile || !auth.role) return null;
-  return { id: auth.profile.id as string, role: auth.role };
+async function getPermissionManager(request: NextRequest) {
+  return getAuthContext(request, 'permissions.manage');
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const admin = await getSuperAdminProfile(request);
-    if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized access' }, { status: 403 });
+    const auth = await getPermissionManager(request);
+    if (!auth.profile) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const serviceClient = createServiceClient();
@@ -199,10 +200,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getSuperAdminProfile(request);
-    if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized access' }, { status: 403 });
+    const auth = await getPermissionManager(request);
+    if (!auth.profile) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    const admin = { id: auth.profile.id, role: auth.role };
 
     const body = await request.json();
     const { code, name, description, color, permissions = [] } = body;
