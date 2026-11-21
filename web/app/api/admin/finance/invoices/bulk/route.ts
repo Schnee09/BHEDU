@@ -3,13 +3,13 @@
  * POST /api/admin/finance/invoices/bulk
  */
 
-import { apiSuccess, createApiHandler } from "@/lib/api";
-import { financeService } from "@/lib/services";
-import { bulkGenerateInvoicesSchema } from "@/lib/schemas";
+import { apiSuccess, createApiHandler } from '@/lib/api';
+import { financeService } from '@/lib/services';
+import { bulkGenerateInvoicesSchema } from '@/lib/schemas';
 
 export const POST = createApiHandler(
   {
-    allowedRoles: ["admin"],
+    permission: 'finance.manage',
     bodySchema: bulkGenerateInvoicesSchema,
   },
   async ({ body }) => {
