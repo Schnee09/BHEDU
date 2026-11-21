@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { adminAuth } from '@/lib/auth/adminAuth';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/guard';
 
 // GET: Get a setting by key or all settings
 export async function GET(request: NextRequest) {
@@ -9,10 +9,16 @@ export async function GET(request: NextRequest) {
     const key = searchParams.get('key');
     const category = searchParams.get('category');
     const includeCounts = searchParams.get('include_counts') === 'true';
+    const auth = await getAuthContext(request, 'system.settings');
+    const canViewPrivateSettings = Boolean(auth.profile && auth.authorized);
 
     const supabase = createServiceClient();
 
     let query = supabase.from('settings').select('*');
+
+    if (!canViewPrivateSettings) {
+      query = query.eq('is_public', true);
+    }
 
     if (key) {
       query = query.eq('key', key);
@@ -74,7 +80,7 @@ export async function GET(request: NextRequest) {
           branches: Record<string, number>;
         }
       | undefined;
-    if (includeCounts) {
+    if (includeCounts && canViewPrivateSettings) {
       const { data: slots, error: slotsError } = await supabase
         .from('timetable_slots')
         .select('room, start_time, end_time');
@@ -133,15 +139,12 @@ export async function GET(request: NextRequest) {
 // PUT: Update a setting (admin only)
 export async function PUT(request: NextRequest) {
   try {
-    // Use the centralized adminAuth helper which supports super_admin via inheritance
-    const auth = await adminAuth(request);
+    const auth = await getAuthContext(request, 'system.settings');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
     if (!auth.authorized) {
-      return NextResponse.json(
-        { error: auth.reason || 'Admin access required' },
-        {
-          status: auth.authorized === false && auth.userId ? 403 : 401,
-        }
-      );
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();
