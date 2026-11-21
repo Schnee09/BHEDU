@@ -20,6 +20,50 @@ export interface ResolvedPermissions {
 }
 
 /**
+ * Get the effective permissions for a role without applying user-level overrides.
+ * Used by administration and monitoring tools that inspect a role itself.
+ */
+export async function getEffectiveRolePermissions(role: UserRole): Promise<ResolvedPermissions> {
+  const granted = new Set<PermissionCode>(getFlattenedPermissions(role));
+  const denied = new Set<PermissionCode>();
+
+  if (role === 'super_admin') {
+    granted.add('*');
+    return { granted, denied };
+  }
+
+  try {
+    const supabase = createServiceClient();
+    const [defaultsResult, overridesResult] = await Promise.all([
+      supabase.from('role_permissions').select('permission_code').eq('role', role),
+      supabase
+        .from('role_permission_overrides')
+        .select('permission_code, is_denied')
+        .eq('role', role),
+    ]);
+
+    for (const permission of defaultsResult.data || []) {
+      granted.add(permission.permission_code as PermissionCode);
+    }
+
+    for (const override of overridesResult.data || []) {
+      const code = override.permission_code as PermissionCode;
+      if (override.is_denied) {
+        denied.add(code);
+        granted.delete(code);
+      } else {
+        granted.add(code);
+        denied.delete(code);
+      }
+    }
+  } catch (err) {
+    console.warn('[getEffectiveRolePermissions] DB check failed, using code defaults only:', err);
+  }
+
+  return { granted, denied };
+}
+
+/**
  * Check if a user has a specific permission using 3-layer resolution.
  * Falls back to code-only check if DB is unreachable.
  */

@@ -7,7 +7,8 @@
 
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth/guard';
-import { getFlattenedPermissions, hasPermission, UserRole } from '@/lib/auth/core';
+import { PermissionCode, UserRole } from '@/lib/auth/core';
+import { getEffectiveRolePermissions } from '@/lib/auth/permissionResolver';
 
 export async function POST(request: Request) {
   try {
@@ -29,10 +30,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'role and permission are required' }, { status: 400 });
     }
 
-    const hasPerm = hasPermission(
-      role as UserRole,
-      permission as import('@/lib/auth/core').PermissionCode
-    );
+    const { granted } = await getEffectiveRolePermissions(role as UserRole);
+    const hasPerm = granted.has(permission as PermissionCode);
 
     return NextResponse.json({
       success: true,
@@ -70,7 +69,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'role parameter is required' }, { status: 400 });
     }
 
-    const permissions = getFlattenedPermissions(role as UserRole);
+    const { granted: permissions } = await getEffectiveRolePermissions(role as UserRole);
 
     return NextResponse.json({
       success: true,

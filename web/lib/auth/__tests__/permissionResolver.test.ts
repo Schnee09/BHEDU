@@ -1,5 +1,9 @@
 import { createServiceClient } from '@/lib/supabase/server';
-import { getEffectivePermissions, resolveServerPermission } from '@/lib/auth/permissionResolver';
+import {
+  getEffectivePermissions,
+  getEffectiveRolePermissions,
+  resolveServerPermission,
+} from '@/lib/auth/permissionResolver';
 
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(),
@@ -88,5 +92,37 @@ describe('permissionResolver', () => {
 
     expect(result.granted.has('finance.view')).toBe(true);
     expect(result.granted.has('students.view')).toBe(true);
+  });
+
+  it('resolves database defaults and overrides when inspecting a role', async () => {
+    const queries = {
+      role_permissions: {
+        data: [{ permission_code: 'finance.view' }, { permission_code: 'students.view' }],
+      },
+      role_permission_overrides: {
+        data: [
+          { permission_code: 'finance.view', is_denied: true },
+          { permission_code: 'reports.view', is_denied: false },
+        ],
+      },
+    };
+    const from = jest.fn((table: keyof typeof queries) => {
+      const query = {
+        select: jest.fn(),
+        eq: jest.fn().mockResolvedValue(queries[table]),
+      };
+      query.select.mockReturnValue(query);
+      return query;
+    });
+    mockCreateServiceClient.mockReturnValue({ from } as unknown as ReturnType<
+      typeof createServiceClient
+    >);
+
+    const result = await getEffectiveRolePermissions('staff');
+
+    expect(result.granted.has('students.view')).toBe(true);
+    expect(result.granted.has('reports.view')).toBe(true);
+    expect(result.granted.has('finance.view')).toBe(false);
+    expect(result.denied.has('finance.view')).toBe(true);
   });
 });

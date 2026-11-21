@@ -10,8 +10,10 @@ import {
   POST as POST_PERMISSION_CHECK,
 } from '@/app/api/admin/monitoring/check-permission/route';
 import { getAuthContext } from '@/lib/auth/guard';
+import { getEffectiveRolePermissions } from '@/lib/auth/permissionResolver';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
+jest.mock('@/lib/auth/permissionResolver', () => ({ getEffectiveRolePermissions: jest.fn() }));
 jest.mock('@/lib/incidentLogger', () => ({
   getRecentIncidents: jest.fn(() => []),
   recordIncident: jest.fn(),
@@ -76,5 +78,51 @@ describe('admin monitoring authorization', () => {
 
     expect(response.status).toBe(403);
     expect(getAuthContext).toHaveBeenCalledWith(expect.any(NextRequest), 'system.audit');
+  });
+
+  it('returns the effective database-aware permission list for a role', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'admin-1' },
+      role: 'admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    jest.mocked(getEffectiveRolePermissions).mockResolvedValue({
+      granted: new Set(['students.view', 'finance.view']),
+      denied: new Set(),
+    });
+    const req = new NextRequest(
+      'http://localhost/api/admin/monitoring/check-permission?role=staff'
+    );
+
+    const response = await GET_PERMISSION_CHECK(req);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(getEffectiveRolePermissions).toHaveBeenCalledWith('staff');
+    expect(json.permissions).toEqual(expect.arrayContaining(['students.view', 'finance.view']));
+  });
+
+  it('checks a permission against the effective database-aware role set', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'admin-1' },
+      role: 'admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    jest.mocked(getEffectiveRolePermissions).mockResolvedValue({
+      granted: new Set(['finance.view']),
+      denied: new Set(),
+    });
+    const req = new NextRequest('http://localhost/api/admin/monitoring/check-permission', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'staff', permission: 'finance.view' }),
+    });
+
+    const response = await POST_PERMISSION_CHECK(req);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(getEffectiveRolePermissions).toHaveBeenCalledWith('staff');
+    expect(json.result.hasPermission).toBe(true);
   });
 });
