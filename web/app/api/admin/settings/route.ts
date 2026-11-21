@@ -22,7 +22,7 @@ const updateSettingsSchema = z.object({
  * PUT /api/admin/settings - Update settings
  */
 
-export const GET = createGetHandler({ allowedRoles: ['admin', 'super_admin'] }, async () => {
+export const GET = createGetHandler({ permission: 'system.settings' }, async () => {
   const supabase = createServiceClient();
 
   const { data: settings, error } = await supabase.from('settings').select('*').order('key');
@@ -37,7 +37,7 @@ export const GET = createGetHandler({ allowedRoles: ['admin', 'super_admin'] }, 
 
 export const PUT = createApiHandler(
   {
-    allowedRoles: ['admin', 'super_admin'],
+    permission: 'system.settings',
     bodySchema: updateSettingsSchema,
   },
   async ({ body, user }) => {
@@ -49,20 +49,21 @@ export const PUT = createApiHandler(
     // Update or insert each setting
     for (const setting of settings) {
       const { key, value } = setting;
-      const category = (key === 'academic_year' || key === 'semester' || key === 'grading_scale') ? 'academic' : 'school';
+      const category =
+        key === 'academic_year' || key === 'semester' || key === 'grading_scale'
+          ? 'academic'
+          : 'school';
 
-      const { error } = await supabase
-        .from('settings')
-        .upsert(
-          {
-            key,
-            value,
-            category,
-            is_public: true,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'key' }
-        );
+      const { error } = await supabase.from('settings').upsert(
+        {
+          key,
+          value,
+          category,
+          is_public: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'key' }
+      );
 
       if (error) {
         console.error(`Error updating setting ${key}:`, error);
@@ -74,16 +75,14 @@ export const PUT = createApiHandler(
 
     // Log activity (optional, non-fatal)
     try {
-      await supabase
-        .from('audit_logs')
-        .insert({
-          user_id: user.id,
-          user_email: user.email,
-          user_role: user.role,
-          action: 'UPDATE_SETTINGS',
-          resource_type: 'SCHOOL_SETTINGS',
-          metadata: { updated_settings: settings.map((s) => s.key) },
-        });
+      await supabase.from('audit_logs').insert({
+        user_id: user.id,
+        user_email: user.email,
+        user_role: user.role,
+        action: 'UPDATE_SETTINGS',
+        resource_type: 'SCHOOL_SETTINGS',
+        metadata: { updated_settings: settings.map((s) => s.key) },
+      });
     } catch (auditError) {
       console.warn('Audit log error (non-fatal):', auditError);
     }

@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  *
  * Checks database connectivity and returns basic system status
  */
-export const GET = createGetHandler({ allowedRoles: ['admin', 'super_admin'] }, async () => {
+export const GET = createGetHandler({ permission: 'system.settings' }, async () => {
   const supabase = createServiceClient();
   const startTime = Date.now();
 
