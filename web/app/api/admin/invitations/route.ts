@@ -9,7 +9,7 @@ import { z } from 'zod';
  */
 export const GET = createGetHandler(
   {
-    allowedRoles: ['admin', 'super_admin', 'owner'],
+    permission: 'users.invite',
   },
   async () => {
     const supabase = createServiceClient(); // Use service client for DB access (RLS bypass)
@@ -38,7 +38,7 @@ export const GET = createGetHandler(
  */
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin', 'super_admin', 'owner'],
+    permission: 'users.invite',
     bodySchema: z.object({
       email: z.string().email().optional().or(z.literal('')),
       phone: z.string().optional(),
