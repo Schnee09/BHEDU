@@ -1,12 +1,7 @@
-import { teacherAuth } from '@/lib/auth/adminAuth'
-import { redirect } from 'next/navigation'
+export const dynamic = 'force-dynamic';
 
-export const dynamic = 'force-dynamic'
-
-export default async function AttendanceSectionLayout({ children }: { children: React.ReactNode }) {
-  const auth = await teacherAuth()
-  if (!auth.authorized) {
-    redirect('/unauthorized')
-  }
-  return <>{children}</>
+// Route-specific attendance permissions are enforced by proxy.ts and the API layer.
+// A role-only guard here would reject staff/custom roles with valid grants.
+export default function AttendanceSectionLayout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }
