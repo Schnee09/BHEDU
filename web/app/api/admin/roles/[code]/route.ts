@@ -5,7 +5,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getAuthContext } from '@/lib/auth/guard';
+import { PermissionCode } from '@/lib/auth/core';
+import { isValidPermissionCode } from '@/lib/auth/permissionManagement';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 
 const SYSTEM_ROLE_CODES = [
   'super_admin',
@@ -21,34 +25,49 @@ interface RouteContext {
   params: Promise<{ code: string }>;
 }
 
-async function getSuperAdminProfile(request: NextRequest) {
-  const supabase = createClientFromRequest(request);
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, role')
-    .or(`id.eq.${user.id},user_id.eq.${user.id}`)
-    .maybeSingle();
-
-  if (profile?.role !== 'super_admin' && profile?.role !== 'owner') return null;
-  return profile;
+async function getPermissionManager(request: NextRequest) {
+  return getAuthContext(request, 'permissions.manage');
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     const { code } = await context.params;
-    const admin = await getSuperAdminProfile(request);
-    if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await getPermissionManager(request);
+    if (!auth.profile) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    const admin = { id: auth.profile.id, role: auth.role };
 
     const body = await request.json();
     const { name, description, color, permissions } = body;
+
+    if (
+      permissions !== undefined &&
+      (!Array.isArray(permissions) ||
+        permissions.length > 100 ||
+        permissions.some(
+          (permission) => typeof permission !== 'string' || !isValidPermissionCode(permission)
+        ))
+    ) {
+      return NextResponse.json({ error: 'Danh sách quyền không hợp lệ' }, { status: 400 });
+    }
+
+    if (admin.role !== 'super_admin' && Array.isArray(permissions)) {
+      const delegationChecks = await Promise.all(
+        permissions.map((permission: string) =>
+          resolveServerPermission(admin.id, admin.role, permission as PermissionCode)
+        )
+      );
+      if (delegationChecks.some((allowed) => !allowed)) {
+        return NextResponse.json(
+          { error: 'Không thể cấp quyền cao hơn quyền của tài khoản hiện tại' },
+          { status: 403 }
+        );
+      }
+    }
 
     const isSystemRole = SYSTEM_ROLE_CODES.includes(code.toLowerCase());
 
@@ -56,7 +75,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     if (!isSystemRole) {
       // 1. Update in custom_roles table
-      const updateData: Record<string, any> = {
+      const updateData: Record<string, unknown> = {
         updated_at: new Date().toISOString(),
       };
       if (name) updateData.name = name.trim();
@@ -81,9 +100,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
             ? existingSettings.setting_value
             : JSON.parse(existingSettings.setting_value);
 
-          const updatedList = list.map((r: any) =>
-            r.code === code ? { ...r, ...updateData } : r
-          );
+          const updatedList = list.map((r: any) => (r.code === code ? { ...r, ...updateData } : r));
 
           await serviceClient.from('app_settings').upsert({
             setting_key: 'custom_roles',
@@ -97,10 +114,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     // 2. If permissions array is provided, sync role_permission_overrides
     if (Array.isArray(permissions)) {
       // Clear existing overrides for this role
-      await serviceClient
-        .from('role_permission_overrides')
-        .delete()
-        .eq('role', code);
+      await serviceClient.from('role_permission_overrides').delete().eq('role', code);
 
       if (permissions.length > 0) {
         const overridesToInsert = permissions.map((pCode: string) => ({
@@ -134,22 +148,24 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       success: true,
       message: `Đã cập nhật vai trò thành công`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Roles Detail API] PUT error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    const details = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Internal server error', details }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { code } = await context.params;
-    const admin = await getSuperAdminProfile(request);
-    if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await getPermissionManager(request);
+    if (!auth.profile) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    const admin = { id: auth.profile.id, role: auth.role };
 
     if (SYSTEM_ROLE_CODES.includes(code.toLowerCase())) {
       return NextResponse.json(
@@ -161,7 +177,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const serviceClient = createServiceClient();
 
     // 1. Safety Check: Check if any user currently has this role
-    const { count: usersWithRole, error: countError } = await serviceClient
+    const { count: usersWithRole } = await serviceClient
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('role', code);
@@ -200,10 +216,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     // 4. Clean up role_permission_overrides
-    await serviceClient
-      .from('role_permission_overrides')
-      .delete()
-      .eq('role', code);
+    await serviceClient.from('role_permission_overrides').delete().eq('role', code);
 
     // 5. Audit log
     await serviceClient.from('permission_audit_logs').insert({
@@ -221,11 +234,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       success: true,
       message: `Đã xóa vai trò '${code}' thành công`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Roles Detail API] DELETE error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    const details = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Internal server error', details }, { status: 500 });
   }
 }
