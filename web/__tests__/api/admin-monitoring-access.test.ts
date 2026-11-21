@@ -5,6 +5,10 @@ import { NextRequest } from 'next/server';
 import { GET as GET_INCIDENTS, POST as POST_INCIDENT } from '@/app/api/admin/incidents/route';
 import { GET as GET_AUDIT_LOGS } from '@/app/api/admin/monitoring/audit-logs/route';
 import { GET as GET_AUTH_MONITORING } from '@/app/api/admin/monitoring/auth/route';
+import {
+  GET as GET_PERMISSION_CHECK,
+  POST as POST_PERMISSION_CHECK,
+} from '@/app/api/admin/monitoring/check-permission/route';
 import { getAuthContext } from '@/lib/auth/guard';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
@@ -31,6 +35,8 @@ const handlers: Array<[string, MonitoringHandler, 'GET' | 'POST']> = [
   ['incident creation', POST_INCIDENT, 'POST'],
   ['audit log export', GET_AUDIT_LOGS, 'GET'],
   ['authentication monitoring', GET_AUTH_MONITORING, 'GET'],
+  ['permission list', GET_PERMISSION_CHECK, 'GET'],
+  ['permission check', POST_PERMISSION_CHECK, 'POST'],
 ];
 
 function request(method: 'GET' | 'POST') {
