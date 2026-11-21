@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { teacherAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
 import { logger } from '@/lib/logger';
 import { canAccessClass } from '@/lib/auth/classAccess';
 import { getCurrentDateOnly, isValidDateOnly } from '@/lib/enrollments/effectiveDates';
@@ -15,9 +15,12 @@ import { getCurrentDateOnly, isValidDateOnly } from '@/lib/enrollments/effective
 export async function GET(req: NextRequest, { params }: { params: Promise<{ classId: string }> }) {
   try {
     // Teacher or admin authentication
-    const authResult = await teacherAuth(req);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.reason || 'Unauthorized' }, { status: 401 });
+    const auth = await getAuthContext(req, 'classes.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();
@@ -32,7 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clas
 
     const canViewClass = await canAccessClass(
       supabase,
-      { id: authResult.userId, role: authResult.userRole },
+      { id: auth.profile.id, role: auth.role },
       classId
     );
     if (!canViewClass) {

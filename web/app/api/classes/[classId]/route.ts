@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
-import { adminAuth, teacherAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
 import { ClassRepository } from '@/lib/repositories/ClassRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
@@ -46,15 +46,12 @@ export async function GET(
     }
 
     // Auth
-    const auth = await teacherAuth(request);
-
-    if (!auth.authorized) {
-      return NextResponse.json(
-        { error: auth.reason || 'Unauthorized' },
-        {
-          status: 401,
-        }
-      );
+    const auth = await getAuthContext(request, 'classes.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const includeStudents = request.nextUrl.searchParams.get('include_students') === 'true';
@@ -72,7 +69,7 @@ export async function GET(
 
     const canViewClass = await canAccessClass(
       supabase,
-      { id: auth.userId, role: auth.userRole },
+      { id: auth.profile.id, role: auth.role },
       classId
     );
     if (!canViewClass) {
@@ -177,14 +174,12 @@ export async function PATCH(
     }
 
     // Auth - staff/admin only
-    const auth = await adminAuth(request);
+    const auth = await getAuthContext(request, 'classes.edit');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
     if (!auth.authorized) {
-      return NextResponse.json(
-        { error: auth.reason || 'Forbidden' },
-        {
-          status: 403,
-        }
-      );
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     // Parse body
@@ -247,14 +242,12 @@ export async function DELETE(
     }
 
     // Auth - staff/admin only
-    const auth = await adminAuth(request);
+    const auth = await getAuthContext(request, 'classes.delete');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
     if (!auth.authorized) {
-      return NextResponse.json(
-        { error: auth.reason || 'Forbidden' },
-        {
-          status: 403,
-        }
-      );
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();
