@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
-import { adminAuth, teacherAuth } from '@/lib/auth/adminAuth';
+import { getAuthContext } from '@/lib/auth/guard';
 import { GradeRepository } from '@/lib/repositories/GradeRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
@@ -41,14 +41,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Auth
-    const auth = await teacherAuth(request);
-    if (!auth.authorized) {
-      return NextResponse.json(
-        { error: auth.reason || 'Unauthorized' },
-        {
-          status: 401,
-        }
-      );
+    const auth = await getAuthContext(request, 'grades.view');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();
@@ -66,7 +64,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const canViewGrade = await canAccessClass(
       supabase,
-      { id: auth.userId, role: auth.userRole },
+      { id: auth.profile.id, role: auth.role },
       grade.class_id
     );
     if (!canViewGrade) {
@@ -102,9 +100,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Auth - teachers or staff
-    const auth = await teacherAuth(request);
-    if (!auth.authorized || auth.userRole === 'student') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const auth = await getAuthContext(request, 'grades.manage');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
+    if (!auth.authorized || !auth.role) {
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     // Parse body
@@ -141,7 +142,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const canEditGrade = await canAccessClass(
       supabase,
-      { id: auth.userId, role: auth.userRole },
+      { id: auth.profile.id, role: auth.role },
       existing.class_id
     );
     if (!canEditGrade) {
@@ -235,14 +236,12 @@ export async function DELETE(
     }
 
     // Auth - staff/admin only
-    const auth = await adminAuth(request);
+    const auth = await getAuthContext(request, 'grades.delete');
+    if (!auth.profile) {
+      return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
+    }
     if (!auth.authorized) {
-      return NextResponse.json(
-        { error: auth.reason || 'Forbidden' },
-        {
-          status: 403,
-        }
-      );
+      return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();

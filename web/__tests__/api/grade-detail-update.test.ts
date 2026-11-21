@@ -19,13 +19,12 @@ jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(() => ({ from: jest.fn(() => assignmentQuery) })),
 }));
 jest.mock('@/lib/auth/classAccess', () => ({ canAccessClass: jest.fn() }));
-jest.mock('@/lib/auth/adminAuth', () => ({
-  teacherAuth: jest.fn().mockResolvedValue({
+jest.mock('@/lib/auth/guard', () => ({
+  getAuthContext: jest.fn().mockResolvedValue({
     authorized: true,
-    userId: 'teacher-1',
-    userRole: 'teacher',
+    profile: { id: 'teacher-1' },
+    role: 'teacher',
   }),
-  adminAuth: jest.fn(),
 }));
 jest.mock('@/lib/auth/rateLimit', () => ({
   checkRateLimit: jest.fn(() => ({ allowed: true })),
