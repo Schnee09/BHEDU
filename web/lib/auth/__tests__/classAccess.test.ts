@@ -1,4 +1,9 @@
-import { canAccessClass, canAccessStudent, canAccessTimetableSlot } from '@/lib/auth/classAccess';
+import {
+  canAccessClass,
+  canAccessStudent,
+  canAccessTimetableSlot,
+  canAccessTimetableTarget,
+} from '@/lib/auth/classAccess';
 
 function createSupabaseResult(data: unknown, error: unknown = null) {
   const query: Record<string, jest.Mock> = {};
@@ -155,6 +160,32 @@ describe('canAccessTimetableSlot', () => {
 
     await expect(
       canAccessTimetableSlot(client, { id: 'teacher-2', role: 'teacher' }, 'slot-1')
+    ).resolves.toBe(false);
+  });
+});
+
+describe('canAccessTimetableTarget', () => {
+  it('allows a teacher to create a slot assigned to themselves', async () => {
+    const { client } = createSupabaseResult(null);
+
+    await expect(
+      canAccessTimetableTarget(
+        client,
+        { id: 'teacher-1', role: 'teacher' },
+        { teacherId: 'teacher-1' }
+      )
+    ).resolves.toBe(true);
+  });
+
+  it('rejects a target with no relationship to the user', async () => {
+    const { client } = createSupabaseResult(null);
+
+    await expect(
+      canAccessTimetableTarget(
+        client,
+        { id: 'teacher-1', role: 'teacher' },
+        { teacherId: 'teacher-2' }
+      )
     ).resolves.toBe(false);
   });
 });

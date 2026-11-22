@@ -4,7 +4,7 @@ import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
 import { createTimetableSlotSchema, timetableQuerySchema } from '@/lib/schemas';
 import { validateQuery } from '@/lib/api/validation';
 import { AuthorizationError, ConflictError } from '@/lib/api/errors';
-import { canAccessClass, canAccessStudent } from '@/lib/auth/classAccess';
+import { canAccessClass, canAccessStudent, canAccessTimetableTarget } from '@/lib/auth/classAccess';
 
 export const GET = createGetHandler({ permission: 'timetable.view' }, async ({ request, user }) => {
   const query = validateQuery(request, timetableQuerySchema);
@@ -46,12 +46,19 @@ const DAY_LABELS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Th�
 
 export const POST = createApiHandler(
   {
-    permission: 'classes.manage',
-    allowedRoles: ['admin', 'owner', 'super_admin'],
+    permission: 'timetable.edit',
     bodySchema: createTimetableSlotSchema,
   },
-  async ({ body }) => {
+  async ({ body, user }) => {
     const supabase = createServiceClient();
+    const canEditTarget = await canAccessTimetableTarget(supabase, user, {
+      classId: body.class_id,
+      studentId: body.student_id,
+      teacherId: body.teacher_id,
+    });
+    if (!canEditTarget) {
+      throw new AuthorizationError('Bạn không có quyền tạo lịch cho lớp hoặc học sinh này.');
+    }
     const repository = new TimetableRepository(supabase);
 
     const targetDays: number[] =

@@ -99,3 +99,20 @@ export async function canAccessTimetableSlot(
 
   return false;
 }
+
+export async function canAccessTimetableTarget(
+  supabase: SupabaseClient,
+  user: { id?: string; role?: string },
+  target: {
+    classId?: string | null;
+    studentId?: string | null;
+    teacherId?: string | null;
+  }
+): Promise<boolean> {
+  if (!user.id) return false;
+  if (user.role && GLOBAL_CLASS_ROLES.has(user.role)) return true;
+  if (target.teacherId === user.id) return true;
+  if (target.classId && (await canAccessClass(supabase, user, target.classId))) return true;
+  if (target.studentId && (await canAccessStudent(supabase, user, target.studentId))) return true;
+  return false;
+}
