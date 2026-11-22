@@ -4,10 +4,8 @@ import { getAuthContext } from '@/lib/auth/guard';
 import { createServiceClient } from '@/lib/supabase/server';
 import { normalizeReceptionSearch, summarizeStudentFinance } from '@/lib/students/reception360';
 
-const RECEPTION_ROLES = ['staff', 'admin', 'owner', 'super_admin'] as const;
-
 export const GET = createGetHandler(
-  { permission: 'students.view', allowedRoles: [...RECEPTION_ROLES] },
+  { permission: 'students.view' },
   async ({ request, searchParams }) => {
     const financeAuth = await getAuthContext(request, 'finance.view');
     if (!financeAuth.authorized) {
