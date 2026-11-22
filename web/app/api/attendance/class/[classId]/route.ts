@@ -13,46 +13,48 @@ import { canAccessClass } from '@/lib/auth/classAccess';
 import { uuidSchema } from '@/lib/schemas';
 import { calculateAttendanceRate } from '@/lib/attendance/metrics';
 
-export const GET = createGetHandler({ requireAuth: true }, async ({ request, user, params }) => {
-  try {
-    const supabase = createServiceClient();
-    const { classId } = (await params) as { classId: string };
-    if (!uuidSchema.safeParse(classId).success) {
-      throw new AppError('Class ID is invalid', 400, 'VALIDATION_ERROR');
-    }
-    const url = new URL(request.url);
-    const date = url.searchParams.get('date') || getCurrentDateOnly();
-    if (!isValidDateOnly(date)) {
-      throw new AppError('Date must use a valid YYYY-MM-DD format', 400, 'VALIDATION_ERROR');
-    }
+export const GET = createGetHandler(
+  { permission: 'attendance.view' },
+  async ({ request, user, params }) => {
+    try {
+      const supabase = createServiceClient();
+      const { classId } = (await params) as { classId: string };
+      if (!uuidSchema.safeParse(classId).success) {
+        throw new AppError('Class ID is invalid', 400, 'VALIDATION_ERROR');
+      }
+      const url = new URL(request.url);
+      const date = url.searchParams.get('date') || getCurrentDateOnly();
+      if (!isValidDateOnly(date)) {
+        throw new AppError('Date must use a valid YYYY-MM-DD format', 400, 'VALIDATION_ERROR');
+      }
 
-    const hasClassAccess =
-      user.role === 'staff' ||
-      (await canAccessClass(supabase, { id: user.id, role: user.role }, classId));
-    if (!hasClassAccess) {
-      throw new AppError(
-        'You do not have permission to view attendance for this class',
-        403,
-        'FORBIDDEN'
-      );
-    }
+      const hasClassAccess =
+        user.role === 'staff' ||
+        (await canAccessClass(supabase, { id: user.id, role: user.role }, classId));
+      if (!hasClassAccess) {
+        throw new AppError(
+          'You do not have permission to view attendance for this class',
+          403,
+          'FORBIDDEN'
+        );
+      }
 
-    // Get class info
-    const { data: classInfo, error: classError } = await supabase
-      .from('classes')
-      .select('id, name')
-      .eq('id', classId)
-      .single();
+      // Get class info
+      const { data: classInfo, error: classError } = await supabase
+        .from('classes')
+        .select('id, name')
+        .eq('id', classId)
+        .single();
 
-    if (classError || !classInfo) {
-      throw new AppError('Class not found', 404, 'NOT_FOUND');
-    }
+      if (classError || !classInfo) {
+        throw new AppError('Class not found', 404, 'NOT_FOUND');
+      }
 
-    // Get students enrolled in the class with joins
-    const { data: enrollments, error: enrollError } = await supabase
-      .from('enrollments')
-      .select(
-        `
+      // Get students enrolled in the class with joins
+      const { data: enrollments, error: enrollError } = await supabase
+        .from('enrollments')
+        .select(
+          `
           student_id,
           enrollment_date,
           end_date,
@@ -63,92 +65,93 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, use
             student_code
           )
         `
-      )
-      .eq('class_id', classId)
-      .lte('enrollment_date', date)
-      .or(`end_date.is.null,end_date.gte.${date}`)
-      .is('deleted_at', null);
+        )
+        .eq('class_id', classId)
+        .lte('enrollment_date', date)
+        .or(`end_date.is.null,end_date.gte.${date}`)
+        .is('deleted_at', null);
 
-    if (enrollError) {
-      logger.error('Failed to fetch enrollments', new Error(enrollError.message));
-      // Do not leak internal db message (enrollError.message) to client
-      throw new AppError('Failed to fetch class enrollments', 500, 'INTERNAL_SERVER_ERROR');
-    }
+      if (enrollError) {
+        logger.error('Failed to fetch enrollments', new Error(enrollError.message));
+        // Do not leak internal db message (enrollError.message) to client
+        throw new AppError('Failed to fetch class enrollments', 500, 'INTERNAL_SERVER_ERROR');
+      }
 
-    // Get attendance records for this date
-    const { data: attendance, error: attendanceError } = await supabase
-      .from('attendance')
-      .select(
-        `id, student_id, status, remarks, enrollment_exception_reason,
+      // Get attendance records for this date
+      const { data: attendance, error: attendanceError } = await supabase
+        .from('attendance')
+        .select(
+          `id, student_id, status, remarks, enrollment_exception_reason,
          profiles!student_id (id, full_name, email, student_code)`
-      )
-      .eq('class_id', classId)
-      .eq('date', date)
-      .is('deleted_at', null);
+        )
+        .eq('class_id', classId)
+        .eq('date', date)
+        .is('deleted_at', null);
 
-    if (attendanceError) {
-      logger.error('Failed to fetch attendance records', new Error(attendanceError.message));
-      throw new AppError('Failed to fetch attendance records', 500, 'INTERNAL_SERVER_ERROR');
-    }
+      if (attendanceError) {
+        logger.error('Failed to fetch attendance records', new Error(attendanceError.message));
+        throw new AppError('Failed to fetch attendance records', 500, 'INTERNAL_SERVER_ERROR');
+      }
 
-    // Combine enrollment and attendance data
-    const attendanceMap = new Map(attendance?.map((a) => [a.student_id, a]) || []);
+      // Combine enrollment and attendance data
+      const attendanceMap = new Map(attendance?.map((a) => [a.student_id, a]) || []);
 
-    const records = (enrollments || []).map((enrollment: any) => ({
-      studentId: enrollment.student_id,
-      studentName: enrollment.profiles?.full_name || 'Unknown',
-      studentCode: enrollment.profiles?.student_code || enrollment.profiles?.id || '',
-      email: enrollment.profiles?.email || '',
-      status: attendanceMap.get(enrollment.student_id)?.status || 'unmarked',
-      remarks: (attendanceMap.get(enrollment.student_id) as any)?.remarks || '',
-      recordId: (attendanceMap.get(enrollment.student_id) as any)?.id,
-      enrollmentExceptionReason: null,
-    }));
+      const records = (enrollments || []).map((enrollment: any) => ({
+        studentId: enrollment.student_id,
+        studentName: enrollment.profiles?.full_name || 'Unknown',
+        studentCode: enrollment.profiles?.student_code || enrollment.profiles?.id || '',
+        email: enrollment.profiles?.email || '',
+        status: attendanceMap.get(enrollment.student_id)?.status || 'unmarked',
+        remarks: (attendanceMap.get(enrollment.student_id) as any)?.remarks || '',
+        recordId: (attendanceMap.get(enrollment.student_id) as any)?.id,
+        enrollmentExceptionReason: null,
+      }));
 
-    const enrolledStudentIds = new Set(records.map((record) => record.studentId));
-    for (const record of attendance || []) {
-      if (!record.enrollment_exception_reason || enrolledStudentIds.has(record.student_id))
-        continue;
-      const profile = record.profiles as any;
-      records.push({
-        studentId: record.student_id,
-        studentName: profile?.full_name || 'Chưa có tên',
-        studentCode: profile?.student_code || profile?.id || '',
-        email: profile?.email || '',
-        status: record.status,
-        remarks: record.remarks || '',
-        recordId: record.id,
-        enrollmentExceptionReason: record.enrollment_exception_reason,
+      const enrolledStudentIds = new Set(records.map((record) => record.studentId));
+      for (const record of attendance || []) {
+        if (!record.enrollment_exception_reason || enrolledStudentIds.has(record.student_id))
+          continue;
+        const profile = record.profiles as any;
+        records.push({
+          studentId: record.student_id,
+          studentName: profile?.full_name || 'Chưa có tên',
+          studentCode: profile?.student_code || profile?.id || '',
+          email: profile?.email || '',
+          status: record.status,
+          remarks: record.remarks || '',
+          recordId: record.id,
+          enrollmentExceptionReason: record.enrollment_exception_reason,
+        });
+      }
+
+      // Calculate summary statistics
+      const summary = {
+        totalStudents: records.length,
+        presentCount: records.filter((r) => r.status === 'present').length,
+        absentCount: records.filter((r) => r.status === 'absent').length,
+        lateCount: records.filter((r) => r.status === 'late').length,
+        excusedCount: records.filter((r) => r.status === 'excused').length,
+        unmarkedCount: records.filter((r) => r.status === 'unmarked').length,
+        attendanceRate: 0,
+      };
+
+      const markedCount = summary.totalStudents - summary.unmarkedCount;
+      summary.attendanceRate = calculateAttendanceRate(
+        summary.presentCount,
+        summary.lateCount,
+        markedCount
+      );
+
+      return apiSuccess({
+        class: classInfo,
+        date,
+        summary,
+        students: records,
       });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      logger.error('Get class attendance error', error);
+      throw new AppError('Internal server error', 500, 'INTERNAL_SERVER_ERROR');
     }
-
-    // Calculate summary statistics
-    const summary = {
-      totalStudents: records.length,
-      presentCount: records.filter((r) => r.status === 'present').length,
-      absentCount: records.filter((r) => r.status === 'absent').length,
-      lateCount: records.filter((r) => r.status === 'late').length,
-      excusedCount: records.filter((r) => r.status === 'excused').length,
-      unmarkedCount: records.filter((r) => r.status === 'unmarked').length,
-      attendanceRate: 0,
-    };
-
-    const markedCount = summary.totalStudents - summary.unmarkedCount;
-    summary.attendanceRate = calculateAttendanceRate(
-      summary.presentCount,
-      summary.lateCount,
-      markedCount
-    );
-
-    return apiSuccess({
-      class: classInfo,
-      date,
-      summary,
-      students: records,
-    });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    logger.error('Get class attendance error', error);
-    throw new AppError('Internal server error', 500, 'INTERNAL_SERVER_ERROR');
   }
-});
+);
