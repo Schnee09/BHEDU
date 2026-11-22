@@ -10,7 +10,7 @@
 
 import { NextResponse } from 'next/server';
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
-import { type UpdateSubjectInput, updateSubjectSchema, uuidSchema } from '@/lib/schemas';
+import { updateSubjectSchema } from '@/lib/schemas';
 import { subjectService } from '@/lib/services';
 import { NotFoundError } from '@/lib/api/errors';
 import { CACHE_KEYS, CACHE_TTL, cached, invalidateCache } from '@/lib/cache';
@@ -18,7 +18,7 @@ import { CACHE_KEYS, CACHE_TTL, cached, invalidateCache } from '@/lib/cache';
 // GET /api/subjects/[id]
 export const GET = createGetHandler(
   {
-    allowedRoles: ['admin', 'teacher', 'student'],
+    permission: 'subjects.view',
   },
   async ({ params }) => {
     const id = params.id as string;
@@ -40,7 +40,7 @@ export const GET = createGetHandler(
 // PUT /api/subjects/[id]
 export const PUT = createApiHandler(
   {
-    allowedRoles: ['admin', 'owner', 'super_admin'],
+    permission: 'subjects.manage',
     bodySchema: updateSubjectSchema,
   },
   async ({ params, body }) => {
@@ -63,7 +63,7 @@ export const PUT = createApiHandler(
 // DELETE /api/subjects/[id]
 export const DELETE = createGetHandler(
   {
-    allowedRoles: ['admin', 'owner', 'super_admin'],
+    permission: 'subjects.manage',
   },
   async ({ params, searchParams }) => {
     const id = params.id as string;
