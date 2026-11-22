@@ -3,23 +3,23 @@
  * CRUD operations for a specific class
  */
 
-import { NextResponse } from 'next/server';
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { updateClassSchema } from '@/lib/schemas';
 import { ClassService } from '@/lib/services/classService';
 import { AuthorizationError, NotFoundError } from '@/lib/api/errors';
-import { hasPermission } from '@/lib/auth/core';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 
 // GET /api/admin/classes/[id]
 export const GET = createGetHandler({ permission: 'classes.view' }, async ({ params, user }) => {
   const id = params.id as string;
   const classData = await ClassService.getClassById(id);
 
-  // Access Control Logic
-  const canManageAll = hasPermission(user.role as any, 'classes.manage');
+  const canManageAll = await resolveServerPermission(user.id, user.role, 'classes.manage');
+  const isAssignedStaff =
+    ['teacher', 'tutor', 'staff'].includes(user.role) && classData.teacher_id === user.id;
 
-  if (!canManageAll && user.role === 'teacher' && classData.teacher_id !== user.id) {
-    throw new AuthorizationError('Access denied - not your class');
+  if (!canManageAll && !isAssignedStaff) {
+    throw new AuthorizationError('Bạn không có quyền xem lớp học này.');
   }
 
   return apiSuccess(classData);
