@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 import { NextRequest } from 'next/server';
-import { POST as CREATE_STUDENT } from '@/app/api/students/route';
+import { GET as LIST_STUDENTS, POST as CREATE_STUDENT } from '@/app/api/students/route';
 import { DELETE, GET, PATCH } from '@/app/api/students/[id]/route';
 import { POST as BULK_ARCHIVE } from '@/app/api/students/bulk-archive/route';
 import { getAuthContext } from '@/lib/auth/guard';
@@ -28,6 +28,12 @@ describe('student mutation authorization', () => {
   });
 
   it.each([
+    [
+      'student list',
+      (req: NextRequest) => LIST_STUDENTS(req),
+      request('/api/students', 'GET'),
+      'students.view',
+    ],
     [
       'student list detail',
       (req: NextRequest) => GET(req, detailContext),

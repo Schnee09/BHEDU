@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 // GET /api/students
 export const GET = createGetHandler(
-  { requireAuth: true },
+  { permission: 'students.view' },
   async ({ request, user, searchParams }) => {
     const identifier = getRateLimitIdentifier(request);
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
