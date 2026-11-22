@@ -2,9 +2,11 @@
  * @jest-environment node
  */
 import { GET } from '@/app/api/timetable/route';
+import { GET as GET_MY_TIMETABLE } from '@/app/api/timetable/my/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { canAccessClass, canAccessStudent } from '@/lib/auth/classAccess';
 import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
+import { createServiceClient } from '@/lib/supabase/server';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/auth/classAccess', () => ({
@@ -45,6 +47,23 @@ describe('GET /api/timetable access control', () => {
 
     expect(response.status).toBe(401);
     expect(getSlots).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['scoped timetable', GET, `?class_id=${classId}`],
+    ['personal timetable', GET_MY_TIMETABLE, ''],
+  ] as const)('requires timetable.view for the %s', async (_name, handler, search) => {
+    (getAuthContext as jest.Mock).mockResolvedValue({
+      authorized: false,
+      profile: { id: 'teacher-1', email: 'teacher@example.com' },
+      role: 'teacher',
+    });
+
+    const response = await handler(request(search));
+
+    expect(response.status).toBe(403);
+    expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'timetable.view');
+    expect(createServiceClient).not.toHaveBeenCalled();
   });
 
   it('rejects access to an unassigned class', async () => {

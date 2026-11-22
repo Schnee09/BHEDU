@@ -1,13 +1,12 @@
-import { NextResponse } from 'next/server';
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
 import { createTimetableSlotSchema, timetableQuerySchema } from '@/lib/schemas';
 import { validateQuery } from '@/lib/api/validation';
-import { AuthorizationError, ConflictError, ValidationError } from '@/lib/api/errors';
+import { AuthorizationError, ConflictError } from '@/lib/api/errors';
 import { canAccessClass, canAccessStudent } from '@/lib/auth/classAccess';
 
-export const GET = createGetHandler({ requireAuth: true }, async ({ request, user }) => {
+export const GET = createGetHandler({ permission: 'timetable.view' }, async ({ request, user }) => {
   const query = validateQuery(request, timetableQuerySchema);
 
   const supabase = createServiceClient();
@@ -51,7 +50,7 @@ export const POST = createApiHandler(
     allowedRoles: ['admin', 'owner', 'super_admin'],
     bodySchema: createTimetableSlotSchema,
   },
-  async ({ body, user }) => {
+  async ({ body }) => {
     const supabase = createServiceClient();
     const repository = new TimetableRepository(supabase);
 
