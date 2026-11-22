@@ -10,14 +10,12 @@ import { apiSuccess, createApiHandler } from '@/lib/api';
 import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 import { createServiceClient } from '@/lib/supabase/server';
-import { createAbility } from '@/lib/auth/permissions';
 import { canAccessClass } from '@/lib/auth/classAccess';
 import { type BulkAttendanceInput, bulkAttendanceSchema } from '@/lib/schemas';
 
 // POST /api/attendance/bulk
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin', 'teacher'],
     permission: 'attendance.mark',
     bodySchema: bulkAttendanceSchema,
   },
@@ -26,11 +24,6 @@ export const POST = createApiHandler(
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
       return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
-    }
-
-    const ability = createAbility({ userId: user.id, role: user.role });
-    if (ability.cannot('create', 'Attendance')) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();

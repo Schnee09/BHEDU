@@ -4,6 +4,7 @@
 import { GET, POST } from '@/app/api/attendance/route';
 import { canAccessClass } from '@/lib/auth/classAccess';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
+import { getAuthContext } from '@/lib/auth/guard';
 
 jest.mock('@/lib/repositories/AttendanceRepository');
 jest.mock('@/lib/auth/classAccess', () => ({ canAccessClass: jest.fn() }));
@@ -48,6 +49,11 @@ describe('/api/attendance authorization', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'teacher-1', email: 'teacher@example.com' },
+      role: 'teacher',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
     classQuery.select.mockReturnValue(classQuery);
     classQuery.eq.mockResolvedValue({ data: [{ id: 'class-1' }], error: null });
     findAll.mockResolvedValue({ data: [], total: 0, page: 1, pageSize: 50, totalPages: 0 });
@@ -118,6 +124,34 @@ describe('/api/attendance authorization', () => {
 
     expect(response.status).toBe(200);
     expect(create).toHaveBeenCalledWith({ ...payload, marked_by: 'teacher-1' });
+  });
+
+  it('allows assigned staff granted attendance.mark dynamically', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'staff-1', email: 'staff@example.com' },
+      role: 'staff',
+      isCustomOverride: true,
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    create.mockResolvedValue({ id: 'attendance-1' });
+    const payload = {
+      student_id: '223e4567-e89b-12d3-a456-426614174000',
+      class_id: '123e4567-e89b-12d3-a456-426614174000',
+      date: '2026-10-29',
+      status: 'present',
+    };
+
+    const response = await POST(createRequest('POST', '', payload), {
+      params: Promise.resolve({}),
+    } as any);
+
+    expect(response.status).toBe(200);
+    expect(canAccessClass).toHaveBeenCalledWith(
+      expect.anything(),
+      { id: 'staff-1', role: 'staff' },
+      payload.class_id
+    );
+    expect(create).toHaveBeenCalledWith({ ...payload, marked_by: 'staff-1' });
   });
 
   it('rejects client-supplied attendance attribution', async () => {

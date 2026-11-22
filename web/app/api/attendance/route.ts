@@ -142,7 +142,6 @@ export const GET = createGetHandler(
 // POST /api/attendance
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin', 'teacher'],
     permission: 'attendance.mark',
     bodySchema: createAttendanceSchema,
   },
@@ -151,11 +150,6 @@ export const POST = createApiHandler(
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
       return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
-    }
-
-    const ability = createAbility({ userId: user.id, role: user.role });
-    if (ability.cannot('create', 'Attendance')) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();
