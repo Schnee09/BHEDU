@@ -1,4 +1,4 @@
-import { canAccessClass, canAccessStudent } from '@/lib/auth/classAccess';
+import { canAccessClass, canAccessStudent, canAccessTimetableSlot } from '@/lib/auth/classAccess';
 
 function createSupabaseResult(data: unknown, error: unknown = null) {
   const query: Record<string, jest.Mock> = {};
@@ -125,5 +125,36 @@ describe('canAccessStudent', () => {
     expect(query.eq).toHaveBeenNthCalledWith(1, 'parent_id', 'parent-1');
     expect(query.eq).toHaveBeenNthCalledWith(2, 'student_id', 'student-1');
     expect(query.eq).toHaveBeenNthCalledWith(3, 'status', 'approved');
+  });
+});
+
+describe('canAccessTimetableSlot', () => {
+  function createSlotClient(slot: unknown) {
+    const query: Record<string, jest.Mock> = {};
+    query.select = jest.fn(() => query);
+    query.eq = jest.fn(() => query);
+    query.is = jest.fn(() => query);
+    query.maybeSingle = jest.fn().mockResolvedValue({ data: slot, error: null });
+    return { from: jest.fn(() => query) } as any;
+  }
+
+  it('allows the teacher assigned directly to a slot', async () => {
+    const client = createSlotClient({
+      class_id: null,
+      student_id: 'student-1',
+      teacher_id: 'teacher-1',
+    });
+
+    await expect(
+      canAccessTimetableSlot(client, { id: 'teacher-1', role: 'teacher' }, 'slot-1')
+    ).resolves.toBe(true);
+  });
+
+  it('rejects an unrelated user when the slot cannot be resolved', async () => {
+    const client = createSlotClient(null);
+
+    await expect(
+      canAccessTimetableSlot(client, { id: 'teacher-2', role: 'teacher' }, 'slot-1')
+    ).resolves.toBe(false);
   });
 });

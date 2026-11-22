@@ -70,3 +70,32 @@ export async function canAccessStudent(
 
   return !error && Boolean(data);
 }
+
+export async function canAccessTimetableSlot(
+  supabase: SupabaseClient,
+  user: { id?: string; role?: string },
+  slotId: string | null | undefined
+): Promise<boolean> {
+  if (!user.id || !slotId) return false;
+
+  const { data: slot, error } = await supabase
+    .from('timetable_slots')
+    .select('class_id, student_id, teacher_id')
+    .eq('id', slotId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error || !slot) return false;
+  if (user.role && GLOBAL_CLASS_ROLES.has(user.role)) return true;
+  if (slot.teacher_id === user.id) return true;
+
+  if (slot.class_id) {
+    return canAccessClass(supabase, user, slot.class_id);
+  }
+
+  if (slot.student_id) {
+    return canAccessStudent(supabase, user, slot.student_id);
+  }
+
+  return false;
+}
