@@ -5,18 +5,13 @@
  * Uses Repository pattern, Zod validation, CASL permissions
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
 import { StudentRepository } from '@/lib/repositories/StudentRepository';
 import { createServiceClient } from '@/lib/supabase/server';
 import { createAbility } from '@/lib/auth/permissions';
-import {
-  type CreateStudentInput,
-  createStudentSchema,
-  type StudentQuery,
-  studentQuerySchema,
-} from '@/lib/schemas';
+import { createStudentSchema, studentQuerySchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,7 +90,7 @@ export const GET = createGetHandler(
 // POST /api/students
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin', 'super_admin', 'owner', 'staff'],
+    permission: 'students.create',
     bodySchema: createStudentSchema,
   },
   async ({ request, body, user }) => {
@@ -103,19 +98,6 @@ export const POST = createApiHandler(
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
       return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
-    }
-
-    const ability = createAbility({ userId: user.id, role: user.role });
-    if (ability.cannot('create', 'Student')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            ability.reasonFor('create', 'Student') ||
-            'You do not have permission to create students',
-        },
-        { status: 403 }
-      );
     }
 
     const { UserService } = await import('@/lib/services/userService');

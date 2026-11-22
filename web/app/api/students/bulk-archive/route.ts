@@ -17,7 +17,7 @@ const bulkArchiveSchema = z.object({
  */
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin'],
+    permission: 'students.delete',
     bodySchema: bulkArchiveSchema,
   },
   async ({ body }) => {

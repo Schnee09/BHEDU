@@ -56,13 +56,18 @@ describe('POST /api/students/bulk-archive', () => {
   it.each(['staff', 'teacher', 'tutor', 'student', 'parent'])(
     'rejects %s before updating profiles',
     async (role) => {
-      authenticate(role);
+      (getAuthContext as jest.Mock).mockResolvedValue({
+        authorized: false,
+        profile: { id: `${role}-1`, email: `${role}@example.com` },
+        role,
+      });
 
       const response = await POST(request({ studentIds: [STUDENT_1] }), {
         params: Promise.resolve({}),
       } as any);
 
       expect(response.status).toBe(403);
+      expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'students.delete');
       expect(createServiceClient).not.toHaveBeenCalled();
     }
   );
