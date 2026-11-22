@@ -4,9 +4,7 @@ import { DEFAULT_ACADEMIC_MILESTONES } from '@/lib/utils/academicMasterPlan';
 
 export const POST = createApiHandler(
   {
-    requireAuth: true,
-    permission: 'classes.manage',
-    allowedRoles: ['super_admin', 'owner', 'admin'],
+    permission: 'calendar.reset',
   },
   async ({ user }) => {
     const supabase = createServiceClient();

@@ -19,9 +19,9 @@ describe('POST /api/calendar/reset access control', () => {
     jest.clearAllMocks();
   });
 
-  it('rejects a teacher even when authentication succeeds', async () => {
+  it('requires the dedicated calendar.reset permission', async () => {
     (getAuthContext as jest.Mock).mockResolvedValue({
-      authorized: true,
+      authorized: false,
       profile: { id: 'teacher-1', email: 'teacher@example.com' },
       role: 'teacher',
     });
@@ -29,7 +29,7 @@ describe('POST /api/calendar/reset access control', () => {
     const response = await POST(request());
 
     expect(response.status).toBe(403);
-    expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'classes.manage');
+    expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'calendar.reset');
     expect(createServiceClient).not.toHaveBeenCalled();
   });
 

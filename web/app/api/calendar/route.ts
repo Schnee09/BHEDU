@@ -55,8 +55,7 @@ export const GET = createGetHandler({ requireAuth: false }, async ({ request }) 
 
 export const POST = createApiHandler(
   {
-    requireAuth: true,
-    allowedRoles: ['super_admin', 'owner', 'admin', 'staff', 'teacher'],
+    permission: 'calendar.manage',
     bodySchema: eventSchema,
   },
   async ({ body, user }) => {
