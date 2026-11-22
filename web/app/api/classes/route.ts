@@ -5,7 +5,7 @@
  * Uses Repository pattern, Zod validation, CASL permissions
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
@@ -88,7 +88,7 @@ export const GET = createGetHandler(
 // POST /api/classes
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin', 'super_admin', 'owner'],
+    permission: 'classes.create',
     bodySchema: createClassSchema,
   },
   async ({ request, body, user }) => {
@@ -96,18 +96,6 @@ export const POST = createApiHandler(
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
       return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
-    }
-
-    const ability = createAbility({ userId: user.id, role: user.role });
-    if (ability.cannot('create', 'Class')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            ability.reasonFor('create', 'Class') || 'You do not have permission to create classes',
-        },
-        { status: 403 }
-      );
     }
 
     const supabase = createServiceClient();
