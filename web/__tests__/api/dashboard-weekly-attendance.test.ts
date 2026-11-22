@@ -3,6 +3,7 @@
  */
 import { GET } from '@/app/api/dashboard/weekly-attendance/route';
 import { getAuthContext } from '@/lib/auth/guard';
+import { createServiceClient } from '@/lib/supabase/server';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 
@@ -43,6 +44,20 @@ describe('GET /api/dashboard/weekly-attendance authorization', () => {
     attendanceQuery.eq.mockReturnValue(attendanceQuery);
     attendanceQuery.is.mockReturnValue(attendanceQuery);
     attendanceQuery.gte.mockResolvedValue({ data: [], error: null });
+  });
+
+  it('requires attendance.view before using the service-role client', async () => {
+    (getAuthContext as jest.Mock).mockResolvedValue({
+      authorized: false,
+      profile: { id: 'teacher-1', email: 'teacher@example.com' },
+      role: 'teacher',
+    });
+
+    const response = await GET(request(), { params: Promise.resolve({}) } as any);
+
+    expect(response.status).toBe(403);
+    expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'attendance.view');
+    expect(createServiceClient).not.toHaveBeenCalled();
   });
 
   it.each(['teacher', 'tutor', 'staff'])(

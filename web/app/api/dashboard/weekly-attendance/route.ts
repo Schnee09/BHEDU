@@ -15,7 +15,7 @@ function formatLocalDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-export const GET = createGetHandler({ requireAuth: true }, async ({ user }) => {
+export const GET = createGetHandler({ permission: 'attendance.view' }, async ({ user }) => {
   const supabase = createServiceClient();
 
   // If student, fetch personal weekly attendance
