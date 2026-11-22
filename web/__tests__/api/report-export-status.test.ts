@@ -3,8 +3,10 @@
  */
 import { GET } from '@/app/api/reports/export/status/[id]/route';
 import { getAuthContext } from '@/lib/auth/guard';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
+jest.mock('@/lib/auth/permissionResolver', () => ({ resolveServerPermission: jest.fn() }));
 jest.mock('@/lib/api/rateLimit', () => ({ enforceRateLimit: jest.fn(() => null) }));
 
 const exportQuery = { select: jest.fn(), eq: jest.fn(), maybeSingle: jest.fn() };
@@ -36,6 +38,7 @@ function authenticate(role: string, id = `${role}-1`) {
 describe('GET /api/reports/export/status/[id]', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(resolveServerPermission).mockResolvedValue(false);
     exportQuery.select.mockReturnValue(exportQuery);
     exportQuery.eq.mockReturnValue(exportQuery);
     exportQuery.maybeSingle.mockResolvedValue({
@@ -81,6 +84,7 @@ describe('GET /api/reports/export/status/[id]', () => {
     'allows %s to monitor exports across the center',
     async (role) => {
       authenticate(role);
+      jest.mocked(resolveServerPermission).mockResolvedValue(true);
 
       const response = await GET(request(), {
         params: Promise.resolve({ id: 'job-1' }),
@@ -89,6 +93,18 @@ describe('GET /api/reports/export/status/[id]', () => {
       expect(response.status).toBe(200);
     }
   );
+
+  it('allows staff granted reports.export dynamically to monitor center exports', async () => {
+    authenticate('staff');
+    jest.mocked(resolveServerPermission).mockResolvedValue(true);
+
+    const response = await GET(request(), {
+      params: Promise.resolve({ id: 'job-1' }),
+    } as any);
+
+    expect(response.status).toBe(200);
+    expect(resolveServerPermission).toHaveBeenCalledWith('staff-1', 'staff', 'reports.export');
+  });
 
   it('creates a fresh short-lived URL for a completed owned export', async () => {
     authenticate('teacher');
@@ -112,6 +128,7 @@ describe('GET /api/reports/export/status/[id]', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(resolveServerPermission).not.toHaveBeenCalled();
     expect(createSignedUrl).toHaveBeenCalledWith('reports/attendance.csv', 900);
     expect(body.job.downloadUrl).toBe('https://signed.example/report');
   });

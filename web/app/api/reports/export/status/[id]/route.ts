@@ -3,10 +3,10 @@ import { createGetHandler } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
 import { enforceRateLimit } from '@/lib/api/rateLimit';
 import { rateLimitConfigs } from '@/lib/auth/rateLimit';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 
 export const dynamic = 'force-dynamic';
 
-const MANAGEMENT_ROLES = new Set(['super_admin', 'owner', 'admin']);
 const REPORTS_BUCKET = process.env.REPORTS_STORAGE_BUCKET || 'reports';
 const DOWNLOAD_TTL_SECONDS = 15 * 60;
 
@@ -30,7 +30,9 @@ export const GET = createGetHandler({ requireAuth: true }, async ({ request, par
   if (!data) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   const ownsJob = data.requested_by === user.id;
-  const canManageAll = MANAGEMENT_ROLES.has(user.role);
+  const canManageAll = ownsJob
+    ? false
+    : await resolveServerPermission(user.id, user.role, 'reports.export');
   if (!ownsJob && !canManageAll) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
