@@ -65,6 +65,7 @@ export type PermissionCode =
   // Curriculum
   | 'curriculum.view'
   | 'curriculum.manage'
+  | 'curriculum.delete'
   // Parent
   | 'parent.view_students'
   | 'parent.link_student'
@@ -421,6 +422,13 @@ export const SYSTEM_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     description: 'Tải lên tài liệu và phân phối bài giảng',
     category: 'curriculum',
   },
+  {
+    id: 'curriculum.delete',
+    code: 'curriculum.delete',
+    name: 'Xóa nội dung chương trình học',
+    description: 'Xóa chuẩn kiến thức hoặc nội dung không còn sử dụng',
+    category: 'curriculum',
+  },
 
   // Tài chính & Báo cáo
   {
@@ -585,6 +593,7 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'classes.enroll',
     'enrollments.manage',
     'curriculum.manage',
+    'curriculum.delete',
     'grades.entry',
     'grades.delete',
     'timetable.edit',
@@ -638,6 +647,7 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'enrollments.view',
     'enrollments.manage',
     'curriculum.manage',
+    'curriculum.delete',
     'grades.entry',
     'grades.manage',
     'grades.analytics',
