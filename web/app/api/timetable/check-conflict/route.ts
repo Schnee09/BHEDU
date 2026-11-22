@@ -5,7 +5,6 @@
  * Check for scheduling conflicts (room or teacher double booking) before saving.
  */
 
-import { NextResponse } from 'next/server';
 import { apiSuccess, createApiHandler } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
@@ -24,7 +23,7 @@ const checkConflictSchema = z.object({
 
 export const POST = createApiHandler(
   {
-    allowedRoles: ['admin', 'owner', 'teacher'] as any[],
+    permission: 'timetable.edit',
     bodySchema: checkConflictSchema,
   },
   async ({ body }) => {
