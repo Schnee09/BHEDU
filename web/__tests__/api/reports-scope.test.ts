@@ -68,6 +68,31 @@ describe('aggregate report scopes', () => {
     (classService.getClassGradeStats as jest.Mock).mockResolvedValue({ average: 8 });
   });
 
+  it.each([
+    [
+      'attendance report',
+      getAttendanceReport,
+      `/api/reports/attendance?class_id=${CLASS_ID}`,
+      'attendance.reports',
+    ],
+    ['grade report', getGradeReport, `/api/reports/grades?classId=${CLASS_ID}`, 'grades.view'],
+  ] as const)(
+    'requires the explicit permission for %s before scope queries',
+    async (_name, handler, path, permission) => {
+      (getAuthContext as jest.Mock).mockResolvedValue({
+        authorized: false,
+        profile: { id: 'teacher-1', email: 'teacher@example.com' },
+        role: 'teacher',
+      });
+
+      const response = await handler(request(path), { params: Promise.resolve({}) } as any);
+
+      expect(response.status).toBe(403);
+      expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), permission);
+      expect(canAccessClass).not.toHaveBeenCalled();
+    }
+  );
+
   it.each(['teacher', 'tutor', 'staff', 'student', 'parent'])(
     'blocks %s from the center-wide student report',
     async (role) => {

@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
  *
  * Aggregates student, grade, and attendance data for a printable report card
  */
-export const GET = createGetHandler({ requireAuth: true }, async ({ request, user }) => {
+export const GET = createGetHandler({ permission: 'reports.view' }, async ({ request, user }) => {
   const { studentId, academicYearId, dateFrom, dateTo } = validateQuery(
     request,
     reportCardQuerySchema

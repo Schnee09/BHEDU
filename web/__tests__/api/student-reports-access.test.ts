@@ -64,6 +64,28 @@ describe('student report access', () => {
     ]);
   });
 
+  it.each([
+    ['transcript', getTranscript],
+    ['report card', getReportCard],
+  ] as const)('requires reports.view before loading the %s', async (_name, handler) => {
+    (getAuthContext as jest.Mock).mockResolvedValue({
+      authorized: false,
+      profile: { id: 'parent-1', email: 'parent@example.com' },
+      role: 'parent',
+    });
+
+    const response = await handler(
+      request(
+        `/api/reports/${_name === 'transcript' ? 'transcript' : 'report-card'}?studentId=${STUDENT_ID}`
+      ),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(403);
+    expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'reports.view');
+    expect(canAccessStudent).not.toHaveBeenCalled();
+  });
+
   it.each(['teacher', 'tutor', 'parent', 'student', 'staff'])(
     'rejects %s when the student is outside their scope',
     async (role) => {

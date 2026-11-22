@@ -13,7 +13,7 @@ import { validateQuery } from '@/lib/api/validation';
  */
 export const GET = createGetHandler(
   {
-    requireAuth: true,
+    permission: 'reports.view',
   },
   async ({ request, user }) => {
     const query = validateQuery(request, transcriptQuerySchema);
