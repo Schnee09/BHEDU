@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server';
 import { GET as GET_MY_CLASSES } from '@/app/api/classes/my-classes/route';
 import { GET as GET_ALL_TIMETABLE } from '@/app/api/timetable/all/route';
 import { getAuthContext } from '@/lib/auth/guard';
+import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/supabase/server', () => ({ createServiceClient: jest.fn() }));
@@ -19,7 +20,7 @@ jest.mock('@/lib/repositories/TimetableRepository', () => ({
 
 const handlers = [
   ['my classes', GET_MY_CLASSES, 'classes.view'],
-  ['complete timetable', GET_ALL_TIMETABLE, 'timetable.view'],
+  ['complete timetable', GET_ALL_TIMETABLE, 'timetable.view_all'],
 ] as const;
 
 function request() {
@@ -59,4 +60,25 @@ describe('class and schedule authorization', () => {
       expect(getAuthContext).toHaveBeenCalledWith(expect.any(NextRequest), permission);
     }
   );
+
+  it('allows a custom scheduler role granted timetable.view_all', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'scheduler-1', email: 'scheduler@example.com' },
+      role: 'scheduler',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    const getAllSlots = jest.fn().mockResolvedValue([]);
+    jest.mocked(TimetableRepository).mockImplementation(
+      () =>
+        ({
+          getAllSlots,
+        }) as unknown as TimetableRepository
+    );
+
+    const response = await GET_ALL_TIMETABLE(request());
+
+    expect(response.status).toBe(200);
+    expect(getAuthContext).toHaveBeenCalledWith(expect.any(NextRequest), 'timetable.view_all');
+    expect(getAllSlots).toHaveBeenCalled();
+  });
 });

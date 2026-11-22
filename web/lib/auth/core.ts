@@ -55,6 +55,7 @@ export type PermissionCode =
   | 'classes.enroll'
   // Timetable
   | 'timetable.view'
+  | 'timetable.view_all'
   | 'timetable.edit'
   // Calendar
   | 'calendar.manage'
@@ -383,6 +384,13 @@ export const SYSTEM_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     category: 'timetable',
   },
   {
+    id: 'timetable.view_all',
+    code: 'timetable.view_all',
+    name: 'Xem toàn bộ thời khóa biểu',
+    description: 'Xem lịch của tất cả lớp học, giáo viên và học sinh trong trung tâm',
+    category: 'timetable',
+  },
+  {
     id: 'calendar.manage',
     code: 'calendar.manage',
     name: 'Quản lý lịch trung tâm',
@@ -598,6 +606,7 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'students.view',
     'classes.view',
     'timetable.view',
+    'timetable.view_all',
     'grades.view',
     'grades.analytics',
     'grades.manage',
@@ -681,6 +690,7 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'grades.analytics',
     'attendance.manage',
     'timetable.edit',
+    'timetable.view_all',
     'calendar.manage',
     'calendar.reset',
     'tutoring.sessions.view',

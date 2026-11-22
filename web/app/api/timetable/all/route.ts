@@ -6,9 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export const GET = createGetHandler(
   {
-    permission: 'timetable.view',
-    requireAuth: true,
-    allowedRoles: ['admin', 'owner', 'super_admin'],
+    permission: 'timetable.view_all',
   },
   async ({ request }) => {
     const url = new URL(request.url);
