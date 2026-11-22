@@ -10,7 +10,6 @@ import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/
 import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 import { createServiceClient } from '@/lib/supabase/server';
-import { createAbility } from '@/lib/auth/permissions';
 import { canAccessClass } from '@/lib/auth/classAccess';
 import {
   attendanceQuerySchema,
@@ -20,7 +19,7 @@ import {
 
 // GET /api/attendance
 export const GET = createGetHandler(
-  { requireAuth: true },
+  { permission: 'attendance.view' },
   async ({ request, user, searchParams }) => {
     const identifier = getRateLimitIdentifier(request);
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
@@ -45,97 +44,81 @@ export const GET = createGetHandler(
       return apiPaginated(data, pagination, { summary });
     };
 
-    const ability = createAbility({
-      userId: user.id,
-      role: user.role,
-      classIds: [],
-    });
-
-    if (ability.can('read', 'Attendance')) {
-      if (['admin', 'super_admin', 'owner'].includes(user.role)) {
-        return respondWithAttendance(validatedQuery);
-      }
-
-      if (['teacher', 'tutor', 'staff'].includes(user.role)) {
-        const { data: assignedClasses, error: classError } = await supabase
-          .from('classes')
-          .select('id')
-          .eq('teacher_id', user.id);
-
-        if (classError) {
-          return NextResponse.json(
-            { success: false, error: 'Failed to verify class access' },
-            { status: 500 }
-          );
-        }
-
-        const assignedClassIds = (assignedClasses || []).map((item) => item.id);
-        if (validatedQuery.class_id && !assignedClassIds.includes(validatedQuery.class_id)) {
-          return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-        }
-
-        const teacherConfig = validatedQuery.class_id
-          ? validatedQuery
-          : { ...validatedQuery, class_ids: assignedClassIds };
-        return respondWithAttendance(teacherConfig);
-      }
-
-      if (user.role === 'student') {
-        const studentConfig = {
-          ...validatedQuery,
-          student_id: user.id,
-        };
-        return respondWithAttendance(studentConfig);
-      }
-
-      if (user.role === 'parent') {
-        let studentId = validatedQuery.student_id;
-
-        // If not specified, get first approved student ID
-        if (!studentId) {
-          const { data: links } = await supabase
-            .from('parent_student_links')
-            .select('student_id')
-            .eq('parent_id', user.id)
-            .eq('status', 'approved')
-            .limit(1);
-
-          if (!links || links.length === 0) {
-            return apiPaginated([], { page: 1, pageSize: 50, total: 0 });
-          }
-          studentId = links[0]!.student_id;
-        } else {
-          // Verify relationship
-          const { data: link } = await supabase
-            .from('parent_student_links')
-            .select('id')
-            .eq('parent_id', user.id)
-            .eq('student_id', studentId)
-            .eq('status', 'approved')
-            .maybeSingle();
-
-          if (!link) {
-            return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-          }
-        }
-
-        const parentConfig = {
-          ...validatedQuery,
-          student_id: studentId,
-        };
-        return respondWithAttendance(parentConfig);
-      }
-
-      return apiPaginated([], { page: 1, pageSize: 50, total: 0 });
+    if (['admin', 'super_admin', 'owner'].includes(user.role)) {
+      return respondWithAttendance(validatedQuery);
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: ability.reasonFor('read', 'Attendance') || 'Forbidden',
-      },
-      { status: 403 }
-    );
+    if (['teacher', 'tutor', 'staff'].includes(user.role)) {
+      const { data: assignedClasses, error: classError } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('teacher_id', user.id);
+
+      if (classError) {
+        return NextResponse.json(
+          { success: false, error: 'Failed to verify class access' },
+          { status: 500 }
+        );
+      }
+
+      const assignedClassIds = (assignedClasses || []).map((item) => item.id);
+      if (validatedQuery.class_id && !assignedClassIds.includes(validatedQuery.class_id)) {
+        return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      }
+
+      const teacherConfig = validatedQuery.class_id
+        ? validatedQuery
+        : { ...validatedQuery, class_ids: assignedClassIds };
+      return respondWithAttendance(teacherConfig);
+    }
+
+    if (user.role === 'student') {
+      const studentConfig = {
+        ...validatedQuery,
+        student_id: user.id,
+      };
+      return respondWithAttendance(studentConfig);
+    }
+
+    if (user.role === 'parent') {
+      let studentId = validatedQuery.student_id;
+
+      // If not specified, get first approved student ID
+      if (!studentId) {
+        const { data: links } = await supabase
+          .from('parent_student_links')
+          .select('student_id')
+          .eq('parent_id', user.id)
+          .eq('status', 'approved')
+          .limit(1);
+
+        if (!links || links.length === 0) {
+          return apiPaginated([], { page: 1, pageSize: 50, total: 0 });
+        }
+        studentId = links[0]!.student_id;
+      } else {
+        // Verify relationship
+        const { data: link } = await supabase
+          .from('parent_student_links')
+          .select('id')
+          .eq('parent_id', user.id)
+          .eq('student_id', studentId)
+          .eq('status', 'approved')
+          .maybeSingle();
+
+        if (!link) {
+          return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+        }
+      }
+
+      const parentConfig = {
+        ...validatedQuery,
+        student_id: studentId,
+      };
+      return respondWithAttendance(parentConfig);
+    }
+
+    return apiPaginated([], { page: 1, pageSize: 50, total: 0 });
   }
 );
 

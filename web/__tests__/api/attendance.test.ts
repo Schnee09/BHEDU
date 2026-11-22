@@ -5,6 +5,7 @@ import { GET, POST } from '@/app/api/attendance/route';
 import { canAccessClass } from '@/lib/auth/classAccess';
 import { AttendanceRepository } from '@/lib/repositories/AttendanceRepository';
 import { getAuthContext } from '@/lib/auth/guard';
+import { createServiceClient } from '@/lib/supabase/server';
 
 jest.mock('@/lib/repositories/AttendanceRepository');
 jest.mock('@/lib/auth/classAccess', () => ({ canAccessClass: jest.fn() }));
@@ -79,6 +80,20 @@ describe('/api/attendance authorization', () => {
     expect(response.status).toBe(200);
     expect(findAll).toHaveBeenCalledWith(expect.objectContaining({ class_ids: ['class-1'] }));
     expect(getSummary).toHaveBeenCalledWith(expect.objectContaining({ class_ids: ['class-1'] }));
+  });
+
+  it('requires attendance.view before using the service-role client', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: false,
+      profile: { id: 'teacher-1', email: 'teacher@example.com' },
+      role: 'teacher',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const response = await GET(createRequest('GET'), { params: Promise.resolve({}) } as any);
+
+    expect(response.status).toBe(403);
+    expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'attendance.view');
+    expect(createServiceClient).not.toHaveBeenCalled();
   });
 
   it('rejects a teacher requesting an unassigned class', async () => {
