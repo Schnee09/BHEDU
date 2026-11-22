@@ -82,6 +82,7 @@ export type PermissionCode =
   | 'subjects.manage'
   // Reports
   | 'reports.view'
+  | 'reports.center_view'
   | 'reports.export'
   // Finance
   | 'finance.view'
@@ -467,6 +468,13 @@ export const SYSTEM_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     category: 'reports',
   },
   {
+    id: 'reports.center_view',
+    code: 'reports.center_view',
+    name: 'Xem tổng quan trung tâm',
+    description: 'Xem các chỉ số tổng hợp về học sinh, lớp học và hoạt động của trung tâm',
+    category: 'reports',
+  },
+  {
     id: 'reports.export',
     code: 'reports.export',
     name: 'Xuất báo cáo thống kê',
@@ -606,6 +614,7 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'finance.export',
     // ── Reports — full export control ──
     'reports.view',
+    'reports.center_view',
     'reports.export',
     // ── Announcements — center-wide comms ──
     'announcements.manage',
@@ -661,6 +670,7 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'finance.refund',
     'finance.export',
     'reports.view',
+    'reports.center_view',
     'reports.export',
     'subjects.view',
     'subjects.manage',

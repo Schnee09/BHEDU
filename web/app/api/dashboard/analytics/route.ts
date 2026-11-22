@@ -71,7 +71,7 @@ interface AttendanceDateRange {
   to: string;
 }
 
-export const GET = createGetHandler({ allowedRoles: ['admin'] }, async ({ request }) => {
+export const GET = createGetHandler({ permission: 'reports.center_view' }, async ({ request }) => {
   const supabase = await createClient();
   // Get query params and validate
   const searchParams = Object.fromEntries(request.nextUrl.searchParams);

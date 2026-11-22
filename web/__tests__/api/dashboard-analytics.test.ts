@@ -24,7 +24,7 @@ describe('GET /api/dashboard/analytics authorization', () => {
     'rejects %s before loading center-wide analytics',
     async (role) => {
       (getAuthContext as jest.Mock).mockResolvedValue({
-        authorized: true,
+        authorized: false,
         profile: { id: `${role}-1`, email: `${role}@example.com` },
         role,
       });
@@ -32,6 +32,7 @@ describe('GET /api/dashboard/analytics authorization', () => {
       const response = await GET(request(), { params: Promise.resolve({}) } as any);
 
       expect(response.status).toBe(403);
+      expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'reports.center_view');
       expect(createClient).not.toHaveBeenCalled();
     }
   );
