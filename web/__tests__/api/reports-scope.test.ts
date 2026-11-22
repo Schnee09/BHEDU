@@ -7,9 +7,11 @@ import { GET as getGradeReport } from '@/app/api/reports/grades/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { canAccessClass } from '@/lib/auth/classAccess';
 import { classService } from '@/lib/services';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/auth/classAccess', () => ({ canAccessClass: jest.fn() }));
+jest.mock('@/lib/auth/permissionResolver', () => ({ resolveServerPermission: jest.fn() }));
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(() => ({ from: jest.fn() })),
 }));
@@ -54,6 +56,14 @@ describe('aggregate report scopes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getAttendanceData.mockResolvedValue({ data: [] });
+    getStudentDemographicsReport.mockResolvedValue({
+      total: 10,
+      active: 9,
+      inactive: 1,
+      newThisMonth: 2,
+      byGrade: [],
+      byGender: [],
+    });
     (classService.getClassById as jest.Mock).mockResolvedValue({ id: CLASS_ID, name: 'Toán 9' });
     (classService.getClassGradeStats as jest.Mock).mockResolvedValue({ average: 8 });
   });
@@ -61,17 +71,46 @@ describe('aggregate report scopes', () => {
   it.each(['teacher', 'tutor', 'staff', 'student', 'parent'])(
     'blocks %s from the center-wide student report',
     async (role) => {
-      authenticate(role);
+      (getAuthContext as jest.Mock).mockResolvedValue({
+        authorized: false,
+        profile: { id: `${role}-1`, email: `${role}@example.com` },
+        role,
+      });
 
       const response = await getStudentReport(request('/api/reports/students'), {
         params: Promise.resolve({}),
       } as any);
 
       expect(response.status).toBe(403);
+      expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'reports.center_view');
       expect(getStudentsForExport).not.toHaveBeenCalled();
       expect(getStudentDemographicsReport).not.toHaveBeenCalled();
     }
   );
+
+  it('allows staff granted center report access dynamically to view demographics', async () => {
+    authenticate('staff');
+
+    const response = await getStudentReport(request('/api/reports/students'), {
+      params: Promise.resolve({}),
+    } as any);
+
+    expect(response.status).toBe(200);
+    expect(getStudentDemographicsReport).toHaveBeenCalled();
+  });
+
+  it('requires reports.export in addition to center report access for CSV', async () => {
+    authenticate('staff');
+    jest.mocked(resolveServerPermission).mockResolvedValue(false);
+
+    const response = await getStudentReport(request('/api/reports/students?format=csv'), {
+      params: Promise.resolve({}),
+    } as any);
+
+    expect(response.status).toBe(403);
+    expect(resolveServerPermission).toHaveBeenCalledWith('staff-1', 'staff', 'reports.export');
+    expect(getStudentsForExport).not.toHaveBeenCalled();
+  });
 
   it('requires a class filter for non-management attendance reports', async () => {
     authenticate('teacher');
