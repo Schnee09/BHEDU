@@ -20,20 +20,79 @@ const listSchema = z.object({
 // GET /api/admin/enrollments
 export const GET = createGetHandler(
   { permission: 'enrollments.view' },
-  async ({ searchParams, request }) => {
+  async ({ searchParams, request, user }) => {
     const { supabase } = await getDataClient(request);
     const repository = new EnrollmentRepository(supabase);
 
     const params = {
       student_id: searchParams.get('student_id') || undefined,
       class_id: searchParams.get('class_id') || undefined,
-      status: searchParams.get('status') as any,
+      status: searchParams.get('status') || undefined,
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '50'),
     };
 
     const validated = listSchema.parse(params);
-    const result = await repository.findAll(validated);
+    const scopedFilters: typeof validated & { class_ids?: string[]; student_ids?: string[] } = {
+      ...validated,
+      status: validated.status === 'all' ? undefined : validated.status,
+    };
+
+    if (['teacher', 'tutor', 'staff'].includes(user.role)) {
+      if (validated.class_id) {
+        if (!(await canAccessClass(supabase, user, validated.class_id))) {
+          throw new AuthorizationError('Bạn không có quyền xem đăng ký của lớp này.');
+        }
+      } else {
+        const { data: assignedClasses, error: assignedClassesError } = await supabase
+          .from('classes')
+          .select('id')
+          .eq('teacher_id', user.id);
+        if (assignedClassesError) {
+          throw new Error(`Failed to verify assigned classes: ${assignedClassesError.message}`);
+        }
+        scopedFilters.class_ids = (assignedClasses || []).map((item) => item.id);
+        if (scopedFilters.class_ids.length === 0) {
+          return apiSuccess({
+            data: [],
+            total: 0,
+            page: validated.page,
+            pageSize: validated.limit,
+          });
+        }
+      }
+    } else if (user.role === 'student') {
+      scopedFilters.student_id = user.id;
+    } else if (user.role === 'parent') {
+      const { data: links, error: linksError } = await supabase
+        .from('parent_student_links')
+        .select('student_id')
+        .eq('parent_id', user.id)
+        .eq('status', 'approved');
+      if (linksError) {
+        throw new Error(`Failed to verify linked students: ${linksError.message}`);
+      }
+      const linkedStudentIds = (links || []).map((link) => link.student_id);
+      if (validated.student_id) {
+        if (!linkedStudentIds.includes(validated.student_id)) {
+          throw new AuthorizationError('Bạn không có quyền xem đăng ký của học sinh này.');
+        }
+      } else {
+        scopedFilters.student_ids = linkedStudentIds;
+        if (scopedFilters.student_ids.length === 0) {
+          return apiSuccess({
+            data: [],
+            total: 0,
+            page: validated.page,
+            pageSize: validated.limit,
+          });
+        }
+      }
+    } else if (!['admin', 'owner', 'super_admin'].includes(user.role)) {
+      throw new AuthorizationError('Bạn không có quyền xem danh sách đăng ký lớp.');
+    }
+
+    const result = await repository.findAll(scopedFilters);
 
     return apiSuccess(result);
   }

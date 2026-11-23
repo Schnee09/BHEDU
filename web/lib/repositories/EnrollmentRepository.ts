@@ -20,6 +20,10 @@ import type {
 } from '@/lib/schemas';
 
 export type EnrollmentFilters = EnrollmentQueryInput;
+type ScopedEnrollmentFilters = Partial<EnrollmentFilters> & {
+  class_ids?: string[];
+  student_ids?: string[];
+};
 
 import type { EnrollmentResponse } from '@/lib/schemas/responses/enrollment';
 import { getCurrentDateOnly } from '@/lib/enrollments/effectiveDates';
@@ -126,7 +130,7 @@ export class EnrollmentRepository
   /**
    * Find all enrollments with filters and pagination
    */
-  async findAll(filters: Partial<EnrollmentFilters> = {}): Promise<PaginatedResult<Enrollment>> {
+  async findAll(filters: ScopedEnrollmentFilters = {}): Promise<PaginatedResult<Enrollment>> {
     const page = filters.page || 1;
     const pageSize = filters.limit || 50;
     const start = (page - 1) * pageSize;
@@ -141,10 +145,14 @@ export class EnrollmentRepository
     // Apply filters
     if (filters.student_id) {
       query = query.eq('student_id', filters.student_id);
+    } else if (filters.student_ids) {
+      query = query.in('student_id', filters.student_ids);
     }
 
     if (filters.class_id) {
       query = query.eq('class_id', filters.class_id);
+    } else if (filters.class_ids) {
+      query = query.in('class_id', filters.class_ids);
     }
 
     if (filters.status) {
