@@ -8,14 +8,15 @@
 import { NextResponse } from 'next/server';
 import { getDataClient } from '@/lib/auth/dataClient';
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
-import { NotFoundError } from '@/lib/api/errors';
+import { AuthorizationError, NotFoundError } from '@/lib/api/errors';
 import { logger } from '@/lib/logger';
 import { updateAttendanceSchema } from '@/lib/schemas';
+import { canAccessClass, canAccessStudent } from '@/lib/auth/classAccess';
 
 // GET /api/admin/attendance/[id]
 export const GET = createGetHandler(
   { permission: 'attendance.view' },
-  async ({ params, request }) => {
+  async ({ params, request, user }) => {
     const { supabase } = await getDataClient(request);
 
     const { data: record, error } = await supabase
@@ -37,6 +38,13 @@ export const GET = createGetHandler(
 
     if (error || !record) {
       throw new NotFoundError('Attendance record not found');
+    }
+
+    const canViewRecord =
+      (await canAccessClass(supabase, user, record.class_id)) ||
+      (await canAccessStudent(supabase, user, record.student_id));
+    if (!canViewRecord) {
+      throw new AuthorizationError('Bạn không có quyền xem bản ghi điểm danh này.');
     }
 
     // Fetch class info separately if needed (preserving previous logic)
@@ -72,20 +80,24 @@ export const PATCH = createApiHandler(
     permission: 'attendance.manage',
     bodySchema: updateAttendanceSchema,
   },
-  async ({ params, body, request }) => {
+  async ({ params, body, request, user }) => {
     const { supabase } = await getDataClient(request);
     const id = params.id;
 
     // Verify record exists
     const { data: existingRecord, error: fetchError } = await supabase
       .from('attendance')
-      .select('id')
+      .select('id, class_id')
       .eq('id', id)
       .is('deleted_at', null)
       .single();
 
     if (fetchError || !existingRecord) {
       throw new NotFoundError('Attendance record not found');
+    }
+
+    if (!(await canAccessClass(supabase, user, existingRecord.class_id))) {
+      throw new AuthorizationError('Bạn không có quyền chỉnh sửa điểm danh của lớp này.');
     }
 
     const { notes, ...record } = body;
@@ -121,20 +133,24 @@ export const PATCH = createApiHandler(
 // DELETE /api/admin/attendance/[id]
 export const DELETE = createGetHandler(
   { permission: 'attendance.manage' },
-  async ({ params, request }) => {
+  async ({ params, request, user }) => {
     const { supabase } = await getDataClient(request);
     const id = params.id;
 
     // Check if record exists
     const { data: record, error: fetchError } = await supabase
       .from('attendance')
-      .select('id')
+      .select('id, class_id')
       .eq('id', id)
       .is('deleted_at', null)
       .single();
 
     if (fetchError || !record) {
       throw new NotFoundError('Attendance record not found');
+    }
+
+    if (!(await canAccessClass(supabase, user, record.class_id))) {
+      throw new AuthorizationError('Bạn không có quyền xóa điểm danh của lớp này.');
     }
 
     // Preserve the audit trail and allow an intentional restore through the create/upsert flow.
