@@ -1,10 +1,11 @@
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api/apiHandler';
 import { bulkEnrollmentSchema, createEnrollmentSchema, enrollmentQuerySchema } from '@/lib/schemas';
 import { logger } from '@/lib/logger';
-import { ValidationError } from '@/lib/api/errors';
+import { AuthorizationError, ValidationError } from '@/lib/api/errors';
 import { EnrollmentRepository } from '@/lib/repositories/EnrollmentRepository';
 import { getDataClient } from '@/lib/auth/dataClient';
 import { createServiceClient } from '@/lib/supabase/server';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 // GET /api/enrollments
 export const GET = createGetHandler(
@@ -53,6 +54,9 @@ export const POST = createApiHandler(
     const targetClassId = classId || class_id;
     if (!targetClassId) {
       throw new ValidationError('Mã lớp là bắt buộc');
+    }
+    if (!(await canAccessClass(supabase, user, targetClassId))) {
+      throw new AuthorizationError('Bạn không có quyền ghi danh học sinh vào lớp này.');
     }
 
     // Bulk enrollment
