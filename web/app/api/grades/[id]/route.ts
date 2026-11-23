@@ -240,12 +240,26 @@ export async function DELETE(
     if (!auth.profile) {
       return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
     }
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.role) {
       return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const supabase = createServiceClient();
     const repository = new GradeRepository(supabase);
+
+    const existing = await repository.findById(id);
+    if (!existing) {
+      return NextResponse.json({ error: 'Grade not found' }, { status: 404 });
+    }
+
+    const canDeleteGrade = await canAccessClass(
+      supabase,
+      { id: auth.profile.id, role: auth.role },
+      existing.class_id
+    );
+    if (!canDeleteGrade) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     await repository.delete(id);
     return NextResponse.json({
