@@ -10,6 +10,7 @@ import { getAuthContext } from '@/lib/auth/guard';
 import { handleApiError, ValidationError } from '@/lib/api/errors';
 import { logger } from '@/lib/logger';
 import { createAttendanceSchema } from '@/lib/schemas';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     if (!auth.profile) {
       return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
     }
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.role) {
       return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     if (!auth.profile) {
       return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
     }
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.role) {
       return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
@@ -105,6 +106,10 @@ export async function POST(request: NextRequest) {
       throw new ValidationError('Invalid attendance data');
     }
     const { student_id, class_id, date, status, notes } = parsed.data;
+    if (!(await canAccessClass(supabase, { id: auth.profile.id, role: auth.role }, class_id))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const attendanceRecord = {
       status,
       remarks: notes ?? null,
