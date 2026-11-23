@@ -11,7 +11,6 @@ import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/
 import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
 import { ClassRepository } from '@/lib/repositories/ClassRepository';
 import { createServiceClient } from '@/lib/supabase/server';
-import { createAbility } from '@/lib/auth/permissions';
 import { classQuerySchema, createClassSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
@@ -36,52 +35,31 @@ export const GET = createGetHandler(
     const supabase = createServiceClient();
     const repository = new ClassRepository(supabase);
 
-    const ability = createAbility({
-      userId: user.id,
-      role: user.role,
-      classIds: [],
-    });
-
-    if (ability.can('read', 'Class')) {
-      if (
-        user.role === 'admin' ||
-        user.role === ('admin' as any) ||
-        user.role === 'super_admin' ||
-        user.role === 'owner'
-      ) {
-        const { data, ...pagination } = await repository.findAll(validatedQuery);
-        logger.debug('[API/Classes] Admin/Staff fetch success', { count: data.length });
-        return apiPaginated(data, pagination);
-      }
-
-      if (user.role === 'teacher' || user.role === 'tutor') {
-        const { data, ...pagination } = await repository.findAll({
-          ...validatedQuery,
-          teacher_id: user.id,
-        });
-        return apiPaginated(data, pagination);
-      }
-
-      if (user.role === 'student') {
-        const { data, ...pagination } = await repository.findByStudent(user.id, validatedQuery);
-        return apiPaginated(data, pagination);
-      }
-
-      if (user.role === 'parent') {
-        return apiSuccess({
-          data: [],
-          pagination: { page: 1, pageSize: 0, total: 0 },
-        });
-      }
+    if (['admin', 'super_admin', 'owner'].includes(user.role)) {
+      const { data, ...pagination } = await repository.findAll(validatedQuery);
+      logger.debug('[API/Classes] Center-wide fetch success', { count: data.length });
+      return apiPaginated(data, pagination);
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: ability.reasonFor('read', 'Class') || 'Forbidden',
-      },
-      { status: 403 }
-    );
+    if (user.role === 'student') {
+      const { data, ...pagination } = await repository.findByStudent(user.id, validatedQuery);
+      return apiPaginated(data, pagination);
+    }
+
+    if (user.role === 'parent') {
+      return apiSuccess({
+        data: [],
+        pagination: { page: 1, pageSize: 0, total: 0 },
+      });
+    }
+
+    // Teaching, support, and custom operational roles granted classes.view
+    // only receive classes explicitly assigned to their profile.
+    const { data, ...pagination } = await repository.findAll({
+      ...validatedQuery,
+      teacher_id: user.id,
+    });
+    return apiPaginated(data, pagination);
   }
 );
 
