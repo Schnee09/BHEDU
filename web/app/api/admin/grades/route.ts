@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDataClient } from '@/lib/auth/dataClient';
 import { getAuthContext } from '@/lib/auth/guard';
 import { getGradeSemesterAliases, normalizeGradeSemester } from '@/lib/grades/semester';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 const VALID_COMPONENT_TYPES = ['oral', 'fifteen_min', 'one_period', 'midterm', 'final'];
 const VALID_SEMESTERS = ['1', '2'];
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     if (!auth.profile) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập.' }, { status: 401 });
     }
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.role) {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền quản lý điểm.' },
         { status: 403 }
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
     if (!auth.profile) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập.' }, { status: 401 });
     }
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.role) {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền quản lý điểm.' },
         { status: 403 }
@@ -147,6 +148,10 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Score must be between 0 and 10' },
         { status: 400 }
       );
+    }
+
+    if (!(await canAccessClass(supabase, { id: auth.profile.id, role: auth.role }, class_id))) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const { data, error } = await supabase
