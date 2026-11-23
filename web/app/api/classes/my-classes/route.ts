@@ -34,13 +34,8 @@ export async function GET(request: Request) {
     const userRole = auth.role;
     const profileId = auth.profile.id;
 
-    // Admin/staff see all classes + their personal teaching classes if any
-    if (
-      userRole === 'admin' ||
-      userRole === 'staff' ||
-      userRole === 'super_admin' ||
-      userRole === 'owner'
-    ) {
+    // Center-wide management roles see all classes.
+    if (userRole === 'admin' || userRole === 'super_admin' || userRole === 'owner') {
       const { data: allClasses, error } = await supabase
         .from('classes')
         .select('id, name, teacher_id, created_at')
@@ -66,8 +61,8 @@ export async function GET(request: Request) {
       });
     }
 
-    // Teachers see their assigned classes
-    if (userRole === 'teacher' && profileId) {
+    // Teaching and support roles only see their assigned classes.
+    if (['teacher', 'tutor', 'staff'].includes(userRole) && profileId) {
       const { data: classes, error } = await supabase
         .from('classes')
         .select('id, name, teacher_id, created_at')
