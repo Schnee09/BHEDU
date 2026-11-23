@@ -9,7 +9,10 @@ import { AuthorizationError, ValidationError } from '@/lib/api/errors';
  * GET /api/attendance/reports
  */
 export const GET = createGetHandler(
-  { allowedRoles: ['admin', 'teacher', 'super_admin', 'owner', 'student'] },
+  {
+    permission: 'attendance.view',
+    allowedRoles: ['admin', 'teacher', 'super_admin', 'owner', 'student'],
+  },
   async ({ searchParams, user }) => {
     const supabase = createServiceClient();
     const repository = new AttendanceRepository(supabase);
