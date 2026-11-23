@@ -4,6 +4,8 @@ import { EnrollmentRepository } from '@/lib/repositories/EnrollmentRepository';
 import { getDataClient } from '@/lib/auth/dataClient';
 import { createEnrollmentSchema } from '@/lib/schemas';
 import { createServiceClient } from '@/lib/supabase/server';
+import { canAccessClass } from '@/lib/auth/classAccess';
+import { AuthorizationError } from '@/lib/api/errors';
 
 const listSchema = z.object({
   student_id: z.string().uuid().optional(),
@@ -45,6 +47,10 @@ export const POST = createApiHandler(
   },
   async ({ body, user }) => {
     const supabase = createServiceClient();
+    if (!(await canAccessClass(supabase, user, body.class_id))) {
+      throw new AuthorizationError('Bạn không có quyền đăng ký học sinh vào lớp này.');
+    }
+
     const { data, error } = await supabase.rpc('enroll_student_atomic', {
       p_student_id: body.student_id,
       p_class_id: body.class_id,
