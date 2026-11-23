@@ -8,17 +8,20 @@
 import { getDataClient } from '@/lib/auth/dataClient';
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { updateGradeSchema } from '@/lib/schemas';
-import { NotFoundError, ValidationError } from '@/lib/api/errors';
+import { AuthorizationError, NotFoundError, ValidationError } from '@/lib/api/errors';
 import { logger } from '@/lib/logger';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 // GET /api/admin/grades/[id]
-export const GET = createGetHandler({ permission: 'grades.view' }, async ({ params, request }) => {
-  const { supabase } = await getDataClient(request);
+export const GET = createGetHandler(
+  { permission: 'grades.view' },
+  async ({ params, request, user }) => {
+    const { supabase } = await getDataClient(request);
 
-  const { data: grade, error } = await supabase
-    .from('grades')
-    .select(
-      `
+    const { data: grade, error } = await supabase
+      .from('grades')
+      .select(
+        `
         *,
         assignment:assignments!grades_assignment_id_fkey(
           id,
@@ -59,35 +62,40 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ para
           phone
         )
       `
-    )
-    .eq('id', params.id)
-    .is('deleted_at', null)
-    .single();
+      )
+      .eq('id', params.id)
+      .is('deleted_at', null)
+      .single();
 
-  if (error || !grade) {
-    throw new NotFoundError('Grade not found');
+    if (error || !grade) {
+      throw new NotFoundError('Grade not found');
+    }
+
+    if (!(await canAccessClass(supabase, user, grade.class_id))) {
+      throw new AuthorizationError('Bạn không có quyền xem điểm của lớp này.');
+    }
+
+    // Calculate percentage and letter grade if points are available
+    let percentage = null;
+    let calculatedLetterGrade = null;
+
+    if (grade.points_earned !== null && grade.assignment?.total_points) {
+      percentage = (grade.points_earned / grade.assignment.total_points) * 100;
+
+      if (percentage >= 90) calculatedLetterGrade = 'A';
+      else if (percentage >= 80) calculatedLetterGrade = 'B';
+      else if (percentage >= 70) calculatedLetterGrade = 'C';
+      else if (percentage >= 60) calculatedLetterGrade = 'D';
+      else calculatedLetterGrade = 'F';
+    }
+
+    return apiSuccess({
+      ...grade,
+      percentage,
+      calculated_letter_grade: calculatedLetterGrade,
+    });
   }
-
-  // Calculate percentage and letter grade if points are available
-  let percentage = null;
-  let calculatedLetterGrade = null;
-
-  if (grade.points_earned !== null && grade.assignment?.total_points) {
-    percentage = (grade.points_earned / grade.assignment.total_points) * 100;
-
-    if (percentage >= 90) calculatedLetterGrade = 'A';
-    else if (percentage >= 80) calculatedLetterGrade = 'B';
-    else if (percentage >= 70) calculatedLetterGrade = 'C';
-    else if (percentage >= 60) calculatedLetterGrade = 'D';
-    else calculatedLetterGrade = 'F';
-  }
-
-  return apiSuccess({
-    ...grade,
-    percentage,
-    calculated_letter_grade: calculatedLetterGrade,
-  });
-});
+);
 
 // PATCH /api/admin/grades/[id]
 export const PATCH = createApiHandler(
@@ -117,6 +125,10 @@ export const PATCH = createApiHandler(
 
     if (fetchError || !existingGrade) {
       throw new NotFoundError('Grade not found');
+    }
+
+    if (!(await canAccessClass(supabase, user, existingGrade.class_id))) {
+      throw new AuthorizationError('Bạn không có quyền chỉnh sửa điểm của lớp này.');
     }
 
     const { reason, notes, feedback, points_earned, score, graded_at } = body;
@@ -228,6 +240,10 @@ export const DELETE = createGetHandler(
 
     if (fetchError || !grade) {
       throw new NotFoundError('Grade not found');
+    }
+
+    if (!(await canAccessClass(supabase, user, grade.class_id))) {
+      throw new AuthorizationError('Bạn không có quyền xóa điểm của lớp này.');
     }
 
     const deletedAt = new Date().toISOString();
