@@ -1,56 +1,59 @@
-import { NextResponse } from "next/server";
-import { apiSuccess, createGetHandler } from "@/lib/api";
-import { createServiceClient } from "@/lib/supabase/server";
-import { NotFoundError } from "@/lib/api/errors";
+import { apiSuccess, createGetHandler } from '@/lib/api';
+import { createServiceClient } from '@/lib/supabase/server';
+import { AuthorizationError, NotFoundError } from '@/lib/api/errors';
+import { canAccessClass } from '@/lib/auth/classAccess';
 
 /**
  * GET /api/classes/[classId]/subjects
  * Fetch subjects linked to a class via timetable_slots
  */
-export const GET = createGetHandler(
-    { permission: "classes.view" },
-    async ({ params }) => {
-        const supabase = createServiceClient();
-        const { classId } = params;
+export const GET = createGetHandler({ permission: 'classes.view' }, async ({ params, user }) => {
+  const supabase = createServiceClient();
+  const { classId } = params;
 
-        // 1. Verify class exists
-        const { data: classData, error: classError } = await supabase
-            .from("classes")
-            .select("id, name")
-            .eq("id", classId)
-            .single();
+  if (!(await canAccessClass(supabase, user, classId))) {
+    throw new AuthorizationError('Bạn không có quyền xem môn học của lớp này.');
+  }
 
-        if (classError || !classData) {
-            throw new NotFoundError("Không tìm thấy lớp học");
-        }
+  // 1. Verify class exists
+  const { data: classData, error: classError } = await supabase
+    .from('classes')
+    .select('id, name')
+    .eq('id', classId)
+    .single();
 
-        // 2. Fetch unique subjects from timetable_slots for this class
-        const { data: slots, error: slotsError } = await supabase
-            .from("timetable_slots")
-            .select(`
+  if (classError || !classData) {
+    throw new NotFoundError('Không tìm thấy lớp học');
+  }
+
+  // 2. Fetch unique subjects from timetable_slots for this class
+  const { data: slots, error: slotsError } = await supabase
+    .from('timetable_slots')
+    .select(
+      `
         subject_id,
         subject:subjects (
           id,
           name,
           code
         )
-      `)
-            .eq("class_id", classId);
+      `
+    )
+    .eq('class_id', classId);
 
-        if (slotsError) {
-            throw slotsError;
-        }
+  if (slotsError) {
+    throw slotsError;
+  }
 
-        // 3. Extract unique subjects
-        const subjectMap = new Map();
-        (slots || []).forEach((slot: any) => {
-            if (slot.subject && !subjectMap.has(slot.subject.id)) {
-                subjectMap.set(slot.subject.id, slot.subject);
-            }
-        });
+  // 3. Extract unique subjects
+  const subjectMap = new Map();
+  (slots || []).forEach((slot: any) => {
+    if (slot.subject && !subjectMap.has(slot.subject.id)) {
+      subjectMap.set(slot.subject.id, slot.subject);
+    }
+  });
 
-        const subjects = Array.from(subjectMap.values());
+  const subjects = Array.from(subjectMap.values());
 
-        return apiSuccess({ subjects });
-    },
-);
+  return apiSuccess({ subjects });
+});
