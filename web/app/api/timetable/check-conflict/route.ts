@@ -9,6 +9,8 @@ import { apiSuccess, createApiHandler } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TimetableRepository } from '@/lib/repositories/TimetableRepository';
 import { z } from 'zod';
+import { AuthorizationError } from '@/lib/api/errors';
+import { canAccessTimetableSlot, canAccessTimetableTarget } from '@/lib/auth/classAccess';
 
 const checkConflictSchema = z.object({
   class_id: z.string().uuid().optional().nullable(),
@@ -26,8 +28,26 @@ export const POST = createApiHandler(
     permission: 'timetable.edit',
     bodySchema: checkConflictSchema,
   },
-  async ({ body }) => {
+  async ({ body, user }) => {
     const supabase = createServiceClient();
+    if (
+      body.exclude_slot_id &&
+      !(await canAccessTimetableSlot(supabase, user, body.exclude_slot_id))
+    ) {
+      throw new AuthorizationError('Bạn không có quyền kiểm tra lịch học này.');
+    }
+    if (body.class_id || body.student_id || body.teacher_id) {
+      if (
+        !(await canAccessTimetableTarget(supabase, user, {
+          classId: body.class_id,
+          studentId: body.student_id,
+          teacherId: body.teacher_id,
+        }))
+      ) {
+        throw new AuthorizationError('Bạn không có quyền kiểm tra lịch cho đối tượng này.');
+      }
+    }
+
     const repository = new TimetableRepository(supabase);
 
     // Call checkConflicts in Repository
