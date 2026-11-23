@@ -10,25 +10,74 @@ import { canAccessClass } from '@/lib/auth/classAccess';
 // GET /api/enrollments
 export const GET = createGetHandler(
   { permission: 'enrollments.view' },
-  async ({ searchParams, request }) => {
+  async ({ searchParams, request, user }) => {
     const { supabase } = await getDataClient(request);
     const repository = new EnrollmentRepository(supabase);
 
     // Validate and normalize query params
     const query = enrollmentQuerySchema.safeParse({
-      class_id: searchParams.get('classId') || searchParams.get('class_id'),
-      student_id: searchParams.get('studentId') || searchParams.get('student_id'),
-      status: searchParams.get('status'),
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit') || searchParams.get('pageSize'),
+      class_id: searchParams.get('classId') || searchParams.get('class_id') || undefined,
+      student_id: searchParams.get('studentId') || searchParams.get('student_id') || undefined,
+      status: searchParams.get('status') || undefined,
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || searchParams.get('pageSize') || undefined,
     });
 
     if (!query.success) {
       throw new ValidationError(query.error.issues[0]?.message || 'Tham số ghi danh không hợp lệ');
     }
     const validatedQuery = query.data;
+    const scopedFilters: typeof validatedQuery & { class_ids?: string[]; student_ids?: string[] } =
+      {
+        ...validatedQuery,
+        status: validatedQuery.status === 'all' ? undefined : validatedQuery.status,
+      };
 
-    const result = await repository.findAll(validatedQuery);
+    if (['teacher', 'tutor', 'staff'].includes(user.role)) {
+      if (validatedQuery.class_id) {
+        if (!(await canAccessClass(supabase, user, validatedQuery.class_id))) {
+          throw new AuthorizationError('Bạn không có quyền xem đăng ký của lớp này.');
+        }
+      } else {
+        const { data: assignedClasses, error: assignedClassesError } = await supabase
+          .from('classes')
+          .select('id')
+          .eq('teacher_id', user.id);
+        if (assignedClassesError) {
+          throw new Error(`Failed to verify assigned classes: ${assignedClassesError.message}`);
+        }
+        scopedFilters.class_ids = (assignedClasses || []).map((item) => item.id);
+        if (scopedFilters.class_ids.length === 0) {
+          return apiSuccess({ data: [], total: 0, page: validatedQuery.page, pageSize: 50 });
+        }
+      }
+    } else if (user.role === 'student') {
+      scopedFilters.student_id = user.id;
+    } else if (user.role === 'parent') {
+      const { data: links, error: linksError } = await supabase
+        .from('parent_student_links')
+        .select('student_id')
+        .eq('parent_id', user.id)
+        .eq('status', 'approved');
+      if (linksError) {
+        throw new Error(`Failed to verify linked students: ${linksError.message}`);
+      }
+      const linkedStudentIds = (links || []).map((link) => link.student_id);
+      if (validatedQuery.student_id) {
+        if (!linkedStudentIds.includes(validatedQuery.student_id)) {
+          throw new AuthorizationError('Bạn không có quyền xem đăng ký của học sinh này.');
+        }
+      } else {
+        scopedFilters.student_ids = linkedStudentIds;
+        if (scopedFilters.student_ids.length === 0) {
+          return apiSuccess({ data: [], total: 0, page: validatedQuery.page, pageSize: 50 });
+        }
+      }
+    } else if (!['admin', 'owner', 'super_admin'].includes(user.role)) {
+      throw new AuthorizationError('Bạn không có quyền xem danh sách đăng ký lớp.');
+    }
+
+    const result = await repository.findAll(scopedFilters);
     return apiSuccess({
       data: result.data,
       total: result.total,
