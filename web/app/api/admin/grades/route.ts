@@ -42,6 +42,53 @@ export async function GET(request: NextRequest) {
     const componentType = searchParams.get('component_type');
 
     const { supabase } = await getDataClient(request);
+    let scopedStudentId = studentId;
+    let scopedClassIds: string[] | null = null;
+    let scopedStudentIds: string[] | null = null;
+
+    if (['teacher', 'tutor', 'staff'].includes(auth.role)) {
+      if (classId) {
+        if (!(await canAccessClass(supabase, { id: auth.profile.id, role: auth.role }, classId))) {
+          return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+        }
+      } else {
+        const { data: assignedClasses, error: assignedClassesError } = await supabase
+          .from('classes')
+          .select('id')
+          .eq('teacher_id', auth.profile.id);
+        if (assignedClassesError) {
+          throw new Error(`Failed to verify assigned classes: ${assignedClassesError.message}`);
+        }
+        scopedClassIds = (assignedClasses || []).map((item) => item.id);
+        if (scopedClassIds.length === 0) {
+          return NextResponse.json({ success: true, data: [], total: 0 });
+        }
+      }
+    } else if (auth.role === 'student') {
+      scopedStudentId = auth.profile.id;
+    } else if (auth.role === 'parent') {
+      const { data: links, error: linksError } = await supabase
+        .from('parent_student_links')
+        .select('student_id')
+        .eq('parent_id', auth.profile.id)
+        .eq('status', 'approved');
+      if (linksError) {
+        throw new Error(`Failed to verify linked students: ${linksError.message}`);
+      }
+      const linkedStudentIds = (links || []).map((link) => link.student_id);
+      if (studentId) {
+        if (!linkedStudentIds.includes(studentId)) {
+          return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+        }
+      } else {
+        scopedStudentIds = linkedStudentIds;
+        if (scopedStudentIds.length === 0) {
+          return NextResponse.json({ success: true, data: [], total: 0 });
+        }
+      }
+    } else if (!['admin', 'owner', 'super_admin'].includes(auth.role)) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
 
     // Build query using new schema
     let query = supabase
@@ -57,8 +104,10 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
-    if (studentId) query = query.eq('student_id', studentId);
+    if (scopedStudentId) query = query.eq('student_id', scopedStudentId);
+    if (scopedStudentIds) query = query.in('student_id', scopedStudentIds);
     if (classId) query = query.eq('class_id', classId);
+    if (scopedClassIds) query = query.in('class_id', scopedClassIds);
     if (subjectId) query = query.eq('subject_id', subjectId);
     if (semester) {
       const semesterAliases = getGradeSemesterAliases(semester);
