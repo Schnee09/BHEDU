@@ -4,19 +4,29 @@ import { EnrollmentRepository } from '@/lib/repositories/EnrollmentRepository';
 import { enrollmentLifecycleActionSchema } from '@/lib/schemas';
 import { getDataClient } from '@/lib/auth/dataClient';
 import { createServiceClient } from '@/lib/supabase/server';
-import { canAccessClass } from '@/lib/auth/classAccess';
+import { canAccessClass, canAccessStudent } from '@/lib/auth/classAccess';
 
 // GET /api/admin/enrollments/[id]
 export const GET = createGetHandler(
   {
     permission: 'enrollments.view',
   },
-  async ({ params, request }) => {
+  async ({ params, request, user }) => {
     const id = params.id as string;
     const { supabase } = await getDataClient(request);
     const repository = new EnrollmentRepository(supabase);
 
     const enrollment = await repository.findById(id);
+    if (!enrollment) {
+      throw new NotFoundError('Không tìm thấy đăng ký lớp.');
+    }
+    const canViewEnrollment =
+      (await canAccessClass(supabase, user, enrollment.class_id)) ||
+      (await canAccessStudent(supabase, user, enrollment.student_id));
+    if (!canViewEnrollment) {
+      throw new AuthorizationError('Bạn không có quyền xem đăng ký lớp này.');
+    }
+
     return apiSuccess({ enrollment });
   }
 );
