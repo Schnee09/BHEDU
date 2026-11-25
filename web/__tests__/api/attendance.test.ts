@@ -82,6 +82,22 @@ describe('/api/attendance authorization', () => {
     expect(getSummary).toHaveBeenCalledWith(expect.objectContaining({ class_ids: ['class-1'] }));
   });
 
+  it('limits a custom operational role to assigned classes', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'coordinator-1', email: 'coordinator@example.com' },
+      role: 'attendance_coordinator',
+      isCustomOverride: true,
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const response = await GET(createRequest('GET'), { params: Promise.resolve({}) } as any);
+
+    expect(response.status).toBe(200);
+    expect(classQuery.eq).toHaveBeenCalledWith('teacher_id', 'coordinator-1');
+    expect(findAll).toHaveBeenCalledWith(expect.objectContaining({ class_ids: ['class-1'] }));
+    expect(getSummary).toHaveBeenCalledWith(expect.objectContaining({ class_ids: ['class-1'] }));
+  });
+
   it('requires attendance.view before using the service-role client', async () => {
     jest.mocked(getAuthContext).mockResolvedValue({
       authorized: false,

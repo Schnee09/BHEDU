@@ -48,7 +48,7 @@ export const GET = createGetHandler(
       return respondWithAttendance(validatedQuery);
     }
 
-    if (['teacher', 'tutor', 'staff'].includes(user.role)) {
+    if (!['student', 'parent'].includes(user.role)) {
       const { data: assignedClasses, error: classError } = await supabase
         .from('classes')
         .select('id')
