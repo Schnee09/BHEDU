@@ -61,8 +61,8 @@ describe('GET /api/dashboard/stats authorization', () => {
       const response = await GET(request(), { params: Promise.resolve({}) } as any);
 
       expect(response.status).toBe(200);
-      expect(DashboardService.getStats).toHaveBeenCalledWith(role, `${role}-1`);
-      expect(DashboardService.getRecentActivity).toHaveBeenCalledWith(10, role, `${role}-1`);
+      expect(DashboardService.getStats).toHaveBeenCalledWith('admin', `${role}-1`);
+      expect(DashboardService.getRecentActivity).toHaveBeenCalledWith(10, 'admin', `${role}-1`);
     }
   );
 
@@ -74,6 +74,19 @@ describe('GET /api/dashboard/stats authorization', () => {
     const response = await GET(request(), { params: Promise.resolve({}) } as any);
 
     expect(response.status).toBe(200);
-    expect(DashboardService.getStats).toHaveBeenCalledWith('staff', 'staff-1');
+    expect(DashboardService.getStats).toHaveBeenCalledWith('admin', 'staff-1');
+    expect(DashboardService.getRecentActivity).toHaveBeenCalledWith(10, 'admin', 'staff-1');
+  });
+
+  it('uses center-wide scope for a custom role granted the permission', async () => {
+    authenticate('center_coordinator', 'coordinator-1');
+    (DashboardService.getStats as jest.Mock).mockResolvedValue({ totalStudents: 12 });
+    (DashboardService.getRecentActivity as jest.Mock).mockResolvedValue({ items: [], total: 0 });
+
+    const response = await GET(request(), { params: Promise.resolve({}) } as any);
+
+    expect(response.status).toBe(200);
+    expect(DashboardService.getStats).toHaveBeenCalledWith('admin', 'coordinator-1');
+    expect(DashboardService.getRecentActivity).toHaveBeenCalledWith(10, 'admin', 'coordinator-1');
   });
 });
