@@ -50,7 +50,7 @@ export const PATCH = createApiHandler(
     permission: 'students.edit',
     bodySchema: updateStudentSchema,
   },
-  async ({ params, request, body }) => {
+  async ({ params, request, body, user }) => {
     const identifier = getRateLimitIdentifier(request);
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
@@ -59,6 +59,9 @@ export const PATCH = createApiHandler(
 
     const id = params.id as string;
     const supabase = createServiceClient();
+    if (!(await canAccessStudent(supabase, { id: user.id, role: user.role }, id))) {
+      throw new AuthorizationError('Forbidden');
+    }
     const repository = new StudentRepository(supabase);
 
     const updated = await repository.update(id, body);
@@ -69,7 +72,7 @@ export const PATCH = createApiHandler(
 // DELETE /api/students/[id]
 export const DELETE = createGetHandler(
   { permission: 'students.delete' },
-  async ({ params, request }) => {
+  async ({ params, request, user }) => {
     const identifier = getRateLimitIdentifier(request);
     const rateCheck = checkRateLimit(identifier, rateLimitConfigs.api);
     if (!rateCheck.allowed) {
@@ -78,6 +81,9 @@ export const DELETE = createGetHandler(
 
     const id = params.id as string;
     const supabase = createServiceClient();
+    if (!(await canAccessStudent(supabase, { id: user.id, role: user.role }, id))) {
+      throw new AuthorizationError('Forbidden');
+    }
     const repository = new StudentRepository(supabase);
 
     await repository.softDelete(id);

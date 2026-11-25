@@ -7,9 +7,11 @@ import { DELETE, GET, PATCH } from '@/app/api/students/[id]/route';
 import { POST as BULK_ARCHIVE } from '@/app/api/students/bulk-archive/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { StudentRepository } from '@/lib/repositories/StudentRepository';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/repositories/StudentRepository');
+jest.mock('@/lib/auth/classAccess', () => ({ canAccessStudent: jest.fn() }));
 jest.mock('@/lib/supabase/server', () => ({ createServiceClient: jest.fn(() => ({})) }));
 
 const detailContext = { params: Promise.resolve({ id: 'student-1' }) };
@@ -25,6 +27,7 @@ function request(path: string, method: string, body?: unknown) {
 describe('student mutation authorization', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(canAccessStudent).mockResolvedValue(true);
   });
 
   it.each([
@@ -104,5 +107,28 @@ describe('student mutation authorization', () => {
       'student-1',
       expect.objectContaining({ full_name: 'Nguyễn An' })
     );
+  });
+
+  it.each([
+    ['PATCH', PATCH],
+    ['DELETE', DELETE],
+  ] as const)('rejects %s outside the student scope', async (method, handler) => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'teacher-1' },
+      role: 'teacher',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    jest.mocked(canAccessStudent).mockResolvedValue(false);
+
+    const response = await handler(
+      request(
+        '/api/students/student-1',
+        method,
+        method === 'PATCH' ? { full_name: 'Học sinh A' } : undefined
+      ),
+      detailContext
+    );
+
+    expect(response.status).toBe(403);
   });
 });
