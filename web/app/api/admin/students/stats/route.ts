@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { getDataClient } from '@/lib/auth/dataClient';
 import { getAuthContext } from '@/lib/auth/guard';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 
 type StudentStats = {
   total: number;
@@ -26,6 +27,17 @@ export async function GET(request: Request) {
     }
     if (!auth.authorized) {
       return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
+    }
+    if (!auth.role) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const isDirectoryRole = ['admin', 'super_admin', 'owner', 'staff'].includes(auth.role);
+    const canViewCenter =
+      isDirectoryRole ||
+      (await resolveServerPermission(auth.profile.id, auth.role, 'reports.center_view'));
+    if (!canViewCenter) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const { supabase } = await getDataClient(request);
