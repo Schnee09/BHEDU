@@ -110,6 +110,15 @@ describe('canAccessStudent', () => {
     ).resolves.toBe(false);
   });
 
+  it('allows an assigned custom operational role to access a student', async () => {
+    const { client, query } = createSupabaseResult({ class_id: 'class-1' });
+
+    await expect(
+      canAccessStudent(client, { id: 'mentor-1', role: 'mentor' }, 'student-1')
+    ).resolves.toBe(true);
+    expect(query.eq).toHaveBeenNthCalledWith(3, 'classes.teacher_id', 'mentor-1');
+  });
+
   it('allows operational staff to view student records without a class query', async () => {
     const { client } = createSupabaseResult(null);
 

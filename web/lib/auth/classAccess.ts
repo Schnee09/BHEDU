@@ -35,7 +35,7 @@ export async function canAccessStudent(
     return true;
   }
 
-  if (!user.id) {
+  if (!user.id || !user.role) {
     return false;
   }
 
@@ -53,10 +53,6 @@ export async function canAccessStudent(
       .maybeSingle();
 
     return !error && Boolean(data);
-  }
-
-  if (!['teacher', 'tutor'].includes(user.role || '')) {
-    return false;
   }
 
   const { data, error } = await supabase
