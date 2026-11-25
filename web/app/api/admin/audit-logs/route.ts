@@ -16,7 +16,9 @@ export const GET = createGetHandler(
     const resource_type = searchParams.get('resource_type') || undefined;
     const page = Math.floor(offset / limit) + 1;
 
-    const { items, total } = await DashboardService.getRecentActivity(limit, user.role, user.id, {
+    // system.audit is a system-wide permission; normalize the repository scope after the
+    // permission check so owners and custom audit roles are not restricted to their own events.
+    const { items, total } = await DashboardService.getRecentActivity(limit, 'admin', user.id, {
       action,
       entityType: resource_type,
       offset,
