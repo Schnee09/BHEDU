@@ -12,7 +12,7 @@ export async function canAccessClass(
     return true;
   }
 
-  if (!['teacher', 'tutor', 'staff'].includes(user.role || '') || !user.id || !classId) {
+  if (!user.id || !classId || !user.role || ['student', 'parent'].includes(user.role)) {
     return false;
   }
 

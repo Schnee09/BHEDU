@@ -50,6 +50,15 @@ describe('canAccessClass', () => {
     }
   );
 
+  it('allows an assigned custom operational role', async () => {
+    const { client, query } = createSupabaseResult({ id: 'class-1' });
+
+    await expect(
+      canAccessClass(client, { id: 'scheduler-1', role: 'scheduler' }, 'class-1')
+    ).resolves.toBe(true);
+    expect(query.eq).toHaveBeenNthCalledWith(2, 'teacher_id', 'scheduler-1');
+  });
+
   it('rejects an unassigned teacher', async () => {
     const { client } = createSupabaseResult(null);
 
