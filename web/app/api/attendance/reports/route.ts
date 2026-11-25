@@ -9,10 +9,7 @@ import { AuthorizationError, ValidationError } from '@/lib/api/errors';
  * GET /api/attendance/reports
  */
 export const GET = createGetHandler(
-  {
-    permission: 'attendance.view',
-    allowedRoles: ['admin', 'teacher', 'super_admin', 'owner', 'student'],
-  },
+  { permission: 'attendance.view' },
   async ({ searchParams, user }) => {
     const supabase = createServiceClient();
     const repository = new AttendanceRepository(supabase);
@@ -30,9 +27,10 @@ export const GET = createGetHandler(
       filters.student_id = user.id;
     }
 
-    if (user.role === 'teacher') {
+    const isManagement = ['admin', 'owner', 'super_admin'].includes(user.role);
+    if (!isManagement && user.role !== 'student') {
       if (!filters.class_id) {
-        throw new ValidationError('classId is required for teacher reports');
+        throw new ValidationError('classId is required for class-scoped attendance reports');
       }
 
       const allowed = await canAccessClass(
