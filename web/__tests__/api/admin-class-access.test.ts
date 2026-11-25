@@ -57,6 +57,15 @@ describe('GET /api/admin/classes/[id] scope', () => {
     expect(response.status).toBe(200);
   });
 
+  it('allows an assigned custom role without global management permission', async () => {
+    authenticate('teacher-1', 'academic_coordinator');
+    jest.mocked(resolveServerPermission).mockResolvedValue(false);
+
+    const response = await GET(request(), routeContext);
+
+    expect(response.status).toBe(200);
+  });
+
   it('rejects an unassigned viewer without global management permission', async () => {
     authenticate('teacher-2', 'teacher');
     jest.mocked(resolveServerPermission).mockResolvedValue(false);

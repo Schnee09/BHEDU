@@ -16,7 +16,7 @@ export const GET = createGetHandler({ permission: 'classes.view' }, async ({ par
 
   const canManageAll = await resolveServerPermission(user.id, user.role, 'classes.manage');
   const isAssignedStaff =
-    ['teacher', 'tutor', 'staff'].includes(user.role) && classData.teacher_id === user.id;
+    !['student', 'parent'].includes(user.role) && classData.teacher_id === user.id;
 
   if (!canManageAll && !isAssignedStaff) {
     throw new AuthorizationError('Bạn không có quyền xem lớp học này.');
