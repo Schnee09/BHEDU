@@ -3,35 +3,25 @@
  * View audit history for permission changes
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { createGetHandler } from '@/lib/api';
+import { ValidationError } from '@/lib/api/errors';
 import { createClientFromRequest } from '@/lib/supabase/server';
 
 // GET /api/admin/permissions/audit - Get audit logs
-export async function GET(request: NextRequest) {
-  try {
+export const GET = createGetHandler(
+  { permission: 'permissions.manage' },
+  async ({ request, searchParams }) => {
     const supabase = createClientFromRequest(request);
-    const { searchParams } = new URL(request.url);
 
-    // Check admin access
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const page = Number(searchParams.get('page') || '1');
+    const limit = Number(searchParams.get('limit') || '50');
+    if (!Number.isInteger(page) || page < 1) {
+      throw new ValidationError('page must be a positive integer');
     }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
-      .maybeSingle();
-
-    if (!['super_admin', 'admin', 'owner'].includes(profile?.role || '')) {
-      return NextResponse.json({ error: 'Admin or Owner access required' }, { status: 403 });
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      throw new ValidationError('limit must be an integer between 1 and 100');
     }
-
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
     const userId = searchParams.get('user_id');
     const action = searchParams.get('action');
     const scope = searchParams.get('scope'); // 'user' | 'role' | null (all)
@@ -75,8 +65,5 @@ export async function GET(request: NextRequest) {
       limit,
       totalPages: Math.ceil((count || 0) / limit),
     });
-  } catch (error) {
-    console.error('Audit logs API error:', error);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
-}
+);
