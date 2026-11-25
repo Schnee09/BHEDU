@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClientFromRequest, createServiceClient } from '@/lib/supabase/server';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 
 /**
  * GET /api/sidebar/badge-counts
@@ -42,6 +43,9 @@ export async function GET(request: NextRequest) {
     const role = profile?.role ?? '';
 
     const profileId = profile?.id || user.id;
+    const canApproveParentLinks = profile
+      ? await resolveServerPermission(profileId, role, 'parent_links.approve')
+      : false;
 
     // Run actionable badge queries in parallel for minimum latency
     const [notificationsResult, parentLinksResult] = await Promise.allSettled([
@@ -52,8 +56,8 @@ export async function GET(request: NextRequest) {
         .or(`user_id.eq.${profileId},user_id.eq.${user.id}`)
         .eq('is_read', false),
 
-      // 2. Pending parent links (admin/owner/super_admin only)
-      ['admin', 'owner', 'super_admin'].includes(role)
+      // 2. Pending parent links for users with the effective approval permission.
+      canApproveParentLinks
         ? serviceClient
             .from('parent_student_links')
             .select('*', { count: 'exact', head: true })
