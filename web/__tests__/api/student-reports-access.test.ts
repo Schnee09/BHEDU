@@ -6,9 +6,11 @@ import { GET as getReportCard } from '@/app/api/reports/report-card/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { canAccessStudent } from '@/lib/auth/classAccess';
 import { studentService, gradeService } from '@/lib/services';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/auth/classAccess', () => ({ canAccessStudent: jest.fn() }));
+jest.mock('@/lib/auth/permissionResolver', () => ({ resolveServerPermission: jest.fn() }));
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(() => ({ from: jest.fn() })),
 }));
@@ -54,6 +56,7 @@ function authenticate(role: string, id = `${role}-1`) {
 describe('student report access', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(resolveServerPermission).mockResolvedValue(false);
     getTranscriptData.mockResolvedValue({ student: { id: STUDENT_ID } });
     (studentService.getStudentById as jest.Mock).mockResolvedValue({ id: STUDENT_ID });
     (gradeService.getStudentTranscript as jest.Mock).mockResolvedValue([]);
@@ -121,6 +124,28 @@ describe('student report access', () => {
     expect(getTranscriptData).toHaveBeenCalledWith(
       STUDENT_ID,
       expect.objectContaining({ includePending: false })
+    );
+  });
+
+  it('allows a scoped custom role with grades.manage to include pending entries', async () => {
+    authenticate('academic_coordinator', 'coordinator-1');
+    (canAccessStudent as jest.Mock).mockResolvedValue(true);
+    jest.mocked(resolveServerPermission).mockResolvedValue(true);
+
+    const response = await getTranscript(
+      request(`/api/reports/transcript?studentId=${STUDENT_ID}&includePending=true`),
+      { params: Promise.resolve({}) } as any
+    );
+
+    expect(response.status).toBe(200);
+    expect(resolveServerPermission).toHaveBeenCalledWith(
+      'coordinator-1',
+      'academic_coordinator',
+      'grades.manage'
+    );
+    expect(getTranscriptData).toHaveBeenCalledWith(
+      STUDENT_ID,
+      expect.objectContaining({ includePending: true })
     );
   });
 

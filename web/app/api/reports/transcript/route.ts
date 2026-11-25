@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { ReportsRepository } from '@/lib/repositories/ReportsRepository';
 import { transcriptQuerySchema } from '@/lib/schemas';
 import { canAccessStudent } from '@/lib/auth/classAccess';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 
 import { validateQuery } from '@/lib/api/validation';
 
@@ -27,9 +28,9 @@ export const GET = createGetHandler(
 
     const repository = new ReportsRepository(supabase);
 
-    const canViewPending = ['super_admin', 'owner', 'admin', 'teacher', 'tutor'].includes(
-      user.role
-    );
+    const canViewPending = includePending
+      ? await resolveServerPermission(user.id, user.role, 'grades.manage')
+      : false;
 
     const transcript = await repository.getTranscript(studentId, {
       includePending: canViewPending && Boolean(includePending),
