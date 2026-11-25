@@ -6,7 +6,6 @@ import { createServiceClient } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 
 const GLOBAL_ATTENDANCE_ROLES = new Set(['super_admin', 'owner', 'admin']);
-const ASSIGNED_CLASS_ROLES = new Set(['teacher', 'tutor', 'staff']);
 
 function formatLocalDate(date: Date) {
   const year = date.getFullYear();
@@ -55,7 +54,7 @@ export const GET = createGetHandler({ permission: 'attendance.view' }, async ({ 
     return apiSuccess({ weeklyData });
   }
 
-  if (!GLOBAL_ATTENDANCE_ROLES.has(user.role) && !ASSIGNED_CLASS_ROLES.has(user.role)) {
+  if (user.role === 'parent') {
     throw new AuthorizationError('Bạn không có quyền xem thống kê chuyên cần này');
   }
 

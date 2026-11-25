@@ -86,6 +86,17 @@ describe('GET /api/dashboard/weekly-attendance authorization', () => {
     }
   );
 
+  it('scopes a custom role to the authenticated profile', async () => {
+    authenticate('attendance_coordinator', 'coordinator-1');
+
+    const response = await GET(request(), { params: Promise.resolve({}) } as any);
+
+    expect(response.status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith('get_weekly_attendance', {
+      p_teacher_id: 'coordinator-1',
+    });
+  });
+
   it('rejects a parent before querying center-wide attendance', async () => {
     authenticate('parent');
 
