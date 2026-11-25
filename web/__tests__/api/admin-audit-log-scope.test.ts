@@ -57,4 +57,20 @@ describe('GET /api/admin/audit-logs scope', () => {
     expect(getAuthContext).toHaveBeenCalledWith(expect.anything(), 'system.audit');
     expect(DashboardService.getRecentActivity).not.toHaveBeenCalled();
   });
+
+  it.each(['?limit=0', '?limit=101', '?limit=abc', '?offset=-1', '?offset=1.5'])(
+    'rejects invalid pagination parameters: %s',
+    async (search) => {
+      jest.mocked(getAuthContext).mockResolvedValue({
+        authorized: true,
+        profile: { id: 'admin-1' },
+        role: 'admin',
+      } as Awaited<ReturnType<typeof getAuthContext>>);
+
+      const response = await GET(request(search), { params: Promise.resolve({}) } as any);
+
+      expect(response.status).toBe(400);
+      expect(DashboardService.getRecentActivity).not.toHaveBeenCalled();
+    }
+  );
 });
