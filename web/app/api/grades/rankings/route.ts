@@ -6,7 +6,7 @@ import { cached, CACHE_TTL } from '@/lib/cache/cache';
 export const dynamic = 'force-dynamic';
 
 const GLOBAL_RANKING_ROLES = new Set(['super_admin', 'owner', 'admin']);
-const ASSIGNED_CLASS_ROLES = new Set(['teacher', 'tutor', 'staff']);
+const SELF_SERVICE_ROLES = new Set(['student', 'parent']);
 
 interface StudentRanking {
   studentId: string;
@@ -53,7 +53,7 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
   const requestedTeacherId = url.searchParams.get('teacher_id');
   const supabase = createServiceClient();
 
-  if (!GLOBAL_RANKING_ROLES.has(user.role) && !ASSIGNED_CLASS_ROLES.has(user.role)) {
+  if (SELF_SERVICE_ROLES.has(user.role)) {
     throw new AuthorizationError('Bạn không có quyền xem bảng xếp hạng này');
   }
 

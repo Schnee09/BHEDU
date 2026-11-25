@@ -97,6 +97,18 @@ describe('GET /api/grades/rankings authorization', () => {
     expect(classQuery.eq).toHaveBeenCalledWith('teacher_id', 'teacher-2');
   });
 
+  it('scopes a custom role with grade access to its assigned classes', async () => {
+    authenticate('academic_coordinator', 'coordinator-1');
+
+    const response = await GET(request('?teacher_id=teacher-2'), {
+      params: Promise.resolve({}),
+    } as any);
+
+    expect(response.status).toBe(200);
+    expect(classQuery.eq).toHaveBeenCalledWith('teacher_id', 'coordinator-1');
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it('rejects students instead of returning center-wide rankings', async () => {
     authenticate('student', 'student-1');
 

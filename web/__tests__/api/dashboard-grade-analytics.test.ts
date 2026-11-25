@@ -71,6 +71,27 @@ describe('dashboard grade analytics authorization', () => {
     expect(rpc).toHaveBeenNthCalledWith(2, 'get_class_averages', { p_teacher_id: null });
   });
 
+  it('scopes a custom role with grade access to the authenticated profile', async () => {
+    authenticate('academic_coordinator', 'coordinator-1');
+
+    const distributionResponse = await getGradeDistribution(
+      request('/api/dashboard/grade-distribution'),
+      { params: Promise.resolve({}) } as any
+    );
+    const comparisonResponse = await getClassComparison(request('/api/classes/comparison'), {
+      params: Promise.resolve({}),
+    } as any);
+
+    expect(distributionResponse.status).toBe(200);
+    expect(comparisonResponse.status).toBe(200);
+    expect(rpc).toHaveBeenNthCalledWith(1, 'get_grade_distribution', {
+      p_teacher_id: 'coordinator-1',
+    });
+    expect(rpc).toHaveBeenNthCalledWith(2, 'get_class_averages', {
+      p_teacher_id: 'coordinator-1',
+    });
+  });
+
   it.each(['student', 'parent'])(
     'rejects %s before querying center-wide analytics',
     async (role) => {
