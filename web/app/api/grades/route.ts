@@ -58,9 +58,10 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     (queryParams as any)._linkedStudentIds = linkedStudentIds;
   }
 
-  // ========== TEACHER SCOPE FILTER ==========
+  // ========== ASSIGNED CLASS SCOPE FILTER ==========
   let teacherClassIds: string[] | null = null;
-  if (['teacher', 'tutor', 'staff'].includes(user.role)) {
+  const isManagement = ['admin', 'owner', 'super_admin'].includes(user.role);
+  if (!isManagement && !['student', 'parent'].includes(user.role)) {
     const { data: teacherClasses, error: teacherClassesError } = await supabase
       .from('classes')
       .select('id')
@@ -133,7 +134,7 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
     }
   }
 
-  // Teachers, tutors and assigned staff can only view grades from their own classes.
+  // Operational and custom roles can only view grades from their assigned classes.
   if (teacherClassIds && !queryParams.class_id) {
     query = query.in('class_id', teacherClassIds);
   }

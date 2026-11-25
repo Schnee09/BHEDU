@@ -3,6 +3,7 @@
  */
 import { GET, POST } from '@/app/api/grades/route';
 import { canAccessClass } from '@/lib/auth/classAccess';
+import { getAuthContext } from '@/lib/auth/guard';
 
 jest.mock('@/lib/auth/classAccess', () => ({ canAccessClass: jest.fn() }));
 
@@ -95,6 +96,21 @@ describe('/api/grades authorization', () => {
     expect(response.status).toBe(200);
     expect(gradeQuery.in).toHaveBeenCalledWith('class_id', [ASSIGNED_CLASS_ID]);
     expect(gradeQuery.range).toHaveBeenCalledWith(0, 24);
+  });
+
+  it('scopes a custom role with grades.view to assigned classes', async () => {
+    jest.mocked(getAuthContext).mockResolvedValueOnce({
+      authorized: true,
+      profile: { id: 'coordinator-1', email: 'coordinator@example.com' },
+      role: 'academic_coordinator',
+      isCustomOverride: true,
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const response = await GET(createRequest('GET'), { params: Promise.resolve({}) } as any);
+
+    expect(response.status).toBe(200);
+    expect(classQuery.eq).toHaveBeenCalledWith('teacher_id', 'coordinator-1');
+    expect(gradeQuery.in).toHaveBeenCalledWith('class_id', [ASSIGNED_CLASS_ID]);
   });
 
   it('rejects a teacher requesting an unassigned class', async () => {
