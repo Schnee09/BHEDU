@@ -1,13 +1,23 @@
 import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { updateStudentSchema } from '@/lib/schemas';
 import { createServiceClient } from '@/lib/supabase/server';
-import { StudentRepository } from '@/lib/repositories/StudentRepository';
-import { userService } from '@/lib/services/userService';
 import { studentService } from '@/lib/services/studentService';
+import { canAccessStudent } from '@/lib/auth/classAccess';
+import { AuthorizationError } from '@/lib/api/errors';
+
+const GLOBAL_STUDENT_DIRECTORY_ROLES = new Set(['super_admin', 'owner', 'admin', 'staff']);
 
 // GET /api/admin/students/[id]
-export const GET = createGetHandler({ permission: 'students.view' }, async ({ params }) => {
+export const GET = createGetHandler({ permission: 'students.view' }, async ({ params, user }) => {
   const id = params.id as string;
+  const supabase = createServiceClient();
+  const canViewStudent =
+    GLOBAL_STUDENT_DIRECTORY_ROLES.has(user.role) ||
+    (await canAccessStudent(supabase, { id: user.id, role: user.role }, id));
+  if (!canViewStudent) {
+    throw new AuthorizationError('Forbidden');
+  }
+
   // Use service to fetch student with enrollments
   const student = await studentService.getStudentById(id);
 
@@ -20,7 +30,7 @@ export const PUT = createApiHandler(
     permission: 'students.edit',
     bodySchema: updateStudentSchema,
   },
-  async ({ params, body, user }) => {
+  async ({ params, body }) => {
     const id = params.id as string;
 
     // Use service for centralized update logic
@@ -33,15 +43,12 @@ export const PUT = createApiHandler(
 );
 
 // DELETE /api/admin/students/[id]
-export const DELETE = createApiHandler(
-  { permission: 'students.delete' },
-  async ({ params, user }) => {
-    const id = params.id as string;
-    // Soft delete via service
-    await studentService.deleteStudent(id);
+export const DELETE = createApiHandler({ permission: 'students.delete' }, async ({ params }) => {
+  const id = params.id as string;
+  // Soft delete via service
+  await studentService.deleteStudent(id);
 
-    return apiSuccess(null, {
-      message: 'Học sinh đã được chuyển vào kho lưu trữ (tạm khóa).',
-    });
-  }
-);
+  return apiSuccess(null, {
+    message: 'Học sinh đã được chuyển vào kho lưu trữ (tạm khóa).',
+  });
+});
