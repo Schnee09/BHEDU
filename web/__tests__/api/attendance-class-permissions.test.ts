@@ -18,6 +18,7 @@ const context = { params: Promise.resolve({ classId: CLASS_ID }) };
 describe('class attendance permissions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(createServiceClient).mockReturnValue({} as never);
   });
 
   it.each([
@@ -52,4 +53,25 @@ describe('class attendance permissions', () => {
       expect(canAccessClass).not.toHaveBeenCalled();
     }
   );
+
+  it('rejects staff outside their assigned classes', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'staff-1' },
+      role: 'staff',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    jest.mocked(canAccessClass).mockResolvedValue(false);
+
+    const response = await GET_ATTENDANCE(
+      new NextRequest(`http://localhost/api/attendance/class/${CLASS_ID}?date=2026-11-22`),
+      context
+    );
+
+    expect(response.status).toBe(403);
+    expect(canAccessClass).toHaveBeenCalledWith(
+      expect.anything(),
+      { id: 'staff-1', role: 'staff' },
+      CLASS_ID
+    );
+  });
 });

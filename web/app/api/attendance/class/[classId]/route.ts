@@ -28,9 +28,11 @@ export const GET = createGetHandler(
         throw new AppError('Date must use a valid YYYY-MM-DD format', 400, 'VALIDATION_ERROR');
       }
 
-      const hasClassAccess =
-        user.role === 'staff' ||
-        (await canAccessClass(supabase, { id: user.id, role: user.role }, classId));
+      const hasClassAccess = await canAccessClass(
+        supabase,
+        { id: user.id, role: user.role },
+        classId
+      );
       if (!hasClassAccess) {
         throw new AppError(
           'You do not have permission to view attendance for this class',
