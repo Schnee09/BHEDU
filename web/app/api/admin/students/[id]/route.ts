@@ -30,8 +30,12 @@ export const PUT = createApiHandler(
     permission: 'students.edit',
     bodySchema: updateStudentSchema,
   },
-  async ({ params, body }) => {
+  async ({ params, body, user }) => {
     const id = params.id as string;
+    const supabase = createServiceClient();
+    if (!(await canAccessStudent(supabase, { id: user.id, role: user.role }, id))) {
+      throw new AuthorizationError('Forbidden');
+    }
 
     // Use service for centralized update logic
     const updatedStudent = await studentService.updateStudent(id, body as any);
@@ -43,12 +47,19 @@ export const PUT = createApiHandler(
 );
 
 // DELETE /api/admin/students/[id]
-export const DELETE = createApiHandler({ permission: 'students.delete' }, async ({ params }) => {
-  const id = params.id as string;
-  // Soft delete via service
-  await studentService.deleteStudent(id);
+export const DELETE = createApiHandler(
+  { permission: 'students.delete' },
+  async ({ params, user }) => {
+    const id = params.id as string;
+    const supabase = createServiceClient();
+    if (!(await canAccessStudent(supabase, { id: user.id, role: user.role }, id))) {
+      throw new AuthorizationError('Forbidden');
+    }
+    // Soft delete via service
+    await studentService.deleteStudent(id);
 
-  return apiSuccess(null, {
-    message: 'Học sinh đã được chuyển vào kho lưu trữ (tạm khóa).',
-  });
-});
+    return apiSuccess(null, {
+      message: 'Học sinh đã được chuyển vào kho lưu trữ (tạm khóa).',
+    });
+  }
+);

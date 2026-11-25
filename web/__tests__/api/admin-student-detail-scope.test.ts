@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { GET } from '@/app/api/admin/students/[id]/route';
+import { DELETE, GET, PUT } from '@/app/api/admin/students/[id]/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { canAccessStudent } from '@/lib/auth/classAccess';
 import { studentService } from '@/lib/services/studentService';
@@ -63,5 +63,22 @@ describe('GET /api/admin/students/[id] scope', () => {
 
     expect(response.status).toBe(200);
     expect(canAccessStudent).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['PUT', PUT],
+    ['DELETE', DELETE],
+  ] as const)('rejects %s outside the student scope', async (method, handler) => {
+    authenticate('academic_coordinator', 'operator-1');
+    jest.mocked(canAccessStudent).mockResolvedValue(false);
+    const mutationRequest = new NextRequest('http://localhost/api/admin/students/student-1', {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: method === 'PUT' ? JSON.stringify({ full_name: 'Học sinh A' }) : undefined,
+    });
+
+    const response = await handler(mutationRequest, context);
+
+    expect(response.status).toBe(403);
   });
 });

@@ -5,9 +5,11 @@ import { NextRequest } from 'next/server';
 import { PATCH } from '@/app/api/admin/students/[id]/status/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { getDataClient } from '@/lib/auth/dataClient';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/auth/dataClient', () => ({ getDataClient: jest.fn() }));
+jest.mock('@/lib/auth/classAccess', () => ({ canAccessStudent: jest.fn() }));
 
 const profileQuery: Record<string, jest.Mock> = {};
 for (const method of ['select', 'eq', 'update']) {
@@ -30,6 +32,7 @@ function request() {
 describe('PATCH /api/admin/students/[id]/status', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(canAccessStudent).mockResolvedValue(true);
     for (const method of ['select', 'eq', 'update']) {
       profileQuery[method]!.mockReturnValue(profileQuery);
     }
@@ -94,5 +97,19 @@ describe('PATCH /api/admin/students/[id]/status', () => {
         details: expect.objectContaining({ previous_status: 'active', new_status: 'inactive' }),
       })
     );
+  });
+
+  it('rejects a status change outside the student scope', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'teacher-1' },
+      role: 'teacher',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    jest.mocked(canAccessStudent).mockResolvedValue(false);
+
+    const response = await PATCH(request(), context);
+
+    expect(response.status).toBe(403);
+    expect(profileQuery.select).not.toHaveBeenCalled();
   });
 });
