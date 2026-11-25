@@ -5,9 +5,11 @@ import { NextRequest } from 'next/server';
 import { DELETE, PUT } from '@/app/api/admin/students/[id]/guardians/[guardianId]/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { getDataClient } from '@/lib/auth/dataClient';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/auth/dataClient', () => ({ getDataClient: jest.fn() }));
+jest.mock('@/lib/auth/classAccess', () => ({ canAccessStudent: jest.fn() }));
 jest.mock('@/lib/logger', () => ({
   logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
 }));
@@ -35,6 +37,7 @@ function request(method: 'PUT' | 'DELETE') {
 describe('/api/admin/students/[id]/guardians/[guardianId]', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(canAccessStudent).mockResolvedValue(true);
     for (const method of ['select', 'eq', 'neq', 'update', 'delete']) {
       guardianQuery[method]!.mockReturnValue(guardianQuery);
     }
@@ -98,5 +101,22 @@ describe('/api/admin/students/[id]/guardians/[guardianId]', () => {
         resource_id: 'guardian-1',
       })
     );
+  });
+
+  it.each([
+    ['PUT', PUT],
+    ['DELETE', DELETE],
+  ] as const)('rejects %s outside the student scope', async (method, handler) => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'teacher-1' },
+      role: 'teacher',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    jest.mocked(canAccessStudent).mockResolvedValue(false);
+
+    const response = await handler(request(method), context);
+
+    expect(response.status).toBe(403);
+    expect(guardianQuery.select).not.toHaveBeenCalled();
   });
 });

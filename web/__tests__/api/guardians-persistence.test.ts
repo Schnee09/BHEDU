@@ -103,6 +103,21 @@ describe('guardian persistence', () => {
     expect(getDataClient).not.toHaveBeenCalled();
   });
 
+  it('rejects guardian creation outside the student scope', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'teacher-1' },
+      role: 'teacher',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    jest.mocked(canAccessStudent).mockResolvedValue(false);
+
+    const response = await POST(request({ name: 'Người giám hộ' }), {
+      params: Promise.resolve({ id: 'student-1' }),
+    });
+
+    expect(response.status).toBe(403);
+  });
+
   it('rejects guardian reads outside the student scope', async () => {
     jest.mocked(getAuthContext).mockResolvedValue({
       authorized: true,

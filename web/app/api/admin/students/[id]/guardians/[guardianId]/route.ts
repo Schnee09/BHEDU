@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDataClient } from '@/lib/auth/dataClient';
 import { getAuthContext } from '@/lib/auth/guard';
 import { logger } from '@/lib/logger';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 
 interface RouteParams {
   params: Promise<{ id: string; guardianId: string }>;
@@ -25,6 +26,12 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
     const { id, guardianId } = await params;
     const { supabase } = await getDataClient(req);
+    if (
+      !auth.role ||
+      !(await canAccessStudent(supabase, { id: auth.profile.id, role: auth.role }, id))
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const body = await req.json();
 
     // Verify guardian exists and belongs to student
@@ -125,6 +132,12 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
 
     const { id, guardianId } = await params;
     const { supabase } = await getDataClient(req);
+    if (
+      !auth.role ||
+      !(await canAccessStudent(supabase, { id: auth.profile.id, role: auth.role }, id))
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Verify guardian exists and belongs to student
     const { data: existingGuardian } = await supabase

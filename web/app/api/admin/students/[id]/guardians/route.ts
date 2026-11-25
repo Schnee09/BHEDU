@@ -127,6 +127,12 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     const { id } = await params;
     const { supabase } = await getDataClient(req);
+    if (
+      !auth.role ||
+      !(await canAccessStudent(supabase, { id: auth.profile.id, role: auth.role }, id))
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const body = await req.json();
 
     // Verify student exists
