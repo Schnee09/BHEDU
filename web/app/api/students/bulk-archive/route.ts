@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { apiSuccess, createApiHandler } from '@/lib/api';
 import { createServiceClient } from '@/lib/supabase/server';
+import { AuthorizationError } from '@/lib/api/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,8 +21,28 @@ export const POST = createApiHandler(
     permission: 'students.delete',
     bodySchema: bulkArchiveSchema,
   },
-  async ({ body }) => {
+  async ({ body, user }) => {
     const supabase = createServiceClient();
+    const canArchiveGlobally = ['super_admin', 'owner', 'admin', 'staff'].includes(user.role);
+    if (!canArchiveGlobally) {
+      if (['student', 'parent'].includes(user.role)) {
+        throw new AuthorizationError('Forbidden');
+      }
+
+      const { data: accessibleEnrollments, error: accessError } = await supabase
+        .from('enrollments')
+        .select('student_id, classes!inner(teacher_id)')
+        .in('student_id', body.studentIds)
+        .eq('status', 'enrolled')
+        .eq('classes.teacher_id', user.id);
+      if (accessError) throw new Error(`Failed to verify student scope: ${accessError.message}`);
+
+      const accessibleIds = new Set((accessibleEnrollments || []).map((row) => row.student_id));
+      if (body.studentIds.some((id) => !accessibleIds.has(id))) {
+        throw new AuthorizationError('One or more students are outside your assigned classes');
+      }
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .update({ status: 'inactive', is_active: false })

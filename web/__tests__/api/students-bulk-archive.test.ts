@@ -13,10 +13,18 @@ const profilesQuery = {
   eq: jest.fn(),
   select: jest.fn(),
 };
+const enrollmentQuery = {
+  select: jest.fn(),
+  in: jest.fn(),
+  eq: jest.fn(),
+};
+const from = jest.fn((table: string) =>
+  table === 'enrollments' ? enrollmentQuery : profilesQuery
+);
 
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(() => ({
-    from: jest.fn(() => profilesQuery),
+    from,
   })),
 }));
 
@@ -51,6 +59,9 @@ describe('POST /api/students/bulk-archive', () => {
     profilesQuery.in.mockReturnValue(profilesQuery);
     profilesQuery.eq.mockReturnValue(profilesQuery);
     profilesQuery.select.mockResolvedValue({ data: [{ id: STUDENT_1 }], error: null });
+    enrollmentQuery.select.mockReturnValue(enrollmentQuery);
+    enrollmentQuery.in.mockReturnValue(enrollmentQuery);
+    enrollmentQuery.eq.mockReturnValue(enrollmentQuery);
   });
 
   it.each(['staff', 'teacher', 'tutor', 'student', 'parent'])(
@@ -104,4 +115,21 @@ describe('POST /api/students/bulk-archive', () => {
       expect(body.failedIds).toEqual([STUDENT_2]);
     }
   );
+
+  it('rejects a custom operator when any student is outside assigned classes', async () => {
+    authenticate('records_coordinator');
+    enrollmentQuery.eq.mockImplementation((field: string) =>
+      field === 'classes.teacher_id'
+        ? Promise.resolve({ data: [{ student_id: STUDENT_1 }], error: null })
+        : enrollmentQuery
+    );
+
+    const response = await POST(request({ studentIds: [STUDENT_1, STUDENT_2] }), {
+      params: Promise.resolve({}),
+    } as any);
+
+    expect(response.status).toBe(403);
+    expect(enrollmentQuery.eq).toHaveBeenCalledWith('classes.teacher_id', 'records_coordinator-1');
+    expect(profilesQuery.update).not.toHaveBeenCalled();
+  });
 });
