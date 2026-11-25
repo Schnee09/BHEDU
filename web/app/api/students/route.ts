@@ -10,7 +10,6 @@ import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/
 import { checkRateLimit, getRateLimitIdentifier, rateLimitConfigs } from '@/lib/auth/rateLimit';
 import { StudentRepository } from '@/lib/repositories/StudentRepository';
 import { createServiceClient } from '@/lib/supabase/server';
-import { createAbility } from '@/lib/auth/permissions';
 import { createStudentSchema, studentQuerySchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
@@ -40,50 +39,27 @@ export const GET = createGetHandler(
     const supabase = createServiceClient();
     const repository = new StudentRepository(supabase);
 
-    // Operational staff need the center-wide directory for reception workflows.
-    if (user.role === 'staff') {
+    // Management and operational staff need the center-wide directory for reception workflows.
+    if (['admin', 'super_admin', 'owner', 'staff'].includes(user.role)) {
       const { data, ...pagination } = await repository.findAll(queryOpts);
       return apiPaginated(data, pagination);
     }
 
-    const ability = createAbility({
-      userId: user.id,
-      role: user.role,
-      classIds: [],
-    });
-
-    if (ability.can('read', 'Student')) {
-      if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'owner') {
-        const { data, ...pagination } = await repository.findAll(queryOpts);
-        return apiPaginated(data, pagination);
-      }
-
-      if (user.role === 'teacher' || user.role === 'tutor') {
-        const { data, ...pagination } = await repository.findByTeacher(user.id, queryOpts);
-        return apiPaginated(data, pagination);
-      }
-
-      if (user.role === 'student') {
-        const student = await repository.findById(user.id);
-        return apiPaginated(student ? [student] : [], {
-          page: 1,
-          pageSize: 1,
-          total: student ? 1 : 0,
-        });
-      }
-
-      if (user.role === 'parent') {
-        return apiPaginated([], { page: 1, pageSize: 0, total: 0 });
-      }
+    if (user.role === 'student') {
+      const student = await repository.findById(user.id);
+      return apiPaginated(student ? [student] : [], {
+        page: 1,
+        pageSize: 1,
+        total: student ? 1 : 0,
+      });
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: ability.reasonFor('read', 'Student') || 'Forbidden',
-      },
-      { status: 403 }
-    );
+    if (user.role === 'parent') {
+      return apiPaginated([], { page: 1, pageSize: 0, total: 0 });
+    }
+
+    const { data, ...pagination } = await repository.findByTeacher(user.id, queryOpts);
+    return apiPaginated(data, pagination);
   }
 );
 
