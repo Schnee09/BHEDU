@@ -17,6 +17,7 @@ jest.mock('@/lib/repositories/EnrollmentRepository', () => ({
 }));
 
 const from = jest.fn();
+const classQuery = { select: jest.fn(), eq: jest.fn() };
 
 function request(search = '') {
   const value: any = new Request(`http://localhost/api/enrollments${search}`);
@@ -27,6 +28,9 @@ function request(search = '') {
 describe('GET /api/enrollments scope', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    classQuery.select.mockReturnValue(classQuery);
+    classQuery.eq.mockResolvedValue({ data: [{ id: 'class-1' }], error: null });
+    from.mockReturnValue(classQuery);
     jest.mocked(getDataClient).mockResolvedValue({ supabase: { from } } as any);
   });
 
@@ -63,5 +67,20 @@ describe('GET /api/enrollments scope', () => {
       expect.objectContaining({ student_id: '11111111-1111-4111-8111-111111111111' })
     );
     expect(EnrollmentRepository).toHaveBeenCalled();
+  });
+
+  it('scopes a custom role to assigned classes', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'coordinator-1' },
+      role: 'enrollment_coordinator',
+    } as any);
+    findAll.mockResolvedValue({ data: [], total: 0, page: 1, pageSize: 50, totalPages: 0 });
+
+    const response = await GET(request(), { params: Promise.resolve({}) } as any);
+
+    expect(response.status).toBe(200);
+    expect(classQuery.eq).toHaveBeenCalledWith('teacher_id', 'coordinator-1');
+    expect(findAll).toHaveBeenCalledWith(expect.objectContaining({ class_ids: ['class-1'] }));
   });
 });

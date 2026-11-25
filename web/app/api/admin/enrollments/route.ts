@@ -38,7 +38,7 @@ export const GET = createGetHandler(
       status: validated.status === 'all' ? undefined : validated.status,
     };
 
-    if (['teacher', 'tutor', 'staff'].includes(user.role)) {
+    if (!['admin', 'owner', 'super_admin', 'student', 'parent'].includes(user.role)) {
       if (validated.class_id) {
         if (!(await canAccessClass(supabase, user, validated.class_id))) {
           throw new AuthorizationError('Bạn không có quyền xem đăng ký của lớp này.');
