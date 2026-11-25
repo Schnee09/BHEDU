@@ -4,9 +4,11 @@
 import { GET, POST } from '@/app/api/admin/students/[id]/guardians/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { getDataClient } from '@/lib/auth/dataClient';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/auth/dataClient', () => ({ getDataClient: jest.fn() }));
+jest.mock('@/lib/auth/classAccess', () => ({ canAccessStudent: jest.fn() }));
 jest.mock('@/lib/logger', () => ({
   logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
 }));
@@ -27,6 +29,7 @@ describe('guardian persistence', () => {
       profile: { id: 'admin-1' },
       role: 'admin',
     } as Awaited<ReturnType<typeof getAuthContext>>);
+    jest.mocked(canAccessStudent).mockResolvedValue(true);
 
     const profiles = {
       select: jest.fn(() => ({
@@ -98,5 +101,26 @@ describe('guardian persistence', () => {
     expect(response.status).toBe(403);
     expect(getAuthContext).toHaveBeenCalledWith(expect.any(Request), 'students.edit');
     expect(getDataClient).not.toHaveBeenCalled();
+  });
+
+  it('rejects guardian reads outside the student scope', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'teacher-1' },
+      role: 'teacher',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    jest.mocked(canAccessStudent).mockResolvedValue(false);
+
+    const response = await GET(
+      new Request('http://localhost/api/admin/students/student-1/guardians') as any,
+      { params: Promise.resolve({ id: 'student-1' }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(canAccessStudent).toHaveBeenCalledWith(
+      expect.anything(),
+      { id: 'teacher-1', role: 'teacher' },
+      'student-1'
+    );
   });
 });
