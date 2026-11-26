@@ -7,6 +7,7 @@
 import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/lib/api';
 import { financeService } from '@/lib/services';
 import { createInvoiceSchema } from '@/lib/schemas';
+import { ValidationError } from '@/lib/api/errors';
 
 export const GET = createGetHandler({ permission: 'finance.view' }, async ({ searchParams }) => {
   const search = searchParams.get('search') || undefined;
@@ -14,8 +15,14 @@ export const GET = createGetHandler({ permission: 'finance.view' }, async ({ sea
   const status = searchParams.get('status') || undefined;
   const month = searchParams.get('month') || undefined;
   const academicYearId = searchParams.get('academic_year_id') || undefined;
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = parseInt(searchParams.get('limit') || '25', 10);
+  const page = Number(searchParams.get('page') || '1');
+  const limit = Number(searchParams.get('limit') || '25');
+  if (!Number.isInteger(page) || page < 1) {
+    throw new ValidationError('page must be a positive integer');
+  }
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+    throw new ValidationError('limit must be an integer between 1 and 100');
+  }
 
   const result = await financeService.getInvoices({
     search,
