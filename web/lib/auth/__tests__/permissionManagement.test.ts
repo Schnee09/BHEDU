@@ -2,12 +2,23 @@ import {
   canManageRolePermissions,
   canManageUserPermissions,
   isValidPermissionCode,
+  isValidRoleCode,
 } from '../permissionManagement';
 
 describe('permission management safety', () => {
   it('rejects unknown permission codes', () => {
     expect(isValidPermissionCode('permissions.manage')).toBe(true);
     expect(isValidPermissionCode('system.made_up')).toBe(false);
+  });
+
+  it('accepts bounded system and custom role codes only', () => {
+    expect(isValidRoleCode('teacher')).toBe(true);
+    expect(isValidRoleCode('academic_coordinator')).toBe(true);
+    expect(isValidRoleCode('role-2')).toBe(true);
+    expect(isValidRoleCode('')).toBe(false);
+    expect(isValidRoleCode('_hidden')).toBe(false);
+    expect(isValidRoleCode('Role Name')).toBe(false);
+    expect(isValidRoleCode(`r${'x'.repeat(50)}`)).toBe(false);
   });
 
   it('prevents managers from changing their own permissions', () => {

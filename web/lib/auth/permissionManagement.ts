@@ -8,6 +8,10 @@ export function isValidPermissionCode(code: string): boolean {
   return VALID_PERMISSION_CODES.has(code as never);
 }
 
+export function isValidRoleCode(code: string): boolean {
+  return /^[a-z][a-z0-9_-]{0,49}$/.test(code);
+}
+
 export function canManageUserPermissions(input: {
   actorId: string;
   actorRole: UserRole;

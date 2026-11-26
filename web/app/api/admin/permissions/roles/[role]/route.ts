@@ -11,13 +11,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { UserRole, BASE_ROLE_PERMISSIONS, SYSTEM_PERMISSION_DEFINITIONS } from '@/lib/auth/core';
 import { getAuthContext } from '@/lib/auth/guard';
-import { canManageRolePermissions, isValidPermissionCode } from '@/lib/auth/permissionManagement';
+import {
+  canManageRolePermissions,
+  isValidPermissionCode,
+  isValidRoleCode,
+} from '@/lib/auth/permissionManagement';
 
 interface RouteContext {
   params: Promise<{ role: string }>;
 }
-
-const VALID_ROLES: UserRole[] = ['owner', 'admin', 'teacher', 'tutor', 'parent', 'student'];
 
 // GET — Get current overrides for a role
 export async function GET(request: NextRequest, context: RouteContext) {
@@ -30,6 +32,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
         { error: auth.reason || 'Forbidden' },
         { status: auth.user ? 403 : 401 }
       );
+    }
+    if (!isValidRoleCode(role)) {
+      return NextResponse.json({ error: 'Invalid role code format' }, { status: 400 });
     }
 
     const serviceClient = createServiceClient();
@@ -78,7 +83,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { role } = await context.params;
 
-    if (!role || !/^[a-z0-9_-]+$/i.test(role)) {
+    if (!isValidRoleCode(role)) {
       return NextResponse.json({ error: 'Invalid role code format' }, { status: 400 });
     }
 
@@ -174,6 +179,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
         { error: auth.reason || 'Forbidden' },
         { status: auth.user ? 403 : 401 }
       );
+    }
+    if (!isValidRoleCode(role)) {
+      return NextResponse.json({ error: 'Invalid role code format' }, { status: 400 });
     }
     if (!canManageRolePermissions(auth.role, role as UserRole)) {
       return NextResponse.json(
