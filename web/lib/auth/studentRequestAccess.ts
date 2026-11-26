@@ -27,9 +27,7 @@ export function canChangeStudentRequestStatus(input: {
     return input.isOwner && input.nextStatus === 'cancelled';
   }
 
-  if (input.role === 'teacher') {
-    return input.isAssignedTeacher && input.nextStatus !== 'cancelled';
-  }
+  if (REQUEST_ADMIN_ROLES.has(input.role)) return true;
 
-  return REQUEST_ADMIN_ROLES.has(input.role);
+  return input.isAssignedTeacher && input.nextStatus !== 'cancelled';
 }

@@ -69,7 +69,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     let isAssignedTeacher = false;
-    if (profile.role === 'teacher' && existing.class_id) {
+    if (
+      !['student', 'parent', 'admin', 'owner', 'super_admin', 'staff'].includes(profile.role) &&
+      existing.class_id
+    ) {
       const { data: assignedClass } = await serviceSupabase
         .from('classes')
         .select('id')

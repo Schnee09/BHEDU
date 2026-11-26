@@ -1,4 +1,5 @@
 import { canChangeStudentRequestStatus, canSubmitStudentRequest } from '../studentRequestAccess';
+import type { UserRole } from '../core';
 
 describe('student request access', () => {
   it('only lets a student submit for their own profile', () => {
@@ -40,6 +41,30 @@ describe('student request access', () => {
       })
     ).toBe(false);
   });
+
+  it.each(['tutor', 'academic_coordinator'])(
+    'allows assigned operational role %s to approve or reject',
+    (role) => {
+      expect(
+        canChangeStudentRequestStatus({
+          role: role as UserRole,
+          currentStatus: 'pending',
+          nextStatus: 'approved',
+          isOwner: false,
+          isAssignedTeacher: true,
+        })
+      ).toBe(true);
+      expect(
+        canChangeStudentRequestStatus({
+          role: role as UserRole,
+          currentStatus: 'pending',
+          nextStatus: 'rejected',
+          isOwner: false,
+          isAssignedTeacher: false,
+        })
+      ).toBe(false);
+    }
+  );
 
   it('only lets owners cancel a pending request', () => {
     expect(
