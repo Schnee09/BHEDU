@@ -21,6 +21,10 @@ const SYSTEM_ROLE_CODES = [
   'student',
 ];
 
+const MAX_ROLE_NAME_LENGTH = 100;
+const MAX_ROLE_DESCRIPTION_LENGTH = 500;
+const MAX_ROLE_COLOR_LENGTH = 300;
+
 interface RouteContext {
   params: Promise<{ code: string }>;
 }
@@ -46,7 +50,25 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     const body = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Dữ liệu vai trò không hợp lệ' }, { status: 400 });
+    }
     const { name, description, color, permissions } = body;
+
+    if (
+      (name !== undefined &&
+        (typeof name !== 'string' || !name.trim() || name.trim().length > MAX_ROLE_NAME_LENGTH)) ||
+      (description !== undefined &&
+        (typeof description !== 'string' ||
+          description.trim().length > MAX_ROLE_DESCRIPTION_LENGTH)) ||
+      (color !== undefined &&
+        (typeof color !== 'string' || !color.trim() || color.trim().length > MAX_ROLE_COLOR_LENGTH))
+    ) {
+      return NextResponse.json(
+        { error: 'Thông tin hiển thị vai trò không hợp lệ' },
+        { status: 400 }
+      );
+    }
 
     if (
       permissions !== undefined &&
@@ -84,7 +106,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       };
       if (name) updateData.name = name.trim();
       if (description !== undefined) updateData.description = description.trim();
-      if (color) updateData.color = color;
+      if (color) updateData.color = color.trim();
 
       const { error: updateError } = await serviceClient
         .from('custom_roles')

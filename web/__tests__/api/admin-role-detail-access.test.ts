@@ -102,6 +102,22 @@ describe('admin role detail authorization', () => {
       expect(createServiceClient).not.toHaveBeenCalled();
     }
   );
+
+  it.each([{ name: 42 }, { name: '   ' }, { description: 'x'.repeat(501) }, { color: null }])(
+    'rejects invalid role update metadata: %p',
+    async (body) => {
+      jest.mocked(getAuthContext).mockResolvedValue({
+        authorized: true,
+        profile: { id: 'admin-1' },
+        role: 'super_admin',
+      } as Awaited<ReturnType<typeof getAuthContext>>);
+
+      const response = await PUT(request('PUT', body), context);
+
+      expect(response.status).toBe(400);
+      expect(createServiceClient).not.toHaveBeenCalled();
+    }
+  );
 });
 
 describe('admin role collection authorization', () => {
@@ -155,4 +171,22 @@ describe('admin role collection authorization', () => {
       expect(createServiceClient).not.toHaveBeenCalled();
     }
   );
+
+  it.each([
+    { code: 'office_staff', name: 42 },
+    { code: 'office_staff', name: 'x'.repeat(101) },
+    { code: 'office_staff', name: 'Nhân viên', description: 42 },
+    { code: 'office_staff', name: 'Nhân viên', color: '   ' },
+  ])('rejects invalid role creation metadata: %p', async (body) => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'admin-1' },
+      role: 'super_admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const response = await POST_ROLE(request('POST', body));
+
+    expect(response.status).toBe(400);
+    expect(createServiceClient).not.toHaveBeenCalled();
+  });
 });

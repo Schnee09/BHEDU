@@ -88,6 +88,10 @@ const SYSTEM_ROLES: RoleInfo[] = [
   },
 ];
 
+const MAX_ROLE_NAME_LENGTH = 100;
+const MAX_ROLE_DESCRIPTION_LENGTH = 500;
+const MAX_ROLE_COLOR_LENGTH = 300;
+
 async function getPermissionManager(request: NextRequest) {
   return getAuthContext(request, 'permissions.manage');
 }
@@ -210,11 +214,33 @@ export async function POST(request: NextRequest) {
     const admin = { id: auth.profile.id, role: auth.role };
 
     const body = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Dữ liệu vai trò không hợp lệ' }, { status: 400 });
+    }
     const { code, name, description, color, permissions = [] } = body;
 
-    if (typeof code !== 'string' || typeof name !== 'string' || !code.trim() || !name.trim()) {
+    if (
+      typeof code !== 'string' ||
+      typeof name !== 'string' ||
+      !code.trim() ||
+      !name.trim() ||
+      name.trim().length > MAX_ROLE_NAME_LENGTH
+    ) {
       return NextResponse.json(
-        { error: 'Mã vai trò (code) và Tên hiển thị (name) là bắt buộc' },
+        { error: 'Mã vai trò hoặc tên hiển thị không hợp lệ' },
+        { status: 400 }
+      );
+    }
+
+    if (
+      (description !== undefined &&
+        (typeof description !== 'string' ||
+          description.trim().length > MAX_ROLE_DESCRIPTION_LENGTH)) ||
+      (color !== undefined &&
+        (typeof color !== 'string' || !color.trim() || color.trim().length > MAX_ROLE_COLOR_LENGTH))
+    ) {
+      return NextResponse.json(
+        { error: 'Thông tin hiển thị vai trò không hợp lệ' },
         { status: 400 }
       );
     }
@@ -267,7 +293,8 @@ export async function POST(request: NextRequest) {
       code: normalizedCode,
       name: name.trim(),
       description: description?.trim() || '',
-      color: color || 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+      color:
+        color?.trim() || 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
       created_by: admin.id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
