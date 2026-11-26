@@ -96,7 +96,7 @@ export async function GET(request: Request) {
       } else {
         filters.student_ids = studentIds;
       }
-    } else if (profile.role === 'teacher') {
+    } else if (!['admin', 'owner', 'super_admin', 'staff'].includes(profile.role)) {
       const { data: teacherClasses } = await serviceSupabase
         .from('classes')
         .select('id')
@@ -110,8 +110,6 @@ export async function GET(request: Request) {
       } else {
         filters.class_ids = classIds;
       }
-    } else if (!['admin', 'owner', 'super_admin', 'staff'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const result = await studentRequestRepository.findRequests(filters);
