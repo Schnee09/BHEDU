@@ -6,10 +6,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { BASE_ROLE_PERMISSIONS, PermissionCode } from '@/lib/auth/core';
+import { BASE_ROLE_PERMISSIONS, PermissionCode, UserRole } from '@/lib/auth/core';
 import { getAuthContext } from '@/lib/auth/guard';
 import { resolveServerPermission } from '@/lib/auth/permissionResolver';
-import { isValidPermissionCode, isValidRoleCode } from '@/lib/auth/permissionManagement';
+import {
+  canManageRolePermissions,
+  isValidPermissionCode,
+  isValidRoleCode,
+} from '@/lib/auth/permissionManagement';
 
 export interface RoleInfo {
   code: string;
@@ -255,6 +259,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Danh sách quyền không hợp lệ' }, { status: 400 });
     }
 
+    const normalizedCode = code
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9_-]/g, '_');
+
+    if (!isValidRoleCode(normalizedCode)) {
+      return NextResponse.json({ error: 'Mã vai trò không hợp lệ' }, { status: 400 });
+    }
+
+    if (!canManageRolePermissions(admin.role, normalizedCode as UserRole)) {
+      return NextResponse.json({ error: 'Không thể quản lý vai trò này' }, { status: 403 });
+    }
+
+    // Prevent overwriting system roles
+    const reservedCodes = SYSTEM_ROLES.map((r) => r.code);
+    if (reservedCodes.includes(normalizedCode)) {
+      return NextResponse.json(
+        { error: `Mã vai trò '${normalizedCode}' trùng với vai trò hệ thống cốt lõi` },
+        { status: 400 }
+      );
+    }
+
     if (admin.role !== 'super_admin') {
       const delegationChecks = await Promise.all(
         permissions.map((permission: string) =>
@@ -267,24 +293,6 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         );
       }
-    }
-
-    const normalizedCode = code
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9_-]/g, '_');
-
-    if (!isValidRoleCode(normalizedCode)) {
-      return NextResponse.json({ error: 'Mã vai trò không hợp lệ' }, { status: 400 });
-    }
-
-    // Prevent overwriting system roles
-    const reservedCodes = SYSTEM_ROLES.map((r) => r.code);
-    if (reservedCodes.includes(normalizedCode)) {
-      return NextResponse.json(
-        { error: `Mã vai trò '${normalizedCode}' trùng với vai trò hệ thống cốt lõi` },
-        { status: 400 }
-      );
     }
 
     const serviceClient = createServiceClient();

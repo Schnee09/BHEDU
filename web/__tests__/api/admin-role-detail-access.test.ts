@@ -76,6 +76,38 @@ describe('admin role detail authorization', () => {
   });
 
   it.each([
+    ['owner', 'owner'],
+    ['admin', 'office_staff'],
+    ['permission_manager', 'office_staff'],
+  ])('prevents %s from updating protected role %s', async (actorRole, targetRole) => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'manager-1' },
+      role: actorRole,
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    const targetContext = { params: Promise.resolve({ code: targetRole }) };
+
+    const response = await PUT(request('PUT', { name: 'Vai trò mới' }), targetContext);
+
+    expect(response.status).toBe(403);
+    expect(createServiceClient).not.toHaveBeenCalled();
+  });
+
+  it('prevents an owner from deleting the owner role', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'owner-1' },
+      role: 'owner',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    const ownerContext = { params: Promise.resolve({ code: 'owner' }) };
+
+    const response = await DELETE(request('DELETE'), ownerContext);
+
+    expect(response.status).toBe(403);
+    expect(createServiceClient).not.toHaveBeenCalled();
+  });
+
+  it.each([
     [
       'role update',
       (req: NextRequest, invalidContext: typeof context) => PUT(req, invalidContext),
@@ -155,6 +187,24 @@ describe('admin role collection authorization', () => {
 
     expect(response.status).toBe(403);
   });
+
+  it.each(['admin', 'permission_manager'])(
+    'prevents %s from creating roles despite a dynamic permissions.manage grant',
+    async (actorRole) => {
+      jest.mocked(getAuthContext).mockResolvedValue({
+        authorized: true,
+        profile: { id: 'manager-1' },
+        role: actorRole,
+      } as Awaited<ReturnType<typeof getAuthContext>>);
+
+      const response = await POST_ROLE(
+        request('POST', { code: 'new_role', name: 'Vai trò mới', permissions: [] })
+      );
+
+      expect(response.status).toBe(403);
+      expect(createServiceClient).not.toHaveBeenCalled();
+    }
+  );
 
   it.each(['!!!', `a${'b'.repeat(50)}`])(
     'rejects invalid normalized custom role code %s before accessing the database',
