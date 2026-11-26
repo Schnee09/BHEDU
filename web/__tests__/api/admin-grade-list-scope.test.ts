@@ -24,24 +24,27 @@ describe('GET /api/admin/grades scope', () => {
     jest.mocked(getDataClient).mockResolvedValue({ supabase: { from } } as any);
   });
 
-  it('rejects a teacher filtering by an unassigned class', async () => {
-    jest.mocked(getAuthContext).mockResolvedValue({
-      authorized: true,
-      profile: { id: 'teacher-1' },
-      role: 'teacher',
-    } as any);
-    jest.mocked(canAccessClass).mockResolvedValue(false);
+  it.each(['teacher', 'academic_coordinator'])(
+    'rejects %s filtering by an unassigned class',
+    async (role) => {
+      jest.mocked(getAuthContext).mockResolvedValue({
+        authorized: true,
+        profile: { id: `${role}-1` },
+        role,
+      } as any);
+      jest.mocked(canAccessClass).mockResolvedValue(false);
 
-    const response = await GET(request('?class_id=class-2'));
+      const response = await GET(request('?class_id=class-2'));
 
-    expect(response.status).toBe(403);
-    expect(canAccessClass).toHaveBeenCalledWith(
-      expect.anything(),
-      { id: 'teacher-1', role: 'teacher' },
-      'class-2'
-    );
-    expect(from).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(403);
+      expect(canAccessClass).toHaveBeenCalledWith(
+        expect.anything(),
+        { id: `${role}-1`, role },
+        'class-2'
+      );
+      expect(from).not.toHaveBeenCalled();
+    }
+  );
 
   it('rejects a parent filtering by an unlinked student', async () => {
     jest.mocked(getAuthContext).mockResolvedValue({

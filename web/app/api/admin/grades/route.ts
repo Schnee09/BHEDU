@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     let scopedClassIds: string[] | null = null;
     let scopedStudentIds: string[] | null = null;
 
-    if (['teacher', 'tutor', 'staff'].includes(auth.role)) {
+    if (!['admin', 'owner', 'super_admin', 'student', 'parent'].includes(auth.role)) {
       if (classId) {
         if (!(await canAccessClass(supabase, { id: auth.profile.id, role: auth.role }, classId))) {
           return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
