@@ -6,6 +6,7 @@ import { DELETE, PUT } from '@/app/api/admin/roles/[code]/route';
 import { GET as GET_ROLES, POST as POST_ROLE } from '@/app/api/admin/roles/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { resolveServerPermission } from '@/lib/auth/permissionResolver';
+import { createServiceClient } from '@/lib/supabase/server';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/auth/permissionResolver', () => ({ resolveServerPermission: jest.fn() }));
@@ -73,6 +74,34 @@ describe('admin role detail authorization', () => {
     expect(response.status).toBe(403);
     expect(resolveServerPermission).toHaveBeenCalledWith('owner-1', 'owner', 'system.settings');
   });
+
+  it.each([
+    [
+      'role update',
+      (req: NextRequest, invalidContext: typeof context) => PUT(req, invalidContext),
+      'PUT' as const,
+    ],
+    [
+      'role deletion',
+      (req: NextRequest, invalidContext: typeof context) => DELETE(req, invalidContext),
+      'DELETE' as const,
+    ],
+  ])(
+    'rejects an invalid code for %s before accessing the database',
+    async (_name, handler, method) => {
+      jest.mocked(getAuthContext).mockResolvedValue({
+        authorized: true,
+        profile: { id: 'admin-1' },
+        role: 'super_admin',
+      } as Awaited<ReturnType<typeof getAuthContext>>);
+      const invalidContext = { params: Promise.resolve({ code: '../owner' }) };
+
+      const response = await handler(request(method), invalidContext);
+
+      expect(response.status).toBe(400);
+      expect(createServiceClient).not.toHaveBeenCalled();
+    }
+  );
 });
 
 describe('admin role collection authorization', () => {
@@ -110,4 +139,20 @@ describe('admin role collection authorization', () => {
 
     expect(response.status).toBe(403);
   });
+
+  it.each(['!!!', `a${'b'.repeat(50)}`])(
+    'rejects invalid normalized custom role code %s before accessing the database',
+    async (code) => {
+      jest.mocked(getAuthContext).mockResolvedValue({
+        authorized: true,
+        profile: { id: 'admin-1' },
+        role: 'super_admin',
+      } as Awaited<ReturnType<typeof getAuthContext>>);
+
+      const response = await POST_ROLE(request('POST', { code, name: 'Vai trò thử nghiệm' }));
+
+      expect(response.status).toBe(400);
+      expect(createServiceClient).not.toHaveBeenCalled();
+    }
+  );
 });

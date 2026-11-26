@@ -9,7 +9,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { BASE_ROLE_PERMISSIONS, PermissionCode } from '@/lib/auth/core';
 import { getAuthContext } from '@/lib/auth/guard';
 import { resolveServerPermission } from '@/lib/auth/permissionResolver';
-import { isValidPermissionCode } from '@/lib/auth/permissionManagement';
+import { isValidPermissionCode, isValidRoleCode } from '@/lib/auth/permissionManagement';
 
 export interface RoleInfo {
   code: string;
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { code, name, description, color, permissions = [] } = body;
 
-    if (!code || !name) {
+    if (typeof code !== 'string' || typeof name !== 'string' || !code.trim() || !name.trim()) {
       return NextResponse.json(
         { error: 'Mã vai trò (code) và Tên hiển thị (name) là bắt buộc' },
         { status: 400 }
@@ -247,6 +247,10 @@ export async function POST(request: NextRequest) {
       .toLowerCase()
       .trim()
       .replace(/[^a-z0-9_-]/g, '_');
+
+    if (!isValidRoleCode(normalizedCode)) {
+      return NextResponse.json({ error: 'Mã vai trò không hợp lệ' }, { status: 400 });
+    }
 
     // Prevent overwriting system roles
     const reservedCodes = SYSTEM_ROLES.map((r) => r.code);

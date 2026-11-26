@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/guard';
 import { PermissionCode } from '@/lib/auth/core';
-import { isValidPermissionCode } from '@/lib/auth/permissionManagement';
+import { isValidPermissionCode, isValidRoleCode } from '@/lib/auth/permissionManagement';
 import { resolveServerPermission } from '@/lib/auth/permissionResolver';
 
 const SYSTEM_ROLE_CODES = [
@@ -40,6 +40,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const admin = { id: auth.profile.id, role: auth.role };
+
+    if (!isValidRoleCode(code)) {
+      return NextResponse.json({ error: 'Mã vai trò không hợp lệ' }, { status: 400 });
+    }
 
     const body = await request.json();
     const { name, description, color, permissions } = body;
@@ -166,6 +170,10 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const admin = { id: auth.profile.id, role: auth.role };
+
+    if (!isValidRoleCode(code)) {
+      return NextResponse.json({ error: 'Mã vai trò không hợp lệ' }, { status: 400 });
+    }
 
     if (SYSTEM_ROLE_CODES.includes(code.toLowerCase())) {
       return NextResponse.json(
