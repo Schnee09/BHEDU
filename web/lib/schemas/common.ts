@@ -13,8 +13,8 @@ import { z } from 'zod';
  * Standard pagination schema
  */
 export const paginationSchema = z.object({
-  page: z.string().optional().default('1').transform(Number),
-  limit: z.string().optional().default('25').transform(Number),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
 });
 
 /**
@@ -22,8 +22,8 @@ export const paginationSchema = z.object({
  */
 export const paginationWithDefaults = (defaultLimit = 25) =>
   z.object({
-    page: z.string().optional().default('1').transform(Number),
-    limit: z.string().optional().default(String(defaultLimit)).transform(Number),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(defaultLimit),
   });
 
 // ============================================
