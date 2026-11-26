@@ -4,13 +4,23 @@ import {
   type StudentMatchCandidate,
 } from '@/lib/finance/bankStatementMatching';
 import { createServiceClient } from '@/lib/supabase/server';
+import { ValidationError } from '@/lib/api/errors';
 
 const allowedStatuses = new Set(['unmatched', 'suggested', 'confirmed', 'ignored', 'needs_review']);
 
 export const GET = createGetHandler({ permission: 'finance.view' }, async ({ searchParams }) => {
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
-  const pageSize = Math.min(100, Math.max(1, Number(searchParams.get('limit')) || 25));
+  const page = Number(searchParams.get('page') || '1');
+  const pageSize = Number(searchParams.get('limit') || '25');
   const status = searchParams.get('status') || 'unmatched';
+  if (!Number.isInteger(page) || page < 1) {
+    throw new ValidationError('page must be a positive integer');
+  }
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+    throw new ValidationError('limit must be an integer between 1 and 100');
+  }
+  if (status !== 'all' && !allowedStatuses.has(status)) {
+    throw new ValidationError('status is invalid');
+  }
   const start = (page - 1) * pageSize;
   const supabase = createServiceClient();
 
@@ -27,7 +37,7 @@ export const GET = createGetHandler({ permission: 'finance.view' }, async ({ sea
     )
     .order('transaction_at', { ascending: false })
     .range(start, start + pageSize - 1);
-  if (status !== 'all' && allowedStatuses.has(status)) query = query.eq('match_status', status);
+  if (status !== 'all') query = query.eq('match_status', status);
 
   const { data: transactions, error, count } = await query;
   if (error) throw error;
