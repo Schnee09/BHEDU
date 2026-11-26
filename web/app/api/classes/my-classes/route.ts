@@ -61,8 +61,8 @@ export async function GET(request: Request) {
       });
     }
 
-    // Teaching and support roles only see their assigned classes.
-    if (['teacher', 'tutor', 'staff'].includes(userRole) && profileId) {
+    // Operational and custom roles only see their assigned classes.
+    if (!['student', 'parent'].includes(userRole) && profileId) {
       const { data: classes, error } = await supabase
         .from('classes')
         .select('id, name, teacher_id, created_at')

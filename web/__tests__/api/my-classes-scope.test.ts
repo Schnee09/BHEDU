@@ -16,27 +16,30 @@ function request() {
 }
 
 describe('GET /api/classes/my-classes scope', () => {
-  it.each(['teacher', 'tutor', 'staff'])('limits %s to assigned classes', async (role) => {
-    jest.mocked(getAuthContext).mockResolvedValue({
-      authorized: true,
-      profile: { id: `${role}-1` },
-      role,
-    } as any);
-    const query: any = {
-      select: jest.fn(),
-      eq: jest.fn(),
-      order: jest.fn(),
-    };
-    query.select.mockReturnValue(query);
-    query.eq.mockReturnValue(query);
-    query.order.mockResolvedValue({ data: [], error: null });
-    jest.mocked(createServiceClient).mockReturnValue({
-      from: jest.fn(() => query),
-    } as any);
+  it.each(['teacher', 'tutor', 'staff', 'academic_coordinator'])(
+    'limits %s to assigned classes',
+    async (role) => {
+      jest.mocked(getAuthContext).mockResolvedValue({
+        authorized: true,
+        profile: { id: `${role}-1` },
+        role,
+      } as any);
+      const query: any = {
+        select: jest.fn(),
+        eq: jest.fn(),
+        order: jest.fn(),
+      };
+      query.select.mockReturnValue(query);
+      query.eq.mockReturnValue(query);
+      query.order.mockResolvedValue({ data: [], error: null });
+      jest.mocked(createServiceClient).mockReturnValue({
+        from: jest.fn(() => query),
+      } as any);
 
-    const response = await GET(request());
+      const response = await GET(request());
 
-    expect(response.status).toBe(200);
-    expect(query.eq).toHaveBeenCalledWith('teacher_id', `${role}-1`);
-  });
+      expect(response.status).toBe(200);
+      expect(query.eq).toHaveBeenCalledWith('teacher_id', `${role}-1`);
+    }
+  );
 });
