@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth/guard';
 import { getDataClient } from '@/lib/auth/dataClient';
+import { canAccessStudent } from '@/lib/auth/classAccess';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -19,6 +20,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     const { supabase } = await getDataClient(request);
+    if (
+      !studentAuth.role ||
+      !(await canAccessStudent(
+        supabase,
+        { id: studentAuth.profile.id, role: studentAuth.role },
+        id
+      ))
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Fetch student profile with guardians and basic account info
     const { data: student, error: studentError } = await supabase
