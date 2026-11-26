@@ -2,11 +2,18 @@ import { apiPaginated, apiSuccess, createApiHandler, createGetHandler } from '@/
 import { FinanceRepository } from '@/lib/repositories/FinanceRepository';
 import { receiveStudentPaymentSchema } from '@/lib/schemas';
 import { createServiceClient } from '@/lib/supabase/server';
+import { ValidationError } from '@/lib/api/errors';
 
 export const GET = createGetHandler({ permission: 'finance.view' }, async ({ searchParams }) => {
   const academicYearId = searchParams.get('academic_year_id');
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
-  const pageSize = Math.min(100, Math.max(1, Number(searchParams.get('limit')) || 25));
+  const page = Number(searchParams.get('page') || '1');
+  const pageSize = Number(searchParams.get('limit') || '25');
+  if (!Number.isInteger(page) || page < 1) {
+    throw new ValidationError('page must be a positive integer');
+  }
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+    throw new ValidationError('limit must be an integer between 1 and 100');
+  }
   const start = (page - 1) * pageSize;
 
   const supabase = createServiceClient();
