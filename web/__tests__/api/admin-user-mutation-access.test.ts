@@ -82,6 +82,39 @@ describe('admin user mutation access', () => {
     expect(userService.updateUser).not.toHaveBeenCalled();
   });
 
+  it('prevents an admin from modifying a peer administrator', async () => {
+    findById.mockResolvedValue({ id: 'admin-2', role: 'admin' });
+
+    const response = await PUT(putRequest({ full_name: 'Tên mới' }), {
+      params: Promise.resolve({ id: 'admin-2' }),
+    });
+
+    expect(response.status).toBe(403);
+    expect(userService.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('prevents a custom role from promoting a student', async () => {
+    authorize('staff', 'staff-1');
+
+    const response = await PUT(putRequest({ role: 'admin' }), {
+      params: Promise.resolve({ id: 'student-1' }),
+    });
+
+    expect(response.status).toBe(403);
+    expect(userService.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('prevents an administrator from changing their own role', async () => {
+    findById.mockResolvedValue({ id: 'admin-1', role: 'admin' });
+
+    const response = await PUT(putRequest({ role: 'teacher' }), {
+      params: Promise.resolve({ id: 'admin-1' }),
+    });
+
+    expect(response.status).toBe(403);
+    expect(userService.updateUser).not.toHaveBeenCalled();
+  });
+
   it('honors a custom users.edit grant resolved by the centralized guard', async () => {
     authorize('staff', 'staff-1');
 
@@ -105,6 +138,17 @@ describe('admin user mutation access', () => {
     expect(response.status).toBe(403);
     expect(findById).not.toHaveBeenCalled();
     expect(userService.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it('prevents an admin from deactivating a peer administrator', async () => {
+    findById.mockResolvedValue({ id: 'admin-2', role: 'admin' });
+
+    const response = await DELETE(deleteRequest('admin-2'), {
+      params: Promise.resolve({ id: 'admin-2' }),
+    });
+
+    expect(response.status).toBe(403);
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('requires the hard-delete permission for permanent deletion', async () => {

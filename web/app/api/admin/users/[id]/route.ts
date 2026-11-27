@@ -6,15 +6,25 @@ import { UserRepository } from '@/lib/repositories/UserRepository';
 import { AuthorizationError, NotFoundError } from '@/lib/api/errors';
 import { getAuthContext } from '@/lib/auth/guard';
 
-const PROTECTED_ROLES = new Set(['owner', 'super_admin']);
-
 function assertCanMutateRole(actorRole: string, targetRole: string, requestedRole?: string) {
-  if (actorRole !== 'super_admin' && PROTECTED_ROLES.has(targetRole)) {
-    throw new AuthorizationError('Chỉ quản trị viên cấp cao mới có thể thay đổi tài khoản này');
+  const canManageTarget =
+    actorRole === 'super_admin' ||
+    (actorRole === 'owner' && !['super_admin', 'owner'].includes(targetRole)) ||
+    (actorRole !== 'owner' && !['super_admin', 'owner', 'admin'].includes(targetRole));
+
+  if (!canManageTarget) {
+    throw new AuthorizationError('Bạn không thể thay đổi tài khoản ngang cấp hoặc cấp cao hơn');
   }
 
-  if (actorRole !== 'super_admin' && requestedRole && PROTECTED_ROLES.has(requestedRole)) {
-    throw new AuthorizationError('Bạn không có quyền cấp vai trò quản trị cấp cao');
+  if (!requestedRole) return;
+
+  const canAssignRole =
+    actorRole === 'super_admin' ||
+    (actorRole === 'owner' && !['super_admin', 'owner'].includes(requestedRole)) ||
+    (actorRole === 'admin' && !['super_admin', 'owner', 'admin'].includes(requestedRole));
+
+  if (!canAssignRole) {
+    throw new AuthorizationError('Bạn không có quyền cấp vai trò này');
   }
 }
 
@@ -57,6 +67,10 @@ export const PUT = createApiHandler(
     const target = await repository.findById(id);
     if (!target) {
       throw new NotFoundError('Không tìm thấy người dùng');
+    }
+
+    if (id === user.id && body.role && body.role !== target.role) {
+      throw new AuthorizationError('Bạn không thể tự thay đổi vai trò của mình');
     }
 
     assertCanMutateRole(user.role, target.role, body.role);
