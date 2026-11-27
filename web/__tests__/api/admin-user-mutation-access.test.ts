@@ -5,6 +5,7 @@ import { DELETE, PUT } from '@/app/api/admin/users/[id]/route';
 import { getAuthContext } from '@/lib/auth/guard';
 import { UserRepository } from '@/lib/repositories/UserRepository';
 import { userService } from '@/lib/services/userService';
+import { createServiceClient } from '@/lib/supabase/server';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/supabase/server', () => ({ createServiceClient: jest.fn(() => ({})) }));
@@ -46,6 +47,7 @@ function deleteRequest(id: string, permanent = false) {
 describe('admin user mutation access', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (createServiceClient as jest.Mock).mockReturnValue({});
     authorize();
     findById.mockResolvedValue({ id: 'student-1', role: 'student' });
     update.mockResolvedValue({ id: 'student-1' });
@@ -54,7 +56,55 @@ describe('admin user mutation access', () => {
   });
 
   it('validates update payloads before changing a user', async () => {
-    const response = await PUT(putRequest({ role: 'unknown-role' }), {
+    const response = await PUT(putRequest({ role: 'Unknown Role' }), {
+      params: Promise.resolve({ id: 'student-1' }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(userService.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('allows assigning an existing custom role within the actor hierarchy', async () => {
+    const customRoleQuery = {
+      select: jest.fn(),
+      eq: jest.fn(),
+      maybeSingle: jest.fn(),
+    };
+    customRoleQuery.select.mockReturnValue(customRoleQuery);
+    customRoleQuery.eq.mockReturnValue(customRoleQuery);
+    customRoleQuery.maybeSingle.mockResolvedValue({
+      data: { code: 'academic_coordinator' },
+      error: null,
+    });
+    (createServiceClient as jest.Mock).mockReturnValue({
+      from: jest.fn().mockReturnValue(customRoleQuery),
+    });
+
+    const response = await PUT(putRequest({ role: 'academic_coordinator' }), {
+      params: Promise.resolve({ id: 'student-1' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(userService.updateUser).toHaveBeenCalledWith(
+      'student-1',
+      expect.objectContaining({ role: 'academic_coordinator' })
+    );
+  });
+
+  it('rejects a well-formed custom role that does not exist', async () => {
+    const customRoleQuery = {
+      select: jest.fn(),
+      eq: jest.fn(),
+      maybeSingle: jest.fn(),
+    };
+    customRoleQuery.select.mockReturnValue(customRoleQuery);
+    customRoleQuery.eq.mockReturnValue(customRoleQuery);
+    customRoleQuery.maybeSingle.mockResolvedValue({ data: null, error: null });
+    (createServiceClient as jest.Mock).mockReturnValue({
+      from: jest.fn().mockReturnValue(customRoleQuery),
+    });
+
+    const response = await PUT(putRequest({ role: 'missing_custom_role' }), {
       params: Promise.resolve({ id: 'student-1' }),
     });
 

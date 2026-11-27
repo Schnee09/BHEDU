@@ -3,8 +3,39 @@ import { userService } from '@/lib/services/userService';
 import { updateUserSchema } from '@/lib/schemas';
 import { createServiceClient } from '@/lib/supabase/server';
 import { UserRepository } from '@/lib/repositories/UserRepository';
-import { AuthorizationError, NotFoundError } from '@/lib/api/errors';
+import { AppError, AuthorizationError, NotFoundError, ValidationError } from '@/lib/api/errors';
 import { getAuthContext } from '@/lib/auth/guard';
+
+const SYSTEM_ROLE_CODES = new Set([
+  'super_admin',
+  'owner',
+  'admin',
+  'staff',
+  'teacher',
+  'tutor',
+  'parent',
+  'student',
+]);
+
+async function assertRoleExists(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  requestedRole: string
+) {
+  if (SYSTEM_ROLE_CODES.has(requestedRole)) return;
+
+  const { data, error } = await serviceClient
+    .from('custom_roles')
+    .select('code')
+    .eq('code', requestedRole)
+    .maybeSingle();
+
+  if (error) {
+    throw new AppError('Không thể kiểm tra vai trò tùy chỉnh');
+  }
+  if (!data) {
+    throw new ValidationError('Vai trò tùy chỉnh không tồn tại');
+  }
+}
 
 function assertCanMutateRole(actorRole: string, targetRole: string, requestedRole?: string) {
   const canManageTarget =
@@ -74,6 +105,9 @@ export const PUT = createApiHandler(
     }
 
     assertCanMutateRole(user.role, target.role, body.role);
+    if (body.role) {
+      await assertRoleExists(supabase, body.role);
+    }
 
     // Use UserService for complex update (syncs with other tables)
     const updatedUser = await userService.updateUser(id, body);

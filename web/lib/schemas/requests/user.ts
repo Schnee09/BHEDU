@@ -4,7 +4,6 @@ import {
   createSortSchema,
   emailSchema,
   notesSchema,
-  optionalEmailSchema,
   paginationWithDefaults,
   phoneSchema,
   userRoleSchema,
@@ -85,6 +84,10 @@ export const updateUserSchema = createUserSchema
   })
   .extend({
     id: uuidSchema.optional(),
+    role: z
+      .string()
+      .regex(/^[a-z][a-z0-9_-]{0,49}$/, 'Invalid role code')
+      .optional(),
     status: z.enum(['active', 'inactive', 'suspended']).optional(),
     is_managed: z.boolean().optional(),
   });
