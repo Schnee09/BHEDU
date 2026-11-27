@@ -7,7 +7,20 @@ import {
   assertAssignableCustomRole,
   canAssignUserRoleByHierarchy,
 } from '@/lib/auth/roleAssignment';
-import { AuthorizationError } from '@/lib/api/errors';
+import { AppError, AuthorizationError } from '@/lib/api/errors';
+
+const invitationSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email().optional().or(z.literal('')),
+    phone: z.string().trim().max(30).optional().or(z.literal('')),
+    role: userRoleCodeSchema,
+    expires_in_days: z.number().int().min(1).max(30).default(7),
+    metadata: z.record(z.string(), z.any()).optional(),
+  })
+  .refine((value) => Boolean(value.email || value.phone), {
+    message: 'Cần nhập email hoặc số điện thoại',
+    path: ['email'],
+  });
 
 /**
  * GET /api/admin/invitations - List all invitations
@@ -17,7 +30,7 @@ export const GET = createGetHandler(
   {
     permission: 'users.invite',
   },
-  async () => {
+  async ({ user }) => {
     const supabase = createServiceClient(); // Use service client for DB access (RLS bypass)
 
     const { data: invites, error } = await supabase
@@ -34,7 +47,44 @@ export const GET = createGetHandler(
 
     if (error) throw error;
 
-    return apiSuccess({ invites }, {});
+    const accessByRole = new Map<string, Promise<boolean>>();
+    const canAccessRole = (role: string) => {
+      const cached = accessByRole.get(role);
+      if (cached) return cached;
+
+      const check = (async () => {
+        if (!canAssignUserRoleByHierarchy(user.role, role)) return false;
+        try {
+          await assertAssignableCustomRole({
+            serviceClient: supabase,
+            actorId: user.id,
+            actorRole: user.role,
+            requestedRole: role,
+          });
+          return true;
+        } catch (accessError) {
+          if (accessError instanceof AppError && [400, 403].includes(accessError.statusCode)) {
+            return false;
+          }
+          throw accessError;
+        }
+      })();
+      accessByRole.set(role, check);
+      return check;
+    };
+
+    const visibleInvites = (
+      await Promise.all(
+        (invites || []).map(async (invite) => ({
+          invite,
+          visible: await canAccessRole(invite.role),
+        }))
+      )
+    )
+      .filter(({ visible }) => visible)
+      .map(({ invite }) => invite);
+
+    return apiSuccess({ invites: visibleInvites }, {});
   }
 );
 
@@ -45,13 +95,7 @@ export const GET = createGetHandler(
 export const POST = createApiHandler(
   {
     permission: 'users.invite',
-    bodySchema: z.object({
-      email: z.string().email().optional().or(z.literal('')),
-      phone: z.string().optional(),
-      role: userRoleCodeSchema,
-      expires_in_days: z.number().min(1).max(30).default(7),
-      metadata: z.record(z.string(), z.any()).optional(),
-    }),
+    bodySchema: invitationSchema,
   },
   async ({ body, user }) => {
     const { email, phone, role, expires_in_days, metadata = {} } = body;

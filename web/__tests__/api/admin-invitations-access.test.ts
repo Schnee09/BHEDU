@@ -4,6 +4,7 @@
 import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/admin/invitations/route';
 import { getAuthContext } from '@/lib/auth/guard';
+import { createServiceClient } from '@/lib/supabase/server';
 
 jest.mock('@/lib/auth/guard', () => ({ getAuthContext: jest.fn() }));
 jest.mock('@/lib/supabase/server', () => ({ createServiceClient: jest.fn() }));
@@ -52,5 +53,54 @@ describe('admin invitation authorization', () => {
 
     expect(response.status).toBe(403);
     expect(getAuthContext).toHaveBeenCalledWith(expect.any(NextRequest), 'users.invite');
+  });
+
+  it('hides invitations for roles above the current administrator', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'admin-1', email: 'admin@bhedu.vn' },
+      role: 'admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    const query = {
+      select: jest.fn(),
+      order: jest.fn(),
+    };
+    query.select.mockReturnValue(query);
+    query.order.mockResolvedValue({
+      data: [
+        { id: 'invite-owner', role: 'owner', email: 'owner@example.com' },
+        { id: 'invite-teacher', role: 'teacher', email: 'teacher@example.com' },
+      ],
+      error: null,
+    });
+    jest.mocked(createServiceClient).mockReturnValue({
+      from: jest.fn().mockReturnValue(query),
+    } as unknown as ReturnType<typeof createServiceClient>);
+
+    const response = await GET(request('GET'));
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.invites).toEqual([
+      { id: 'invite-teacher', role: 'teacher', email: 'teacher@example.com' },
+    ]);
+  });
+
+  it('requires at least one invitation contact method', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'admin-1', email: 'admin@bhedu.vn' },
+      role: 'admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    const invalidRequest = new NextRequest('http://localhost/api/admin/invitations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'teacher', email: '', phone: '' }),
+    });
+
+    const response = await POST(invalidRequest);
+
+    expect(response.status).toBe(400);
+    expect(createServiceClient).not.toHaveBeenCalled();
   });
 });
