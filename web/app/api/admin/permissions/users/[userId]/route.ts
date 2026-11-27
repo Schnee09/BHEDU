@@ -7,11 +7,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/guard';
 import { canManageUserPermissions, isValidPermissionCode } from '@/lib/auth/permissionManagement';
-import type { UserRole } from '@/lib/auth/core';
+import { resolveServerPermission } from '@/lib/auth/permissionResolver';
+import type { PermissionCode, UserRole } from '@/lib/auth/core';
 
 interface RouteContext {
   params: Promise<{ userId: string }>;
 }
+
+const MAX_PERMISSION_NOTES_LENGTH = 500;
 
 // GET /api/admin/permissions/users/[userId] - Get user's permissions
 export async function GET(request: NextRequest, context: RouteContext) {
@@ -62,7 +65,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       } else {
         customPerms = data || [];
       }
-    } catch (e) {
+    } catch {
       console.warn('[Permissions API] user_permissions not available');
     }
 
@@ -79,7 +82,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       } else {
         rolePerms = data?.map((p) => p.permission_code) || [];
       }
-    } catch (e) {
+    } catch {
       console.warn('[Permissions API] role_permissions not available');
     }
 
@@ -112,18 +115,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { userId } = await context.params;
 
-    const body = await request.json();
-    const { permission_code, expires_at, notes } = body;
-
-    if (typeof permission_code !== 'string' || !isValidPermissionCode(permission_code)) {
-      return NextResponse.json(
-        { error: 'Invalid permission_code' },
-        {
-          status: 400,
-        }
-      );
-    }
-
     const auth = await getAuthContext(request, 'permissions.manage');
     if (!auth.authorized || !auth.profile || !auth.role) {
       return NextResponse.json(
@@ -131,6 +122,36 @@ export async function POST(request: NextRequest, context: RouteContext) {
         { status: auth.user ? 403 : 401 }
       );
     }
+
+    const body = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+    const { permission_code, expires_at, notes } = body;
+
+    if (typeof permission_code !== 'string' || !isValidPermissionCode(permission_code)) {
+      return NextResponse.json({ error: 'Invalid permission_code' }, { status: 400 });
+    }
+    if (
+      notes !== undefined &&
+      notes !== null &&
+      (typeof notes !== 'string' || notes.trim().length > MAX_PERMISSION_NOTES_LENGTH)
+    ) {
+      return NextResponse.json({ error: 'Invalid notes' }, { status: 400 });
+    }
+    if (
+      expires_at !== undefined &&
+      expires_at !== null &&
+      (typeof expires_at !== 'string' ||
+        expires_at.length > 50 ||
+        !Number.isFinite(Date.parse(expires_at)))
+    ) {
+      return NextResponse.json({ error: 'Invalid expires_at' }, { status: 400 });
+    }
+
+    const normalizedNotes = typeof notes === 'string' ? notes.trim() || null : null;
+    const normalizedExpiry =
+      typeof expires_at === 'string' ? new Date(expires_at).toISOString() : null;
 
     const serviceClient = createServiceClient();
     const { data: targetUser } = await serviceClient
@@ -157,6 +178,20 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
+    if (
+      auth.role !== 'super_admin' &&
+      !(await resolveServerPermission(
+        auth.profile.id,
+        auth.role,
+        permission_code as PermissionCode
+      ))
+    ) {
+      return NextResponse.json(
+        { error: 'Cannot grant a permission you do not have' },
+        { status: 403 }
+      );
+    }
+
     // Grant permission
     const { data, error } = await serviceClient
       .from('user_permissions')
@@ -165,9 +200,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
           user_id: userId,
           permission_code,
           granted_by: auth.profile.id,
-          expires_at: expires_at || null,
+          expires_at: normalizedExpiry,
           is_denied: false,
-          notes,
+          notes: normalizedNotes,
         },
         {
           onConflict: 'user_id,permission_code',
@@ -195,8 +230,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
         user_id: userId,
         permission_code,
         performed_by: auth.profile.id,
-        new_value: { expires_at, notes },
-        reason: notes,
+        new_value: { expires_at: normalizedExpiry, notes: normalizedNotes },
+        reason: normalizedNotes,
       });
     } catch (auditError) {
       console.warn('[Permissions API] Audit log error (non-fatal):', auditError);
@@ -216,21 +251,15 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { searchParams } = new URL(request.url);
     const permission_code = searchParams.get('permission_code');
 
-    if (!permission_code || !isValidPermissionCode(permission_code)) {
-      return NextResponse.json(
-        { error: 'Invalid permission_code' },
-        {
-          status: 400,
-        }
-      );
-    }
-
     const auth = await getAuthContext(request, 'permissions.manage');
     if (!auth.authorized || !auth.profile || !auth.role) {
       return NextResponse.json(
         { error: auth.reason || 'Forbidden' },
         { status: auth.user ? 403 : 401 }
       );
+    }
+    if (!permission_code || !isValidPermissionCode(permission_code)) {
+      return NextResponse.json({ error: 'Invalid permission_code' }, { status: 400 });
     }
 
     const serviceClient = createServiceClient();
