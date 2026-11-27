@@ -8,8 +8,8 @@ import { getDataClient } from '@/lib/auth/dataClient';
 import { getAuthContext } from '@/lib/auth/guard';
 import { generatePasswordResetEmail, sendEmail } from '@/lib/email/emailService';
 import { logger } from '@/lib/logger';
-
-const PROTECTED_ROLES = new Set(['owner', 'super_admin']);
+import { canManageUserPermissions } from '@/lib/auth/permissionManagement';
+import type { UserRole } from '@/lib/auth/core';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -17,19 +17,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!auth.profile) {
       return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
     }
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.role) {
       return NextResponse.json({ error: auth.reason || 'Forbidden' }, { status: 403 });
     }
 
     const { id } = await params;
     const body = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     const { new_password, send_email = true } = body;
 
-    if (!new_password || new_password.length < 6) {
+    if (typeof new_password !== 'string' || new_password.length < 8 || new_password.length > 128) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
+        { error: 'Password must be between 8 and 128 characters long' },
         { status: 400 }
       );
+    }
+    if (typeof send_email !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid send_email value' }, { status: 400 });
     }
 
     const { supabase } = await getDataClient(request);
@@ -40,12 +46,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .eq('id', id)
       .maybeSingle();
 
-    if (profileError || !userProfile) {
+    if (profileError) {
+      logger.error('Error loading password reset target', profileError);
+      return NextResponse.json({ error: 'Failed to load user account' }, { status: 500 });
+    }
+    if (!userProfile) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    if (auth.role !== 'super_admin' && PROTECTED_ROLES.has(userProfile.role)) {
+    if (
+      !canManageUserPermissions({
+        actorId: auth.profile.id,
+        actorRole: auth.role,
+        targetId: userProfile.id,
+        targetRole: userProfile.role as UserRole,
+      })
+    ) {
       return NextResponse.json(
-        { error: 'Only a super administrator can reset this account' },
+        { error: 'Cannot reset the password of this account' },
         { status: 403 }
       );
     }

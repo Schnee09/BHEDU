@@ -32,8 +32,8 @@ export default function ResetPasswordModal({ isOpen, onClose, user }: ResetPassw
       return;
     }
 
-    if (passwordData.new_password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự');
+    if (passwordData.new_password.length < 8 || passwordData.new_password.length > 128) {
+      setError('Mật khẩu phải có từ 8 đến 128 ký tự');
       return;
     }
 
@@ -98,9 +98,11 @@ export default function ResetPasswordModal({ isOpen, onClose, user }: ResetPassw
                 {resetResult.password}
               </code>
               <button
+                type="button"
                 onClick={() => navigator.clipboard.writeText(resetResult.password)}
-                className="p-2 hover:bg-stone-200 dark:hover:bg-white/5 rounded-xl transition-colors"
+                className="cursor-pointer p-3 hover:bg-stone-200 dark:hover:bg-white/5 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                 title="Sao chép"
+                aria-label="Sao chép mật khẩu mới"
               >
                 <Icons.Edit className="w-5 h-5 text-stone-400" />
               </button>
@@ -155,9 +157,12 @@ export default function ResetPasswordModal({ isOpen, onClose, user }: ResetPassw
               placeholder="Nhập mật khẩu mới…"
               value={passwordData.new_password}
               onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
+              minLength={8}
+              maxLength={128}
               required
               className="h-14 rounded-2xl"
               leftIcon={<Icons.Lock className="w-4 h-4" />}
+              hint="Sử dụng từ 8 đến 128 ký tự."
             />
 
             <Input
@@ -170,6 +175,8 @@ export default function ResetPasswordModal({ isOpen, onClose, user }: ResetPassw
               onChange={(e) =>
                 setPasswordData({ ...passwordData, confirm_password: e.target.value })
               }
+              minLength={8}
+              maxLength={128}
               required
               className="h-14 rounded-2xl"
               leftIcon={<Icons.Lock className="w-4 h-4" />}
