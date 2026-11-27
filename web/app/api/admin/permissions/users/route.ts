@@ -6,13 +6,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getAuthContext } from '@/lib/auth/guard';
+import { isValidRoleCode } from '@/lib/auth/permissionManagement';
+
+function getProtectedRoles(actorRole: string): string[] | null {
+  if (actorRole === 'super_admin') return [];
+  if (actorRole === 'owner') return ['super_admin', 'owner'];
+  if (actorRole === 'admin') return ['super_admin', 'owner', 'admin'];
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
     const auth = await getAuthContext(request, 'permissions.manage');
-    if (!auth.authorized || !auth.profile) {
+    if (!auth.authorized || !auth.profile || !auth.role) {
       return NextResponse.json(
         { error: auth.reason || 'Forbidden' },
         { status: auth.user ? 403 : 401 }
@@ -26,6 +34,21 @@ export async function GET(request: NextRequest) {
     const limit = Number.isFinite(parsedLimit) ? Math.min(100, Math.max(1, parsedLimit)) : 20;
     const search = searchParams.get('search')?.trim().slice(0, 200);
     const role = searchParams.get('role')?.trim().slice(0, 50);
+    if (role && !isValidRoleCode(role)) {
+      return NextResponse.json({ error: 'Invalid role filter' }, { status: 400 });
+    }
+
+    const protectedRoles = getProtectedRoles(auth.role);
+    if (!protectedRoles) {
+      return NextResponse.json({ error: 'Cannot manage permissions for users' }, { status: 403 });
+    }
+
+    if (role && protectedRoles.includes(role)) {
+      return NextResponse.json({
+        users: [],
+        pagination: { page, limit, total: 0, totalPages: 0 },
+      });
+    }
 
     const serviceClient = createServiceClient();
     let query = serviceClient
@@ -33,6 +56,11 @@ export async function GET(request: NextRequest) {
       .select('id, full_name, email, role, phone, student_code, teacher_code, is_active', {
         count: 'exact',
       });
+
+    query = query.neq('id', auth.profile.id);
+    if (protectedRoles.length > 0) {
+      query = query.not('role', 'in', `(${protectedRoles.join(',')})`);
+    }
 
     if (role) {
       query = query.eq('role', role);

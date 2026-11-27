@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { userId } = await context.params;
     const auth = await getAuthContext(request, 'permissions.manage');
-    if (!auth.authorized || !auth.profile) {
+    if (!auth.authorized || !auth.profile || !auth.role) {
       return NextResponse.json(
         { error: auth.reason || 'Forbidden' },
         { status: auth.user ? 403 : 401 }
@@ -50,6 +50,20 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     if (!targetUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (
+      !canManageUserPermissions({
+        actorId: auth.profile.id,
+        actorRole: auth.role,
+        targetId: targetUser.id,
+        targetRole: targetUser.role as UserRole,
+      })
+    ) {
+      return NextResponse.json(
+        { error: 'Cannot manage permissions for this user' },
+        { status: 403 }
+      );
     }
 
     // Get user's custom permissions - handle missing table gracefully
