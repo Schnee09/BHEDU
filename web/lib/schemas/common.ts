@@ -121,6 +121,9 @@ export const userRoleSchema = z.enum([
   'student',
 ]);
 
+/** System or center-defined role code. Existence is verified by the service layer. */
+export const userRoleCodeSchema = z.string().regex(/^[a-z][a-z0-9_-]{0,49}$/, 'Invalid role code');
+
 /** Student status */
 export const studentStatusSchema = z.enum([
   'active',

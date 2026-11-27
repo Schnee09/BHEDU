@@ -2,6 +2,8 @@ import { apiSuccess, createApiHandler, createGetHandler } from '@/lib/api/apiHan
 import { createServiceClient } from '@/lib/supabase/server';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
+import { userRoleCodeSchema } from '@/lib/schemas/common';
+import { assertAssignableCustomRole } from '@/lib/auth/roleAssignment';
 
 /**
  * GET /api/admin/invitations - List all invitations
@@ -42,7 +44,7 @@ export const POST = createApiHandler(
     bodySchema: z.object({
       email: z.string().email().optional().or(z.literal('')),
       phone: z.string().optional(),
-      role: z.string(),
+      role: userRoleCodeSchema,
       expires_in_days: z.number().min(1).max(30).default(7),
       metadata: z.record(z.string(), z.any()).optional(),
     }),
@@ -50,6 +52,13 @@ export const POST = createApiHandler(
   async ({ body, user }) => {
     const { email, phone, role, expires_in_days, metadata = {} } = body;
     const supabase = createServiceClient();
+
+    await assertAssignableCustomRole({
+      serviceClient: supabase,
+      actorId: user.id,
+      actorRole: user.role,
+      requestedRole: role,
+    });
 
     const token = randomUUID();
     const expires_at = new Date();

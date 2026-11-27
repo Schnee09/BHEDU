@@ -6,7 +6,7 @@ import {
   notesSchema,
   paginationWithDefaults,
   phoneSchema,
-  userRoleSchema,
+  userRoleCodeSchema,
   uuidSchema,
 } from '../common';
 
@@ -43,7 +43,7 @@ export const createUserSchema = z.object({
   full_name: z.string().min(1, 'Full name is required').max(200).optional(),
   first_name: z.string().max(100).optional(),
   last_name: z.string().max(100).optional(),
-  role: userRoleSchema,
+  role: userRoleCodeSchema,
   phone: phoneSchema.optional().nullable(),
   status: z.enum(['active', 'inactive', 'suspended']).optional().default('active'),
   is_active: z.boolean().optional(),
@@ -84,10 +84,7 @@ export const updateUserSchema = createUserSchema
   })
   .extend({
     id: uuidSchema.optional(),
-    role: z
-      .string()
-      .regex(/^[a-z][a-z0-9_-]{0,49}$/, 'Invalid role code')
-      .optional(),
+    role: userRoleCodeSchema.optional(),
     status: z.enum(['active', 'inactive', 'suspended']).optional(),
     is_managed: z.boolean().optional(),
   });
@@ -118,7 +115,7 @@ export const importUsersSchema = z.object({
         email: emailSchema,
         password: z.string().optional(),
         full_name: z.string().min(1),
-        role: userRoleSchema, // Use schema for enum validation
+        role: userRoleCodeSchema,
         phone: phoneSchema.optional().nullable(),
         is_active: booleanStringSchema.optional().or(z.boolean().optional()),
         notes: notesSchema,

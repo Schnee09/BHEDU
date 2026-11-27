@@ -17,6 +17,7 @@ import { generateWelcomeEmail, sendEmail } from '@/lib/email/emailService';
 import { generateUserEmailSlug, splitFullName, formatVietnameseName } from '@/lib/utils/names';
 import { generateStudentCode } from '@/lib/students/studentCode';
 import { logger } from '@/lib/logger';
+import { assertAssignableCustomRole } from '@/lib/auth/roleAssignment';
 
 const MANAGED_DOMAINS = [
   '@bhedu.vn',
@@ -56,6 +57,13 @@ export class UserService {
    * Creates a new user in Auth and Profile with automatic generation support
    */
   async createUser(input: CreateUserInput, currentUserRole: string, createdBy?: string) {
+    await assertAssignableCustomRole({
+      serviceClient: this.supabase,
+      actorId: createdBy,
+      actorRole: currentUserRole,
+      requestedRole: input.role,
+    });
+
     // 1. Role Escalation / Protection Logic
     if (
       ['owner', 'super_admin'].includes(input.role as string) &&
