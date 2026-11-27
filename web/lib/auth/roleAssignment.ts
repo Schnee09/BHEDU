@@ -15,6 +15,15 @@ export const SYSTEM_USER_ROLE_CODES = new Set([
   'student',
 ]);
 
+export function canAssignUserRoleByHierarchy(actorRole: string, requestedRole: string): boolean {
+  if (actorRole === 'super_admin') return true;
+  if (actorRole === 'owner') return !['super_admin', 'owner'].includes(requestedRole);
+  if (actorRole === 'admin') {
+    return !['super_admin', 'owner', 'admin'].includes(requestedRole);
+  }
+  return false;
+}
+
 export async function assertAssignableCustomRole(input: {
   serviceClient: SupabaseClient;
   actorId?: string;

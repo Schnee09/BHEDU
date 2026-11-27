@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { assertAssignableCustomRole } from '../roleAssignment';
+import { assertAssignableCustomRole, canAssignUserRoleByHierarchy } from '../roleAssignment';
 import { resolveServerPermission } from '../permissionResolver';
 
 jest.mock('../permissionResolver', () => ({ resolveServerPermission: jest.fn() }));
@@ -37,6 +37,15 @@ function clientWithRolePermissions(permissionCodes: string[]) {
 describe('custom role assignment', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('enforces the system role assignment hierarchy', () => {
+    expect(canAssignUserRoleByHierarchy('super_admin', 'owner')).toBe(true);
+    expect(canAssignUserRoleByHierarchy('owner', 'admin')).toBe(true);
+    expect(canAssignUserRoleByHierarchy('owner', 'owner')).toBe(false);
+    expect(canAssignUserRoleByHierarchy('admin', 'teacher')).toBe(true);
+    expect(canAssignUserRoleByHierarchy('admin', 'admin')).toBe(false);
+    expect(canAssignUserRoleByHierarchy('permission_manager', 'student')).toBe(false);
   });
 
   it('allows system roles without database lookups', async () => {

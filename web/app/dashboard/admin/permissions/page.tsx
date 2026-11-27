@@ -13,7 +13,6 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
-  Filter,
   UserCog,
   Settings,
   History,
@@ -23,9 +22,6 @@ import {
   Plus,
   Edit3,
   Trash2,
-  Sparkles,
-  Users,
-  Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/useToast';
@@ -88,6 +84,7 @@ export interface RoleInfo {
   is_system: boolean;
   user_count: number;
   permission_count: number;
+  assignable?: boolean;
 }
 
 interface AuditLog {
@@ -124,44 +121,6 @@ interface PendingRolePermAction {
 // ──────────────────────────────────────────────
 // CONSTANTS
 // ──────────────────────────────────────────────
-
-const DEFAULT_ROLE_OPTIONS = [
-  {
-    value: 'super_admin',
-    label: 'Quản trị Hệ thống',
-    color: 'bg-black text-white dark:bg-white/10',
-  },
-  {
-    value: 'owner',
-    label: 'Chủ trung tâm',
-    color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  },
-  {
-    value: 'admin',
-    label: 'Quản trị viên',
-    color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  },
-  {
-    value: 'teacher',
-    label: 'Giáo viên',
-    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  },
-  {
-    value: 'tutor',
-    label: 'Gia sư',
-    color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-  },
-  {
-    value: 'parent',
-    label: 'Phụ huynh',
-    color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  },
-  {
-    value: 'student',
-    label: 'Học sinh',
-    color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
-  },
-];
 
 const CATEGORY_LABELS: Record<string, string> = {
   system: 'Hệ Thống',
@@ -946,7 +905,8 @@ function UserPermissionsTab() {
   const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
   const [savingRole, setSavingRole] = useState(false);
   const toast = useToast();
-  const { isAdmin: isCurrentAdmin } = usePermissions();
+  const { role: currentUserRole } = usePermissions();
+  const canChangeRoles = ['super_admin', 'owner', 'admin'].includes(currentUserRole || '');
 
   useEffect(() => {
     apiFetch('/api/admin/roles')
@@ -1084,7 +1044,7 @@ function UserPermissionsTab() {
     setSavingRole(true);
     try {
       const res = await apiFetch(`/api/admin/users/${pendingRoleChange.userId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: pendingRoleChange.newRole }),
       });
@@ -1215,21 +1175,37 @@ function UserPermissionsTab() {
               </div>
 
               {/* Role Dropdown */}
-              {isCurrentAdmin && (
+              {canChangeRoles && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-muted-foreground">Vai trò:</span>
+                  <label
+                    htmlFor="user-role-select"
+                    className="text-xs font-bold text-muted-foreground"
+                  >
+                    Vai trò:
+                  </label>
                   <select
+                    id="user-role-select"
                     value={selectedUser.role}
                     onChange={(e) => handleRoleSelect(e.target.value)}
                     disabled={savingRole}
-                    className="px-3 py-1.5 text-xs font-bold border border-border rounded-xl bg-background"
+                    className="cursor-pointer px-3 py-1.5 text-xs font-bold border border-border rounded-xl bg-background transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-describedby="user-role-help"
                   >
-                    {availableRoles.map((r) => (
-                      <option key={r.code} value={r.code}>
-                        {r.name} ({r.code})
-                      </option>
-                    ))}
+                    {availableRoles
+                      .filter((role) => role.assignable || role.code === selectedUser.role)
+                      .map((role) => (
+                        <option
+                          key={role.code}
+                          value={role.code}
+                          disabled={!role.assignable && role.code !== selectedUser.role}
+                        >
+                          {role.name} ({role.code})
+                        </option>
+                      ))}
                   </select>
+                  <span id="user-role-help" className="sr-only">
+                    Chỉ hiển thị những vai trò bạn được phép gán cho tài khoản này.
+                  </span>
                 </div>
               )}
             </div>

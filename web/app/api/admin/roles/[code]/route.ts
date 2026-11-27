@@ -19,6 +19,7 @@ const SYSTEM_ROLE_CODES = [
   'super_admin',
   'owner',
   'admin',
+  'staff',
   'teacher',
   'tutor',
   'parent',

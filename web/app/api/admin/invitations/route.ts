@@ -3,7 +3,11 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { userRoleCodeSchema } from '@/lib/schemas/common';
-import { assertAssignableCustomRole } from '@/lib/auth/roleAssignment';
+import {
+  assertAssignableCustomRole,
+  canAssignUserRoleByHierarchy,
+} from '@/lib/auth/roleAssignment';
+import { AuthorizationError } from '@/lib/api/errors';
 
 /**
  * GET /api/admin/invitations - List all invitations
@@ -52,6 +56,10 @@ export const POST = createApiHandler(
   async ({ body, user }) => {
     const { email, phone, role, expires_in_days, metadata = {} } = body;
     const supabase = createServiceClient();
+
+    if (!canAssignUserRoleByHierarchy(user.role, role)) {
+      throw new AuthorizationError('Bạn không có quyền gửi lời mời với vai trò này');
+    }
 
     await assertAssignableCustomRole({
       serviceClient: supabase,

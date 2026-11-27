@@ -9,6 +9,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { BASE_ROLE_PERMISSIONS, PermissionCode, UserRole } from '@/lib/auth/core';
 import { getAuthContext } from '@/lib/auth/guard';
 import { resolveServerPermission } from '@/lib/auth/permissionResolver';
+import { canAssignUserRoleByHierarchy } from '@/lib/auth/roleAssignment';
 import {
   canManageRolePermissions,
   isValidPermissionCode,
@@ -23,6 +24,7 @@ export interface RoleInfo {
   is_system: boolean;
   user_count: number;
   permission_count: number;
+  assignable?: boolean;
   created_at?: string;
 }
 
@@ -53,6 +55,15 @@ const SYSTEM_ROLES: RoleInfo[] = [
     is_system: true,
     user_count: 0,
     permission_count: BASE_ROLE_PERMISSIONS.admin?.length || 24,
+  },
+  {
+    code: 'staff',
+    name: 'Nhân viên vận hành',
+    description: 'Hỗ trợ vận hành, tiếp nhận thông tin và phối hợp các công việc của trung tâm.',
+    color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+    is_system: true,
+    user_count: 0,
+    permission_count: BASE_ROLE_PERMISSIONS.staff?.length || 0,
   },
   {
     code: 'teacher',
@@ -109,6 +120,8 @@ export async function GET(request: NextRequest) {
     if (!auth.authorized || !auth.role) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+    const actorId = auth.profile.id;
+    const actorRole = auth.role;
 
     const serviceClient = createServiceClient();
 
@@ -144,9 +157,13 @@ export async function GET(request: NextRequest) {
     }));
 
     // 3. Count active permissions for each custom role from role_permission_overrides
-    const { data: overrides } = await serviceClient
+    const { data: overrides, error: overridesError } = await serviceClient
       .from('role_permission_overrides')
-      .select('role, is_denied');
+      .select('role, permission_code, is_denied');
+
+    if (overridesError) {
+      throw new Error(`Không thể tải quyền của vai trò: ${overridesError.message}`);
+    }
 
     const permCounts: Record<string, number> = {};
     (overrides || []).forEach((o) => {
@@ -159,13 +176,34 @@ export async function GET(request: NextRequest) {
     const systemRolesWithCounts = SYSTEM_ROLES.map((r) => ({
       ...r,
       user_count: countsByRole[r.code] || 0,
+      assignable: canAssignUserRoleByHierarchy(actorRole, r.code),
     }));
 
     // Merge custom roles with live perm counts
-    const customRolesWithCounts = customRoles.map((r) => ({
-      ...r,
-      permission_count: permCounts[r.code] ?? r.permission_count,
-    }));
+    const customRolesWithCounts = await Promise.all(
+      customRoles.map(async (r) => {
+        const permissionCodes = (overrides || [])
+          .filter((override) => override.role === r.code && !override.is_denied)
+          .map((override) => override.permission_code as PermissionCode);
+        const hierarchyAllows = canAssignUserRoleByHierarchy(actorRole, r.code);
+        const delegationChecks =
+          hierarchyAllows && actorRole !== 'super_admin'
+            ? await Promise.all(
+                permissionCodes.map((permission) =>
+                  resolveServerPermission(actorId, actorRole, permission)
+                )
+              )
+            : [];
+
+        return {
+          ...r,
+          permission_count: permCounts[r.code] ?? r.permission_count,
+          assignable:
+            hierarchyAllows &&
+            (actorRole === 'super_admin' || delegationChecks.every((allowed) => allowed)),
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
