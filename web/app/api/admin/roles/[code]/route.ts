@@ -115,32 +115,18 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       if (description !== undefined) updateData.description = description.trim();
       if (color) updateData.color = color.trim();
 
-      const { error: updateError } = await serviceClient
+      const { data: updatedRole, error: updateError } = await serviceClient
         .from('custom_roles')
         .update(updateData)
-        .eq('code', code);
+        .eq('code', code)
+        .select('code')
+        .maybeSingle();
 
       if (updateError) {
-        // Fallback: app_settings
-        const { data: existingSettings } = await serviceClient
-          .from('app_settings')
-          .select('setting_value')
-          .eq('setting_key', 'custom_roles')
-          .maybeSingle();
-
-        if (existingSettings?.setting_value) {
-          const list = Array.isArray(existingSettings.setting_value)
-            ? existingSettings.setting_value
-            : JSON.parse(existingSettings.setting_value);
-
-          const updatedList = list.map((r: any) => (r.code === code ? { ...r, ...updateData } : r));
-
-          await serviceClient.from('app_settings').upsert({
-            setting_key: 'custom_roles',
-            setting_value: updatedList,
-            updated_at: new Date().toISOString(),
-          });
-        }
+        throw new Error(`Không thể cập nhật vai trò tùy chỉnh: ${updateError.message}`);
+      }
+      if (!updatedRole) {
+        return NextResponse.json({ error: 'Không tìm thấy vai trò tùy chỉnh' }, { status: 404 });
       }
     }
 
@@ -217,10 +203,14 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const serviceClient = createServiceClient();
 
     // 1. Safety Check: Check if any user currently has this role
-    const { count: usersWithRole } = await serviceClient
+    const { count: usersWithRole, error: usageError } = await serviceClient
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('role', code);
+
+    if (usageError) {
+      throw new Error(`Không thể kiểm tra tài khoản đang dùng vai trò: ${usageError.message}`);
+    }
 
     if (usersWithRole && usersWithRole > 0) {
       return NextResponse.json(
@@ -231,34 +221,19 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // 2. Delete from custom_roles table
-    await serviceClient.from('custom_roles').delete().eq('code', code);
-
-    // 3. Fallback: remove from app_settings
-    const { data: existingSettings } = await serviceClient
-      .from('app_settings')
-      .select('setting_value')
-      .eq('setting_key', 'custom_roles')
-      .maybeSingle();
-
-    if (existingSettings?.setting_value) {
-      const list = Array.isArray(existingSettings.setting_value)
-        ? existingSettings.setting_value
-        : JSON.parse(existingSettings.setting_value);
-
-      const filtered = list.filter((r: any) => r.code !== code);
-
-      await serviceClient.from('app_settings').upsert({
-        setting_key: 'custom_roles',
-        setting_value: filtered,
-        updated_at: new Date().toISOString(),
-      });
+    // 2. Delete from the canonical custom_roles table
+    const { error: deleteError } = await serviceClient
+      .from('custom_roles')
+      .delete()
+      .eq('code', code);
+    if (deleteError) {
+      throw new Error(`Không thể xóa vai trò tùy chỉnh: ${deleteError.message}`);
     }
 
-    // 4. Clean up role_permission_overrides
+    // 3. Clean up role_permission_overrides
     await serviceClient.from('role_permission_overrides').delete().eq('role', code);
 
-    // 5. Audit log
+    // 4. Audit log
     await serviceClient.from('permission_audit_logs').insert({
       action: 'revoke',
       user_id: admin.id,

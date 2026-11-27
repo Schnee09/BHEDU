@@ -122,50 +122,26 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // 2. Fetch custom roles from custom_roles table or app_settings
-    let customRoles: RoleInfo[] = [];
-
+    // 2. Fetch custom roles from the canonical table
     const { data: customRolesData, error: customRolesError } = await serviceClient
       .from('custom_roles')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!customRolesError && customRolesData) {
-      customRoles = customRolesData.map((r: any) => ({
-        code: r.code,
-        name: r.name,
-        description: r.description || '',
-        color: r.color || 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-        is_system: false,
-        user_count: countsByRole[r.code] || 0,
-        permission_count: r.permission_count || 0,
-        created_at: r.created_at,
-      }));
-    } else {
-      // Fallback: check app_settings for custom_roles metadata
-      const { data: settingsData } = await serviceClient
-        .from('app_settings')
-        .select('setting_value')
-        .eq('setting_key', 'custom_roles')
-        .maybeSingle();
-
-      if (settingsData?.setting_value) {
-        const stored = Array.isArray(settingsData.setting_value)
-          ? settingsData.setting_value
-          : JSON.parse(settingsData.setting_value || '[]');
-
-        customRoles = stored.map((r: any) => ({
-          code: r.code,
-          name: r.name,
-          description: r.description || '',
-          color: r.color || 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-          is_system: false,
-          user_count: countsByRole[r.code] || 0,
-          permission_count: r.permissions?.length || 0,
-          created_at: r.created_at,
-        }));
-      }
+    if (customRolesError) {
+      throw new Error(`Không thể tải vai trò tùy chỉnh: ${customRolesError.message}`);
     }
+
+    const customRoles: RoleInfo[] = (customRolesData || []).map((r: any) => ({
+      code: r.code,
+      name: r.name,
+      description: r.description || '',
+      color: r.color || 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+      is_system: false,
+      user_count: countsByRole[r.code] || 0,
+      permission_count: 0,
+      created_at: r.created_at,
+    }));
 
     // 3. Count active permissions for each custom role from role_permission_overrides
     const { data: overrides } = await serviceClient
@@ -308,37 +284,17 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    // 1. Try inserting into custom_roles table
+    // 1. Insert into the canonical custom_roles table
     const { error: insertError } = await serviceClient.from('custom_roles').insert(newRoleData);
 
     if (insertError) {
-      // Fallback: save to app_settings
-      const { data: existingSettings } = await serviceClient
-        .from('app_settings')
-        .select('setting_value')
-        .eq('setting_key', 'custom_roles')
-        .maybeSingle();
-
-      const existingList = existingSettings?.setting_value
-        ? Array.isArray(existingSettings.setting_value)
-          ? existingSettings.setting_value
-          : JSON.parse(existingSettings.setting_value)
-        : [];
-
-      if (existingList.some((r: any) => r.code === normalizedCode)) {
+      if (insertError.code === '23505') {
         return NextResponse.json(
           { error: `Vai trò với mã '${normalizedCode}' đã tồn tại` },
-          { status: 400 }
+          { status: 409 }
         );
       }
-
-      existingList.push({ ...newRoleData, permissions });
-
-      await serviceClient.from('app_settings').upsert({
-        setting_key: 'custom_roles',
-        setting_value: existingList,
-        updated_at: new Date().toISOString(),
-      });
+      throw new Error(`Không thể tạo vai trò tùy chỉnh: ${insertError.message}`);
     }
 
     // 2. Grant initial permissions via role_permission_overrides

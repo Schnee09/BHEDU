@@ -93,6 +93,35 @@ describe('admin role detail authorization', () => {
     expect(createServiceClient).not.toHaveBeenCalled();
   });
 
+  it('returns conflict for a duplicate custom role without using a fallback table', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'super-1' },
+      role: 'super_admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+    const from = jest.fn().mockImplementation((table: string) => {
+      if (table !== 'custom_roles') {
+        throw new Error(`Unexpected table: ${table}`);
+      }
+      return {
+        insert: jest.fn().mockResolvedValue({
+          error: { code: '23505', message: 'duplicate key' },
+        }),
+      };
+    });
+    jest.mocked(createServiceClient).mockReturnValue({
+      from,
+    } as unknown as ReturnType<typeof createServiceClient>);
+
+    const response = await POST_ROLE(
+      request('POST', { code: 'office_staff', name: 'Nhân viên văn phòng' })
+    );
+
+    expect(response.status).toBe(409);
+    expect(from).toHaveBeenCalledTimes(1);
+    expect(from).toHaveBeenCalledWith('custom_roles');
+  });
+
   it('prevents an owner from deleting the owner role', async () => {
     jest.mocked(getAuthContext).mockResolvedValue({
       authorized: true,
