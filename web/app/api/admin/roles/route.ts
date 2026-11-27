@@ -297,6 +297,15 @@ export async function POST(request: NextRequest) {
       throw new Error(`Không thể tạo vai trò tùy chỉnh: ${insertError.message}`);
     }
 
+    const { error: staleOverridesError } = await serviceClient
+      .from('role_permission_overrides')
+      .delete()
+      .eq('role', normalizedCode);
+    if (staleOverridesError) {
+      await serviceClient.from('custom_roles').delete().eq('code', normalizedCode);
+      throw new Error(`Không thể chuẩn bị quyền cho vai trò: ${staleOverridesError.message}`);
+    }
+
     // 2. Grant initial permissions via role_permission_overrides
     if (Array.isArray(permissions) && permissions.length > 0) {
       const overridesToInsert = permissions.map((pCode: string) => ({
@@ -308,9 +317,13 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString(),
       }));
 
-      await serviceClient
+      const { error: permissionsError } = await serviceClient
         .from('role_permission_overrides')
         .upsert(overridesToInsert, { onConflict: 'role,permission_code' });
+      if (permissionsError) {
+        await serviceClient.from('custom_roles').delete().eq('code', normalizedCode);
+        throw new Error(`Không thể cấp quyền ban đầu cho vai trò: ${permissionsError.message}`);
+      }
     }
 
     // 3. Log audit event

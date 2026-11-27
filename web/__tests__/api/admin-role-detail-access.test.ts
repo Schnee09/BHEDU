@@ -136,6 +136,46 @@ describe('admin role detail authorization', () => {
     expect(createServiceClient).not.toHaveBeenCalled();
   });
 
+  it('prevents deleting a custom role used by an active invitation', async () => {
+    jest.mocked(getAuthContext).mockResolvedValue({
+      authorized: true,
+      profile: { id: 'super-1' },
+      role: 'super_admin',
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    const profilesQuery = {
+      select: jest.fn(),
+      eq: jest.fn(),
+    };
+    profilesQuery.select.mockReturnValue(profilesQuery);
+    profilesQuery.eq.mockResolvedValue({ count: 0, error: null });
+
+    const invitationsQuery = {
+      select: jest.fn(),
+      eq: jest.fn(),
+      is: jest.fn(),
+      gt: jest.fn(),
+    };
+    invitationsQuery.select.mockReturnValue(invitationsQuery);
+    invitationsQuery.eq.mockReturnValue(invitationsQuery);
+    invitationsQuery.is.mockReturnValue(invitationsQuery);
+    invitationsQuery.gt.mockResolvedValue({ count: 1, error: null });
+
+    const from = jest.fn((table: string) => {
+      if (table === 'profiles') return profilesQuery;
+      if (table === 'user_invitations') return invitationsQuery;
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    jest.mocked(createServiceClient).mockReturnValue({
+      from,
+    } as unknown as ReturnType<typeof createServiceClient>);
+
+    const response = await DELETE(request('DELETE'), context);
+
+    expect(response.status).toBe(409);
+    expect(from).not.toHaveBeenCalledWith('custom_roles');
+  });
+
   it.each([
     [
       'role update',

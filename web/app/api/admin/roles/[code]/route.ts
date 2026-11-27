@@ -221,6 +221,25 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
+    const { count: activeInvitations, error: invitationError } = await serviceClient
+      .from('user_invitations')
+      .select('id', { count: 'exact', head: true })
+      .eq('role', code)
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString());
+
+    if (invitationError) {
+      throw new Error(`Không thể kiểm tra lời mời đang dùng vai trò: ${invitationError.message}`);
+    }
+    if (activeInvitations && activeInvitations > 0) {
+      return NextResponse.json(
+        {
+          error: `Không thể xóa vai trò vì còn ${activeInvitations} lời mời chưa sử dụng. Vui lòng thu hồi hoặc chờ lời mời hết hạn.`,
+        },
+        { status: 409 }
+      );
+    }
+
     // 2. Delete from the canonical custom_roles table
     const { error: deleteError } = await serviceClient
       .from('custom_roles')
@@ -231,7 +250,13 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     // 3. Clean up role_permission_overrides
-    await serviceClient.from('role_permission_overrides').delete().eq('role', code);
+    const { error: cleanupError } = await serviceClient
+      .from('role_permission_overrides')
+      .delete()
+      .eq('role', code);
+    if (cleanupError) {
+      throw new Error(`Không thể dọn quyền của vai trò đã xóa: ${cleanupError.message}`);
+    }
 
     // 4. Audit log
     await serviceClient.from('permission_audit_logs').insert({
