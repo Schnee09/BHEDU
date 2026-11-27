@@ -21,6 +21,8 @@ interface RouteContext {
   params: Promise<{ role: string }>;
 }
 
+const MAX_OVERRIDE_NOTES_LENGTH = 500;
+
 // GET — Get current overrides for a role
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
@@ -83,16 +85,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { role } = await context.params;
 
-    if (!isValidRoleCode(role)) {
-      return NextResponse.json({ error: 'Invalid role code format' }, { status: 400 });
-    }
-
     const auth = await getAuthContext(request, 'permissions.manage');
     if (!auth.authorized || !auth.profile || !auth.role) {
       return NextResponse.json(
         { error: auth.reason || 'Forbidden' },
         { status: auth.user ? 403 : 401 }
       );
+    }
+    if (!isValidRoleCode(role)) {
+      return NextResponse.json({ error: 'Invalid role code format' }, { status: 400 });
     }
     if (!canManageRolePermissions(auth.role, role as UserRole)) {
       return NextResponse.json(
@@ -102,11 +103,25 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const body = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     const { permission_code, is_denied = false, notes } = body;
 
     if (typeof permission_code !== 'string' || !isValidPermissionCode(permission_code)) {
       return NextResponse.json({ error: 'Invalid permission_code' }, { status: 400 });
     }
+    if (typeof is_denied !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid is_denied value' }, { status: 400 });
+    }
+    if (
+      notes !== undefined &&
+      (typeof notes !== 'string' || notes.trim().length > MAX_OVERRIDE_NOTES_LENGTH)
+    ) {
+      return NextResponse.json({ error: 'Invalid notes' }, { status: 400 });
+    }
+
+    const normalizedNotes = notes?.trim() || null;
 
     const serviceClient = createServiceClient();
 
@@ -127,7 +142,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
           permission_code,
           is_denied,
           granted_by: auth.profile.id,
-          notes: notes || null,
+          notes: normalizedNotes,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'role,permission_code' }
@@ -150,8 +165,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       permission_code,
       performed_by: auth.profile.id,
       old_value: oldOverride || null,
-      new_value: { role, is_denied, notes },
-      reason: notes || null,
+      new_value: { role, is_denied, notes: normalizedNotes },
+      reason: normalizedNotes,
       scope: 'role',
     });
 
@@ -169,10 +184,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { searchParams } = new URL(request.url);
     const permission_code = searchParams.get('permission_code');
 
-    if (!permission_code || !isValidPermissionCode(permission_code)) {
-      return NextResponse.json({ error: 'Invalid permission_code' }, { status: 400 });
-    }
-
     const auth = await getAuthContext(request, 'permissions.manage');
     if (!auth.authorized || !auth.profile || !auth.role) {
       return NextResponse.json(
@@ -182,6 +193,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
     if (!isValidRoleCode(role)) {
       return NextResponse.json({ error: 'Invalid role code format' }, { status: 400 });
+    }
+    if (!permission_code || !isValidPermissionCode(permission_code)) {
+      return NextResponse.json({ error: 'Invalid permission_code' }, { status: 400 });
     }
     if (!canManageRolePermissions(auth.role, role as UserRole)) {
       return NextResponse.json(
