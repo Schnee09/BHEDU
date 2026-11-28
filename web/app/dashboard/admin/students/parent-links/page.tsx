@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Badge } from '../../_components/FormElements';
 import { ConfirmDialog } from '../../_components/Alert';
+import { Pagination } from '../../_components/Pagination';
 
 type LinkStatus = 'pending' | 'approved' | 'rejected' | 'revoked';
 
@@ -38,6 +39,8 @@ const RELATIONSHIP_LABELS: Record<string, string> = {
   other: 'Khác',
 };
 
+const PAGE_SIZE = 20;
+
 function StatusBadge({ status }: { status: LinkStatus }) {
   if (status === 'pending') return <Badge variant="warning">Chờ duyệt</Badge>;
   if (status === 'approved') return <Badge variant="success">Đã duyệt</Badge>;
@@ -48,6 +51,8 @@ function StatusBadge({ status }: { status: LinkStatus }) {
 export default function ParentLinksPage() {
   const [links, setLinks] = useState<ParentStudentLink[]>([]);
   const [status, setStatus] = useState<'all' | LinkStatus>('pending');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,14 +66,20 @@ export default function ParentLinksPage() {
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`/api/admin/parent-links?status=${status}`)
+    fetch(`/api/admin/parent-links?status=${status}&page=${page}&limit=${PAGE_SIZE}`)
       .then(async (response) => {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Không thể tải danh sách yêu cầu.');
-        return result.data || [];
+        return {
+          links: (result.data || []) as ParentStudentLink[],
+          total: Number(result.pagination?.total || 0),
+        };
       })
-      .then((data) => {
-        if (!cancelled) setLinks(data);
+      .then((result) => {
+        if (!cancelled) {
+          setLinks(result.links);
+          setTotal(result.total);
+        }
       })
       .catch((requestError) => {
         if (cancelled) return;
@@ -76,6 +87,7 @@ export default function ParentLinksPage() {
           requestError instanceof Error ? requestError.message : 'Không thể tải danh sách yêu cầu.'
         );
         setLinks([]);
+        setTotal(0);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -84,7 +96,7 @@ export default function ParentLinksPage() {
     return () => {
       cancelled = true;
     };
-  }, [status]);
+  }, [page, status]);
 
   const updateStatus = async (id: string, nextStatus: 'approved' | 'rejected', notes?: string) => {
     setActionLoading(id);
@@ -98,11 +110,18 @@ export default function ParentLinksPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Không thể cập nhật trạng thái.');
-      setLinks((currentLinks) =>
-        status === 'all'
-          ? currentLinks.map((link) => (link.id === id ? { ...link, status: nextStatus } : link))
-          : currentLinks.filter((link) => link.id !== id)
-      );
+      if (status === 'all') {
+        setLinks((currentLinks) =>
+          currentLinks.map((link) => (link.id === id ? { ...link, status: nextStatus } : link))
+        );
+      } else if (links.length === 1 && page > 1) {
+        setLoading(true);
+        setPage((currentPage) => currentPage - 1);
+        setTotal((currentTotal) => Math.max(0, currentTotal - 1));
+      } else {
+        setLinks((currentLinks) => currentLinks.filter((link) => link.id !== id));
+        setTotal((currentTotal) => Math.max(0, currentTotal - 1));
+      }
       setSuccess(
         nextStatus === 'approved' ? 'Đã duyệt yêu cầu kết nối.' : 'Đã từ chối yêu cầu kết nối.'
       );
@@ -137,6 +156,7 @@ export default function ParentLinksPage() {
               if (status === option.value) return;
               setLoading(true);
               setError(null);
+              setPage(1);
               setStatus(option.value);
             }}
             aria-pressed={status === option.value}
@@ -253,6 +273,18 @@ export default function ParentLinksPage() {
               </article>
             ))}
           </div>
+        )}
+        {!loading && (
+          <Pagination
+            page={page}
+            perPage={PAGE_SIZE}
+            total={total}
+            onPageChange={(nextPage) => {
+              setLoading(true);
+              setError(null);
+              setPage(nextPage);
+            }}
+          />
         )}
       </section>
 
