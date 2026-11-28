@@ -30,7 +30,7 @@ import {
   SkeletonTable,
   Modal,
 } from '@/components/ui';
-import { PermissionGuard } from '@/hooks/usePermissions';
+import { PermissionGuard, usePermissions } from '@/hooks/usePermissions';
 import PageGuard from '@/components/PageGuard';
 import { StatCard } from '@/components/ui/Card';
 import { Icons } from '@/components/ui/Icons';
@@ -125,7 +125,10 @@ export default function StudentsPageGuarded() {
 
 function StudentsPage() {
   const toast = useToast();
-  const { user, hasAdminAccess, isTeacher: _isTeacher } = useUser();
+  const { user, isTeacher: _isTeacher } = useUser();
+  const { can } = usePermissions();
+  const canEditStudents = can('students.edit');
+  const canDeleteStudents = can('students.delete');
 
   // View mode (Desktop table vs Grid cards)
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
@@ -236,8 +239,8 @@ function StudentsPage() {
 
   // Bulk archive
   const handleBulkArchive = async () => {
-    if (!hasAdminAccess) {
-      toast.warning('Not Allowed', 'Only admins and staff can archive students');
+    if (!canDeleteStudents) {
+      toast.warning('Không được phép', 'Bạn không có quyền lưu trữ hồ sơ học sinh');
       return;
     }
     if (selectedIds.size === 0) {
@@ -283,8 +286,8 @@ function StudentsPage() {
 
   // Single student archive
   const handleArchiveOne = async (student: Student) => {
-    if (!hasAdminAccess) {
-      toast.warning('Not Allowed', 'Only admins and staff can archive students');
+    if (!canDeleteStudents) {
+      toast.warning('Không được phép', 'Bạn không có quyền lưu trữ hồ sơ học sinh');
       return;
     }
 
@@ -317,6 +320,8 @@ function StudentsPage() {
   };
 
   const handleInlineStatusToggle = async (student: Student) => {
+    if (!canEditStudents) return;
+
     const nextStatus = student.status === 'active' ? 'inactive' : 'active';
     const toastId = showToast.loading(`Đang cập nhật trạng thái cho ${student.full_name}...`);
     try {
@@ -350,6 +355,8 @@ function StudentsPage() {
   };
 
   const handleInlineGradeUpdate = async (student: Student, newGrade: string) => {
+    if (!canEditStudents) return;
+
     const toastId = showToast.loading(`Đang cập nhật khối lớp cho ${student.full_name}...`);
     try {
       const payload = {
@@ -869,9 +876,11 @@ function StudentsPage() {
             }
             action={
               <div className="flex gap-2">
-                <Link href={routes.students.import()}>
-                  <Button variant="primary">Nhập học sinh</Button>
-                </Link>
+                <PermissionGuard permissions="students.import">
+                  <Link href={routes.students.import()}>
+                    <Button variant="primary">Nhập học sinh</Button>
+                  </Link>
+                </PermissionGuard>
                 {debouncedSearch && (
                   <Button variant="outline" onClick={() => setSearchQuery('')}>
                     Xóa tìm kiếm
@@ -891,7 +900,8 @@ function StudentsPage() {
               onArchive={handleArchiveOne}
               selectedIds={selectedIds}
               onSelect={handleSelectOne}
-              hasAdminAccess={hasAdminAccess}
+              canEdit={canEditStudents}
+              canArchive={canDeleteStudents}
               onViewDetails={(student) => {
                 setSelectedStudentForDrawer(student);
                 setShowDrawer(true);
@@ -906,7 +916,8 @@ function StudentsPage() {
                   onArchive={handleArchiveOne}
                   selectedIds={selectedIds}
                   onSelect={handleSelectOne}
-                  hasAdminAccess={hasAdminAccess}
+                  canEdit={canEditStudents}
+                  canArchive={canDeleteStudents}
                   onViewDetails={(student) => {
                     setSelectedStudentForDrawer(student);
                     setShowDrawer(true);
@@ -1037,29 +1048,34 @@ function StudentsPage() {
                         {
                           key: 'grade_level',
                           header: 'Khối lớp',
-                          render: (student) => (
-                            <DropdownMenu
-                              trigger={
-                                <button
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="cursor-pointer active:scale-95 transition-all px-2.5 py-1 rounded-lg border border-stone-200 dark:border-white/10 font-bold text-xs bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:border-amber-400"
-                                  title="Click đổi khối lớp nhanh"
-                                >
-                                  {student.grade_level || 'Chưa xếp khối'}
-                                </button>
-                              }
-                            >
-                              {[6, 7, 8, 9, 10, 11, 12].map((g) => (
-                                <DropdownItem
-                                  key={g}
-                                  onClick={() => handleInlineGradeUpdate(student, `Lớp ${g}`)}
-                                  className="font-bold py-1.5 text-xs cursor-pointer"
-                                >
-                                  Lớp {g}
-                                </DropdownItem>
-                              ))}
-                            </DropdownMenu>
-                          ),
+                          render: (student) =>
+                            canEditStudents ? (
+                              <DropdownMenu
+                                trigger={
+                                  <button
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="cursor-pointer active:scale-95 transition-all px-2.5 py-1 rounded-lg border border-stone-200 dark:border-white/10 font-bold text-xs bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:border-amber-400"
+                                    title="Click đổi khối lớp nhanh"
+                                  >
+                                    {student.grade_level || 'Chưa xếp khối'}
+                                  </button>
+                                }
+                              >
+                                {[6, 7, 8, 9, 10, 11, 12].map((g) => (
+                                  <DropdownItem
+                                    key={g}
+                                    onClick={() => handleInlineGradeUpdate(student, `Lớp ${g}`)}
+                                    className="font-bold py-1.5 text-xs cursor-pointer"
+                                  >
+                                    Lớp {g}
+                                  </DropdownItem>
+                                ))}
+                              </DropdownMenu>
+                            ) : (
+                              <span className="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-bold text-stone-700 dark:border-white/10 dark:bg-stone-800 dark:text-stone-300">
+                                {student.grade_level || 'Chưa xếp khối'}
+                              </span>
+                            ),
                         },
                         {
                           key: 'phone',
@@ -1099,22 +1115,31 @@ function StudentsPage() {
                           header: 'Trạng thái',
                           render: (student) => {
                             const isActive = student.status === 'active';
-                            return (
+                            const statusClassName = cn(
+                              'px-2.5 py-0.5 rounded-full font-semibold text-[10px]',
+                              isActive
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40'
+                                : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-white/10'
+                            );
+
+                            return canEditStudents ? (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleInlineStatusToggle(student);
                                 }}
                                 className={cn(
-                                  'cursor-pointer active:scale-95 transition-all px-2.5 py-0.5 rounded-full font-semibold text-[10px]',
-                                  isActive
-                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100'
-                                    : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-white/10 hover:bg-stone-200'
+                                  statusClassName,
+                                  'cursor-pointer active:scale-95 transition-all hover:brightness-95'
                                 )}
                                 title="Click để chuyển trạng thái"
                               >
                                 {isActive ? 'Đang học' : 'Lưu trữ'}
                               </button>
+                            ) : (
+                              <span className={statusClassName}>
+                                {isActive ? 'Đang học' : 'Lưu trữ'}
+                              </span>
                             );
                           },
                         },
@@ -1140,15 +1165,17 @@ function StudentsPage() {
                               >
                                 <Award className="w-4 h-4" />
                               </Link>
-                              <button
-                                type="button"
-                                onClick={() => setEditingStudent(student)}
-                                className="p-1.5 rounded-lg text-stone-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-all cursor-pointer"
-                                title="Chỉnh sửa thông tin"
-                              >
-                                <Icons.Edit className="w-4 h-4" />
-                              </button>
-                              {hasAdminAccess && (
+                              {canEditStudents && (
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingStudent(student)}
+                                  className="p-1.5 rounded-lg text-stone-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-all cursor-pointer"
+                                  title="Chỉnh sửa thông tin"
+                                >
+                                  <Icons.Edit className="w-4 h-4" />
+                                </button>
+                              )}
+                              {canDeleteStudents && (
                                 <button
                                   type="button"
                                   onClick={() => handleArchiveOne(student)}
@@ -1161,6 +1188,7 @@ function StudentsPage() {
                               <StudentQuickActions
                                 studentId={student.id}
                                 studentName={student.full_name}
+                                canEdit={canEditStudents}
                               />
                             </div>
                           ),

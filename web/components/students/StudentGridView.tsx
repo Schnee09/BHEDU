@@ -13,7 +13,8 @@ interface StudentGridViewProps {
   onArchive: (student: Student) => void;
   selectedIds: Set<string>;
   onSelect: (id: string) => void;
-  hasAdminAccess: boolean;
+  canEdit: boolean;
+  canArchive: boolean;
   onViewDetails?: (student: Student) => void;
   onToggleStatus?: (student: Student) => void;
 }
@@ -24,7 +25,8 @@ export default function StudentGridView({
   onArchive,
   selectedIds,
   onSelect,
-  hasAdminAccess,
+  canEdit,
+  canArchive,
   onViewDetails,
   onToggleStatus,
 }: StudentGridViewProps) {
@@ -114,9 +116,11 @@ export default function StudentGridView({
                       )}
                       <button
                         type="button"
-                        onClick={() => onToggleStatus && onToggleStatus(student)}
+                        disabled={!canEdit}
+                        onClick={() => canEdit && onToggleStatus && onToggleStatus(student)}
                         className={cn(
-                          'px-2 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer transition-all',
+                          'px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all',
+                          canEdit ? 'cursor-pointer' : 'cursor-default',
                           isActive
                             ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100'
                             : 'bg-stone-200/70 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-300/80 dark:border-white/10 hover:bg-stone-200'
@@ -213,15 +217,17 @@ export default function StudentGridView({
               >
                 <Award className="w-3.5 h-3.5" />
               </Link>
-              <button
-                type="button"
-                onClick={() => onEdit(student)}
-                className="p-1.5 h-8 w-8 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-xl border border-amber-200/60 dark:border-amber-800/40 flex items-center justify-center transition-all cursor-pointer"
-                title="Chỉnh sửa thông tin"
-              >
-                <Edit className="w-3.5 h-3.5" />
-              </button>
-              {hasAdminAccess && (
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => onEdit(student)}
+                  className="p-1.5 h-8 w-8 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-xl border border-amber-200/60 dark:border-amber-800/40 flex items-center justify-center transition-all cursor-pointer"
+                  title="Chỉnh sửa thông tin"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {canArchive && (
                 <button
                   type="button"
                   onClick={() => onArchive(student)}

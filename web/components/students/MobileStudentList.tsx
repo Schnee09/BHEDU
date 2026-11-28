@@ -26,7 +26,8 @@ interface MobileStudentListProps {
   onArchive: (student: Student) => void;
   selectedIds: Set<string>;
   onSelect: (id: string) => void;
-  hasAdminAccess: boolean;
+  canEdit: boolean;
+  canArchive: boolean;
   onViewDetails?: (student: Student) => void;
 }
 
@@ -36,7 +37,8 @@ export default function MobileStudentList({
   onArchive,
   selectedIds,
   onSelect,
-  hasAdminAccess,
+  canEdit,
+  canArchive,
   onViewDetails,
 }: MobileStudentListProps) {
   if (students.length === 0) {
@@ -219,18 +221,20 @@ export default function MobileStudentList({
               >
                 <Award className="w-4 h-4 text-amber-500" />
               </Link>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(student);
-                }}
-                className="px-3 h-9 shrink-0 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-black uppercase tracking-wider border border-amber-200/60 dark:border-amber-800/40 flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer whitespace-nowrap"
-              >
-                <Edit className="w-3.5 h-3.5" />
-                <span>Sửa</span>
-              </button>
-              {hasAdminAccess && (
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(student);
+                  }}
+                  className="px-3 h-9 shrink-0 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-black uppercase tracking-wider border border-amber-200/60 dark:border-amber-800/40 flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer whitespace-nowrap"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>Sửa</span>
+                </button>
+              )}
+              {canArchive && (
                 <button
                   type="button"
                   onClick={(e) => {

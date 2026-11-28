@@ -9,10 +9,16 @@ import { routes } from '@/lib/routes';
 interface StudentQuickActionsProps {
   studentId: string;
   studentName: string;
+  canEdit: boolean;
   className?: string;
 }
 
-export default function StudentQuickActions({ studentId, studentName, className }: StudentQuickActionsProps) {
+export default function StudentQuickActions({
+  studentId,
+  studentName,
+  canEdit,
+  className,
+}: StudentQuickActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -47,30 +53,34 @@ export default function StudentQuickActions({ studentId, studentName, className 
       label: 'Hồ sơ chi tiết',
       icon: <Icons.Students className="w-3.5 h-3.5" />,
       href: routes.students.detail(studentId),
-      color: 'text-stone-600 dark:text-stone-400'
+      color: 'text-stone-600 dark:text-stone-400',
     },
     {
       label: 'Bảng điểm',
       icon: <Icons.Grades className="w-3.5 h-3.5" />,
       href: `/dashboard/students/${studentId}/transcript`,
-      color: 'text-amber-600 dark:text-amber-400'
+      color: 'text-amber-600 dark:text-amber-400',
     },
     {
       label: 'Tiến độ học tập',
       icon: <Icons.History className="w-3.5 h-3.5" />,
       href: `/dashboard/students/${studentId}/progress`,
-      color: 'text-blue-600 dark:text-blue-400'
+      color: 'text-blue-600 dark:text-blue-400',
     },
-    {
-      label: 'Chỉnh sửa',
-      icon: <Icons.Edit className="w-3.5 h-3.5" />,
-      href: routes.students.edit(studentId),
-      color: 'text-emerald-600 dark:text-emerald-400'
-    }
+    ...(canEdit
+      ? [
+          {
+            label: 'Chỉnh sửa',
+            icon: <Icons.Edit className="w-3.5 h-3.5" />,
+            href: routes.students.edit(studentId),
+            color: 'text-emerald-600 dark:text-emerald-400',
+          },
+        ]
+      : []),
   ];
 
   return (
-    <div ref={containerRef} className={cn("relative inline-block text-left", className)}>
+    <div ref={containerRef} className={cn('relative inline-block text-left', className)}>
       <button
         type="button"
         onClick={(e) => {
@@ -79,10 +89,10 @@ export default function StudentQuickActions({ studentId, studentName, className 
           setIsOpen((prev) => !prev);
         }}
         className={cn(
-          "w-8 h-8 flex items-center justify-center rounded-xl transition-all border cursor-pointer",
+          'w-8 h-8 flex items-center justify-center rounded-xl transition-all border cursor-pointer',
           isOpen
-            ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
-            : "bg-stone-100 dark:bg-white/5 text-stone-500 hover:text-stone-900 dark:hover:text-white border-transparent hover:border-stone-200 dark:hover:border-white/10"
+            ? 'bg-amber-500/10 text-amber-600 border-amber-500/30'
+            : 'bg-stone-100 dark:bg-white/5 text-stone-500 hover:text-stone-900 dark:hover:text-white border-transparent hover:border-stone-200 dark:hover:border-white/10'
         )}
         title="Thao tác nhanh"
         aria-label="Thao tác nhanh"
@@ -112,9 +122,7 @@ export default function StudentQuickActions({ studentId, studentName, className 
               className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-stone-50 dark:hover:bg-white/5 transition-colors group cursor-pointer"
               onClick={() => setIsOpen(false)}
             >
-              <div className={cn("transition-colors shrink-0", item.color)}>
-                {item.icon}
-              </div>
+              <div className={cn('transition-colors shrink-0', item.color)}>{item.icon}</div>
               <span className="text-xs font-semibold text-stone-700 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-white">
                 {item.label}
               </span>
