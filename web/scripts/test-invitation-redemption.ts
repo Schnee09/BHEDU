@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { config } from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+import { UserService } from '../lib/services/userService';
 
 config({ path: '.env.local' });
 config({ path: '.env' });
@@ -61,7 +62,7 @@ async function createInvitation(input: {
 }
 
 let inviterId: string | null = null;
-async function getInviterId() {
+async function getInviterId(): Promise<string> {
   if (inviterId) return inviterId;
   const { data, error } = await service
     .from('profiles')
@@ -72,7 +73,7 @@ async function getInviterId() {
     .single();
   if (error || !data) throw new Error(`Cannot find an inviter profile: ${error?.message}`);
   inviterId = data.id;
-  return inviterId;
+  return data.id;
 }
 
 async function signUp(email: string, metadata: Record<string, unknown>) {
@@ -214,6 +215,34 @@ async function main() {
     const publicProfile = await profileFor(publicSignup.data.user.id);
     assert(publicProfile.role === 'parent', 'Public signup escalated its role from user metadata.');
     console.log('PASS: public signup cannot elevate its role');
+
+    const managedProfile = await new UserService(service).createUser(
+      {
+        email: `e2e-managed-${runId}@bhedu.vn`,
+        password,
+        full_name: 'Giáo viên kiểm thử',
+        role: 'teacher',
+        teacher_type: 'part_time',
+        status: 'active',
+        is_active: true,
+        is_managed: true,
+      },
+      'super_admin',
+      await getInviterId()
+    );
+    assert(managedProfile.user_id, 'Managed teacher did not return an Auth user ID.');
+    authUserIds.add(managedProfile.user_id);
+    assert(managedProfile.role === 'teacher', 'Managed account did not retain its trusted role.');
+    const { data: teacherProfile, error: teacherProfileError } = await service
+      .from('teacher_profiles')
+      .select('teacher_type')
+      .eq('profile_id', managedProfile.id)
+      .single();
+    assert(
+      !teacherProfileError && teacherProfile?.teacher_type === 'part_time',
+      'Managed teacher profile was not provisioned.'
+    );
+    console.log('PASS: admin-provisioned teacher retains its role and teacher profile');
   } finally {
     await cleanup();
   }

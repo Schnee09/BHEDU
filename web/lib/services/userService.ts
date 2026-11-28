@@ -285,7 +285,7 @@ export class UserService {
       // 7. Log activity
       try {
         const { error: activityError } = await this.supabase.from('user_activity_logs').insert({
-          user_id: userId,
+          user_id: profile.id,
           action: 'user_created',
           description: `User created by ${currentUserRole}`,
           metadata: { created_by: createdBy, role: input.role },

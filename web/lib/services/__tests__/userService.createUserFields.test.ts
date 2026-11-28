@@ -82,5 +82,11 @@ describe('UserService.createUser profile fields', () => {
         user_metadata: expect.objectContaining({ role: 'student' }),
       })
     );
+    expect(activityInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 'profile-1',
+        action: 'user_created',
+      })
+    );
   });
 });
