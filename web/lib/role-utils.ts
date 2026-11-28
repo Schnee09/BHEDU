@@ -17,6 +17,7 @@ export type UserRole =
   | 'super_admin'
   | 'owner'
   | 'admin'
+  | 'staff'
   | 'teacher'
   | 'tutor'
   | 'parent'
@@ -85,6 +86,20 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
     icon: '👑',
     phoneAuthAllowed: false,
     emailRequired: true,
+    provisionMethod: 'invite',
+  },
+  staff: {
+    label: 'Nhân viên vận hành',
+    labelEn: 'Operations Staff',
+    description: 'Hỗ trợ tiếp nhận thông tin và vận hành công việc tại trung tâm',
+    color: 'violet',
+    bgClass: 'bg-violet-100 text-violet-800',
+    bgClassDark: 'dark:bg-violet-900/30 dark:text-violet-300',
+    textClass: 'text-violet-600 dark:text-violet-400',
+    borderClass: 'border-violet-200 dark:border-violet-800',
+    icon: '🗂️',
+    phoneAuthAllowed: true,
+    emailRequired: false,
     provisionMethod: 'invite',
   },
 
@@ -189,14 +204,14 @@ export function getRoleBadgeClass(role: string | null | undefined): string {
  * Get all valid roles as array
  */
 export function getAllRoles(): UserRole[] {
-  return ['super_admin', 'owner', 'admin', 'teacher', 'tutor', 'parent', 'student'];
+  return ['super_admin', 'owner', 'admin', 'staff', 'teacher', 'tutor', 'parent', 'student'];
 }
 
 /**
  * Get roles that can be assigned via invite system
  */
 export function getInvitableRoles(): UserRole[] {
-  return ['owner', 'admin', 'teacher', 'tutor'];
+  return ['owner', 'admin', 'staff', 'teacher', 'tutor'];
 }
 
 /**
@@ -221,6 +236,7 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   super_admin: 1000,
   owner: 900,
   admin: 800,
+  staff: 600,
   teacher: 400,
   tutor: 350,
   parent: 200,
@@ -238,9 +254,10 @@ export function hasHigherOrEqualRole(actorRole: UserRole, targetRole: UserRole):
  * Define which roles can create/manage other roles
  */
 export const ROLE_MANAGEMENT_MATRIX: Record<UserRole, UserRole[]> = {
-  super_admin: ['owner', 'admin', 'teacher', 'tutor', 'parent', 'student'],
-  owner: ['admin', 'teacher', 'tutor', 'parent', 'student'],
-  admin: ['teacher', 'tutor', 'parent', 'student'],
+  super_admin: ['owner', 'admin', 'staff', 'teacher', 'tutor', 'parent', 'student'],
+  owner: ['admin', 'staff', 'teacher', 'tutor', 'parent', 'student'],
+  admin: ['staff', 'teacher', 'tutor', 'parent', 'student'],
+  staff: [],
   teacher: [],
   tutor: [],
   parent: [],
@@ -349,6 +366,7 @@ export const ROLE_AVATAR_GRADIENT: Record<string, string> = {
   super_admin: 'from-slate-800 to-stone-950',
   owner: 'from-amber-500 to-amber-700',
   admin: 'from-red-600 to-amber-600',
+  staff: 'from-violet-600 to-purple-600',
   teacher: 'from-blue-600 to-cyan-600',
   tutor: 'from-teal-600 to-emerald-600',
   parent: 'from-amber-500 to-orange-500',

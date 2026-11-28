@@ -4,6 +4,7 @@
  */
 
 import {
+  canDeactivateUser,
   canModifyUserRole,
   getAllRoles,
   getRoleBadgeClass,
@@ -19,6 +20,7 @@ describe('Role Utilities', () => {
     expect(ROLE_CONFIG.super_admin).toBeDefined();
     expect(ROLE_CONFIG.owner).toBeDefined();
     expect(ROLE_CONFIG.admin).toBeDefined();
+    expect(ROLE_CONFIG.staff).toBeDefined();
     expect(ROLE_CONFIG.teacher).toBeDefined();
     expect(ROLE_CONFIG.tutor).toBeDefined();
     expect(ROLE_CONFIG.parent).toBeDefined();
@@ -30,12 +32,13 @@ describe('Role Utilities', () => {
     expect(ROLE_CONFIG.teacher.label).toBe('Giáo viên');
     expect(ROLE_CONFIG.student.label).toBe('Học sinh');
     expect(ROLE_CONFIG.owner.label).toBe('Chủ sở hữu');
+    expect(ROLE_CONFIG.staff.label).toBe('Nhân viên vận hành');
   });
 
   it('should have unique colors for each role', () => {
     const colors = getAllRoles().map((role) => ROLE_CONFIG[role].color);
     const uniqueColors = new Set(colors);
-    expect(uniqueColors.size).toBe(7);
+    expect(uniqueColors.size).toBe(8);
   });
 
   describe('getRoleConfig', () => {
@@ -70,6 +73,7 @@ describe('Role Utilities', () => {
     it('should return true for valid roles', () => {
       expect(isValidRole('admin')).toBe(true);
       expect(isValidRole('teacher')).toBe(true);
+      expect(isValidRole('staff')).toBe(true);
       expect(isValidRole('student')).toBe(true);
     });
 
@@ -86,6 +90,8 @@ describe('Role Utilities', () => {
       expect(hasHigherOrEqualRole('admin', 'student')).toBe(true);
       expect(hasHigherOrEqualRole('admin', 'admin')).toBe(true);
       expect(hasHigherOrEqualRole('admin', 'teacher')).toBe(true);
+      expect(hasHigherOrEqualRole('staff', 'teacher')).toBe(true);
+      expect(hasHigherOrEqualRole('teacher', 'staff')).toBe(false);
       expect(hasHigherOrEqualRole('student', 'admin')).toBe(false);
       expect(hasHigherOrEqualRole('teacher', 'admin')).toBe(false);
     });
@@ -94,6 +100,7 @@ describe('Role Utilities', () => {
   describe('canModifyUserRole', () => {
     it('should allow admin to modify staff and below but not other admins', () => {
       expect(canModifyUserRole('admin', 'admin')).toBe(false);
+      expect(canModifyUserRole('admin', 'staff')).toBe(true);
       expect(canModifyUserRole('admin', 'teacher')).toBe(true);
       expect(canModifyUserRole('admin', 'student')).toBe(true);
     });
@@ -106,6 +113,7 @@ describe('Role Utilities', () => {
 
     it('should allow owner to modify admin, staff, and others', () => {
       expect(canModifyUserRole('owner', 'admin')).toBe(true);
+      expect(canModifyUserRole('owner', 'staff')).toBe(true);
       expect(canModifyUserRole('owner', 'student')).toBe(true);
     });
 
@@ -120,13 +128,21 @@ describe('Role Utilities', () => {
     });
   });
 
+  describe('canDeactivateUser', () => {
+    it('allows administrators to deactivate staff but not peer administrators', () => {
+      expect(canDeactivateUser('admin', 'staff')).toBe(true);
+      expect(canDeactivateUser('admin', 'admin')).toBe(false);
+    });
+  });
+
   describe('getAllRoles', () => {
-    it('should return all seven roles', () => {
+    it('should return all eight roles', () => {
       const roles = getAllRoles();
-      expect(roles).toHaveLength(7);
+      expect(roles).toHaveLength(8);
       expect(roles).toContain('super_admin');
       expect(roles).toContain('owner');
       expect(roles).toContain('admin');
+      expect(roles).toContain('staff');
       expect(roles).toContain('teacher');
       expect(roles).toContain('tutor');
       expect(roles).toContain('parent');
