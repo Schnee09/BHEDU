@@ -8,6 +8,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { Badge } from '../../_components/FormElements';
+import { ConfirmDialog } from '../../_components/Alert';
 
 type LinkStatus = 'pending' | 'approved' | 'rejected' | 'revoked';
 
@@ -50,6 +51,12 @@ export default function ParentLinksPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [reviewAction, setReviewAction] = useState<{
+    item: ParentStudentLink;
+    status: 'approved' | 'rejected';
+  } | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -79,14 +86,15 @@ export default function ParentLinksPage() {
     };
   }, [status]);
 
-  const updateStatus = async (id: string, nextStatus: 'approved' | 'rejected') => {
+  const updateStatus = async (id: string, nextStatus: 'approved' | 'rejected', notes?: string) => {
     setActionLoading(id);
     setError(null);
+    setSuccess(null);
     try {
       const response = await fetch('/api/admin/parent-links', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: nextStatus }),
+        body: JSON.stringify({ id, status: nextStatus, notes }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Không thể cập nhật trạng thái.');
@@ -95,6 +103,11 @@ export default function ParentLinksPage() {
           ? currentLinks.map((link) => (link.id === id ? { ...link, status: nextStatus } : link))
           : currentLinks.filter((link) => link.id !== id)
       );
+      setSuccess(
+        nextStatus === 'approved' ? 'Đã duyệt yêu cầu kết nối.' : 'Đã từ chối yêu cầu kết nối.'
+      );
+      setReviewAction(null);
+      setRejectionReason('');
     } catch (requestError) {
       setError(
         requestError instanceof Error ? requestError.message : 'Không thể cập nhật trạng thái.'
@@ -144,6 +157,15 @@ export default function ParentLinksPage() {
           className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
         >
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300"
+        >
+          {success}
         </div>
       )}
 
@@ -201,7 +223,10 @@ export default function ParentLinksPage() {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => void updateStatus(item.id, 'approved')}
+                      onClick={() => {
+                        setSuccess(null);
+                        setReviewAction({ item, status: 'approved' });
+                      }}
                       disabled={actionLoading !== null}
                       className="cursor-pointer rounded-xl bg-emerald-600 p-2.5 text-white transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
                       title="Phê duyệt yêu cầu"
@@ -211,7 +236,11 @@ export default function ParentLinksPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => void updateStatus(item.id, 'rejected')}
+                      onClick={() => {
+                        setSuccess(null);
+                        setRejectionReason('');
+                        setReviewAction({ item, status: 'rejected' });
+                      }}
                       disabled={actionLoading !== null}
                       className="cursor-pointer rounded-xl bg-red-600 p-2.5 text-white transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                       title="Từ chối yêu cầu"
@@ -226,6 +255,59 @@ export default function ParentLinksPage() {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        isOpen={Boolean(reviewAction)}
+        title={reviewAction?.status === 'approved' ? 'Duyệt yêu cầu kết nối?' : 'Từ chối yêu cầu?'}
+        message={
+          reviewAction
+            ? `${reviewAction.item.parent.full_name} yêu cầu kết nối với học sinh ${reviewAction.item.student.full_name}.`
+            : ''
+        }
+        variant={reviewAction?.status === 'rejected' ? 'danger' : 'default'}
+        confirmLabel={reviewAction?.status === 'approved' ? 'Xác nhận duyệt' : 'Xác nhận từ chối'}
+        cancelLabel="Quay lại"
+        loading={Boolean(reviewAction && actionLoading === reviewAction.item.id)}
+        loadingLabel="Đang cập nhật…"
+        confirmDisabled={reviewAction?.status === 'rejected' && !rejectionReason.trim()}
+        onCancel={() => {
+          setReviewAction(null);
+          setRejectionReason('');
+        }}
+        onConfirm={() => {
+          if (!reviewAction) return;
+          void updateStatus(
+            reviewAction.item.id,
+            reviewAction.status,
+            reviewAction.status === 'rejected' ? rejectionReason.trim() : undefined
+          );
+        }}
+      >
+        {reviewAction?.status === 'approved' ? (
+          <p className="rounded-xl bg-blue-50 p-3 text-sm leading-6 text-blue-800 dark:bg-blue-950/40 dark:text-blue-200">
+            Sau khi duyệt, phụ huynh có thể xem các thông tin học tập được trung tâm cho phép.
+          </p>
+        ) : (
+          <div>
+            <label
+              htmlFor="rejection-reason"
+              className="mb-2 block text-sm font-semibold text-stone-800 dark:text-stone-200"
+            >
+              Lý do từ chối <span aria-hidden="true">*</span>
+            </label>
+            <textarea
+              id="rejection-reason"
+              value={rejectionReason}
+              onChange={(event) => setRejectionReason(event.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder="Ví dụ: Thông tin chưa đủ để xác minh mối quan hệ."
+              className="w-full resize-y rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-950 outline-none transition-colors placeholder:text-stone-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-stone-700 dark:bg-stone-950 dark:text-white"
+            />
+            <p className="mt-1 text-right text-xs text-stone-500">{rejectionReason.length}/500</p>
+          </div>
+        )}
+      </ConfirmDialog>
     </main>
   );
 }

@@ -1,7 +1,12 @@
 'use client';
 
-import React from 'react';
-import { ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import React, { useEffect, useId, useRef } from 'react';
+import {
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  InformationCircleIcon,
+} from '@heroicons/react/24/outline';
 
 export type AlertVariant = 'info' | 'success' | 'error' | 'warning';
 
@@ -12,12 +17,7 @@ export interface AlertProps {
   onClose?: () => void;
 }
 
-export function Alert({
-  variant = 'info',
-  title,
-  children,
-  onClose,
-}: AlertProps) {
+export function Alert({ variant = 'info', title, children, onClose }: AlertProps) {
   const variantConfig = {
     info: {
       bg: 'bg-blue-50',
@@ -57,10 +57,7 @@ export function Alert({
           <div className="text-sm">{children}</div>
         </div>
         {onClose && (
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 font-bold"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 font-bold">
             ×
           </button>
         )}
@@ -79,6 +76,9 @@ export interface ConfirmDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   loading?: boolean;
+  loadingLabel?: string;
+  confirmDisabled?: boolean;
+  children?: React.ReactNode;
 }
 
 export function ConfirmDialog({
@@ -91,33 +91,69 @@ export function ConfirmDialog({
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
   loading = false,
+  loadingLabel = 'Đang xử lý…',
+  confirmDisabled = false,
+  children,
 }: ConfirmDialogProps) {
+  const titleId = useId();
+  const messageId = useId();
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    cancelButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !loading) onCancel();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, loading, onCancel]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-        <p className="text-gray-600 mb-6">{message}</p>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !loading) onCancel();
+      }}
+    >
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={messageId}
+        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-stone-900"
+      >
+        <h3 id={titleId} className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+          {title}
+        </h3>
+        <p id={messageId} className="text-sm leading-6 text-gray-600 dark:text-stone-300">
+          {message}
+        </p>
+        {children && <div className="mt-4">{children}</div>}
 
-        <div className="flex gap-3">
+        <div className="mt-6 flex gap-3">
           <button
+            ref={cancelButtonRef}
+            type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 font-medium"
+            className="flex-1 cursor-pointer rounded-xl border border-gray-300 px-4 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-stone-800"
           >
             {cancelLabel}
           </button>
           <button
+            type="button"
             onClick={onConfirm}
-            disabled={loading}
-            className={`flex-1 px-4 py-2 rounded-lg text-white font-medium disabled:opacity-50 ${
+            disabled={loading || confirmDisabled}
+            className={`flex-1 cursor-pointer rounded-xl px-4 py-2.5 font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
               variant === 'danger'
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-blue-600 hover:bg-blue-700'
+                ? 'bg-red-600 hover:bg-red-700 focus-visible:ring-red-500'
+                : 'bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500'
             }`}
           >
-            {loading ? 'Processing...' : confirmLabel}
+            {loading ? loadingLabel : confirmLabel}
           </button>
         </div>
       </div>
