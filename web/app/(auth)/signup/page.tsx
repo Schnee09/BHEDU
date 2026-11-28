@@ -45,6 +45,7 @@ function SignupContent() {
   // Invite token support
   const inviteToken = searchParams.get('token');
   const [invitedRole, setInvitedRole] = useState<string | null>(null);
+  const [verifyingInvite, setVerifyingInvite] = useState(Boolean(inviteToken));
 
   // States
   const [loading, setLoading] = useState(false);
@@ -68,6 +69,8 @@ function SignupContent() {
         }
       } catch {
         setError('Không thể kiểm tra mã mời.');
+      } finally {
+        setVerifyingInvite(false);
       }
     }
 
@@ -79,6 +82,11 @@ function SignupContent() {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
+
+    if (inviteToken && !invitedRole) {
+      setError('Lời mời chưa được xác thực hoặc không còn hiệu lực.');
+      return;
+    }
 
     if (!fullName.trim()) {
       setError('Vui lòng nhập Họ và tên của bạn');
@@ -116,6 +124,7 @@ function SignupContent() {
             phone: formattedPhone || undefined,
             personal_email: email.trim() || undefined,
             child_student_code: childStudentCode.trim().toUpperCase() || undefined,
+            invite_token: inviteToken || undefined,
           },
         },
       });
@@ -128,11 +137,9 @@ function SignupContent() {
           setError(authErr.message);
         }
       } else {
-        setSuccessMessage(
-          'Đăng ký tài khoản Phụ huynh thành công! Đang chuyển hướng vào hệ thống...'
-        );
+        setSuccessMessage('Đăng ký tài khoản thành công! Đang chuyển hướng vào hệ thống...');
         setTimeout(() => {
-          router.replace('/dashboard/parent');
+          router.replace('/dashboard');
         }, 1500);
       }
     } catch (err: any) {
@@ -425,10 +432,16 @@ function SignupContent() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || verifyingInvite || Boolean(inviteToken && !invitedRole)}
               className="w-full h-11 mt-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-950 font-black text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-amber-500/20 disabled:opacity-50 cursor-pointer"
             >
-              <span>{loading ? 'Đang khởi tạo tài khoản...' : 'Hoàn tất Đăng ký'}</span>
+              <span>
+                {verifyingInvite
+                  ? 'Đang xác thực lời mời...'
+                  : loading
+                    ? 'Đang khởi tạo tài khoản...'
+                    : 'Hoàn tất đăng ký'}
+              </span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>

@@ -148,6 +148,7 @@ async function main() {
         email,
         password,
         email_confirm: true,
+        app_metadata: { provisioned_by_admin: true },
         user_metadata: { full_name: teacherName.replace(/_/g, ' '), role: 'teacher' },
       });
 
@@ -334,6 +335,7 @@ async function main() {
             email,
             password,
             email_confirm: true,
+            app_metadata: { provisioned_by_admin: true },
             user_metadata: { full_name: studentName, role: 'student' },
           });
 

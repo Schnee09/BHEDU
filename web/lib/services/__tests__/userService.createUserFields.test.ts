@@ -76,5 +76,11 @@ describe('UserService.createUser profile fields', () => {
       }),
       expect.objectContaining({ onConflict: 'user_id' })
     );
+    expect(createUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        app_metadata: { provisioned_by_admin: true },
+        user_metadata: expect.objectContaining({ role: 'student' }),
+      })
+    );
   });
 });

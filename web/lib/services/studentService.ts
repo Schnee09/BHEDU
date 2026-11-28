@@ -113,6 +113,9 @@ export class StudentService {
     const { data: authData, error: authError } = await this.supabase.auth.admin.createUser({
       email: input.email || undefined,
       email_confirm: true,
+      app_metadata: {
+        provisioned_by_admin: true,
+      },
       user_metadata: {
         first_name: input.first_name,
         last_name: input.last_name,

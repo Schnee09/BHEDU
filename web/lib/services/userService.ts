@@ -143,6 +143,9 @@ export class UserService {
       email,
       password,
       email_confirm: true,
+      app_metadata: {
+        provisioned_by_admin: true,
+      },
       user_metadata: {
         first_name: firstName,
         last_name: lastName,
