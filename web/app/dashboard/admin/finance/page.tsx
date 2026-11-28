@@ -10,7 +10,9 @@ import ReceivePaymentDialog from '@/components/finance/ReceivePaymentDialog';
 import BankStatementImportDialog from '@/components/finance/BankStatementImportDialog';
 import BankReconciliationPanel from '@/components/finance/BankReconciliationPanel';
 import FinanceWorkQueue from '@/components/finance/FinanceWorkQueue';
+import FinanceRefundAction from '@/components/finance/FinanceRefundAction';
 import { useFetch } from '@/hooks/useFetch';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   BarChart,
   Bar,
@@ -90,6 +92,8 @@ export default function FinanceDashboardPage() {
 }
 
 function FinanceDashboardContent() {
+  const { can } = usePermissions();
+  const canRefund = can('finance.refund');
   const [mounted, setMounted] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [activeTab, setActiveTab] = useState<
@@ -306,6 +310,8 @@ function FinanceDashboardContent() {
   };
 
   const handleOpenRefund = (payment: PaymentRecord) => {
+    if (!canRefund) return;
+
     setRefundPayment(payment);
     setRefundAmount(String(Number(payment.amount) - Number(payment.refunded_amount || 0)));
     setRefundReason('');
@@ -905,13 +911,11 @@ Trung tâm xin gửi thông báo học phí:
                               : '—'}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <button
-                              disabled={refundable <= 0}
-                              onClick={() => handleOpenRefund(payment)}
-                              className="cursor-pointer rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-rose-900 dark:hover:bg-rose-950/30"
-                            >
-                              {refundable > 0 ? 'Hoàn tiền' : 'Đã hoàn hết'}
-                            </button>
+                            <FinanceRefundAction
+                              canRefund={canRefund}
+                              refundableAmount={refundable}
+                              onRefund={() => handleOpenRefund(payment)}
+                            />
                           </td>
                         </tr>
                       );
@@ -1178,7 +1182,7 @@ Trung tâm xin gửi thông báo học phí:
         </div>
       )}
 
-      {refundPayment && (
+      {canRefund && refundPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <Card className="relative w-full max-w-md space-y-5 rounded-3xl bg-white p-7 shadow-2xl dark:bg-stone-950">
             <button
