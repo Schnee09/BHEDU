@@ -155,11 +155,30 @@ export class LinkService {
   /**
    * Update link status (approve/reject)
    */
-  async updateLinkStatus(input: UpdateLinkStatusInput) {
+  async updateLinkStatus(input: UpdateLinkStatusInput, reviewedBy: string) {
+    const { data: currentLink, error: currentLinkError } = await this.supabase
+      .from('parent_student_links')
+      .select('id, status')
+      .eq('id', input.id)
+      .maybeSingle();
+
+    if (currentLinkError) throw currentLinkError;
+    if (!currentLink) throw new NotFoundError('Không tìm thấy yêu cầu kết nối');
+    if (currentLink.status !== 'pending') {
+      throw new ValidationError('Chỉ có thể xử lý yêu cầu đang chờ duyệt.');
+    }
+
     const { data, error } = await this.supabase
       .from('parent_student_links')
-      .update({ status: input.status })
+      .update({
+        status: input.status,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: reviewedBy,
+        notes: input.notes,
+        rejection_reason: input.status === 'rejected' ? input.notes : null,
+      })
       .eq('id', input.id)
+      .eq('status', 'pending')
       .select(
         `
         *,
@@ -220,8 +239,8 @@ export class LinkService {
     return linkService.requestLink(input);
   }
 
-  static async updateLinkStatus(input: UpdateLinkStatusInput) {
-    return linkService.updateLinkStatus(input);
+  static async updateLinkStatus(input: UpdateLinkStatusInput, reviewedBy: string) {
+    return linkService.updateLinkStatus(input, reviewedBy);
   }
 
   static async getLinkedStudents(parentId: string) {

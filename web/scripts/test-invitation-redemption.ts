@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { config } from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import { UserService } from '../lib/services/userService';
+import { LinkService } from '../lib/services/linkService';
 
 config({ path: '.env.local' });
 config({ path: '.env' });
@@ -238,7 +239,7 @@ async function main() {
 
     const { data: pendingLink, error: pendingLinkError } = await service
       .from('parent_student_links')
-      .select('status')
+      .select('id, status')
       .eq('parent_id', publicProfile.id)
       .eq('student_id', managedStudent.id)
       .single();
@@ -247,6 +248,29 @@ async function main() {
       'Parent signup did not create a pending student link request.'
     );
     console.log('PASS: parent signup student code creates only a pending link');
+
+    const reviewerId = await getInviterId();
+    const approvedLink = await new LinkService(service).updateLinkStatus(
+      { id: pendingLink.id, status: 'approved' },
+      reviewerId
+    );
+    assert(
+      approvedLink.status === 'approved' &&
+        approvedLink.reviewed_by === reviewerId &&
+        approvedLink.reviewed_at,
+      'Parent link approval did not record reviewer metadata.'
+    );
+    let repeatedReviewRejected = false;
+    try {
+      await new LinkService(service).updateLinkStatus(
+        { id: pendingLink.id, status: 'rejected' },
+        reviewerId
+      );
+    } catch {
+      repeatedReviewRejected = true;
+    }
+    assert(repeatedReviewRejected, 'An approved link was allowed to transition again.');
+    console.log('PASS: approval records its reviewer and cannot be processed twice');
 
     const managedProfile = await new UserService(service).createUser(
       {
