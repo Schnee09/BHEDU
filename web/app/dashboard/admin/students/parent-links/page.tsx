@@ -10,6 +10,7 @@ import {
 import { Badge } from '../../_components/FormElements';
 import { ConfirmDialog } from '../../_components/Alert';
 import { Pagination } from '../../_components/Pagination';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type LinkStatus = 'pending' | 'approved' | 'rejected' | 'revoked';
 
@@ -49,6 +50,8 @@ function StatusBadge({ status }: { status: LinkStatus }) {
 }
 
 export default function ParentLinksPage() {
+  const { can } = usePermissions();
+  const canApprove = can('parent_links.approve');
   const [links, setLinks] = useState<ParentStudentLink[]>([]);
   const [status, setStatus] = useState<'all' | LinkStatus>('pending');
   const [page, setPage] = useState(1);
@@ -99,6 +102,8 @@ export default function ParentLinksPage() {
   }, [page, status]);
 
   const updateStatus = async (id: string, nextStatus: 'approved' | 'rejected', notes?: string) => {
+    if (!canApprove) return;
+
     setActionLoading(id);
     setError(null);
     setSuccess(null);
@@ -239,7 +244,7 @@ export default function ParentLinksPage() {
                     {new Date(item.created_at).toLocaleDateString('vi-VN')}
                   </time>
                 </div>
-                {item.status === 'pending' && (
+                {canApprove && item.status === 'pending' && (
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -289,7 +294,7 @@ export default function ParentLinksPage() {
       </section>
 
       <ConfirmDialog
-        isOpen={Boolean(reviewAction)}
+        isOpen={canApprove && Boolean(reviewAction)}
         title={reviewAction?.status === 'approved' ? 'Duyệt yêu cầu kết nối?' : 'Từ chối yêu cầu?'}
         message={
           reviewAction
@@ -307,7 +312,7 @@ export default function ParentLinksPage() {
           setRejectionReason('');
         }}
         onConfirm={() => {
-          if (!reviewAction) return;
+          if (!canApprove || !reviewAction) return;
           void updateStatus(
             reviewAction.item.id,
             reviewAction.status,
