@@ -16,15 +16,21 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface StudentActionsProps {
   studentId: string;
   studentName: string;
-  isAdmin: boolean;
 }
 
-export default function StudentActions({ studentId, studentName, isAdmin }: StudentActionsProps) {
+export default function StudentActions({ studentId, studentName }: StudentActionsProps) {
   const router = useRouter();
+  const { can } = usePermissions();
+  const canEdit = can('students.edit');
+  const canArchive = can('students.delete');
+  const canResetPassword = can('users.edit');
+  const canViewFinance = can('finance.view');
+  const canViewGrades = can('grades.view');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -42,6 +48,8 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
   }, []);
 
   const handleArchive = async () => {
+    if (!canArchive) return;
+
     setDeleting(true);
     const loadingToast = showToast.loading('Đang lưu trữ hồ sơ...');
 
@@ -64,6 +72,8 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
   };
 
   const handleResetPassword = async () => {
+    if (!canResetPassword) return;
+
     try {
       const loading = showToast.loading('Đang đặt lại mật mã...');
       const res = await apiFetch(`/api/admin/users/${studentId}/reset-password`, {
@@ -84,54 +94,61 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
 
   return (
     <div className="relative inline-flex items-center gap-2" ref={menuRef}>
-      {/* Primary Edit Button (Always visible) */}
-      <Link href={`/dashboard/students/${studentId}/edit`}>
-        <Button
-          variant="secondary"
-          size="sm"
-          className="h-9 px-3.5 rounded-xl font-bold text-xs gap-1.5 shadow-2xs"
-        >
-          <PencilSquareIcon className="w-4 h-4 text-amber-500" />
-          <span>Chỉnh sửa</span>
-        </Button>
-      </Link>
+      {canEdit && (
+        <Link href={`/dashboard/students/${studentId}/edit`}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-9 px-3.5 rounded-xl font-bold text-xs gap-1.5 shadow-2xs"
+          >
+            <PencilSquareIcon className="w-4 h-4 text-amber-500" />
+            <span>Chỉnh sửa</span>
+          </Button>
+        </Link>
+      )}
 
       {/* Desktop Inline Actions (hidden on mobile, visible on sm+) */}
       <div className="hidden lg:flex items-center gap-2">
-        <Link href={`/dashboard/grades/transcripts?student_id=${studentId}`}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 px-3 rounded-xl font-bold text-xs gap-1.5 border-stone-200 dark:border-white/10"
-          >
-            <AcademicCapIcon className="w-4 h-4 text-emerald-500" />
-            <span>Kết quả học tập</span>
-          </Button>
-        </Link>
+        {canViewGrades && (
+          <Link href={`/dashboard/grades/transcripts?student_id=${studentId}`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 rounded-xl font-bold text-xs gap-1.5 border-stone-200 dark:border-white/10"
+            >
+              <AcademicCapIcon className="w-4 h-4 text-emerald-500" />
+              <span>Kết quả học tập</span>
+            </Button>
+          </Link>
+        )}
 
-        <Link href={`/dashboard/admin/finance/invoices?student_id=${studentId}`}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 px-3 rounded-xl font-bold text-xs gap-1.5 border-stone-200 dark:border-white/10"
-          >
-            <BanknotesIcon className="w-4 h-4 text-blue-500" />
-            <span>Học phí</span>
-          </Button>
-        </Link>
+        {canViewFinance && (
+          <Link href={`/dashboard/admin/finance/invoices?student_id=${studentId}`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 rounded-xl font-bold text-xs gap-1.5 border-stone-200 dark:border-white/10"
+            >
+              <BanknotesIcon className="w-4 h-4 text-blue-500" />
+              <span>Học phí</span>
+            </Button>
+          </Link>
+        )}
 
-        <Link href={`/dashboard/admin/finance/payments?student_id=${studentId}`}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 px-3 rounded-xl font-bold text-xs gap-1.5 border-stone-200 dark:border-white/10"
-          >
-            <ArrowDownTrayIcon className="w-4 h-4 text-stone-500" />
-            <span>Thu phí</span>
-          </Button>
-        </Link>
+        {canViewFinance && (
+          <Link href={`/dashboard/admin/finance/payments?student_id=${studentId}`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 rounded-xl font-bold text-xs gap-1.5 border-stone-200 dark:border-white/10"
+            >
+              <ArrowDownTrayIcon className="w-4 h-4 text-stone-500" />
+              <span>Thu phí</span>
+            </Button>
+          </Link>
+        )}
 
-        {isAdmin && (
+        {canResetPassword && (
           <Button
             variant="outline"
             size="sm"
@@ -143,7 +160,7 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
           </Button>
         )}
 
-        {isAdmin && (
+        {canArchive && (
           <Button
             variant="danger"
             size="sm"
@@ -176,59 +193,69 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
         {showMoreMenu && (
           <div className="absolute right-0 top-11 w-56 bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-stone-700 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 divide-y divide-stone-100 dark:divide-white/5">
             <div className="p-1 space-y-0.5">
-              <Link
-                href={`/dashboard/grades/transcripts?student_id=${studentId}`}
-                onClick={() => setShowMoreMenu(false)}
-                className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors"
-              >
-                <AcademicCapIcon className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>Phiếu kết quả học tập</span>
-              </Link>
+              {canViewGrades && (
+                <Link
+                  href={`/dashboard/grades/transcripts?student_id=${studentId}`}
+                  onClick={() => setShowMoreMenu(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+                >
+                  <AcademicCapIcon className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Phiếu kết quả học tập</span>
+                </Link>
+              )}
 
-              <Link
-                href={`/dashboard/admin/finance/invoices?student_id=${studentId}`}
-                onClick={() => setShowMoreMenu(false)}
-                className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors"
-              >
-                <BanknotesIcon className="w-4 h-4 text-blue-500 shrink-0" />
-                <span>Hóa đơn học phí</span>
-              </Link>
+              {canViewFinance && (
+                <Link
+                  href={`/dashboard/admin/finance/invoices?student_id=${studentId}`}
+                  onClick={() => setShowMoreMenu(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+                >
+                  <BanknotesIcon className="w-4 h-4 text-blue-500 shrink-0" />
+                  <span>Hóa đơn học phí</span>
+                </Link>
+              )}
 
-              <Link
-                href={`/dashboard/admin/finance/payments?student_id=${studentId}`}
-                onClick={() => setShowMoreMenu(false)}
-                className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors"
-              >
-                <ArrowDownTrayIcon className="w-4 h-4 text-stone-500 shrink-0" />
-                <span>Lịch sử đóng phí</span>
-              </Link>
+              {canViewFinance && (
+                <Link
+                  href={`/dashboard/admin/finance/payments?student_id=${studentId}`}
+                  onClick={() => setShowMoreMenu(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+                >
+                  <ArrowDownTrayIcon className="w-4 h-4 text-stone-500 shrink-0" />
+                  <span>Lịch sử đóng phí</span>
+                </Link>
+              )}
             </div>
 
-            {isAdmin && (
+            {(canResetPassword || canArchive) && (
               <div className="p-1 space-y-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    handleResetPassword();
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
-                >
-                  <KeyIcon className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>Đặt lại mật mã</span>
-                </button>
+                {canResetPassword && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      handleResetPassword();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
+                  >
+                    <KeyIcon className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Đặt lại mật mã</span>
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    setShowDeleteModal(true);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors text-left"
-                >
-                  <ArchiveBoxIcon className="w-4 h-4 text-rose-500 shrink-0" />
-                  <span>Lưu trữ hồ sơ</span>
-                </button>
+                {canArchive && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      setShowDeleteModal(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors text-left"
+                  >
+                    <ArchiveBoxIcon className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span>Lưu trữ hồ sơ</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -236,7 +263,7 @@ export default function StudentActions({ studentId, studentName, isAdmin }: Stud
       </div>
 
       {/* Archive / Delete Confirmation Modal */}
-      {showDeleteModal && (
+      {canArchive && showDeleteModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[2000] backdrop-blur-xs">
           <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-stone-200 dark:border-white/10 animate-in zoom-in-95 duration-200 space-y-4">
             <div className="flex items-center gap-3">

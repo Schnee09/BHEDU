@@ -715,11 +715,7 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
           </Link>
 
           <div className="flex items-center gap-2">
-            <StudentActions
-              studentId={studentId}
-              studentName={profile.full_name}
-              isAdmin={hasAdminAccess}
-            />
+            <StudentActions studentId={studentId} studentName={profile.full_name} />
           </div>
         </div>
 
