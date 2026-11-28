@@ -205,8 +205,28 @@ async function main() {
     assert(expiredSignup.error, 'An expired invitation was accepted.');
     console.log('PASS: expired invitation is rejected');
 
+    const studentCode = `HS2026${String(Date.now()).slice(-4)}`;
+    const managedStudent = await new UserService(service).createUser(
+      {
+        email: `e2e-student-${runId}@student.bhedu.vn`,
+        password,
+        full_name: 'Học sinh kiểm thử',
+        role: 'student',
+        student_code: studentCode,
+        grade_level: '9',
+        status: 'active',
+        is_active: true,
+        is_managed: true,
+      },
+      'super_admin',
+      await getInviterId()
+    );
+    assert(managedStudent.user_id, 'Managed student did not return an Auth user ID.');
+    authUserIds.add(managedStudent.user_id);
+
     const publicSignup = await signUp(`e2e-public-${runId}@bhedu.vn`, {
       role: 'super_admin',
+      child_student_code: studentCode,
     });
     assert(
       !publicSignup.error && publicSignup.data.user,
@@ -215,6 +235,18 @@ async function main() {
     const publicProfile = await profileFor(publicSignup.data.user.id);
     assert(publicProfile.role === 'parent', 'Public signup escalated its role from user metadata.');
     console.log('PASS: public signup cannot elevate its role');
+
+    const { data: pendingLink, error: pendingLinkError } = await service
+      .from('parent_student_links')
+      .select('status')
+      .eq('parent_id', publicProfile.id)
+      .eq('student_id', managedStudent.id)
+      .single();
+    assert(
+      !pendingLinkError && pendingLink?.status === 'pending',
+      'Parent signup did not create a pending student link request.'
+    );
+    console.log('PASS: parent signup student code creates only a pending link');
 
     const managedProfile = await new UserService(service).createUser(
       {
