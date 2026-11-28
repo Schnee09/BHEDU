@@ -154,7 +154,7 @@ export const GET = createGetHandler({ permission: 'grades.view' }, async ({ requ
 });
 
 // POST /api/grades
-export const POST = createApiHandler({ permission: 'grades.manage' }, async ({ request, user }) => {
+export const POST = createApiHandler({ permission: 'grades.entry' }, async ({ request, user }) => {
   const supabase = createServiceClient();
   const body = await request.json();
   const data = body as any;
