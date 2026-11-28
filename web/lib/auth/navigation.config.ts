@@ -46,6 +46,7 @@ export interface NavLink {
   label: string;
   icon: LucideIcon;
   permissions?: PermissionCode[]; // Required permissions (ANY)
+  requireAll?: boolean; // When true, every listed permission is required
   allowedRoles?: UserRole[]; // Optional role restriction (only for ALL_NAV_ITEMS)
   badge?: string;
 }
@@ -84,6 +85,7 @@ export const ALL_NAV_ITEMS: NavSection[] = [
         label: 'Tiếp nhận học sinh',
         icon: ContactRound,
         permissions: ['students.view', 'finance.view'],
+        requireAll: true,
         allowedRoles: ['staff', 'admin', 'owner', 'super_admin'],
       },
       {
@@ -347,6 +349,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
           label: 'Tiếp nhận học sinh',
           icon: ContactRound,
           permissions: ['students.view', 'finance.view'],
+          requireAll: true,
         },
         {
           href: '/dashboard/classes',
@@ -556,6 +559,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
           label: 'Tiếp nhận học sinh',
           icon: ContactRound,
           permissions: ['students.view', 'finance.view'],
+          requireAll: true,
         },
         {
           href: '/dashboard/classes',
@@ -749,6 +753,7 @@ const ROLE_NAV_PRESETS: Partial<Record<UserRole, NavSection[]>> = {
           label: 'Tra cứu học sinh',
           icon: ContactRound,
           permissions: ['students.view', 'finance.view'],
+          requireAll: true,
         },
         {
           href: '/dashboard/students',
@@ -1061,7 +1066,7 @@ export function getNavigationForPermissions(
         if (link.allowedRoles && role && !link.allowedRoles.includes(role)) return false;
         if (userPermissions.has('*')) return true;
         if (!link.permissions || link.permissions.length === 0) return true;
-        return link.permissions.some((p) => userPermissions.has(p));
+        return hasRequiredPermissions(link, userPermissions);
       });
 
       const filteredGroups = section.groups
@@ -1079,7 +1084,7 @@ export function getNavigationForPermissions(
             if (link.allowedRoles && role && !link.allowedRoles.includes(role)) return false;
             if (userPermissions.has('*')) return true;
             if (!link.permissions || link.permissions.length === 0) return true;
-            return link.permissions.some((p) => userPermissions.has(p));
+            return hasRequiredPermissions(link, userPermissions);
           });
 
           if (filteredGroupLinks.length === 0) return null;
@@ -1106,9 +1111,18 @@ export function getNavigationForRole(role: UserRole): NavSection[] {
 }
 
 export function isLinkVisible(link: NavLink, userPermissions: Set<PermissionCode>): boolean {
+  return hasRequiredPermissions(link, userPermissions);
+}
+
+function hasRequiredPermissions(
+  link: Pick<NavLink, 'permissions' | 'requireAll'>,
+  userPermissions: Set<PermissionCode>
+): boolean {
   if (userPermissions.has('*')) return true;
   if (!link.permissions || link.permissions.length === 0) return true;
-  return link.permissions.some((p) => userPermissions.has(p));
+  return link.requireAll
+    ? link.permissions.every((permission) => userPermissions.has(permission))
+    : link.permissions.some((permission) => userPermissions.has(permission));
 }
 
 // ============================================

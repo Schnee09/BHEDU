@@ -30,4 +30,13 @@ describe('staff navigation preset', () => {
     expect(hrefs).not.toContain('/dashboard/admin/finance/tuition-matrix');
     expect(hrefs).not.toContain('/dashboard/attendance/mark');
   });
+
+  it.each([[['students.view'] as PermissionCode[]], [['finance.view'] as PermissionCode[]]])(
+    'hides reception unless both student and finance access are granted',
+    (grants) => {
+      const hrefs = collectHrefs(getNavigationForPermissions(new Set(grants), 'staff'));
+
+      expect(hrefs).not.toContain('/dashboard/admin/reception');
+    }
+  );
 });
