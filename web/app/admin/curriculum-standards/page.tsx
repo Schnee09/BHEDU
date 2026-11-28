@@ -8,11 +8,45 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import Badge from '@/components/ui/badge';
-import { TabsComponent as Tabs, TabsContentComponent as TabsContent, TabsListComponent as TabsList, TabsTriggerComponent as TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PlusIcon, PencilIcon, TrashIcon, BookOpenIcon, TagIcon, TrophyIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import {
+  TabsComponent as Tabs,
+  TabsContentComponent as TabsContent,
+  TabsListComponent as TabsList,
+  TabsTriggerComponent as TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  BookOpenIcon,
+  TagIcon,
+  TrophyIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+} from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
+import { usePermissions } from '@/hooks/usePermissions';
+import { getCurriculumActionAccess } from '@/lib/auth/curriculumActionAccess';
 
 interface Subject {
   id: string;
@@ -45,6 +79,8 @@ interface CurriculumStandard {
 }
 
 export default function CurriculumStandardsPage() {
+  const { can } = usePermissions();
+  const { canManage, canDelete } = getCurriculumActionAccess(can);
   const [standards, setStandards] = useState<CurriculumStandard[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
@@ -64,7 +100,7 @@ export default function CurriculumStandardsPage() {
     description: '',
     learning_objectives: [''],
     competencies: [''],
-    assessment_criteria: ['']
+    assessment_criteria: [''],
   });
 
   // Load data on component mount
@@ -72,7 +108,7 @@ export default function CurriculumStandardsPage() {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  async function loadData() {
     try {
       setLoading(true);
 
@@ -102,7 +138,7 @@ export default function CurriculumStandardsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const resetForm = () => {
     setFormData({
@@ -114,11 +150,13 @@ export default function CurriculumStandardsPage() {
       description: '',
       learning_objectives: [''],
       competencies: [''],
-      assessment_criteria: ['']
+      assessment_criteria: [''],
     });
   };
 
   const handleCreate = async () => {
+    if (!canManage) return;
+
     try {
       // Get current academic year if not selected
       let academicYearId = formData.academic_year_id;
@@ -137,9 +175,9 @@ export default function CurriculumStandardsPage() {
         body: JSON.stringify({
           ...formData,
           academic_year_id: academicYearId,
-          learning_objectives: formData.learning_objectives.filter(obj => obj.trim()),
-          competencies: formData.competencies.filter(comp => comp.trim()),
-          assessment_criteria: formData.assessment_criteria.filter(crit => crit.trim())
+          learning_objectives: formData.learning_objectives.filter((obj) => obj.trim()),
+          competencies: formData.competencies.filter((comp) => comp.trim()),
+          assessment_criteria: formData.assessment_criteria.filter((crit) => crit.trim()),
         }),
       });
 
@@ -159,6 +197,8 @@ export default function CurriculumStandardsPage() {
   };
 
   const handleEdit = async () => {
+    if (!canManage) return;
+
     if (!editingStandard) return;
 
     try {
@@ -169,9 +209,9 @@ export default function CurriculumStandardsPage() {
         },
         body: JSON.stringify({
           ...formData,
-          learning_objectives: formData.learning_objectives.filter(obj => obj.trim()),
-          competencies: formData.competencies.filter(comp => comp.trim()),
-          assessment_criteria: formData.assessment_criteria.filter(crit => crit.trim())
+          learning_objectives: formData.learning_objectives.filter((obj) => obj.trim()),
+          competencies: formData.competencies.filter((comp) => comp.trim()),
+          assessment_criteria: formData.assessment_criteria.filter((crit) => crit.trim()),
         }),
       });
 
@@ -192,6 +232,8 @@ export default function CurriculumStandardsPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!canDelete) return;
+
     try {
       const response = await fetch(`/api/curriculum-standards/${id}`, {
         method: 'DELETE',
@@ -211,6 +253,8 @@ export default function CurriculumStandardsPage() {
   };
 
   const openEditDialog = (standard: CurriculumStandard) => {
+    if (!canManage) return;
+
     setEditingStandard(standard);
     setFormData({
       subject_id: standard.subject_id,
@@ -219,39 +263,49 @@ export default function CurriculumStandardsPage() {
       standard_code: standard.standard_code,
       title: standard.title,
       description: standard.description || '',
-      learning_objectives: standard.learning_objectives.length > 0 ? standard.learning_objectives : [''],
+      learning_objectives:
+        standard.learning_objectives.length > 0 ? standard.learning_objectives : [''],
       competencies: standard.competencies.length > 0 ? standard.competencies : [''],
-      assessment_criteria: standard.assessment_criteria.length > 0 ? standard.assessment_criteria : ['']
+      assessment_criteria:
+        standard.assessment_criteria.length > 0 ? standard.assessment_criteria : [''],
     });
     setIsEditDialogOpen(true);
   };
 
   const addArrayItem = (field: 'learning_objectives' | 'competencies' | 'assessment_criteria') => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: [...prev[field], '']
+      [field]: [...prev[field], ''],
     }));
   };
 
-  const updateArrayItem = (field: 'learning_objectives' | 'competencies' | 'assessment_criteria', index: number, value: string) => {
-    setFormData(prev => ({
+  const updateArrayItem = (
+    field: 'learning_objectives' | 'competencies' | 'assessment_criteria',
+    index: number,
+    value: string
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: prev[field].map((item, i) => i === index ? value : item)
+      [field]: prev[field].map((item, i) => (i === index ? value : item)),
     }));
   };
 
-  const removeArrayItem = (field: 'learning_objectives' | 'competencies' | 'assessment_criteria', index: number) => {
-    setFormData(prev => ({
+  const removeArrayItem = (
+    field: 'learning_objectives' | 'competencies' | 'assessment_criteria',
+    index: number
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: prev[field].filter((_, i) => i !== index)
+      [field]: prev[field].filter((_, i) => i !== index),
     }));
   };
 
   // Filter standards based on search and filters
-  const filteredStandards = standards.filter(standard => {
-    const matchesSearch = standard.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         standard.standard_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         standard.subjects.name.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredStandards = standards.filter((standard) => {
+    const matchesSearch =
+      standard.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      standard.standard_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      standard.subjects.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesGrade = selectedGrade === 'all' || standard.grade_level === selectedGrade;
     const matchesSubject = selectedSubject === 'all' || standard.subject_id === selectedSubject;
@@ -278,40 +332,40 @@ export default function CurriculumStandardsPage() {
             Quản lý các chuẩn chương trình học và mục tiêu học tập theo chương trình Việt Nam
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger>
-            <Button onClick={resetForm}>
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Thêm chuẩn mới
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Tạo chuẩn chương trình mới</DialogTitle>
-              <DialogDescription>
-                Thêm mới một chuẩn chương trình học với mục tiêu và yêu cầu cụ thể
-              </DialogDescription>
-            </DialogHeader>
-            <CurriculumStandardForm
-              formData={formData}
-              setFormData={setFormData}
-              subjects={subjects}
-              academicYears={academicYears}
-              gradeLevels={gradeLevels}
-              onAddItem={addArrayItem}
-              onUpdateItem={updateArrayItem}
-              onRemoveItem={removeArrayItem}
-            />
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                Hủy
+        {canManage && (
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger>
+              <Button onClick={resetForm}>
+                <PlusIcon className="w-4 h-4 mr-2" />
+                Thêm chuẩn mới
               </Button>
-              <Button onClick={handleCreate}>
-                Tạo chuẩn
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Tạo chuẩn chương trình mới</DialogTitle>
+                <DialogDescription>
+                  Thêm mới một chuẩn chương trình học với mục tiêu và yêu cầu cụ thể
+                </DialogDescription>
+              </DialogHeader>
+              <CurriculumStandardForm
+                formData={formData}
+                setFormData={setFormData}
+                subjects={subjects}
+                academicYears={academicYears}
+                gradeLevels={gradeLevels}
+                onAddItem={addArrayItem}
+                onUpdateItem={updateArrayItem}
+                onRemoveItem={removeArrayItem}
+              />
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Hủy
+                </Button>
+                <Button onClick={handleCreate}>Tạo chuẩn</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Filters */}
@@ -339,18 +393,28 @@ export default function CurriculumStandardsPage() {
             </div>
             <div>
               <Label htmlFor="grade">Khối lớp</Label>
-              <Select id="grade" value={selectedGrade} onChange={(e) => setSelectedGrade(e.target.value)}>
+              <Select
+                id="grade"
+                value={selectedGrade}
+                onChange={(e) => setSelectedGrade(e.target.value)}
+              >
                 <option value="all">Tất cả khối</option>
-                {gradeLevels.map(grade => (
-                  <option key={grade} value={grade}>Khối {grade}</option>
+                {gradeLevels.map((grade) => (
+                  <option key={grade} value={grade}>
+                    Khối {grade}
+                  </option>
                 ))}
               </Select>
             </div>
             <div>
               <Label htmlFor="subject">Môn học</Label>
-              <Select id="subject" value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}>
+              <Select
+                id="subject"
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+              >
                 <option value="all">Tất cả môn</option>
-                {subjects.map(subject => (
+                {subjects.map((subject) => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>
@@ -375,7 +439,7 @@ export default function CurriculumStandardsPage() {
 
       {/* Standards List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStandards.map(standard => (
+        {filteredStandards.map((standard) => (
           <Card key={standard.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -386,40 +450,47 @@ export default function CurriculumStandardsPage() {
                     <Badge variant="info">Khối {standard.grade_level}</Badge>
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEditDialog(standard)}
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger>
-                      <Button variant="ghost" size="sm">
-                        <TrashIcon className="w-4 h-4 text-destructive" />
+                {(canManage || canDelete) && (
+                  <div className="flex gap-2">
+                    {canManage && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(standard)}
+                        aria-label={`Chỉnh sửa ${standard.title}`}
+                      >
+                        <PencilIcon className="w-4 h-4" />
                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Bạn có chắc chắn muốn xóa chuẩn chương trình "{standard.title}"?
-                          Hành động này không thể hoàn tác.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(standard.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Xóa
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                    )}
+                    {canDelete && (
+                      <AlertDialog>
+                        <AlertDialogTrigger>
+                          <Button variant="ghost" size="sm" aria-label={`Xóa ${standard.title}`}>
+                            <TrashIcon className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Bạn có chắc chắn muốn xóa chuẩn chương trình "{standard.title}"? Hành
+                              động này không thể hoàn tác.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Hủy</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(standard.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Xóa
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -521,13 +592,11 @@ export default function CurriculumStandardsPage() {
       )}
 
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={canManage && isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chỉnh sửa chuẩn chương trình</DialogTitle>
-            <DialogDescription>
-              Cập nhật thông tin chuẩn chương trình học
-            </DialogDescription>
+            <DialogDescription>Cập nhật thông tin chuẩn chương trình học</DialogDescription>
           </DialogHeader>
           <CurriculumStandardForm
             formData={formData}
@@ -543,9 +612,7 @@ export default function CurriculumStandardsPage() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Hủy
             </Button>
-            <Button onClick={handleEdit}>
-              Cập nhật
-            </Button>
+            <Button onClick={handleEdit}>Cập nhật</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -561,8 +628,15 @@ interface CurriculumStandardFormProps {
   academicYears: AcademicYear[];
   gradeLevels: string[];
   onAddItem: (field: 'learning_objectives' | 'competencies' | 'assessment_criteria') => void;
-  onUpdateItem: (field: 'learning_objectives' | 'competencies' | 'assessment_criteria', index: number, value: string) => void;
-  onRemoveItem: (field: 'learning_objectives' | 'competencies' | 'assessment_criteria', index: number) => void;
+  onUpdateItem: (
+    field: 'learning_objectives' | 'competencies' | 'assessment_criteria',
+    index: number,
+    value: string
+  ) => void;
+  onRemoveItem: (
+    field: 'learning_objectives' | 'competencies' | 'assessment_criteria',
+    index: number
+  ) => void;
 }
 
 function CurriculumStandardForm({
@@ -573,7 +647,7 @@ function CurriculumStandardForm({
   gradeLevels,
   onAddItem,
   onUpdateItem,
-  onRemoveItem
+  onRemoveItem,
 }: CurriculumStandardFormProps) {
   return (
     <div className="space-y-6">
@@ -586,7 +660,7 @@ function CurriculumStandardForm({
             onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
           >
             <option value="">Chọn môn học</option>
-            {subjects.map(subject => (
+            {subjects.map((subject) => (
               <option key={subject.id} value={subject.id}>
                 {subject.name} ({subject.code})
               </option>
@@ -601,8 +675,10 @@ function CurriculumStandardForm({
             onChange={(e) => setFormData({ ...formData, grade_level: e.target.value })}
           >
             <option value="">Chọn khối lớp</option>
-            {gradeLevels.map(grade => (
-              <option key={grade} value={grade}>Khối {grade}</option>
+            {gradeLevels.map((grade) => (
+              <option key={grade} value={grade}>
+                Khối {grade}
+              </option>
             ))}
           </Select>
         </div>
@@ -626,7 +702,7 @@ function CurriculumStandardForm({
             onChange={(e) => setFormData({ ...formData, academic_year_id: e.target.value })}
           >
             <option value="">Chọn năm học</option>
-            {academicYears.map(year => (
+            {academicYears.map((year) => (
               <option key={year.id} value={year.id}>
                 {year.name}
               </option>
