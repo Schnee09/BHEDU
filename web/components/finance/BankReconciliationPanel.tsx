@@ -40,7 +40,7 @@ const reasonLabel = {
   counterparty_name: 'Khớp tên người chuyển',
 };
 
-export default function BankReconciliationPanel() {
+export default function BankReconciliationPanel({ canManage }: { canManage: boolean }) {
   const [status, setStatus] = useState('unmatched');
   const [page, setPage] = useState(1);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -53,16 +53,20 @@ export default function BankReconciliationPanel() {
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      <ConfirmBankTransactionDialog
-        transaction={selectedTransaction}
-        onClose={() => setSelectedTransaction(null)}
-        onSuccess={refetch}
-      />
-      <IgnoreBankTransactionDialog
-        transaction={ignoredTransaction}
-        onClose={() => setIgnoredTransaction(null)}
-        onSuccess={refetch}
-      />
+      {canManage && (
+        <>
+          <ConfirmBankTransactionDialog
+            transaction={selectedTransaction}
+            onClose={() => setSelectedTransaction(null)}
+            onSuccess={refetch}
+          />
+          <IgnoreBankTransactionDialog
+            transaction={ignoredTransaction}
+            onClose={() => setIgnoredTransaction(null)}
+            onSuccess={refetch}
+          />
+        </>
+      )}
       <Card className="glass-crystal rounded-3xl p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -131,6 +135,7 @@ export default function BankReconciliationPanel() {
                 <TransactionCard
                   key={row.id}
                   row={row}
+                  canManage={canManage}
                   onConfirm={setSelectedTransaction}
                   onIgnore={setIgnoredTransaction}
                 />
@@ -183,7 +188,7 @@ export default function BankReconciliationPanel() {
                         <StatusBadge status={row.match_status} />
                       </td>
                       <td className="px-5 py-4 text-right">
-                        {canConfirm(row) && (
+                        {canManage && canConfirm(row) && (
                           <div className="flex justify-end gap-2">
                             <Button
                               size="sm"
@@ -280,10 +285,12 @@ function canConfirm(row: Transaction) {
 
 function TransactionCard({
   row,
+  canManage,
   onConfirm,
   onIgnore,
 }: {
   row: Transaction;
+  canManage: boolean;
   onConfirm: (row: Transaction) => void;
   onIgnore: (row: Transaction) => void;
 }) {
@@ -313,7 +320,7 @@ function TransactionCard({
           <StatusBadge status={row.match_status} />
         </div>
       </div>
-      {canConfirm(row) && (
+      {canManage && canConfirm(row) && (
         <div className="grid grid-cols-2 gap-2">
           <Button size="sm" variant="ghost" onClick={() => onIgnore(row)}>
             Bỏ qua

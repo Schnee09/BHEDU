@@ -21,8 +21,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
 } from 'recharts';
 
@@ -93,6 +91,7 @@ export default function FinanceDashboardPage() {
 
 function FinanceDashboardContent() {
   const { can } = usePermissions();
+  const canManage = can('finance.manage');
   const canRefund = can('finance.refund');
   const [mounted, setMounted] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string>('');
@@ -228,6 +227,7 @@ function FinanceDashboardContent() {
 
   const handleBulkGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManage) return;
     if (!bulkClassId || !bulkMonth || !bulkDueDate) return;
 
     setIsSubmittingBulk(true);
@@ -267,6 +267,8 @@ function FinanceDashboardContent() {
   };
 
   const handleOpenPayModal = (invoice: Invoice) => {
+    if (!canManage) return;
+
     setSelectedInvoice(invoice);
     setPayAmount(String(invoice.total_amount - invoice.paid_amount));
     setPayMethod('');
@@ -277,6 +279,7 @@ function FinanceDashboardContent() {
 
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManage) return;
     if (!selectedInvoice || !payAmount || !payMethod) return;
 
     setIsSubmittingPay(true);
@@ -339,6 +342,8 @@ function FinanceDashboardContent() {
   };
 
   const handleCancelInvoice = async (invoice: Invoice) => {
+    if (!canManage) return;
+
     const reason = window.prompt('Nhập lý do hủy hóa đơn (ít nhất 3 ký tự):');
     if (!reason) return;
     const response = await fetch(`/api/admin/finance/invoices/${invoice.id}/cancel`, {
@@ -406,52 +411,60 @@ Trung tâm xin gửi thông báo học phí:
             ))}
           </select>
 
-          <Button
-            onClick={() => setShowStatementImport(true)}
-            variant="outline"
-            className="rounded-xl text-sm font-bold flex items-center gap-2"
-          >
-            <Icons.Upload className="w-4 h-4" />
-            Nhập sao kê
-          </Button>
+          {canManage && (
+            <>
+              <Button
+                onClick={() => setShowStatementImport(true)}
+                variant="outline"
+                className="rounded-xl text-sm font-bold flex items-center gap-2"
+              >
+                <Icons.Upload className="w-4 h-4" />
+                Nhập sao kê
+              </Button>
 
-          <Button
-            onClick={() => setShowReceivePayment(true)}
-            className="bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-xl text-sm font-bold flex items-center gap-2"
-          >
-            <Icons.Finance className="w-4 h-4" />
-            Ghi nhận khoản thu
-          </Button>
+              <Button
+                onClick={() => setShowReceivePayment(true)}
+                className="bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-xl text-sm font-bold flex items-center gap-2"
+              >
+                <Icons.Finance className="w-4 h-4" />
+                Ghi nhận khoản thu
+              </Button>
 
-          <Button
-            onClick={() => setShowBulkGenModal(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold flex items-center gap-2"
-          >
-            <Icons.Add className="w-4 h-4" />
-            Tạo hóa đơn tháng
-          </Button>
+              <Button
+                onClick={() => setShowBulkGenModal(true)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold flex items-center gap-2"
+              >
+                <Icons.Add className="w-4 h-4" />
+                Tạo hóa đơn tháng
+              </Button>
 
-          <a href="/dashboard/admin/finance/tuition-matrix">
-            <Button className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:opacity-90 rounded-xl text-sm font-bold flex items-center gap-2">
-              <Icons.Layout className="w-4 h-4" />
-              Học phí theo lớp
-            </Button>
-          </a>
+              <a href="/dashboard/admin/finance/tuition-matrix">
+                <Button className="bg-stone-900 dark:bg-white text-white dark:text-stone-900 hover:opacity-90 rounded-xl text-sm font-bold flex items-center gap-2">
+                  <Icons.Layout className="w-4 h-4" />
+                  Học phí theo lớp
+                </Button>
+              </a>
+            </>
+          )}
         </div>
       </div>
 
-      <ReceivePaymentDialog
-        open={showReceivePayment}
-        academicYearId={selectedYear}
-        paymentMethods={paymentMethods}
-        onClose={() => setShowReceivePayment(false)}
-        onSuccess={refreshAll}
-      />
-      <BankStatementImportDialog
-        open={showStatementImport}
-        onClose={() => setShowStatementImport(false)}
-        onSuccess={refreshAll}
-      />
+      {canManage && (
+        <>
+          <ReceivePaymentDialog
+            open={showReceivePayment}
+            academicYearId={selectedYear}
+            paymentMethods={paymentMethods}
+            onClose={() => setShowReceivePayment(false)}
+            onSuccess={refreshAll}
+          />
+          <BankStatementImportDialog
+            open={showStatementImport}
+            onClose={() => setShowStatementImport(false)}
+            onSuccess={refreshAll}
+          />
+        </>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-4 border-b border-stone-200 dark:border-white/10">
@@ -775,7 +788,7 @@ Trung tâm xin gửi thông báo học phí:
                             >
                               Sao chép Zalo
                             </button>
-                            {!['paid', 'cancelled'].includes(inv.status) && (
+                            {canManage && !['paid', 'cancelled'].includes(inv.status) && (
                               <Button
                                 onClick={() => handleOpenPayModal(inv)}
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs py-1.5 px-3 font-semibold"
@@ -783,15 +796,17 @@ Trung tâm xin gửi thông báo học phí:
                                 Ghi nhận đóng
                               </Button>
                             )}
-                            {Number(inv.paid_amount) === 0 && inv.status !== 'cancelled' && (
-                              <button
-                                type="button"
-                                onClick={() => handleCancelInvoice(inv)}
-                                className="rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-900 dark:hover:bg-rose-950/30"
-                              >
-                                Hủy hóa đơn
-                              </button>
-                            )}
+                            {canManage &&
+                              Number(inv.paid_amount) === 0 &&
+                              inv.status !== 'cancelled' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelInvoice(inv)}
+                                  className="rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-900 dark:hover:bg-rose-950/30"
+                                >
+                                  Hủy hóa đơn
+                                </button>
+                              )}
                           </div>
                         </td>
                       </tr>
@@ -950,11 +965,11 @@ Trung tâm xin gửi thông báo học phí:
           </Card>
         </div>
       ) : (
-        <BankReconciliationPanel />
+        <BankReconciliationPanel canManage={canManage} />
       )}
 
       {/* Modal 1: Bulk Generate Invoices */}
-      {showBulkGenModal && (
+      {canManage && showBulkGenModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <Card className="bg-white dark:bg-stone-950 max-w-lg w-full p-8 rounded-3xl space-y-6 shadow-2xl relative">
             <button
@@ -1061,7 +1076,7 @@ Trung tâm xin gửi thông báo học phí:
       )}
 
       {/* Modal 2: Record Invoice Payment */}
-      {showPayModal && selectedInvoice && (
+      {canManage && showPayModal && selectedInvoice && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <Card className="bg-white dark:bg-stone-950 max-w-md w-full p-8 rounded-3xl space-y-6 shadow-2xl relative">
             <button
