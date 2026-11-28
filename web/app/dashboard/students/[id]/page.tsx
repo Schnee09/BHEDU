@@ -29,6 +29,8 @@ import { ZaloCopyButton } from '@/components/ui/ZaloCopyButton';
 import { generateAttendanceZaloMessage } from '@/lib/utils/zaloTemplates';
 import { cn } from '@/lib/utils';
 import { calculateAttendanceRate } from '@/lib/attendance/rate';
+import { resolveStudentDetailAccess } from '@/lib/auth/studentDetailAccess';
+import type { UserRole } from '@/lib/auth/core';
 
 const isUUID = (str: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
@@ -38,7 +40,14 @@ const isUUID = (str: string) =>
  * Clean, type-safe queries adhering strictly to production schema.
  * Supports resolution by UUID, student_code (UID), student_id (CID), or phone.
  */
-async function fetchStudentWithClient(supabase: any, identifier: string) {
+async function fetchStudentWithClient(
+  supabase: any,
+  identifier: string,
+  viewer: {
+    id: string;
+    role: UserRole;
+  }
+) {
   let profileQuery = supabase
     .from('profiles')
     .select(
@@ -69,6 +78,22 @@ async function fetchStudentWithClient(supabase: any, identifier: string) {
   }
 
   const realId = profile.id;
+  const access = await resolveStudentDetailAccess(supabase, viewer, realId);
+
+  if (!access.allowed) {
+    return {
+      profile: null,
+      enrollments: [],
+      attendance: [],
+      grades: [],
+      account: null,
+      invoices: [],
+      payments: [],
+      canViewFinance: false,
+    };
+  }
+
+  const { canViewFinance } = access;
 
   const [
     { data: enrollments },
@@ -102,23 +127,31 @@ async function fetchStudentWithClient(supabase: any, identifier: string) {
       .is('deleted_at', null)
       .order('graded_at', { ascending: false })
       .limit(30),
-    supabase
-      .from('student_accounts')
-      .select('id, student_id, balance, total_fees, total_paid, status, notes')
-      .eq('student_id', realId)
-      .maybeSingle(),
-    supabase
-      .from('invoices')
-      .select('id, invoice_number, status, total_amount, paid_amount, issue_date, due_date, notes')
-      .eq('student_id', realId)
-      .order('issue_date', { ascending: false })
-      .limit(10),
-    supabase
-      .from('payments')
-      .select('id, amount, payment_date, invoice_id, notes')
-      .eq('student_id', realId)
-      .order('payment_date', { ascending: false })
-      .limit(10),
+    canViewFinance
+      ? supabase
+          .from('student_accounts')
+          .select('id, student_id, balance, total_fees, total_paid, status, notes')
+          .eq('student_id', realId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    canViewFinance
+      ? supabase
+          .from('invoices')
+          .select(
+            'id, invoice_number, status, total_amount, paid_amount, issue_date, due_date, notes'
+          )
+          .eq('student_id', realId)
+          .order('issue_date', { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: [] }),
+    canViewFinance
+      ? supabase
+          .from('payments')
+          .select('id, amount, payment_date, invoice_id, notes')
+          .eq('student_id', realId)
+          .order('payment_date', { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: [] }),
   ]);
 
   return {
@@ -129,21 +162,29 @@ async function fetchStudentWithClient(supabase: any, identifier: string) {
     account: (account ?? null) as unknown,
     invoices: (invoices as unknown[]) ?? [],
     payments: (payments as unknown[]) ?? [],
+    canViewFinance,
   };
 }
 
 export default async function StudentDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { supabase: dataClient, viewerRole, user } = await getDataClient();
+  const { supabase: dataClient, viewerProfileId, viewerRole } = await getDataClient();
 
-  const { profile, enrollments, attendance, grades, account, invoices, payments } =
-    await fetchStudentWithClient(dataClient, id);
+  if (!viewerProfileId || !viewerRole) return notFound();
+
+  const role = viewerRole as UserRole;
+
+  const { profile, enrollments, attendance, grades, account, invoices, payments, canViewFinance } =
+    await fetchStudentWithClient(dataClient, id, {
+      id: viewerProfileId,
+      role,
+    });
 
   if (!profile) return notFound();
 
   const studentId = profile.id;
   const hasAdminAccess = ['admin', 'super_admin', 'owner', 'staff'].includes(viewerRole || '');
-  const showFinance = hasAdminAccess || user?.id === studentId || viewerRole === 'parent';
+  const showFinance = canViewFinance;
 
   type StudentAccount = {
     id: string;

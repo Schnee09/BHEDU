@@ -18,7 +18,7 @@ function makeAuthClient(
   isActive = role !== null
 ) {
   const maybeSingle = jest.fn().mockResolvedValue({
-    data: role ? { role, is_active: isActive } : null,
+    data: role ? { id: `${role}-profile`, role, is_active: isActive } : null,
     error: null,
   });
   const or = jest.fn().mockReturnValue({ maybeSingle });
@@ -71,6 +71,7 @@ describe('getDataClient', () => {
     const result = await getDataClient(request);
 
     expect(result.user).toEqual({ id: 'verified-user' });
+    expect(result.viewerProfileId).toBe('student-profile');
     expect(result.viewerRole).toBe('student');
     expect(result.usingServiceClient).toBe(false);
     expect(createServiceClient).not.toHaveBeenCalled();

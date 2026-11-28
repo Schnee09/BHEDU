@@ -31,17 +31,19 @@ export async function getDataClient(request?: Request) {
     const { data: auth, error: authError } = await authClient.auth.getUser();
     const user = authError ? null : (auth?.user ?? null);
     let viewerRole: string | null = null;
+    let viewerProfileId: string | null = null;
     let viewerIsActive = false;
 
     if (user) {
       const { data: viewer, error: profileError } = await authClient
         .from('profiles')
-        .select('role, is_active')
+        .select('id, role, is_active')
         .or(`id.eq.${user.id},user_id.eq.${user.id}`)
         .maybeSingle();
 
       if (!profileError) {
-        const verifiedViewer = viewer as { role?: string; is_active?: boolean } | null;
+        const verifiedViewer = viewer as { id?: string; role?: string; is_active?: boolean } | null;
+        viewerProfileId = verifiedViewer?.id ?? null;
         viewerRole = verifiedViewer?.role ?? null;
         viewerIsActive = verifiedViewer?.is_active === true;
       }
@@ -52,7 +54,14 @@ export async function getDataClient(request?: Request) {
       (viewerRole === 'admin' || viewerRole === 'super_admin' || viewerRole === 'owner');
     const supabase = usingServiceClient ? createServiceClient() : authClient;
 
-    return { supabase, viewerRole, viewerIsActive, user, usingServiceClient } as const;
+    return {
+      supabase,
+      viewerProfileId,
+      viewerRole,
+      viewerIsActive,
+      user,
+      usingServiceClient,
+    } as const;
   } catch (outerError) {
     console.error('[getDataClient] FATAL ERROR:', outerError);
     throw outerError;
