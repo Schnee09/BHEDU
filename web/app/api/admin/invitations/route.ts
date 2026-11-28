@@ -9,6 +9,17 @@ import {
 } from '@/lib/auth/roleAssignment';
 import { AppError, AuthorizationError } from '@/lib/api/errors';
 
+const INVITABLE_SYSTEM_ROLES = [
+  { code: 'super_admin', name: 'Quản trị Hệ thống' },
+  { code: 'owner', name: 'Chủ trung tâm' },
+  { code: 'admin', name: 'Quản trị viên' },
+  { code: 'staff', name: 'Nhân viên vận hành' },
+  { code: 'teacher', name: 'Giáo viên' },
+  { code: 'tutor', name: 'Gia sư' },
+  { code: 'parent', name: 'Phụ huynh' },
+  { code: 'student', name: 'Học sinh' },
+] as const;
+
 const invitationSchema = z
   .object({
     email: z.string().trim().toLowerCase().email().optional().or(z.literal('')),
@@ -84,7 +95,30 @@ export const GET = createGetHandler(
       .filter(({ visible }) => visible)
       .map(({ invite }) => invite);
 
-    return apiSuccess({ invites: visibleInvites }, {});
+    const { data: customRoles, error: customRolesError } = await supabase
+      .from('custom_roles')
+      .select('code, name')
+      .order('name');
+
+    if (customRolesError) throw customRolesError;
+
+    const roleCandidates = [
+      ...INVITABLE_SYSTEM_ROLES,
+      ...(customRoles || []).filter(
+        (role): role is { code: string; name: string } =>
+          typeof role.code === 'string' && typeof role.name === 'string'
+      ),
+    ];
+    const assignableRoles = (
+      await Promise.all(
+        roleCandidates.map(async (role) => ({
+          ...role,
+          assignable: await canAccessRole(role.code),
+        }))
+      )
+    ).filter((role) => role.assignable);
+
+    return apiSuccess({ invites: visibleInvites, assignable_roles: assignableRoles }, {});
   }
 );
 

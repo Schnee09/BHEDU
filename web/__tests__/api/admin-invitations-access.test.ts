@@ -84,6 +84,13 @@ describe('admin invitation authorization', () => {
     expect(json.invites).toEqual([
       { id: 'invite-teacher', role: 'teacher', email: 'teacher@example.com' },
     ]);
+    expect(json.assignable_roles.map((role: { code: string }) => role.code)).toEqual([
+      'staff',
+      'teacher',
+      'tutor',
+      'parent',
+      'student',
+    ]);
   });
 
   it('requires at least one invitation contact method', async () => {
