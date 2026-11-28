@@ -31,6 +31,7 @@ import {
   ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface Class {
   id: string;
@@ -68,6 +69,8 @@ export default function EnrollmentManager({
   studentId,
   onEnrollmentCountChange,
 }: EnrollmentManagerProps) {
+  const { can } = usePermissions();
+  const canManage = can('enrollments.manage');
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [availableClasses, setAvailableClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,14 +99,12 @@ export default function EnrollmentManager({
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [enrollmentsRes, classesRes] = await Promise.all([
-        apiFetch(`/api/admin/students/${studentId}/enrollments`),
-        apiFetch('/api/admin/classes?status=active'),
-      ]);
+      const enrollmentsRes = await apiFetch(`/api/admin/students/${studentId}/enrollments`);
+      const classesRes = canManage ? await apiFetch('/api/admin/classes?status=active') : null;
 
-      if (enrollmentsRes.ok && classesRes.ok) {
+      if (enrollmentsRes.ok && (!classesRes || classesRes.ok)) {
         const enrollmentsData = await enrollmentsRes.json();
-        const classesData = await classesRes.json();
+        const classesData = classesRes ? await classesRes.json() : { classes: [] };
 
         const enrs = enrollmentsData.enrollments || [];
         setEnrollments(enrs);
@@ -208,6 +209,8 @@ export default function EnrollmentManager({
   };
 
   const handleAddEnrollment = async () => {
+    if (!canManage) return;
+
     if (!selectedClassId) {
       showToast.error('Vui lòng chọn một lớp học');
       return;
@@ -222,6 +225,8 @@ export default function EnrollmentManager({
   };
 
   const performEnrollment = async () => {
+    if (!canManage) return;
+
     const toastId = showToast.loading('Đang ghi danh học sinh...');
     setProcessingEnrollment(selectedClassId);
     setShowWarningDialog(false);
@@ -247,6 +252,8 @@ export default function EnrollmentManager({
   };
 
   const handleRemoveClick = (enrollmentId: string, className: string) => {
+    if (!canManage) return;
+
     setEnrollmentToRemove({ id: enrollmentId, name: className });
     setLifecycleAction('end');
     setLifecycleDate(new Date().toISOString().slice(0, 10));
@@ -256,11 +263,15 @@ export default function EnrollmentManager({
   };
 
   const handleTransferClick = (enrollmentId: string, className: string) => {
+    if (!canManage) return;
+
     handleRemoveClick(enrollmentId, className);
     setLifecycleAction('transfer');
   };
 
   const performRemoval = async () => {
+    if (!canManage) return;
+
     if (!enrollmentToRemove) return;
 
     if (!lifecycleReason.trim()) {
@@ -334,7 +345,7 @@ export default function EnrollmentManager({
           </p>
         </div>
 
-        {!showAddDropdown && (
+        {canManage && !showAddDropdown && (
           <Button
             onClick={() => setShowAddDropdown(true)}
             className="h-9 px-4 rounded-xl font-black text-xs bg-amber-500 hover:bg-amber-600 text-stone-950 shadow-sm gap-1.5 cursor-pointer self-start sm:self-auto"
@@ -346,7 +357,7 @@ export default function EnrollmentManager({
       </div>
 
       {/* Add Enrollment Dropdown / Card */}
-      {showAddDropdown && (
+      {canManage && showAddDropdown && (
         <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 space-y-4 animate-in slide-in-from-top-2 duration-200">
           <div className="space-y-1">
             <label className="text-xs font-black text-stone-800 dark:text-stone-200 uppercase tracking-wider block">
@@ -528,7 +539,7 @@ export default function EnrollmentManager({
                 </div>
               </div>
 
-              {enrollment.status === 'enrolled' && (
+              {canManage && enrollment.status === 'enrolled' && (
                 <div className="pt-2 border-t border-stone-100 dark:border-white/5 flex flex-wrap justify-end gap-1.5">
                   <Button
                     variant="ghost"
@@ -600,7 +611,7 @@ export default function EnrollmentManager({
       )}
 
       {/* Warning Dialog */}
-      <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+      <AlertDialog open={canManage && showWarningDialog} onOpenChange={setShowWarningDialog}>
         <AlertDialogContent className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-6 max-w-md">
           <AlertDialogHeader>
             <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center mb-3">
@@ -644,7 +655,7 @@ export default function EnrollmentManager({
       </AlertDialog>
 
       {/* Enrollment lifecycle dialog */}
-      <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
+      <AlertDialog open={canManage && showRemoveDialog} onOpenChange={setShowRemoveDialog}>
         <AlertDialogContent className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 p-6 max-w-md">
           <AlertDialogHeader>
             <div
