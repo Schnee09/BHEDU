@@ -183,6 +183,23 @@ describe('Unified Permission Checks (hasPermission)', () => {
     expect(hasPermission('admin', 'system.settings')).toBe(false);
   });
 
+  it('staff should support daily operations without destructive or administrative powers', () => {
+    expect(hasPermission('staff', 'students.view')).toBe(true);
+    expect(hasPermission('staff', 'students.edit')).toBe(true);
+    expect(hasPermission('staff', 'enrollments.manage')).toBe(true);
+    expect(hasPermission('staff', 'parent_links.approve')).toBe(true);
+    expect(hasPermission('staff', 'attendance.mark')).toBe(true);
+    expect(hasPermission('staff', 'grades.entry')).toBe(true);
+    expect(hasPermission('staff', 'finance.manage')).toBe(true);
+
+    expect(hasPermission('staff', 'users.create')).toBe(false);
+    expect(hasPermission('staff', 'users.delete')).toBe(false);
+    expect(hasPermission('staff', 'students.delete')).toBe(false);
+    expect(hasPermission('staff', 'classes.delete')).toBe(false);
+    expect(hasPermission('staff', 'finance.refund')).toBe(false);
+    expect(hasPermission('staff', 'permissions.manage')).toBe(false);
+  });
+
   it('teacher should have class-scoped grades/attendance permissions but not users manage or finance', () => {
     expect(hasPermission('teacher', 'grades.entry')).toBe(true);
     expect(hasPermission('teacher', 'attendance.mark')).toBe(true);

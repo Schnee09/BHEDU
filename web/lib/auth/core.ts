@@ -11,6 +11,7 @@ export type SystemRole =
   | 'super_admin'
   | 'owner'
   | 'admin'
+  | 'staff'
   | 'teacher'
   | 'tutor'
   | 'parent'
@@ -584,6 +585,7 @@ export const ROLE_HIERARCHY: Record<UserRole, UserRole[]> = {
   super_admin: ['owner', 'admin'],
   owner: [], // Standalone — strategic oversight, no operational inheritance
   admin: ['teacher'],
+  staff: [], // Standalone — front-desk and daily operations
   teacher: ['student'],
   tutor: ['student'],
   parent: ['student'],
@@ -705,6 +707,28 @@ export const BASE_ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     'reports.export',
     'subjects.view',
     'subjects.manage',
+  ],
+  staff: [
+    'students.view',
+    'students.create',
+    'students.edit',
+    'classes.view',
+    'classes.enroll',
+    'enrollments.view',
+    'enrollments.manage',
+    'timetable.view',
+    'parent_links.view',
+    'parent_links.approve',
+    'attendance.view',
+    'attendance.mark',
+    'attendance.reports',
+    'grades.view',
+    'grades.entry',
+    'finance.view',
+    'finance.manage',
+    'reports.view',
+    'subjects.view',
+    'curriculum.view',
   ],
   teacher: [
     'grades.entry',

@@ -268,6 +268,7 @@ export function getRoleDescription(role: UserRole): string {
     owner:
       'Strategic business oversight — finance, reporting, staff management, and center-wide announcements',
     admin: 'System management including users, classes, and settings',
+    staff: 'Daily student, enrollment, attendance, tuition, and front-desk operations',
     teacher: 'Class management including grades and attendance for assigned classes',
     tutor: 'Limited teaching access for tutoring sessions',
     parent: "View children's academic progress and make payments",
